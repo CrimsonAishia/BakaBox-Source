@@ -1,0 +1,99 @@
+name: bakabox_app
+description: "BakaBox CS2 Server Browser - Mobile Edition"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI & Icons
+  cupertino_icons: ^1.0.8
+  material_design_icons_flutter: ^7.0.7296
+  
+  # HTTP & Network
+  http: ^1.2.0
+  dio: ^5.4.0
+  
+  # State Management - Bloc
+  flutter_bloc: ^9.1.0
+  bloc: ^9.0.0
+  equatable: ^2.0.7
+  
+  # Routing - GoRouter
+  go_router: ^15.1.2
+  
+  # Local Storage & Caching
+  shared_preferences: ^2.2.2
+  sqflite: ^2.3.0
+  path: ^1.9.0
+  
+  # UI Components
+  cached_network_image: ^3.3.1
+  flutter_cache_manager: ^3.3.1
+  pull_to_refresh: ^2.0.0
+  shimmer: ^3.0.0
+  fl_chart: ^0.68.0
+  flutter_html: ^3.0.0-beta.2
+  flutter_markdown: ^0.7.3
+  flutter_quill: ^11.0.0
+  dart_quill_delta: ^10.8.3
+  markdown: ^7.2.2
+  
+  # Animations
+  flutter_staggered_animations: ^1.1.1
+  animations: ^2.0.11
+  flutter_animate: ^4.5.0
+  curved_navigation_bar: ^1.0.6
+  
+  # Utilities
+  intl: ^0.20.2
+  url_launcher: ^6.2.4
+  connectivity_plus: ^5.0.2
+  package_info_plus: ^8.0.0
+  path_provider: ^2.1.1
+  crypto: ^3.0.3
+  mime: ^1.0.5
+  image_picker: ^1.0.7
+  
+  # Logging
+  logger: ^2.0.0
+  
+  # Desktop Support
+  file_picker: ^8.0.0
+  desktop_multi_window: ^0.3.0
+  flutter_alone: ^3.2.4
+  # Use the forked window_manager with showWithoutActivating support
+  window_manager:
+    git:
+      url: https://github.com/CrimsonAishia/window_manager.git
+      path: packages/window_manager
+      ref: 2ebc4b2d776b0c2772b6146489193f199b8d69eb
+  
+  # Audio
+  audioplayers: ^6.1.0
+  
+  # JSON & Serialization
+  json_annotation: ^4.8.1
+  source_server: ^4.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+  json_serializable: ^6.7.1
+  build_runner: ^2.4.8
+  glados: ^1.1.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/audio/

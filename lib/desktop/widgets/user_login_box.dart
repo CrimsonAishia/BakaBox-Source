@@ -1,0 +1,499 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../core/bloc/auth/auth_bloc.dart';
+import '../../core/bloc/auth/auth_event.dart';
+import '../../core/bloc/auth/auth_state.dart';
+import '../../core/models/user_info.dart';
+import 'login_dialog.dart';
+
+/// 用户登录框组件
+///
+/// 显示在侧边栏，展示登录状态和用户信息
+/// 登录后可点击展开查看详细信息
+class UserLoginBox extends StatefulWidget {
+  const UserLoginBox({super.key});
+
+  @override
+  State<UserLoginBox> createState() => _UserLoginBoxState();
+}
+
+class _UserLoginBoxState extends State<UserLoginBox> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        if (state.isAuthenticated && state.userInfo != null) {
+          return _LoggedInView(
+            state: state,
+            isExpanded: _isExpanded,
+            onToggleExpand: () => setState(() => _isExpanded = !_isExpanded),
+          );
+        }
+        return const _LoginPromptView();
+      },
+    );
+  }
+}
+
+/// 获取卡片背景色 - 与侧边栏协调
+Color _getCardColor(bool isDark) {
+  return isDark
+      ? const Color(0xFF334155).withValues(alpha: 0.6) // slate-700
+      : const Color(0xFFF1F5F9); // slate-100
+}
+
+/// 获取卡片边框色
+Color _getBorderColor(bool isDark) {
+  return isDark
+      ? Colors.white.withValues(alpha: 0.1)
+      : Colors.black.withValues(alpha: 0.08);
+}
+
+/// 获取主文字颜色
+Color _getPrimaryTextColor(bool isDark) {
+  return isDark ? Colors.white : const Color(0xFF1F2937);
+}
+
+/// 获取次要文字颜色
+Color _getSecondaryTextColor(bool isDark) {
+  return isDark ? Colors.white60 : const Color(0xFF6B7280);
+}
+
+/// 获取头像背景色
+Color _getAvatarBgColor(bool isDark) {
+  return isDark ? const Color(0xFF475569) : const Color(0xFFE2E8F0);
+}
+
+/// 未登录视图 - 固定高度
+class _LoginPromptView extends StatelessWidget {
+  const _LoginPromptView();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _getCardColor(isDark),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _getBorderColor(isDark)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            '欢迎使用 BakaBox',
+            style: TextStyle(
+              color: _getPrimaryTextColor(isDark),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '绑定您的论坛账户',
+            style: TextStyle(
+              color: _getSecondaryTextColor(isDark),
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 36,
+            child: ElevatedButton(
+              onPressed: () {
+                // 使用 addPostFrameCallback 确保 overlay 已准备好
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (context.mounted) {
+                    LoginDialog.show(context);
+                  }
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0080FF),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('绑定账户', style: TextStyle(fontSize: 13)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 已登录视图 - 可展开
+class _LoggedInView extends StatelessWidget {
+  final AuthState state;
+  final bool isExpanded;
+  final VoidCallback onToggleExpand;
+
+  const _LoggedInView({
+    required this.state,
+    required this.isExpanded,
+    required this.onToggleExpand,
+  });
+
+  static const double _collapsedHeight = 120.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final userInfo = state.userInfo!;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+      decoration: BoxDecoration(
+        color: _getCardColor(isDark),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _getBorderColor(isDark)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 折叠状态的主卡片 - 固定高度
+          InkWell(
+            onTap: onToggleExpand,
+            child: Container(
+              height: _collapsedHeight,
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  // 头像
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundColor: _getAvatarBgColor(isDark),
+                    backgroundImage: userInfo.avatar.isNotEmpty
+                        ? NetworkImage(userInfo.avatar)
+                        : null,
+                    child: userInfo.avatar.isEmpty
+                        ? Icon(Icons.person,
+                            size: 24, color: _getSecondaryTextColor(isDark))
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+
+                  // 用户信息
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          userInfo.username,
+                          style: TextStyle(
+                            color: _getPrimaryTextColor(isDark),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (userInfo.userGroup != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            "用户组:${userInfo.userGroup!}",
+                            style: TextStyle(
+                              color: _getSecondaryTextColor(isDark),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  // 展开/收起图标
+                  AnimatedRotation(
+                    turns: isExpanded ? 0 : 0.5,
+                    duration: const Duration(milliseconds: 250),
+                    child: Icon(
+                      Icons.keyboard_arrow_down,
+                      color: _getSecondaryTextColor(isDark),
+                      size: 20,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // 展开的详细信息
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: _ExpandedContent(
+              userInfo: userInfo,
+              state: state,
+            ),
+            crossFadeState: isExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 250),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 展开后的详细内容
+class _ExpandedContent extends StatelessWidget {
+  final UserInfo userInfo;
+  final AuthState state;
+
+  const _ExpandedContent({
+    required this.userInfo,
+    required this.state,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: Column(
+        children: [
+          Divider(color: _getBorderColor(isDark), height: 1),
+          const SizedBox(height: 12),
+
+          // Steam ID
+          if (userInfo.steamId != null)
+            _SteamRow(
+              steamId: userInfo.steamId!,
+              steamUrl: userInfo.steamUrl,
+            ),
+
+          // 积分
+          if (userInfo.credits != null)
+            _InfoRow(
+              icon: Icons.star_outline,
+              label: '积分',
+              value: userInfo.credits!,
+            ),
+
+          // 僵尸币
+          if (userInfo.zombieCoins != null)
+            _InfoRow(
+              icon: Icons.monetization_on_outlined,
+              label: '僵尸币',
+              value: userInfo.zombieCoins!,
+            ),
+
+          const SizedBox(height: 12),
+
+          // 操作按钮
+          Row(
+            children: [
+              // 刷新按钮
+              Expanded(
+                child: _ActionButton(
+                  icon: Icons.refresh,
+                  label: '刷新',
+                  isLoading: state.isRefreshing,
+                  onPressed: state.isRefreshing
+                      ? null
+                      : () => context
+                          .read<AuthBloc>()
+                          .add(const AuthRefreshRequested()),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // 解除绑定按钮
+              Expanded(
+                child: _ActionButton(
+                  icon: Icons.link_off,
+                  label: '解除绑定',
+                  isDestructive: true,
+                  onPressed: () => _showUnbindConfirm(context),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showUnbindConfirm(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        title: Text('解除绑定',
+            style: TextStyle(color: _getPrimaryTextColor(isDark))),
+        content: Text(
+          '确定要解除论坛账户绑定吗？',
+          style: TextStyle(color: _getSecondaryTextColor(isDark)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              context.read<AuthBloc>().add(const AuthLogoutRequested());
+            },
+            child: const Text('确认解除', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Steam 信息行 - 使用图标
+class _SteamRow extends StatelessWidget {
+  final String steamId;
+  final String? steamUrl;
+
+  const _SteamRow({
+    required this.steamId,
+    this.steamUrl,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return InkWell(
+      onTap: steamUrl != null ? () => launchUrl(Uri.parse(steamUrl!)) : null,
+      borderRadius: BorderRadius.circular(4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            Image.asset(
+              'assets/icons/steam.png',
+              width: 14,
+              height: 14,
+              errorBuilder: (_, __, ___) => Icon(
+                Icons.games,
+                size: 14,
+                color: _getSecondaryTextColor(isDark),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                steamId,
+                style: TextStyle(
+                  color: steamUrl != null
+                      ? const Color(0xFF0080FF)
+                      : _getSecondaryTextColor(isDark),
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            if (steamUrl != null)
+              const Icon(Icons.open_in_new, size: 12, color: Color(0xFF0080FF)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 信息行
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: _getSecondaryTextColor(isDark)),
+          const SizedBox(width: 8),
+          Text(
+            '$label:',
+            style: TextStyle(
+                color: _getSecondaryTextColor(isDark), fontSize: 12),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: TextStyle(color: _getPrimaryTextColor(isDark), fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 操作按钮
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isLoading;
+  final bool isDestructive;
+  final VoidCallback? onPressed;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    this.isLoading = false,
+    this.isDestructive = false,
+    this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = isDestructive
+        ? Colors.red.shade400
+        : (isDark ? Colors.white70 : const Color(0xFF6B7280));
+
+    return SizedBox(
+      height: 32,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: isLoading
+            ? SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: color,
+                ),
+              )
+            : Icon(icon, size: 14),
+        label: Text(label, style: const TextStyle(fontSize: 11)),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: color,
+          side: BorderSide(color: color.withValues(alpha: 0.3)),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(6),
+          ),
+        ),
+      ),
+    );
+  }
+}
