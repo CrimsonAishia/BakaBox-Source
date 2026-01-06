@@ -1,0 +1,1363 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
+import '../../core/core.dart';
+import '../../core/services/quill_markdown_converter.dart';
+
+/// Issue 详情移动端页面
+class IssueDetailMobile extends StatefulWidget {
+  final int issueId;
+  const IssueDetailMobile({super.key, required this.issueId});
+
+  @override
+  State<IssueDetailMobile> createState() => _IssueDetailMobileState();
+}
+
+class _IssueDetailMobileState extends State<IssueDetailMobile> {
+  final quill.QuillController _commentController = quill.QuillController.basic();
+  final ScrollController _scrollController = ScrollController();
+  final _commentEditorKey = GlobalKey<RichTextEditorState>();
+  List<String> _commentImageUrls = [];
+
+  @override
+  void initState() {
+    super.initState();
+    // IssueDetailBloc 已在路由中初始化并触发 IssueDetailFetch
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _submitComment() {
+    final content = QuillMarkdownConverter.toMarkdown(_commentController.document).trim();
+    if (content.isEmpty) {
+      ToastUtils.showWarning(context, '请输入评论内容');
+      return;
+    }
+    final authState = context.read<AuthBloc>().state;
+    if (!authState.isAuthenticated) {
+      ToastUtils.showWarning(context, '请先登录');
+      return;
+    }
+    context.read<IssueDetailBloc>().add(IssueDetailSetUser(authState.userInfo));
+    context.read<IssueDetailBloc>().add(IssueDetailAddComment(content, images: _commentImageUrls));
+    _commentController.clear();
+    _commentEditorKey.currentState?.clearImages();
+    setState(() {
+      _commentImageUrls = [];
+    });
+    FocusScope.of(context).unfocus();
+  }
+
+  void _toggleVote() {
+    final authState = context.read<AuthBloc>().state;
+    if (!authState.isAuthenticated) {
+      ToastUtils.showWarning(context, '请先登录');
+      return;
+    }
+    context.read<IssueDetailBloc>().add(const IssueDetailToggleVote());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocConsumer<IssueDetailBloc, IssueDetailState>(
+      listener: (context, state) {
+        if (state.error != null) {
+          ToastUtils.showError(context, state.error!);
+          context.read<IssueDetailBloc>().add(const IssueDetailClearError());
+        }
+        if (state.successMessage != null) {
+          ToastUtils.showSuccess(context, state.successMessage!);
+          context.read<IssueDetailBloc>().add(const IssueDetailClearError());
+        }
+      },
+      builder: (context, state) {
+        return Scaffold(
+          body: state.isLoading
+              ? _buildLoadingState()
+              : state.issue == null
+                  ? _buildErrorState()
+                  : _buildContent(state),
+          bottomNavigationBar: state.issue != null ? _buildBottomBar(state) : null,
+        );
+      },
+    );
+  }
+
+  /// 构建优化后的 AppBar
+  Widget _buildAppBar(BuildContext context, IssueDetailState state) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
+    return SliverAppBar(
+      pinned: true,
+      elevation: 0,
+      backgroundColor: theme.appBarTheme.backgroundColor,
+      surfaceTintColor: theme.appBarTheme.backgroundColor,
+      toolbarHeight: 80,
+      automaticallyImplyLeading: false,
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          color: theme.appBarTheme.backgroundColor,
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withValues(alpha: 0.05),
+              offset: const Offset(0, 1),
+              blurRadius: 3,
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 12, 20, 12),
+            child: Row(
+              children: [
+                // 返回按钮
+                IconButton(
+                  onPressed: () => context.pop(),
+                  icon: Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: theme.appBarTheme.foregroundColor,
+                    size: 22,
+                  ),
+                  style: IconButton.styleFrom(
+                    backgroundColor: colorScheme.surfaceContainer,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ).animate().fadeIn(duration: 200.ms),
+                const SizedBox(width: 8),
+                // 图标容器
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0080FF), Color(0xFF0066CC)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                        offset: const Offset(0, 4),
+                        blurRadius: 12,
+                      ),
+                    ],
+                  ),
+                  child: Icon(MdiIcons.fileDocumentOutline, color: Colors.white, size: 24),
+                )
+                    .animate()
+                    .scale(
+                      begin: const Offset(0.5, 0.5),
+                      end: const Offset(1.0, 1.0),
+                      duration: 600.ms,
+                      curve: Curves.elasticOut,
+                    )
+                    .fadeIn(duration: 200.ms)
+                    .then()
+                    .shimmer(
+                      duration: 1000.ms,
+                      delay: 100.ms,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.0),
+                        Colors.white.withValues(alpha: 0.3),
+                        Colors.white.withValues(alpha: 0.8),
+                        Colors.white.withValues(alpha: 0.3),
+                        Colors.white.withValues(alpha: 0.0),
+                      ],
+                    ),
+                const SizedBox(width: 16),
+                // 标题区域
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        state.issue != null ? '#${state.issue!.id}' : '加载中...',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: theme.appBarTheme.foregroundColor,
+                        ),
+                      ).animate().fadeIn(duration: 300.ms),
+                      const SizedBox(height: 2),
+                      Text(
+                        '问题详情',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: theme.appBarTheme.foregroundColor?.withValues(alpha: 0.7),
+                        ),
+                      ).animate().fadeIn(duration: 300.ms, delay: 80.ms),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建加载状态
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(40),
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(30),
+                    color: const Color(0xFF0080FF).withValues(alpha: 0.2),
+                  ),
+                ).animate(onPlay: (controller) => controller.repeat()).scale(duration: 1000.ms).fadeIn(duration: 500.ms),
+                const SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0080FF)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 32),
+          Text(
+            '正在加载问题详情',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: const Color(0xFF0080FF),
+              fontWeight: FontWeight.w500,
+            ),
+          ).animate(onPlay: (controller) => controller.repeat(reverse: true)).fadeIn(duration: 800.ms).then(delay: 200.ms).fadeOut(duration: 800.ms),
+          const SizedBox(height: 8),
+          Text(
+            '请稍候...',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+          ).animate().fadeIn(delay: 300.ms, duration: 500.ms),
+        ],
+      ),
+    ).animate().fadeIn(duration: 300.ms);
+  }
+
+  /// 构建错误状态
+  Widget _buildErrorState() {
+    final state = context.read<IssueDetailBloc>().state;
+    final errorMessage = state.error ?? 'Issue 不存在或加载失败';
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 320),
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEE2E2),
+                borderRadius: BorderRadius.circular(36),
+              ),
+              child: Icon(MdiIcons.alertCircleOutline, size: 36, color: const Color(0xFFDC2626)),
+            ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
+            const SizedBox(height: 20),
+            const Text(
+              '加载失败',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
+            ).animate().fadeIn(delay: 100.ms, duration: 300.ms),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF2F2),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFFECACA)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(MdiIcons.informationOutline, size: 16, color: const Color(0xFFDC2626)),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      errorMessage,
+                      style: const TextStyle(color: Color(0xFFDC2626), fontSize: 13),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            ).animate().fadeIn(delay: 200.ms, duration: 300.ms),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: () => context.read<IssueDetailBloc>().add(IssueDetailFetch(widget.issueId)),
+              icon: Icon(MdiIcons.refresh, size: 18),
+              label: const Text('重新加载'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0080FF),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ).animate().fadeIn(delay: 300.ms, duration: 300.ms).slideY(begin: 0.2, end: 0),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建内容区域
+  Widget _buildContent(IssueDetailState state) {
+    final issue = state.issue!;
+    return RefreshIndicator(
+      onRefresh: () async => context.read<IssueDetailBloc>().add(IssueDetailFetch(widget.issueId)),
+      child: CustomScrollView(
+        controller: _scrollController,
+        slivers: [
+          _buildAppBar(context, state),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildIssueCard(issue).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0),
+                  const SizedBox(height: 16),
+                  _buildCommentsSection(state).animate().fadeIn(duration: 300.ms, delay: 100.ms).slideY(begin: 0.1, end: 0),
+                  const SizedBox(height: 80),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  /// 构建问题详情卡片
+  Widget _buildIssueCard(Issue issue) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 类型和状态标签行
+          Row(
+            children: [
+              _buildTypeTag(issue.issueType),
+              const SizedBox(width: 8),
+              _buildStatusTag(issue.issueStatus),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '#${issue.id}',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // 标题
+          Text(
+            issue.title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 16),
+          // 作者信息行
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  backgroundImage: issue.authorAvatar != null ? NetworkImage(issue.authorAvatar!) : null,
+                  child: issue.authorAvatar == null
+                      ? Text(
+                          issue.authorName[0].toUpperCase(),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        issue.authorName,
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(
+                            MdiIcons.clockOutline,
+                            size: 12,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            Formatters.formatRelativeTime(issue.createdAt),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // 投票和评论统计
+                _buildStatBadge(MdiIcons.thumbUpOutline, issue.voteCount),
+                const SizedBox(width: 8),
+                _buildStatBadge(MdiIcons.commentOutline, issue.commentCount),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // 分割线
+          Container(
+            height: 1,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).dividerColor.withValues(alpha: 0),
+                  Theme.of(context).dividerColor,
+                  Theme.of(context).dividerColor.withValues(alpha: 0),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // 内容区域
+          MarkdownBody(
+            data: issue.content,
+            styleSheet: MarkdownStyleSheet(
+              p: const TextStyle(fontSize: 15, height: 1.6),
+              code: TextStyle(
+                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                color: const Color(0xFFDC2626),
+                fontFamily: 'monospace',
+              ),
+              codeblockDecoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Theme.of(context).dividerColor),
+              ),
+            ),
+          ),
+          // 图片网格
+          if (issue.images.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _buildImageGrid(issue.images),
+          ],
+          // 设备信息
+          if (issue.deviceInfo != null) ...[
+            const SizedBox(height: 16),
+            _buildDeviceInfoCard(issue.deviceInfo!),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// 构建统计徽章
+  Widget _buildStatBadge(IconData icon, int count) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          const SizedBox(width: 4),
+          Text(
+            '$count',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建图片网格
+  Widget _buildImageGrid(List<String> images) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                MdiIcons.imageMultipleOutline,
+                size: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '附件图片 (${images.length})',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ImageGrid(
+            imageUrls: images,
+            imageWidth: 100,
+            imageHeight: 100,
+            spacing: 8,
+            borderRadius: 8,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建设备信息卡片
+  Widget _buildDeviceInfoCard(DeviceInfo deviceInfo) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              MdiIcons.cellphoneInformation,
+              size: 18,
+              color: const Color(0xFF0080FF),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '设备信息',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${deviceInfo.appVersion} · ${deviceInfo.platform} · ${deviceInfo.osVersion}',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建类型标签
+  Widget _buildTypeTag(IssueType type) {
+    final (color, bgColor, icon) = switch (type) {
+      IssueType.bug => (const Color(0xFFDC2626), const Color(0xFFFEE2E2), MdiIcons.bug),
+      IssueType.feature => (const Color(0xFF2563EB), const Color(0xFFDBEAFE), MdiIcons.lightbulbOnOutline),
+      IssueType.question => (const Color(0xFF059669), const Color(0xFFD1FAE5), MdiIcons.helpCircleOutline),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 5),
+          Text(
+            type.label,
+            style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建状态标签
+  Widget _buildStatusTag(IssueStatus status) {
+    final isOpen = status.isOpen;
+    final color = isOpen ? const Color(0xFF16A34A) : const Color(0xFF6B7280);
+    final bgColor = isOpen ? const Color(0xFFDCFCE7) : const Color(0xFFF3F4F6);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            status.label,
+            style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  /// 构建评论区域
+  Widget _buildCommentsSection(IssueDetailState state) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 评论标题行
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  MdiIcons.commentMultipleOutline,
+                  size: 18,
+                  color: const Color(0xFF0080FF),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '评论',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${state.comments.length}',
+                  style: const TextStyle(
+                    color: Color(0xFF0080FF),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // 评论列表
+          if (state.isLoadingComments)
+            _buildCommentsLoading()
+          else if (state.comments.isEmpty)
+            _buildCommentsEmpty()
+          else
+            ...state.comments.asMap().entries.map((entry) {
+              return _buildCommentItem(entry.value, entry.key)
+                  .animate()
+                  .fadeIn(duration: 300.ms, delay: Duration(milliseconds: 50 * entry.key))
+                  .slideX(begin: 0.05, end: 0);
+            }),
+        ],
+      ),
+    );
+  }
+
+  /// 构建评论加载状态
+  Widget _buildCommentsLoading() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          children: [
+            const SizedBox(
+              width: 32,
+              height: 32,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0080FF)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '加载评论中...',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建评论空状态
+  Widget _buildCommentsEmpty() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(28),
+              ),
+              child: Icon(
+                MdiIcons.commentOutline,
+                size: 28,
+                color: const Color(0xFF3B82F6),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '暂无评论',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '成为第一个评论的人吧',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建评论项
+  Widget _buildCommentItem(IssueComment comment, int index) {
+    final isLast = index == context.read<IssueDetailBloc>().state.comments.length - 1;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        border: isLast
+            ? null
+            : Border(
+                bottom: BorderSide(
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                ),
+              ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 头像
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                backgroundImage: comment.authorAvatar != null ? NetworkImage(comment.authorAvatar!) : null,
+                child: comment.authorAvatar == null
+                    ? Text(
+                        comment.authorName[0].toUpperCase(),
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      )
+                    : null,
+              ),
+              // 管理员标识
+              if (comment.isAdmin)
+                Positioned(
+                  right: -2,
+                  bottom: -2,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0080FF),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.surface,
+                        width: 2,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      size: 8,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 12),
+          // 评论内容
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 作者信息行
+                Row(
+                  children: [
+                    Text(
+                      comment.authorName,
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    ),
+                    if (comment.isAdmin) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF0080FF), Color(0xFF0066CC)],
+                          ),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          '管理员',
+                          style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                    const Spacer(),
+                    Icon(
+                      MdiIcons.clockOutline,
+                      size: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      Formatters.formatRelativeTime(comment.createdAt),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // 评论内容
+                MarkdownBody(
+                  data: comment.content,
+                  styleSheet: MarkdownStyleSheet(
+                    p: const TextStyle(fontSize: 14, height: 1.5),
+                    code: TextStyle(
+                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      color: const Color(0xFFDC2626),
+                      fontFamily: 'monospace',
+                      fontSize: 13,
+                    ),
+                    codeblockDecoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Theme.of(context).dividerColor),
+                    ),
+                  ),
+                ),
+                // 评论图片
+                if (comment.images.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  ImageGrid(
+                    imageUrls: comment.images,
+                    imageWidth: 80,
+                    imageHeight: 80,
+                    spacing: 6,
+                    borderRadius: 6,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  /// 构建底部操作栏
+  Widget _buildBottomBar(IssueDetailState state) {
+    final issue = state.issue!;
+    final authState = context.read<AuthBloc>().state;
+    final backendUserInfo = TokenService.instance.userInfo;
+    final isAuthor = authState.isAuthenticated && backendUserInfo != null && backendUserInfo.id == issue.authorId;
+
+    return Container(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 12,
+        bottom: MediaQuery.of(context).padding.bottom + 12,
+      ),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          top: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.05),
+            offset: const Offset(0, -2),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // 投票按钮
+          _buildVoteButton(issue, state.isSubmitting),
+          const SizedBox(width: 12),
+          // 关闭/重开按钮（仅作者可见）
+          if (isAuthor) ...[
+            _buildCloseReopenButton(issue, state.isSubmitting),
+            const SizedBox(width: 12),
+          ],
+          // 评论输入按钮
+          Expanded(
+            child: issue.issueStatus.isOpen
+                ? _buildCommentInput(state)
+                : _buildClosedCommentHint(),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.2, end: 0);
+  }
+
+  /// 构建投票按钮
+  Widget _buildVoteButton(Issue issue, bool isSubmitting) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: isSubmitting ? null : _toggleVote,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: issue.isVoted
+                ? const Color(0xFF0080FF).withValues(alpha: 0.1)
+                : Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: issue.isVoted ? const Color(0xFF0080FF) : Colors.transparent,
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                issue.isVoted ? MdiIcons.thumbUp : MdiIcons.thumbUpOutline,
+                size: 20,
+                color: issue.isVoted
+                    ? const Color(0xFF0080FF)
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${issue.voteCount}',
+                style: TextStyle(
+                  color: issue.isVoted
+                      ? const Color(0xFF0080FF)
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建关闭/重开按钮
+  Widget _buildCloseReopenButton(Issue issue, bool isSubmitting) {
+    final isOpen = issue.issueStatus.isOpen;
+    final color = isOpen ? const Color(0xFFDC2626) : const Color(0xFF059669);
+    final bgColor = isOpen ? const Color(0xFFFEE2E2) : const Color(0xFFD1FAE5);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: isSubmitting
+            ? null
+            : () {
+                if (isOpen) {
+                  context.read<IssueDetailBloc>().add(const IssueDetailClose());
+                } else {
+                  context.read<IssueDetailBloc>().add(const IssueDetailReopen());
+                }
+              },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                isOpen ? MdiIcons.closeCircleOutline : MdiIcons.refreshCircle,
+                size: 20,
+                color: color,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                isOpen ? '关闭' : '重开',
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建评论输入按钮
+  Widget _buildCommentInput(IssueDetailState state) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showCommentDialog(state),
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                MdiIcons.pencilOutline,
+                size: 18,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '写评论...',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建已关闭评论提示
+  Widget _buildClosedCommentHint() {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            MdiIcons.lockOutline,
+            size: 16,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '该问题已关闭，无法评论',
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 显示评论编辑底部面板
+  void _showCommentDialog(IssueDetailState state) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.75,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              // 顶部拖动条
+              Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // 标题栏
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        MdiIcons.commentEditOutline,
+                        size: 18,
+                        color: const Color(0xFF0080FF),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      '写评论',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    ),
+                    const Spacer(),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => Navigator.of(context).pop(),
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 20,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // 编辑器
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: RichTextEditor(
+                    key: _commentEditorKey,
+                    controller: _commentController,
+                    hintText: '写下你的评论...',
+                    maxLength: 2000,
+                    maxImages: 3,
+                    compactMode: true,
+                    draftId: 'comment_${widget.issueId}',
+                    onImagesChanged: (urls) {
+                      setState(() {
+                        _commentImageUrls = urls;
+                      });
+                    },
+                  ),
+                ),
+              ),
+              // 提交按钮
+              Container(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 12,
+                  bottom: MediaQuery.of(context).padding.bottom + 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  border: Border(
+                    top: BorderSide(
+                      color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: state.isSubmitting
+                        ? null
+                        : () {
+                            _submitComment();
+                            Navigator.of(context).pop();
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0080FF),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: state.isSubmitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(MdiIcons.send, size: 18),
+                              const SizedBox(width: 8),
+                              const Text(
+                                '发表评论',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

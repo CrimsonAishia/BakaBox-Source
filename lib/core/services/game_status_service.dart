@@ -1,0 +1,188 @@
+import 'dart:async';
+
+import '../utils/log_service.dart';
+import '../utils/platform_utils.dart';
+import 'game_launcher_service.dart';
+
+/// 游戏状态变化事件
+class GameStatusEvent {
+  final bool isRunning;
+  final bool isMonitorable;
+  final DateTime timestamp;
+
+  const GameStatusEvent({
+    required this.isRunning,
+    required this.isMonitorable,
+    required this.timestamp,
+  });
+}
+
+/// 游戏状态管理服务 - 桌面端专属功能
+/// 
+/// 职责：
+/// - 监控游戏进程是否运行（每3秒检测一次）
+/// - 检测游戏是否带 -condebug 启动（可监控状态）
+/// - 发送游戏运行/退出事件
+/// 
+/// 注意：console.log 相关操作由 ConsoleLogService 负责
+class GameStatusService {
+  final GameLauncherService _gameLauncher = GameLauncherService();
+  
+  // 状态
+  bool _isGameRunning = false;
+  bool _isMonitorable = false;  // 是否可监控（带 -condebug 启动）
+  DateTime? _lastGameStartTime;
+  
+  // 监控
+  bool _isMonitoring = false;
+  Timer? _monitorTimer;
+  static const Duration _monitorInterval = Duration(seconds: 3);
+  
+  // 事件流
+  final _statusController = StreamController<GameStatusEvent>.broadcast();
+  
+  /// 状态变化流
+  Stream<GameStatusEvent> get statusStream => _statusController.stream;
+  
+  /// 游戏是否运行中
+  bool get isGameRunning => _isGameRunning;
+  
+  /// 是否可监控（带 -condebug 启动）
+  bool get isMonitorable => _isMonitorable;
+  
+  /// 是否正在监控
+  bool get isMonitoring => _isMonitoring;
+
+  /// 单例模式
+  static final GameStatusService _instance = GameStatusService._internal();
+  factory GameStatusService() => _instance;
+  GameStatusService._internal();
+
+  /// 检查是否为桌面平台
+  bool get isDesktopPlatform => PlatformUtils.isDesktopPlatform;
+
+  /// 开始监控游戏状态
+  Future<void> startMonitoring() async {
+    if (_isMonitoring) {
+      return;
+    }
+    
+    _isMonitoring = true;
+    
+    // 初始检测
+    await _checkGameStatus();
+    
+    // 启动定时监控
+    _monitorTimer = Timer.periodic(_monitorInterval, (_) {
+      _checkGameStatus();
+    });
+    
+    LogService.i('[GameStatus] 游戏状态监控已启动');
+    return;
+  }
+
+  /// 停止监控
+  void stopMonitoring() {
+    if (!_isMonitoring) {
+      return;
+    }
+    
+    _monitorTimer?.cancel();
+    _monitorTimer = null;
+    _isMonitoring = false;
+    
+    LogService.i('[GameStatus] 游戏状态监控已停止');
+    return;
+  }
+
+  /// 检查游戏状态
+  Future<void> _checkGameStatus() async {
+    final wasRunning = _isGameRunning;
+    final isRunning = await _gameLauncher.isCS2Running();
+    
+    _isGameRunning = isRunning;
+    
+    if (!wasRunning && isRunning) {
+      // 游戏刚启动，检测是否可监控
+      _lastGameStartTime = DateTime.now();
+      await _checkIfMonitorable();
+      
+      LogService.i('[GameStatus] 检测到游戏启动，可监控: $_isMonitorable');
+      
+      _emitStatusEvent();
+    } else if (wasRunning && !isRunning) {
+      // 游戏刚关闭
+      _isMonitorable = false;
+      
+      LogService.i('[GameStatus] 检测到游戏关闭');
+      
+      _emitStatusEvent();
+    } else if (isRunning && !_isMonitorable) {
+      // 游戏运行中但之前未检测到可监控，重新检测
+      // 这处理了 BakaBox 启动后游戏才完全初始化的情况
+      await _checkIfMonitorable();
+      if (_isMonitorable) {
+        LogService.i('[GameStatus] 重新检测到游戏可监控');
+        _emitStatusEvent();
+      }
+    }
+  }
+
+  /// 检查游戏是否可监控
+  /// 
+  /// 判断依据：检测游戏进程命令行是否包含 -condebug 参数
+  Future<void> _checkIfMonitorable() async {
+    final hasCondebug = await _gameLauncher.isCS2LaunchedWithCondebug();
+    _isMonitorable = hasCondebug;
+    
+    if (hasCondebug) {
+      LogService.d('[GameStatus] 检测到游戏带 -condebug 参数，可以监控');
+    } else {
+      LogService.d('[GameStatus] 游戏未带 -condebug 参数，无法监控');
+    }
+  }
+
+  /// 标记游戏为可监控状态
+  /// 在 GameLauncher 成功启动游戏后调用
+  void markAsMonitorable() {
+    _isMonitorable = true;
+    _isGameRunning = true;
+    _lastGameStartTime = DateTime.now();
+    
+    LogService.i('[GameStatus] 已标记游戏为可监控');
+    
+    _emitStatusEvent();
+  }
+
+  /// 获取当前状态
+  Map<String, dynamic> getStatus() {
+    return {
+      'success': true,
+      'isRunning': _isGameRunning,
+      'isMonitorable': _isMonitorable,
+      'isMonitoring': _isMonitoring,
+      'lastStartTime': _lastGameStartTime,
+    };
+  }
+
+  /// 立即刷新状态
+  Future<Map<String, dynamic>> refreshStatus() async {
+    await _checkGameStatus();
+    return getStatus();
+  }
+
+  /// 发送状态事件
+  void _emitStatusEvent() {
+    _statusController.add(GameStatusEvent(
+      isRunning: _isGameRunning,
+      isMonitorable: _isMonitorable,
+      timestamp: DateTime.now(),
+    ));
+  }
+
+  /// 清理资源
+  void dispose() {
+    stopMonitoring();
+    _statusController.close();
+  }
+}

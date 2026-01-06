@@ -1,0 +1,817 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../utils/log_service.dart';
+import '../utils/platform_utils.dart';
+import 'console_log_service.dart';
+import 'game_status_service.dart';
+
+/// 游戏启动结果
+class GameLaunchResult {
+  final bool success;
+  final String? message;
+  final String? error;
+  final bool alreadyRunning;
+
+  GameLaunchResult({
+    required this.success,
+    this.message,
+    this.error,
+    this.alreadyRunning = false,
+  });
+
+  factory GameLaunchResult.success({String? message, bool alreadyRunning = false}) {
+    return GameLaunchResult(
+      success: true,
+      message: message,
+      alreadyRunning: alreadyRunning,
+    );
+  }
+
+  factory GameLaunchResult.failure(String error) {
+    return GameLaunchResult(
+      success: false,
+      error: error,
+    );
+  }
+}
+
+/// 服务器连接结果
+class ServerConnectResult {
+  final bool success;
+  final String? message;
+  final String? error;
+  final String? method;
+
+  ServerConnectResult({
+    required this.success,
+    this.message,
+    this.error,
+    this.method,
+  });
+
+  factory ServerConnectResult.success({String? message, String? method}) {
+    return ServerConnectResult(
+      success: true,
+      message: message,
+      method: method,
+    );
+  }
+
+  factory ServerConnectResult.failure(String error) {
+    return ServerConnectResult(
+      success: false,
+      error: error,
+    );
+  }
+}
+
+/// 启动平台枚举
+enum LaunchPlatform {
+  worldwide,  // 国际版
+  perfect,    // 完美世界
+}
+
+/// 游戏启动器服务 - 桌面端专属功能
+/// 
+/// 提供以下功能：
+/// - 检测CS2游戏是否运行
+/// - 启动CS2游戏
+/// - 通过Steam URL连接服务器
+/// - 支持密码服务器连接
+class GameLauncherService {
+  static const String _keyGamePath = 'game_path';
+  static const String _keySteamPath = 'steam_path';
+  static const String _keyLaunchPlatform = 'launch_platform';
+  static const String _keyLaunchOptions = 'launch_options';
+
+  // CS2 App ID
+  static const String _cs2AppId = '730';
+
+  // 进程名称
+  static const List<String> _gameProcessNames = ['cs2.exe', 'csgo.exe'];
+
+  /// 单例模式
+  static final GameLauncherService _instance = GameLauncherService._internal();
+  factory GameLauncherService() => _instance;
+  GameLauncherService._internal();
+  
+  // 游戏路径检测缓存（避免重复检测）
+  bool _gamePathDetectionAttempted = false;
+  String? _cachedGamePath;
+  
+  // Steam路径检测缓存
+  bool _steamPathDetectionAttempted = false;
+  String? _cachedSteamPath;
+
+  /// 检查是否为桌面平台
+  bool get isDesktopPlatform => PlatformUtils.isDesktopPlatform;
+
+  /// 检测CS2是否正在运行
+  Future<bool> isCS2Running() async {
+    if (!isDesktopPlatform) {
+      LogService.w('游戏检测功能仅支持桌面平台');
+      return false;
+    }
+
+    try {
+      if (PlatformUtils.isWindows) {
+        return await _isCS2RunningWindows();
+      }
+      return false;
+    } catch (e) {
+      LogService.e('检测游戏运行状态失败', e);
+      return false;
+    }
+  }
+
+
+  /// Windows平台检测CS2进程
+  Future<bool> _isCS2RunningWindows() async {
+    for (final processName in _gameProcessNames) {
+      try {
+        final result = await Process.run(
+          'tasklist',
+          ['/FI', 'IMAGENAME eq $processName', '/FO', 'CSV'],
+          runInShell: true,
+        );
+        
+        if (result.exitCode == 0 && 
+            result.stdout.toString().toLowerCase().contains(processName.toLowerCase())) {
+          LogService.d('检测到游戏进程: $processName');
+          return true;
+        }
+      } catch (e) {
+        LogService.d('检测进程 $processName 失败: $e');
+      }
+    }
+    return false;
+  }
+
+  /// 检测游戏是否带有 -condebug 参数启动（判断是否可监控）
+  /// 
+  /// 返回值：
+  /// - true: 游戏带 -condebug 启动，可以监控 console.log
+  /// - false: 游戏未带 -condebug 或未运行
+  Future<bool> isCS2LaunchedWithCondebug() async {
+    if (!PlatformUtils.isWindows) {
+      // 非 Windows 平台暂时返回 false，后续可扩展
+      return false;
+    }
+
+    try {
+      // 使用 WMIC 获取进程命令行参数
+      final result = await Process.run(
+        'wmic',
+        ['process', 'where', "name='cs2.exe'", 'get', 'CommandLine', '/format:value'],
+        runInShell: true,
+      );
+
+      if (result.exitCode == 0) {
+        final output = result.stdout.toString().toLowerCase();
+        
+        // 检查是否包含 -condebug 参数
+        if (output.contains('-condebug')) {
+          LogService.d('检测到游戏带 -condebug 参数启动');
+          return true;
+        }
+        
+        // 如果有输出但没有 -condebug，说明游戏在运行但没带参数
+        if (output.contains('commandline=') && output.contains('cs2.exe')) {
+          LogService.d('游戏运行中但未带 -condebug 参数');
+          return false;
+        }
+      }
+
+      // 也检查 csgo.exe（兼容旧版本）
+      final csgoResult = await Process.run(
+        'wmic',
+        ['process', 'where', "name='csgo.exe'", 'get', 'CommandLine', '/format:value'],
+        runInShell: true,
+      );
+
+      if (csgoResult.exitCode == 0) {
+        final output = csgoResult.stdout.toString().toLowerCase();
+        if (output.contains('-condebug')) {
+          LogService.d('检测到 CSGO 带 -condebug 参数启动');
+          return true;
+        }
+      }
+
+      return false;
+    } catch (e) {
+      LogService.e('检测游戏启动参数失败', e);
+      return false;
+    }
+  }
+
+  /// 获取游戏进程的完整命令行参数
+  Future<String?> getCS2CommandLine() async {
+    if (!PlatformUtils.isWindows) {
+      return null;
+    }
+
+    try {
+      final result = await Process.run(
+        'wmic',
+        ['process', 'where', "name='cs2.exe'", 'get', 'CommandLine', '/format:value'],
+        runInShell: true,
+      );
+
+      if (result.exitCode == 0) {
+        final output = result.stdout.toString();
+        final lines = output.split('\n');
+        for (final line in lines) {
+          final trimmed = line.trim();
+          if (trimmed.startsWith('CommandLine=')) {
+            return trimmed.substring('CommandLine='.length).trim();
+          }
+        }
+      }
+      return null;
+    } catch (e) {
+      LogService.e('获取游戏命令行参数失败', e);
+      return null;
+    }
+  }
+
+  /// 启动CS2游戏（不连接服务器）
+  Future<GameLaunchResult> launchCS2() async {
+    if (!isDesktopPlatform) {
+      return GameLaunchResult.failure('游戏启动功能仅支持桌面平台');
+    }
+
+    LogService.d('收到CS2启动请求');
+
+    // 检查游戏是否已在运行
+    if (await isCS2Running()) {
+      LogService.i('游戏已在运行');
+      return GameLaunchResult.success(
+        message: '游戏已在运行',
+        alreadyRunning: true,
+      );
+    }
+
+    try {
+      // 启动前清空 console.log（用于判断是否由 BakaBox 启动）
+      final consoleLogService = ConsoleLogService();
+      await consoleLogService.clearConsoleLog();
+      
+      final gameStatusService = GameStatusService();
+
+      GameLaunchResult launchResult;
+      
+      // Windows使用命令行方式启动
+      if (PlatformUtils.isWindows) {
+        launchResult = await _launchCS2Windows();
+      } else {
+        // 其他平台使用Steam URL
+        final platform = await getLaunchPlatform();
+        final launchOptions = await getLaunchOptions();
+        final steamUrl = _buildLaunchUrl(platform, launchOptions);
+        LogService.d('启动游戏URL: $steamUrl');
+
+        final uri = Uri.parse(steamUrl);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          launchResult = GameLaunchResult.success(message: '游戏启动命令已发送');
+        } else {
+          return GameLaunchResult.failure('无法启动Steam，请确保Steam已安装');
+        }
+      }
+
+      if (!launchResult.success) {
+        return launchResult;
+      }
+
+      LogService.d('游戏启动命令已发送');
+
+      // 等待游戏启动
+      final started = await _waitForGameStart();
+      if (started) {
+        // 标记为可监控
+        gameStatusService.markAsMonitorable();
+        LogService.d('游戏已成功启动');
+        return GameLaunchResult.success(message: '游戏启动成功');
+      } else {
+        return GameLaunchResult.failure('游戏启动超时，请检查Steam是否正常运行');
+      }
+    } catch (e) {
+      LogService.e('启动游戏失败', e);
+      return GameLaunchResult.failure('启动游戏失败: $e');
+    }
+  }
+
+  /// 构建游戏启动URL
+  String _buildLaunchUrl(LaunchPlatform platform, List<String> launchOptions) {
+    final options = <String>['-console', '-condebug'];
+    
+    // 添加平台参数
+    if (platform == LaunchPlatform.perfect) {
+      options.add('-perfectworld');
+    } else {
+      options.add('-worldwide');
+    }
+    
+    // 添加用户自定义启动选项
+    options.addAll(launchOptions);
+    
+    // 构建Steam URL
+    // 格式: steam://run/730//<options>
+    final optionsStr = options.join(' ');
+    return 'steam://run/$_cs2AppId//$optionsStr';
+  }
+
+  /// 使用命令行启动游戏
+  Future<GameLaunchResult> _launchCS2Windows() async {
+    try {
+      // 优先从设置获取Steam路径，没有设置才自动检测
+      String? steamPath = await getSteamPath();
+      if (steamPath == null || steamPath.isEmpty) {
+        LogService.d('设置中未配置Steam路径，尝试自动检测');
+        steamPath = await detectSteamPath();
+      }
+      
+      if (steamPath == null) {
+        return GameLaunchResult.failure('未找到Steam路径，请在设置中配置');
+      }
+
+      final steamExe = '$steamPath\\steam.exe';
+      if (!await File(steamExe).exists()) {
+        return GameLaunchResult.failure('Steam.exe不存在: $steamExe');
+      }
+
+      // 获取启动配置
+      final platform = await getLaunchPlatform();
+      final launchOptions = await getLaunchOptions();
+
+      // 构建启动参数
+      final args = <String>['-applaunch', _cs2AppId, '-console', '-condebug'];
+      
+      // 添加平台参数
+      if (platform == LaunchPlatform.perfect) {
+        args.add('-perfectworld');
+      } else {
+        args.add('-worldwide');
+      }
+      
+      // 添加用户自定义启动选项
+      args.addAll(launchOptions);
+
+      LogService.d('启动游戏命令: $steamExe ${args.join(" ")}');
+
+      // 使用Process.start启动
+      final process = await Process.start(
+        steamExe,
+        args,
+        mode: ProcessStartMode.detached,
+      );
+
+      LogService.d('游戏启动命令已发送，PID: ${process.pid}');
+      return GameLaunchResult.success(message: '游戏启动命令已发送');
+    } catch (e) {
+      LogService.e('启动游戏失败', e);
+      return GameLaunchResult.failure('启动游戏失败: $e');
+    }
+  }
+
+  /// 使用命令行连接服务器
+  Future<ServerConnectResult> _connectUsingCmdWindows(String serverAddress, String? password) async {
+    try {
+      LogService.d('使用命令行连接服务器: $serverAddress');
+
+      // 构建Steam URL
+      String steamUrl;
+      if (password != null && password.isNotEmpty) {
+        steamUrl = 'steam://run/$_cs2AppId//+connect $serverAddress +password $password';
+      } else {
+        steamUrl = 'steam://run/$_cs2AppId//+connect $serverAddress';
+      }
+
+      LogService.d('生成的Steam URL: $steamUrl');
+
+      // 使用cmd.exe的start命令打开Steam URL
+      final result = await Process.run(
+        'cmd.exe',
+        ['/C', 'start', '', steamUrl],
+        runInShell: false,
+      );
+
+      if (result.exitCode == 0) {
+        LogService.d('Steam URL连接命令已发送');
+        return ServerConnectResult.success(
+          message: '连接命令已发送',
+          method: 'steam-url',
+        );
+      } else {
+        LogService.e('连接命令执行失败: ${result.stderr}');
+        return ServerConnectResult.failure('连接命令执行失败');
+      }
+    } catch (e) {
+      LogService.e('连接服务器失败', e);
+      return ServerConnectResult.failure('连接服务器失败: $e');
+    }
+  }
+
+  /// 等待游戏启动
+  Future<bool> _waitForGameStart({Duration timeout = const Duration(seconds: 35)}) async {
+    final endTime = DateTime.now().add(timeout);
+    
+    while (DateTime.now().isBefore(endTime)) {
+      await Future.delayed(const Duration(seconds: 1));
+      
+      if (await isCS2Running()) {
+        LogService.d('检测到CS2进程已启动，等待进程稳定...');
+        // 等待3秒确保进程稳定
+        await Future.delayed(const Duration(seconds: 3));
+        
+        // 再次确认进程仍在运行
+        if (await isCS2Running()) {
+          LogService.d('CS2进程已稳定运行');
+          // 额外等待2秒，确保游戏完全初始化
+          await Future.delayed(const Duration(seconds: 2));
+          return true;
+        } else {
+          LogService.d('CS2进程启动后崩溃，继续等待...');
+        }
+      }
+    }
+    
+    return false;
+  }
+
+
+  /// 连接到服务器（通过Steam URL）
+  /// 
+  /// [address] 服务器地址，格式为 ip:port 或 ip:port;password=xxx
+  Future<ServerConnectResult> connectToServer(String address) async {
+    if (!isDesktopPlatform) {
+      return ServerConnectResult.failure('服务器连接功能仅支持桌面平台');
+    }
+
+    LogService.d('收到连接服务器请求，目标服务器: $address');
+
+    // 解析地址和密码
+    String serverAddress;
+    String? password;
+
+    if (address.contains(';password=')) {
+      final parts = address.split(';password=');
+      serverAddress = parts[0];
+      password = parts.length > 1 ? parts[1] : null;
+    } else {
+      serverAddress = address;
+    }
+
+    LogService.d('连接到服务器: $serverAddress');
+    if (password != null && password.isNotEmpty) {
+      LogService.d('服务器设置了密码保护');
+    }
+
+    // 使用Steam URL连接
+    return await _connectUsingSteamUrl(serverAddress, password);
+  }
+
+  /// 连接到密码服务器
+  /// 
+  /// [address] 服务器地址，格式为 ip:port
+  /// [password] 服务器密码
+  Future<ServerConnectResult> connectToPasswordServer(String address, String password) async {
+    if (!isDesktopPlatform) {
+      return ServerConnectResult.failure('服务器连接功能仅支持桌面平台');
+    }
+
+    LogService.i('收到连接密码服务器请求，目标服务器: $address');
+    return await _connectUsingSteamUrl(address, password);
+  }
+
+  /// 使用Steam URL连接服务器
+  Future<ServerConnectResult> _connectUsingSteamUrl(String serverAddress, String? password) async {
+    // Windows使用命令行方式
+    if (PlatformUtils.isWindows) {
+      return await _connectUsingCmdWindows(serverAddress, password);
+    }
+
+    // 其他平台使用url_launcher
+    try {
+      LogService.d('使用Steam URL连接服务器: $serverAddress');
+
+      // 构建Steam URL
+      String steamUrl;
+      if (password != null && password.isNotEmpty) {
+        steamUrl = 'steam://run/$_cs2AppId//+connect $serverAddress +password $password';
+      } else {
+        steamUrl = 'steam://run/$_cs2AppId//+connect $serverAddress';
+      }
+
+      LogService.d('生成的Steam URL: $steamUrl');
+
+      final uri = Uri.parse(steamUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        LogService.d('Steam URL连接命令已发送');
+        
+        return ServerConnectResult.success(
+          message: '连接命令已发送',
+          method: 'steam-url',
+        );
+      } else {
+        LogService.e('无法打开Steam URL');
+        return ServerConnectResult.failure('无法打开Steam，请确保Steam已安装');
+      }
+    } catch (e) {
+      LogService.e('连接服务器失败', e);
+      return ServerConnectResult.failure('连接服务器失败: $e');
+    }
+  }
+
+  /// 启动游戏并连接到服务器
+  /// 
+  /// [address] 服务器地址，格式为 ip:port 或 ip:port;password=xxx
+  Future<ServerConnectResult> launchAndConnect(String address) async {
+    if (!isDesktopPlatform) {
+      return ServerConnectResult.failure('游戏启动功能仅支持桌面平台');
+    }
+
+    LogService.i('启动游戏并连接到服务器: $address');
+
+    // 解析地址和密码
+    String serverAddress;
+    String? password;
+
+    if (address.contains(';password=')) {
+      final parts = address.split(';password=');
+      serverAddress = parts[0];
+      password = parts.length > 1 ? parts[1] : null;
+    } else {
+      serverAddress = address;
+    }
+
+    // 直接使用Steam URL启动并连接
+    return await _connectUsingSteamUrl(serverAddress, password);
+  }
+
+  // ==================== 配置管理 ====================
+
+  /// 获取游戏路径
+  Future<String?> getGamePath() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyGamePath);
+  }
+
+  /// 设置游戏路径
+  Future<void> setGamePath(String path) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyGamePath, path);
+    // 重置缓存，因为用户手动设置了路径
+    _gamePathDetectionAttempted = false;
+    _cachedGamePath = null;
+    LogService.i('游戏路径已设置: $path');
+  }
+
+  /// 获取Steam路径
+  Future<String?> getSteamPath() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keySteamPath);
+  }
+
+  /// 设置Steam路径
+  Future<void> setSteamPath(String path) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keySteamPath, path);
+    // 重置缓存，因为用户手动设置了路径
+    _steamPathDetectionAttempted = false;
+    _cachedSteamPath = null;
+    LogService.i('Steam路径已设置: $path');
+  }
+
+  /// 获取启动平台
+  Future<LaunchPlatform> getLaunchPlatform() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString(_keyLaunchPlatform);
+    if (value == 'perfect') {
+      return LaunchPlatform.perfect;
+    }
+    return LaunchPlatform.worldwide;
+  }
+
+  /// 设置启动平台
+  Future<void> setLaunchPlatform(LaunchPlatform platform) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyLaunchPlatform, platform == LaunchPlatform.perfect ? 'perfect' : 'worldwide');
+    LogService.i('启动平台已设置: ${platform == LaunchPlatform.perfect ? "完美世界" : "国际版"}');
+  }
+
+  /// 获取自定义启动选项
+  Future<List<String>> getLaunchOptions() async {
+    final prefs = await SharedPreferences.getInstance();
+    final options = prefs.getStringList(_keyLaunchOptions);
+    return options ?? [];
+  }
+
+  /// 设置自定义启动选项
+  Future<void> setLaunchOptions(List<String> options) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_keyLaunchOptions, options);
+    LogService.i('启动选项已设置: ${options.join(" ")}');
+  }
+
+  /// 自动检测Steam路径（仅Windows）
+  /// 检测顺序：注册表 → 进程 → 常见路径
+  /// 带缓存，避免重复检测
+  Future<String?> detectSteamPath() async {
+    if (!PlatformUtils.isWindows) {
+      return null;
+    }
+    
+    // 如果已经尝试过检测，直接返回缓存结果
+    if (_steamPathDetectionAttempted) {
+      return _cachedSteamPath;
+    }
+
+    try {
+      // 方法1: 从注册表查找
+      final regPath = await _findSteamPathFromRegistry();
+      if (regPath != null) {
+        LogService.i('从注册表检测到Steam路径: $regPath');
+        _steamPathDetectionAttempted = true;
+        _cachedSteamPath = regPath;
+        return regPath;
+      }
+
+      // 方法2: 从进程查找
+      final processPath = await _findSteamPathFromProcess();
+      if (processPath != null) {
+        LogService.i('从进程检测到Steam路径: $processPath');
+        _steamPathDetectionAttempted = true;
+        _cachedSteamPath = processPath;
+        return processPath;
+      }
+
+      // 方法3: 检查常见路径
+      final commonPaths = [
+        'C:\\Program Files (x86)\\Steam',
+        'C:\\Program Files\\Steam',
+        'D:\\Steam',
+        'D:\\Program Files (x86)\\Steam',
+        'E:\\Steam',
+        'E:\\Program Files (x86)\\Steam',
+        'F:\\Steam',
+      ];
+
+      for (final path in commonPaths) {
+        final steamExe = File('$path\\steam.exe');
+        if (await steamExe.exists()) {
+          LogService.i('从常见路径检测到Steam路径: $path');
+          _steamPathDetectionAttempted = true;
+          _cachedSteamPath = path;
+          return path;
+        }
+      }
+
+      LogService.w('未能自动检测到Steam路径');
+      _steamPathDetectionAttempted = true;
+      _cachedSteamPath = null;
+      return null;
+    } catch (e) {
+      LogService.e('检测Steam路径失败', e);
+      _steamPathDetectionAttempted = true;
+      _cachedSteamPath = null;
+      return null;
+    }
+  }
+
+  /// 从注册表查找Steam路径
+  Future<String?> _findSteamPathFromRegistry() async {
+    try {
+      final result = await Process.run(
+        'reg',
+        ['query', 'HKCU\\Software\\Valve\\Steam', '/v', 'SteamPath'],
+        runInShell: true,
+      );
+
+      if (result.exitCode == 0) {
+        final output = result.stdout.toString();
+        final lines = output.split('\n');
+        for (final line in lines) {
+          if (line.contains('SteamPath')) {
+            // 格式: "    SteamPath    REG_SZ    C:/Program Files (x86)/Steam"
+            final parts = line.split(RegExp(r'\s{4,}'));
+            if (parts.length >= 3) {
+              var steamPath = parts.last.trim();
+              // 将正斜杠转换为反斜杠
+              steamPath = steamPath.replaceAll('/', '\\');
+              
+              // 验证路径存在
+              if (await File('$steamPath\\steam.exe').exists()) {
+                return steamPath;
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      LogService.d('从注册表查找Steam路径失败: $e');
+    }
+    return null;
+  }
+
+  /// 从进程查找Steam路径
+  Future<String?> _findSteamPathFromProcess() async {
+    try {
+      final result = await Process.run(
+        'wmic',
+        ['process', 'where', "name='steam.exe'", 'get', 'ExecutablePath', '/format:value'],
+        runInShell: true,
+      );
+
+      if (result.exitCode == 0) {
+        final output = result.stdout.toString();
+        final lines = output.split('\n');
+        for (final line in lines) {
+          final trimmed = line.trim();
+          if (trimmed.startsWith('ExecutablePath=')) {
+            final executablePath = trimmed.substring('ExecutablePath='.length).trim();
+            if (executablePath.isNotEmpty && 
+                executablePath.toLowerCase().endsWith('steam.exe')) {
+              // 从可执行文件路径提取Steam安装目录
+              final steamPath = File(executablePath).parent.path;
+              LogService.d('从进程路径提取Steam目录: $steamPath');
+              return steamPath;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      LogService.d('从进程查找Steam路径失败: $e');
+    }
+    return null;
+  }
+
+  /// 自动检测游戏路径
+  /// 带缓存，避免重复检测
+  Future<String?> detectGamePath() async {
+    // 如果已经尝试过检测，直接返回缓存结果
+    if (_gamePathDetectionAttempted) {
+      return _cachedGamePath;
+    }
+    
+    try {
+      // 优先从设置获取Steam路径
+      String? steamPath = await getSteamPath();
+      if (steamPath == null || steamPath.isEmpty) {
+        steamPath = await detectSteamPath();
+      }
+      
+      // 常见的游戏路径
+      final possiblePaths = <String>[];
+      
+      // 如果有Steam路径，优先检查
+      if (steamPath != null) {
+        possiblePaths.add('$steamPath\\steamapps\\common\\Counter-Strike Global Offensive');
+      }
+      
+      // 添加其他常见路径
+      possiblePaths.addAll([
+        'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Counter-Strike Global Offensive',
+        'C:\\Program Files\\Steam\\steamapps\\common\\Counter-Strike Global Offensive',
+        'D:\\Steam\\steamapps\\common\\Counter-Strike Global Offensive',
+        'E:\\Steam\\steamapps\\common\\Counter-Strike Global Offensive',
+        'F:\\Steam\\steamapps\\common\\Counter-Strike Global Offensive',
+      ]);
+
+      for (final path in possiblePaths) {
+        // 检查cs2.exe是否存在
+        final exePath = '$path\\game\\bin\\win64\\cs2.exe';
+        if (await File(exePath).exists()) {
+          LogService.i('检测到游戏路径: $path');
+          _gamePathDetectionAttempted = true;
+          _cachedGamePath = path;
+          return path;
+        }
+      }
+
+      LogService.w('未能自动检测到游戏路径');
+      _gamePathDetectionAttempted = true;
+      _cachedGamePath = null;
+      return null;
+    } catch (e) {
+      LogService.e('检测游戏路径失败', e);
+      _gamePathDetectionAttempted = true;
+      _cachedGamePath = null;
+      return null;
+    }
+  }
+  
+  /// 重置路径检测缓存（当用户更新设置时调用）
+  void resetPathCache() {
+    _gamePathDetectionAttempted = false;
+    _cachedGamePath = null;
+    _steamPathDetectionAttempted = false;
+    _cachedSteamPath = null;
+    LogService.d('路径检测缓存已重置');
+  }
+}
