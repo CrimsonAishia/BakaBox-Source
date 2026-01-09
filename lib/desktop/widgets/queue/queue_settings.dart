@@ -362,7 +362,7 @@ class QueueSettings extends StatelessWidget {
                     ),
                     if (!canEnableAutoRetry)
                       Text(
-                        '需要先启动游戏',
+                        '需要使用启动器启动游戏',
                         style: TextStyle(
                           fontSize: 11,
                           color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
