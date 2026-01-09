@@ -1007,61 +1007,63 @@ class _HistoryCardState extends State<_HistoryCard> {
                 ),
               ],
             ),
-            clipBehavior: Clip.antiAlias,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // 地图背景
-                RepaintBoundary(
-                  child: widget.buildMapBackground(widget.mapUrl, widget.mapName),
-                ),
-                // 渐变遮罩
-                const _GradientOverlay(),
-                // 地图信息
-                Positioned(
-                  left: 12,
-                  right: 12,
-                  bottom: 12,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.formattedMapName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          widget.buildStatChip(
-                            MdiIcons.clockOutline,
-                            widget.mapPlayDuration,
-                          ),
-                          const SizedBox(width: 12),
-                          if (widget.hasTrendData)
-                            widget.buildStatChip(
-                              MdiIcons.chartLine,
-                              '${widget.trendDataCount}个数据点',
-                              color: const Color(0xFFFBBF24),
-                            ),
-                        ],
-                      ),
-                    ],
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // 地图背景
+                  RepaintBoundary(
+                    child: widget.buildMapBackground(widget.mapUrl, widget.mapName),
                   ),
-                ),
-                // 右上角静态黄点
-                if (widget.hasTrendData)
-                  const Positioned(
-                    top: 12,
+                  // 渐变遮罩
+                  const _GradientOverlay(),
+                  // 地图信息
+                  Positioned(
+                    left: 12,
                     right: 12,
-                    child: _StaticDot(),
+                    bottom: 12,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.formattedMapName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            widget.buildStatChip(
+                              MdiIcons.clockOutline,
+                              widget.mapPlayDuration,
+                            ),
+                            const SizedBox(width: 12),
+                            if (widget.hasTrendData)
+                              widget.buildStatChip(
+                                MdiIcons.chartLine,
+                                '${widget.trendDataCount}个数据点',
+                                color: const Color(0xFFFBBF24),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-              ],
+                  // 右上角静态黄点
+                  if (widget.hasTrendData)
+                    const Positioned(
+                      top: 12,
+                      right: 12,
+                      child: _StaticDot(),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
