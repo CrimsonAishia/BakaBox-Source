@@ -10,6 +10,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_alone
   screen_retriever_windows
   url_launcher_windows
+  webview_windows
   window_manager
 )
 

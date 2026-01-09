@@ -1634,6 +1634,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.2.1"
+  webview_windows:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: ff7488a79a310fd03e514dab489e06d67d5d4d37
+      resolved-ref: ff7488a79a310fd03e514dab489e06d67d5d4d37
+      url: "https://github.com/CrimsonAishia/flutter-webview-windows.git"
+    source: git
+    version: "0.4.0"
   win32:
     dependency: transitive
     description:

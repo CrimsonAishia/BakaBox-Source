@@ -77,6 +77,12 @@ dependencies:
   # Audio
   audioplayers: ^6.1.0
   
+  # WebView (for QQ login) - using local fork with getCookies support
+  webview_windows:
+    git:
+      url: https://github.com/CrimsonAishia/flutter-webview-windows.git
+      ref: ff7488a79a310fd03e514dab489e06d67d5d4d37
+  
   # JSON & Serialization
   json_annotation: ^4.8.1
   source_server: ^4.0.0
