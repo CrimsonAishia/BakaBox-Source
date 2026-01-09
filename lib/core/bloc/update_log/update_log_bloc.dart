@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../api/api.dart';
 import '../../api/update_log_api.dart';
 import '../../constants/api_constants.dart';
+import '../../utils/error_utils.dart';
 import '../../utils/log_service.dart';
 import 'update_log_event.dart';
 import 'update_log_state.dart';
@@ -39,7 +40,7 @@ class UpdateLogBloc extends Bloc<UpdateLogEvent, UpdateLogState> {
       emit(state.copyWith(error: '获取更新日志失败：${e.message}', isLoading: false));
       LogService.e('API Exception: $e', e);
     } catch (e) {
-      emit(state.copyWith(error: '未知错误：$e', isLoading: false));
+      emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '获取更新日志失败'), isLoading: false));
       LogService.e('Failed to fetch update logs: $e', e);
     }
   }
@@ -65,7 +66,7 @@ class UpdateLogBloc extends Bloc<UpdateLogEvent, UpdateLogState> {
       emit(state.copyWith(error: '加载更多失败：${e.message}', isLoadingMore: false));
       LogService.e('Load more API Exception: $e', e);
     } catch (e) {
-      emit(state.copyWith(error: '加载更多失败: $e', isLoadingMore: false));
+      emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载更多失败'), isLoadingMore: false));
       LogService.e('Failed to load more update logs: $e', e);
     }
   }

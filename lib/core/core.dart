@@ -51,6 +51,7 @@ export 'utils/announcement_utils.dart';
 export 'utils/app_directory_service.dart';
 export 'utils/cache_service.dart';
 export 'utils/category_utils.dart';
+export 'utils/error_utils.dart';
 export 'utils/formatters.dart';
 export 'utils/log_service.dart';
 export 'utils/platform_utils.dart';

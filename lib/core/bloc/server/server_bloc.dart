@@ -7,6 +7,7 @@ import '../../services/game_launcher_service.dart';
 import '../../services/map_change_monitor_service.dart';
 import '../../services/custom_server_service.dart';
 import '../../utils/log_service.dart';
+import '../../utils/error_utils.dart';
 import 'server_event.dart';
 import 'server_state.dart';
 
@@ -678,7 +679,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       LogService.i('添加自定义分类成功: ${event.categoryName}');
     } catch (e) {
       LogService.e('添加自定义分类失败: $e', e);
-      emit(state.copyWith(error: e.toString()));
+      emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '添加分类失败')));
     }
   }
 
@@ -708,12 +709,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       }
     } catch (e) {
       LogService.e('添加服务器失败: $e', e);
-      // 提取友好的错误信息
-      String errorMessage = e.toString();
-      if (errorMessage.contains('Exception:')) {
-        errorMessage = errorMessage.replaceFirst('Exception:', '').trim();
-      }
-      emit(state.copyWith(error: errorMessage));
+      emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '添加服务器失败')));
     }
   }
 
@@ -750,7 +746,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       LogService.i('删除自定义分类成功: ${event.categoryName}');
     } catch (e) {
       LogService.e('删除自定义分类失败: $e', e);
-      emit(state.copyWith(error: e.toString()));
+      emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '删除分类失败')));
     }
   }
 
@@ -787,7 +783,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       }
     } catch (e) {
       LogService.e('删除服务器失败: $e', e);
-      emit(state.copyWith(error: e.toString()));
+      emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '删除服务器失败')));
     }
   }
 

@@ -275,7 +275,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
       LogService.e('获取玩家列表失败: $e', e);
       if (mounted) {
         setState(() {
-          _playerError = '获取玩家列表失败: ${e.toString().split(':').last.trim()}';
+          _playerError = '获取玩家列表失败，请点击刷新重试';
           _isLoadingPlayers = false;
         });
       }

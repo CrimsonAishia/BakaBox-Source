@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../utils/map_utils.dart';
+import '../utils/log_service.dart';
 import '../utils/image_cache_manager.dart';
 import '../services/image_url_service.dart';
 
@@ -100,6 +101,7 @@ class _MapBackgroundState extends State<MapBackground> {
           });
         }
       } catch (e) {
+        LogService.d('加载地图背景签名URL失败: $e');
         if (mounted) {
           setState(() {
             _resolvedUrl = MapUtils.defaultMapBackground;

@@ -92,8 +92,9 @@ class _ServerHistoryModalState extends State<ServerHistoryModal> with SingleTick
 
       _preloadMapInfo(newData);
     } catch (e) {
+      LogService.e('加载历史数据失败', e);
       setState(() {
-        error = '加载历史数据失败: $e';
+        error = ErrorUtils.getErrorMessage(e, defaultMessage: '加载历史数据失败');
         isLoading = false;
       });
     }
@@ -126,8 +127,9 @@ class _ServerHistoryModalState extends State<ServerHistoryModal> with SingleTick
       });
       _preloadMapInfo(moreData);
     } catch (e) {
+      LogService.e('加载更多历史数据失败', e);
       setState(() => isLoadingMore = false);
-      if (mounted) ToastUtils.showError(context, '加载更多数据失败: $e');
+      if (mounted) ToastUtils.showError(context, ErrorUtils.getErrorMessage(e, defaultMessage: '加载更多数据失败'));
     }
   }
 

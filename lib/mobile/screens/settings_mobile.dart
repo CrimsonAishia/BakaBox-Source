@@ -460,7 +460,8 @@ class _SettingsMobileState extends State<SettingsMobile> {
                       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('无法打开浏览器'), backgroundColor: Colors.redAccent));
                     }
                   } catch (e) {
-                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('打开链接失败：$e'), backgroundColor: Colors.redAccent));
+                    LogService.e('打开Gitee链接失败', e);
+                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('打开链接失败，请稍后重试'), backgroundColor: Colors.redAccent));
                   }
                 },
               ),
@@ -487,9 +488,10 @@ class _SettingsMobileState extends State<SettingsMobile> {
         }
       }
     } catch (e) {
+      LogService.e('打开网站链接失败', e);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('打开链接失败：$e'), backgroundColor: Colors.redAccent),
+          const SnackBar(content: Text('打开链接失败，请稍后重试'), backgroundColor: Colors.redAccent),
         );
       }
     }

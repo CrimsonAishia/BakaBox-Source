@@ -84,8 +84,9 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
         context.pop();
       }
     } catch (e) {
+      LogService.e('提交反馈失败', e);
       if (mounted) {
-        ToastUtils.showError(context, e.toString());
+        ToastUtils.showError(context, ErrorUtils.getErrorMessage(e, defaultMessage: '提交失败，请稍后重试'));
       }
     } finally {
       if (mounted) {

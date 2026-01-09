@@ -633,9 +633,10 @@ class _SettingsDesktopState extends State<SettingsDesktop> {
         );
       }
     } catch (e) {
+      LogService.e('选择游戏路径失败', e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('选择路径失败: $e'), backgroundColor: Colors.red),
+          const SnackBar(content: Text('选择路径失败，请重试'), backgroundColor: Colors.red),
         );
       }
     }
@@ -651,9 +652,10 @@ class _SettingsDesktopState extends State<SettingsDesktop> {
         );
       }
     } catch (e) {
+      LogService.e('选择Steam路径失败', e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('选择路径失败: $e'), backgroundColor: Colors.red),
+          const SnackBar(content: Text('选择路径失败，请重试'), backgroundColor: Colors.red),
         );
       }
     }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/image_url_service.dart';
+import '../utils/log_service.dart';
 import 'image_viewer_dialog.dart';
 
 /// 可点击的图片组件
@@ -62,6 +63,7 @@ class _ClickableImageState extends State<ClickableImage> {
         setState(() { _signedUrl = url; _isLoading = false; });
       }
     } catch (e) {
+      LogService.d('加载图片签名URL失败: $e');
       if (mounted) {
         setState(() { _signedUrl = widget.imageUrl; _isLoading = false; });
       }
