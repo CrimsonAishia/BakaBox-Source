@@ -134,6 +134,9 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
   Future<void> _initializeBlocs() async {
     context.read<ServerBloc>().add(ServerStartPeriodicRefresh());
     
+    // 首帧渲染完成，上报启动统计
+    AnalyticsService.instance.reportStartupIfNeeded();
+    
     // 启动游戏状态监控（桌面端专属，需要先完成初始检测）
     await GameStatusService().startMonitoring();
     

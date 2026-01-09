@@ -20,6 +20,9 @@ import 'mobile/app.dart';
 /// 3. 运行不同的 App
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 记录启动时间（统一在此处记录，确保统计完整的启动耗时）
+  AnalyticsService.instance.setStartTime(DateTime.now());
 
   // 移动端直接启动
   if (!PlatformUtils.isDesktopPlatform) {
@@ -89,8 +92,6 @@ Future<void> main(List<String> args) async {
 
 /// 运行主窗口
 Future<void> _runMainWindow(WindowController controller) async {
-  final startTime = DateTime.now();
-
   // 设置主窗口 ID，供通知服务使用
   NotificationWindowService().setMainWindowId(controller.windowId);
 
@@ -159,11 +160,6 @@ Future<void> _runMainWindow(WindowController controller) async {
   StatusWindowService().initialize();
 
   runApp(const DesktopApp());
-
-  // 记录启动分析
-  Timer(const Duration(seconds: 3), () {
-    AnalyticsService.instance.recordAppStartup(startTime);
-  });
 }
 
 /// 运行浮动窗口

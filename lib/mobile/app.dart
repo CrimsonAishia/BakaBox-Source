@@ -70,6 +70,9 @@ class _MobileAppHomeState extends State<MobileAppHome> {
 
   void _initializeBlocs() {
     context.read<ServerBloc>().add(ServerStartPeriodicRefresh());
+    
+    // 首帧渲染完成，上报启动统计
+    AnalyticsService.instance.reportStartupIfNeeded();
   }
 
   void _listenForUpdate() {
