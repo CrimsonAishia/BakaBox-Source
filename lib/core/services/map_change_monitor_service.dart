@@ -77,6 +77,9 @@ class MapChangeMonitorService {
   /// 监控定时器
   Timer? _monitorTimer;
   
+  /// 是否暂停监控（服务器页面打开时暂停）
+  bool _isPaused = false;
+  
   /// 监控间隔（秒）- 缩短到20秒提高检测及时性
   static const int monitorIntervalSeconds = 20;
   
@@ -96,6 +99,25 @@ class MapChangeMonitorService {
 
   /// 检查服务器是否在监控中
   bool isMonitoring(String serverAddress) => _monitoredServers.containsKey(serverAddress);
+  
+  /// 是否已暂停
+  bool get isPaused => _isPaused;
+
+  /// 暂停监控（服务器页面打开时调用）
+  void pauseMonitor() {
+    if (_isPaused) return;
+    _isPaused = true;
+    _stopMonitorLoop();
+    LogService.d('[MapChangeMonitor] 监控已暂停（服务器页面活跃）');
+  }
+
+  /// 恢复监控（离开服务器页面时调用）
+  void resumeMonitor() {
+    if (!_isPaused) return;
+    _isPaused = false;
+    _startMonitorLoop();
+    LogService.d('[MapChangeMonitor] 监控已恢复');
+  }
 
   /// 初始化服务（应用启动时调用）
   Future<void> initialize() async {
@@ -221,6 +243,7 @@ class MapChangeMonitorService {
   void _startMonitorLoop() {
     if (_monitorTimer != null) return;
     if (_monitoredServers.isEmpty) return;
+    if (_isPaused) return;  // 暂停状态不启动
 
     _monitorTimer = Timer.periodic(
       const Duration(seconds: monitorIntervalSeconds),
