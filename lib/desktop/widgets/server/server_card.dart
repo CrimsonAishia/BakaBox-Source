@@ -1417,6 +1417,7 @@ class _FloatingActionPanelState extends State<_FloatingActionPanel>
   Widget build(BuildContext context) {
     final data = widget.server.serverData;
     final isDisabled = data == null || widget.server.isLoading;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     // 获取刷新状态
     final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
@@ -1445,8 +1446,18 @@ class _FloatingActionPanelState extends State<_FloatingActionPanel>
           ));
         }
 
+        // 深色/浅色主题颜色
+        final borderColor = isDark ? const Color(0xFF475569) : const Color(0xFF94A3B8);
+        final bgGradientColors = isDark
+            ? [const Color(0xF01E293B), const Color(0xE80F172A)]
+            : [const Color(0xF0FFFFFF), const Color(0xE8F8FAFC)];
+        final shadowColor = isDark
+            ? const Color(0xFF000000)
+            : const Color(0xFF0F172A);
+
         return Positioned(
           width: panelWidth + 8,
+          height: 165, // 与卡片高度一致
           child: CompositedTransformFollower(
             link: widget.link,
             targetAnchor: Alignment.centerRight,
@@ -1472,7 +1483,7 @@ class _FloatingActionPanelState extends State<_FloatingActionPanel>
                 },
                 child: CustomPaint(
                   painter: _DashedBorderPainter(
-                    color: const Color(0xFF94A3B8),
+                    color: borderColor,
                     strokeWidth: 1.5,
                     dashWidth: 6,
                     dashSpace: 4,
@@ -1480,25 +1491,23 @@ class _FloatingActionPanelState extends State<_FloatingActionPanel>
                   ),
                   child: Container(
                     width: panelWidth,
+                    height: 165, // 与卡片高度一致
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
+                      gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xF0FFFFFF),
-                          Color(0xE8F8FAFC),
-                        ],
+                        colors: bgGradientColors,
                       ),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.12),
+                          color: shadowColor.withValues(alpha: isDark ? 0.3 : 0.12),
                           blurRadius: 16,
                           offset: const Offset(4, 4),
                           spreadRadius: 0,
                         ),
                         BoxShadow(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                          color: shadowColor.withValues(alpha: isDark ? 0.2 : 0.06),
                           blurRadius: 6,
                           offset: const Offset(2, 2),
                         ),
@@ -1506,32 +1515,34 @@ class _FloatingActionPanelState extends State<_FloatingActionPanel>
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            for (var i = 0; i < columns.length; i++) ...[
-                              if (i > 0) const SizedBox(width: columnGap),
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  for (final config in columns[i])
-                                    _FloatingActionButton(
-                                      icon: config.icon,
-                                      label: config.label,
-                                      color: config.color,
-                                      isActive: config.isActive,
-                                      isDisabled: config.isDisabled,
-                                      tooltip: config.tooltip,
-                                      onTap: config.onTap,
-                                    ),
-                                ],
-                              ),
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              for (var i = 0; i < columns.length; i++) ...[
+                                if (i > 0) const SizedBox(width: columnGap),
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    for (final config in columns[i])
+                                      _FloatingActionButton(
+                                        icon: config.icon,
+                                        label: config.label,
+                                        color: config.color,
+                                        isActive: config.isActive,
+                                        isDisabled: config.isDisabled,
+                                        tooltip: config.tooltip,
+                                        onTap: config.onTap,
+                                      ),
+                                  ],
+                                ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
                     ),
@@ -1598,6 +1609,16 @@ class _FloatingActionButtonState extends State<_FloatingActionButton> {
   Widget build(BuildContext context) {
     final isDisabled = widget.isDisabled || widget.onTap == null;
     final isHighlighted = widget.isActive || (_isHovered && !isDisabled);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // 深色/浅色主题颜色
+    final disabledBgColor = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    final normalBgColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
+    final borderColor = isDark ? const Color(0xFF475569) : const Color(0xFFE2E8F0);
+    final disabledIconColor = isDark ? const Color(0xFF64748B) : const Color(0xFFCBD5E1);
+    final normalIconColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final disabledTextColor = isDark ? const Color(0xFF64748B) : const Color(0xFFCBD5E1);
+    final normalTextColor = isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569);
 
     final button = MouseRegion(
       cursor: isDisabled ? SystemMouseCursors.forbidden : SystemMouseCursors.click,
@@ -1609,13 +1630,11 @@ class _FloatingActionButtonState extends State<_FloatingActionButton> {
       },
       child: GestureDetector(
         onTap: isDisabled ? null : widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOutCubic,
+        child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
           decoration: BoxDecoration(
             color: isHighlighted && !isDisabled
-                ? widget.color.withValues(alpha: 0.08)
+                ? widget.color.withValues(alpha: isDark ? 0.15 : 0.08)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
@@ -1623,9 +1642,7 @@ class _FloatingActionButtonState extends State<_FloatingActionButton> {
             mainAxisSize: MainAxisSize.min,
             children: [
               // 图标容器
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
+              Container(
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
@@ -1633,42 +1650,30 @@ class _FloatingActionButtonState extends State<_FloatingActionButton> {
                   color: widget.isActive && !isDisabled
                       ? widget.color
                       : isDisabled
-                          ? const Color(0xFFE2E8F0)
+                          ? disabledBgColor
                           : _isHovered
-                              ? widget.color.withValues(alpha: 0.15)
-                              : const Color(0xFFF1F5F9),
+                              ? widget.color.withValues(alpha: isDark ? 0.25 : 0.15)
+                              : normalBgColor,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: widget.isActive && !isDisabled
                         ? widget.color
                         : isHighlighted && !isDisabled
-                            ? widget.color.withValues(alpha: 0.4)
-                            : const Color(0xFFE2E8F0),
+                            ? widget.color.withValues(alpha: isDark ? 0.6 : 0.4)
+                            : borderColor,
                     width: 1,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: widget.isActive && !isDisabled
-                          ? widget.color.withValues(alpha: 0.35)
-                          : _isHovered && !isDisabled
-                              ? widget.color.withValues(alpha: 0.2)
-                              : Colors.transparent,
-                      blurRadius: 8,
-                      spreadRadius: 0,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
                 ),
                 child: Icon(
                   widget.icon,
                   size: 20,
                   color: isDisabled
-                      ? const Color(0xFFCBD5E1)
+                      ? disabledIconColor
                       : widget.isActive
                           ? Colors.white
                           : _isHovered
                               ? widget.color
-                              : const Color(0xFF64748B),
+                              : normalIconColor,
                 ),
               ),
               const SizedBox(height: 4),
@@ -1676,14 +1681,15 @@ class _FloatingActionButtonState extends State<_FloatingActionButton> {
               Text(
                 widget.label,
                 style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  decoration: TextDecoration.none,
                   color: isDisabled
-                      ? const Color(0xFFCBD5E1)
+                      ? disabledTextColor
                       : isHighlighted
                           ? widget.color
-                          : const Color(0xFF64748B),
-                  letterSpacing: 0.1,
+                          : normalTextColor,
+                  letterSpacing: 0.2,
                 ),
               ),
             ],
@@ -1692,16 +1698,7 @@ class _FloatingActionButtonState extends State<_FloatingActionButton> {
       ),
     );
 
-    // 如果有 tooltip，包裹 Tooltip widget
-    if (widget.tooltip != null) {
-      return Tooltip(
-        message: widget.tooltip!,
-        preferBelow: false,
-        verticalOffset: 10,
-        child: button,
-      );
-    }
-
+    // 移除 tooltip 包裹，避免布局变化
     return button;
   }
 }
