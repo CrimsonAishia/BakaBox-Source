@@ -44,6 +44,7 @@ class KeyConfig extends Equatable {
   final String configId;
   final String name;
   final String description;
+  final int categoryId;
   final String category;
   final String? icon;
   final String config;
@@ -86,6 +87,7 @@ class KeyConfig extends Equatable {
     required this.configId,
     required this.name,
     required this.description,
+    required this.categoryId,
     required this.category,
     this.icon,
     required this.config,
@@ -133,6 +135,7 @@ class KeyConfig extends Equatable {
     String? configId,
     String? name,
     String? description,
+    int? categoryId,
     String? category,
     String? icon,
     String? config,
@@ -159,6 +162,7 @@ class KeyConfig extends Equatable {
       configId: configId ?? this.configId,
       name: name ?? this.name,
       description: description ?? this.description,
+      categoryId: categoryId ?? this.categoryId,
       category: category ?? this.category,
       icon: icon ?? this.icon,
       config: config ?? this.config,
@@ -188,6 +192,7 @@ class KeyConfig extends Equatable {
         configId,
         name,
         description,
+        categoryId,
         category,
         icon,
         config,
@@ -231,13 +236,35 @@ class KeyConfigListResponse extends Equatable {
   List<Object?> get props => [items, total];
 }
 
+/// 配置分类模型
+@JsonSerializable()
+class KeyConfigCategory extends Equatable {
+  final int id;
+  final String name;
+
+  const KeyConfigCategory({
+    required this.id,
+    required this.name,
+  });
+
+  factory KeyConfigCategory.fromJson(Map<String, dynamic> json) =>
+      _$KeyConfigCategoryFromJson(json);
+  Map<String, dynamic> toJson() => _$KeyConfigCategoryToJson(this);
+
+  @override
+  String toString() => name;
+
+  @override
+  List<Object?> get props => [id, name];
+}
+
 /// 创建配置请求
 @JsonSerializable()
 class KeyConfigCreateRequest extends Equatable {
   final String configId; // 业务标识符
   final String name;
   final String description;
-  final String category;
+  final int categoryId;
   final String? icon;
   final String config;
   final bool needsKeybind;
@@ -248,7 +275,7 @@ class KeyConfigCreateRequest extends Equatable {
     required this.configId,
     required this.name,
     required this.description,
-    required this.category,
+    required this.categoryId,
     this.icon,
     required this.config,
     required this.needsKeybind,
@@ -261,7 +288,7 @@ class KeyConfigCreateRequest extends Equatable {
   Map<String, dynamic> toJson() => _$KeyConfigCreateRequestToJson(this);
 
   @override
-  List<Object?> get props => [configId, name, description, category, icon, config, needsKeybind, isActive, sort];
+  List<Object?> get props => [configId, name, description, categoryId, icon, config, needsKeybind, isActive, sort];
 }
 
 /// autoexec.cfg 中的配置块

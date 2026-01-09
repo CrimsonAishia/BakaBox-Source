@@ -1,6 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/log_service.dart';
+import '../utils/platform_utils.dart';
 
 /// 音频服务 - 管理应用音效播放
 /// 
@@ -8,6 +9,8 @@ import '../utils/log_service.dart';
 /// - 挤服成功音效播放
 /// - 音量控制
 /// - 音量持久化存储
+/// 
+/// 注意：此服务仅在桌面端有效，移动端调用会直接返回
 class AudioService {
   static final AudioService _instance = AudioService._internal();
   factory AudioService() => _instance;
@@ -15,7 +18,7 @@ class AudioService {
 
   static const String _keyAudioVolume = 'audio_volume';
   
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  AudioPlayer? _audioPlayer;
   double _volume = 0.8; // 默认音量 80%
   bool _isInitialized = false;
 
@@ -30,8 +33,11 @@ class AudioService {
       final prefs = await SharedPreferences.getInstance();
       _volume = prefs.getDouble(_keyAudioVolume) ?? 0.8;
       
-      // 设置音频播放器
-      await _audioPlayer.setReleaseMode(ReleaseMode.stop);
+      // 仅桌面端初始化播放器
+      if (PlatformUtils.isDesktopPlatform) {
+        _audioPlayer = AudioPlayer();
+        await _audioPlayer!.setReleaseMode(ReleaseMode.stop);
+      }
       
       _isInitialized = true;
       LogService.i('音频服务已初始化，音量: ${(_volume * 100).toInt()}%');
@@ -55,14 +61,13 @@ class AudioService {
 
   /// 播放挤服成功音效
   Future<bool> playQueueSuccessSound() async {
-    if (_volume <= 0) {
-      LogService.d('音量为0，跳过播放');
+    if (_audioPlayer == null || _volume <= 0) {
       return false;
     }
     
     try {
-      await _audioPlayer.setVolume(_volume);
-      await _audioPlayer.play(AssetSource('audio/queue_success.mp3'));
+      await _audioPlayer!.setVolume(_volume);
+      await _audioPlayer!.play(AssetSource('audio/queue_success.mp3'));
       LogService.d('播放挤服成功音效');
       return true;
     } catch (e) {
@@ -79,7 +84,7 @@ class AudioService {
   /// 停止播放
   Future<void> stop() async {
     try {
-      await _audioPlayer.stop();
+      await _audioPlayer?.stop();
     } catch (e) {
       LogService.e('停止音效失败', e);
     }
@@ -88,7 +93,8 @@ class AudioService {
   /// 释放资源
   Future<void> dispose() async {
     try {
-      await _audioPlayer.dispose();
+      await _audioPlayer?.dispose();
+      _audioPlayer = null;
       _isInitialized = false;
       LogService.i('音频服务已释放');
     } catch (e) {

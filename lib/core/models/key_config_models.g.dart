@@ -11,6 +11,7 @@ KeyConfig _$KeyConfigFromJson(Map<String, dynamic> json) => KeyConfig(
   configId: json['configId'] as String,
   name: json['name'] as String,
   description: json['description'] as String,
+  categoryId: (json['categoryId'] as num).toInt(),
   category: json['category'] as String,
   icon: json['icon'] as String?,
   config: json['config'] as String,
@@ -42,6 +43,7 @@ Map<String, dynamic> _$KeyConfigToJson(KeyConfig instance) => <String, dynamic>{
   'configId': instance.configId,
   'name': instance.name,
   'description': instance.description,
+  'categoryId': instance.categoryId,
   'category': instance.category,
   'icon': instance.icon,
   'config': instance.config,
@@ -85,13 +87,22 @@ Map<String, dynamic> _$KeyConfigListResponseToJson(
   KeyConfigListResponse instance,
 ) => <String, dynamic>{'items': instance.items, 'total': instance.total};
 
+KeyConfigCategory _$KeyConfigCategoryFromJson(Map<String, dynamic> json) =>
+    KeyConfigCategory(
+      id: (json['id'] as num).toInt(),
+      name: json['name'] as String,
+    );
+
+Map<String, dynamic> _$KeyConfigCategoryToJson(KeyConfigCategory instance) =>
+    <String, dynamic>{'id': instance.id, 'name': instance.name};
+
 KeyConfigCreateRequest _$KeyConfigCreateRequestFromJson(
   Map<String, dynamic> json,
 ) => KeyConfigCreateRequest(
   configId: json['configId'] as String,
   name: json['name'] as String,
   description: json['description'] as String,
-  category: json['category'] as String,
+  categoryId: (json['categoryId'] as num).toInt(),
   icon: json['icon'] as String?,
   config: json['config'] as String,
   needsKeybind: json['needsKeybind'] as bool,
@@ -105,7 +116,7 @@ Map<String, dynamic> _$KeyConfigCreateRequestToJson(
   'configId': instance.configId,
   'name': instance.name,
   'description': instance.description,
-  'category': instance.category,
+  'categoryId': instance.categoryId,
   'icon': instance.icon,
   'config': instance.config,
   'needsKeybind': instance.needsKeybind,

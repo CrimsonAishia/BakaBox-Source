@@ -55,7 +55,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       LogService.d('[KeyBindingBloc] 开始加载配置列表');
       
       final response = await _api.getConfigList(
-        category: state.categoryFilter,
+        categoryId: state.categoryFilter,
         keyword: state.searchKeyword,
         isActive: true,
       );
@@ -568,10 +568,10 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     KeyBindingSetCategoryFilter event,
     Emitter<KeyBindingState> emit,
   ) {
-    if (event.category == null || event.category!.isEmpty) {
+    if (event.categoryId == null) {
       emit(state.copyWith(clearCategoryFilter: true));
     } else {
-      emit(state.copyWith(categoryFilter: event.category));
+      emit(state.copyWith(categoryFilter: event.categoryId));
     }
     
     // 重新加载配置列表

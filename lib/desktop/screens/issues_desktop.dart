@@ -943,7 +943,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
         title: _titleController.text.trim(), 
         content: content, 
         images: _imageUrls,
-        deviceInfo: _selectedType == IssueType.bug ? _collectDeviceInfo() : null
+        deviceInfo: _collectDeviceInfo()
       );
       final response = await IssueApi().createIssue(request);
       if (response != null && mounted) { ToastUtils.showSuccess(context, '反馈提交成功'); widget.onCreated(response.id); }
