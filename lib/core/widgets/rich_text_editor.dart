@@ -572,7 +572,7 @@ class RichTextEditorState extends State<RichTextEditor> {
       await _performUpload(file);
     } catch (e) {
       LogService.e('选择文件失败', e);
-      _showError('选择文件失败: $e');
+      _showError('选择文件失败，请重试');
     }
   }
 
@@ -734,6 +734,7 @@ class _ImageAttachmentItemState extends State<_ImageAttachmentItem> {
       final url = await ImageUrlService.instance.getSignedUrl(widget.image.url);
       if (mounted) setState(() { _signedUrl = url; _isLoading = false; });
     } catch (e) {
+      LogService.d('加载图片签名URL失败: $e');
       if (mounted) setState(() => _isLoading = false);
     }
   }

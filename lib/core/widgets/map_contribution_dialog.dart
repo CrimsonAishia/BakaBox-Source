@@ -11,6 +11,7 @@ import '../bloc/map_contribution/map_contribution_event.dart';
 import '../bloc/map_contribution/map_contribution_state.dart';
 import '../models/map_contribution_models.dart';
 import '../utils/contribution_validation_utils.dart';
+import '../utils/log_service.dart';
 import '../utils/toast_utils.dart';
 import '../utils/image_cache_manager.dart';
 import '../services/file_upload_service.dart';
@@ -978,9 +979,10 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         fileId: result.fileId,
       ));
     } catch (e) {
+      LogService.e('上传背景图片失败', e);
       if (!mounted) return;
       Navigator.of(context).pop(); // 关闭进度对话框
-      ToastUtils.showError(context, '上传失败: $e');
+      ToastUtils.showError(context, '上传失败，请稍后重试');
     }
   }
 
@@ -1632,6 +1634,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         setState(() => _selectedImage = file);
       }
     } catch (e) {
+      LogService.e('选择图片失败', e);
       if (mounted) {
         ToastUtils.showError(context, '选择图片失败');
       }
@@ -1714,12 +1717,13 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         _uploadProgress = 0.0;
       });
     } catch (e) {
+      LogService.e('上传图片失败', e);
       if (mounted) {
         setState(() {
           _isUploadingImage = false;
           _uploadProgress = 0.0;
         });
-        ToastUtils.showError(context, '上传失败: $e');
+        ToastUtils.showError(context, '上传失败，请稍后重试');
       }
     }
   }
@@ -1835,6 +1839,7 @@ class _ContributionImageState extends State<_ContributionImage> {
         });
       }
     } catch (e) {
+      LogService.d('加载签名URL失败: $e');
       if (mounted) {
         setState(() {
           _hasError = true;

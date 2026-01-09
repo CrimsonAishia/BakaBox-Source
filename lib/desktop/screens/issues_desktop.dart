@@ -922,7 +922,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
       );
       final response = await IssueApi().createIssue(request);
       if (response != null && mounted) { ToastUtils.showSuccess(context, '反馈提交成功'); widget.onCreated(response.id); }
-    } catch (e) { if (mounted) ToastUtils.showError(context, e.toString()); }
+    } catch (e) { if (mounted) ToastUtils.showError(context, ErrorUtils.getErrorMessage(e, defaultMessage: '提交失败，请稍后重试')); }
     finally { if (mounted) setState(() => _isSubmitting = false); }
   }
 

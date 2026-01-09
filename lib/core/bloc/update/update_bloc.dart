@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../models/update_models.dart';
 import '../../services/update_service.dart';
+import '../../utils/error_utils.dart';
 import '../../utils/log_service.dart';
 import '../../utils/platform_utils.dart';
 import 'update_event.dart';
@@ -31,7 +32,8 @@ class UpdateBloc extends Bloc<UpdateEvent, UpdateState> {
         status: updateInfo.hasUpdate ? UpdateStatus.available : UpdateStatus.idle,
       ));
     } catch (e) {
-      emit(state.copyWith(errorMessage: e.toString(), status: UpdateStatus.failed));
+      LogService.e('检查更新失败', e);
+      emit(state.copyWith(errorMessage: ErrorUtils.getErrorMessage(e, defaultMessage: '检查更新失败'), status: UpdateStatus.failed));
     }
   }
 
@@ -67,7 +69,8 @@ class UpdateBloc extends Bloc<UpdateEvent, UpdateState> {
       // 下载完成，等待用户确认安装
       emit(state.copyWith(status: UpdateStatus.downloaded, downloadedFilePath: filePath));
     } catch (e) {
-      emit(state.copyWith(errorMessage: e.toString(), status: UpdateStatus.failed));
+      LogService.e('下载更新失败', e);
+      emit(state.copyWith(errorMessage: ErrorUtils.getErrorMessage(e, defaultMessage: '下载更新失败'), status: UpdateStatus.failed));
     }
   }
 
@@ -96,7 +99,8 @@ class UpdateBloc extends Bloc<UpdateEvent, UpdateState> {
         emit(state.copyWith(status: UpdateStatus.completed));
       }
     } catch (e) {
-      emit(state.copyWith(errorMessage: e.toString(), status: UpdateStatus.failed));
+      LogService.e('安装更新失败', e);
+      emit(state.copyWith(errorMessage: ErrorUtils.getErrorMessage(e, defaultMessage: '安装更新失败'), status: UpdateStatus.failed));
     }
   }
 
@@ -127,7 +131,8 @@ class UpdateBloc extends Bloc<UpdateEvent, UpdateState> {
         emit(state.copyWith(status: UpdateStatus.completed));
       }
     } catch (e) {
-      emit(state.copyWith(errorMessage: e.toString(), status: UpdateStatus.failed));
+      LogService.e('下载安装更新失败', e);
+      emit(state.copyWith(errorMessage: ErrorUtils.getErrorMessage(e, defaultMessage: '下载安装更新失败'), status: UpdateStatus.failed));
     }
   }
 
@@ -135,7 +140,8 @@ class UpdateBloc extends Bloc<UpdateEvent, UpdateState> {
     try {
       await _updateService.openAppStore(state.updateInfo);
     } catch (e) {
-      emit(state.copyWith(errorMessage: e.toString()));
+      LogService.e('打开应用商店失败', e);
+      emit(state.copyWith(errorMessage: ErrorUtils.getErrorMessage(e, defaultMessage: '打开应用商店失败')));
     }
   }
 

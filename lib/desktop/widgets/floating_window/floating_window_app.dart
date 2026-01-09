@@ -203,7 +203,7 @@ class _FloatingWindowInitializerState
     } catch (e, stack) {
       debugPrint('[FloatingWindow] Init error: $e\n$stack');
       if (mounted) {
-        setState(() => _error = e.toString());
+        setState(() => _error = '初始化失败，请重试');
       }
     }
   }

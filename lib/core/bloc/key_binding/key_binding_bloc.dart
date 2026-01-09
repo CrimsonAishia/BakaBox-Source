@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../api/key_config_api.dart';
 import '../../models/key_config_models.dart';
 import '../../services/autoexec_service.dart';
+import '../../utils/error_utils.dart';
 import '../../utils/key_placeholder_parser.dart';
 import '../../utils/log_service.dart';
 import 'key_binding_event.dart';
@@ -77,7 +78,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       LogService.e('[KeyBindingBloc] 加载配置列表失败', e);
       emit(state.copyWith(
         isLoading: false,
-        error: '加载配置列表失败: $e',
+        error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载配置列表失败'),
       ));
     }
   }
@@ -253,7 +254,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       LogService.e('[KeyBindingBloc] 应用配置失败', e);
       emit(state.copyWith(
         isSaving: false,
-        error: '应用配置失败: $e',
+        error: ErrorUtils.getErrorMessage(e, defaultMessage: '应用配置失败'),
       ));
     }
   }
@@ -306,7 +307,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       LogService.e('[KeyBindingBloc] 移除配置失败', e);
       emit(state.copyWith(
         isSaving: false,
-        error: '移除配置失败: $e',
+        error: ErrorUtils.getErrorMessage(e, defaultMessage: '移除配置失败'),
       ));
     }
   }
@@ -372,7 +373,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       LogService.e('[KeyBindingBloc] 加载 autoexec.cfg 失败', e);
       emit(state.copyWith(
         isLoadingAutoexec: false,
-        error: '加载 autoexec.cfg 失败: $e',
+        error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载 autoexec.cfg 失败'),
       ));
     }
   }
@@ -411,7 +412,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       LogService.e('[KeyBindingBloc] 保存 autoexec.cfg 失败', e);
       emit(state.copyWith(
         isSaving: false,
-        error: '保存 autoexec.cfg 失败: $e',
+        error: ErrorUtils.getErrorMessage(e, defaultMessage: '保存 autoexec.cfg 失败'),
       ));
     }
   }
@@ -449,7 +450,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       LogService.e('[KeyBindingBloc] 创建 autoexec.cfg 失败', e);
       emit(state.copyWith(
         isSaving: false,
-        error: '创建 autoexec.cfg 失败: $e',
+        error: ErrorUtils.getErrorMessage(e, defaultMessage: '创建 autoexec.cfg 失败'),
       ));
     }
   }
@@ -486,7 +487,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       LogService.e('[KeyBindingBloc] 发布配置失败', e);
       emit(state.copyWith(
         isPublishing: false,
-        error: '发布配置失败: $e',
+        error: ErrorUtils.getErrorMessage(e, defaultMessage: '发布配置失败'),
       ));
     }
   }
@@ -520,7 +521,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       LogService.e('[KeyBindingBloc] 删除配置失败', e);
       emit(state.copyWith(
         isLoading: false,
-        error: '删除配置失败: $e',
+        error: ErrorUtils.getErrorMessage(e, defaultMessage: '删除配置失败'),
       ));
     }
   }
@@ -558,7 +559,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       LogService.e('[KeyBindingBloc] 更新配置失败', e);
       emit(state.copyWith(
         isSaving: false,
-        error: '更新配置失败: $e',
+        error: ErrorUtils.getErrorMessage(e, defaultMessage: '更新配置失败'),
       ));
     }
   }
@@ -602,7 +603,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       await _autoexecService.openInExplorer();
     } catch (e) {
       LogService.e('[KeyBindingBloc] 打开文件管理器失败', e);
-      emit(state.copyWith(error: '打开文件管理器失败: $e'));
+      emit(state.copyWith(error: '打开文件管理器失败'));
     }
   }
 
@@ -676,7 +677,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       if (errorMsg.contains('40003') || errorMsg.contains('不能对自己')) {
         emit(state.copyWith(error: '不能对自己的配置投反对票'));
       } else {
-        emit(state.copyWith(error: '投票失败: $e'));
+        emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '投票失败')));
       }
     }
   }

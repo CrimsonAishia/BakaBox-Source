@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import '../../utils/error_utils.dart';
 import '../../utils/log_service.dart';
 import '../../utils/cache_service.dart';
 import '../../utils/app_directory_service.dart';
@@ -300,7 +301,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       LogService.i('游戏路径已设置: ${event.path}');
     } catch (e) {
       LogService.e('设置游戏路径失败', e);
-      emit(state.copyWith(gamePathError: '设置游戏路径失败: $e'));
+      emit(state.copyWith(gamePathError: ErrorUtils.getErrorMessage(e, defaultMessage: '设置游戏路径失败')));
     }
   }
 
@@ -328,7 +329,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       LogService.i('Steam路径已设置: ${event.path}');
     } catch (e) {
       LogService.e('设置Steam路径失败', e);
-      emit(state.copyWith(steamPathError: '设置Steam路径失败: $e'));
+      emit(state.copyWith(steamPathError: ErrorUtils.getErrorMessage(e, defaultMessage: '设置Steam路径失败')));
     }
   }
 
@@ -358,7 +359,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     } catch (e) {
       emit(state.copyWith(
         isDetectingPath: false,
-        gamePathError: '检测游戏路径失败: $e',
+        gamePathError: ErrorUtils.getErrorMessage(e, defaultMessage: '检测游戏路径失败'),
       ));
       LogService.e('检测游戏路径失败', e);
     }
@@ -390,7 +391,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     } catch (e) {
       emit(state.copyWith(
         isDetectingPath: false,
-        steamPathError: '检测Steam路径失败: $e',
+        steamPathError: ErrorUtils.getErrorMessage(e, defaultMessage: '检测Steam路径失败'),
       ));
       LogService.e('检测Steam路径失败', e);
     }

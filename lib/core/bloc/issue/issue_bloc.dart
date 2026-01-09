@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../api/api.dart';
 import '../../api/issue_api.dart';
+import '../../utils/error_utils.dart';
 import '../../utils/log_service.dart';
 import 'issue_event.dart';
 import 'issue_state.dart';
@@ -27,7 +28,7 @@ class IssueBloc extends Bloc<IssueEvent, IssueState> {
   /// 提取错误信息
   String _getErrorMessage(Object e) {
     if (e is ApiException) return e.message;
-    return e.toString();
+    return ErrorUtils.getErrorMessage(e);
   }
 
   Future<void> _onFetch(IssueFetch event, Emitter<IssueState> emit) async {

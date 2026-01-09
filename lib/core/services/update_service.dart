@@ -151,7 +151,7 @@ class UpdateService {
       // 上报下载失败
       _reportResult(updateInfo, 'download_failed', errorMessage: e.toString());
       if (e is UpdateException) rethrow;
-      throw UpdateException('下载安装失败: $e');
+      throw const UpdateException('下载安装失败，请检查网络后重试');
     }
   }
 
@@ -247,7 +247,7 @@ class UpdateService {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri);
       } else {
-        throw UpdateException('无法安装更新: $e');
+        throw const UpdateException('无法安装更新，请手动运行安装程序');
       }
     }
   }
@@ -275,7 +275,7 @@ class UpdateService {
       if (e is PlatformException) {
         throw UpdateException(e.message ?? '安装失败');
       }
-      throw UpdateException('无法安装APK: $e');
+      throw const UpdateException('无法安装APK，请检查安装权限');
     }
   }
 

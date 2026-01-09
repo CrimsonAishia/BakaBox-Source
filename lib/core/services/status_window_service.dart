@@ -907,7 +907,7 @@ class StatusWindowService {
         _handleQueueConnectionFailure(result.error ?? '连接失败', serverAddress);
       }
     } catch (e) {
-      _handleQueueConnectionFailure('连接异常: $e', serverAddress);
+      _handleQueueConnectionFailure('连接异常，请检查网络', serverAddress);
     }
   }
   

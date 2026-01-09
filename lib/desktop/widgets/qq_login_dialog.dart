@@ -175,7 +175,7 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
     } catch (e) {
       LogService.e('提取 Cookie 失败', e);
       if (mounted) {
-        ToastUtils.showError(context, '获取登录信息失败: $e');
+        ToastUtils.showError(context, '获取登录信息失败，请重试');
         setState(() => _isExtracting = false);
         _loginDetected = false;
       }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../services/auth_service.dart';
 import '../../services/token_service.dart';
+import '../../utils/error_utils.dart';
 import '../../utils/log_service.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
@@ -88,7 +89,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       LogService.e('登录失败', e);
       emit(state.copyWith(
         status: AuthStatus.error,
-        errorMessage: '登录失败: $e',
+        errorMessage: ErrorUtils.getErrorMessage(e, defaultMessage: '登录失败'),
       ));
     }
   }
@@ -124,7 +125,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       LogService.e('QQ登录失败', e);
       emit(state.copyWith(
         status: AuthStatus.error,
-        errorMessage: 'QQ登录失败: $e',
+        errorMessage: ErrorUtils.getErrorMessage(e, defaultMessage: 'QQ登录失败'),
       ));
     }
   }

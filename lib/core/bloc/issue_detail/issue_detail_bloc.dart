@@ -3,6 +3,7 @@ import '../../api/api.dart';
 import '../../api/issue_api.dart';
 import '../../models/issue_models.dart';
 import '../../models/user_info.dart';
+import '../../utils/error_utils.dart';
 import '../../utils/log_service.dart';
 import 'issue_detail_event.dart';
 import 'issue_detail_state.dart';
@@ -33,7 +34,7 @@ class IssueDetailBloc extends Bloc<IssueDetailEvent, IssueDetailState> {
   /// 提取错误信息
   String _getErrorMessage(Object e) {
     if (e is ApiException) return e.message;
-    return e.toString();
+    return ErrorUtils.getErrorMessage(e);
   }
 
   Future<void> _onFetch(IssueDetailFetch event, Emitter<IssueDetailState> emit) async {

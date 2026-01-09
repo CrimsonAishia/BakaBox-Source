@@ -301,7 +301,7 @@ class GameLauncherService {
       }
     } catch (e) {
       LogService.e('启动游戏失败', e);
-      return GameLaunchResult.failure('启动游戏失败: $e');
+      return GameLaunchResult.failure('启动游戏失败，请检查Steam是否正常运行');
     }
   }
 
@@ -374,7 +374,7 @@ class GameLauncherService {
       return GameLaunchResult.success(message: '游戏启动命令已发送');
     } catch (e) {
       LogService.e('启动游戏失败', e);
-      return GameLaunchResult.failure('启动游戏失败: $e');
+      return GameLaunchResult.failure('启动游戏失败，请检查Steam是否正常运行');
     }
   }
 
@@ -412,7 +412,7 @@ class GameLauncherService {
       }
     } catch (e) {
       LogService.e('连接服务器失败', e);
-      return ServerConnectResult.failure('连接服务器失败: $e');
+      return ServerConnectResult.failure('连接服务器失败，请检查Steam是否正常运行');
     }
   }
 
@@ -524,7 +524,7 @@ class GameLauncherService {
       }
     } catch (e) {
       LogService.e('连接服务器失败', e);
-      return ServerConnectResult.failure('连接服务器失败: $e');
+      return ServerConnectResult.failure('连接服务器失败，请检查Steam是否正常运行');
     }
   }
 

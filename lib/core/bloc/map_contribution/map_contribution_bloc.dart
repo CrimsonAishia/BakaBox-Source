@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../api/api.dart';
 import '../../api/map_contribution_api.dart';
 import '../../models/map_contribution_models.dart';
+import '../../utils/error_utils.dart';
 import '../../utils/log_service.dart';
 import 'map_contribution_event.dart';
 import 'map_contribution_state.dart';
@@ -33,7 +34,7 @@ class MapContributionBloc
   /// 提取错误信息
   String _getErrorMessage(Object e) {
     if (e is ApiException) return e.message;
-    return e.toString();
+    return ErrorUtils.getErrorMessage(e);
   }
 
   /// 对贡献列表排序：按票数降序，相同票数按时间升序
