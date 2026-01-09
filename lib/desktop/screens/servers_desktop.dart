@@ -256,47 +256,56 @@ class _ServersDesktopState extends State<ServersDesktop> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<ServerBloc, ServerState>(
-      listenWhen: (previous, current) {
-        // 监听错误状态变化
-        return current.error != null && current.error != previous.error;
-      },
-      listener: (context, state) {
-        // 使用 toast 显示错误提示
-        if (state.error != null) {
-          ToastUtils.showError(context, state.error!);
-        }
-      },
-      child: BlocListener<ServerBloc, ServerState>(
-        listenWhen: (previous, current) {
-          // 当服务器列表从加载中变为加载完成时触发
-          return previous.isLoadingServers && !current.isLoadingServers && current.servers.isNotEmpty;
-        },
-        listener: (context, state) {
-          // 服务器数据加载完成后，延迟获取 ping
-          _scheduleDelayedPingFetch();
-        },
-        child: Scaffold(
-          backgroundColor: Theme.of(context).brightness == Brightness.dark 
-              ? const Color(0xFF0F172A) 
-              : const Color(0xFFF3F4F6),
-          body: BlocListener<ServerBloc, ServerState>(
-            listenWhen: (previous, current) {
-              // 当分类列表加载完成且没有选中分类时，自动选择第一个
-              return previous.isLoading && !current.isLoading && 
-                     current.serverCategories.isNotEmpty && 
-                     current.selectedCategory == null;
-            },
-            listener: (context, state) {
-              _autoSelectFirstCategory(state);
-            },
-            child: PageLayout(
-              title: '服务器列表',
-              subtitle: '选择一个服务器开始游戏',
-              headerActions: _buildHeaderActions(),
-              child: _buildMainContent(),
-            ),
-          ),
+    return MultiBlocListener(
+      listeners: [
+        // 监听错误消息
+        BlocListener<ServerBloc, ServerState>(
+          listenWhen: (previous, current) =>
+              current.error != null && current.error != previous.error,
+          listener: (context, state) {
+            if (state.error != null) {
+              ToastUtils.showError(context, state.error!);
+            }
+          },
+        ),
+        // 监听成功消息
+        BlocListener<ServerBloc, ServerState>(
+          listenWhen: (previous, current) =>
+              current.successMessage != null &&
+              current.successMessage != previous.successMessage,
+          listener: (context, state) {
+            if (state.successMessage != null) {
+              ToastUtils.showSuccess(context, state.successMessage!);
+            }
+          },
+        ),
+        // 服务器数据加载完成后获取 ping
+        BlocListener<ServerBloc, ServerState>(
+          listenWhen: (previous, current) =>
+              previous.isLoadingServers &&
+              !current.isLoadingServers &&
+              current.servers.isNotEmpty,
+          listener: (context, state) => _scheduleDelayedPingFetch(),
+        ),
+        // 分类加载完成后自动选择第一个
+        BlocListener<ServerBloc, ServerState>(
+          listenWhen: (previous, current) =>
+              previous.isLoading &&
+              !current.isLoading &&
+              current.serverCategories.isNotEmpty &&
+              current.selectedCategory == null,
+          listener: (context, state) => _autoSelectFirstCategory(state),
+        ),
+      ],
+      child: Scaffold(
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF0F172A)
+            : const Color(0xFFF3F4F6),
+        body: PageLayout(
+          title: '服务器列表',
+          subtitle: '选择一个服务器开始游戏',
+          headerActions: _buildHeaderActions(),
+          child: _buildMainContent(),
         ),
       ),
     );
@@ -493,7 +502,6 @@ class _ServersDesktopState extends State<ServersDesktop> {
                                           categoryName: categoryName,
                                           serverAddress: address,
                                         ));
-                                        _showSuccessSnackBar('服务器 "$address" 已删除');
                                       }
                                     }
                                   : null,
@@ -788,7 +796,6 @@ class _ServersDesktopState extends State<ServersDesktop> {
                             context
                                 .read<ServerBloc>()
                                 .add(ServerDeleteCategory(categoryName));
-                            _showSuccessSnackBar('分类 "$categoryName" 已删除');
                           }
                         : null,
                   );
@@ -868,21 +875,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
     ).then((categoryName) {
       if (!mounted) return;
       if (categoryName != null && categoryName.isNotEmpty) {
-        final bloc = context.read<ServerBloc>();
-        bloc.add(ServerAddCategory(categoryName));
-        
-        // 监听错误状态
-        final subscription = bloc.stream.listen((state) {
-          if (!mounted) return;
-          if (state.error != null && state.error!.contains('已存在')) {
-            ToastUtils.showError(context, state.error!);
-          } else if (state.serverCategories.any((c) => c.modelName == categoryName && c.isCustom)) {
-            _showSuccessSnackBar('分类 "$categoryName" 已添加');
-          }
-        });
-        
-        // 2秒后取消监听
-        Future.delayed(const Duration(seconds: 2), () => subscription.cancel());
+        context.read<ServerBloc>().add(ServerAddCategory(categoryName));
       }
     });
   }
@@ -900,36 +893,11 @@ class _ServersDesktopState extends State<ServersDesktop> {
     ).then((serverAddress) {
       if (!mounted) return;
       if (serverAddress != null && serverAddress.isNotEmpty) {
-        final bloc = context.read<ServerBloc>();
-        bloc.add(ServerAddServer(
+        context.read<ServerBloc>().add(ServerAddServer(
           categoryName: categoryName,
           serverAddress: serverAddress,
         ));
-        
-        // 监听错误状态
-        final subscription = bloc.stream.listen((state) {
-          if (!mounted) return;
-          if (state.error != null && (state.error!.contains('已存在') || state.error!.contains('不存在'))) {
-            ToastUtils.showError(context, state.error!);
-          } else {
-            final category = state.serverCategories.firstWhere(
-              (c) => c.modelName == categoryName,
-              orElse: () => ServerCategory(modelName: null, serverList: []),
-            );
-            if (category.serverList.any((s) => (s.address ?? s.serverAddress) == serverAddress)) {
-              _showSuccessSnackBar('服务器 "$serverAddress" 已添加');
-            }
-          }
-        });
-        
-        // 2秒后取消监听
-        Future.delayed(const Duration(seconds: 2), () => subscription.cancel());
       }
     });
-  }
-
-  /// 显示成功提示
-  void _showSuccessSnackBar(String message) {
-    ToastUtils.showSuccess(context, message);
   }
 }
