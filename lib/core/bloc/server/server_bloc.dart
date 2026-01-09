@@ -675,7 +675,10 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       final apiCategories = state.serverCategories.where((c) => !c.isCustom).toList();
       final updatedCategories = [...customCategories, newCategory, ...apiCategories];
       
-      emit(state.copyWith(serverCategories: updatedCategories));
+      emit(state.copyWith(
+        serverCategories: updatedCategories,
+        successMessage: '分类 "${event.categoryName}" 已添加',
+      ));
       LogService.i('添加自定义分类成功: ${event.categoryName}');
     } catch (e) {
       LogService.e('添加自定义分类失败: $e', e);
@@ -698,7 +701,10 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       if (categoryIndex != -1) {
         final updatedCategories = List<ServerCategory>.from(state.serverCategories);
         updatedCategories[categoryIndex] = updatedCategory;
-        emit(state.copyWith(serverCategories: updatedCategories));
+        emit(state.copyWith(
+          serverCategories: updatedCategories,
+          successMessage: '服务器 "${event.serverAddress}" 已添加',
+        ));
         
         // 如果当前选中的是该分类，刷新服务器列表
         if (state.selectedCategory?.modelName == event.categoryName) {
@@ -736,7 +742,10 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           .where((c) => c.modelName != event.categoryName)
           .toList();
       
-      emit(state.copyWith(serverCategories: updatedCategories));
+      emit(state.copyWith(
+        serverCategories: updatedCategories,
+        successMessage: '分类 "${event.categoryName}" 已删除',
+      ));
       
       // 如果删除的是当前选中的分类，清除选中状态
       if (state.selectedCategory?.modelName == event.categoryName) {
@@ -772,7 +781,10 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       if (categoryIndex != -1) {
         final updatedCategories = List<ServerCategory>.from(state.serverCategories);
         updatedCategories[categoryIndex] = updatedCategory;
-        emit(state.copyWith(serverCategories: updatedCategories));
+        emit(state.copyWith(
+          serverCategories: updatedCategories,
+          successMessage: '服务器 "${event.serverAddress}" 已删除',
+        ));
         
         // 如果当前选中的是该分类，刷新服务器列表
         if (state.selectedCategory?.modelName == event.categoryName) {

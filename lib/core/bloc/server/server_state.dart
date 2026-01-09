@@ -5,6 +5,7 @@ class ServerState extends Equatable {
   final List<ServerCategory> serverCategories;
   final bool isLoading;
   final String? error;
+  final String? successMessage; // 操作成功消息
   final ServerCategory? selectedCategory;
   final List<ExtendedServerItem> servers;
   final bool isLoadingServers;
@@ -21,6 +22,7 @@ class ServerState extends Equatable {
     this.serverCategories = const [],
     this.isLoading = false,
     this.error,
+    this.successMessage,
     this.selectedCategory,
     this.servers = const [],
     this.isLoadingServers = false,
@@ -38,6 +40,7 @@ class ServerState extends Equatable {
     List<ServerCategory>? serverCategories,
     bool? isLoading,
     String? error,
+    String? successMessage,
     ServerCategory? selectedCategory,
     bool clearSelectedCategory = false,
     List<ExtendedServerItem>? servers,
@@ -55,6 +58,7 @@ class ServerState extends Equatable {
       serverCategories: serverCategories ?? this.serverCategories,
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      successMessage: successMessage,
       selectedCategory: clearSelectedCategory ? null : (selectedCategory ?? this.selectedCategory),
       servers: servers ?? this.servers,
       isLoadingServers: isLoadingServers ?? this.isLoadingServers,
@@ -76,7 +80,7 @@ class ServerState extends Equatable {
 
   @override
   List<Object?> get props => [
-    serverCategories, isLoading, error, selectedCategory, servers,
+    serverCategories, isLoading, error, successMessage, selectedCategory, servers,
     isLoadingServers, isPaused, categoryOnlineCounts, loadingCategories,
     isLoadingOnlineCounts, hasEverLoadedOnlineCounts, countdownResetKey,
     isCountdownActive, refreshingMaps,
