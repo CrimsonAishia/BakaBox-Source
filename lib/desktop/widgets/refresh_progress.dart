@@ -4,15 +4,11 @@ import 'package:flutter/material.dart';
 /// 紧凑版刷新进度指示器
 class CompactRefreshProgress extends StatefulWidget {
   final int refreshInterval;
-  final bool isRefreshing;
-  final int resetKey;
   final VoidCallback? onRefresh;
 
   const CompactRefreshProgress({
     super.key,
     this.refreshInterval = 15,
-    this.isRefreshing = false,
-    this.resetKey = 0,
     this.onRefresh,
   });
 
@@ -23,23 +19,21 @@ class CompactRefreshProgress extends StatefulWidget {
 class _CompactRefreshProgressState extends State<CompactRefreshProgress> {
   Timer? _timer;
   int _remaining = 0;
-  int _lastResetKey = 0;
+  bool _isRefreshing = false;  // 内部管理的刷新状态
 
   @override
   void initState() {
     super.initState();
     _remaining = widget.refreshInterval;
-    _lastResetKey = widget.resetKey;
     _startTimer();
   }
 
   @override
   void didUpdateWidget(CompactRefreshProgress oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // resetKey 变化时重置倒计时
-    if (widget.resetKey != _lastResetKey) {
-      _lastResetKey = widget.resetKey;
-      _reset();
+    // refreshInterval 变化时重新计算
+    if (widget.refreshInterval != oldWidget.refreshInterval) {
+      _remaining = widget.refreshInterval;
     }
   }
 
@@ -52,40 +46,50 @@ class _CompactRefreshProgressState extends State<CompactRefreshProgress> {
   void _startTimer() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted || widget.isRefreshing) return;
-      if (_remaining <= 0) return; // 已经触发刷新，等待 resetKey 变化
+      if (!mounted || _isRefreshing) return;  // 刷新中时跳过
       
       setState(() {
         _remaining--;
         if (_remaining <= 0) {
-          _remaining = 0;
-          widget.onRefresh?.call();
+          // 触发刷新，显示短暂的刷新动画
+          _triggerRefresh();
         }
       });
     });
   }
 
-  void _reset() {
-    setState(() => _remaining = widget.refreshInterval);
+  void _triggerRefresh() {
+    _isRefreshing = true;
+    _remaining = widget.refreshInterval;  // 立即重置
+    widget.onRefresh?.call();
+    
+    // 1秒后结束刷新动画
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+          _remaining = widget.refreshInterval - 1;  // 刷新动画占用1秒，所以从14开始
+        });
+      }
+    });
   }
 
   void _manualRefresh() {
-    if (widget.isRefreshing || _remaining <= 0) return;
-    setState(() => _remaining = 0);
-    widget.onRefresh?.call();
+    if (_isRefreshing) return;
+    _triggerRefresh();
+    setState(() {});  // 触发 UI 更新
   }
 
   @override
   Widget build(BuildContext context) {
-    final showRefreshing = widget.isRefreshing || _remaining <= 0;
-    final progress = showRefreshing ? 0.0 : _remaining / widget.refreshInterval;
+    final progress = _isRefreshing ? 0.0 : _remaining / widget.refreshInterval;
 
     return MouseRegion(
-      cursor: showRefreshing ? SystemMouseCursors.basic : SystemMouseCursors.click,
+      cursor: _isRefreshing ? SystemMouseCursors.basic : SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: showRefreshing ? null : _manualRefresh,
+        onTap: _isRefreshing ? null : _manualRefresh,
         child: Tooltip(
-          message: showRefreshing ? '刷新中...' : '点击立即刷新',
+          message: _isRefreshing ? '刷新中...' : '点击立即刷新',
           child: SizedBox(
             width: 42,
             height: 42,
@@ -106,7 +110,7 @@ class _CompactRefreshProgressState extends State<CompactRefreshProgress> {
                 SizedBox(
                   width: 38,
                   height: 38,
-                  child: showRefreshing
+                  child: _isRefreshing
                       ? const CircularProgressIndicator(
                           strokeWidth: 3,
                           valueColor: AlwaysStoppedAnimation(Color(0xFFF0A020)),
@@ -119,11 +123,11 @@ class _CompactRefreshProgressState extends State<CompactRefreshProgress> {
                 ),
                 // 文字
                 Text(
-                  showRefreshing ? '...' : '$_remaining',
+                  _isRefreshing ? '...' : '$_remaining',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: showRefreshing ? const Color(0xFFF0A020) : const Color(0xFF18A058),
+                    color: _isRefreshing ? const Color(0xFFF0A020) : const Color(0xFF18A058),
                   ),
                 ),
               ],

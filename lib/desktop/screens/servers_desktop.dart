@@ -310,14 +310,8 @@ class _ServersDesktopState extends State<ServersDesktop> {
           return const SizedBox.shrink();
         }
         
-        final categoryName = state.selectedCategory?.modelName ?? '';
-        final isRefreshing = state.servers.isNotEmpty && 
-            state.isCategoryLoading(categoryName);
-        
         return CompactRefreshProgress(
           refreshInterval: _kRefreshInterval,
-          isRefreshing: isRefreshing,
-          resetKey: state.countdownResetKey,
           onRefresh: () => _handleRefresh(state),
         );
       },

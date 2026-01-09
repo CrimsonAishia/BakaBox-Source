@@ -329,7 +329,6 @@ class _ServersMobileState extends State<ServersMobile>
       child: CountdownProgressBar(
         duration: 30,
         isActive: isActive,
-        resetKey: state.countdownResetKey,
         onComplete: () {
           // 使用 context.read 获取最新状态
           final currentState = context.read<ServerBloc>().state;
@@ -339,7 +338,6 @@ class _ServersMobileState extends State<ServersMobile>
           } else {
             // 在分类页面，刷新分类在线人数
             context.read<ServerBloc>().add(ServerUpdateCategoryOnlineCounts());
-            context.read<ServerBloc>().add(ServerResetCountdown());
           }
         },
       ),

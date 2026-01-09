@@ -127,10 +127,6 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   }
 
   Future<void> _onRefreshServers(ServerRefreshServers event, Emitter<ServerState> emit) async {
-    // 定时刷新只负责发送刷新指令，不管服务器数据状态
-    // 先重置倒计时，让 UI 立即开始新的倒计时周期
-    _resetCountdown(emit);
-    
     // 如果没有选中分类或没有服务器，直接返回
     if (state.selectedCategory == null || state.servers.isEmpty) {
       return;
@@ -147,11 +143,19 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     final loadingCategories = Set<String>.from(state.loadingCategories)..add(categoryName);
     emit(state.copyWith(loadingCategories: loadingCategories));
     
+    // 异步执行，10秒超时，但需要等待完成以保持 emit 有效
     try {
-      await _fetchServersInfo(requestId, emit);
+      await _fetchServersInfo(requestId, emit).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          LogService.d('服务器刷新超时（10秒），强制结束');
+        },
+      );
+    } catch (e) {
+      LogService.e('服务器刷新异常: $e', e);
     } finally {
-      // 无论成功失败，都要清除 loading 状态
-      if (!emit.isDone) {
+      // 无论成功、失败、超时，都要清除 loading 状态
+      if (!emit.isDone && requestId == _currentRequestId) {
         final updatedLoadingCategories = Set<String>.from(state.loadingCategories)..remove(categoryName);
         emit(state.copyWith(loadingCategories: updatedLoadingCategories));
       }
@@ -551,7 +555,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     try {
       final ip = parts[0];
       final port = int.parse(parts[1]);
-      return await SourceServerService.getServerInfo(ip, port, timeout: 5000);
+      return await SourceServerService.getServerInfo(ip, port, timeout: 10000);
     } catch (e) {
       LogService.e('获取服务器信息失败 ($address): $e', e);
       return null;

@@ -5,14 +5,12 @@ class CountdownProgressBar extends StatefulWidget {
   final int duration;
   final VoidCallback? onComplete;
   final bool isActive;
-  final int resetKey;
 
   const CountdownProgressBar({
     super.key,
     this.duration = 30,
     this.onComplete,
     this.isActive = true,
-    this.resetKey = 0,
   });
 
   @override
@@ -22,13 +20,12 @@ class CountdownProgressBar extends StatefulWidget {
 class _CountdownProgressBarState extends State<CountdownProgressBar> {
   Timer? _timer;
   int _remaining = 0;
-  int _lastResetKey = 0;
+  bool _isRefreshing = false;  // 内部管理的刷新状态
 
   @override
   void initState() {
     super.initState();
     _remaining = widget.duration;
-    _lastResetKey = widget.resetKey;
     if (widget.isActive) {
       _startTimer();
     }
@@ -38,17 +35,14 @@ class _CountdownProgressBarState extends State<CountdownProgressBar> {
   void didUpdateWidget(CountdownProgressBar oldWidget) {
     super.didUpdateWidget(oldWidget);
     
-    // resetKey 变化时重置倒计时
-    if (widget.resetKey != _lastResetKey) {
-      _lastResetKey = widget.resetKey;
-      _reset();
-      return; // resetKey 变化已处理，不需要再检查 isActive
+    // duration 变化时重新计算
+    if (widget.duration != oldWidget.duration) {
+      _remaining = widget.duration;
     }
     
-    // isActive 变化时启动或停止（不重置进度）
+    // isActive 变化时启动或停止
     if (widget.isActive != oldWidget.isActive) {
       if (widget.isActive) {
-        // 恢复时继续之前的进度，不重置
         _startTimer();
       } else {
         _timer?.cancel();
@@ -65,30 +59,36 @@ class _CountdownProgressBarState extends State<CountdownProgressBar> {
   void _startTimer() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted || !widget.isActive) return;
-      if (_remaining <= 0) return;
+      if (!mounted || !widget.isActive || _isRefreshing) return;
       
       setState(() {
         _remaining--;
         if (_remaining <= 0) {
-          _remaining = 0;
-          widget.onComplete?.call();
+          _triggerRefresh();
         }
       });
     });
   }
 
-  void _reset() {
-    setState(() => _remaining = widget.duration);
-    if (widget.isActive) {
-      _startTimer();
-    }
+  void _triggerRefresh() {
+    _isRefreshing = true;
+    _remaining = widget.duration;
+    widget.onComplete?.call();
+    
+    // 1秒后结束刷新动画
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+          _remaining = widget.duration - 1;
+        });
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final progress = _remaining / widget.duration;
-    final isRefreshing = _remaining <= 0;
+    final progress = _isRefreshing ? 0.0 : _remaining / widget.duration;
 
     return SizedBox(
       width: 60,
@@ -99,7 +99,7 @@ class _CountdownProgressBarState extends State<CountdownProgressBar> {
           SizedBox(
             width: 40,
             height: 40,
-            child: isRefreshing
+            child: _isRefreshing
                 ? const CircularProgressIndicator(
                     strokeWidth: 3,
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
@@ -114,11 +114,11 @@ class _CountdownProgressBarState extends State<CountdownProgressBar> {
                   ),
           ),
           Text(
-            isRefreshing ? '...' : '$_remaining',
+            _isRefreshing ? '...' : '$_remaining',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: _remaining <= 5 || isRefreshing ? Colors.orange : const Color(0xFF0080FF),
+              color: _remaining <= 5 || _isRefreshing ? Colors.orange : const Color(0xFF0080FF),
             ),
           ),
         ],
