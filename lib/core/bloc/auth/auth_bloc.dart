@@ -18,6 +18,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthBloc() : super(const AuthState()) {
     on<AuthCheckRequested>(_onCheckRequested);
     on<AuthLoginRequested>(_onLoginRequested);
+    on<AuthQQLoginRequested>(_onQQLoginRequested);
     on<AuthLogoutRequested>(_onLogoutRequested);
     on<AuthRefreshRequested>(_onRefreshRequested);
     on<AuthValidateSessionRequested>(_onValidateSessionRequested);
@@ -88,6 +89,42 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(state.copyWith(
         status: AuthStatus.error,
         errorMessage: '登录失败: $e',
+      ));
+    }
+  }
+
+  Future<void> _onQQLoginRequested(
+    AuthQQLoginRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(state.copyWith(status: AuthStatus.loading));
+
+    try {
+      final result = await _authService.loginWithCookies(event.cookies);
+      
+      if (result.success) {
+        emit(state.copyWith(
+          status: AuthStatus.authenticated,
+          userInfo: result.userInfo,
+          hasBackendToken: TokenService.instance.isTokenValid,
+        ));
+        
+        _startTimers();
+        
+        Future.delayed(const Duration(milliseconds: 500), () {
+          add(const AuthRefreshRequested());
+        });
+      } else {
+        emit(state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: result.message,
+        ));
+      }
+    } catch (e) {
+      LogService.e('QQ登录失败', e);
+      emit(state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'QQ登录失败: $e',
       ));
     }
   }

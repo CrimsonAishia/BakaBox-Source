@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -5,6 +6,7 @@ import '../../core/bloc/auth/auth_bloc.dart';
 import '../../core/bloc/auth/auth_event.dart';
 import '../../core/bloc/auth/auth_state.dart';
 import '../../core/utils/toast_utils.dart';
+import 'qq_login_dialog.dart';
 
 /// 绑定论坛账户对话框
 class LoginDialog extends StatefulWidget {
@@ -66,6 +68,11 @@ class _LoginDialogState extends State<LoginDialog> {
   void _openForgotPassword() {
     launchUrl(Uri.parse(
         'https://bbs.zombieden.cn/home.php?mod=spacecp&ac=credit&op=base'));
+  }
+
+  void _openQQLogin(BuildContext context) {
+    Navigator.of(context).pop();
+    QQLoginDialog.show(context);
   }
 
   @override
@@ -256,6 +263,42 @@ class _LoginDialogState extends State<LoginDialog> {
                         : const Text('绑定账户', style: TextStyle(fontSize: 16)),
                   ),
                 ),
+
+                // QQ 登录按钮（仅桌面端）
+                if (Platform.isWindows) ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(child: Divider(color: borderColor)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('或', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
+                      ),
+                      Expanded(child: Divider(color: borderColor)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 44,
+                    child: OutlinedButton.icon(
+                      onPressed: _isLoading ? null : () => _openQQLogin(context),
+                      icon: Image.asset(
+                        'assets/icons/qq.png',
+                        width: 20,
+                        height: 20,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.chat_bubble, size: 20),
+                      ),
+                      label: const Text('QQ 登录', style: TextStyle(fontSize: 16)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: textColor,
+                        side: BorderSide(color: borderColor),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

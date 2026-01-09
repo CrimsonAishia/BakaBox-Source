@@ -1,0 +1,304 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:webview_windows/webview_windows.dart' as windows_webview;
+import '../../core/bloc/auth/auth_bloc.dart';
+import '../../core/bloc/auth/auth_event.dart';
+import '../../core/utils/toast_utils.dart';
+import '../../core/utils/log_service.dart';
+
+/// QQ WebView 登录对话框
+class QQLoginDialog extends StatefulWidget {
+  const QQLoginDialog({super.key});
+
+  static Future<void> show(BuildContext context) {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const QQLoginDialog(),
+    );
+  }
+
+  @override
+  State<QQLoginDialog> createState() => _QQLoginDialogState();
+}
+
+class _QQLoginDialogState extends State<QQLoginDialog> {
+  windows_webview.WebviewController? _webViewController;
+  bool _isLoading = true;
+  Timer? _loadingTimer;
+  bool _isInitialized = false;
+  bool _loginDetected = false;
+  bool _isExtracting = false;
+
+  // 论坛的 QQ 登录入口
+  static const String _forumQQLoginUrl =
+      'https://bbs.zombieden.cn/connect.php?mod=login&op=init&referer=forum.php&statfrom=login_simple';
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeWebView();
+  }
+
+  @override
+  void dispose() {
+    _loadingTimer?.cancel();
+    _webViewController?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initializeWebView() async {
+    try {
+      _webViewController = windows_webview.WebviewController();
+      await _webViewController!.initialize();
+
+      await _webViewController!.setUserAgent(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      );
+
+      // 监听 URL 变化事件
+      _webViewController!.url.listen((url) {
+        if (!mounted || _loginDetected) return;
+        
+        // 检测是否从 QQ 登录页面跳转回论坛（包括 connect.php 回调）
+        // 排除初始的登录入口页面 (op=init)
+        if (url.contains('bbs.zombieden.cn') &&
+            !url.contains('op=init') &&
+            !url.contains('graph.qq.com') &&
+            !url.contains('ptlogin2.qq.com')) {
+          
+          _loginDetected = true;
+          setState(() => _isExtracting = true);
+          _checkLoginStatus();
+        }
+      });
+
+      setState(() {
+        _isInitialized = true;
+        _isLoading = true;
+      });
+
+      await _webViewController!.loadUrl(_forumQQLoginUrl);
+
+      // 2秒后关闭 loading
+      _loadingTimer = Timer(const Duration(seconds: 2), () {
+        if (mounted) setState(() => _isLoading = false);
+      });
+    } catch (e) {
+      LogService.e('WebView 初始化失败', e);
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ToastUtils.showError(context, 'WebView 初始化失败');
+        Navigator.of(context).pop();
+      }
+    }
+  }
+
+  /// 检查登录状态
+  Future<void> _checkLoginStatus() async {
+    if (!mounted || _webViewController == null) return;
+
+    try {
+      // 等待页面加载完成
+      await Future.delayed(const Duration(seconds: 1));
+
+      // 检查页面是否包含退出链接（已登录标志）
+      final checkScript = '''
+        (function() {
+          const html = document.documentElement.innerHTML;
+          const hasLogout = html.includes('action=logout');
+          return hasLogout;
+        })();
+      ''';
+
+      final result = await _webViewController!.executeScript(checkScript);
+      if (result != null && result.toString() == 'true') {
+        await _extractCookiesAndLogin();
+      } else {
+        setState(() => _isExtracting = false);
+        _loginDetected = false;
+      }
+    } catch (e) {
+      LogService.e('检查登录状态失败', e);
+      setState(() => _isExtracting = false);
+      _loginDetected = false;
+    }
+  }
+
+  /// 提取 Cookie 并完成登录
+  Future<void> _extractCookiesAndLogin() async {
+    if (!mounted || _webViewController == null) return;
+
+    try {
+      // 使用 CDP 获取所有 Cookie（包括 HttpOnly）
+      final cookieJson = await _webViewController!.getCookiesForUrl('https://bbs.zombieden.cn/');
+      
+      if (cookieJson == null || cookieJson.isEmpty) {
+        throw Exception('无法获取 Cookie');
+      }
+      
+      final cookieData = jsonDecode(cookieJson) as Map<String, dynamic>;
+      final cookies = cookieData['cookies'] as List<dynamic>? ?? [];
+      
+      final forumCookies = <Map<String, String>>[];
+      bool hasAuthCookie = false;
+      
+      for (final cookie in cookies) {
+        final cookieMap = cookie as Map<String, dynamic>;
+        final name = cookieMap['name'] as String? ?? '';
+        final value = cookieMap['value'] as String? ?? '';
+        
+        if (name.isNotEmpty && value.isNotEmpty) {
+          forumCookies.add({
+            'name': name,
+            'value': value,
+          });
+          
+          if (name == 'auth' || name.endsWith('_auth')) {
+            hasAuthCookie = true;
+          }
+        }
+      }
+      
+      if (forumCookies.isEmpty || !hasAuthCookie) {
+        throw Exception('Cookie 无效，缺少 auth Cookie');
+      }
+
+      // 调用 AuthBloc 完成登录（用户信息由 AuthService 从服务器获取）
+      if (mounted) {
+        context.read<AuthBloc>().add(AuthQQLoginRequested(cookies: forumCookies));
+        ToastUtils.showSuccess(context, 'QQ 登录成功');
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      LogService.e('提取 Cookie 失败', e);
+      if (mounted) {
+        ToastUtils.showError(context, '获取登录信息失败: $e');
+        setState(() => _isExtracting = false);
+        _loginDetected = false;
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+    final secondaryTextColor = isDark ? Colors.white54 : const Color(0xFF6B7280);
+
+    return Dialog(
+      backgroundColor: bgColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Container(
+        width: 480,
+        height: 600,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // 标题栏
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'QQ 登录',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.close, color: secondaryTextColor),
+                  onPressed: () => Navigator.of(context).pop(),
+                  splashRadius: 20,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            // WebView 区域
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Stack(
+                  children: [
+                    if (_isInitialized && _webViewController != null)
+                      windows_webview.Webview(_webViewController!),
+
+                    // Loading 遮罩
+                    if (_isLoading || !_isInitialized)
+                      Container(
+                        color: bgColor,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const CircularProgressIndicator(
+                                color: Color(0xFF0080FF),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                '正在加载...',
+                                style: TextStyle(color: secondaryTextColor),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                    // 提取 Cookie 遮罩（完全不透明，遮住 WebView）
+                    if (_isExtracting)
+                      Container(
+                        color: bgColor,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const CircularProgressIndicator(
+                                color: Color(0xFF0080FF),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                '登录成功，正在获取信息...',
+                                style: TextStyle(color: textColor),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // 底部提示
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, color: Color(0xFF0080FF), size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '使用 QQ 账号登录，登录成功后将自动绑定',
+                      style: TextStyle(color: secondaryTextColor, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

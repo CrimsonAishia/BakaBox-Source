@@ -45,3 +45,15 @@ class AuthValidateSessionRequested extends AuthEvent {
 class AuthSessionExpired extends AuthEvent {
   const AuthSessionExpired();
 }
+
+/// QQ 登录请求（通过 Cookie）
+class AuthQQLoginRequested extends AuthEvent {
+  final List<Map<String, String>> cookies;
+
+  const AuthQQLoginRequested({
+    required this.cookies,
+  });
+
+  @override
+  List<Object?> get props => [cookies];
+}
