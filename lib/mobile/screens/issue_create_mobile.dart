@@ -72,7 +72,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
         title: _titleController.text.trim(),
         content: content,
         images: _imageUrls,
-        deviceInfo: _selectedType == IssueType.bug ? _collectDeviceInfo() : null,
+        deviceInfo: _collectDeviceInfo(),
       );
 
       final issue = await IssueApi().createIssue(request);

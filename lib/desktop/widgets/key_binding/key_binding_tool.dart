@@ -924,7 +924,7 @@ class _PublishViewState extends State<_PublishView> {
   final _nameCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _scriptCtrl = TextEditingController();
-  String? _category;
+  int? _categoryId;
   bool _needsKey = false;
 
   /// 发布所需的最低积分
@@ -1194,16 +1194,16 @@ class _PublishViewState extends State<_PublishView> {
     );
   }
 
-  Widget _buildCategoryChips(List<String> categories) {
+  Widget _buildCategoryChips(List<KeyConfigCategory> categories) {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: categories.map((c) {
-        final sel = _category == c;
+        final sel = _categoryId == c.id;
         return _HoverChip(
-          label: c,
+          label: c.name,
           selected: sel,
-          onTap: () => setState(() => _category = c),
+          onTap: () => setState(() => _categoryId = c.id),
         );
       }).toList(),
     );
@@ -1324,7 +1324,7 @@ class _PublishViewState extends State<_PublishView> {
     final hasName = _nameCtrl.text.trim().isNotEmpty;
     final hasDesc = _descCtrl.text.trim().isNotEmpty;
     final hasScript = _scriptCtrl.text.trim().isNotEmpty;
-    final hasCategory = _category != null;
+    final hasCategory = _categoryId != null;
     
     // 生成提示信息
     String? hint;
@@ -1474,14 +1474,14 @@ class _PublishViewState extends State<_PublishView> {
     _nameCtrl.clear();
     _descCtrl.clear();
     _scriptCtrl.clear();
-    setState(() { _category = null; _needsKey = false; });
+    setState(() { _categoryId = null; _needsKey = false; });
   }
 
   void _submit() {
     // 再次检查积分（防止状态变化）
     if (!_checkCredits()) return;
     
-    if (_formKey.currentState?.validate() == true && _category != null) {
+    if (_formKey.currentState?.validate() == true && _categoryId != null) {
       // 生成 configId：使用时间戳 + 随机数确保唯一性
       final configId = 'cfg_${DateTime.now().millisecondsSinceEpoch}_${_nameCtrl.text.trim().hashCode.abs()}';
       
@@ -1489,7 +1489,7 @@ class _PublishViewState extends State<_PublishView> {
         configId: configId,
         name: _nameCtrl.text.trim(),
         description: _descCtrl.text.trim(),
-        category: _category!,
+        categoryId: _categoryId!,
         config: _scriptCtrl.text,
         needsKeybind: _needsKey,
       )));
@@ -1516,7 +1516,7 @@ class _EditViewState extends State<_EditView> {
   late TextEditingController _nameCtrl;
   late TextEditingController _descCtrl;
   late TextEditingController _scriptCtrl;
-  String? _category;
+  int? _categoryId;
   late bool _needsKey;
 
   @override
@@ -1525,7 +1525,7 @@ class _EditViewState extends State<_EditView> {
     _nameCtrl = TextEditingController(text: widget.config.name);
     _descCtrl = TextEditingController(text: widget.config.description);
     _scriptCtrl = TextEditingController(text: widget.config.config);
-    _category = widget.config.category;
+    _categoryId = widget.config.categoryId;
     _needsKey = widget.config.needsKeybind;
   }
 
@@ -1717,16 +1717,16 @@ class _EditViewState extends State<_EditView> {
     );
   }
 
-  Widget _buildCategoryChips(List<String> categories) {
+  Widget _buildCategoryChips(List<KeyConfigCategory> categories) {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: categories.map((c) {
-        final sel = _category == c;
+        final sel = _categoryId == c.id;
         return _HoverChip(
-          label: c,
+          label: c.name,
           selected: sel,
-          onTap: () => setState(() => _category = c),
+          onTap: () => setState(() => _categoryId = c.id),
         );
       }).toList(),
     );
@@ -1847,7 +1847,7 @@ class _EditViewState extends State<_EditView> {
     final hasName = _nameCtrl.text.trim().isNotEmpty;
     final hasDesc = _descCtrl.text.trim().isNotEmpty;
     final hasScript = _scriptCtrl.text.trim().isNotEmpty;
-    final hasCategory = _category != null;
+    final hasCategory = _categoryId != null;
     
     // 生成提示信息
     String? hint;
@@ -2009,14 +2009,14 @@ class _EditViewState extends State<_EditView> {
   }
 
   void _submit() {
-    if (_formKey.currentState?.validate() == true && _category != null) {
+    if (_formKey.currentState?.validate() == true && _categoryId != null) {
       context.read<KeyBindingBloc>().add(KeyBindingUpdateConfig(
         id: widget.config.id,
         request: KeyConfigCreateRequest(
           configId: widget.config.configId,
           name: _nameCtrl.text.trim(),
           description: _descCtrl.text.trim(),
-          category: _category!,
+          categoryId: _categoryId!,
           config: _scriptCtrl.text,
           needsKeybind: _needsKey,
         ),
@@ -2296,16 +2296,23 @@ class _CategoryDropdownState extends State<_CategoryDropdown> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return BlocBuilder<KeyBindingBloc, KeyBindingState>(
       builder: (context, state) {
+        // 获取当前选中分类的名称
+        final selectedCategory = state.categories.cast<KeyConfigCategory?>().firstWhere(
+          (c) => c?.id == state.categoryFilter,
+          orElse: () => null,
+        );
+        final displayName = selectedCategory?.name ?? '全部';
+        
         return MouseRegion(
           onEnter: (_) => setState(() => _hovered = true),
           onExit: (_) => setState(() => _hovered = false),
           cursor: SystemMouseCursors.click,
-          child: PopupMenuButton<String?>(
+          child: PopupMenuButton<int?>(
             initialValue: state.categoryFilter,
             onSelected: (v) => context.read<KeyBindingBloc>().add(KeyBindingSetCategoryFilter(v)),
             itemBuilder: (context) => [
               const PopupMenuItem(value: null, child: Text('全部')),
-              ...state.categories.map((c) => PopupMenuItem(value: c, child: Text(c))),
+              ...state.categories.map((c) => PopupMenuItem(value: c.id, child: Text(c.name))),
             ],
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
@@ -2319,7 +2326,7 @@ class _CategoryDropdownState extends State<_CategoryDropdown> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(state.categoryFilter ?? '全部', style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.grey[700])),
+                  Text(displayName, style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.grey[700])),
                   const SizedBox(width: 4),
                   Icon(Icons.arrow_drop_down, size: 18, color: isDark ? Colors.white54 : Colors.grey[600]),
                 ],

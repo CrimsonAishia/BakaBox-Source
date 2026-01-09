@@ -7,7 +7,7 @@ class KeyBindingState extends Equatable {
   final List<KeyConfig> configs;
   
   /// 分类列表
-  final List<String> categories;
+  final List<KeyConfigCategory> categories;
   
   /// 是否正在加载配置列表
   final bool isLoading;
@@ -28,7 +28,7 @@ class KeyBindingState extends Equatable {
   final List<ConfigBlock> appliedConfigs;
   
   /// 分类筛选
-  final String? categoryFilter;
+  final int? categoryFilter;
   
   /// 搜索关键词
   final String? searchKeyword;
@@ -75,8 +75,8 @@ class KeyBindingState extends Equatable {
     var result = configs;
     
     // 分类筛选
-    if (categoryFilter != null && categoryFilter!.isNotEmpty) {
-      result = result.where((c) => c.category == categoryFilter).toList();
+    if (categoryFilter != null) {
+      result = result.where((c) => c.categoryId == categoryFilter).toList();
     }
     
     // 搜索关键词筛选
@@ -112,7 +112,7 @@ class KeyBindingState extends Equatable {
 
   KeyBindingState copyWith({
     List<KeyConfig>? configs,
-    List<String>? categories,
+    List<KeyConfigCategory>? categories,
     bool? isLoading,
     String? error,
     bool clearError = false,
@@ -122,7 +122,7 @@ class KeyBindingState extends Equatable {
     String? autoexecContent,
     bool clearAutoexecContent = false,
     List<ConfigBlock>? appliedConfigs,
-    String? categoryFilter,
+    int? categoryFilter,
     bool clearCategoryFilter = false,
     String? searchKeyword,
     bool clearSearchKeyword = false,

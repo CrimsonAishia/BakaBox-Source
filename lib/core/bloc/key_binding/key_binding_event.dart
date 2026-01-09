@@ -108,10 +108,10 @@ class KeyBindingUpdateConfig extends KeyBindingEvent {
 
 /// 设置分类筛选
 class KeyBindingSetCategoryFilter extends KeyBindingEvent {
-  final String? category;
-  const KeyBindingSetCategoryFilter(this.category);
+  final int? categoryId;
+  const KeyBindingSetCategoryFilter(this.categoryId);
   @override
-  List<Object?> get props => [category];
+  List<Object?> get props => [categoryId];
 }
 
 /// 设置搜索关键词
