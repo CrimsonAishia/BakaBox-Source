@@ -1380,7 +1380,7 @@ class _FloatingActionPanelState extends State<_FloatingActionPanel>
     return [
       _FloatingButtonConfig(
         icon: MdiIcons.pencilOutline,
-        label: '编辑',
+        label: '编辑地图',
         color: const Color(0xFF8B5CF6),
         isDisabled: isDisabled,
         onTap: isDisabled ? null : widget.onMapEdit,
