@@ -35,13 +35,16 @@ class AnalyticsService {
       final arch = _getDeviceArchitecture();
       final platform = PlatformUtils.platformName;
       
+      // 从编译时环境变量获取构建日期
+      const buildDate = String.fromEnvironment('BUILD_DATE', defaultValue: 'dev');
+      
       final data = {
         'event_type': 'app_startup',
         'timestamp': DateTime.now().millisecondsSinceEpoch ~/ 1000,
         'client_id': 'bakabox_${platform}_${arch}_${packageInfo.version}',
         
         'app_version': packageInfo.version,
-        'build_date': packageInfo.buildNumber,
+        'build_date': buildDate,
         'build_platform': '$platform/$arch',
         
         'os_platform': platform,
