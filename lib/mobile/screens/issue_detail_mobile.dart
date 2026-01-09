@@ -3,10 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import '../../core/core.dart';
-import '../../core/services/quill_markdown_converter.dart';
+import '../../core/services/quill_delta_codec.dart';
 
 /// Issue 详情移动端页面
 class IssueDetailMobile extends StatefulWidget {
@@ -37,11 +36,11 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   }
 
   void _submitComment() {
-    final content = QuillMarkdownConverter.toMarkdown(_commentController.document).trim();
-    if (content.isEmpty) {
+    if (_commentController.document.toPlainText().trim().isEmpty) {
       ToastUtils.showWarning(context, '请输入评论内容');
       return;
     }
+    final content = QuillDeltaCodec.encode(_commentController.document);
     final authState = context.read<AuthBloc>().state;
     if (!authState.isAuthenticated) {
       ToastUtils.showWarning(context, '请先登录');
@@ -477,21 +476,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           ),
           const SizedBox(height: 16),
           // 内容区域
-          MarkdownBody(
-            data: issue.content,
-            styleSheet: MarkdownStyleSheet(
-              p: const TextStyle(fontSize: 15, height: 1.6),
-              code: TextStyle(
-                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                color: const Color(0xFFDC2626),
-                fontFamily: 'monospace',
-              ),
-              codeblockDecoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Theme.of(context).dividerColor),
-              ),
-            ),
+          RichTextViewer(
+            content: issue.content,
+            textStyle: const TextStyle(fontSize: 15, height: 1.6),
           ),
           // 图片网格
           if (issue.images.isNotEmpty) ...[
@@ -940,22 +927,10 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 ),
                 const SizedBox(height: 8),
                 // 评论内容
-                MarkdownBody(
-                  data: comment.content,
-                  styleSheet: MarkdownStyleSheet(
-                    p: const TextStyle(fontSize: 14, height: 1.5),
-                    code: TextStyle(
-                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      color: const Color(0xFFDC2626),
-                      fontFamily: 'monospace',
-                      fontSize: 13,
-                    ),
-                    codeblockDecoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: Theme.of(context).dividerColor),
-                    ),
-                  ),
+                RichTextViewer(
+                  content: comment.content,
+                  textStyle: const TextStyle(fontSize: 14, height: 1.5),
+                  compact: true,
                 ),
                 // 评论图片
                 if (comment.images.isNotEmpty) ...[

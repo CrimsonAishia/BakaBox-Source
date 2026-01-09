@@ -2,13 +2,10 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import '../../core/core.dart';
-import '../../core/widgets/rich_text_editor.dart';
-import '../../core/widgets/clickable_image.dart';
-import '../../core/services/quill_markdown_converter.dart';
+import '../../core/services/quill_delta_codec.dart';
 import '../widgets/page_layout.dart';
 
 /// Issue 页面视图类型
@@ -670,8 +667,8 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
   }
 
   void _submitComment() {
-    final content = QuillMarkdownConverter.toMarkdown(_commentController.document).trim();
-    if (content.isEmpty) { ToastUtils.showWarning(context, '请输入评论内容'); return; }
+    final content = QuillDeltaCodec.encode(_commentController.document);
+    if (_commentController.document.toPlainText().trim().isEmpty) { ToastUtils.showWarning(context, '请输入评论内容'); return; }
     final authState = context.read<AuthBloc>().state;
     if (!authState.isAuthenticated) { ToastUtils.showWarning(context, '请先登录后再评论'); return; }
     // 设置当前用户信息用于构建评论
@@ -737,21 +734,9 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
         const SizedBox(width: 8), Text('创建于 ${Formatters.formatDateTime(issue.createdAt.toIso8601String())}', style: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF9CA3AF), fontSize: 13)),
       ]),
       const SizedBox(height: 20), Divider(height: 1, color: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6)), const SizedBox(height: 20),
-      MarkdownBody(
-        data: issue.content,
-        styleSheet: MarkdownStyleSheet(
-          p: TextStyle(fontSize: 15, height: 1.7, color: isDark ? Colors.white70 : const Color(0xFF374151)),
-          code: TextStyle(
-            backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
-            color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFDC2626),
-            fontFamily: 'monospace',
-          ),
-          codeblockDecoration: BoxDecoration(
-            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB)),
-          ),
-        ),
+      RichTextViewer(
+        content: issue.content,
+        textStyle: TextStyle(fontSize: 15, height: 1.7, color: isDark ? Colors.white70 : const Color(0xFF374151)),
       ),
       if (issue.images.isNotEmpty) ...[const SizedBox(height: 16), ImageGrid(imageUrls: issue.images, imageWidth: 200, imageHeight: 150, spacing: 12)],
       if (issue.deviceInfo != null) ...[const SizedBox(height: 16), Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB), borderRadius: BorderRadius.circular(8)), child: Row(children: [Icon(MdiIcons.informationOutline, size: 16, color: isDark ? Colors.white38 : const Color(0xFF9CA3AF)), const SizedBox(width: 8), Text('${issue.deviceInfo!.appVersion} · ${issue.deviceInfo!.platform} · ${issue.deviceInfo!.osVersion}', style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF6B7280), fontSize: 13))]))],
@@ -835,22 +820,10 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
           const SizedBox(width: 8), Text(Formatters.formatRelativeTime(comment.createdAt), style: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF9CA3AF), fontSize: 12)),
         ]),
         const SizedBox(height: 8), 
-        MarkdownBody(
-          data: comment.content,
-          styleSheet: MarkdownStyleSheet(
-            p: TextStyle(fontSize: 14, height: 1.6, color: isDark ? Colors.white70 : const Color(0xFF374151)),
-            code: TextStyle(
-              backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
-              color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFDC2626),
-              fontFamily: 'monospace',
-              fontSize: 13,
-            ),
-            codeblockDecoration: BoxDecoration(
-              color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB)),
-            ),
-          ),
+        RichTextViewer(
+          content: comment.content,
+          textStyle: TextStyle(fontSize: 14, height: 1.6, color: isDark ? Colors.white70 : const Color(0xFF374151)),
+          compact: true,
         ),
         if (comment.images.isNotEmpty) ...[const SizedBox(height: 12), ImageGrid(imageUrls: comment.images, imageWidth: 120, imageHeight: 90, spacing: 8, borderRadius: 6)],
       ])),
@@ -920,19 +893,21 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
     if (!_formKey.currentState!.validate()) return;
     
     // 验证内容长度
-    final content = QuillMarkdownConverter.toMarkdown(_contentController.document).trim();
-    if (content.isEmpty) {
+    final plainText = _contentController.document.toPlainText().trim();
+    if (plainText.isEmpty) {
       ToastUtils.showWarning(context, '请输入详细描述');
       return;
     }
-    if (content.length < 10) {
+    if (plainText.length < 10) {
       ToastUtils.showWarning(context, '详细描述至少 10 个字符');
       return;
     }
-    if (content.length > 5000) {
+    if (plainText.length > 5000) {
       ToastUtils.showWarning(context, '详细描述最多 5000 个字符');
       return;
     }
+    
+    final content = QuillDeltaCodec.encode(_contentController.document);
     
     final authState = context.read<AuthBloc>().state;
     if (!authState.isAuthenticated) { ToastUtils.showWarning(context, '请先登录'); return; }

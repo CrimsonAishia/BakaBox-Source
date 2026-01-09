@@ -72,3 +72,4 @@ export 'widgets/rich_text_editor.dart';
 export 'widgets/image_viewer_dialog.dart';
 export 'widgets/clickable_image.dart';
 export 'widgets/map_background.dart';
+export 'widgets/rich_text_viewer.dart';
