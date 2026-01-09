@@ -11,6 +11,24 @@ class AnalyticsService {
   
   AnalyticsService._internal();
 
+  /// 应用启动时间，在 main() 中设置
+  DateTime? _appStartTime;
+  
+  /// 是否已上报启动统计
+  bool _startupReported = false;
+
+  /// 设置应用启动时间（在 main() 中调用）
+  void setStartTime(DateTime time) {
+    _appStartTime = time;
+  }
+
+  /// 上报启动统计（在首页首帧渲染完成后调用）
+  Future<void> reportStartupIfNeeded() async {
+    if (_startupReported || _appStartTime == null) return;
+    _startupReported = true;
+    await recordAppStartup(_appStartTime!);
+  }
+
   Future<void> recordAppStartup(DateTime startTime) async {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
