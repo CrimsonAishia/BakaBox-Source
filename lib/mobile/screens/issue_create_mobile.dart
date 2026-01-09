@@ -6,7 +6,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'dart:io';
 import '../../core/core.dart';
-import '../../core/services/quill_markdown_converter.dart';
+import '../../core/services/quill_delta_codec.dart';
 
 /// 创建 Issue 移动端页面
 class IssueCreateMobile extends StatefulWidget {
@@ -44,19 +44,21 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
     if (!_formKey.currentState!.validate()) return;
 
     // 验证内容长度
-    final content = QuillMarkdownConverter.toMarkdown(_contentController.document).trim();
-    if (content.isEmpty) {
+    final plainText = _contentController.document.toPlainText().trim();
+    if (plainText.isEmpty) {
       ToastUtils.showWarning(context, '请输入详细描述');
       return;
     }
-    if (content.length < 10) {
+    if (plainText.length < 10) {
       ToastUtils.showWarning(context, '详细描述至少 10 个字符');
       return;
     }
-    if (content.length > 5000) {
+    if (plainText.length > 5000) {
       ToastUtils.showWarning(context, '详细描述最多 5000 个字符');
       return;
     }
+
+    final content = QuillDeltaCodec.encode(_contentController.document);
 
     final authState = context.read<AuthBloc>().state;
     if (!authState.isAuthenticated) {
