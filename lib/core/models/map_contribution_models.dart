@@ -86,7 +86,14 @@ class MapContribution extends Equatable {
   final String mapName;
   final ContributionType type;
   final String content;
+  /// 净票数（用于排序）
   final int voteCount;
+  /// 点赞数
+  @JsonKey(defaultValue: 0)
+  final int upCount;
+  /// 点踩数
+  @JsonKey(defaultValue: 0)
+  final int downCount;
   /// 贡献者信息，系统数据时为 null
   final ContributorInfo? contributor;
   final bool hasVoted;
@@ -116,6 +123,8 @@ class MapContribution extends Equatable {
     required this.type,
     required this.content,
     required this.voteCount,
+    this.upCount = 0,
+    this.downCount = 0,
     this.contributor,
     required this.hasVoted,
     this.voteType,
@@ -174,6 +183,8 @@ class MapContribution extends Equatable {
     ContributionType? type,
     String? content,
     int? voteCount,
+    int? upCount,
+    int? downCount,
     ContributorInfo? contributor,
     bool clearContributor = false,
     bool? hasVoted,
@@ -194,6 +205,8 @@ class MapContribution extends Equatable {
       type: type ?? this.type,
       content: content ?? this.content,
       voteCount: voteCount ?? this.voteCount,
+      upCount: upCount ?? this.upCount,
+      downCount: downCount ?? this.downCount,
       contributor: clearContributor ? null : (contributor ?? this.contributor),
       hasVoted: hasVoted ?? this.hasVoted,
       voteType: clearVoteType ? null : (voteType ?? this.voteType),
@@ -209,7 +222,7 @@ class MapContribution extends Equatable {
 
   @override
   List<Object?> get props => [
-    id, mapName, type, content, voteCount, contributor,
+    id, mapName, type, content, voteCount, upCount, downCount, contributor,
     hasVoted, voteType, isOwner, isSystem, auditStatus, auditRemark, auditAt,
     createdAt, updatedAt,
   ];
@@ -268,12 +281,20 @@ class MapContributionSummary extends Equatable {
 class ContributionVoteResponse extends Equatable {
   final bool success;
   final int newVoteCount;
+  /// 点赞数
+  @JsonKey(defaultValue: 0)
+  final int upCount;
+  /// 点踩数
+  @JsonKey(defaultValue: 0)
+  final int downCount;
   final bool hasVoted;
   final VoteType? voteType;
 
   const ContributionVoteResponse({
     required this.success,
     required this.newVoteCount,
+    this.upCount = 0,
+    this.downCount = 0,
     required this.hasVoted,
     this.voteType,
   });
@@ -283,5 +304,5 @@ class ContributionVoteResponse extends Equatable {
   Map<String, dynamic> toJson() => _$ContributionVoteResponseToJson(this);
 
   @override
-  List<Object?> get props => [success, newVoteCount, hasVoted, voteType];
+  List<Object?> get props => [success, newVoteCount, upCount, downCount, hasVoted, voteType];
 }

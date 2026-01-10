@@ -28,6 +28,8 @@ MapContribution _$MapContributionFromJson(
   type: $enumDecode(_$ContributionTypeEnumMap, json['type']),
   content: json['content'] as String,
   voteCount: (json['voteCount'] as num).toInt(),
+  upCount: (json['upCount'] as num?)?.toInt() ?? 0,
+  downCount: (json['downCount'] as num?)?.toInt() ?? 0,
   contributor: json['contributor'] == null
       ? null
       : ContributorInfo.fromJson(json['contributor'] as Map<String, dynamic>),
@@ -53,6 +55,8 @@ Map<String, dynamic> _$MapContributionToJson(MapContribution instance) =>
       'type': _$ContributionTypeEnumMap[instance.type]!,
       'content': instance.content,
       'voteCount': instance.voteCount,
+      'upCount': instance.upCount,
+      'downCount': instance.downCount,
       'contributor': instance.contributor,
       'hasVoted': instance.hasVoted,
       'voteType': _$VoteTypeEnumMap[instance.voteType],
@@ -101,6 +105,8 @@ ContributionVoteResponse _$ContributionVoteResponseFromJson(
 ) => ContributionVoteResponse(
   success: json['success'] as bool,
   newVoteCount: (json['newVoteCount'] as num).toInt(),
+  upCount: (json['upCount'] as num?)?.toInt() ?? 0,
+  downCount: (json['downCount'] as num?)?.toInt() ?? 0,
   hasVoted: json['hasVoted'] as bool,
   voteType: $enumDecodeNullable(_$VoteTypeEnumMap, json['voteType']),
 );
@@ -110,6 +116,8 @@ Map<String, dynamic> _$ContributionVoteResponseToJson(
 ) => <String, dynamic>{
   'success': instance.success,
   'newVoteCount': instance.newVoteCount,
+  'upCount': instance.upCount,
+  'downCount': instance.downCount,
   'hasVoted': instance.hasVoted,
   'voteType': _$VoteTypeEnumMap[instance.voteType],
 };

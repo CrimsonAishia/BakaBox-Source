@@ -1164,7 +1164,8 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   /// Requirements: 3.1, 4.2, 5.2
   /// 系统数据（isSystem=true）不可投票
   Widget _buildVoteButton(MapContribution contribution, bool isDark) {
-    final voteCount = contribution.voteCount;
+    final upCount = contribution.upCount;
+    final downCount = contribution.downCount;
     final voteType = contribution.voteType;
     final isOwner = contribution.isOwner;
     final isSystem = contribution.isSystem;
@@ -1187,9 +1188,24 @@ class _MapContributionDialogState extends State<MapContributionDialog>
               size: 14,
               color: secondaryColor.withValues(alpha: 0.6),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 4),
             Text(
-              '$voteCount',
+              '$upCount',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: secondaryColor,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              MdiIcons.thumbDown,
+              size: 14,
+              color: secondaryColor.withValues(alpha: 0.6),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '$downCount',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -1208,29 +1224,18 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         _buildSingleVoteButton(
           icon: voteType == VoteType.up ? MdiIcons.thumbUp : MdiIcons.thumbUpOutline,
           isActive: voteType == VoteType.up,
+          count: upCount,
           onTap: () => _handleVote(contribution, VoteType.up),
           isDark: isDark,
           bgColor: bgColor,
           secondaryColor: secondaryColor,
         ),
-        // 票数显示
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Text(
-            '$voteCount',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: voteCount > 0
-                  ? const Color(0xFF0080FF)
-                  : (voteCount < 0 ? const Color(0xFFEF4444) : secondaryColor),
-            ),
-          ),
-        ),
+        const SizedBox(width: 8),
         // 反对按钮（自己的贡献不能踩）
         _buildSingleVoteButton(
           icon: voteType == VoteType.down ? MdiIcons.thumbDown : MdiIcons.thumbDownOutline,
           isActive: voteType == VoteType.down,
+          count: downCount,
           onTap: isOwner ? null : () => _handleVote(contribution, VoteType.down),
           isDark: isDark,
           bgColor: bgColor,
@@ -1246,6 +1251,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   Widget _buildSingleVoteButton({
     required IconData icon,
     required bool isActive,
+    required int count,
     required VoidCallback? onTap,
     required bool isDark,
     required Color bgColor,
@@ -1262,13 +1268,29 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         onTap: disabled ? null : onTap,
         borderRadius: BorderRadius.circular(6),
         child: Container(
-          padding: const EdgeInsets.all(6),
-          child: Icon(
-            icon,
-            size: 16,
-            color: disabled
-                ? secondaryColor.withValues(alpha: 0.3)
-                : (isActive ? Colors.white : secondaryColor),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: disabled
+                    ? secondaryColor.withValues(alpha: 0.3)
+                    : (isActive ? Colors.white : secondaryColor),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '$count',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: disabled
+                      ? secondaryColor.withValues(alpha: 0.3)
+                      : (isActive ? Colors.white : secondaryColor),
+                ),
+              ),
+            ],
           ),
         ),
       ),
