@@ -1067,6 +1067,15 @@ class _PublishViewState extends State<_PublishView> {
     
     return BlocBuilder<KeyBindingBloc, KeyBindingState>(
       builder: (context, state) {
+        // 默认选择第一个分类
+        if (_categoryId == null && state.categories.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && _categoryId == null) {
+              setState(() => _categoryId = state.categories.first.id);
+            }
+          });
+        }
+        
         final placeholders = KeyPlaceholderParser.parse(_scriptCtrl.text);
         
         return Column(
@@ -1342,30 +1351,49 @@ class _PublishViewState extends State<_PublishView> {
       hint = '按键绑定类型需要包含占位符';
     }
     
+    final isError = !hasEnoughCredits;
+    final hintColor = isError ? const Color(0xFFef4444) : const Color(0xFFf59e0b);
+    
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(color: isDark ? const Color(0xFF334155) : Colors.grey[50], border: Border(top: BorderSide(color: isDark ? const Color(0xFF475569) : Colors.grey[200]!))),
       child: Row(
         children: [
           if (hint != null)
-            Row(
-              children: [
-                Icon(
-                  !hasEnoughCredits ? MdiIcons.alertCircleOutline : Icons.info_outline, 
-                  size: 14, 
-                  color: !hasEnoughCredits ? const Color(0xFFef4444) : (isDark ? Colors.white38 : Colors.grey[500]),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: hintColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: hintColor.withValues(alpha: 0.3)),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  hint, 
-                  style: TextStyle(
-                    fontSize: 11, 
-                    color: !hasEnoughCredits ? const Color(0xFFef4444) : (isDark ? Colors.white38 : Colors.grey[500]),
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isError ? MdiIcons.alertCircleOutline : MdiIcons.informationOutline,
+                      size: 16,
+                      color: hintColor,
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        hint,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: hintColor,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          const Spacer(),
+              ),
+            )
+          else
+            const Spacer(),
+          const SizedBox(width: 12),
           TextButton(onPressed: _clear, child: const Text('清空', style: TextStyle(fontSize: 12))),
           const SizedBox(width: 8),
           FilledButton.icon(
