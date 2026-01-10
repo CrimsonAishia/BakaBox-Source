@@ -135,16 +135,24 @@ class NotificationWindowService {
   static const double normalCardHeight = 72.0;
   static const double updateLogCardHeight = 110.0;
   static const double cardSpacing = 8.0;
-  static const double topPadding = 40.0;
+  static const double topPadding = 5.0;
   static const int maxVisibleNotifications = 5;
 
   /// 获取指定位置之前所有通知的总高度
-  double _calculateYOffset(int targetPosition) {
-    double offset = topPadding;
+  /// [isWarmup] 是否是热身通知，热身通知从 topPadding 开始，其他通知需要跳过热身区域
+  double _calculateYOffset(int targetPosition, {bool isWarmup = false}) {
+    // 热身通知固定从 topPadding 开始
+    if (isWarmup) return topPadding;
+    
+    // 其他通知从热身区域下方开始（topPadding + 热身卡片高度 + 间距）
+    double offset = topPadding + normalCardHeight + cardSpacing;
+    
     final sortedWindows = _activeWindows.values.toList()
       ..sort((a, b) => a.position.compareTo(b.position));
     
     for (final info in sortedWindows) {
+      // 跳过 position 0（热身区域）
+      if (info.position == 0) continue;
       if (info.position >= targetPosition) break;
       // 根据通知类型计算高度
       final height = info.notificationId.startsWith('updatelog_')
@@ -176,10 +184,15 @@ class NotificationWindowService {
   }
 
   /// 获取下一个可用位置
-  int _getNextPosition() {
-    if (_activeWindows.isEmpty) return 0;
+  /// [isWarmup] 是否是热身通知，热身通知固定在 position 0
+  int _getNextPosition({bool isWarmup = false}) {
+    // 热身通知固定在 position 0
+    if (isWarmup) return 0;
+    
+    // 其他通知从 position 1 开始（position 0 保留给热身通知）
+    if (_activeWindows.isEmpty) return 1;
     final positions = _activeWindows.values.map((w) => w.position).toSet();
-    for (int i = 0; i < maxVisibleNotifications; i++) {
+    for (int i = 1; i < maxVisibleNotifications; i++) {
       if (!positions.contains(i)) return i;
     }
     return _activeWindows.length;
@@ -249,8 +262,9 @@ class NotificationWindowService {
 
   /// 创建单个窗口
   Future<void> _createWindow(NotificationData notification) async {
-    final position = _getNextPosition();
-    final yOffset = _calculateYOffset(position);
+    final isWarmup = notification.type == NotificationType.warmup;
+    final position = _getNextPosition(isWarmup: isWarmup);
+    final yOffset = _calculateYOffset(position, isWarmup: isWarmup);
 
     try {
       // 创建新窗口，传递主窗口 ID 和 Y 偏移量
