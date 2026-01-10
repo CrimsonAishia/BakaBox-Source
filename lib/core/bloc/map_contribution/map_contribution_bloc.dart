@@ -259,6 +259,8 @@ class MapContributionBloc
           if (c.id == event.contributionId) {
             return c.copyWith(
               voteCount: response.newVoteCount,
+              upCount: response.upCount,
+              downCount: response.downCount,
               hasVoted: response.hasVoted,
               voteType: response.voteType,
               clearVoteType: response.voteType == null,
@@ -272,6 +274,8 @@ class MapContributionBloc
           if (c.id == event.contributionId) {
             return c.copyWith(
               voteCount: response.newVoteCount,
+              upCount: response.upCount,
+              downCount: response.downCount,
               hasVoted: response.hasVoted,
               voteType: response.voteType,
               clearVoteType: response.voteType == null,
