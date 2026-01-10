@@ -91,8 +91,14 @@ class WarmupMonitorService {
   /// 游戏状态变化处理
   void _onGameStatusChanged(GameStatusEvent event) {
     if (!event.isRunning) {
-      // 游戏退出，关闭热身通知
-      LogService.i('[WarmupMonitor] 游戏已退出，关闭热身通知');
+      // 游戏退出，关闭热身通知并停止监控
+      LogService.i('[WarmupMonitor] 游戏已退出，关闭热身通知并停止监控');
+      
+      // 停止监控定时器
+      _monitorTimer?.cancel();
+      _monitorTimer = null;
+      
+      // 关闭热身通知
       if (_isWarmingUp && _currentServerAddress != null) {
         _notificationService.dismissWarmupNotification(_currentServerAddress!);
         _isWarmingUp = false;
@@ -107,6 +113,12 @@ class WarmupMonitorService {
       _currentMapRuntimeFetchedAt = null;
       _currentMapInfo = null;
       _lastGameState = GameState.unknown;
+    } else {
+      // 游戏启动，重新开始监控
+      if (_monitorTimer == null) {
+        LogService.i('[WarmupMonitor] 游戏已启动，重新开始监控');
+        _startMonitorLoop(isWarmup: false);
+      }
     }
   }
 
