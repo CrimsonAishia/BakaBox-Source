@@ -73,8 +73,8 @@ class CategoryCard extends StatelessWidget {
                 const SizedBox(width: 15),
                 // 分类信息
                 Expanded(child: _buildCategoryInfo(isDark)),
-                // 在线人数
-                _buildOnlineCount(),
+                // 在线人数（自定义分类不显示）
+                if (!category.isCustom) _buildOnlineCount(),
                 // 删除按钮（仅自定义分类）
                 if (category.isCustom && onDelete != null) ...[
                   const SizedBox(width: 8),
