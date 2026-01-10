@@ -491,6 +491,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
                           : ServerCard(
                               key: ValueKey(server.serverItem.address),
                               server: server,
+                              categoryName: state.selectedCategory?.modelName,
                               onTap: () => _showServerDetails(server),
                               onDelete: server.serverItem.isCustom
                                   ? () {

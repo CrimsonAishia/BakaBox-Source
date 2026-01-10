@@ -478,33 +478,29 @@ class _NotificationCardState extends State<_NotificationCard> {
                               // 标题行
                               Row(
                                 children: [
-                                  Text(
-                                    // 热身通知显示动态倒计时
-                                    isWarmup && widget.countdownSeconds > 0
-                                        ? '热身 ${widget.countdownSeconds}秒'
-                                        : notification.title,
-                                    style: TextStyle(
-                                      color: borderColor,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  if (notification.serverName != null) ...[
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Text(
-                                        notification.serverName!,
-                                        style: TextStyle(
-                                          color:
-                                              Colors.white.withValues(alpha: 0.85),
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                  // 换图通知不显示标题，直接显示分类名+服务器名
+                                  if (!isMapChange)
+                                    Text(
+                                      // 热身通知显示动态倒计时
+                                      isWarmup && widget.countdownSeconds > 0
+                                          ? '热身 ${widget.countdownSeconds}秒'
+                                          : notification.title,
+                                      style: TextStyle(
+                                        color: borderColor,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                  ] else
+                                  if (!isMapChange && notification.serverName != null)
+                                    const SizedBox(width: 6),
+                                  if (notification.serverName != null)
+                                    Expanded(
+                                      child: _ServerNameText(
+                                        serverName: notification.serverName!,
+                                        categoryName: notification.extraData?['categoryName'] as String?,
+                                      ),
+                                    )
+                                  else
                                     const Spacer(),
                                 ],
                               ),
@@ -649,6 +645,147 @@ class _NotificationCardState extends State<_NotificationCard> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 服务器名称文本组件 - 支持分类名称高亮和超长滚动
+class _ServerNameText extends StatefulWidget {
+  final String serverName;
+  final String? categoryName;
+
+  const _ServerNameText({
+    required this.serverName,
+    this.categoryName,
+  });
+
+  @override
+  State<_ServerNameText> createState() => _ServerNameTextState();
+}
+
+class _ServerNameTextState extends State<_ServerNameText>
+    with SingleTickerProviderStateMixin {
+  late ScrollController _scrollController;
+  late AnimationController _animationController;
+  double _scrollDistance = 0;
+  final GlobalKey _textKey = GlobalKey();
+  final GlobalKey _containerKey = GlobalKey();
+  bool _animationStarted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _animationController = AnimationController(vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAndStartScroll());
+  }
+
+  @override
+  void dispose() {
+    _animationController.removeListener(_onAnimationUpdate);
+    _animationController.removeStatusListener(_onAnimationStatus);
+    _animationController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _checkAndStartScroll() {
+    if (!mounted || _animationStarted) return;
+
+    // 延迟一帧确保布局完成
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _animationStarted) return;
+
+      final textBox = _textKey.currentContext?.findRenderObject() as RenderBox?;
+      final containerBox = _containerKey.currentContext?.findRenderObject() as RenderBox?;
+      
+      if (textBox == null || containerBox == null) return;
+
+      final textWidth = textBox.size.width;
+      final containerWidth = containerBox.size.width;
+
+      if (textWidth <= containerWidth) return;
+
+      _scrollDistance = textWidth - containerWidth;
+      _startScrollAnimation();
+    });
+  }
+
+  void _startScrollAnimation() {
+    if (!mounted || _scrollDistance <= 0 || _animationStarted) return;
+    _animationStarted = true;
+
+    final duration = Duration(milliseconds: (_scrollDistance * 30).toInt());
+    _animationController.duration = duration;
+
+    _animationController.addListener(_onAnimationUpdate);
+    _animationController.addStatusListener(_onAnimationStatus);
+
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) _animationController.forward();
+    });
+  }
+
+  void _onAnimationUpdate() {
+    if (_scrollController.hasClients) {
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final targetScroll = (_animationController.value * _scrollDistance).clamp(0.0, maxScroll);
+      _scrollController.jumpTo(targetScroll);
+    }
+  }
+
+  void _onAnimationStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed) {
+      Future.delayed(const Duration(seconds: 2), () {
+        if (!mounted) return;
+        _scrollController.jumpTo(0);
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) _animationController.forward(from: 0);
+        });
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final categoryName = widget.categoryName;
+    final hasCategory = categoryName != null && categoryName.isNotEmpty;
+
+    return Row(
+      children: [
+        // 分类名固定显示，不滚动
+        if (hasCategory)
+          Text(
+            '[$categoryName] ',
+            style: const TextStyle(
+              color: Color(0xFFFBBF24),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        // 服务器名滚动
+        Expanded(
+          key: _containerKey,
+          child: ClipRect(
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              scrollDirection: Axis.horizontal,
+              physics: const NeverScrollableScrollPhysics(),
+              child: Text(
+                key: _textKey,
+                widget.serverName,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.85),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+                softWrap: false,
+                maxLines: 1,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

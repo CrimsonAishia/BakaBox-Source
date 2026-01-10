@@ -241,17 +241,18 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           // 通知换图监控服务（如果该服务器在监控列表中）
           // 自定义服务器需要带上分类名
           final isCustomServer = currentServer.serverItem.isCustom;
-          final categoryPrefix = isCustomServer && state.selectedCategory != null
-              ? '[${state.selectedCategory!.modelName}] '
-              : '';
+          final categoryName = isCustomServer && state.selectedCategory != null
+              ? state.selectedCategory!.modelName
+              : null;
           
           // 不等待完成，避免阻塞刷新流程
           _notifyMapChange(
             address: address,
-            serverName: '$categoryPrefix${info.name}',
+            serverName: info.name,
             oldMap: cachedMap,
             newMap: newMap,
             serverApi: serverApi,
+            categoryName: categoryName,
           );
         }
         
@@ -595,6 +596,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     required String oldMap,
     required String newMap,
     required ServerApi serverApi,
+    String? categoryName,
   }) async {
     final monitorService = MapChangeMonitorService();
     
@@ -648,6 +650,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       newMap: newMap,
       newMapCn: newMapCn,
       mapBackground: mapBackground,
+      categoryName: categoryName,
     );
   }
 

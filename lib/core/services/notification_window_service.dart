@@ -26,6 +26,7 @@ class NotificationData {
   final String? mapNameCn;
   final String? mapBackground;
   final int? autoDismissSeconds;
+  final Map<String, dynamic>? extraData; // 额外数据，用于传递分类名等
 
   NotificationData({
     required this.id,
@@ -38,6 +39,7 @@ class NotificationData {
     this.mapNameCn,
     this.mapBackground,
     this.autoDismissSeconds,
+    this.extraData,
   });
 
   Map<String, dynamic> toMap() => {
@@ -51,20 +53,31 @@ class NotificationData {
         'mapNameCn': mapNameCn,
         'mapBackground': mapBackground,
         'autoDismissSeconds': autoDismissSeconds,
+        'extraData': extraData,
       };
 
-  static NotificationData fromMap(Map<String, dynamic> map) => NotificationData(
-        id: map['id'] as String? ?? '',
-        type: NotificationType.values[map['type'] as int? ?? 0],
-        title: map['title'] as String? ?? '',
-        message: map['message'] as String? ?? '',
-        serverAddress: map['serverAddress'] as String?,
-        serverName: map['serverName'] as String?,
-        mapName: map['mapName'] as String?,
-        mapNameCn: map['mapNameCn'] as String?,
-        mapBackground: map['mapBackground'] as String?,
-        autoDismissSeconds: map['autoDismissSeconds'] as int?,
-      );
+  static NotificationData fromMap(Map<String, dynamic> map) {
+    // extraData 需要特殊处理，确保类型正确
+    Map<String, dynamic>? extraData;
+    final rawExtraData = map['extraData'];
+    if (rawExtraData != null && rawExtraData is Map) {
+      extraData = Map<String, dynamic>.from(rawExtraData);
+    }
+    
+    return NotificationData(
+      id: map['id'] as String? ?? '',
+      type: NotificationType.values[map['type'] as int? ?? 0],
+      title: map['title'] as String? ?? '',
+      message: map['message'] as String? ?? '',
+      serverAddress: map['serverAddress'] as String?,
+      serverName: map['serverName'] as String?,
+      mapName: map['mapName'] as String?,
+      mapNameCn: map['mapNameCn'] as String?,
+      mapBackground: map['mapBackground'] as String?,
+      autoDismissSeconds: map['autoDismissSeconds'] as int?,
+      extraData: extraData,
+    );
+  }
 
   /// 单个通知窗口的参数 JSON
   String toArguments(int position, String mainWindowId, {double? yOffset}) => jsonEncode({
@@ -188,14 +201,15 @@ class NotificationWindowService {
   int _getNextPosition({bool isWarmup = false}) {
     // 热身通知固定在 position 0
     if (isWarmup) return 0;
-    
+
     // 其他通知从 position 1 开始（position 0 保留给热身通知）
     if (_activeWindows.isEmpty) return 1;
     final positions = _activeWindows.values.map((w) => w.position).toSet();
-    for (int i = 1; i < maxVisibleNotifications; i++) {
+    // 从 1 到 maxVisibleNotifications（包含）查找空位
+    for (int i = 1; i <= maxVisibleNotifications; i++) {
       if (!positions.contains(i)) return i;
     }
-    return _activeWindows.length;
+    return _activeWindows.length + 1;
   }
 
   /// 显示通知
@@ -341,6 +355,7 @@ class NotificationWindowService {
     required String newMap,
     String? newMapCn,
     String? mapBackground,
+    String? categoryName,
   }) async {
     final id =
         'mapchange_${serverAddress}_${DateTime.now().millisecondsSinceEpoch}';
@@ -358,6 +373,7 @@ class NotificationWindowService {
       mapNameCn: newMapCn,
       mapBackground: mapBackground,
       autoDismissSeconds: 15,
+      extraData: categoryName != null ? {'categoryName': categoryName} : null,
     ));
   }
 

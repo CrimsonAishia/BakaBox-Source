@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/server_api.dart';
@@ -10,6 +11,7 @@ import 'source_server_service.dart';
 class ServerMonitorData {
   final String serverAddress;
   final String serverName;
+  final String? categoryName;  // 分类名称
   String? lastMapName;
   String? lastMapNameCn;
   DateTime? lastCheckTime;
@@ -24,6 +26,7 @@ class ServerMonitorData {
   ServerMonitorData({
     required this.serverAddress,
     required this.serverName,
+    this.categoryName,
     this.lastMapName,
     this.lastMapNameCn,
     this.lastCheckTime,
@@ -130,6 +133,7 @@ class MapChangeMonitorService {
   Future<void> addMonitor({
     required String serverAddress,
     required String serverName,
+    String? categoryName,
     String? currentMap,
     String? currentMapCn,
   }) async {
@@ -138,6 +142,7 @@ class MapChangeMonitorService {
     _monitoredServers[serverAddress] = ServerMonitorData(
       serverAddress: serverAddress,
       serverName: serverName,
+      categoryName: categoryName,
       lastMapName: currentMap,
       lastMapNameCn: currentMapCn,
       lastCheckTime: DateTime.now(),
@@ -172,6 +177,7 @@ class MapChangeMonitorService {
   Future<bool> toggleMonitor({
     required String serverAddress,
     required String serverName,
+    String? categoryName,
     String? currentMap,
     String? currentMapCn,
   }) async {
@@ -182,6 +188,7 @@ class MapChangeMonitorService {
       await addMonitor(
         serverAddress: serverAddress,
         serverName: serverName,
+        categoryName: categoryName,
         currentMap: currentMap,
         currentMapCn: currentMapCn,
       );
@@ -208,6 +215,7 @@ class MapChangeMonitorService {
     required String newMap,
     String? newMapCn,
     String? mapBackground,
+    String? categoryName,
   }) {
     _notificationService.showMapChangeNotification(
       serverAddress: serverAddress,
@@ -216,6 +224,7 @@ class MapChangeMonitorService {
       newMap: newMap,
       newMapCn: newMapCn,
       mapBackground: mapBackground,
+      categoryName: categoryName,
     );
   }
   
@@ -353,6 +362,7 @@ class MapChangeMonitorService {
             newMap: newMapName,
             newMapCn: newMapCn,
             mapBackground: mapBackground,
+            categoryName: data.categoryName,
           );
         }
       }
@@ -370,12 +380,16 @@ class MapChangeMonitorService {
     }
   }
 
-  /// 保存监控列表到本地存储
+  /// 保存监控列表到本地存储（JSON格式）
   Future<void> _saveMonitoredServers() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final List<String> data = _monitoredServers.entries.map((e) {
-        return '${e.key}|${e.value.serverName}|${e.value.lastMapName ?? ""}';
+        return jsonEncode({
+          'address': e.key,
+          'serverName': e.value.serverName,
+          'categoryName': e.value.categoryName,
+        });
       }).toList();
       await prefs.setStringList(_storageKey, data);
     } catch (e) {
@@ -393,17 +407,30 @@ class MapChangeMonitorService {
       final data = prefs.getStringList(_storageKey) ?? [];
       
       for (final item in data) {
-        final parts = item.split('|');
-        if (parts.length >= 2) {
-          final address = parts[0];
-          final name = parts[1];
-          // 不加载之前保存的 lastMapName，让首次检查只记录不通知
+        try {
+          // 尝试 JSON 格式解析
+          final map = jsonDecode(item) as Map<String, dynamic>;
+          final address = map['address'] as String;
+          final serverName = map['serverName'] as String;
+          final categoryName = map['categoryName'] as String?;
           
           _monitoredServers[address] = ServerMonitorData(
             serverAddress: address,
-            serverName: name,
-            lastMapName: null, // 启动时清空，首次检查只记录当前地图
+            serverName: serverName,
+            categoryName: categoryName,
+            lastMapName: null,
           );
+        } catch (_) {
+          // 兼容旧格式: address|serverName|...
+          final parts = item.split('|');
+          if (parts.length >= 2) {
+            _monitoredServers[parts[0]] = ServerMonitorData(
+              serverAddress: parts[0],
+              serverName: parts[1],
+              categoryName: null, // 旧格式无分类名
+              lastMapName: null,
+            );
+          }
         }
       }
     } catch (e) {
