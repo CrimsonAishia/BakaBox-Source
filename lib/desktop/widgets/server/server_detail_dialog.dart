@@ -248,7 +248,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
         final playerCount = widget.server.serverData?.players ?? 0;
         if (playerCount > 55) {
           setState(() {
-            _playerError = '由于A2S_PLAYER协议限制，无法获取超过55人服务器的玩家详情';
+            _playerError = '由于协议限制，无法获取超过55人服务器的玩家详情';
             _isLoadingPlayers = false;
           });
         } else if (playerCount == 0) {
