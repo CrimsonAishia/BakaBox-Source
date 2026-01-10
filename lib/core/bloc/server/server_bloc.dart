@@ -16,6 +16,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   final Map<String, MapRuntimeData> _mapRuntimeCache = {};
   final Map<String, int> _mapRuntimeLastFetchedCache = {};
   final Map<String, String> _serverMapCache = {}; // 记录服务器当前地图，用于检测换图
+  // 全局失败计数缓存，key 为服务器地址
+  final Map<String, int> _failureCountCache = {};
   int _currentRequestId = 0;
   
   // 刷新频率限制：记录每个服务器的刷新时间戳
@@ -99,6 +101,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       // 从全局缓存恢复 mapRuntime 数据
       final cachedRuntime = address != null ? _mapRuntimeCache[address] : null;
       final cachedLastFetched = address != null ? _mapRuntimeLastFetchedCache[address] : null;
+      // 从全局缓存恢复失败计数
+      final cachedFailures = address != null ? (_failureCountCache[address] ?? 0) : 0;
       
       return ExtendedServerItem(
         serverItem: serverItem,
@@ -106,6 +110,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         mapRuntime: cachedRuntime,
         mapRuntimeLastFetched: cachedLastFetched,
         mapRuntimeError: false,
+        consecutiveFailures: cachedFailures,
+        isOffline: cachedFailures >= 3,
       );
     }).toList();
     
@@ -256,12 +262,16 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           );
         }
         
+        // 成功获取数据，重置失败计数和离线状态
+        _failureCountCache[address] = 0; // 更新全局缓存
         final updatedServer = currentServer.copyWith(
           serverData: _convertSourceServerInfo(info),
           updatedAt: DateTime.now(),
           recentlyUpdated: hasDataChanged && currentServer.serverData != null,
           isLoading: false,
           hasError: false,
+          consecutiveFailures: 0,
+          isOffline: false,
           mapInfo: mapChanged ? null : currentServer.mapInfo,
           mapRuntime: mapChanged ? null : currentServer.mapRuntime,
           mapRuntimeLastFetched: mapChanged ? null : currentServer.mapRuntimeLastFetched,
@@ -293,17 +303,26 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           }
         }
       } else {
-        // 服务器无法访问（维护中），清除旧数据
+        // 服务器无法访问，增加失败计数
+        final newFailureCount = currentServer.consecutiveFailures + 1;
+        final isNowOffline = newFailureCount >= 3; // 连续失败3次判定为离线
+        _failureCountCache[address] = newFailureCount; // 更新全局缓存
+        
         _updateServerByAddress(address, currentServer.copyWith(
           isLoading: false, 
           hasError: true,
-          clearServerData: true,  // 清除服务器数据
-          clearMapRuntime: true,  // 清除地图运行时间
-          clearMapInfo: true,     // 清除地图信息（背景图）
+          consecutiveFailures: newFailureCount,
+          isOffline: isNowOffline,
+          clearServerData: isNowOffline,  // 离线时清除服务器数据
+          clearMapRuntime: isNowOffline,  // 离线时清除地图运行时间
+          clearMapInfo: isNowOffline,     // 离线时清除地图信息（背景图）
         ), emit);
-        // 清除 runtime 缓存，但保留 _serverMapCache 以便恢复后检测换图
-        _mapRuntimeCache.remove(address);
-        _mapRuntimeLastFetchedCache.remove(address);
+        
+        // 离线时清除 runtime 缓存，但保留 _serverMapCache 以便恢复后检测换图
+        if (isNowOffline) {
+          _mapRuntimeCache.remove(address);
+          _mapRuntimeLastFetchedCache.remove(address);
+        }
       }
     } catch (e) {
       LogService.e('加载服务器数据失败 ($address): $e', e);
@@ -311,17 +330,26 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         (s) => (s.serverItem.address ?? s.serverItem.serverAddress) == address
       );
       if (currentIndex != -1 && !emit.isDone) {
-        // 服务器异常，清除旧数据
-        _updateServerByAddress(address, state.servers[currentIndex].copyWith(
+        final currentServer = state.servers[currentIndex];
+        // 服务器异常，增加失败计数
+        final newFailureCount = currentServer.consecutiveFailures + 1;
+        final isNowOffline = newFailureCount >= 3;
+        _failureCountCache[address] = newFailureCount; // 更新全局缓存
+        
+        _updateServerByAddress(address, currentServer.copyWith(
           isLoading: false, 
           hasError: true,
-          clearServerData: true,
-          clearMapRuntime: true,
-          clearMapInfo: true,     // 清除地图信息（背景图）
+          consecutiveFailures: newFailureCount,
+          isOffline: isNowOffline,
+          clearServerData: isNowOffline,
+          clearMapRuntime: isNowOffline,
+          clearMapInfo: isNowOffline,
         ), emit);
-        // 清除 runtime 缓存，但保留 _serverMapCache 以便恢复后检测换图
-        _mapRuntimeCache.remove(address);
-        _mapRuntimeLastFetchedCache.remove(address);
+        
+        if (isNowOffline) {
+          _mapRuntimeCache.remove(address);
+          _mapRuntimeLastFetchedCache.remove(address);
+        }
       }
     }
   }
@@ -737,9 +765,17 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       
       for (final server in categoryToDelete.serverList) {
         final address = server.address ?? server.serverAddress;
-        if (address != null && monitorService.isMonitoring(address)) {
-          await monitorService.removeMonitor(address);
-          LogService.i('删除分类时取消换图监控: $address');
+        if (address != null) {
+          // 清理该服务器的所有缓存
+          _failureCountCache.remove(address);
+          _mapRuntimeCache.remove(address);
+          _mapRuntimeLastFetchedCache.remove(address);
+          _serverMapCache.remove(address);
+          
+          if (monitorService.isMonitoring(address)) {
+            await monitorService.removeMonitor(address);
+            LogService.i('删除分类时取消换图监控: $address');
+          }
         }
       }
       
@@ -773,7 +809,13 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
   Future<void> _onDeleteServer(ServerDeleteServer event, Emitter<ServerState> emit) async {
     try {
-      // 先取消该服务器的换图监控（如果有）
+      // 清理该服务器的所有缓存
+      _failureCountCache.remove(event.serverAddress);
+      _mapRuntimeCache.remove(event.serverAddress);
+      _mapRuntimeLastFetchedCache.remove(event.serverAddress);
+      _serverMapCache.remove(event.serverAddress);
+      
+      // 取消该服务器的换图监控（如果有）
       final monitorService = MapChangeMonitorService();
       if (monitorService.isMonitoring(event.serverAddress)) {
         await monitorService.removeMonitor(event.serverAddress);
