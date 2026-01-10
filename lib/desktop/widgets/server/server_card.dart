@@ -20,12 +20,14 @@ import '../../../core/widgets/map_contribution_dialog.dart';
 /// 服务器卡片
 class ServerCard extends StatefulWidget {
   final ExtendedServerItem server;
+  final String? categoryName;  // 分类名称
   final VoidCallback? onTap;
   final VoidCallback? onDelete; // 删除回调（仅自定义服务器）
 
   const ServerCard({
     super.key,
     required this.server,
+    this.categoryName,
     this.onTap,
     this.onDelete,
   });
@@ -722,6 +724,7 @@ class _ServerCardState extends State<ServerCard>
     final isNowMonitoring = await _mapMonitorService.toggleMonitor(
       serverAddress: address,
       serverName: serverName,
+      categoryName: widget.categoryName,
       currentMap: currentMap,
       currentMapCn: currentMapCn,
     );
