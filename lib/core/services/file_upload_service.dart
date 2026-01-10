@@ -1,11 +1,26 @@
 import 'dart:io';
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import '../api/file_upload_api.dart';
 import '../models/upload_models.dart';
 import '../utils/log_service.dart';
 import '../utils/file_validation_utils.dart';
+
+/// 用于流式 MD5 计算的累加器
+class _DigestAccumulator implements Sink<Digest> {
+  Digest? _digest;
+  
+  Digest get digest => _digest!;
+  
+  @override
+  void add(Digest data) {
+    _digest = data;
+  }
+  
+  @override
+  void close() {}
+}
 
 /// 文件上传服务
 /// 
@@ -207,6 +222,8 @@ class FileUploadService {
 
   /// 计算文件 MD5
   /// 
+  /// 使用流式读取 + isolate 避免阻塞 UI 线程
+  /// 
   /// 参数:
   /// - [file]: 要计算 MD5 的文件
   /// 
@@ -214,13 +231,26 @@ class FileUploadService {
   /// - MD5 哈希值（十六进制字符串）
   Future<String> calculateMD5(File file) async {
     try {
-      final bytes = await file.readAsBytes();
-      final digest = md5.convert(bytes);
-      return digest.toString();
+      // 使用 compute 在隔离线程中计算 MD5，避免阻塞 UI
+      return await compute(_calculateMD5InIsolate, file.path);
     } catch (e) {
       LogService.e('计算 MD5 失败', e);
       rethrow;
     }
+  }
+  
+  /// 在隔离线程中计算 MD5（同步读取，compute 不支持 async）
+  static String _calculateMD5InIsolate(String filePath) {
+    final file = File(filePath);
+    final output = _DigestAccumulator();
+    final input = md5.startChunkedConversion(output);
+    
+    // 同步读取文件
+    final bytes = file.readAsBytesSync();
+    input.add(bytes);
+    input.close();
+    
+    return output.digest.toString();
   }
 
   /// 上传分片
@@ -234,7 +264,7 @@ class FileUploadService {
     final fileSize = task.fileSize;
     final totalChunks = (fileSize / chunkSize).ceil();
 
-    LogService.i('开始分片上传: $totalChunks 个分片');
+    LogService.i('开始分片上传: $totalChunks 个分片, 文件大小: ${(fileSize / 1024 / 1024).toStringAsFixed(2)}MB');
 
     // 如果只有一个分片，直接上传
     if (totalChunks == 1) {
@@ -245,7 +275,7 @@ class FileUploadService {
         fileKey: fileKey,
         data: chunkData,
       );
-      
+
       task.updateProgress(UploadProgress(
         fileName: task.fileName,
         totalBytes: fileSize,
@@ -253,8 +283,6 @@ class FileUploadService {
         progress: 1.0,
         status: UploadStatus.uploading,
       ));
-      
-      LogService.d('分片 1/1 上传完成');
       return;
     }
 
@@ -287,7 +315,7 @@ class FileUploadService {
           status: UploadStatus.uploading,
         ));
 
-        LogService.d('分片 $partNumber/$totalChunks 上传完成');
+        LogService.i('分片 $partNumber/$totalChunks 上传完成');
       });
       
       uploadFutures.add(uploadFuture);
