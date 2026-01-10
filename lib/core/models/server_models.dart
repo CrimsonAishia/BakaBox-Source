@@ -228,12 +228,15 @@ class ExtendedServerItem {
   final int? mapRuntimeLastFetched;
   final bool mapRuntimeError;
   final bool mapRuntimeFetching;
+  final int consecutiveFailures; // 连续失败次数
+  final bool isOffline; // 是否离线（连续失败3次）
 
   ExtendedServerItem({
     required this.serverItem, this.serverData, this.mapInfo, this.updatedAt,
     this.recentlyUpdated = false, this.isLoading = false, this.hasError = false,
     this.pingInfo, this.mapRuntime, this.mapRuntimeLastFetched,
     this.mapRuntimeError = false, this.mapRuntimeFetching = false,
+    this.consecutiveFailures = 0, this.isOffline = false,
   });
 
   ExtendedServerItem copyWith({
@@ -241,6 +244,7 @@ class ExtendedServerItem {
     bool? recentlyUpdated, bool? isLoading, bool? hasError, ServerPingInfo? pingInfo,
     MapRuntimeData? mapRuntime, int? mapRuntimeLastFetched, bool? mapRuntimeError, bool? mapRuntimeFetching,
     bool clearServerData = false, bool clearMapRuntime = false, bool clearMapInfo = false,
+    int? consecutiveFailures, bool? isOffline,
   }) {
     return ExtendedServerItem(
       serverItem: serverItem ?? this.serverItem,
@@ -255,6 +259,8 @@ class ExtendedServerItem {
       mapRuntimeLastFetched: clearMapRuntime ? null : (mapRuntimeLastFetched ?? this.mapRuntimeLastFetched),
       mapRuntimeError: mapRuntimeError ?? this.mapRuntimeError,
       mapRuntimeFetching: mapRuntimeFetching ?? this.mapRuntimeFetching,
+      consecutiveFailures: consecutiveFailures ?? this.consecutiveFailures,
+      isOffline: isOffline ?? this.isOffline,
     );
   }
 }
