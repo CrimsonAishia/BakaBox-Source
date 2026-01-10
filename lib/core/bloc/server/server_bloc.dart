@@ -82,14 +82,13 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   }
 
   Future<void> _onSelectCategory(ServerSelectCategory event, Emitter<ServerState> emit) async {
-    // 如果是相同分类且有服务器，只在服务器列表不为空时跳过
-    // 但如果是强制刷新（例如删除服务器后），则不跳过
+    // 如果是相同分类且服务器数量一致，跳过刷新（除非强制刷新）
+    // 添加/删除服务器后，serverList 数量会变化，此时需要刷新
     final isSameCategory = state.selectedCategory?.modelName == event.category.modelName;
-    final hasServers = state.servers.isNotEmpty;
-    final categoryHasServers = event.category.serverList.isNotEmpty;
+    final serverCountMatch = state.servers.length == event.category.serverList.length;
     
-    // 只有在相同分类、当前有服务器、且新分类也有服务器时才跳过
-    if (isSameCategory && hasServers && categoryHasServers) {
+    // 只有在相同分类且服务器数量一致且非强制刷新时才跳过
+    if (isSameCategory && serverCountMatch && state.servers.isNotEmpty && !event.forceRefresh) {
       return;
     }
     
@@ -270,12 +269,11 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         
         _updateServerByAddress(address, updatedServer, emit);
         
-        // 自定义服务器不获取 mapInfo 和 mapRuntime（不与 API 交互）
         // graphics_settings 是服务器启动中的加载地图，不获取其背景图
         final isCustomServer = currentServer.serverItem.isCustom;
         final isValidMap = newMap != 'graphics_settings';
         
-        if (!isCustomServer && isValidMap) {
+        if (isValidMap) {
           // 需要获取背景图的情况：
           // 1. 换图了（mapChanged）
           // 2. 没有背景图数据
@@ -287,8 +285,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           if (needFetchMapInfo) {
             _fetchMapInfoAsync(address, info.map, requestId, serverApi);
           }
+          // 自定义服务器不获取 mapRuntime（需要 API 交互）
           // 只有换图或没有缓存的 runtime 时才重新获取
-          if (mapChanged || (currentServer.mapRuntime == null && _mapRuntimeCache[address] == null)) {
+          if (!isCustomServer && (mapChanged || (currentServer.mapRuntime == null && _mapRuntimeCache[address] == null))) {
             _fetchMapRuntimeAsync(address, info.map, requestId, serverApi);
           }
         }
@@ -701,14 +700,19 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       if (categoryIndex != -1) {
         final updatedCategories = List<ServerCategory>.from(state.serverCategories);
         updatedCategories[categoryIndex] = updatedCategory;
+        
+        // 如果当前选中的是该分类，同时更新 selectedCategory
+        final isCurrentCategory = state.selectedCategory?.modelName == event.categoryName;
+        
         emit(state.copyWith(
           serverCategories: updatedCategories,
+          selectedCategory: isCurrentCategory ? updatedCategory : state.selectedCategory,
           successMessage: '服务器 "${event.serverAddress}" 已添加',
         ));
         
-        // 如果当前选中的是该分类，刷新服务器列表
-        if (state.selectedCategory?.modelName == event.categoryName) {
-          add(ServerSelectCategory(updatedCategory));
+        // 如果当前选中的是该分类，刷新服务器列表（强制刷新）
+        if (isCurrentCategory) {
+          add(ServerSelectCategory(updatedCategory, forceRefresh: true));
         }
         
         LogService.i('添加服务器成功: ${event.serverAddress} -> ${event.categoryName}');
@@ -742,8 +746,13 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           .where((c) => c.modelName != event.categoryName)
           .toList();
       
+      // 清理该分类的在线人数记录
+      final updatedOnlineCounts = Map<String, int>.from(state.categoryOnlineCounts)
+        ..remove(event.categoryName);
+      
       emit(state.copyWith(
         serverCategories: updatedCategories,
+        categoryOnlineCounts: updatedOnlineCounts,
         successMessage: '分类 "${event.categoryName}" 已删除',
       ));
       
@@ -781,14 +790,27 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       if (categoryIndex != -1) {
         final updatedCategories = List<ServerCategory>.from(state.serverCategories);
         updatedCategories[categoryIndex] = updatedCategory;
+        
+        // 重新计算该分类的在线人数（排除被删除的服务器）
+        final updatedOnlineCounts = Map<String, int>.from(state.categoryOnlineCounts);
+        if (state.selectedCategory?.modelName == event.categoryName) {
+          // 从当前服务器列表中排除被删除的服务器，重新计算人数
+          final remainingServers = state.servers.where(
+            (s) => (s.serverItem.address ?? s.serverItem.serverAddress) != event.serverAddress
+          );
+          final newCount = remainingServers.fold(0, (sum, s) => sum + (s.serverData?.players ?? 0));
+          updatedOnlineCounts[event.categoryName] = newCount;
+        }
+        
         emit(state.copyWith(
           serverCategories: updatedCategories,
+          categoryOnlineCounts: updatedOnlineCounts,
           successMessage: '服务器 "${event.serverAddress}" 已删除',
         ));
         
-        // 如果当前选中的是该分类，刷新服务器列表
+        // 如果当前选中的是该分类，刷新服务器列表（强制刷新）
         if (state.selectedCategory?.modelName == event.categoryName) {
-          add(ServerSelectCategory(updatedCategory));
+          add(ServerSelectCategory(updatedCategory, forceRefresh: true));
         }
         
         LogService.i('删除服务器成功: ${event.serverAddress} <- ${event.categoryName}');

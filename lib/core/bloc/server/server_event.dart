@@ -11,9 +11,10 @@ class ServerFetchList extends ServerEvent {}
 
 class ServerSelectCategory extends ServerEvent {
   final ServerCategory category;
-  const ServerSelectCategory(this.category);
+  final bool forceRefresh;
+  const ServerSelectCategory(this.category, {this.forceRefresh = false});
   @override
-  List<Object?> get props => [category];
+  List<Object?> get props => [category, forceRefresh];
 }
 
 class ServerClearCategory extends ServerEvent {}
