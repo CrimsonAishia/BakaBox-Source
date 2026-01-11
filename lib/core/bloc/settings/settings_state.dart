@@ -116,9 +116,6 @@ class SettingsState extends Equatable {
   final String? gamePathError;
   final String? steamPathError;
   
-  // 应用设置
-  final bool enableStartupAnimation;
-  
   // 音效设置
   final double audioVolume;
   
@@ -146,7 +143,6 @@ class SettingsState extends Equatable {
     this.isDetectingPath = false,
     this.gamePathError,
     this.steamPathError,
-    this.enableStartupAnimation = true,
     this.audioVolume = 0.8,
     this.cacheDetails = const [],
     this.isLoadingCacheDetails = false,
@@ -203,7 +199,6 @@ class SettingsState extends Equatable {
     bool? isDetectingPath,
     String? gamePathError,
     String? steamPathError,
-    bool? enableStartupAnimation,
     double? audioVolume,
     List<CacheItemInfo>? cacheDetails,
     bool? isLoadingCacheDetails,
@@ -224,7 +219,6 @@ class SettingsState extends Equatable {
       isDetectingPath: isDetectingPath ?? this.isDetectingPath,
       gamePathError: gamePathError,
       steamPathError: steamPathError,
-      enableStartupAnimation: enableStartupAnimation ?? this.enableStartupAnimation,
       audioVolume: audioVolume ?? this.audioVolume,
       cacheDetails: cacheDetails ?? this.cacheDetails,
       isLoadingCacheDetails: isLoadingCacheDetails ?? this.isLoadingCacheDetails,
@@ -248,7 +242,6 @@ class SettingsState extends Equatable {
     isDetectingPath,
     gamePathError,
     steamPathError,
-    enableStartupAnimation,
     audioVolume,
     cacheDetails,
     isLoadingCacheDetails,

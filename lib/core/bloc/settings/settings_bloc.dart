@@ -23,7 +23,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   static const String _keySteamPath = 'steam_path';
   static const String _keyLaunchPlatform = 'launch_platform';
   static const String _keyLaunchOptions = 'launch_options';
-  static const String _keyStartupAnimation = 'startup_animation';
   static const String _keyNotificationPosition = 'notification_position';
   static const String _keyFloatingWindowPosition = 'floating_window_position';
 
@@ -49,8 +48,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<SettingsRemoveLaunchOption>(_onRemoveLaunchOption);
     on<SettingsClearGamePath>(_onClearGamePath);
     on<SettingsClearSteamPath>(_onClearSteamPath);
-    // 应用设置事件
-    on<SettingsSetStartupAnimation>(_onSetStartupAnimation);
     // 音效设置事件
     on<SettingsSetAudioVolume>(_onSetAudioVolume);
     on<SettingsTestAudio>(_onTestAudio);
@@ -90,7 +87,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final themeModeIndex = prefs.getInt('theme_mode') ?? 0;
-      final enableStartupAnimation = prefs.getBool(_keyStartupAnimation) ?? true;
       final notificationPositionIndex = prefs.getInt(_keyNotificationPosition) ?? NotificationPositionType.topRight.index;
       final floatingWindowPositionIndex = prefs.getInt(_keyFloatingWindowPosition) ?? NotificationPositionType.bottomRight.index;
       final notificationPosition = NotificationPositionType.values[notificationPositionIndex];
@@ -103,7 +99,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       
       emit(state.copyWith(
         themeMode: ThemeMode.values[themeModeIndex],
-        enableStartupAnimation: enableStartupAnimation,
         notificationPosition: notificationPosition,
         floatingWindowPosition: floatingWindowPosition,
       ));
@@ -508,19 +503,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       LogService.i('Steam路径已清除');
     } catch (e) {
       LogService.e('清除Steam路径失败', e);
-    }
-  }
-
-  // ==================== 应用设置事件处理 ====================
-
-  Future<void> _onSetStartupAnimation(SettingsSetStartupAnimation event, Emitter<SettingsState> emit) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_keyStartupAnimation, event.enabled);
-      emit(state.copyWith(enableStartupAnimation: event.enabled));
-      LogService.i('启动动画已${event.enabled ? '启用' : '禁用'}');
-    } catch (e) {
-      LogService.e('设置启动动画失败', e);
     }
   }
 

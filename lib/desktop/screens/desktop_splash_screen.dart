@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/core.dart';
 import '../router/desktop_router.dart';
 
@@ -15,7 +14,6 @@ class DesktopSplashScreen extends StatefulWidget {
 }
 
 class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTickerProviderStateMixin {
-  static const String _keyStartupAnimation = 'startup_animation';
   late AnimationController _progressController;
   String _loadingText = 'LOADING';
   
@@ -26,21 +24,11 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTi
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     );
-    _checkAnimationAndNavigate();
+    _startAnimationAndNavigate();
   }
 
-  Future<void> _checkAnimationAndNavigate() async {
+  Future<void> _startAnimationAndNavigate() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final enableAnimation = prefs.getBool(_keyStartupAnimation) ?? true;
-      
-      if (!enableAnimation) {
-        if (mounted) {
-          context.go(DesktopRoutes.home);
-        }
-        return;
-      }
-      
       // 阶段1: 初始化 (0-30%)
       if (mounted) {
         setState(() => _loadingText = 'INITIALIZING');
