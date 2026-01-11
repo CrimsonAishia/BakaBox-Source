@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../core/bloc/settings/settings_bloc.dart';
 import '../../core/bloc/settings/settings_event.dart';
 import '../../core/bloc/settings/settings_state.dart';
@@ -36,7 +35,6 @@ class _SettingsDesktopState extends State<SettingsDesktop> {
           return PageLayout(
             title: '设置',
             subtitle: '自定义您的应用体验',
-            headerActions: _buildHeaderActions(),
             child: _buildSettingsContent(settingsState),
           );
         },
@@ -44,39 +42,7 @@ class _SettingsDesktopState extends State<SettingsDesktop> {
     );
   }
 
-  Widget _buildHeaderActions() {
-    return BlocBuilder<SettingsBloc, SettingsState>(
-      builder: (context, state) {
-        return ElevatedButton.icon(
-          onPressed: state.isLoading ? null : _saveSettings,
-          icon: state.isLoading
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                )
-              : Icon(MdiIcons.contentSave, size: 18),
-          label: const Text('保存设置'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF0080FF),
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-        );
-      },
-    );
-  }
 
-  void _saveSettings() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('设置已保存'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
 
   Widget _buildSettingsContent(SettingsState settingsState) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
