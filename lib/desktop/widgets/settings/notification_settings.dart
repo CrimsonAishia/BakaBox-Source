@@ -35,7 +35,7 @@ class NotificationSettings extends StatelessWidget {
           icon: MdiIcons.monitorScreenshot,
         ),
         AppSettingItem(
-          title: '通知与浮窗位置',
+          title: '窗口位置',
           description: '拖动窗口调整位置，点击预览按钮在屏幕上显示实际占用区域',
           value: _NotificationPositionEditorWrapper(
             settingsState: settingsState,
