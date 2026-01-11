@@ -14,6 +14,7 @@ import '../../api/server_api.dart';
 import '../../services/game_launcher_service.dart';
 import '../../services/game_path_service.dart';
 import '../../services/audio_service.dart';
+import '../../services/notification_window_service.dart';
 import 'settings_event.dart';
 import 'settings_state.dart';
 
@@ -23,6 +24,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   static const String _keyLaunchPlatform = 'launch_platform';
   static const String _keyLaunchOptions = 'launch_options';
   static const String _keyStartupAnimation = 'startup_animation';
+  static const String _keyNotificationPosition = 'notification_position';
+  static const String _keyFloatingWindowPosition = 'floating_window_position';
 
   final AudioService _audioService = AudioService();
   final GamePathService _gamePathService = GamePathService();
@@ -56,6 +59,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<SettingsClearCacheByType>(_onClearCacheByType);
     on<SettingsClearAllCache>(_onClearAllCache);
     on<SettingsClearSelectedCache>(_onClearSelectedCache);
+    // 窗口位置设置事件
+    on<SettingsSetNotificationPosition>(_onSetNotificationPosition);
+    on<SettingsSetFloatingWindowPosition>(_onSetFloatingWindowPosition);
   }
 
   Future<void> _onInit(SettingsInit event, Emitter<SettingsState> emit) async {
@@ -85,9 +91,21 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       final prefs = await SharedPreferences.getInstance();
       final themeModeIndex = prefs.getInt('theme_mode') ?? 0;
       final enableStartupAnimation = prefs.getBool(_keyStartupAnimation) ?? true;
+      final notificationPositionIndex = prefs.getInt(_keyNotificationPosition) ?? NotificationPositionType.topRight.index;
+      final floatingWindowPositionIndex = prefs.getInt(_keyFloatingWindowPosition) ?? NotificationPositionType.bottomRight.index;
+      final notificationPosition = NotificationPositionType.values[notificationPositionIndex];
+      final floatingWindowPosition = NotificationPositionType.values[floatingWindowPositionIndex];
+      
+      // 同步通知位置到 NotificationWindowService
+      if (PlatformUtils.isDesktopPlatform) {
+        NotificationWindowService().setNotificationPosition(notificationPosition);
+      }
+      
       emit(state.copyWith(
         themeMode: ThemeMode.values[themeModeIndex],
         enableStartupAnimation: enableStartupAnimation,
+        notificationPosition: notificationPosition,
+        floatingWindowPosition: floatingWindowPosition,
       ));
     } catch (e) {
       LogService.e('加载偏好设置失败', e);
@@ -765,6 +783,39 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
           }
         }
         break;
+    }
+  }
+
+  // ==================== 通知位置设置事件处理 ====================
+
+  Future<void> _onSetNotificationPosition(SettingsSetNotificationPosition event, Emitter<SettingsState> emit) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_keyNotificationPosition, event.position.index);
+      emit(state.copyWith(notificationPosition: event.position));
+      
+      // 同步到 NotificationWindowService
+      NotificationWindowService().setNotificationPosition(event.position);
+      
+      LogService.i('通知位置已设置: ${event.position.displayName}');
+    } catch (e) {
+      LogService.e('设置通知位置失败', e);
+    }
+  }
+
+  // ==================== 浮窗位置设置事件处理 ====================
+
+  Future<void> _onSetFloatingWindowPosition(SettingsSetFloatingWindowPosition event, Emitter<SettingsState> emit) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_keyFloatingWindowPosition, event.position.index);
+      emit(state.copyWith(floatingWindowPosition: event.position));
+      
+      // TODO: 同步到 FloatingWindowService（如果需要）
+      
+      LogService.i('浮窗位置已设置: ${event.position.displayName}');
+    } catch (e) {
+      LogService.e('设置浮窗位置失败', e);
     }
   }
 }

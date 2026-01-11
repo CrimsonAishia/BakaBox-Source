@@ -115,3 +115,19 @@ class SettingsClearSelectedCache extends SettingsEvent {
   @override
   List<Object?> get props => [cacheTypes];
 }
+
+// 通知位置设置事件
+class SettingsSetNotificationPosition extends SettingsEvent {
+  final NotificationPositionType position;
+  const SettingsSetNotificationPosition(this.position);
+  @override
+  List<Object?> get props => [position];
+}
+
+// 浮窗位置设置事件
+class SettingsSetFloatingWindowPosition extends SettingsEvent {
+  final NotificationPositionType position;
+  const SettingsSetFloatingWindowPosition(this.position);
+  @override
+  List<Object?> get props => [position];
+}

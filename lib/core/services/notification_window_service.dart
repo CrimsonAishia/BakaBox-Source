@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:desktop_multi_window/desktop_multi_window.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../bloc/settings/settings_state.dart';
 import '../utils/log_service.dart';
 
 /// 通知类型
@@ -80,11 +82,12 @@ class NotificationData {
   }
 
   /// 单个通知窗口的参数 JSON
-  String toArguments(int position, String mainWindowId, {double? yOffset}) => jsonEncode({
+  String toArguments(int position, String mainWindowId, {double? yOffset, NotificationPositionType? notificationPosition}) => jsonEncode({
         'windowType': 'single_notification',
         'position': position,
         'yOffset': yOffset,
         'mainWindowId': mainWindowId,
+        'notificationPosition': notificationPosition?.index ?? NotificationPositionType.topRight.index,
         ...toMap(),
       });
 
@@ -99,13 +102,15 @@ class NotificationData {
     }
   }
 
-  /// 从窗口参数解析通知数据、位置、Y偏移量和主窗口ID
-  static (NotificationData, int, double?, String) fromArguments(String arguments) {
+  /// 从窗口参数解析通知数据、位置、Y偏移量、主窗口ID和通知位置
+  static (NotificationData, int, double?, String, NotificationPositionType) fromArguments(String arguments) {
     final map = jsonDecode(arguments) as Map<String, dynamic>;
     final position = map['position'] as int? ?? 0;
     final yOffset = map['yOffset'] as double?;
     final mainWindowId = map['mainWindowId'] as String? ?? '';
-    return (fromMap(map), position, yOffset, mainWindowId);
+    final notificationPositionIndex = map['notificationPosition'] as int? ?? NotificationPositionType.topRight.index;
+    final notificationPosition = NotificationPositionType.values[notificationPositionIndex];
+    return (fromMap(map), position, yOffset, mainWindowId, notificationPosition);
   }
 }
 
@@ -142,6 +147,9 @@ class NotificationWindowService {
 
   /// 等待队列（屏幕已满时，新通知在此等待）
   final List<NotificationData> _pendingQueue = [];
+
+  /// 当前通知位置设置
+  NotificationPositionType _notificationPosition = NotificationPositionType.topRight;
 
   /// 窗口配置
   static const double windowWidth = 300.0;
@@ -183,6 +191,27 @@ class NotificationWindowService {
   void setMainWindowId(String windowId) {
     _mainWindowId = windowId;
     LogService.d('[NotificationWindow] Main window ID set: $windowId');
+  }
+
+  /// 设置通知位置
+  void setNotificationPosition(NotificationPositionType position) {
+    _notificationPosition = position;
+    LogService.d('[NotificationWindow] Notification position set: ${position.displayName}');
+  }
+
+  /// 获取当前通知位置
+  NotificationPositionType get notificationPosition => _notificationPosition;
+
+  /// 从设置中加载通知位置
+  Future<void> loadNotificationPosition() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final positionIndex = prefs.getInt('notification_position') ?? NotificationPositionType.topRight.index;
+      _notificationPosition = NotificationPositionType.values[positionIndex];
+      LogService.d('[NotificationWindow] Loaded notification position: ${_notificationPosition.displayName}');
+    } catch (e) {
+      LogService.e('[NotificationWindow] Failed to load notification position', e);
+    }
   }
 
   /// 设置导航回调（由主窗口设置）
@@ -281,11 +310,16 @@ class NotificationWindowService {
     final yOffset = _calculateYOffset(position, isWarmup: isWarmup);
 
     try {
-      // 创建新窗口，传递主窗口 ID 和 Y 偏移量
+      // 创建新窗口，传递主窗口 ID、Y 偏移量和通知位置
       final controller = await WindowController.create(
         WindowConfiguration(
           hiddenAtLaunch: true,
-          arguments: notification.toArguments(position, _mainWindowId, yOffset: yOffset),
+          arguments: notification.toArguments(
+            position, 
+            _mainWindowId, 
+            yOffset: yOffset,
+            notificationPosition: _notificationPosition,
+          ),
         ),
       );
 
