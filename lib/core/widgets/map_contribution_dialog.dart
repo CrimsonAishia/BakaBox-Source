@@ -1721,11 +1721,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       final result = await uploadService.uploadToImageBed(
         _selectedImage!,
         categoryName: 'map_backgrounds',
-        onProgress: (progress) {
-          if (mounted) {
-            setState(() => _uploadProgress = progress.progress);
-          }
-        },
       );
 
       if (!mounted) return;
