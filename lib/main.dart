@@ -13,6 +13,7 @@ import 'desktop/app.dart';
 import 'desktop/widgets/floating_window/floating_window_app.dart';
 import 'desktop/widgets/floating_window/floating_window_state.dart';
 import 'desktop/widgets/notification_window_app.dart';
+import 'desktop/widgets/position_preview_window.dart';
 import 'mobile/app.dart';
 
 /// 1. 使用 WindowController.fromCurrentEngine() 获取当前窗口
@@ -80,8 +81,12 @@ Future<void> main(List<String> args) async {
   if (isMainWindow) {
     await _runMainWindow(controller);
   } else {
+    // 检查是否是位置预览窗口
+    if (PositionPreviewConfig.isPositionPreviewWindow(controller.arguments)) {
+      await _runPositionPreviewWindow(controller);
+    }
     // 检查是否是单个通知窗口
-    if (NotificationData.isSingleNotificationWindow(controller.arguments)) {
+    else if (NotificationData.isSingleNotificationWindow(controller.arguments)) {
       await _runSingleNotificationWindow(controller);
     } else {
       final config = FloatingWindowConfig.fromArguments(controller.arguments);
@@ -219,12 +224,17 @@ Future<void> _runFloatingWindow(
 Future<void> _runSingleNotificationWindow(WindowController controller) async {
   final windowId = controller.windowId;
 
-  // 从参数解析通知数据、位置、Y偏移量和主窗口ID
-  final (notification, position, yOffset, mainWindowId) =
+  // 从参数解析通知数据、位置、Y偏移量、主窗口ID和通知位置
+  final (notification, position, yOffset, mainWindowId, notificationPosition) =
       NotificationData.fromArguments(controller.arguments);
 
   // 创建状态通知器
-  final stateNotifier = SingleNotificationStateNotifier(notification, position, yOffset: yOffset);
+  final stateNotifier = SingleNotificationStateNotifier(
+    notification, 
+    position, 
+    yOffset: yOffset,
+    notificationPosition: notificationPosition,
+  );
 
   // 获取主窗口控制器用于 IPC
   final mainWindowController = mainWindowId.isNotEmpty
@@ -277,4 +287,30 @@ Future<void> _runSingleNotificationWindow(WindowController controller) async {
     mainWindowController: mainWindowController,
     notificationId: notification.id,
   ));
+}
+
+
+/// 运行位置预览窗口
+Future<void> _runPositionPreviewWindow(WindowController controller) async {
+  final config = PositionPreviewConfig.fromArguments(controller.arguments);
+
+  // 设置 IPC 处理器
+  await controller.setWindowMethodHandler((call) async {
+    switch (call.method) {
+      case 'window_close':
+      case 'close_self':
+        await windowManager.close();
+        return true;
+      case 'updatePosition':
+        final args = call.arguments as Map<dynamic, dynamic>;
+        final x = (args['x'] as num?)?.toDouble() ?? 0;
+        final y = (args['y'] as num?)?.toDouble() ?? 0;
+        await windowManager.setPosition(Offset(x, y));
+        return true;
+      default:
+        throw MissingPluginException('Not implemented: ${call.method}');
+    }
+  });
+
+  runApp(PositionPreviewWindowApp(config: config));
 }

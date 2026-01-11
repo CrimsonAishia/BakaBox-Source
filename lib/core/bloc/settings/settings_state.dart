@@ -7,6 +7,45 @@ enum LaunchPlatformType {
   perfect,    // 完美世界
 }
 
+/// 通知位置枚举
+enum NotificationPositionType {
+  topLeft,      // 左上角
+  topCenter,    // 顶部居中
+  topRight,     // 右上角
+  centerLeft,   // 左侧居中
+  center,       // 正中间
+  centerRight,  // 右侧居中
+  bottomLeft,   // 左下角
+  bottomCenter, // 底部居中
+  bottomRight,  // 右下角
+}
+
+/// 通知位置扩展
+extension NotificationPositionTypeExtension on NotificationPositionType {
+  String get displayName {
+    switch (this) {
+      case NotificationPositionType.topLeft:
+        return '左上角';
+      case NotificationPositionType.topCenter:
+        return '顶部居中';
+      case NotificationPositionType.topRight:
+        return '右上角';
+      case NotificationPositionType.centerLeft:
+        return '左侧居中';
+      case NotificationPositionType.center:
+        return '正中间';
+      case NotificationPositionType.centerRight:
+        return '右侧居中';
+      case NotificationPositionType.bottomLeft:
+        return '左下角';
+      case NotificationPositionType.bottomCenter:
+        return '底部居中';
+      case NotificationPositionType.bottomRight:
+        return '右下角';
+    }
+  }
+}
+
 /// 缓存类型枚举
 enum CacheType {
   cacheFiles,     // 缓存文件（包含临时文件和图片缓存）
@@ -86,6 +125,12 @@ class SettingsState extends Equatable {
   // 详细缓存信息
   final List<CacheItemInfo> cacheDetails;
   final bool isLoadingCacheDetails;
+  
+  // 通知位置设置
+  final NotificationPositionType notificationPosition;
+  
+  // 浮窗位置设置
+  final NotificationPositionType floatingWindowPosition;
 
   const SettingsState({
     this.appVersion = '',
@@ -105,6 +150,8 @@ class SettingsState extends Equatable {
     this.audioVolume = 0.8,
     this.cacheDetails = const [],
     this.isLoadingCacheDetails = false,
+    this.notificationPosition = NotificationPositionType.topRight,
+    this.floatingWindowPosition = NotificationPositionType.bottomRight,
   });
   
   /// 获取总缓存大小（字节）
@@ -160,6 +207,8 @@ class SettingsState extends Equatable {
     double? audioVolume,
     List<CacheItemInfo>? cacheDetails,
     bool? isLoadingCacheDetails,
+    NotificationPositionType? notificationPosition,
+    NotificationPositionType? floatingWindowPosition,
   }) {
     return SettingsState(
       appVersion: appVersion ?? this.appVersion,
@@ -179,6 +228,8 @@ class SettingsState extends Equatable {
       audioVolume: audioVolume ?? this.audioVolume,
       cacheDetails: cacheDetails ?? this.cacheDetails,
       isLoadingCacheDetails: isLoadingCacheDetails ?? this.isLoadingCacheDetails,
+      notificationPosition: notificationPosition ?? this.notificationPosition,
+      floatingWindowPosition: floatingWindowPosition ?? this.floatingWindowPosition,
     );
   }
 
@@ -201,5 +252,7 @@ class SettingsState extends Equatable {
     audioVolume,
     cacheDetails,
     isLoadingCacheDetails,
+    notificationPosition,
+    floatingWindowPosition,
   ];
 }

@@ -7,6 +7,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 
+import '../../core/bloc/settings/settings_state.dart';
 import '../../core/services/notification_window_service.dart';
 import '../../core/utils/map_utils.dart';
 import '../../core/utils/image_cache_manager.dart';
@@ -17,14 +18,20 @@ class SingleNotificationStateNotifier extends ChangeNotifier {
   NotificationData _notification;
   int _position;
   double? _yOffset;
+  NotificationPositionType _notificationPosition;
 
-  SingleNotificationStateNotifier(this._notification, this._position,
-      {double? yOffset})
-      : _yOffset = yOffset;
+  SingleNotificationStateNotifier(
+    this._notification, 
+    this._position, {
+    double? yOffset,
+    NotificationPositionType notificationPosition = NotificationPositionType.topRight,
+  }) : _yOffset = yOffset,
+       _notificationPosition = notificationPosition;
 
   NotificationData get notification => _notification;
   int get position => _position;
   double? get yOffset => _yOffset;
+  NotificationPositionType get notificationPosition => _notificationPosition;
 
   void updateNotification(NotificationData notification) {
     _notification = notification;
@@ -95,7 +102,6 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
   static const double _windowWidth = 300.0;
   static const double _normalCardHeight = 72.0;
   static const double _updateLogCardHeight = 120.0;
-  static const double _cardSpacing = 8.0;
   static const double _topPadding = 40.0;
 
   // 动画
@@ -157,18 +163,18 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
 
       final screenInfo = await windowManager.getPrimaryScreenSize();
       final screenWidth = screenInfo['screenWidth']!;
+      final screenHeight = screenInfo['screenHeight']!;
 
       final size = Size(_windowWidth, _windowHeight);
-      final x = screenWidth - _windowWidth;
-      final y = _calculateWindowY();
+      final position = _calculateWindowPosition(screenWidth, screenHeight);
 
-      debugPrint('[SingleNotificationWindow] Init window at position ${widget.stateNotifier.position}, y=$y');
+      debugPrint('[SingleNotificationWindow] Init window at position ${widget.stateNotifier.position}, x=${position.dx}, y=${position.dy}');
 
       // 不传递 options，手动设置所有属性
       await windowManager.waitUntilReadyToShow(null, () async {
         await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
         await windowManager.setSize(size);
-        await windowManager.setPosition(Offset(x, y));
+        await windowManager.setPosition(position);
         await windowManager.setSkipTaskbar(true);
         await windowManager.setAlwaysOnTop(true);
         await windowManager.setBackgroundColor(Colors.transparent);
@@ -196,15 +202,59 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
     }
   }
 
-  double _calculateWindowY() {
-    // 优先使用传入的 yOffset
-    final yOffset = widget.stateNotifier.yOffset;
-    if (yOffset != null) {
-      return yOffset;
+  /// 根据通知位置设置计算窗口在屏幕上的位置
+  Offset _calculateWindowPosition(double screenWidth, double screenHeight) {
+    final notificationPosition = widget.stateNotifier.notificationPosition;
+    final yOffset = widget.stateNotifier.yOffset ?? _topPadding;
+    
+    // 任务栏高度估算
+    const taskbarHeight = 48.0;
+    final availableHeight = screenHeight - taskbarHeight;
+    final centerY = (availableHeight - _windowHeight) / 2;
+    
+    double x;
+    double y;
+    
+    switch (notificationPosition) {
+      case NotificationPositionType.topLeft:
+        x = 0;
+        y = yOffset;
+        break;
+      case NotificationPositionType.topCenter:
+        x = (screenWidth - _windowWidth) / 2;
+        y = yOffset;
+        break;
+      case NotificationPositionType.topRight:
+        x = screenWidth - _windowWidth;
+        y = yOffset;
+        break;
+      case NotificationPositionType.centerLeft:
+        x = 0;
+        y = centerY;
+        break;
+      case NotificationPositionType.center:
+        x = (screenWidth - _windowWidth) / 2;
+        y = centerY;
+        break;
+      case NotificationPositionType.centerRight:
+        x = screenWidth - _windowWidth;
+        y = centerY;
+        break;
+      case NotificationPositionType.bottomLeft:
+        x = 0;
+        y = screenHeight - _windowHeight - taskbarHeight - yOffset;
+        break;
+      case NotificationPositionType.bottomCenter:
+        x = (screenWidth - _windowWidth) / 2;
+        y = screenHeight - _windowHeight - taskbarHeight - yOffset;
+        break;
+      case NotificationPositionType.bottomRight:
+        x = screenWidth - _windowWidth;
+        y = screenHeight - _windowHeight - taskbarHeight - yOffset;
+        break;
     }
-    // 回退到基于 position 的计算
-    final position = widget.stateNotifier.position;
-    return _topPadding + position * (_normalCardHeight + _cardSpacing);
+    
+    return Offset(x, y);
   }
 
   Future<void> _updateWindowPosition() async {
@@ -212,11 +262,11 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
     try {
       final screenInfo = await windowManager.getPrimaryScreenSize();
       final screenWidth = screenInfo['screenWidth']!;
-      final x = screenWidth - _windowWidth;
-      final y = _calculateWindowY();
+      final screenHeight = screenInfo['screenHeight']!;
+      final position = _calculateWindowPosition(screenWidth, screenHeight);
       debugPrint(
-          '[SingleNotificationWindow] Updating position to y=$y (position=${widget.stateNotifier.position})');
-      await windowManager.setPosition(Offset(x, y));
+          '[SingleNotificationWindow] Updating position to x=${position.dx}, y=${position.dy} (position=${widget.stateNotifier.position})');
+      await windowManager.setPosition(position);
     } catch (e) {
       debugPrint('[SingleNotificationWindow] Update position error: $e');
     }

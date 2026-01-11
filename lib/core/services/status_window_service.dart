@@ -195,6 +195,39 @@ class StatusWindowService {
     _updateState(_state.copyWith(isGameRunning: _gameStatusService.isGameRunning));
     LogService.i('[StatusWindowService] 服务已初始化');
   }
+
+  /// 显示测试浮窗（用于设置页面预览）
+  Future<void> showTestWindow({
+    required String serverAddress,
+    required String serverName,
+  }) async {
+    // 如果有正在进行的操作，不显示测试窗口
+    if (_state.type != OperationType.none && _state.status == OperationStatus.running) {
+      LogService.w('[StatusWindowService] 有其他操作正在进行，无法显示测试窗口');
+      return;
+    }
+
+    _cancelCloseTimer();
+
+    // 显示测试浮窗
+    await _showWindow(
+      type: FloatingWindowType.queue,
+      serverAddress: serverAddress,
+      title: serverName,
+      state: 'queueing',
+      message: '测试浮窗显示效果',
+      mapName: 'de_mirage',
+      mapNameCn: '荒漠迷城',
+      currentPlayers: 8,
+      targetPlayers: 10,
+      threadStatuses: ['success', 'requesting', 'idle', 'failed'],
+    );
+
+    // 5秒后自动关闭
+    _scheduleClose(seconds: 5);
+    
+    LogService.d('[StatusWindowService] 显示测试浮窗');
+  }
   
   /// 启动游戏
   Future<bool> launchGame({
