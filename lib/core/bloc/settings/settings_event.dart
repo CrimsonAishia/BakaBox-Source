@@ -79,14 +79,6 @@ class SettingsClearGamePath extends SettingsEvent {}
 
 class SettingsClearSteamPath extends SettingsEvent {}
 
-// 应用设置事件
-class SettingsSetStartupAnimation extends SettingsEvent {
-  final bool enabled;
-  const SettingsSetStartupAnimation(this.enabled);
-  @override
-  List<Object?> get props => [enabled];
-}
-
 // 音效设置事件
 class SettingsSetAudioVolume extends SettingsEvent {
   final double volume;

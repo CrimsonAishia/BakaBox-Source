@@ -27,17 +27,6 @@ class AppSettings extends StatelessWidget {
           icon: MdiIcons.cog,
         ),
         AppSettingItem(
-          title: '启动动画',
-          description: '控制应用启动时是否显示logo动画效果',
-          action: Switch(
-            value: settingsState.enableStartupAnimation,
-            onChanged: (value) {
-              context.read<SettingsBloc>().add(SettingsSetStartupAnimation(value));
-            },
-            activeColor: const Color(0xFF0080FF),
-          ),
-        ),
-        AppSettingItem(
           title: '挤服成功音效音量',
           description: '调节挤服成功时播放音效的音量大小',
           value: _VolumeSlider(settingsState: settingsState),
