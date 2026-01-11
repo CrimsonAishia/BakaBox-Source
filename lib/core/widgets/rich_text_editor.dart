@@ -55,14 +55,11 @@ class RichTextEditorState extends State<RichTextEditor> {
   /// 已上传的图片列表（存储 fileId 引用格式）
   final List<UploadedImage> _uploadedImages = [];
   
-  UploadProgress? _currentUploadProgress;
   final FocusNode _focusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
   
   bool _isUploading = false;
-  File? _failedUploadFile;
-  int _uploadRetryCount = 0;
-  static const int _maxRetries = 3;
+  String? _uploadingFileName;
   
   bool _showDraftRestorePrompt = false;
   DraftData? _restoredDraft;
@@ -195,11 +192,6 @@ class RichTextEditorState extends State<RichTextEditor> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 上传进度
-          if (_currentUploadProgress != null) ...[
-            _buildInlineUploadProgress(isDark),
-            const SizedBox(height: 8),
-          ],
           // 附件区域 + 状态信息
           Row(
             children: [
@@ -212,7 +204,17 @@ class RichTextEditorState extends State<RichTextEditor> {
                       // 添加图片按钮（未达上限时显示，放在最左边）
                       if (!isImageLimit && !_isUploading) ...[
                         _buildAddImageButton(isDark),
-                        if (_uploadedImages.isNotEmpty) const SizedBox(width: 8),
+                        if (_uploadedImages.isNotEmpty || _isUploading)
+                          const SizedBox(width: 8),
+                      ],
+                      // 上传中的占位项
+                      if (_isUploading) ...[
+                        _UploadingImageItem(
+                          fileName: _uploadingFileName ?? '',
+                          isDark: isDark,
+                        ),
+                        if (_uploadedImages.isNotEmpty)
+                          const SizedBox(width: 6),
                       ],
                       // 已上传的图片
                       if (_uploadedImages.isNotEmpty)
@@ -293,66 +295,6 @@ class RichTextEditorState extends State<RichTextEditor> {
     });
     _notifyImagesChanged();
     _showSuccess('图片已删除');
-  }
-
-  Widget _buildInlineUploadProgress(bool isDark) {
-    final progress = _currentUploadProgress!;
-    final isUploading = progress.status == UploadStatus.uploading;
-    final isFailed = progress.status == UploadStatus.failed;
-    final isCompleted = progress.status == UploadStatus.completed;
-    
-    Color accentColor;
-    IconData icon;
-    
-    if (isFailed) {
-      accentColor = const Color(0xFFDC2626);
-      icon = Icons.error_outline_rounded;
-    } else if (isCompleted) {
-      accentColor = const Color(0xFF059669);
-      icon = Icons.check_circle_outline_rounded;
-    } else {
-      accentColor = const Color(0xFF0080FF);
-      icon = Icons.cloud_upload_rounded;
-    }
-    
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: accentColor.withValues(alpha: isDark ? 0.15 : 0.08),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          if (isUploading)
-            SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, value: progress.progress, color: accentColor, backgroundColor: accentColor.withValues(alpha: 0.2)))
-          else
-            Icon(icon, size: 16, color: accentColor),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Expanded(child: Text(progress.fileName, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: isDark ? Colors.white : const Color(0xFF374151)), overflow: TextOverflow.ellipsis)),
-                    if (isUploading) Text('${(progress.progress * 100).toInt()}%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: accentColor)),
-                  ],
-                ),
-                if (isUploading) ...[
-                  const SizedBox(height: 4),
-                  ClipRRect(borderRadius: BorderRadius.circular(2), child: LinearProgressIndicator(value: progress.progress, backgroundColor: accentColor.withValues(alpha: 0.2), valueColor: AlwaysStoppedAnimation<Color>(accentColor), minHeight: 3)),
-                ],
-              ],
-            ),
-          ),
-          if (isFailed && _uploadRetryCount < _maxRetries) ...[
-            const SizedBox(width: 8),
-            GestureDetector(onTap: _retryFailedUpload, child: Text('重试', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: accentColor))),
-          ],
-        ],
-      ),
-    );
   }
   
   Widget _buildStatusChip({IconData? icon, required String text, bool isWarning = false, bool isError = false, required bool isDark}) {
@@ -567,8 +509,6 @@ class RichTextEditorState extends State<RichTextEditor> {
         return;
       }
 
-      _failedUploadFile = file;
-      _uploadRetryCount = 0;
       await _performUpload(file);
     } catch (e) {
       LogService.e('选择文件失败', e);
@@ -577,33 +517,17 @@ class RichTextEditorState extends State<RichTextEditor> {
   }
 
   Future<void> _performUpload(File file) async {
-    setState(() => _isUploading = true);
+    final fileName = file.path.split('/').last.split('\\').last;
+    setState(() {
+      _isUploading = true;
+      _uploadingFileName = fileName;
+    });
 
     try {
       final uploadResult = await _uploadService.uploadToImageBed(
         file,
         categoryName: 'bakabox_issues',
-        onProgress: (progress) {
-          if (mounted) setState(() => _currentUploadProgress = progress);
-        },
       );
-
-      if (mounted) {
-        setState(() {
-          _currentUploadProgress = UploadProgress(
-            fileName: file.path.split('/').last.split('\\').last,
-            totalBytes: file.lengthSync(),
-            uploadedBytes: file.lengthSync(),
-            progress: 1.0,
-            status: UploadStatus.completed,
-          );
-          _isUploading = false;
-        });
-      }
-
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) setState(() => _currentUploadProgress = null);
-      });
 
       // 存储 fileId 引用格式
       final imageRef = ImageUrlService.createFileIdRef(uploadResult.fileId);
@@ -615,48 +539,28 @@ class RichTextEditorState extends State<RichTextEditor> {
       );
 
       if (mounted) {
-        setState(() => _uploadedImages.add(uploadedImage));
+        setState(() {
+          _uploadedImages.add(uploadedImage);
+          _isUploading = false;
+          _uploadingFileName = null;
+        });
       }
 
       _notifyImagesChanged();
       _focusNode.requestFocus();
       _showSuccess('图片上传成功');
-      
-      _failedUploadFile = null;
-      _uploadRetryCount = 0;
     } catch (e) {
       LogService.e('上传失败', e);
       
       if (mounted) {
         setState(() {
-          _currentUploadProgress = UploadProgress(
-            fileName: file.path.split('/').last.split('\\').last,
-            totalBytes: file.lengthSync(),
-            uploadedBytes: 0,
-            progress: 0.0,
-            status: UploadStatus.failed,
-            error: e.toString(),
-          );
           _isUploading = false;
+          _uploadingFileName = null;
         });
       }
       
       _showError('上传失败: ${_getErrorMessage(e)}');
     }
-  }
-
-  Future<void> _retryFailedUpload() async {
-    if (_failedUploadFile == null) {
-      _showError('没有可重试的上传');
-      return;
-    }
-    if (_uploadRetryCount >= _maxRetries) {
-      _showError('已达到最大重试次数');
-      return;
-    }
-    _uploadRetryCount++;
-    LogService.i('重试上传 ($_uploadRetryCount/$_maxRetries)');
-    await _performUpload(_failedUploadFile!);
   }
 
   String _getErrorMessage(dynamic error) {
@@ -892,6 +796,48 @@ class _AddImageButtonState extends State<_AddImageButton> {
               ] : null,
             ),
             child: Icon(Icons.add_photo_alternate_outlined, size: 20, color: iconColor),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 上传中的图片占位组件
+class _UploadingImageItem extends StatelessWidget {
+  final String fileName;
+  final bool isDark;
+
+  const _UploadingImageItem({
+    required this.fileName,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: '上传中: $fileName',
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: const Color(0xFF0080FF).withValues(alpha: 0.5),
+            width: 1,
+          ),
+          color: isDark
+              ? const Color(0xFF0080FF).withValues(alpha: 0.1)
+              : const Color(0xFFEFF6FF),
+        ),
+        child: const Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Color(0xFF0080FF),
+            ),
           ),
         ),
       ),
