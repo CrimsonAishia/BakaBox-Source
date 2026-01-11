@@ -473,7 +473,6 @@ class FileUploadService {
   Future<UploadResult> uploadToImageBed(
     File file, {
     String? categoryName,
-    Function(UploadProgress progress)? onProgress,
   }) async {
     // 验证文件
     final validation = FileValidationUtils.validateFile(file);
@@ -483,15 +482,6 @@ class FileUploadService {
 
     final fileName = file.path.split('/').last.split('\\').last;
     final fileSize = file.lengthSync();
-
-    // 更新状态：上传中
-    onProgress?.call(UploadProgress(
-      fileName: fileName,
-      totalBytes: fileSize,
-      uploadedBytes: 0,
-      progress: 0.0,
-      status: UploadStatus.uploading,
-    ));
 
     try {
       // 读取文件数据
@@ -507,15 +497,6 @@ class FileUploadService {
         operationName: '图床上传',
       );
 
-      // 更新状态：完成
-      onProgress?.call(UploadProgress(
-        fileName: fileName,
-        totalBytes: fileSize,
-        uploadedBytes: fileSize,
-        progress: 1.0,
-        status: UploadStatus.completed,
-      ));
-
       LogService.i('图床上传成功: $fileName');
 
       return UploadResult(
@@ -528,16 +509,6 @@ class FileUploadService {
       );
     } catch (e) {
       LogService.e('图床上传失败: $fileName', e);
-
-      onProgress?.call(UploadProgress(
-        fileName: fileName,
-        totalBytes: fileSize,
-        uploadedBytes: 0,
-        progress: 0.0,
-        status: UploadStatus.failed,
-        error: e.toString(),
-      ));
-
       rethrow;
     }
   }
