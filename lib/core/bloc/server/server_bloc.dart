@@ -20,6 +20,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   final Map<String, int> _failureCountCache = {};
   int _currentRequestId = 0;
   
+  // 分类人数查询防重入标记
+  bool _isUpdatingCategoryOnlineCounts = false;
+  
   // 刷新频率限制：记录每个服务器的刷新时间戳
   final Map<String, List<DateTime>> _refreshHistory = {};
   static const int _maxRefreshPerMinute = 5; // 1分钟内最多刷新5次
@@ -493,80 +496,87 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   Future<void> _onUpdateCategoryOnlineCounts(ServerUpdateCategoryOnlineCounts event, Emitter<ServerState> emit) async {
     if (state.serverCategories.isEmpty) return;
     
-    final isFirstLoad = !state.hasEverLoadedOnlineCounts;
-    if (isFirstLoad) emit(state.copyWith(isLoadingOnlineCounts: true));
+    // 防重入：如果正在更新，直接返回，避免多次触发导致人数翻倍
+    if (_isUpdatingCategoryOnlineCounts) return;
+    _isUpdatingCategoryOnlineCounts = true;
     
-    // 先重置所有分类人数为 0（避免累加到旧数据）
-    final resetCounts = <String, int>{};
-    for (final category in state.serverCategories) {
-      final categoryName = category.modelName ?? '';
-      resetCounts[categoryName] = 0;
-    }
-    emit(state.copyWith(categoryOnlineCounts: resetCounts));
-    
-    final futures = <Future<void>>[];
-    
-    for (final category in state.serverCategories) {
-      final categoryName = category.modelName ?? '';
+    try {
+      final isFirstLoad = !state.hasEverLoadedOnlineCounts;
+      if (isFirstLoad) emit(state.copyWith(isLoadingOnlineCounts: true));
       
-      if (categoryName == state.selectedCategory?.modelName && state.servers.any((s) => s.serverData != null)) {
-        int totalOnline = state.servers.fold(0, (sum, s) => sum + (s.serverData?.players ?? 0));
-        final updatedCounts = Map<String, int>.from(state.categoryOnlineCounts)..[categoryName] = totalOnline;
-        emit(state.copyWith(categoryOnlineCounts: updatedCounts));
-        continue;
+      // 先重置所有分类人数为 0（避免累加到旧数据）
+      final resetCounts = <String, int>{};
+      for (final category in state.serverCategories) {
+        final categoryName = category.modelName ?? '';
+        resetCounts[categoryName] = 0;
+      }
+      emit(state.copyWith(categoryOnlineCounts: resetCounts));
+      
+      // 记录当前选中分类名，用于跳过重复查询
+      final selectedCategoryName = state.selectedCategory?.modelName;
+      
+      final futures = <Future<void>>[];
+      
+      for (final category in state.serverCategories) {
+        final categoryName = category.modelName ?? '';
+        
+        // 当前选中分类且已有服务器数据时，直接从 state.servers 计算，不再发起网络请求
+        if (categoryName == selectedCategoryName && state.servers.any((s) => s.serverData != null)) {
+          int totalOnline = state.servers.fold(0, (sum, s) => sum + (s.serverData?.players ?? 0));
+          final updatedCounts = Map<String, int>.from(state.categoryOnlineCounts)..[categoryName] = totalOnline;
+          emit(state.copyWith(categoryOnlineCounts: updatedCounts));
+          continue;
+        }
+        
+        futures.add(_fetchCategoryOnlineCountAsync(category, selectedCategoryName, emit));
       }
       
-      futures.add(_fetchCategoryOnlineCountAsync(category, emit));
-    }
-    
-    if (futures.isNotEmpty) await Future.wait(futures);
-    
-    if (!emit.isDone) {
-      emit(state.copyWith(isLoadingOnlineCounts: false, hasEverLoadedOnlineCounts: true));
+      if (futures.isNotEmpty) await Future.wait(futures);
+      
+      if (!emit.isDone) {
+        emit(state.copyWith(isLoadingOnlineCounts: false, hasEverLoadedOnlineCounts: true));
+      }
+    } finally {
+      _isUpdatingCategoryOnlineCounts = false;
     }
   }
 
-  Future<void> _fetchCategoryOnlineCountAsync(ServerCategory category, Emitter<ServerState> emit) async {
+  Future<void> _fetchCategoryOnlineCountAsync(ServerCategory category, String? selectedCategoryName, Emitter<ServerState> emit) async {
     final categoryName = category.modelName ?? '';
     
-    // 并行查询所有服务器，每个服务器完成后立即累加更新
-    final futures = <Future<void>>[];
+    // 如果是当前选中分类，跳过（由 _updateCurrentCategoryOnlineCount 处理，避免重复查询导致人数翻倍）
+    if (categoryName == selectedCategoryName) return;
+    
+    // 收集所有服务器人数后一次性更新，避免并发累加时的竞态条件
+    final futures = <Future<int>>[];
     
     for (final serverItem in category.serverList) {
       final address = serverItem.address ?? serverItem.serverAddress;
       if (address != null) {
-        futures.add(_fetchSingleServerOnlineCount(
-          categoryName: categoryName,
-          address: address,
-          emit: emit,
-        ));
+        futures.add(_fetchSingleServerPlayerCount(address));
       }
     }
     
     if (futures.isNotEmpty) {
-      await Future.wait(futures);
+      final results = await Future.wait(futures);
+      final totalPlayers = results.fold(0, (sum, count) => sum + count);
+      
+      // 一次性更新该分类的总人数
+      if (!emit.isDone) {
+        final updatedCounts = Map<String, int>.from(state.categoryOnlineCounts)
+          ..[categoryName] = totalPlayers;
+        emit(state.copyWith(categoryOnlineCounts: updatedCounts));
+      }
     }
   }
   
-  /// 获取单个服务器人数并累加到分类总人数
-  Future<void> _fetchSingleServerOnlineCount({
-    required String categoryName,
-    required String address,
-    required Emitter<ServerState> emit,
-  }) async {
-    if (emit.isDone) return;
-    
+  /// 获取单个服务器人数（返回人数，不直接更新状态）
+  Future<int> _fetchSingleServerPlayerCount(String address) async {
     try {
       final info = await _getServerInfo(address);
-      if (info != null && !emit.isDone) {
-        // 获取当前人数并累加
-        final currentCount = state.categoryOnlineCounts[categoryName] ?? 0;
-        final updatedCounts = Map<String, int>.from(state.categoryOnlineCounts)
-          ..[categoryName] = currentCount + info.players;
-        emit(state.copyWith(categoryOnlineCounts: updatedCounts));
-      }
+      return info?.players ?? 0;
     } catch (_) {
-      // 忽略单个服务器查询失败
+      return 0;
     }
   }
 
