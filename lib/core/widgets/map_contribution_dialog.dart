@@ -969,11 +969,14 @@ class _MapContributionDialogState extends State<MapContributionDialog>
 
     try {
       final uploadService = FileUploadService();
-      final result = await uploadService.uploadImage(imageFile);
-      
+      final result = await uploadService.uploadToImageBed(
+        imageFile,
+        categoryName: 'map_backgrounds',
+      );
+
       if (!mounted) return;
       Navigator.of(context).pop(); // 关闭进度对话框
-      
+
       context.read<MapContributionBloc>().add(UpdateBackgroundContribution(
         id: contributionId,
         fileId: result.fileId,
@@ -1715,8 +1718,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     try {
       // 上传图片
       final uploadService = FileUploadService();
-      final result = await uploadService.uploadImage(
+      final result = await uploadService.uploadToImageBed(
         _selectedImage!,
+        categoryName: 'map_backgrounds',
         onProgress: (progress) {
           if (mounted) {
             setState(() => _uploadProgress = progress.progress);

@@ -463,6 +463,84 @@ class FileUploadService {
       LogService.e('取消上传失败', e);
     }
   }
+
+  /// 上传图片到图床（简单上传，适用于图片）
+  ///
+  /// 与 OSS 分片上传相比：
+  /// - 更简单，无需计算 MD5 和分片
+  /// - 适用于图片文件
+  /// - 返回 CDN 加速 URL
+  Future<UploadResult> uploadToImageBed(
+    File file, {
+    String? categoryName,
+    Function(UploadProgress progress)? onProgress,
+  }) async {
+    // 验证文件
+    final validation = FileValidationUtils.validateFile(file);
+    if (!validation.isValid) {
+      throw FileValidationException(validation.errorMessage ?? '文件验证失败');
+    }
+
+    final fileName = file.path.split('/').last.split('\\').last;
+    final fileSize = file.lengthSync();
+
+    // 更新状态：上传中
+    onProgress?.call(UploadProgress(
+      fileName: fileName,
+      totalBytes: fileSize,
+      uploadedBytes: 0,
+      progress: 0.0,
+      status: UploadStatus.uploading,
+    ));
+
+    try {
+      // 读取文件数据
+      final fileData = await file.readAsBytes();
+
+      // 上传到图床（带重试）
+      final response = await _retryOperation(
+        () => _api.uploadToImageBed(
+          data: fileData,
+          filename: fileName,
+          categoryName: categoryName,
+        ),
+        operationName: '图床上传',
+      );
+
+      // 更新状态：完成
+      onProgress?.call(UploadProgress(
+        fileName: fileName,
+        totalBytes: fileSize,
+        uploadedBytes: fileSize,
+        progress: 1.0,
+        status: UploadStatus.completed,
+      ));
+
+      LogService.i('图床上传成功: $fileName');
+
+      return UploadResult(
+        fileId: response.fileId,
+        url: response.url,
+        cdnUrl: response.url,
+        fileName: fileName,
+        fileSize: fileSize,
+        fileMD5: '', // 图床上传不需要 MD5
+      );
+    } catch (e) {
+      LogService.e('图床上传失败: $fileName', e);
+
+      onProgress?.call(UploadProgress(
+        fileName: fileName,
+        totalBytes: fileSize,
+        uploadedBytes: 0,
+        progress: 0.0,
+        status: UploadStatus.failed,
+        error: e.toString(),
+      ));
+
+      rethrow;
+    }
+  }
 }
 
 /// 上传任务

@@ -580,8 +580,9 @@ class RichTextEditorState extends State<RichTextEditor> {
     setState(() => _isUploading = true);
 
     try {
-      final uploadResult = await _uploadService.uploadImage(
+      final uploadResult = await _uploadService.uploadToImageBed(
         file,
+        categoryName: 'bakabox_issues',
         onProgress: (progress) {
           if (mounted) setState(() => _currentUploadProgress = progress);
         },
