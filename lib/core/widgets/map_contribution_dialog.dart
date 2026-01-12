@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -182,7 +183,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
 
   /// 构建头部
   Widget _buildHeader(Color textColor, bool isDark) {
-    final displayName = widget.mapLabel ?? widget.mapName;
     final secondaryTextColor = isDark ? Colors.white54 : const Color(0xFF6B7280);
 
     return Container(
@@ -210,15 +210,40 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                     color: textColor,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  displayName,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: secondaryTextColor,
+                const SizedBox(height: 4),
+                // 地图原名（可复制）
+                Tooltip(
+                  message: '点击复制',
+                  child: InkWell(
+                    onTap: () => _copyMapName(),
+                    borderRadius: BorderRadius.circular(4),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            MdiIcons.contentCopy,
+                            size: 12,
+                            color: secondaryTextColor,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              widget.mapName,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: secondaryTextColor,
+                                fontFamily: 'monospace',
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -231,6 +256,12 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         ],
       ),
     );
+  }
+
+  /// 复制地图原名到剪贴板
+  void _copyMapName() {
+    Clipboard.setData(ClipboardData(text: widget.mapName));
+    ToastUtils.showSuccess(context, '已复制: ${widget.mapName}');
   }
 
 
