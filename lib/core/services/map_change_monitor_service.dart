@@ -385,10 +385,13 @@ class MapChangeMonitorService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final List<String> data = _monitoredServers.entries.map((e) {
+        // 只有 categoryName 不为空时才标记为自定义分类
+        final isCustomCategory = e.value.categoryName != null && e.value.categoryName!.isNotEmpty;
         return jsonEncode({
           'address': e.key,
           'serverName': e.value.serverName,
           'categoryName': e.value.categoryName,
+          'isCustomCategory': isCustomCategory, // 标记是否为自定义分类
         });
       }).toList();
       await prefs.setStringList(_storageKey, data);
@@ -399,8 +402,10 @@ class MapChangeMonitorService {
 
   /// 从本地存储加载监控列表
   /// 
-  /// 注意：启动时不加载之前保存的地图名，这样首次检查只会记录当前地图而不会触发通知
-  /// 只有在应用运行期间检测到地图变化时才会发送通知
+  /// 注意：
+  /// 1. 启动时不加载之前保存的地图名，这样首次检查只会记录当前地图而不会触发通知
+  /// 2. 只有标记为自定义分类（isCustomCategory=true）的才加载 categoryName
+  ///    这样可以清理历史错误数据（非自定义分类但保存了分类名）
   Future<void> _loadMonitoredServers() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -412,7 +417,9 @@ class MapChangeMonitorService {
           final map = jsonDecode(item) as Map<String, dynamic>;
           final address = map['address'] as String;
           final serverName = map['serverName'] as String;
-          final categoryName = map['categoryName'] as String?;
+          // 只有明确标记为自定义分类的才加载 categoryName
+          final isCustomCategory = map['isCustomCategory'] as bool? ?? false;
+          final categoryName = isCustomCategory ? (map['categoryName'] as String?) : null;
           
           _monitoredServers[address] = ServerMonitorData(
             serverAddress: address,
