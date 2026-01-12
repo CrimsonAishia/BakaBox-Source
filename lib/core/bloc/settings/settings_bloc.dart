@@ -15,6 +15,8 @@ import '../../services/game_launcher_service.dart';
 import '../../services/game_path_service.dart';
 import '../../services/audio_service.dart';
 import '../../services/notification_window_service.dart';
+import '../../services/announcement_read_service.dart';
+import '../../services/custom_server_service.dart';
 import 'settings_event.dart';
 import 'settings_state.dart';
 
@@ -215,6 +217,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   Future<void> _onClearCache(SettingsClearCache event, Emitter<SettingsState> emit) async {
     emit(state.copyWith(isLoading: true));
     try {
+      // 清理图片缓存
+      await AppImageCacheManager.clearCache();
+      
       // 根据平台选择缓存目录
       Directory cacheDir;
       if (PlatformUtils.isDesktopPlatform) {
@@ -237,16 +242,25 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         }
       }
       
+      // 清理服务器列表缓存
+      await CacheService.clearServerListCache();
+      
+      // 清理地图信息缓存
+      await CacheService.clearMapInfoCache();
+      final serverApi = ServerApi();
+      serverApi.clearMapInfoCache();
+      
+      // 清理偏好设置中的缓存数据
       final prefs = await SharedPreferences.getInstance();
       final keysToRemove = prefs.getKeys().where((key) => 
-        key.contains('cache') || key.contains('temp')).toList();
+        (key.contains('cache') || key.contains('temp')) &&
+        !key.contains('theme') && !key.contains('path') && 
+        !key.contains('platform') && !key.contains('options')
+      ).toList();
       for (final key in keysToRemove) {
         await prefs.remove(key);
       }
       
-      await CacheService.clearServerListCache();
-      final serverApi = ServerApi();
-      serverApi.clearMapInfoCache();
       await _calculateCacheSize(emit);
       LogService.i('缓存清理完成');
     } catch (e) {
@@ -637,7 +651,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     final List<CacheItemInfo> details = [];
 
     try {
-      // 1. 缓存文件（临时文件 + 图片缓存）
+      final prefs = await SharedPreferences.getInstance();
+
+      // 1. 图片和临时文件缓存
       int cacheFilesSize = 0;
       if (PlatformUtils.isDesktopPlatform) {
         final cacheDir = Directory(AppDirectoryService.cachePath);
@@ -645,7 +661,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
           cacheFilesSize = await _calculateDirectorySize(cacheDir);
         }
       } else {
-        // 移动端：临时目录 + 图片缓存目录
         final tempDir = await getTemporaryDirectory();
         cacheFilesSize = await _calculateDirectorySize(tempDir);
         
@@ -657,42 +672,55 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       }
       details.add(CacheItemInfo(
         type: CacheType.cacheFiles,
-        name: '缓存文件',
+        name: '图片缓存',
         description: '临时文件和图片缓存',
         sizeInBytes: cacheFilesSize,
       ));
 
-      // 2. 服务器列表缓存
-      final prefs = await SharedPreferences.getInstance();
-      final serverListData = prefs.getString('cached_server_list');
-      final serverListSize = serverListData?.length ?? 0;
-      details.add(CacheItemInfo(
-        type: CacheType.serverList,
-        name: '服务器列表',
-        description: '缓存的服务器数据，加快加载速度',
-        sizeInBytes: serverListSize,
-      ));
-
-      // 3. 偏好设置缓存（不包括用户设置）
-      final cacheKeys = prefs.getKeys().where((key) => 
-        key.contains('cache') || key.contains('temp') || key.contains('timestamp')
-      ).toList();
-      int prefsSize = 0;
-      for (final key in cacheKeys) {
-        final value = prefs.get(key);
-        if (value is String) {
-          prefsSize += value.length;
-        } else if (value is List) {
-          prefsSize += value.length * 10; // 估算
-        } else {
-          prefsSize += 8; // 基本类型估算
+      // 2. 服务器相关数据（列表、地图信息、自定义服务器、监控列表）
+      int serverDataSize = 0;
+      serverDataSize += prefs.getString('cached_server_list')?.length ?? 0;
+      serverDataSize += prefs.getString('cached_map_info')?.length ?? 0;
+      serverDataSize += prefs.getString('custom_server_categories')?.length ?? 0;
+      final monitoredData = prefs.getStringList('monitored_servers');
+      if (monitoredData != null) {
+        for (final item in monitoredData) {
+          serverDataSize += item.length;
         }
       }
       details.add(CacheItemInfo(
-        type: CacheType.preferences,
-        name: '偏好缓存',
-        description: '应用偏好设置中的缓存数据',
-        sizeInBytes: prefsSize,
+        type: CacheType.serverData,
+        name: '服务器数据',
+        description: '服务器列表、地图、自定义配置等',
+        sizeInBytes: serverDataSize,
+      ));
+
+      // 3. 用户数据（草稿、公告已读状态）
+      int userDataSize = 0;
+      final draftKeys = prefs.getKeys().where((key) => key.startsWith('draft_')).toList();
+      for (final key in draftKeys) {
+        final value = prefs.getString(key);
+        if (value != null) userDataSize += value.length;
+      }
+      userDataSize += prefs.getString('announcement_read_ids')?.length ?? 0;
+      details.add(CacheItemInfo(
+        type: CacheType.userData,
+        name: '用户数据',
+        description: '草稿、已读状态等',
+        sizeInBytes: userDataSize,
+      ));
+
+      // 4. 日志文件
+      int logsSize = 0;
+      final logsDir = Directory(AppDirectoryService.logsPath);
+      if (await logsDir.exists()) {
+        logsSize = await _calculateDirectorySize(logsDir);
+      }
+      details.add(CacheItemInfo(
+        type: CacheType.logs,
+        name: '日志文件',
+        description: '应用运行日志',
+        sizeInBytes: logsSize,
       ));
 
     } catch (e) {
@@ -704,38 +732,30 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   /// 根据类型清除缓存
   Future<void> _clearCacheByType(CacheType cacheType) async {
+    final prefs = await SharedPreferences.getInstance();
+    
     switch (cacheType) {
       case CacheType.cacheFiles:
-        // 清理 flutter_cache_manager 的缓存
         await AppImageCacheManager.clearCache();
-        
         if (PlatformUtils.isDesktopPlatform) {
-          // 桌面端：清理整个缓存目录
           final cacheDir = Directory(AppDirectoryService.cachePath);
           if (await cacheDir.exists()) {
             await for (var entity in cacheDir.list()) {
               try {
-                if (entity is File) {
-                  await entity.delete();
-                } else if (entity is Directory) {
-                  await entity.delete(recursive: true);
-                }
+                if (entity is File) await entity.delete();
+                else if (entity is Directory) await entity.delete(recursive: true);
               } catch (e) {
                 LogService.d('删除缓存文件失败: ${entity.path}');
               }
             }
           }
         } else {
-          // 移动端：清理临时目录和图片缓存
           final tempDir = await getTemporaryDirectory();
           if (tempDir.existsSync()) {
             await for (var entity in tempDir.list()) {
               try {
-                if (entity is File) {
-                  await entity.delete();
-                } else if (entity is Directory) {
-                  await entity.delete(recursive: true);
-                }
+                if (entity is File) await entity.delete();
+                else if (entity is Directory) await entity.delete(recursive: true);
               } catch (e) {
                 LogService.d('删除临时文件失败: ${entity.path}');
               }
@@ -749,21 +769,26 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         }
         break;
 
-      case CacheType.serverList:
+      case CacheType.serverData:
         await CacheService.clearServerListCache();
+        await CacheService.clearMapInfoCache();
+        final serverApi = ServerApi();
+        serverApi.clearMapInfoCache();
+        await CustomServerService.clearAll();
+        await prefs.remove('monitored_servers');
         break;
 
-      case CacheType.preferences:
-        final prefs = await SharedPreferences.getInstance();
-        final cacheKeys = prefs.getKeys().where((key) => 
-          key.contains('cache') || key.contains('temp') || key.contains('timestamp')
-        ).toList();
-        for (final key in cacheKeys) {
-          // 不删除用户设置相关的key
-          if (!key.contains('theme') && !key.contains('path') && !key.contains('platform') && !key.contains('options')) {
-            await prefs.remove(key);
-          }
+      case CacheType.userData:
+        final draftKeys = prefs.getKeys().where((key) => key.startsWith('draft_')).toList();
+        for (final key in draftKeys) {
+          await prefs.remove(key);
         }
+        final announcementService = AnnouncementReadService();
+        await announcementService.clearReadStatus();
+        break;
+
+      case CacheType.logs:
+        await LogService.clearLogs();
         break;
     }
   }

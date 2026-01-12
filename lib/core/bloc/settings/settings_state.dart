@@ -48,9 +48,10 @@ extension NotificationPositionTypeExtension on NotificationPositionType {
 
 /// 缓存类型枚举
 enum CacheType {
-  cacheFiles,     // 缓存文件（包含临时文件和图片缓存）
-  serverList,     // 服务器列表缓存
-  preferences,    // 偏好设置缓存
+  cacheFiles,       // 图片和临时文件缓存
+  serverData,       // 服务器相关数据（列表、地图信息、自定义服务器、监控列表）
+  userData,         // 用户数据（草稿、公告已读状态）
+  logs,             // 日志文件
 }
 
 /// 缓存项信息
