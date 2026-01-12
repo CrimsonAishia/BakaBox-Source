@@ -73,16 +73,18 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
   Color _getCacheTypeColor(CacheType type) {
     switch (type) {
       case CacheType.cacheFiles: return Colors.blue;
-      case CacheType.serverList: return Colors.green;
-      case CacheType.preferences: return Colors.teal;
+      case CacheType.serverData: return Colors.green;
+      case CacheType.userData: return Colors.orange;
+      case CacheType.logs: return Colors.amber;
     }
   }
 
   IconData _getCacheTypeIcon(CacheType type) {
     switch (type) {
-      case CacheType.cacheFiles: return MdiIcons.folderOutline;
-      case CacheType.serverList: return MdiIcons.serverNetwork;
-      case CacheType.preferences: return MdiIcons.cogOutline;
+      case CacheType.cacheFiles: return MdiIcons.imageOutline;
+      case CacheType.serverData: return MdiIcons.serverNetwork;
+      case CacheType.userData: return MdiIcons.accountOutline;
+      case CacheType.logs: return MdiIcons.textBoxOutline;
     }
   }
 
