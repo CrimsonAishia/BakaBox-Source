@@ -260,7 +260,7 @@ class _LoginDialogState extends State<LoginDialog> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text('绑定账户', style: TextStyle(fontSize: 16)),
+                        : const Text('关联账户', style: TextStyle(fontSize: 16)),
                   ),
                 ),
 

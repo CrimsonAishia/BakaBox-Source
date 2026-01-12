@@ -123,7 +123,7 @@ class _LoginPromptView extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text('绑定账户', style: TextStyle(fontSize: 13)),
+              child: const Text('关联账户', style: TextStyle(fontSize: 13)),
             ),
           ),
         ],
@@ -310,11 +310,11 @@ class _ExpandedContent extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              // 解除绑定按钮
+              // 解除关联按钮
               Expanded(
                 child: _ActionButton(
                   icon: Icons.link_off,
-                  label: '解除绑定',
+                  label: '解除关联',
                   isDestructive: true,
                   onPressed: () => _showUnbindConfirm(context),
                 ),
@@ -333,10 +333,10 @@ class _ExpandedContent extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-        title: Text('解除绑定',
+        title: Text('解除关联',
             style: TextStyle(color: _getPrimaryTextColor(isDark))),
         content: Text(
-          '确定要解除论坛账户绑定吗？',
+          '确定要解除论坛账户关联吗？',
           style: TextStyle(color: _getSecondaryTextColor(isDark)),
         ),
         actions: [
