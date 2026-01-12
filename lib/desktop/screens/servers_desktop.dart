@@ -491,7 +491,10 @@ class _ServersDesktopState extends State<ServersDesktop> {
                           : ServerCard(
                               key: ValueKey(server.serverItem.address),
                               server: server,
-                              categoryName: state.selectedCategory?.modelName,
+                              // 只有自定义分类才传递分类名（用于换图通知显示）
+                              categoryName: state.selectedCategory?.isCustom == true
+                                  ? state.selectedCategory?.modelName
+                                  : null,
                               onTap: () => _showServerDetails(server),
                               onDelete: server.serverItem.isCustom
                                   ? () {

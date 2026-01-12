@@ -248,9 +248,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           _mapRuntimeLastFetchedCache.remove(address);
           
           // 通知换图监控服务（如果该服务器在监控列表中）
-          // 自定义服务器需要带上分类名
-          final isCustomServer = currentServer.serverItem.isCustom;
-          final categoryName = isCustomServer && state.selectedCategory != null
+          // 只有自定义分类才传递分类名（用于换图通知显示）
+          final isCustomCategory = state.selectedCategory?.isCustom ?? false;
+          final categoryName = isCustomCategory && state.selectedCategory != null
               ? state.selectedCategory!.modelName
               : null;
           
