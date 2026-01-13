@@ -54,6 +54,20 @@ class GsiGameState {
   factory GsiGameState.fromJson(Map<String, dynamic> json) =>
       _$GsiGameStateFromJson(json);
   Map<String, dynamic> toJson() => _$GsiGameStateToJson(this);
+
+  // ==================== 便捷方法 ====================
+
+  /// 玩家是否在主菜单
+  bool get isInMenu => player?.activity == 'menu';
+
+  /// 玩家是否在游戏中（playing 或有 map 数据）
+  bool get isPlaying => player?.activity == 'playing' || (map != null && !isInMenu);
+
+  /// 玩家是否在输入文字（聊天框等）
+  bool get isTextInput => player?.activity == 'textinput';
+
+  /// 是否有有效的游戏数据（非主菜单状态）
+  bool get hasValidGameData => map != null && !isInMenu;
 }
 
 /// 提供者信息
