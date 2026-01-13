@@ -719,14 +719,12 @@ class _ServerCardState extends State<ServerCard>
 
     final serverName = widget.server.serverData?.hostName ?? address;
     final currentMap = widget.server.serverData?.map;
-    final currentMapCn = widget.server.mapInfo?.mapLabel;
 
     final isNowMonitoring = await _mapMonitorService.toggleMonitor(
       serverAddress: address,
       serverName: serverName,
       categoryName: widget.categoryName,
       currentMap: currentMap,
-      currentMapCn: currentMapCn,
     );
 
     if (mounted) {

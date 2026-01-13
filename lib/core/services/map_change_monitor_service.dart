@@ -11,24 +11,22 @@ import 'source_server_service.dart';
 class ServerMonitorData {
   final String serverAddress;
   final String serverName;
-  final String? categoryName;  // 分类名称
+  final String? categoryName; // 分类名称
   String? lastMapName;
-  String? lastMapNameCn;
   DateTime? lastCheckTime;
-  bool _isChecking = false;  // 防止并发检查
-  int _consecutiveFailures = 0;  // 连续失败次数
-  
+  bool _isChecking = false; // 防止并发检查
+  int _consecutiveFailures = 0; // 连续失败次数
+
   // 上次发送通知的换图记录（用于防止重复通知）
   DateTime? _lastNotificationTime;
-  String? _lastNotifiedOldMap;  // 记录旧地图
-  String? _lastNotifiedNewMap;  // 记录新地图
+  String? _lastNotifiedOldMap; // 记录旧地图
+  String? _lastNotifiedNewMap; // 记录新地图
 
   ServerMonitorData({
     required this.serverAddress,
     required this.serverName,
     this.categoryName,
     this.lastMapName,
-    this.lastMapNameCn,
     this.lastCheckTime,
   });
   
@@ -80,11 +78,8 @@ class MapChangeMonitorService {
   /// 监控定时器
   Timer? _monitorTimer;
   
-  /// 是否暂停监控（服务器页面打开时暂停）
-  bool _isPaused = false;
-  
-  /// 监控间隔（秒）- 缩短到20秒提高检测及时性
-  static const int monitorIntervalSeconds = 20;
+  /// 监控间隔（秒）
+  static const int monitorIntervalSeconds = 10;
   
   /// 存储 key
   static const String _storageKey = 'monitored_servers';
@@ -102,25 +97,6 @@ class MapChangeMonitorService {
 
   /// 检查服务器是否在监控中
   bool isMonitoring(String serverAddress) => _monitoredServers.containsKey(serverAddress);
-  
-  /// 是否已暂停
-  bool get isPaused => _isPaused;
-
-  /// 暂停监控（服务器页面打开时调用）
-  void pauseMonitor() {
-    if (_isPaused) return;
-    _isPaused = true;
-    _stopMonitorLoop();
-    LogService.d('[MapChangeMonitor] 监控已暂停（服务器页面活跃）');
-  }
-
-  /// 恢复监控（离开服务器页面时调用）
-  void resumeMonitor() {
-    if (!_isPaused) return;
-    _isPaused = false;
-    _startMonitorLoop();
-    LogService.d('[MapChangeMonitor] 监控已恢复');
-  }
 
   /// 初始化服务（应用启动时调用）
   Future<void> initialize() async {
@@ -135,7 +111,6 @@ class MapChangeMonitorService {
     required String serverName,
     String? categoryName,
     String? currentMap,
-    String? currentMapCn,
   }) async {
     if (_monitoredServers.containsKey(serverAddress)) return;
 
@@ -144,7 +119,6 @@ class MapChangeMonitorService {
       serverName: serverName,
       categoryName: categoryName,
       lastMapName: currentMap,
-      lastMapNameCn: currentMapCn,
       lastCheckTime: DateTime.now(),
     );
 
@@ -179,7 +153,6 @@ class MapChangeMonitorService {
     required String serverName,
     String? categoryName,
     String? currentMap,
-    String? currentMapCn,
   }) async {
     if (isMonitoring(serverAddress)) {
       await removeMonitor(serverAddress);
@@ -190,69 +163,15 @@ class MapChangeMonitorService {
         serverName: serverName,
         categoryName: categoryName,
         currentMap: currentMap,
-        currentMapCn: currentMapCn,
       );
       return true;
     }
-  }
-
-  /// 更新服务器的当前地图（用于初始化或手动更新）
-  void updateCurrentMap(String serverAddress, String? mapName, String? mapNameCn) {
-    final data = _monitoredServers[serverAddress];
-    if (data != null) {
-      data.lastMapName = mapName;
-      data.lastMapNameCn = mapNameCn;
-      data.lastCheckTime = DateTime.now();
-    }
-  }
-
-  /// 发送换图通知（供外部调用，如 ServerBloc）
-  /// 注意：调用前应先调用 markNotificationSent 记录状态，防止重复通知
-  void sendMapChangeNotification({
-    required String serverAddress,
-    required String serverName,
-    required String oldMap,
-    required String newMap,
-    String? newMapCn,
-    String? mapBackground,
-    String? categoryName,
-  }) {
-    _notificationService.showMapChangeNotification(
-      serverAddress: serverAddress,
-      serverName: serverName,
-      oldMap: oldMap,
-      newMap: newMap,
-      newMapCn: newMapCn,
-      mapBackground: mapBackground,
-      categoryName: categoryName,
-    );
-  }
-  
-  /// 获取服务器的保存名称（用于通知显示）
-  String? getSavedServerName(String serverAddress) {
-    return _monitoredServers[serverAddress]?.serverName;
-  }
-  
-  /// 标记通知已发送（供外部调用，防止重复通知）
-  void markNotificationSent(String serverAddress, String oldMap, String newMap) {
-    final data = _monitoredServers[serverAddress];
-    if (data != null) {
-      data.markNotified(oldMap, newMap);
-    }
-  }
-  
-  /// 检查是否应该发送通知（供外部调用，防止重复通知）
-  bool shouldNotify(String serverAddress, String oldMap, String newMap) {
-    final data = _monitoredServers[serverAddress];
-    if (data == null) return false;
-    return data.shouldNotify(oldMap, newMap);
   }
 
   /// 启动监控循环
   void _startMonitorLoop() {
     if (_monitorTimer != null) return;
     if (_monitoredServers.isEmpty) return;
-    if (_isPaused) return;  // 暂停状态不启动
 
     _monitorTimer = Timer.periodic(
       const Duration(seconds: monitorIntervalSeconds),
@@ -315,7 +234,7 @@ class MapChangeMonitorService {
       final port = int.tryParse(parts[1]);
       if (port == null) return;
 
-      final serverInfo = await SourceServerService.getServerInfo(ip, port, timeout: 5000);
+      final serverInfo = await SourceServerService.getServerInfo(ip, port, timeout: 3000);
       if (serverInfo == null) {
         // 记录失败，但保留 lastMapName 以便下次比较
         data.recordFailure();

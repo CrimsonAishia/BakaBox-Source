@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/core.dart';
-import '../../core/services/map_change_monitor_service.dart';
 import '../widgets/page_layout.dart';
 import '../widgets/server/server_card.dart';
 import '../widgets/server/server_card_skeleton.dart';
@@ -26,9 +25,6 @@ class _ServersDesktopState extends State<ServersDesktop> {
   ServerBloc? _serverBloc;
   bool _isInitialized = false;
   
-  // 换图监控服务
-  final MapChangeMonitorService _mapChangeMonitor = MapChangeMonitorService();
-  
   // ScrollController for lists
   final ScrollController _serversScrollController = ScrollController();
   final ScrollController _categoriesScrollController = ScrollController();
@@ -45,9 +41,6 @@ class _ServersDesktopState extends State<ServersDesktop> {
   @override
   void initState() {
     super.initState();
-    
-    // 进入服务器页面时暂停换图监控（避免与页面刷新冲突）
-    _mapChangeMonitor.pauseMonitor();
     
     // 监听服务器列表滚动
     _serversScrollController.addListener(_updateServersScrollIndicators);
@@ -245,8 +238,6 @@ class _ServersDesktopState extends State<ServersDesktop> {
   @override
   void dispose() {
     _serverBloc?.add(ServerStopPeriodicRefresh());
-    // 离开服务器页面时恢复换图监控
-    _mapChangeMonitor.resumeMonitor();
     _serversScrollController.removeListener(_updateServersScrollIndicators);
     _categoriesScrollController.removeListener(_updateCategoriesScrollIndicators);
     _serversScrollController.dispose();
