@@ -515,9 +515,9 @@ class _HoverScaleButtonState extends State<_HoverScaleButton> {
           scale: _isHovered ? 1.05 : 1.0,
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
-          child: AnimatedContainer(
+          child: AnimatedSlide(
             duration: const Duration(milliseconds: 200),
-            transform: Matrix4.identity()..translate(0.0, _isHovered ? -2.0 : 0.0),
+            offset: Offset(0, _isHovered ? -0.05 : 0),
             child: widget.child,
           ),
         ),

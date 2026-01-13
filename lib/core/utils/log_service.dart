@@ -18,19 +18,17 @@ class LogService {
   
   /// 获取 logger 实例，如果未初始化则创建一个简单的 logger
   static Logger get _log {
-    if (_logger == null) {
-      _logger = Logger(
-        printer: PrettyPrinter(
-          methodCount: kDebugMode ? 2 : 0,
-          errorMethodCount: 8,
-          lineLength: 120,
-          colors: true,
-          printEmojis: true,
-          dateTimeFormat: DateTimeFormat.none,
-        ),
-        level: kDebugMode ? Level.debug : Level.info,
-      );
-    }
+    _logger ??= Logger(
+      printer: PrettyPrinter(
+        methodCount: kDebugMode ? 2 : 0,
+        errorMethodCount: 8,
+        lineLength: 120,
+        colors: true,
+        printEmojis: true,
+        dateTimeFormat: DateTimeFormat.none,
+      ),
+      level: kDebugMode ? Level.debug : Level.info,
+    );
     return _logger!;
   }
   

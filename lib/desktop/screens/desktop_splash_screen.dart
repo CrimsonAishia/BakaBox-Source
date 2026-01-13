@@ -145,7 +145,7 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTi
 
   /// Logo + 发光效果
   Widget _buildLogoWithGlow(bool isDark) {
-    return Container(
+    return SizedBox(
       width: 160,
       height: 160,
       child: Image.asset(
