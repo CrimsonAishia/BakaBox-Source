@@ -246,23 +246,6 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         if (mapChanged) {
           _mapRuntimeCache.remove(address);
           _mapRuntimeLastFetchedCache.remove(address);
-          
-          // 通知换图监控服务（如果该服务器在监控列表中）
-          // 只有自定义分类才传递分类名（用于换图通知显示）
-          final isCustomCategory = state.selectedCategory?.isCustom ?? false;
-          final categoryName = isCustomCategory && state.selectedCategory != null
-              ? state.selectedCategory!.modelName
-              : null;
-          
-          // 不等待完成，避免阻塞刷新流程
-          _notifyMapChange(
-            address: address,
-            serverName: info.name,
-            oldMap: cachedMap,
-            newMap: newMap,
-            serverApi: serverApi,
-            categoryName: categoryName,
-          );
         }
         
         // 成功获取数据，重置失败计数和离线状态
@@ -621,75 +604,6 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       LogService.e('获取玩家列表失败 ($address): $e', e);
       return [];
     }
-  }
-
-  /// 通知换图监控服务（如果该服务器在监控列表中）
-  /// 
-  /// ServerBloc 刷新频率比 MapChangeMonitor 高，所以由 ServerBloc 负责：
-  /// 1. 检测换图并发送通知
-  /// 2. 更新 MapChangeMonitorService 的地图缓存
-  Future<void> _notifyMapChange({
-    required String address,
-    required String serverName,
-    required String oldMap,
-    required String newMap,
-    required ServerApi serverApi,
-    String? categoryName,
-  }) async {
-    final monitorService = MapChangeMonitorService();
-    
-    // 只有在监控列表中的服务器才处理
-    if (!monitorService.isMonitoring(address)) return;
-    
-    // 过滤 graphics_settings（旧版本可能遗留在缓存中）
-    if (oldMap == 'graphics_settings' || newMap == 'graphics_settings') {
-      // 只更新地图记录，不发送通知
-      if (newMap != 'graphics_settings') {
-        monitorService.updateCurrentMap(address, newMap, null);
-      }
-      return;
-    }
-    
-    // 检查是否应该发送通知（防止与 Monitor 重复）
-    // 如果 Monitor 已经发送过相同的换图通知，则跳过
-    if (!monitorService.shouldNotify(address, oldMap, newMap)) {
-      // 只更新地图记录，不发送通知
-      monitorService.updateCurrentMap(address, newMap, null);
-      return;
-    }
-    
-    // 优先使用传入的服务器名，如果为空则使用保存的名称
-    final displayName = serverName.isNotEmpty 
-        ? serverName 
-        : (monitorService.getSavedServerName(address) ?? address);
-    
-    // 先记录通知状态，防止 Monitor 重复发送（在获取地图信息之前）
-    monitorService.markNotificationSent(address, oldMap, newMap);
-    
-    // 更新监控服务中的地图记录
-    monitorService.updateCurrentMap(address, newMap, null);
-    
-    // 获取新地图信息（中文名和背景图）
-    String? newMapCn;
-    String? mapBackground;
-    try {
-      final mapInfo = await serverApi.getMapInfo(newMap);
-      newMapCn = mapInfo?.mapLabel;
-      mapBackground = mapInfo?.mapUrl;
-    } catch (e) {
-      // 静默处理
-    }
-    
-    // 发送换图通知
-    monitorService.sendMapChangeNotification(
-      serverAddress: address,
-      serverName: displayName,
-      oldMap: oldMap,
-      newMap: newMap,
-      newMapCn: newMapCn,
-      mapBackground: mapBackground,
-      categoryName: categoryName,
-    );
   }
 
   // ========== 自定义分类和服务器管理 ==========
