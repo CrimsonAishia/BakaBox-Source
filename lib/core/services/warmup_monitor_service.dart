@@ -89,6 +89,20 @@ class WarmupMonitorService {
 
   /// GSI 数据变化处理
   void _onGsiStateChanged(GsiGameState? state) {
+    // 检查是否在主菜单（activity == 'menu'）
+    if (state != null && state.isInMenu) {
+      LogService.d('[WarmupMonitor] GSI: 玩家在主菜单');
+      // 玩家在主菜单，清理热身状态
+      if (_isWarmingUp && _currentServerAddress != null) {
+        _notificationService.dismissWarmupNotification(_currentServerAddress!);
+        _isWarmingUp = false;
+        LogService.i('[WarmupMonitor] GSI: 玩家回到主菜单，关闭热身通知');
+      }
+      // 主菜单时保持 GSI 监听，但不处理热身逻辑
+      // 注意：不切换到 API 轮询，因为 GSI 仍然在工作
+      return;
+    }
+    
     if (state == null || state.map == null) {
       // GSI 无有效数据，保持/切换到 API 轮询
       if (_useGsi) {
@@ -105,7 +119,7 @@ class WarmupMonitorService {
       return;
     }
 
-    // GSI 收到有效数据，立即切换到 GSI（GSI 数据为准）
+    // GSI 收到有效游戏数据，立即切换到 GSI（GSI 数据为准）
     if (!_useGsi) {
       _useGsi = true;
       _monitorTimer?.cancel();
