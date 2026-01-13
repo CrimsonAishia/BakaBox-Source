@@ -18,7 +18,7 @@ class SingleNotificationStateNotifier extends ChangeNotifier {
   NotificationData _notification;
   int _position;
   double? _yOffset;
-  NotificationPositionType _notificationPosition;
+  final NotificationPositionType _notificationPosition;
 
   SingleNotificationStateNotifier(
     this._notification, 

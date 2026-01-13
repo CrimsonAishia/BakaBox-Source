@@ -742,8 +742,11 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
           if (await cacheDir.exists()) {
             await for (var entity in cacheDir.list()) {
               try {
-                if (entity is File) await entity.delete();
-                else if (entity is Directory) await entity.delete(recursive: true);
+                if (entity is File) {
+                  await entity.delete();
+                } else if (entity is Directory) {
+                  await entity.delete(recursive: true);
+                }
               } catch (e) {
                 LogService.d('删除缓存文件失败: ${entity.path}');
               }
@@ -754,8 +757,11 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
           if (tempDir.existsSync()) {
             await for (var entity in tempDir.list()) {
               try {
-                if (entity is File) await entity.delete();
-                else if (entity is Directory) await entity.delete(recursive: true);
+                if (entity is File) {
+                  await entity.delete();
+                } else if (entity is Directory) {
+                  await entity.delete(recursive: true);
+                }
               } catch (e) {
                 LogService.d('删除临时文件失败: ${entity.path}');
               }

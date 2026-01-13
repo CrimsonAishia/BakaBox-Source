@@ -889,6 +889,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                       final file = File(result.files.single.path!);
                       final validation = ContributionValidationUtils.validateBackgroundImage(file);
                       if (!validation.isValid) {
+                        if (!context.mounted) return;
                         ToastUtils.showError(context, validation.errorMessage!);
                         return;
                       }
@@ -1785,11 +1786,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
 /// Hover 缩放效果组件
 class _HoverScaleWidget extends StatefulWidget {
   final Widget child;
-  final double scale;
 
   const _HoverScaleWidget({
     required this.child,
-    this.scale = 1.03,
   });
 
   @override
@@ -1805,7 +1804,7 @@ class _HoverScaleWidgetState extends State<_HoverScaleWidget> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedScale(
-        scale: _isHovered ? widget.scale : 1.0,
+        scale: _isHovered ? 1.03 : 1.0,
         duration: const Duration(milliseconds: 150),
         child: widget.child,
       ),

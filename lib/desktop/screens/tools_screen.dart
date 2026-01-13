@@ -505,15 +505,6 @@ class _ToolCardState extends State<_ToolCard> {
     // 如果是全屏工具
     if (widget.tool.isFullScreen && widget.onOpenFullScreen != null) {
       widget.onOpenFullScreen!();
-      return;
-    }
-    
-    // 打开外部链接
-    if (widget.tool.url != null) {
-      final uri = Uri.parse(widget.tool.url!);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
     }
   }
 }
@@ -585,7 +576,6 @@ class _ToolItem {
   final String name;
   final String description;
   final IconData icon;
-  final String? url;
   final bool isFullScreen;
 
   const _ToolItem({
@@ -593,7 +583,6 @@ class _ToolItem {
     required this.name,
     required this.description,
     required this.icon,
-    this.url,
     this.isFullScreen = false,
   });
 }
