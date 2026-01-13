@@ -153,36 +153,52 @@ class WarmupMonitorService {
     // 判断是否处于热身阶段
     // GSI map.phase 可能的值: warmup, live, intermission, gameover 等
     final isWarmupPhase = mapPhase == 'warmup';
-    
-    // 获取热身剩余时间
-    int warmupSeconds = 0;
-    if (isWarmupPhase && state.phaseCountdowns != null) {
-      final phaseEndsIn = state.phaseCountdowns!.phaseEndsIn;
-      if (phaseEndsIn != null) {
-        // phaseEndsIn 是字符串格式的秒数（如 "45.5"）
-        warmupSeconds = double.tryParse(phaseEndsIn)?.round() ?? 0;
-      }
-    }
 
     _gsiMapName = mapName;
 
     // 地图变化时获取地图信息（用于通知显示）
     if (mapName != null && mapName != _currentMapName) {
+      final wasWarmingUp = _isWarmingUp;
       _currentMapName = mapName;
       _currentMapInfo = null;
+      _currentMapRuntime = null;
+      _currentMapRuntimeFetchedAt = null;
+      _isWarmingUp = false; // 换图时重置热身状态
       _fetchMapInfoAsync(mapName);
+      // 地图变化时也获取服务器名称
+      _fetchServerNameAsync();
+      
+      // 如果之前在热身，关闭旧通知
+      if (wasWarmingUp && _currentServerAddress != null) {
+        _notificationService.dismissWarmupNotification(_currentServerAddress!);
+      }
     }
 
     // 热身状态变化处理
-    if (isWarmupPhase && warmupSeconds > 0) {
+    if (isWarmupPhase) {
+      // 检查地图是否支持热身监控
+      final warmupDuration = MapRuntimeUtils.getWarmupDuration(mapName);
+      if (warmupDuration == null) {
+        // 不支持热身的地图，关闭之前的热身通知
+        if (_isWarmingUp && _currentServerAddress != null) {
+          _notificationService.dismissWarmupNotification(_currentServerAddress!);
+          _isWarmingUp = false;
+          LogService.i('[WarmupMonitor/GSI] 地图 $mapName 不支持热身监控，关闭通知');
+        }
+        return;
+      }
+      
       if (!_isWarmingUp) {
         _isWarmingUp = true;
-        LogService.i('[WarmupMonitor/GSI] 检测到热身: $mapName, 剩余 $warmupSeconds 秒');
+        LogService.i('[WarmupMonitor/GSI] 检测到热身: $mapName');
+        // 获取 API 时间并显示通知（只需一次，通知窗口自己倒计时）
+        _fetchMapRuntimeAndShowNotification();
       }
-      _showGsiWarmupNotification(warmupSeconds);
     } else if (_isWarmingUp) {
       // 热身结束
       _isWarmingUp = false;
+      _currentMapRuntime = null;
+      _currentMapRuntimeFetchedAt = null;
       if (_currentServerAddress != null) {
         _notificationService.dismissWarmupNotification(_currentServerAddress!);
       }
@@ -190,20 +206,80 @@ class WarmupMonitorService {
     }
   }
 
-  /// 显示 GSI 热身通知
-  void _showGsiWarmupNotification(int warmupSeconds) {
-    // 使用 ConsoleLog 获取的服务器地址，或者使用占位符
+  /// GSI 模式下获取 API 时间并显示通知
+  Future<void> _fetchMapRuntimeAndShowNotification() async {
+    if (_currentMapName == null) return;
+    
+    // 保存当前地图名，用于检查请求返回时地图是否已变化
+    final requestMapName = _currentMapName;
+    
+    final apiAddress = _currentServerDomainAddress ?? _currentServerAddress;
     final serverAddress = _currentServerAddress ?? 'gsi_server';
-    final serverName = _currentServerName ?? '当前服务器';
-
+    final serverName = _currentServerName ?? serverAddress;
+    
+    // 先尝试获取 API 时间
+    int warmupRemaining = -1; // 默认显示"热身中"
+    if (apiAddress != null) {
+      try {
+        final mapRuntime = await _serverApi.getMapRuntime(apiAddress, requestMapName!);
+        
+        // 检查地图是否已变化，如果变化则忽略此次请求结果
+        if (_currentMapName != requestMapName) {
+          LogService.d('[WarmupMonitor/GSI] 地图已变化，忽略旧请求结果');
+          return;
+        }
+        
+        _currentMapRuntime = mapRuntime;
+        _currentMapRuntimeFetchedAt = DateTime.now().millisecondsSinceEpoch;
+        LogService.d('[WarmupMonitor/GSI] 获取 mapRuntime: ${_currentMapRuntime?.currentRuntime}');
+        
+        if (_currentMapRuntime != null) {
+          warmupRemaining = MapRuntimeUtils.getWarmupTimeRemaining(
+            _currentMapRuntime,
+            fetchedAt: _currentMapRuntimeFetchedAt,
+            mapName: _currentMapName,
+          );
+        }
+      } catch (e) {
+        LogService.e('[WarmupMonitor/GSI] 获取 mapRuntime 失败', e);
+        // 检查地图是否已变化
+        if (_currentMapName != requestMapName) return;
+      }
+    }
+    
+    // 再次检查地图是否已变化
+    if (_currentMapName != requestMapName) return;
+    
+    // 显示通知（通知窗口会自己倒计时）
     _notificationService.showWarmupNotification(
       serverAddress: serverAddress,
       serverName: serverName,
       mapName: _gsiMapName,
       mapNameCn: _currentMapInfo?.mapLabel,
       mapBackground: _currentMapInfo?.mapUrl,
-      warmupRemainingSeconds: warmupSeconds,
+      warmupRemainingSeconds: warmupRemaining,
     );
+  }
+
+  /// 异步获取服务器名称
+  Future<void> _fetchServerNameAsync() async {
+    if (_currentServerAddress == null) return;
+    
+    try {
+      final parts = _currentServerAddress!.split(':');
+      if (parts.length != 2) return;
+      
+      final ip = parts[0];
+      final port = int.tryParse(parts[1]);
+      if (port == null) return;
+      
+      final serverInfo = await SourceServerService.getServerInfo(ip, port, timeout: 3000);
+      if (serverInfo != null) {
+        _currentServerName = serverInfo.name;
+      }
+    } catch (e) {
+      // 忽略获取失败
+    }
   }
 
   /// 异步获取地图信息
@@ -497,6 +573,9 @@ class WarmupMonitorService {
           _startMonitorLoop(isWarmup: false);
           await _notificationService.dismissWarmupNotification(serverAddress);
           LogService.i('[WarmupMonitor/API] 热身结束');
+        } else {
+          // 更新热身通知显示
+          _showApiWarmupNotification();
         }
       }
     } catch (e) {
