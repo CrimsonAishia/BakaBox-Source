@@ -16,6 +16,7 @@ library;
 export 'api/api_client.dart';
 export 'api/announcement_api.dart';
 export 'api/server_api.dart';
+export 'api/server_stats_api.dart';
 export 'api/update_api.dart';
 export 'api/update_log_api.dart';
 export 'api/issue_api.dart';
@@ -23,6 +24,7 @@ export 'api/issue_api.dart';
 // Models
 export 'models/announcement_models.dart';
 export 'models/server_models.dart';
+export 'models/server_stats_models.dart';
 export 'models/update_models.dart';
 export 'models/update_log_models.dart';
 export 'models/user_info.dart';

@@ -52,6 +52,7 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
       providers: [
         BlocProvider(create: (_) => AuthBloc()..add(const AuthCheckRequested())),
         BlocProvider(create: (_) => ServerBloc()),
+        BlocProvider(create: (_) => ServerStatsBloc()),
         BlocProvider(create: (_) => UpdateLogBloc()),
         BlocProvider(create: (_) => UpdateBloc()),
         BlocProvider(create: (_) => SettingsBloc()..add(SettingsInit())),
