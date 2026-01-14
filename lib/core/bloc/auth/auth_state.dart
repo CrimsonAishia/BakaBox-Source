@@ -9,6 +9,7 @@ enum AuthStatus {
   error,
 }
 
+/// 认证状态
 class AuthState extends Equatable {
   final AuthStatus status;
   final UserInfo? userInfo;
