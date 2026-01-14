@@ -28,7 +28,7 @@ class NotificationData {
   final String? mapNameCn;
   final String? mapBackground;
   final int? autoDismissSeconds;
-  final Map<String, dynamic>? extraData; // 额外数据，用于传递分类名等
+  final Map<String, dynamic>? extraData; // 额外数据，用于传递分类名、人数等
 
   NotificationData({
     required this.id,
@@ -390,6 +390,8 @@ class NotificationWindowService {
     String? newMapCn,
     String? mapBackground,
     String? categoryName,
+    int? currentPlayers,
+    int? maxPlayers,
   }) async {
     final id =
         'mapchange_${serverAddress}_${DateTime.now().millisecondsSinceEpoch}';
@@ -407,7 +409,11 @@ class NotificationWindowService {
       mapNameCn: newMapCn,
       mapBackground: mapBackground,
       autoDismissSeconds: 15,
-      extraData: categoryName != null ? {'categoryName': categoryName} : null,
+      extraData: {
+        if (categoryName != null) 'categoryName': categoryName,
+        if (currentPlayers != null) 'currentPlayers': currentPlayers,
+        if (maxPlayers != null) 'maxPlayers': maxPlayers,
+      },
     ));
   }
 
