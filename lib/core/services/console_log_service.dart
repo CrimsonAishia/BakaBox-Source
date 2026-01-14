@@ -268,6 +268,9 @@ class ConsoleLogService {
   // 连接阶段断开检测（关键：在连接过程中被断开）
   final _regexDisconnectionDuringConnection = RegExp(r'Disconnection during connection phase');
   
+  // 连接超时断开检测（在连接阶段因超时被断开）
+  final _regexDisconnectedTimedout = RegExp(r'Disconnected from server:\s*NETWORK_DISCONNECT_TIMEDOUT');
+  
   // 断开原因检测
   final _regexDisconnectLoopShutdown = RegExp(r'NETWORK_DISCONNECT_LOOPSHUTDOWN');
   
@@ -282,6 +285,11 @@ class ConsoleLogService {
   // 进入游戏界面检测（从加载界面）
   final _regexLoadingToIngame = RegExp(
     r'ChangeGameUIState:.*LOADINGSCREEN\s*->\s*CSGO_GAME_UI_STATE_INGAME'
+  );
+  
+  // 从主菜单直接进入游戏界面检测（异常情况，通常是连接失败后的错误状态）
+  final _regexMainMenuToIngame = RegExp(
+    r'ChangeGameUIState:.*MAINMENU\s*->\s*CSGO_GAME_UI_STATE_INGAME'
   );
   
   // 地图加载相关
@@ -1105,11 +1113,51 @@ class ConsoleLogService {
 
     // 检测连接阶段断开（在连接过程中被服务器断开）
     // 例如：Disconnection during connection phase. Sign-on state: 5 (SIGNONSTATE_SPAWN). Disconnect reason: NETWORK_DISCONNECT_LOOPSHUTDOWN
+    // 例如：Disconnection during connection phase. Sign-on state: 2 (SIGNONSTATE_CONNECTED). Disconnect reason: NETWORK_DISCONNECT_TIMEDOUT
+    // 例如：Disconnection during connection phase. Sign-on state: 2 (SIGNONSTATE_CONNECTED). Disconnect reason: NETWORK_DISCONNECT_LOOP_LEVELLOAD_ACTIVATE
+    // 例如：Disconnection during connection phase. Sign-on state: 2 (SIGNONSTATE_CONNECTED). Disconnect reason: NETWORK_DISCONNECT_REQUEST_HOSTSTATE_IDLE
     if (_regexDisconnectionDuringConnection.hasMatch(line)) {
-      // 检查是否是 LOOPSHUTDOWN（通常是因为服务器重新发起连接请求）
-      if (_regexDisconnectLoopShutdown.hasMatch(line)) {
-        _connectionPhaseFailed = true;
+      _connectionPhaseFailed = true;
+      
+      // 检查具体的断开原因
+      if (line.contains('NETWORK_DISCONNECT_TIMEDOUT')) {
+        LogService.d('[ConsoleLog] 检测到连接阶段断开 (TIMEDOUT)');
+        _connectTimedOut = true;
+        if (_targetServer.isNotEmpty || _currentState.serverAddress.isNotEmpty) {
+          _updateConnectionState(
+            GameState.failed,
+            '连接超时',
+            serverAddress: _targetServer.isNotEmpty ? _targetServer : _currentState.serverAddress,
+            rawLine: line,
+          );
+        }
+      } else if (line.contains('NETWORK_DISCONNECT_LOOP_LEVELLOAD_ACTIVATE') ||
+                 line.contains('NETWORK_DISCONNECT_REQUEST_HOSTSTATE_IDLE')) {
+        // 这些是用户重新发起连接请求导致的断开，标记失败但不更新状态文本
+        // 因为后续会有新的连接请求
+        LogService.d('[ConsoleLog] 检测到连接阶段断开 (重新连接): $line');
+      } else if (_regexDisconnectLoopShutdown.hasMatch(line)) {
         LogService.d('[ConsoleLog] 检测到连接阶段断开 (LOOPSHUTDOWN)');
+      } else {
+        LogService.d('[ConsoleLog] 检测到连接阶段断开: $line');
+      }
+      return;
+    }
+    
+    // 检测 "Disconnected from server: NETWORK_DISCONNECT_TIMEDOUT"
+    // 这是连接超时的另一个标志，通常在 "Disconnection during connection phase" 之后出现
+    if (_regexDisconnectedTimedout.hasMatch(line)) {
+      _connectTimedOut = true;
+      _connectionPhaseFailed = true;
+      LogService.d('[ConsoleLog] 检测到服务器断开 (TIMEDOUT)');
+      // 如果还没有标记为失败，现在标记
+      if (_currentState.state != GameState.failed && _currentState.state != GameState.mainMenu) {
+        _updateConnectionState(
+          GameState.failed,
+          '连接超时',
+          serverAddress: _targetServer.isNotEmpty ? _targetServer : _currentState.serverAddress,
+          rawLine: line,
+        );
       }
       return;
     }
@@ -1148,6 +1196,16 @@ class ConsoleLogService {
           GameState.failed,
           reason,
           serverAddress: _targetServer,
+          rawLine: line,
+        );
+      } else if (_currentState.state == GameState.connecting || _currentState.state == GameState.loading) {
+        // 如果当前正在连接或加载中，但出现了 loopback，说明连接失败了
+        _isLoopbackFallback = true;
+        LogService.d('[ConsoleLog] 检测到连接过程中出现 loopback，连接失败');
+        _updateConnectionState(
+          GameState.failed,
+          '连接失败',
+          serverAddress: _currentState.serverAddress,
           rawLine: line,
         );
       }
@@ -1306,12 +1364,31 @@ class ConsoleLogService {
     
     // 检查进入游戏界面（从加载界面）- 作为备用的连接成功标志
     if (_regexLoadingToIngame.hasMatch(line)) {
+      // 如果连接阶段已经失败（超时或其他原因），忽略这个状态变化
+      // 游戏在连接超时后会错误地触发 MAINMENU -> INGAME 状态变化
+      if (_connectionPhaseFailed || _connectTimedOut) {
+        LogService.d('[ConsoleLog] 忽略连接失败后的 LOADINGSCREEN -> INGAME 状态变化');
+        return;
+      }
+      
       final currentState = _currentState.state;
       // 只有在加载状态且不是 loopback 回退时才更新
       if (currentState == GameState.loading && !_isLoopbackFallback) {
         LogService.d('[ConsoleLog] 检测到 LOADINGSCREEN -> INGAME，等待 Prediction 确认');
         // 不直接设置为 inGame，等待 Prediction 消息确认
       }
+      return;
+    }
+    
+    // 检查从主菜单直接进入游戏界面（异常情况）
+    // 这通常发生在连接超时后，游戏错误地触发了这个状态变化
+    if (_regexMainMenuToIngame.hasMatch(line)) {
+      if (_connectionPhaseFailed || _connectTimedOut) {
+        LogService.d('[ConsoleLog] 忽略连接失败后的 MAINMENU -> INGAME 状态变化（异常状态）');
+        return;
+      }
+      // 正常情况下不应该从主菜单直接进入游戏，记录警告
+      LogService.w('[ConsoleLog] 检测到异常状态变化: MAINMENU -> INGAME');
       return;
     }
 
