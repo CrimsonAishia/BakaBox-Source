@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/core.dart';
+import '../../core/services/onboarding_service.dart';
 import '../router/desktop_router.dart';
 
 /// 桌面端启动屏幕 - 简洁快速的启动动画
@@ -68,9 +69,9 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTi
         _progressController.animateTo(1.0, duration: const Duration(milliseconds: 400));
         await Future.delayed(const Duration(milliseconds: 400));
         
-        // 进度条走完后跳转
+        // 进度条走完后检查是否需要显示引导
         if (mounted) {
-          context.go(DesktopRoutes.home);
+          await _navigateToNextScreen();
         }
       }
     } catch (e) {
@@ -78,6 +79,20 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTi
       _progressController.animateTo(1.0, duration: const Duration(milliseconds: 500));
       await Future.delayed(const Duration(milliseconds: 500));
       if (mounted) {
+        await _navigateToNextScreen();
+      }
+    }
+  }
+
+  /// 根据引导状态导航到下一个页面
+  Future<void> _navigateToNextScreen() async {
+    final onboardingService = OnboardingService();
+    final shouldShowOnboarding = await onboardingService.shouldShowOnboarding();
+    
+    if (mounted) {
+      if (shouldShowOnboarding) {
+        context.go(DesktopRoutes.onboarding);
+      } else {
         context.go(DesktopRoutes.home);
       }
     }
