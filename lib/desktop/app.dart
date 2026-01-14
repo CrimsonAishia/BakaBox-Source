@@ -134,23 +134,27 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
   }
 
   Future<void> _initializeBlocs() async {
-    context.read<ServerBloc>().add(ServerStartPeriodicRefresh());
-    
-    // 首帧渲染完成，上报启动统计
-    AnalyticsService.instance.reportStartupIfNeeded();
-    
-    // 启动游戏状态监控（桌面端专属，需要先完成初始检测）
-    await GameStatusService().startMonitoring();
-    
-    // 启动控制台日志监控（依赖 GameStatusService 的状态流）
-    await ConsoleLogService().startMonitoring();
-    
-    // 以下服务依赖 ConsoleLogService，需要在其启动完成后初始化
-    MapChangeMonitorService().initialize();
-    WarmupMonitorService().initialize();
-    
-    // 初始化更新日志监控服务
-    UpdateLogMonitorService().initialize();
+    try {
+      context.read<ServerBloc>().add(ServerStartPeriodicRefresh());
+      
+      // 首帧渲染完成，上报启动统计
+      AnalyticsService.instance.reportStartupIfNeeded();
+      
+      // 启动游戏状态监控（桌面端专属，需要先完成初始检测）
+      await GameStatusService().startMonitoring();
+      
+      // 启动控制台日志监控（依赖 GameStatusService 的状态流）
+      await ConsoleLogService().startMonitoring();
+      
+      // 以下服务依赖 ConsoleLogService，需要在其启动完成后初始化
+      MapChangeMonitorService().initialize();
+      WarmupMonitorService().initialize();
+      
+      // 初始化更新日志监控服务
+      UpdateLogMonitorService().initialize();
+    } catch (e) {
+      LogService.e('[DesktopAppHome] 初始化服务时出错', e);
+    }
   }
 
 
