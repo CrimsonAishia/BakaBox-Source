@@ -4,8 +4,12 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/bloc/auth/auth_bloc.dart';
 import '../../core/bloc/auth/auth_event.dart';
 import '../../core/bloc/auth/auth_state.dart';
+import '../../core/bloc/daily_task/daily_task_bloc.dart';
+import '../../core/bloc/daily_task/daily_task_event.dart';
+import '../../core/bloc/daily_task/daily_task_state.dart';
 import '../../core/models/user_info.dart';
 import 'login_dialog.dart';
+import 'shake_dialog.dart';
 
 /// 用户登录框组件
 ///
@@ -20,14 +24,40 @@ class UserLoginBox extends StatefulWidget {
 
 class _UserLoginBoxState extends State<UserLoginBox> {
   bool _isExpanded = false;
+  bool _wasAuthenticated = false;
+  bool _initialized = false;
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, AuthState>(
+    return BlocConsumer<AuthBloc, AuthState>(
+      listener: (context, state) {
+        // 首次构建时，如果已登录，触发状态检查
+        if (!_initialized && state.isAuthenticated) {
+          context
+              .read<DailyTaskBloc>()
+              .add(const DailyTaskCheckStatusRequested());
+          _wasAuthenticated = true;
+          _initialized = true;
+          return;
+        }
+        _initialized = true;
+
+        // 登录成功时触发每日任务状态检查
+        if (state.isAuthenticated && !_wasAuthenticated) {
+          context
+              .read<DailyTaskBloc>()
+              .add(const DailyTaskCheckStatusRequested());
+        }
+        // 登出时重置每日任务状态
+        if (!state.isAuthenticated && _wasAuthenticated) {
+          context.read<DailyTaskBloc>().add(const DailyTaskReset());
+        }
+        _wasAuthenticated = state.isAuthenticated;
+      },
       builder: (context, state) {
         if (state.isAuthenticated && state.userInfo != null) {
           return _LoggedInView(
-            state: state,
+            userInfo: state.userInfo!,
             isExpanded: _isExpanded,
             onToggleExpand: () => setState(() => _isExpanded = !_isExpanded),
           );
@@ -134,12 +164,12 @@ class _LoginPromptView extends StatelessWidget {
 
 /// 已登录视图 - 可展开
 class _LoggedInView extends StatelessWidget {
-  final AuthState state;
+  final UserInfo userInfo;
   final bool isExpanded;
   final VoidCallback onToggleExpand;
 
   const _LoggedInView({
-    required this.state,
+    required this.userInfo,
     required this.isExpanded,
     required this.onToggleExpand,
   });
@@ -149,7 +179,6 @@ class _LoggedInView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final userInfo = state.userInfo!;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
@@ -228,14 +257,9 @@ class _LoggedInView extends StatelessWidget {
               ),
             ),
           ),
-
-          // 展开的详细信息
           AnimatedCrossFade(
             firstChild: const SizedBox.shrink(),
-            secondChild: _ExpandedContent(
-              userInfo: userInfo,
-              state: state,
-            ),
+            secondChild: _ExpandedContent(userInfo: userInfo),
             crossFadeState: isExpanded
                 ? CrossFadeState.showSecond
                 : CrossFadeState.showFirst,
@@ -250,12 +274,8 @@ class _LoggedInView extends StatelessWidget {
 /// 展开后的详细内容
 class _ExpandedContent extends StatelessWidget {
   final UserInfo userInfo;
-  final AuthState state;
 
-  const _ExpandedContent({
-    required this.userInfo,
-    required this.state,
-  });
+  const _ExpandedContent({required this.userInfo});
 
   @override
   Widget build(BuildContext context) {
@@ -290,27 +310,22 @@ class _ExpandedContent extends StatelessWidget {
               label: '僵尸币',
               value: userInfo.zombieCoins!,
             ),
-
           const SizedBox(height: 12),
-
-          // 操作按钮
+          // 每日任务按钮
+          BlocBuilder<DailyTaskBloc, DailyTaskState>(
+            builder: (context, state) {
+              return Row(
+                children: [
+                  Expanded(child: _CheckInButton(state: state)),
+                  const SizedBox(width: 8),
+                  Expanded(child: _ShakeButton(state: state)),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 8),
           Row(
             children: [
-              // 刷新按钮
-              Expanded(
-                child: _ActionButton(
-                  icon: Icons.refresh,
-                  label: '刷新',
-                  isLoading: state.isRefreshing,
-                  onPressed: state.isRefreshing
-                      ? null
-                      : () => context
-                          .read<AuthBloc>()
-                          .add(const AuthRefreshRequested()),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // 解除关联按钮
               Expanded(
                 child: _ActionButton(
                   icon: Icons.link_off,
@@ -362,10 +377,7 @@ class _SteamRow extends StatelessWidget {
   final String steamId;
   final String? steamUrl;
 
-  const _SteamRow({
-    required this.steamId,
-    this.steamUrl,
-  });
+  const _SteamRow({required this.steamId, this.steamUrl});
 
   @override
   Widget build(BuildContext context) {
@@ -433,8 +445,8 @@ class _InfoRow extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             '$label:',
-            style: TextStyle(
-                color: _getSecondaryTextColor(isDark), fontSize: 12),
+            style:
+                TextStyle(color: _getSecondaryTextColor(isDark), fontSize: 12),
           ),
           const Spacer(),
           Text(
@@ -451,14 +463,12 @@ class _InfoRow extends StatelessWidget {
 class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
-  final bool isLoading;
   final bool isDestructive;
   final VoidCallback? onPressed;
 
   const _ActionButton({
     required this.icon,
     required this.label,
-    this.isLoading = false,
     this.isDestructive = false,
     this.onPressed,
   });
@@ -474,17 +484,172 @@ class _ActionButton extends StatelessWidget {
       height: 32,
       child: OutlinedButton.icon(
         onPressed: onPressed,
-        icon: isLoading
-            ? SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: color,
-                ),
-              )
-            : Icon(icon, size: 14),
+        icon: Icon(icon, size: 14),
         label: Text(label, style: const TextStyle(fontSize: 11)),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: color,
+          side: BorderSide(color: color.withValues(alpha: 0.3)),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(6),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 签到按钮 - 根据状态显示不同样式
+class _CheckInButton extends StatelessWidget {
+  final DailyTaskState state;
+
+  const _CheckInButton({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = isDark ? Colors.white70 : const Color(0xFF6B7280);
+
+    // 已签到 - 显示绿色完成状态
+    if (state.hasCheckedIn) {
+      return SizedBox(
+        height: 32,
+        child: OutlinedButton.icon(
+          onPressed: null,
+          icon: const Icon(Icons.check, size: 14),
+          label: const Text('已签到', style: TextStyle(fontSize: 11)),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.green,
+            disabledForegroundColor: Colors.green,
+            side: BorderSide(color: Colors.green.withValues(alpha: 0.5)),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 签到中或检测状态中 - 显示 loading
+    if (state.isCheckingIn || state.isCheckingStatus) {
+      return SizedBox(
+        height: 32,
+        child: OutlinedButton.icon(
+          onPressed: null,
+          icon: SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(strokeWidth: 2, color: color),
+          ),
+          label: Text(
+            state.isCheckingIn ? '签到中' : '检测中',
+            style: const TextStyle(fontSize: 11),
+          ),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: color,
+            disabledForegroundColor: color,
+            side: BorderSide(color: color.withValues(alpha: 0.3)),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 默认：可点击签到
+    return SizedBox(
+      height: 32,
+      child: OutlinedButton.icon(
+        onPressed: () => context
+            .read<DailyTaskBloc>()
+            .add(const DailyTaskCheckInRequested()),
+        icon: const Icon(Icons.check_circle_outline, size: 14),
+        label: const Text('签到', style: TextStyle(fontSize: 11)),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: color,
+          side: BorderSide(color: color.withValues(alpha: 0.3)),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(6),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 摇一摇按钮 - 根据状态显示不同样式
+class _ShakeButton extends StatelessWidget {
+  final DailyTaskState state;
+
+  const _ShakeButton({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = isDark ? Colors.white70 : const Color(0xFF6B7280);
+
+    // 已摇过 - 显示绿色完成状态和奖励金额
+    if (state.hasShaked) {
+      final rewardText = state.shakeRewardAmount != null
+          ? '+${state.shakeRewardAmount}'
+          : '已摇过';
+      return SizedBox(
+        height: 32,
+        child: OutlinedButton.icon(
+          onPressed: null,
+          icon: const Icon(Icons.check, size: 14),
+          label: Text(rewardText, style: const TextStyle(fontSize: 11)),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.green,
+            disabledForegroundColor: Colors.green,
+            side: BorderSide(color: Colors.green.withValues(alpha: 0.5)),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 检测状态中 - 显示 loading
+    if (state.isCheckingStatus) {
+      return SizedBox(
+        height: 32,
+        child: OutlinedButton.icon(
+          onPressed: null,
+          icon: SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(strokeWidth: 2, color: color),
+          ),
+          label: const Text('检测中', style: TextStyle(fontSize: 11)),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: color,
+            disabledForegroundColor: color,
+            side: BorderSide(color: color.withValues(alpha: 0.3)),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 默认：可点击摇一摇
+    // 无论 canShake 是 true/false/null，都允许用户点击尝试
+    // ShakeDialog 内部会再次检测状态
+    return SizedBox(
+      height: 32,
+      child: OutlinedButton.icon(
+        onPressed: () => ShakeDialog.show(context),
+        icon: const Icon(Icons.casino, size: 14),
+        label: const Text('摇一摇', style: TextStyle(fontSize: 11)),
         style: OutlinedButton.styleFrom(
           foregroundColor: color,
           side: BorderSide(color: color.withValues(alpha: 0.3)),

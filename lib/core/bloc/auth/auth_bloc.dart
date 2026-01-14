@@ -7,12 +7,15 @@ import '../../utils/log_service.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
+/// 认证 Bloc
+///
+/// 负责用户登录、登出、会话验证等认证相关状态管理
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthService _authService = AuthService.instance;
-  
+
   Timer? _sessionValidationTimer;
   Timer? _statsRefreshTimer;
-  
+
   static const _sessionValidationInterval = Duration(minutes: 5);
   static const _statsRefreshInterval = Duration(minutes: 5);
 
