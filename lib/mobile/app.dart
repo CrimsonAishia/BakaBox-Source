@@ -17,6 +17,7 @@ class MobileApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => ServerBloc()),
+        BlocProvider(create: (_) => ServerStatsBloc()),
         BlocProvider(create: (_) => UpdateLogBloc()),
         BlocProvider(create: (_) => UpdateBloc()),
         BlocProvider(create: (_) => SettingsBloc()..add(SettingsInit())),
