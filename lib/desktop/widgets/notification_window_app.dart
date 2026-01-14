@@ -619,16 +619,52 @@ class _NotificationCardState extends State<_NotificationCard> {
       height: 1.3,
     );
 
-    // 卡片宽度300 - 左右padding各10 = 280
-    const maxWidth = 280.0;
+    // 获取人数信息（仅换图通知显示）
+    final currentPlayers = notification.extraData?['currentPlayers'] as int?;
+    final maxPlayers = notification.extraData?['maxPlayers'] as int?;
+    final hasPlayers =
+        isMapChange && currentPlayers != null && maxPlayers != null;
 
-    return SizedBox(
-      width: maxWidth,
-      child: _MarqueeText(
-        text: notification.message,
-        style: textStyle,
-        maxWidth: maxWidth,
-      ),
+    return Row(
+      children: [
+        Expanded(
+          child: _MarqueeText(
+            text: notification.message,
+            style: textStyle,
+          ),
+        ),
+        if (hasPlayers)
+          Container(
+            margin: const EdgeInsets.only(left: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF4CAF50).withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(
+                color: const Color(0xFF4CAF50).withValues(alpha: 0.5),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.person,
+                  size: 14,
+                  color: Color(0xFF4CAF50),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '$currentPlayers/$maxPlayers',
+                  style: const TextStyle(
+                    color: Color(0xFF4CAF50),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 
@@ -845,12 +881,10 @@ class _ServerNameTextState extends State<_ServerNameText>
 class _MarqueeText extends StatefulWidget {
   final String text;
   final TextStyle style;
-  final double maxWidth;
 
   const _MarqueeText({
     required this.text,
     required this.style,
-    required this.maxWidth,
   });
 
   @override
@@ -863,6 +897,7 @@ class _MarqueeTextState extends State<_MarqueeText>
   late AnimationController _animationController;
   double _scrollDistance = 0;
   final GlobalKey _textKey = GlobalKey();
+  final GlobalKey _containerKey = GlobalKey();
   // 额外滚动距离，补偿渲染误差
   static const double _extraScroll = 10.0;
 
@@ -886,16 +921,20 @@ class _MarqueeTextState extends State<_MarqueeText>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      final renderBox =
+      final textBox =
           _textKey.currentContext?.findRenderObject() as RenderBox?;
-      if (renderBox == null) return;
+      final containerBox =
+          _containerKey.currentContext?.findRenderObject() as RenderBox?;
+      if (textBox == null || containerBox == null) return;
 
-      final textWidth = renderBox.size.width;
+      final textWidth = textBox.size.width;
+      final containerWidth = containerBox.size.width;
+      
       // 文本宽度不超过容器宽度，不需要滚动
-      if (textWidth <= widget.maxWidth) return;
+      if (textWidth <= containerWidth) return;
 
       // 滚动距离 = 文本宽度 - 容器宽度 + 额外补偿
-      _scrollDistance = textWidth - widget.maxWidth + _extraScroll;
+      _scrollDistance = textWidth - containerWidth + _extraScroll;
       _startScrollAnimation();
     });
   }
@@ -920,7 +959,9 @@ class _MarqueeTextState extends State<_MarqueeText>
 
   void _onAnimationUpdate() {
     if (_scrollController.hasClients) {
-      _scrollController.jumpTo(_animationController.value * _scrollDistance);
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final targetScroll = (_animationController.value * _scrollDistance).clamp(0.0, maxScroll);
+      _scrollController.jumpTo(targetScroll);
     }
   }
 
@@ -940,23 +981,26 @@ class _MarqueeTextState extends State<_MarqueeText>
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      controller: _scrollController,
-      scrollDirection: Axis.horizontal,
-      physics: const NeverScrollableScrollPhysics(),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            key: _textKey,
-            widget.text,
-            style: widget.style,
-            softWrap: false,
-            maxLines: 1,
-          ),
-          // 右侧留白，确保有足够空间滚动
-          const SizedBox(width: _extraScroll),
-        ],
+    return ClipRect(
+      key: _containerKey,
+      child: SingleChildScrollView(
+        controller: _scrollController,
+        scrollDirection: Axis.horizontal,
+        physics: const NeverScrollableScrollPhysics(),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              key: _textKey,
+              widget.text,
+              style: widget.style,
+              softWrap: false,
+              maxLines: 1,
+            ),
+            // 右侧留白，确保有足够空间滚动
+            const SizedBox(width: _extraScroll),
+          ],
+        ),
       ),
     );
   }

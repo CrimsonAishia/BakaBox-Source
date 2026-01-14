@@ -282,6 +282,8 @@ class MapChangeMonitorService {
             newMapCn: newMapCn,
             mapBackground: mapBackground,
             categoryName: data.categoryName,
+            currentPlayers: serverInfo.players,
+            maxPlayers: serverInfo.maxPlayers,
           );
         }
       }
