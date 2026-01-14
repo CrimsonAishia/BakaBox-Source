@@ -7,6 +7,7 @@ import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import '../../core/widgets/exit_dialog.dart';
 import '../../core/widgets/page_view_with_listener.dart';
 
+import 'welcome_mobile.dart';
 import 'servers_mobile.dart';
 import 'update_logs_mobile.dart';
 import 'settings_mobile.dart';
@@ -25,18 +26,21 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with TickerProvider
   late AnimationController _navigationAnimationController;
   bool _isAnimating = false;
 
-  final List<Widget> _screens = [
-    const ServersMobile(),
-    const UpdateLogsMobile(),
-    const SettingsMobile(),
-  ];
+  late final List<Widget> _screens;
 
   final List<NavigationItemData> _navigationItems = [
+    NavigationItemData(
+      icon: Icons.home_outlined,
+      selectedIcon: Icons.home,
+      label: '首页',
+      activeColor: const Color(0xFF0080FF),
+      inactiveColor: const Color(0xFF64748B),
+    ),
     NavigationItemData(
       icon: MdiIcons.server,
       selectedIcon: MdiIcons.serverNetwork,
       label: '服务器',
-      activeColor: const Color(0xFF0080FF),
+      activeColor: const Color(0xFF10B981),
       inactiveColor: const Color(0xFF64748B),
     ),
     NavigationItemData(
@@ -63,6 +67,25 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with TickerProvider
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
+    _screens = [
+      WelcomeMobile(onNavigateToServers: () => _navigateToPage(1)),
+      const ServersMobile(),
+      const UpdateLogsMobile(),
+      const SettingsMobile(),
+    ];
+  }
+
+  void _navigateToPage(int index) {
+    if (_currentIndex != index && !_isAnimating) {
+      HapticFeedback.lightImpact();
+      _isAnimating = true;
+      setState(() => _currentIndex = index);
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeInOutCubic,
+      ).then((_) => _isAnimating = false);
+    }
   }
 
   @override
