@@ -224,11 +224,23 @@ class WarmupMonitorService {
   Future<void> _fetchMapRuntimeAndShowNotification() async {
     if (_currentMapName == null) return;
     
-    // 保存当前地图名，用于检查请求返回时地图是否已变化
+    // 保存当前状态，用于检查请求返回时是否已变化
     final requestMapName = _currentMapName;
+    final requestServerAddress = _currentServerAddress;
     
     final apiAddress = _currentServerDomainAddress ?? _currentServerAddress;
     final serverAddress = _currentServerAddress ?? 'gsi_server';
+    
+    // 如果服务器名称为空，先尝试获取（等待完成）
+    if (_currentServerName == null && _currentServerAddress != null) {
+      await _fetchServerNameAsync();
+      // 检查服务器是否已变化
+      if (_currentServerAddress != requestServerAddress) {
+        LogService.d('[WarmupMonitor/GSI] 服务器已变化，忽略旧请求');
+        return;
+      }
+    }
+    // 获取后再读取，如果仍为空则使用地址作为回退
     final serverName = _currentServerName ?? serverAddress;
     
     // 先尝试获取 API 时间
@@ -237,9 +249,9 @@ class WarmupMonitorService {
       try {
         final mapRuntime = await _serverApi.getMapRuntime(apiAddress, requestMapName!);
         
-        // 检查地图是否已变化，如果变化则忽略此次请求结果
-        if (_currentMapName != requestMapName) {
-          LogService.d('[WarmupMonitor/GSI] 地图已变化，忽略旧请求结果');
+        // 检查地图或服务器是否已变化，如果变化则忽略此次请求结果
+        if (_currentMapName != requestMapName || _currentServerAddress != requestServerAddress) {
+          LogService.d('[WarmupMonitor/GSI] 地图或服务器已变化，忽略旧请求结果');
           return;
         }
         
@@ -256,13 +268,19 @@ class WarmupMonitorService {
         }
       } catch (e) {
         LogService.e('[WarmupMonitor/GSI] 获取 mapRuntime 失败', e);
-        // 检查地图是否已变化
-        if (_currentMapName != requestMapName) return;
+        // 检查地图或服务器是否已变化
+        if (_currentMapName != requestMapName || _currentServerAddress != requestServerAddress) return;
       }
     }
     
-    // 再次检查地图是否已变化
-    if (_currentMapName != requestMapName) return;
+    // 再次检查地图或服务器是否已变化
+    if (_currentMapName != requestMapName || _currentServerAddress != requestServerAddress) return;
+    
+    // 检查是否仍在热身状态（可能在异步期间热身已结束）
+    if (!_isWarmingUp) {
+      LogService.d('[WarmupMonitor/GSI] 热身已结束，不显示通知');
+      return;
+    }
     
     // 显示通知（通知窗口会自己倒计时）
     _notificationService.showWarmupNotification(
