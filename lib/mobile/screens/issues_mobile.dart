@@ -514,8 +514,15 @@ class _IssuesMobileState extends State<IssuesMobile> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(MdiIcons.accountOutline, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 4),
+                    CircleAvatar(
+                      radius: 10,
+                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      backgroundImage: issue.authorAvatar != null ? NetworkImage(issue.authorAvatar!) : null,
+                      child: issue.authorAvatar == null
+                          ? Text(issue.authorName.isNotEmpty ? issue.authorName[0].toUpperCase() : '?', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant))
+                          : null,
+                    ),
+                    const SizedBox(width: 6),
                     Text(issue.authorName, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                     const SizedBox(width: 12),
                     Icon(MdiIcons.clockOutline, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),

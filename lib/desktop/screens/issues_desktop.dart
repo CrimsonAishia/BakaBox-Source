@@ -581,7 +581,7 @@ class _IssueCardState extends State<_IssueCard> {
             ]),
             const SizedBox(height: 10),
             Row(children: [
-              _buildMetaItem(MdiIcons.accountOutline, widget.issue.authorName, isDark),
+              _buildAuthorInfo(widget.issue.authorName, widget.issue.authorAvatar, isDark),
               const SizedBox(width: 16),
               _buildMetaItem(MdiIcons.clockOutline, Formatters.formatRelativeTime(widget.issue.createdAt), isDark),
               const Spacer(),
@@ -630,6 +630,21 @@ class _IssueCardState extends State<_IssueCard> {
       Icon(icon, size: 13, color: isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
       const SizedBox(width: 4),
       Text(text, style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF6B7280), fontSize: 12)),
+    ]);
+  }
+
+  Widget _buildAuthorInfo(String authorName, String? authorAvatar, bool isDark) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      CircleAvatar(
+        radius: 10,
+        backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+        backgroundImage: authorAvatar != null ? NetworkImage(authorAvatar) : null,
+        child: authorAvatar == null
+            ? Text(authorName.isNotEmpty ? authorName[0].toUpperCase() : '?', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: isDark ? Colors.white54 : const Color(0xFF6B7280)))
+            : null,
+      ),
+      const SizedBox(width: 6),
+      Text(authorName, style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF6B7280), fontSize: 12)),
     ]);
   }
 
