@@ -51,14 +51,18 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
     ),
   ];
 
-  List<Widget> get _screens => [
-    WelcomeScreen(onNavigateToServers: () => _onIndexChanged(1)),
-    const ServersDesktop(),
-    const UpdateLogsDesktop(),
-    const ToolsScreen(),
-    const SettingsDesktop(),
-    const IssuesDesktop(), // 问题反馈页面（通过底部按钮访问）
-  ];
+  /// 根据索引构建页面（使用全局 Bloc，页面切换不重新创建）
+  Widget _buildScreen(int index) {
+    return switch (index) {
+      0 => WelcomeScreen(onNavigateToServers: () => _onIndexChanged(1)),
+      1 => const ServersDesktop(),
+      2 => const UpdateLogsDesktop(),
+      3 => const ToolsScreen(),
+      4 => const SettingsDesktop(),
+      5 => const IssuesDesktop(),
+      _ => const SizedBox.shrink(),
+    };
+  }
 
   @override
   void initState() {
@@ -84,6 +88,12 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
   }
 
   void _onIndexChanged(int index) {
+    if (_currentIndex == index) return;
+    
+    // 页面切换时清理 Flutter 图片缓存，释放内存
+    // 图片已通过 DiskImageCacheService 缓存到磁盘，内存缓存可以安全清理
+    PaintingBinding.instance.imageCache.clear();
+    
     setState(() {
       _currentIndex = index;
       _contentAnimationController.reset();
@@ -132,7 +142,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
                           position: Tween<Offset>(begin: const Offset(0.1, 0.0), end: Offset.zero).animate(
                             CurvedAnimation(parent: _contentAnimationController, curve: Curves.easeOutCubic),
                           ),
-                          child: _screens[_currentIndex],
+                          child: _buildPageContent(),
                         ),
                       );
                     },
@@ -153,6 +163,14 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
           ],
         ),
       ),
+    );
+  }
+  
+  /// 构建页面内容，使用 KeyedSubtree 确保页面切换时正确销毁
+  Widget _buildPageContent() {
+    return KeyedSubtree(
+      key: ValueKey(_currentIndex),
+      child: _buildScreen(_currentIndex),
     );
   }
 }

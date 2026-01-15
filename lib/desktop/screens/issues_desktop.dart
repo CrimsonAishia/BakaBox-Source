@@ -44,9 +44,9 @@ class _IssuesDesktopState extends State<IssuesDesktop> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // 每次进入页面都刷新数据
+      // 每次进入页面检查是否需要加载数据
       final bloc = context.read<IssueBloc>();
-      if (!bloc.state.isLoading) {
+      if (!bloc.state.isLoading && bloc.state.issues.isEmpty) {
         bloc.add(const IssueFetch());
       }
     });

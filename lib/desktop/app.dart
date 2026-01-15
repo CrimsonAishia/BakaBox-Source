@@ -50,9 +50,10 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        // 全局 Bloc - 所有页面共享
         BlocProvider(create: (_) => AuthBloc()..add(const AuthCheckRequested())),
-        BlocProvider(create: (_) => ServerBloc()),
-        BlocProvider(create: (_) => ServerStatsBloc()),
+        BlocProvider(create: (_) => ServerBloc()..add(ServerFetchList())),
+        BlocProvider(create: (_) => ServerStatsBloc()..add(const ServerStatsFetch())),
         BlocProvider(create: (_) => UpdateLogBloc()),
         BlocProvider(create: (_) => UpdateBloc()),
         BlocProvider(create: (_) => SettingsBloc()..add(SettingsInit())),
@@ -128,15 +129,13 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeBlocs();
+      _initializeServices();
       _listenForUpdate();
     });
   }
 
-  Future<void> _initializeBlocs() async {
+  Future<void> _initializeServices() async {
     try {
-      context.read<ServerBloc>().add(ServerStartPeriodicRefresh());
-      
       // 首帧渲染完成，上报启动统计
       AnalyticsService.instance.reportStartupIfNeeded();
       
@@ -168,14 +167,20 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
     }
     
     // 监听后续更新状态变化（如手动检查更新）
-    updateBloc.stream.listen((state) {
-      if (state.hasUpdate && state.updateInfo != null && mounted && !_updateDialogShown) {
-        _updateDialogShown = true;
-        UpdateDialog.show(context, state.updateInfo!);
-      }
-    });
+    // 使用 BlocListener 替代 stream.listen 避免内存泄漏
   }
 
   @override
-  Widget build(BuildContext context) => const DesktopHomeScreen();
+  Widget build(BuildContext context) {
+    return BlocListener<UpdateBloc, UpdateState>(
+      listenWhen: (prev, curr) => !prev.hasUpdate && curr.hasUpdate && curr.updateInfo != null,
+      listener: (context, state) {
+        if (!_updateDialogShown) {
+          _updateDialogShown = true;
+          UpdateDialog.show(context, state.updateInfo!);
+        }
+      },
+      child: const DesktopHomeScreen(),
+    );
+  }
 }

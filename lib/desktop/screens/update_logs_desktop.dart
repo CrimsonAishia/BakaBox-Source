@@ -34,7 +34,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
   void _checkAndFetchData() {
     final bloc = context.read<UpdateLogBloc>();
     // 每次进入页面都刷新数据
-    if (!bloc.state.isLoading) {
+    if (!bloc.state.isLoading && bloc.state.logs.isEmpty) {
       bloc.add(const UpdateLogFetch());
     }
   }
