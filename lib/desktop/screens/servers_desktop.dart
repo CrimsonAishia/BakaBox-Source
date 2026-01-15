@@ -1,6 +1,7 @@
-import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:dart_ping/dart_ping.dart';
 import '../../core/core.dart';
 import '../widgets/page_layout.dart';
 import '../widgets/server/server_card.dart';
@@ -112,12 +113,14 @@ class _ServersDesktopState extends State<ServersDesktop> {
     final bloc = _serverBloc;
     if (bloc == null || servers.isEmpty) return;
     
-    // 并行获取所有服务器的 ping
-    final futures = servers.map((server) => _fetchServerPing(server, bloc));
-    await Future.wait(futures);
+    // 串行获取 ping，避免同时创建多个 Ping 实例
+    for (final server in servers) {
+      if (!mounted) break;
+      await _fetchServerPing(server, bloc);
+    }
   }
 
-  /// 获取单个服务器的 ping（使用系统 ping 命令）
+  /// 获取单个服务器的 ping
   Future<void> _fetchServerPing(
       ExtendedServerItem server, ServerBloc bloc) async {
     final address = server.serverItem.address;
@@ -127,80 +130,57 @@ class _ServersDesktopState extends State<ServersDesktop> {
     if (ip.isEmpty) return;
 
     try {
-      // 使用系统 ping 命令（Windows: -n 3, Linux/Mac: -c 3）
-      final result = await Process.run(
-        'ping',
-        Platform.isWindows ? ['-n', '3', ip] : ['-c', '3', ip],
-        stdoutEncoding: Platform.isWindows ? const SystemEncoding() : null,
+      // 发送 3 次 ping
+      // forceCodepage: true 解决 Windows 中文系统编码问题
+      // encoding: Utf8Codec(allowMalformed: true) 忽略非 UTF-8 字符
+      final ping = Ping(
+        ip, 
+        count: 3, 
+        timeout: 3,
+        forceCodepage: true,
+        encoding: const Utf8Codec(allowMalformed: true),
       );
-
-      if (result.exitCode == 0 && mounted) {
-        final output = result.stdout.toString();
-        final latency = _parsePingOutput(output);
-
-        if (latency > 0) {
-          // 计算 ping 状态
-          String pingStatus;
-          if (latency < 50) {
-            pingStatus = 'excellent';
-          } else if (latency < 100) {
-            pingStatus = 'good';
-          } else if (latency < 150) {
-            pingStatus = 'fair';
-          } else if (latency < 300) {
-            pingStatus = 'poor';
-          } else {
-            pingStatus = 'bad';
-          }
-
-          final pingInfo = ServerPingInfo(
-            ip: ip,
-            ping: latency,
-            pingStatus: pingStatus,
-          );
-
-          bloc.add(ServerUpdateSingleServer(
-            address: address,
-            pingInfo: pingInfo,
-          ));
+      final results = <Duration>[];
+      
+      await for (final event in ping.stream) {
+        if (!mounted) break;
+        if (event.response != null && event.response!.time != null) {
+          results.add(event.response!.time!);
         }
+      }
+      
+      if (results.isNotEmpty && mounted) {
+        // 计算平均延迟
+        final avgMs = results.map((d) => d.inMilliseconds).reduce((a, b) => a + b) ~/ results.length;
+        
+        // 计算 ping 状态
+        String pingStatus;
+        if (avgMs < 50) {
+          pingStatus = 'excellent';
+        } else if (avgMs < 100) {
+          pingStatus = 'good';
+        } else if (avgMs < 150) {
+          pingStatus = 'fair';
+        } else if (avgMs < 300) {
+          pingStatus = 'poor';
+        } else {
+          pingStatus = 'bad';
+        }
+
+        final pingInfo = ServerPingInfo(
+          ip: ip,
+          ping: avgMs,
+          pingStatus: pingStatus,
+        );
+
+        bloc.add(ServerUpdateSingleServer(
+          address: address,
+          pingInfo: pingInfo,
+        ));
       }
     } catch (e) {
       // 忽略 ping 获取失败
     }
-  }
-
-  /// 解析 ping 命令输出，提取平均延迟
-  int _parsePingOutput(String output) {
-    // Windows 中文: 平均 = 45ms
-    // Windows 英文: Average = 45ms
-    // Linux/Mac: min/avg/max = 10.0/45.0/80.0 ms
-    
-    // 尝试匹配 Windows 中文格式
-    var match = RegExp(r'平均\s*=\s*(\d+)ms').firstMatch(output);
-    if (match != null) {
-      return int.tryParse(match.group(1)!) ?? -1;
-    }
-
-    // 尝试匹配 Windows 英文格式
-    match = RegExp(r'Average\s*=\s*(\d+)ms').firstMatch(output);
-    if (match != null) {
-      return int.tryParse(match.group(1)!) ?? -1;
-    }
-
-    // 尝试匹配 Linux/Mac 格式 (avg 是第二个值)
-    match = RegExp(r'[\d.]+/([\d.]+)/[\d.]+').firstMatch(output);
-    if (match != null) {
-      return double.tryParse(match.group(1)!)?.round() ?? -1;
-    }
-
-    // 尝试匹配任意 数字ms 格式
-    match = RegExp(r'(\d+)ms').firstMatch(output);
-    if (match != null) {
-      return int.tryParse(match.group(1)!) ?? -1;
-    }
-
-    return -1;
   }
 
   @override
