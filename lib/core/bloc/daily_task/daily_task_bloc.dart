@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/auth_service.dart';
+import '../../services/scheduler_service.dart';
 import '../../utils/log_service.dart';
 import 'daily_task_event.dart';
 import 'daily_task_state.dart';
@@ -11,12 +12,11 @@ import 'daily_task_state.dart';
 /// 管理签到和摇一摇状态，支持跨天自动重置
 class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
   final AuthService _authService = AuthService.instance;
-  Timer? _checkTimer;
+  final SchedulerService _scheduler = SchedulerService();
   String? _lastCheckedDate;
-  
+
   static const String _keyLastCheckDate = 'daily_task_last_check_date';
-  // 每分钟检查一次是否跨天
-  static const Duration _checkInterval = Duration(minutes: 1);
+  static const String _taskId = 'daily_task_check';
 
   DailyTaskBloc() : super(const DailyTaskState()) {
     on<DailyTaskCheckStatusRequested>(_onCheckStatusRequested);
@@ -32,32 +32,33 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
     return '${beijingNow.year}-${beijingNow.month.toString().padLeft(2, '0')}-${beijingNow.day.toString().padLeft(2, '0')}';
   }
 
-  /// 启动跨天检查定时器
-  void _startCheckTimer() {
-    _stopCheckTimer();
-    
-    _checkTimer = Timer.periodic(_checkInterval, (_) {
-      _checkDateChange();
-    });
-    
-    LogService.d('每日任务跨天检查定时器已启动，间隔: ${_checkInterval.inMinutes}分钟');
+  /// 启动跨天检查定时任务
+  void _startCheckTask() {
+    if (_scheduler.hasTask(_taskId)) return;
+
+    _scheduler.register(ScheduledTask(
+      id: _taskId,
+      name: '每日任务跨天检查',
+      interval: Intervals.oneMinute,
+      callback: () async => _checkDateChange(),
+    ));
   }
 
-  /// 停止定时器
-  void _stopCheckTimer() {
-    _checkTimer?.cancel();
-    _checkTimer = null;
+  /// 停止定时任务
+  void _stopCheckTask() {
+    _scheduler.cancel(_taskId);
   }
 
   /// 检查是否跨天
   void _checkDateChange() {
     final todayDate = _getBeijingDateString();
-    
+    LogService.d('[DailyTask] 跨天检查: 当前=$todayDate, 上次=$_lastCheckedDate');
+
     if (_lastCheckedDate != null && _lastCheckedDate != todayDate) {
-      LogService.i('检测到跨天: $_lastCheckedDate -> $todayDate，自动刷新每日任务状态');
+      LogService.i('[DailyTask] 检测到跨天: $_lastCheckedDate -> $todayDate，自动刷新状态');
       add(const DailyTaskCheckStatusRequested(forceRefresh: true));
     }
-    
+
     _lastCheckedDate = todayDate;
   }
 
@@ -66,9 +67,9 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
     final prefs = await SharedPreferences.getInstance();
     final lastCheckDate = prefs.getString(_keyLastCheckDate);
     final todayDate = _getBeijingDateString();
-    
+
     if (lastCheckDate != todayDate) {
-      LogService.d('每日任务跨天检测: 上次=$lastCheckDate, 今天=$todayDate, 需要刷新');
+      LogService.d('[DailyTask] 跨天检测: 上次=$lastCheckDate, 今天=$todayDate, 需要刷新');
       return true;
     }
     return false;
@@ -90,13 +91,12 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
 
     // 检查是否跨天，如果跨天则强制刷新
     final needsRefresh = await _needsRefresh();
-    
+
     // 如果已有状态且没跨天，可以跳过（除非强制刷新）
-    // 用 canShake 判断是否已获取过状态（它是 nullable 的，初始为 null）
     if (!needsRefresh && state.canShake != null && !event.forceRefresh) {
-      LogService.d('每日任务状态未跨天，跳过刷新');
-      // 确保定时器在运行
-      if (_checkTimer == null) _startCheckTimer();
+      LogService.d('[DailyTask] 状态未跨天，跳过刷新');
+      // 确保定时任务在运行
+      _startCheckTask();
       return;
     }
 
@@ -120,12 +120,14 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
         shakeRewardAmount: shakeResult.rewardAmount,
       ));
 
-      // 保存检查日期并启动定时器
+      // 保存检查日期并启动定时任务
       await _saveCheckDate();
-      _startCheckTimer();
+      _startCheckTask();
     } catch (e) {
-      LogService.e('检查每日任务状态失败', e);
+      LogService.e('[DailyTask] 检查状态失败', e);
       emit(state.copyWith(isCheckingStatus: false));
+      // 即使失败也启动定时任务，下次检查时重试
+      _startCheckTask();
     }
   }
 
@@ -145,7 +147,7 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
         hasCheckedIn: result.success || result.alreadyCheckedIn,
       ));
     } catch (e) {
-      LogService.e('签到失败', e);
+      LogService.e('[DailyTask] 签到失败', e);
       emit(state.copyWith(isCheckingIn: false));
     }
   }
@@ -167,14 +169,14 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
     DailyTaskReset event,
     Emitter<DailyTaskState> emit,
   ) async {
-    _stopCheckTimer();
+    _stopCheckTask();
     _lastCheckedDate = null;
     emit(const DailyTaskState());
   }
 
   @override
   Future<void> close() {
-    _stopCheckTimer();
+    _stopCheckTask();
     return super.close();
   }
 }

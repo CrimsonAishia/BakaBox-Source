@@ -10,6 +10,7 @@ import 'console_log_service.dart';
 import 'game_status_service.dart';
 import 'gsi_service.dart';
 import 'notification_window_service.dart';
+import 'scheduler_service.dart';
 import 'source_server_service.dart';
 
 /// 热身监控服务（单例）
@@ -31,6 +32,7 @@ class WarmupMonitorService {
   final ServerApi _serverApi = ServerApi();
   final GameStatusService _gameStatusService = GameStatusService();
   final GsiService _gsiService = GsiService();
+  final SchedulerService _scheduler = SchedulerService();
 
   // GSI 相关
   StreamSubscription<GsiGameState?>? _gsiSubscription;
@@ -38,7 +40,7 @@ class WarmupMonitorService {
   String? _gsiMapName; // GSI 获取的地图名
 
   // API 轮询相关
-  Timer? _monitorTimer;
+  static const String _taskId = 'warmup_monitor';
   String? _currentServerAddress; // IP 地址（从游戏日志获取）
   String? _currentServerDomainAddress; // 域名地址（用于 API 调用）
   String? _currentServerName;
@@ -122,8 +124,7 @@ class WarmupMonitorService {
     // GSI 收到有效游戏数据，立即切换到 GSI（GSI 数据为准）
     if (!_useGsi) {
       _useGsi = true;
-      _monitorTimer?.cancel();
-      _monitorTimer = null;
+      _scheduler.cancel(_taskId);
       LogService.i('[WarmupMonitor] GSI 收到有效数据，切换到 GSI 模式');
     }
 
@@ -346,11 +347,10 @@ class WarmupMonitorService {
     if (!event.isRunning) {
       // 游戏退出，关闭热身通知并停止监控
       LogService.i('[WarmupMonitor] 游戏已退出，关闭热身通知并停止监控');
-      
+
       // 停止监控定时器
-      _monitorTimer?.cancel();
-      _monitorTimer = null;
-      
+      _scheduler.cancel(_taskId);
+
       // 关闭热身通知
       if (_isWarmingUp && _currentServerAddress != null) {
         _notificationService.dismissWarmupNotification(_currentServerAddress!);
@@ -370,7 +370,7 @@ class WarmupMonitorService {
       _useGsi = false; // 重置 GSI 状态，下次需要重新检测
     } else {
       // 游戏启动，如果 GSI 不可用则重新开始 API 轮询
-      if (_monitorTimer == null && !_useGsi) {
+      if (!_scheduler.hasTask(_taskId) && !_useGsi) {
         LogService.i('[WarmupMonitor] 游戏已启动，重新开始 API 轮询');
         _startMonitorLoop(isWarmup: false);
       }
@@ -470,13 +470,19 @@ class WarmupMonitorService {
 
   void _startMonitorLoop({bool isWarmup = false}) {
     if (_useGsi) return; // GSI 可用时不启动轮询
-    
-    _monitorTimer?.cancel();
+
+    _scheduler.cancel(_taskId);
     final interval = isWarmup ? warmupIntervalSeconds : normalIntervalSeconds;
-    _monitorTimer = Timer.periodic(
-      Duration(seconds: interval),
-      (_) => _checkCurrentServer(),
-    );
+
+    _scheduler.register(ScheduledTask(
+      id: _taskId,
+      name: '热身监控',
+      interval: Duration(seconds: interval),
+      callback: () async {
+        if (!_useGsi) await _checkCurrentServer();
+      },
+      runImmediately: true,
+    ));
   }
 
   Future<void> _checkCurrentServer() async {
@@ -660,7 +666,7 @@ class WarmupMonitorService {
   bool get isGsiAvailable => _useGsi;
 
   void dispose() {
-    _monitorTimer?.cancel();
+    _scheduler.cancel(_taskId);
     _consoleStateSubscription?.cancel();
     _gameStatusSubscription?.cancel();
     _gsiSubscription?.cancel();

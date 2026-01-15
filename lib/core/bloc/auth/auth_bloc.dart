@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../services/auth_service.dart';
+import '../../services/scheduler_service.dart';
 import '../../services/token_service.dart';
 import '../../utils/error_utils.dart';
 import '../../utils/log_service.dart';
@@ -12,12 +13,10 @@ import 'auth_state.dart';
 /// 负责用户登录、登出、会话验证等认证相关状态管理
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthService _authService = AuthService.instance;
+  final SchedulerService _scheduler = SchedulerService();
 
-  Timer? _sessionValidationTimer;
-  Timer? _statsRefreshTimer;
-
-  static const _sessionValidationInterval = Duration(minutes: 5);
-  static const _statsRefreshInterval = Duration(minutes: 5);
+  static const _taskIdSessionValidation = 'auth_session_validation';
+  static const _taskIdStatsRefresh = 'auth_stats_refresh';
 
   AuthBloc() : super(const AuthState()) {
     on<AuthCheckRequested>(_onCheckRequested);
@@ -210,26 +209,30 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   void _startTimers() {
     _stopTimers();
-    
-    // 会话验证定时器
-    _sessionValidationTimer = Timer.periodic(_sessionValidationInterval, (_) {
-      add(const AuthValidateSessionRequested());
-    });
-    
-    // 统计信息刷新定时器
-    _statsRefreshTimer = Timer.periodic(_statsRefreshInterval, (_) {
-      add(const AuthRefreshRequested());
-    });
-    
+
+    // 会话验证定时器（每5分钟）
+    _scheduler.register(ScheduledTask(
+      id: _taskIdSessionValidation,
+      name: '会话验证',
+      interval: Intervals.fiveMinutes,
+      callback: () async => add(const AuthValidateSessionRequested()),
+    ));
+
+    // 统计信息刷新定时器（每5分钟）
+    _scheduler.register(ScheduledTask(
+      id: _taskIdStatsRefresh,
+      name: '统计信息刷新',
+      interval: Intervals.fiveMinutes,
+      callback: () async => add(const AuthRefreshRequested()),
+    ));
+
     LogService.i('认证定时器已启动');
   }
 
   void _stopTimers() {
-    _sessionValidationTimer?.cancel();
-    _sessionValidationTimer = null;
-    _statsRefreshTimer?.cancel();
-    _statsRefreshTimer = null;
-    
+    _scheduler.cancel(_taskIdSessionValidation);
+    _scheduler.cancel(_taskIdStatsRefresh);
+
     LogService.i('认证定时器已停止');
   }
 

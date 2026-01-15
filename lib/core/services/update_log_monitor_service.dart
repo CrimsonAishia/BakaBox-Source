@@ -5,6 +5,7 @@ import '../api/update_log_api.dart';
 import '../utils/log_service.dart';
 import '../utils/time_utils.dart';
 import 'notification_window_service.dart';
+import 'scheduler_service.dart';
 
 /// 更新日志监控服务（单例）
 ///
@@ -15,11 +16,13 @@ class UpdateLogMonitorService {
   factory UpdateLogMonitorService() => _instance;
   UpdateLogMonitorService._internal();
 
-  /// 监控定时器
-  Timer? _monitorTimer;
+  final SchedulerService _scheduler = SchedulerService();
 
   /// 监控间隔（秒）
   static const int monitorIntervalSeconds = 300; // 5分钟检查一次
+
+  /// 任务 ID
+  static const String _taskId = 'update_log_monitor';
 
   /// 存储 key - 上次检查的更新时间
   static const String _lastCheckTimeKey = 'update_log_last_check_time';
@@ -43,12 +46,14 @@ class UpdateLogMonitorService {
 
   /// 启动监控循环
   void _startMonitorLoop() {
-    if (_monitorTimer != null) return;
+    if (_scheduler.hasTask(_taskId)) return;
 
-    _monitorTimer = Timer.periodic(
-      const Duration(seconds: monitorIntervalSeconds),
-      (_) => checkForUpdates(),
-    );
+    _scheduler.register(ScheduledTask(
+      id: _taskId,
+      name: '更新日志监控',
+      interval: Intervals.fiveMinutes,
+      callback: () async => checkForUpdates(),
+    ));
 
     // 延迟10秒后执行首次检查，避免启动时立即弹出通知
     Future.delayed(const Duration(seconds: 10), () => checkForUpdates());
@@ -56,8 +61,7 @@ class UpdateLogMonitorService {
 
   /// 停止监控循环
   void _stopMonitorLoop() {
-    _monitorTimer?.cancel();
-    _monitorTimer = null;
+    _scheduler.cancel(_taskId);
   }
 
   /// 检查更新日志
