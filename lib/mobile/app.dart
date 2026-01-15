@@ -65,7 +65,7 @@ class _MobileAppHomeState extends State<MobileAppHome> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeBlocs();
-      _listenForUpdate();
+      _checkForUpdate();
     });
   }
 
@@ -76,7 +76,7 @@ class _MobileAppHomeState extends State<MobileAppHome> {
     AnalyticsService.instance.reportStartupIfNeeded();
   }
 
-  void _listenForUpdate() {
+  void _checkForUpdate() {
     final updateBloc = context.read<UpdateBloc>();
 
     // 检查启动屏幕是否已经检测到更新
@@ -84,16 +84,20 @@ class _MobileAppHomeState extends State<MobileAppHome> {
       _updateDialogShown = true;
       UpdateDialog.show(context, updateBloc.state.updateInfo!);
     }
-
-    // 监听后续更新状态变化（如手动检查更新）
-    updateBloc.stream.listen((state) {
-      if (state.hasUpdate && state.updateInfo != null && mounted && !_updateDialogShown) {
-        _updateDialogShown = true;
-        UpdateDialog.show(context, state.updateInfo!);
-      }
-    });
+    // 后续更新状态变化通过 BlocListener 监听，避免内存泄漏
   }
 
   @override
-  Widget build(BuildContext context) => const MobileHomeScreen();
+  Widget build(BuildContext context) {
+    return BlocListener<UpdateBloc, UpdateState>(
+      listenWhen: (prev, curr) => !prev.hasUpdate && curr.hasUpdate && curr.updateInfo != null,
+      listener: (context, state) {
+        if (!_updateDialogShown) {
+          _updateDialogShown = true;
+          UpdateDialog.show(context, state.updateInfo!);
+        }
+      },
+      child: const MobileHomeScreen(),
+    );
+  }
 }
