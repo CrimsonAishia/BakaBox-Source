@@ -34,9 +34,13 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
   int? _touchedIndex;
 
   // 缓存处理后的数据，避免每次 build 都重新计算
-  late List<PlayerTrendInfo> _sortedData;
-  late bool _isMultiDay;
-  late double _yAxisMax;
+  List<PlayerTrendInfo>? _sortedData;
+  bool? _isMultiDay;
+  double? _yAxisMax;
+  
+  // 用于检测数据是否变化
+  List<PlayerTrendInfo>? _lastInfos;
+  int? _lastMaxPlayers;
 
   @override
   void initState() {
@@ -47,13 +51,31 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
   @override
   void didUpdateWidget(PlayerTrendChart oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.infos != widget.infos ||
+    // 只有数据真正变化时才重新处理
+    if (!identical(oldWidget.infos, widget.infos) ||
         oldWidget.maxPlayers != widget.maxPlayers) {
       _processData();
     }
   }
+  
+  @override
+  void dispose() {
+    // 清理缓存数据，帮助 GC 回收
+    _sortedData = null;
+    _lastInfos = null;
+    _touchedIndex = null;
+    super.dispose();
+  }
 
   void _processData() {
+    // 如果数据没变，不重新处理
+    if (identical(widget.infos, _lastInfos) && widget.maxPlayers == _lastMaxPlayers) {
+      return;
+    }
+    
+    _lastInfos = widget.infos;
+    _lastMaxPlayers = widget.maxPlayers;
+    
     // 按时间排序
     _sortedData = List<PlayerTrendInfo>.from(widget.infos)
       ..sort((a, b) {
@@ -62,10 +84,10 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
         if (dateA == null || dateB == null) return 0;
         return dateA.compareTo(dateB);
       });
-    _isMultiDay = _isMultiDayCheck(_sortedData);
-    final maxPlayerCount = _sortedData.isEmpty
+    _isMultiDay = _isMultiDayCheck(_sortedData!);
+    final maxPlayerCount = _sortedData!.isEmpty
         ? 0
-        : _sortedData
+        : _sortedData!
             .map((e) => e.playerCount)
             .reduce((a, b) => a > b ? a : b);
     _yAxisMax = _calculateYAxisMax(maxPlayerCount);
@@ -100,13 +122,13 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.infos.isEmpty) {
+    if (widget.infos.isEmpty || _sortedData == null) {
       return _buildEmptyState();
     }
 
-    final data = _sortedData;
-    final isMultiDay = _isMultiDay;
-    final yAxisMax = _yAxisMax;
+    final data = _sortedData!;
+    final isMultiDay = _isMultiDay ?? false;
+    final yAxisMax = _yAxisMax ?? 10.0;
 
     return Container(
       width: widget.width,

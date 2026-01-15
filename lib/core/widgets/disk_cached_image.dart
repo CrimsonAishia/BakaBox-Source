@@ -9,6 +9,11 @@ import '../services/disk_image_cache_service.dart';
 /// 
 /// 与 [CachedNetworkImage] 不同，此组件不使用内存缓存，
 /// 所有图片都从磁盘读取，以减少内存占用。
+/// 
+/// 内存优化：
+/// - 使用 gaplessPlayback 避免图片切换时的闪烁
+/// - 在 dispose 时清理 _cachedFile 引用
+/// - 支持 cacheWidth/cacheHeight 限制解码尺寸
 class DiskCachedImage extends StatefulWidget {
   /// 图片 URL
   final String imageUrl;
@@ -72,6 +77,7 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
   File? _cachedFile;
   bool _isLoading = true;
   bool _hasError = false;
+  String? _lastUrl;  // 记录上次加载的 URL
   
   @override
   void initState() {
@@ -87,7 +93,20 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
     }
   }
   
+  @override
+  void dispose() {
+    // 清理文件引用，帮助 GC 回收
+    _cachedFile = null;
+    _lastUrl = null;
+    super.dispose();
+  }
+  
   Future<void> _loadImage() async {
+    // 如果 URL 没变且已加载，不重复加载
+    if (widget.imageUrl == _lastUrl && _cachedFile != null && !_hasError) {
+      return;
+    }
+    
     if (widget.imageUrl.isEmpty) {
       setState(() {
         _isLoading = false;
@@ -95,6 +114,8 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
       });
       return;
     }
+    
+    _lastUrl = widget.imageUrl;
     
     setState(() {
       _isLoading = true;

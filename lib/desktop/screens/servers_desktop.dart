@@ -215,6 +215,16 @@ class _ServersDesktopState extends State<ServersDesktop> {
     }
   }
 
+  /// 处理分类点击，切换分类时清理图片内存缓存
+  void _onCategoryTap(ServerCategory category) {
+    final currentCategory = context.read<ServerBloc>().state.selectedCategory;
+    // 切换到不同分类时，清理图片内存缓存
+    if (currentCategory?.modelName != category.modelName) {
+      PaintingBinding.instance.imageCache.clear();
+    }
+    context.read<ServerBloc>().add(ServerSelectCategory(category));
+  }
+
   @override
   void dispose() {
     _serverBloc?.add(ServerStopPeriodicRefresh());
@@ -764,9 +774,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
                     isSelected: isSelected,
                     onlineCount: onlineCount,
                     isLoadingOnlineCount: isLoadingOnlineCount,
-                    onTap: () => context
-                        .read<ServerBloc>()
-                        .add(ServerSelectCategory(category)),
+                    onTap: () => _onCategoryTap(category),
                     onDelete: category.isCustom
                         ? () {
                             context
