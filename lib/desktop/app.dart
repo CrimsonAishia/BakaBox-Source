@@ -57,8 +57,6 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
         BlocProvider(create: (_) => UpdateLogBloc()),
         BlocProvider(create: (_) => UpdateBloc()),
         BlocProvider(create: (_) => SettingsBloc()..add(SettingsInit())),
-        BlocProvider(create: (_) => IssueBloc()),
-        BlocProvider(create: (_) => IssueDetailBloc()),
         BlocProvider(create: (_) => AnnouncementBloc()),
         BlocProvider(create: (_) => DailyTaskBloc()),
       ],
