@@ -13,6 +13,7 @@ import 'disk_cached_image.dart';
 /// - fileId 引用格式（file:xxx）自动获取签名 URL
 /// - 默认背景 fallback
 /// - 地图变化时的刷新
+/// - 图片解码尺寸限制（节省内存）
 class MapBackground extends StatefulWidget {
   /// 地图名称（用于生成缓存 key）
   final String? mapName;
@@ -25,6 +26,14 @@ class MapBackground extends StatefulWidget {
   
   /// 图片填充方式
   final BoxFit fit;
+  
+  /// 解码缓存宽度（限制图片解码尺寸以节省内存）
+  /// 建议设置为显示宽度的 2 倍以保证清晰度
+  final int? cacheWidth;
+  
+  /// 解码缓存高度（限制图片解码尺寸以节省内存）
+  /// 建议设置为显示高度的 2 倍以保证清晰度
+  final int? cacheHeight;
 
   const MapBackground({
     super.key,
@@ -32,6 +41,8 @@ class MapBackground extends StatefulWidget {
     this.imageUrl,
     this.borderRadius,
     this.fit = BoxFit.cover,
+    this.cacheWidth,
+    this.cacheHeight,
   });
 
   /// 从 mapName 和 mapUrl 构建
@@ -41,6 +52,8 @@ class MapBackground extends StatefulWidget {
     String? mapUrl,
     BorderRadius? borderRadius,
     BoxFit fit = BoxFit.cover,
+    int? cacheWidth,
+    int? cacheHeight,
   }) {
     final url = MapUtils.getMapImageUrl(mapName, mapUrl: mapUrl);
     return MapBackground(
@@ -49,6 +62,8 @@ class MapBackground extends StatefulWidget {
       imageUrl: url,
       borderRadius: borderRadius,
       fit: fit,
+      cacheWidth: cacheWidth,
+      cacheHeight: cacheHeight,
     );
   }
 
@@ -146,6 +161,8 @@ class _MapBackgroundState extends State<MapBackground> {
         fit: widget.fit,
         width: double.infinity,
         height: double.infinity,
+        cacheWidth: widget.cacheWidth,
+        cacheHeight: widget.cacheHeight,
         placeholder: _buildDefaultBackground(),
         errorWidget: _buildDefaultBackground(),
       );
@@ -157,6 +174,8 @@ class _MapBackgroundState extends State<MapBackground> {
         fit: widget.fit,
         width: double.infinity,
         height: double.infinity,
+        cacheWidth: widget.cacheWidth,
+        cacheHeight: widget.cacheHeight,
         errorBuilder: (context, error, stackTrace) {
           // 如果不是默认背景加载失败，尝试加载默认背景
           if (url != MapUtils.defaultMapBackground) {
