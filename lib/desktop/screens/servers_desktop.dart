@@ -715,7 +715,8 @@ class _ServersDesktopState extends State<ServersDesktop> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return BlocBuilder<ServerBloc, ServerState>(
       builder: (context, state) {
-        if (state.isLoading) {
+        // 首次加载且没有分类数据时显示加载指示器
+        if (state.isLoading && state.serverCategories.isEmpty) {
           return const Center(
             child: CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0080FF)),

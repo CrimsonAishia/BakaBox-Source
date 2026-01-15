@@ -27,6 +27,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   final Map<String, List<DateTime>> _refreshHistory = {};
   static const int _maxRefreshPerMinute = 5; // 1分钟内最多刷新5次
   static const Duration _refreshWindow = Duration(minutes: 1);
+  
+  // 缓存大小限制
+  static const int _maxCacheSize = 50; // 最多缓存 50 个服务器的数据
 
   ServerBloc() : super(const ServerState()) {
     on<ServerFetchList>(_onFetchList);
@@ -377,6 +380,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     if (event.mapRuntime != null) {
       _mapRuntimeCache[event.address] = event.mapRuntime!;
       _mapRuntimeLastFetchedCache[event.address] = DateTime.now().millisecondsSinceEpoch;
+      _trimCacheIfNeeded();
     }
     
     servers[index] = current.copyWith(
@@ -862,5 +866,45 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         emit(state.copyWith(refreshingMaps: updatedRefreshingMaps));
       }
     }
+  }
+  
+  /// 清理过大的缓存，保留最近使用的数据
+  void _trimCacheIfNeeded() {
+    if (_mapRuntimeCache.length <= _maxCacheSize) return;
+    
+    // 按最后获取时间排序，移除最旧的条目
+    final sortedEntries = _mapRuntimeLastFetchedCache.entries.toList()
+      ..sort((a, b) => a.value.compareTo(b.value));
+    
+    final toRemove = sortedEntries.take(_mapRuntimeCache.length - _maxCacheSize).map((e) => e.key).toList();
+    
+    for (final key in toRemove) {
+      _mapRuntimeCache.remove(key);
+      _mapRuntimeLastFetchedCache.remove(key);
+      _serverMapCache.remove(key);
+      _failureCountCache.remove(key);
+    }
+    
+    LogService.d('清理 ServerBloc 缓存: 移除 ${toRemove.length} 条旧数据');
+  }
+  
+  /// 清理刷新历史中的过期记录
+  void _cleanupRefreshHistory() {
+    final now = DateTime.now();
+    _refreshHistory.removeWhere((_, history) {
+      history.removeWhere((time) => now.difference(time) > _refreshWindow);
+      return history.isEmpty;
+    });
+  }
+  
+  @override
+  Future<void> close() {
+    // 清理所有缓存
+    _mapRuntimeCache.clear();
+    _mapRuntimeLastFetchedCache.clear();
+    _serverMapCache.clear();
+    _failureCountCache.clear();
+    _refreshHistory.clear();
+    return super.close();
   }
 }
