@@ -52,6 +52,10 @@ class DiskCachedImage extends StatefulWidget {
   /// 解码缓存高度（限制图片解码尺寸以节省内存）
   /// 设置后图片会以此高度解码，而非原图高度
   final int? cacheHeight;
+  
+  /// 加载失败时显示的本地资源图片路径
+  /// 例如：'assets/images/default-map-bg.jpg'
+  final String? fallbackAsset;
 
   const DiskCachedImage({
     super.key,
@@ -67,6 +71,7 @@ class DiskCachedImage extends StatefulWidget {
     this.fadeInDuration = const Duration(milliseconds: 300),
     this.cacheWidth,
     this.cacheHeight,
+    this.fallbackAsset,
   });
 
   @override
@@ -186,7 +191,26 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
   }
   
   Widget _buildErrorWidget() {
-    return widget.errorWidget ?? SizedBox(
+    // 如果设置了 fallbackAsset，显示本地资源图片
+    if (widget.fallbackAsset != null) {
+      return Image.asset(
+        widget.fallbackAsset!,
+        fit: widget.fit,
+        width: widget.width,
+        height: widget.height,
+        alignment: widget.alignment,
+        color: widget.color,
+        colorBlendMode: widget.colorBlendMode,
+        cacheWidth: widget.cacheWidth,
+        cacheHeight: widget.cacheHeight,
+        errorBuilder: (context, error, stackTrace) => _buildDefaultErrorWidget(),
+      );
+    }
+    return widget.errorWidget ?? _buildDefaultErrorWidget();
+  }
+  
+  Widget _buildDefaultErrorWidget() {
+    return SizedBox(
       width: widget.width,
       height: widget.height,
       child: const Center(
