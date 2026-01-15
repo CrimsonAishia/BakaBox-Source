@@ -39,6 +39,14 @@ class DiskCachedImage extends StatefulWidget {
   
   /// 淡入动画时长
   final Duration fadeInDuration;
+  
+  /// 解码缓存宽度（限制图片解码尺寸以节省内存）
+  /// 设置后图片会以此宽度解码，而非原图宽度
+  final int? cacheWidth;
+  
+  /// 解码缓存高度（限制图片解码尺寸以节省内存）
+  /// 设置后图片会以此高度解码，而非原图高度
+  final int? cacheHeight;
 
   const DiskCachedImage({
     super.key,
@@ -52,6 +60,8 @@ class DiskCachedImage extends StatefulWidget {
     this.color,
     this.colorBlendMode,
     this.fadeInDuration = const Duration(milliseconds: 300),
+    this.cacheWidth,
+    this.cacheHeight,
   });
 
   @override
@@ -137,6 +147,8 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
         alignment: widget.alignment,
         color: widget.color,
         colorBlendMode: widget.colorBlendMode,
+        cacheWidth: widget.cacheWidth,
+        cacheHeight: widget.cacheHeight,
         errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
       ),
     );

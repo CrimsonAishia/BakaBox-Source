@@ -38,7 +38,8 @@ class ServerCard extends StatefulWidget {
 
 class _ServerCardState extends State<ServerCard>
     with SingleTickerProviderStateMixin {
-  late AnimationController _rgbController;
+  // RGB 动画控制器（仅热身状态时创建，节省内存）
+  AnimationController? _rgbController;
   bool _isConnecting = false;
   bool _isHovered = false;
   
@@ -62,10 +63,8 @@ class _ServerCardState extends State<ServerCard>
   @override
   void initState() {
     super.initState();
-    _rgbController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat();
+    // 延迟创建动画控制器，只在热身状态时创建
+    _updateAnimationController();
     
     // 监听状态变化，当操作完成或游戏关闭时重置连接状态
     _stateSubscription = _statusService.stateStream.listen(_onStatusChanged);
@@ -84,8 +83,24 @@ class _ServerCardState extends State<ServerCard>
   @override
   void didUpdateWidget(covariant ServerCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 检查热身状态变化，更新定时器
+    // 检查热身状态变化，更新定时器和动画控制器
     _updateWarmupTimer();
+    _updateAnimationController();
+  }
+  
+  /// 更新动画控制器（仅热身状态时创建）
+  void _updateAnimationController() {
+    if (_isWarmingUp && _rgbController == null) {
+      // 热身中，创建动画控制器
+      _rgbController = AnimationController(
+        vsync: this,
+        duration: const Duration(seconds: 3),
+      )..repeat();
+    } else if (!_isWarmingUp && _rgbController != null) {
+      // 热身结束，释放动画控制器
+      _rgbController?.dispose();
+      _rgbController = null;
+    }
   }
   
   /// 更新热身刷新定时器
@@ -151,7 +166,7 @@ class _ServerCardState extends State<ServerCard>
     _stateSubscription?.cancel();
     _monitorSubscription?.cancel();
     _warmupRefreshTimer?.cancel();
-    _rgbController.dispose();
+    _rgbController?.dispose();
     super.dispose();
   }
 
@@ -256,101 +271,103 @@ class _ServerCardState extends State<ServerCard>
         cursor: SystemMouseCursors.click,
         onEnter: (_) => _onCardHoverChanged(true),
         onExit: (_) => _onCardHoverChanged(false),
-        child: AnimatedBuilder(
-          animation: _rgbController,
-          builder: (context, child) {
-            final rgbColor = _getRgbColor(_rgbController.value);
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOutCubic,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: _isHovered
-                    ? Border.all(
-                        color: _isWarmingUp
-                            ? rgbColor.withValues(alpha: 0.8)
-                            : const Color(0xFF0080FF).withValues(alpha: 0.6),
-                        width: 2,
-                      )
-                    : null,
-                boxShadow: [
-                  if (_isWarmingUp) ...[
-                    BoxShadow(
-                      color: rgbColor,
-                      blurRadius: _isHovered ? 20 : 8,
-                      spreadRadius: _isHovered ? 4 : 0,
-                    ),
-                    if (_isHovered)
-                      BoxShadow(
-                        color: rgbColor.withValues(alpha: 0.5),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                  ] else ...[
-                    BoxShadow(
-                      color: _isHovered
-                          ? const Color(0xFF0080FF).withValues(alpha: 0.3)
-                          : Colors.black.withValues(alpha: 0.1),
-                      blurRadius: _isHovered ? 16 : 4,
-                      spreadRadius: _isHovered ? 1 : 0,
-                      offset: Offset(0, _isHovered ? 4 : 2),
-                      ),
-                      if (_isHovered)
-                        BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                  ],
-                ],
+        child: _rgbController != null
+            ? AnimatedBuilder(
+                animation: _rgbController!,
+                builder: (context, child) => _buildCardContent(_getRgbColor(_rgbController!.value)),
+              )
+            : _buildCardContent(const Color(0xFF0080FF)),
+      ),
+    );
+  }
+  
+  /// 构建卡片内容
+  Widget _buildCardContent(Color rgbColor) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: _isHovered
+            ? Border.all(
+                color: _isWarmingUp
+                    ? rgbColor.withValues(alpha: 0.8)
+                    : const Color(0xFF0080FF).withValues(alpha: 0.6),
+                width: 2,
+              )
+            : null,
+        boxShadow: [
+          if (_isWarmingUp) ...[
+            BoxShadow(
+              color: rgbColor,
+              blurRadius: _isHovered ? 20 : 8,
+              spreadRadius: _isHovered ? 4 : 0,
+            ),
+            if (_isHovered)
+              BoxShadow(
+                color: rgbColor.withValues(alpha: 0.5),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  height: 165, // 固定高度
-                  child: Stack(
-                    children: [
-                      // 地图背景
-                      Positioned.fill(child: _buildMapBackground()),
-                      // 渐变遮罩
-                      Positioned.fill(child: _buildGradientOverlay()),
-                      // Hover 高亮遮罩
-                      if (_isHovered)
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: _isWarmingUp
-                                    ? [
-                                        rgbColor.withValues(alpha: 0.1),
-                                        Colors.transparent,
-                                        rgbColor.withValues(alpha: 0.08),
-                                      ]
-                                    : [
-                                        const Color(0xFF0080FF)
-                                            .withValues(alpha: 0.08),
-                                        Colors.transparent,
-                                        const Color(0xFF0080FF)
-                                            .withValues(alpha: 0.05),
-                                      ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      // 热身边框
-                      if (_isWarmingUp) _buildWarmupBorder(),
-                      // 刷新加载指示器
-                      _buildRefreshIndicator(),
-                      // 内容
-                      _buildContent(),
-                    ],
+          ] else ...[
+            BoxShadow(
+              color: _isHovered
+                  ? const Color(0xFF0080FF).withValues(alpha: 0.3)
+                  : Colors.black.withValues(alpha: 0.1),
+              blurRadius: _isHovered ? 16 : 4,
+              spreadRadius: _isHovered ? 1 : 0,
+              offset: Offset(0, _isHovered ? 4 : 2),
+            ),
+            if (_isHovered)
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+          ],
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          height: 165, // 固定高度
+          child: Stack(
+            children: [
+              // 地图背景
+              Positioned.fill(child: _buildMapBackground()),
+              // 渐变遮罩
+              Positioned.fill(child: _buildGradientOverlay()),
+              // Hover 高亮遮罩
+              if (_isHovered)
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: _isWarmingUp
+                            ? [
+                                rgbColor.withValues(alpha: 0.1),
+                                Colors.transparent,
+                                rgbColor.withValues(alpha: 0.08),
+                              ]
+                            : [
+                                const Color(0xFF0080FF).withValues(alpha: 0.08),
+                                Colors.transparent,
+                                const Color(0xFF0080FF).withValues(alpha: 0.05),
+                              ],
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
+              // 热身边框
+              if (_isWarmingUp) _buildWarmupBorder(rgbColor),
+              // 刷新加载指示器
+              _buildRefreshIndicator(),
+              // 内容
+              _buildContent(),
+            ],
+          ),
         ),
       ),
     );
@@ -370,13 +387,13 @@ class _ServerCardState extends State<ServerCard>
     return Color.lerp(colors[index], colors[nextIndex], t)!;
   }
 
-  Widget _buildWarmupBorder() {
+  Widget _buildWarmupBorder(Color rgbColor) {
     return Positioned.fill(
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: _getRgbColor(_rgbController.value),
+            color: rgbColor,
             width: 2,
           ),
         ),
@@ -388,9 +405,13 @@ class _ServerCardState extends State<ServerCard>
     // 使用 mapInfo 的背景图
     final mapUrl = widget.server.mapInfo?.mapUrl;
     
+    // 卡片高度 165，宽度约 400-600
+    // 使用 2 倍分辨率保证清晰度，同时限制解码尺寸节省内存
     return MapBackground(
       mapName: widget.server.serverData?.map,
       imageUrl: mapUrl,
+      cacheWidth: 800,   // 2x 显示宽度
+      cacheHeight: 330,  // 2x 显示高度
     );
   }
 
