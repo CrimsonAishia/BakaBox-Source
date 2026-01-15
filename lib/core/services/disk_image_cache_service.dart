@@ -3,6 +3,7 @@ import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as p;
+import '../api/api_client.dart';
 import '../utils/app_directory_service.dart';
 import '../utils/log_service.dart';
 
@@ -18,11 +19,8 @@ class DiskImageCacheService {
   
   static const String _cacheSubDir = 'images';
   
-  final Dio _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 30),
-    receiveTimeout: const Duration(seconds: 60),
-    responseType: ResponseType.bytes,
-  ));
+  /// 复用 ApiClient 的 Dio 实例，减少内存占用
+  Dio get _dio => ApiClient.instance.dio;
   
   /// 获取缓存目录路径
   String get _cacheDir => p.join(AppDirectoryService.cachePath, _cacheSubDir);
@@ -111,7 +109,10 @@ class DiskImageCacheService {
     try {
       final response = await _dio.get<List<int>>(
         url,
-        options: Options(responseType: ResponseType.bytes),
+        options: Options(
+          responseType: ResponseType.bytes,
+          receiveTimeout: const Duration(seconds: 60),
+        ),
       );
       
       if (response.statusCode == 200 && response.data != null) {
