@@ -208,50 +208,11 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTi
   Widget _buildAppName(ThemeData theme, bool isDark) {
     return Column(
       children: [
-        // 主标题 - 使用金色/橙色渐变，与蓝色Logo形成冷暖对比
-        ShaderMask(
-          shaderCallback: (bounds) => LinearGradient(
-            colors: isDark
-                ? [
-                    const Color(0xFFFBBF24), // 金色
-                    const Color(0xFFF59E0B), // 橙色
-                    const Color(0xFFEF4444), // 红色
-                  ]
-                : [
-                    const Color(0xFFFCD34D), // 亮金色
-                    const Color(0xFFFBBF24), // 金色
-                    const Color(0xFFF59E0B), // 橙色
-                  ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ).createShader(bounds),
-          child: Text(
-            AppConstants.appName,
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-              fontSize: 38,
-              letterSpacing: 2.0,
-              height: 1.1,
-              shadows: [
-                Shadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.7 : 0.4),
-                  offset: const Offset(0, 3),
-                  blurRadius: 6,
-                ),
-                Shadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.25),
-                  offset: const Offset(0, 6),
-                  blurRadius: 12,
-                ),
-                // 金色发光
-                Shadow(
-                  color: const Color(0xFFFBBF24).withValues(alpha: isDark ? 0.4 : 0.3),
-                  blurRadius: 20,
-                ),
-              ],
-            ),
-          ),
+        // Logo 图片
+        Image.asset(
+          'assets/images/sidebar-logo.png',
+          height: 72,
+          fit: BoxFit.contain,
         ),
         const SizedBox(height: 10),
         // 副标题 - 使用灰蓝色
