@@ -2,24 +2,23 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../api/announcement_api.dart';
 import '../../services/announcement_read_service.dart';
+import '../../services/scheduler_service.dart';
 import '../../utils/announcement_utils.dart';
 import '../../utils/log_service.dart';
 import 'announcement_event.dart';
 import 'announcement_state.dart';
 
 /// 公告 BLoC
-/// 
+///
 /// 负责管理公告的获取、刷新和已读状态
 /// 支持自动刷新功能（默认30分钟）
 class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
   final AnnouncementApi _announcementApi;
   final AnnouncementReadService _readService;
-  
-  /// 自动刷新定时器
-  Timer? _autoRefreshTimer;
-  
-  /// 自动刷新间隔（30分钟）
-  static const Duration _autoRefreshInterval = Duration(minutes: 30);
+  final SchedulerService _scheduler = SchedulerService();
+
+  /// 任务 ID
+  static const String _taskId = 'announcement_auto_refresh';
 
   AnnouncementBloc({
     AnnouncementApi? announcementApi,
@@ -38,19 +37,23 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
   /// 启动自动刷新
   void _startAutoRefresh() {
     _stopAutoRefresh();
-    _autoRefreshTimer = Timer.periodic(_autoRefreshInterval, (_) {
-      if (!state.isLoading) {
-        LogService.d('公告自动刷新触发');
-        add(AnnouncementRefresh(silent: true));
-      }
-    });
-    LogService.d('公告自动刷新已启动，间隔: ${_autoRefreshInterval.inMinutes} 分钟');
+    _scheduler.register(ScheduledTask(
+      id: _taskId,
+      name: '公告自动刷新',
+      interval: Intervals.thirtyMinutes,
+      callback: () async {
+        if (!state.isLoading) {
+          LogService.d('公告自动刷新触发');
+          add(AnnouncementRefresh(silent: true));
+        }
+      },
+    ));
+    LogService.d('公告自动刷新已启动，间隔: 30 分钟');
   }
-  
+
   /// 停止自动刷新
   void _stopAutoRefresh() {
-    _autoRefreshTimer?.cancel();
-    _autoRefreshTimer = null;
+    _scheduler.cancel(_taskId);
   }
   
   /// 处理启动自动刷新事件

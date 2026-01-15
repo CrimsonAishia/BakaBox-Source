@@ -3,6 +3,7 @@ import 'dart:async';
 import '../utils/log_service.dart';
 import '../utils/platform_utils.dart';
 import 'game_launcher_service.dart';
+import 'scheduler_service.dart';
 
 /// 游戏状态变化事件
 class GameStatusEvent {
@@ -35,8 +36,8 @@ class GameStatusService {
   
   // 监控
   bool _isMonitoring = false;
-  Timer? _monitorTimer;
-  static const Duration _monitorInterval = Duration(seconds: 3);
+  final SchedulerService _scheduler = SchedulerService();
+  static const String _taskId = 'game_status_monitor';
   
   // 事件流
   final _statusController = StreamController<GameStatusEvent>.broadcast();
@@ -66,17 +67,22 @@ class GameStatusService {
     if (_isMonitoring) {
       return;
     }
-    
+
     _isMonitoring = true;
-    
+
     // 初始检测
     await _checkGameStatus();
-    
-    // 启动定时监控
-    _monitorTimer = Timer.periodic(_monitorInterval, (_) {
-      _checkGameStatus();
-    });
-    
+
+    // 启动定时监控（每3秒）
+    _scheduler.register(ScheduledTask(
+      id: _taskId,
+      name: '游戏状态监控',
+      interval: Intervals.threeSeconds,
+      callback: () async {
+        if (_isMonitoring) await _checkGameStatus();
+      },
+    ));
+
     LogService.i('[GameStatus] 游戏状态监控已启动');
     return;
   }
@@ -86,11 +92,10 @@ class GameStatusService {
     if (!_isMonitoring) {
       return;
     }
-    
-    _monitorTimer?.cancel();
-    _monitorTimer = null;
+
+    _scheduler.cancel(_taskId);
     _isMonitoring = false;
-    
+
     LogService.i('[GameStatus] 游戏状态监控已停止');
     return;
   }

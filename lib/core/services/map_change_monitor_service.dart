@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../api/server_api.dart';
 import '../utils/log_service.dart';
 import 'notification_window_service.dart';
+import 'scheduler_service.dart';
 import 'source_server_service.dart';
 
 /// 服务器监控数据
@@ -74,13 +75,15 @@ class MapChangeMonitorService {
 
   /// 监控中的服务器
   final Map<String, ServerMonitorData> _monitoredServers = {};
-  
-  /// 监控定时器
-  Timer? _monitorTimer;
-  
+
+  final SchedulerService _scheduler = SchedulerService();
+
   /// 监控间隔（秒）
   static const int monitorIntervalSeconds = 10;
-  
+
+  /// 任务 ID
+  static const String _taskId = 'map_change_monitor';
+
   /// 存储 key
   static const String _storageKey = 'monitored_servers';
 
@@ -170,22 +173,21 @@ class MapChangeMonitorService {
 
   /// 启动监控循环
   void _startMonitorLoop() {
-    if (_monitorTimer != null) return;
+    if (_scheduler.hasTask(_taskId)) return;
     if (_monitoredServers.isEmpty) return;
 
-    _monitorTimer = Timer.periodic(
-      const Duration(seconds: monitorIntervalSeconds),
-      (_) => _checkAllServers(),
-    );
-    
-    // 立即执行一次检查
-    _checkAllServers();
+    _scheduler.register(ScheduledTask(
+      id: _taskId,
+      name: '地图换图监控',
+      interval: Intervals.tenSeconds,
+      callback: () async => _checkAllServers(),
+      runImmediately: true,
+    ));
   }
 
   /// 停止监控循环
   void _stopMonitorLoop() {
-    _monitorTimer?.cancel();
-    _monitorTimer = null;
+    _scheduler.cancel(_taskId);
   }
 
   /// 检查所有监控的服务器
