@@ -71,23 +71,56 @@ class MapBackground extends StatefulWidget {
   State<MapBackground> createState() => _MapBackgroundState();
 }
 
-class _MapBackgroundState extends State<MapBackground> {
+class _MapBackgroundState extends State<MapBackground>
+    with SingleTickerProviderStateMixin {
   String? _resolvedUrl;
   bool _isLoading = false;
+  bool _animationCompleted = false; // 动画完成后移除底层渐变
   String? _lastImageUrl; // 缓存上次的 imageUrl，避免重复解析
+
+  // 淡入动画控制器（用于本地资源图片）
+  late AnimationController _fadeController;
+  late CurvedAnimation _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeIn,
+    );
+    _fadeController.addStatusListener(_onAnimationStatus);
     _resolveUrl();
+  }
+
+  void _onAnimationStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed && mounted) {
+      setState(() => _animationCompleted = true);
+    }
   }
 
   @override
   void didUpdateWidget(MapBackground oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.imageUrl != widget.imageUrl) {
+      _fadeController.reset();
+      _animationCompleted = false;
       _resolveUrl();
     }
+  }
+
+  @override
+  void dispose() {
+    _fadeController.removeStatusListener(_onAnimationStatus);
+    _fadeAnimation.dispose();
+    _fadeController.dispose();
+    _resolvedUrl = null;
+    _lastImageUrl = null;
+    super.dispose();
   }
 
   Future<void> _resolveUrl() async {
@@ -163,12 +196,14 @@ class _MapBackgroundState extends State<MapBackground> {
         height: double.infinity,
         cacheWidth: widget.cacheWidth,
         cacheHeight: widget.cacheHeight,
-        placeholder: _buildDefaultBackground(),
+        // 不传 placeholder，使用默认的 loading 指示器
+        // 图片加载完成后会淡入显示
+        fallbackAsset: MapUtils.defaultMapBackground,
         errorWidget: _buildDefaultBackground(),
       );
     } else {
       // 本地资源图片
-      child = Image.asset(
+      final assetImage = Image.asset(
         url,
         key: ValueKey('map_bg_asset_${widget.mapName ?? ''}_$url'),
         fit: widget.fit,
@@ -176,6 +211,20 @@ class _MapBackgroundState extends State<MapBackground> {
         height: double.infinity,
         cacheWidth: widget.cacheWidth,
         cacheHeight: widget.cacheHeight,
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (wasSynchronouslyLoaded || frame != null) {
+            // 图片加载完成，播放淡入动画
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted &&
+                  !_fadeController.isAnimating &&
+                  _fadeController.value == 0) {
+                _fadeController.forward();
+              }
+            });
+            return child;
+          }
+          return const SizedBox.shrink();
+        },
         errorBuilder: (context, error, stackTrace) {
           // 如果不是默认背景加载失败，尝试加载默认背景
           if (url != MapUtils.defaultMapBackground) {
@@ -185,6 +234,22 @@ class _MapBackgroundState extends State<MapBackground> {
           return _buildFallbackGradient();
         },
       );
+
+      // 动画完成后直接返回图片，移除底层渐变释放内存
+      if (_animationCompleted) {
+        child = assetImage;
+      } else {
+        child = Stack(
+          fit: StackFit.expand,
+          children: [
+            _buildFallbackGradient(),
+            FadeTransition(
+              opacity: _fadeAnimation,
+              child: assetImage,
+            ),
+          ],
+        );
+      }
     }
 
     if (widget.borderRadius != null) {
