@@ -74,6 +74,14 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
     _scrollController.removeListener(_updateScrollIndicators);
     _scrollController.dispose();
     _searchController.dispose();
+    // 清理地图缓存，释放内存
+    _mapInfoCache.clear();
+    _loadingMaps.clear();
+    // 清理历史数据列表
+    _historyData.clear();
+    // 清理图片内存缓存，释放加载的地图图片
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
     super.dispose();
   }
 
@@ -732,9 +740,13 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
 
   /// 构建地图背景
   Widget _buildMapBackground(String? mapUrl, String mapName) {
+    // 历史卡片高度 140，宽度约 388
+    // 使用 2 倍分辨率保证清晰度，同时限制解码尺寸节省内存
     return MapBackground(
       mapName: mapName,
       imageUrl: mapUrl,
+      cacheWidth: 776,   // 2x 显示宽度
+      cacheHeight: 280,  // 2x 显示高度
     );
   }
 

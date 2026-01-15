@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
@@ -14,7 +15,7 @@ import '../../../core/widgets/map_background.dart';
 import 'queue_settings.dart';
 
 /// 挤服窗口
-class QueueWindow extends StatelessWidget {
+class QueueWindow extends StatefulWidget {
   final String serverAddress;
   final VoidCallback? onClose;
 
@@ -25,12 +26,44 @@ class QueueWindow extends StatelessWidget {
   });
 
   @override
+  State<QueueWindow> createState() => _QueueWindowState();
+}
+
+class _QueueWindowState extends State<QueueWindow> {
+  late final QueueBloc _queueBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _queueBloc = QueueBloc()..add(QueueInitialize(widget.serverAddress));
+  }
+
+  @override
+  void dispose() {
+    // 确保 Bloc 被正确关闭，释放 Timer 和 StreamSubscription
+    _queueBloc.close();
+    // 清理图片内存缓存
+    _clearImageCache();
+    super.dispose();
+  }
+  
+  /// 清理图片内存缓存
+  void _clearImageCache() {
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      PaintingBinding.instance.imageCache.clear();
+      PaintingBinding.instance.imageCache.clearLiveImages();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => QueueBloc()..add(QueueInitialize(serverAddress)),
+    return BlocProvider.value(
+      value: _queueBloc,
       child: _QueueWindowContent(
-        serverAddress: serverAddress,
-        onClose: onClose,
+        serverAddress: widget.serverAddress,
+        onClose: widget.onClose,
       ),
     );
   }

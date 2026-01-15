@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../core/models/server_models.dart';
 import '../../../core/api/server_api.dart';
@@ -60,11 +61,33 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
 
   @override
   void dispose() {
+    // 取消自动刷新定时器
     _refreshTimer?.cancel();
+    _refreshTimer = null;
+    // 释放控制器
     _searchController.dispose();
     _playerScrollController.removeListener(_updateScrollIndicators);
     _playerScrollController.dispose();
+    // 清理数据引用
+    _serverDetail = null;
     super.dispose();
+  }
+  
+  /// 清理图片内存缓存
+  void _clearImageCache() {
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      PaintingBinding.instance.imageCache.clear();
+      PaintingBinding.instance.imageCache.clearLiveImages();
+    });
+  }
+  
+  /// 关闭 Dialog 前的清理
+  void _handleClose() {
+    _clearImageCache();
+    _serverDetail = null;
+    Navigator.of(context).pop();
   }
 
   void _updateScrollIndicators() {
@@ -419,7 +442,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
                     // 关闭按钮
                     IconButton(
                       icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: _handleClose,
                       tooltip: '关闭',
                     ),
                   ],
