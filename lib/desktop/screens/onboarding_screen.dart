@@ -8,7 +8,6 @@ import 'package:file_picker/file_picker.dart';
 import '../../core/core.dart';
 import '../../core/services/onboarding_service.dart';
 import '../../core/services/game_path_service.dart';
-import '../../core/services/game_launcher_service.dart';
 import '../widgets/qq_login_dialog.dart';
 
 /// 引导完成回调

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 import '../../../core/models/server_models.dart';
 import '../../../core/utils/map_utils.dart';
 import '../../../core/utils/player_count_utils.dart';
-import '../../../core/utils/image_cache_manager.dart';
+import '../../../core/widgets/disk_cached_image.dart';
 
 /// 挤服窗口中的服务器信息卡片
 class QueueServerCard extends StatelessWidget {
@@ -67,16 +66,13 @@ class QueueServerCard extends StatelessWidget {
     );
 
     if (mapUrl.startsWith('http://') || mapUrl.startsWith('https://')) {
-      final cacheKey = AppImageCacheManager.extractCacheKey(mapUrl);
-      return CachedNetworkImage(
+      return DiskCachedImage(
         imageUrl: mapUrl,
-        cacheKey: cacheKey,
-        cacheManager: AppImageCacheManager.instance,
         fit: BoxFit.cover,
-        placeholder: (context, url) => Container(
+        placeholder: Container(
           color: const Color(0xFF1E293B),
         ),
-        errorWidget: (context, url, error) => _buildDefaultBackground(),
+        errorWidget: _buildDefaultBackground(),
       );
     }
 

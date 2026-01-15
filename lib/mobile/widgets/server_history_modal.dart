@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
 import '../../core/core.dart';
+import '../../core/widgets/disk_cached_image.dart';
 
 class ServerHistoryModal extends StatefulWidget {
   final ExtendedServerItem server;
@@ -274,7 +275,24 @@ class _ServerHistoryModalState extends State<ServerHistoryModal> with SingleTick
     return SizedBox(
       height: 100,
       child: Stack(children: [
-        Container(color: Colors.grey[300], child: mapInfo?.mapUrl != null ? Image.network(mapInfo!.mapUrl, fit: BoxFit.cover, width: double.infinity, height: double.infinity, errorBuilder: (_, __, ___) => Container(color: Colors.grey[400], child: const Center(child: Icon(Icons.map, size: 40, color: Colors.white54)))) : Container(color: Colors.grey[400], child: const Center(child: Icon(Icons.map, size: 40, color: Colors.white54)))),
+        Container(
+          color: Colors.grey[300],
+          child: mapInfo?.mapUrl != null
+              ? DiskCachedImage(
+                  imageUrl: mapInfo!.mapUrl,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                  errorWidget: Container(
+                    color: Colors.grey[400],
+                    child: const Center(child: Icon(Icons.map, size: 40, color: Colors.white54)),
+                  ),
+                )
+              : Container(
+                  color: Colors.grey[400],
+                  child: const Center(child: Icon(Icons.map, size: 40, color: Colors.white54)),
+                ),
+        ),
         Container(decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black54]))),
         Positioned(left: 12, bottom: 12, right: 12, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           if (mapInfo?.mapLabel != null && mapInfo!.mapLabel.isNotEmpty && mapInfo.mapLabel != snapshot.mapName) Text(mapInfo.mapLabel, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white, shadows: [Shadow(color: Colors.black, offset: Offset(1, 1), blurRadius: 3)])),

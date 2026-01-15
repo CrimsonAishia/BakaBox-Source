@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/image_url_service.dart';
 import '../utils/log_service.dart';
+import 'disk_cached_image.dart';
 import 'image_viewer_dialog.dart';
 
 /// 可点击的图片组件
@@ -109,16 +110,13 @@ class _ClickableImageState extends State<ClickableImage> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(widget.borderRadius - 1),
-                child: Image.network(
-                  _signedUrl ?? widget.imageUrl,
+                child: DiskCachedImage(
+                  imageUrl: _signedUrl ?? widget.imageUrl,
                   width: widget.width,
                   height: widget.height,
                   fit: widget.fit,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return _buildLoadingPlaceholder(isDark);
-                  },
-                  errorBuilder: (_, __, ___) => _buildErrorPlaceholder(isDark),
+                  placeholder: _buildLoadingPlaceholder(isDark),
+                  errorWidget: _buildErrorPlaceholder(isDark),
                 ),
               ),
               // Hover 遮罩

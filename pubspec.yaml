@@ -35,8 +35,6 @@ dependencies:
   path: ^1.9.0
   
   # UI Components
-  cached_network_image: ^3.3.1
-  flutter_cache_manager: ^3.3.1
   pull_to_refresh: ^2.0.0
   shimmer: ^3.0.0
   fl_chart: ^0.68.0

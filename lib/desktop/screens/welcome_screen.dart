@@ -7,6 +7,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:fl_chart/fl_chart.dart';
 
 import '../../core/core.dart';
+import '../../core/widgets/disk_cached_image.dart';
 
 /// 欢迎界面回调类型
 typedef OnNavigateToServers = void Function();
@@ -1061,64 +1062,72 @@ class _TopMapsListState extends State<_TopMapsList> {
                 Expanded(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(6),
-                    child: Stack(
-                      children: [
-                        Container(
-                          height: 32,
-                          decoration: BoxDecoration(
+                    child: SizedBox(
+                      height: 32,
+                      child: Stack(
+                        children: [
+                          // 背景色
+                          Container(
                             color: widget.isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
-                            image: mapInfo?.mapUrl != null
-                                ? DecorationImage(
-                                    image: NetworkImage(mapInfo!.mapUrl),
-                                    fit: BoxFit.cover,
-                                    colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.5), BlendMode.darken),
-                                  )
-                                : null,
                           ),
-                        ),
-                        FractionallySizedBox(
-                          widthFactor: widthRatio,
-                          child: Container(
-                            height: 32,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: index < 3
-                                    ? [const Color(0xFF10B981).withValues(alpha: 0.5), const Color(0xFF10B981).withValues(alpha: 0.2)]
-                                    : [const Color(0xFF3B82F6).withValues(alpha: 0.5), const Color(0xFF3B82F6).withValues(alpha: 0.2)],
+                          // 地图背景图
+                          if (mapInfo?.mapUrl != null)
+                            Positioned.fill(
+                              child: ColorFiltered(
+                                colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.5), BlendMode.darken),
+                                child: DiskCachedImage(
+                                  imageUrl: mapInfo!.mapUrl,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                ),
+                              ),
+                            ),
+                          // 进度条
+                          FractionallySizedBox(
+                            widthFactor: widthRatio,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: index < 3
+                                      ? [const Color(0xFF10B981).withValues(alpha: 0.5), const Color(0xFF10B981).withValues(alpha: 0.2)]
+                                      : [const Color(0xFF3B82F6).withValues(alpha: 0.5), const Color(0xFF3B82F6).withValues(alpha: 0.2)],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        Positioned.fill(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    displayName,
+                          // 文字
+                          Positioned.fill(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      displayName,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: mapInfo?.mapUrl != null ? Colors.white : (widget.isDark ? Colors.white : const Color(0xFF1E293B)),
+                                        fontWeight: FontWeight.w500,
+                                        shadows: mapInfo?.mapUrl != null ? [const Shadow(color: Colors.black54, blurRadius: 2)] : null,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${map.playCount} 次',
                                     style: TextStyle(
-                                      fontSize: 11,
-                                      color: mapInfo?.mapUrl != null ? Colors.white : (widget.isDark ? Colors.white : const Color(0xFF1E293B)),
-                                      fontWeight: FontWeight.w500,
+                                      fontSize: 10,
+                                      color: mapInfo?.mapUrl != null ? Colors.white70 : (widget.isDark ? Colors.white54 : const Color(0xFF94A3B8)),
                                       shadows: mapInfo?.mapUrl != null ? [const Shadow(color: Colors.black54, blurRadius: 2)] : null,
                                     ),
-                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ),
-                                Text(
-                                  '${map.playCount} 次',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: mapInfo?.mapUrl != null ? Colors.white70 : (widget.isDark ? Colors.white54 : const Color(0xFF94A3B8)),
-                                    shadows: mapInfo?.mapUrl != null ? [const Shadow(color: Colors.black54, blurRadius: 2)] : null,
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),

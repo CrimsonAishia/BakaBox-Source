@@ -9,7 +9,7 @@ import '../../utils/log_service.dart';
 import '../../utils/cache_service.dart';
 import '../../utils/app_directory_service.dart';
 import '../../utils/platform_utils.dart';
-import '../../utils/image_cache_manager.dart';
+import '../../services/disk_image_cache_service.dart';
 import '../../api/server_api.dart';
 import '../../services/game_launcher_service.dart';
 import '../../services/game_path_service.dart';
@@ -217,8 +217,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   Future<void> _onClearCache(SettingsClearCache event, Emitter<SettingsState> emit) async {
     emit(state.copyWith(isLoading: true));
     try {
-      // 清理图片缓存
-      await AppImageCacheManager.clearCache();
+      // 清理磁盘图片缓存
+      await DiskImageCacheService.instance.clearCache();
       
       // 根据平台选择缓存目录
       Directory cacheDir;
@@ -736,7 +736,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     
     switch (cacheType) {
       case CacheType.cacheFiles:
-        await AppImageCacheManager.clearCache();
+        // 清理磁盘图片缓存
+        await DiskImageCacheService.instance.clearCache();
         if (PlatformUtils.isDesktopPlatform) {
           final cacheDir = Directory(AppDirectoryService.cachePath);
           if (await cacheDir.exists()) {
