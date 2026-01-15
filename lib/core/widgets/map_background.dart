@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../utils/map_utils.dart';
 import '../utils/log_service.dart';
-import '../utils/image_cache_manager.dart';
 import '../services/image_url_service.dart';
+import '../services/disk_image_cache_service.dart';
+import 'disk_cached_image.dart';
 
 /// 统一的地图背景组件
 /// 
@@ -137,19 +137,17 @@ class _MapBackgroundState extends State<MapBackground> {
       // 否则使用 URL 的 host+path 作为缓存 key（忽略查询参数）
       final cacheKey = ImageUrlService.isFileIdRef(originalUrl)
           ? originalUrl
-          : AppImageCacheManager.extractCacheKey(url);
+          : DiskImageCacheService.extractCacheKey(url);
       
-      child = CachedNetworkImage(
+      child = DiskCachedImage(
         // 使用 cacheKey 作为 widget key，确保图片变化时刷新
         key: ValueKey('map_bg_$cacheKey'),
         imageUrl: url,
-        cacheKey: cacheKey,  // 稳定的缓存 key
-        cacheManager: AppImageCacheManager.instance,
         fit: widget.fit,
         width: double.infinity,
         height: double.infinity,
-        placeholder: (context, url) => _buildDefaultBackground(),
-        errorWidget: (context, url, error) => _buildDefaultBackground(),
+        placeholder: _buildDefaultBackground(),
+        errorWidget: _buildDefaultBackground(),
       );
     } else {
       // 本地资源图片

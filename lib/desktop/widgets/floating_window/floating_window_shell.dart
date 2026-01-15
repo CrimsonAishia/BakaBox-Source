@@ -1,11 +1,10 @@
 import 'dart:async';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../../core/services/floating_window_service.dart';
-import '../../../core/utils/image_cache_manager.dart';
+import '../../../core/widgets/disk_cached_image.dart';
 import 'floating_progress_bar.dart';
 import 'floating_window_app.dart';
 import 'floating_window_body.dart';
@@ -289,14 +288,11 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
   /// 构建地图背景
   Widget _buildMapBackground(String mapUrl) {
     if (mapUrl.startsWith('http://') || mapUrl.startsWith('https://')) {
-      final cacheKey = AppImageCacheManager.extractCacheKey(mapUrl);
-      return CachedNetworkImage(
+      return DiskCachedImage(
         imageUrl: mapUrl,
-        cacheKey: cacheKey,
-        cacheManager: AppImageCacheManager.instance,
         fit: BoxFit.cover,
-        placeholder: (context, url) => Container(color: const Color(0xFF1E293B)),
-        errorWidget: (context, url, error) => Container(color: const Color(0xFF1E293B)),
+        placeholder: Container(color: const Color(0xFF1E293B)),
+        errorWidget: Container(color: const Color(0xFF1E293B)),
       );
     }
     return Image.asset(

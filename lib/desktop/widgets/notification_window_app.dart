@@ -4,13 +4,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 
 import '../../core/bloc/settings/settings_state.dart';
 import '../../core/services/notification_window_service.dart';
 import '../../core/utils/map_utils.dart';
-import '../../core/utils/image_cache_manager.dart';
+import '../../core/widgets/disk_cached_image.dart';
 import '../theme/desktop_theme.dart';
 
 /// 单个通知窗口状态通知器
@@ -682,16 +681,11 @@ class _NotificationCardState extends State<_NotificationCard> {
     );
 
     if (mapUrl.startsWith('http://') || mapUrl.startsWith('https://')) {
-      final cacheKey = AppImageCacheManager.extractCacheKey(mapUrl);
-      return CachedNetworkImage(
+      return DiskCachedImage(
         imageUrl: mapUrl,
-        cacheKey: cacheKey,
-        cacheManager: AppImageCacheManager.instance,
         fit: BoxFit.cover,
-        placeholder: (context, url) =>
-            Container(color: const Color(0xFF1E293B)),
-        errorWidget: (context, url, error) =>
-            Container(color: const Color(0xFF1E293B)),
+        placeholder: Container(color: const Color(0xFF1E293B)),
+        errorWidget: Container(color: const Color(0xFF1E293B)),
       );
     }
 

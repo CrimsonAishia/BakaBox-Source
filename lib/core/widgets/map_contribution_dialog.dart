@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
@@ -14,9 +13,9 @@ import '../models/map_contribution_models.dart';
 import '../utils/contribution_validation_utils.dart';
 import '../utils/log_service.dart';
 import '../utils/toast_utils.dart';
-import '../utils/image_cache_manager.dart';
 import '../services/file_upload_service.dart';
 import '../services/image_url_service.dart';
+import 'disk_cached_image.dart';
 import '../../desktop/widgets/login_dialog.dart';
 
 /// 地图贡献对话框
@@ -1096,13 +1095,11 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       ),
       clipBehavior: Clip.antiAlias,
       child: avatarUrl != null && avatarUrl.isNotEmpty
-          ? CachedNetworkImage(
+          ? DiskCachedImage(
               imageUrl: avatarUrl,
-              cacheKey: AppImageCacheManager.extractCacheKey(avatarUrl),
-              cacheManager: AppImageCacheManager.instance,
               fit: BoxFit.cover,
-              placeholder: (context, url) => _buildDefaultAvatar(contributor.username, size),
-              errorWidget: (context, url, error) => _buildDefaultAvatar(contributor.username, size),
+              placeholder: _buildDefaultAvatar(contributor.username, size),
+              errorWidget: _buildDefaultAvatar(contributor.username, size),
             )
           : _buildDefaultAvatar(contributor.username, size),
     );
@@ -1923,20 +1920,17 @@ class _ContributionImageState extends State<_ContributionImage> {
       );
     }
 
-    return CachedNetworkImage(
+    return DiskCachedImage(
       imageUrl: _signedUrl!,
-      // 使用 imageRef（file:xxx 格式）作为缓存 key，避免签名 URL 变化导致重复下载
-      cacheKey: widget.imageRef,
-      cacheManager: AppImageCacheManager.instance,
       fit: widget.fit,
-      placeholder: (context, url) => const Center(
+      placeholder: const Center(
         child: SizedBox(
           width: 20,
           height: 20,
           child: CircularProgressIndicator(strokeWidth: 2),
         ),
       ),
-      errorWidget: (context, url, error) => Center(
+      errorWidget: Center(
         child: Icon(
           MdiIcons.imageOff,
           color: isDark ? Colors.white24 : Colors.black26,
