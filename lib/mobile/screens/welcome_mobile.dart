@@ -804,18 +804,18 @@ class _TopMapsListState extends State<_TopMapsList> {
                               color: widget.isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
                             ),
                             // 地图背景图
-                            if (mapInfo?.mapUrl != null)
-                              Positioned.fill(
-                                child: ColorFiltered(
-                                  colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.5), BlendMode.darken),
-                                  child: DiskCachedImage(
-                                    imageUrl: mapInfo!.mapUrl,
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                  ),
+                            Positioned.fill(
+                              child: ColorFiltered(
+                                colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.5), BlendMode.darken),
+                                child: DiskCachedImage(
+                                  imageUrl: mapInfo?.mapUrl ?? '',
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  fallbackAsset: 'assets/images/default-map-bg.jpg',
                                 ),
                               ),
+                            ),
                             // 进度条
                             FractionallySizedBox(
                               widthFactor: ratio,
@@ -838,11 +838,11 @@ class _TopMapsListState extends State<_TopMapsList> {
                                     Expanded(
                                       child: Text(
                                         displayName,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w500,
-                                          color: mapInfo?.mapUrl != null ? Colors.white : (widget.isDark ? Colors.white : const Color(0xFF1E293B)),
-                                          shadows: mapInfo?.mapUrl != null ? [const Shadow(color: Colors.black54, blurRadius: 2)] : null,
+                                          color: Colors.white,
+                                          shadows: [Shadow(color: Colors.black54, blurRadius: 2)],
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -850,10 +850,10 @@ class _TopMapsListState extends State<_TopMapsList> {
                                     ),
                                     Text(
                                       '${map.playCount} 次',
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         fontSize: 10,
-                                        color: mapInfo?.mapUrl != null ? Colors.white70 : (widget.isDark ? Colors.white54 : const Color(0xFF94A3B8)),
-                                        shadows: mapInfo?.mapUrl != null ? [const Shadow(color: Colors.black54, blurRadius: 2)] : null,
+                                        color: Colors.white70,
+                                        shadows: [Shadow(color: Colors.black54, blurRadius: 2)],
                                       ),
                                     ),
                                   ],
