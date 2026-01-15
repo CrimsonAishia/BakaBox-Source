@@ -77,6 +77,9 @@ dependencies:
   # Audio
   audioplayers: ^6.1.0
   
+  # Network Ping (替代 Process.run，内存占用更低)
+  dart_ping: ^9.0.1
+  
   # WebView (for QQ login) - using local fork with getCookies support
   webview_windows:
     git:

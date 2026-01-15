@@ -1221,15 +1221,14 @@ class _MarqueeText extends StatefulWidget {
   State<_MarqueeText> createState() => _MarqueeTextState();
 }
 
-class _MarqueeTextState extends State<_MarqueeText> with SingleTickerProviderStateMixin {
-  late ScrollController _scrollController;
+class _MarqueeTextState extends State<_MarqueeText> {
+  ScrollController? _scrollController;
   bool _needsScroll = false;
   bool _isScrolling = false;
 
   @override
   void initState() {
     super.initState();
-    _scrollController = ScrollController();
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
   }
 
@@ -1237,7 +1236,7 @@ class _MarqueeTextState extends State<_MarqueeText> with SingleTickerProviderSta
   void didUpdateWidget(_MarqueeText oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.text != widget.text) {
-      _scrollController.jumpTo(0);
+      _scrollController?.jumpTo(0);
       _isScrolling = false;
       WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
     }
@@ -1245,32 +1244,39 @@ class _MarqueeTextState extends State<_MarqueeText> with SingleTickerProviderSta
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _scrollController?.dispose();
     super.dispose();
   }
 
   void _checkOverflow() {
     if (!mounted) return;
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    setState(() => _needsScroll = maxScroll > 0);
+    // 延迟创建 ScrollController，只在需要时创建
+    _scrollController ??= ScrollController();
+    if (!_scrollController!.hasClients) return;
+    
+    final maxScroll = _scrollController!.position.maxScrollExtent;
+    final needsScroll = maxScroll > 0;
+    if (needsScroll != _needsScroll) {
+      setState(() => _needsScroll = needsScroll);
+    }
     if (_needsScroll && !_isScrolling) {
       _startScrolling();
     }
   }
 
   void _startScrolling() async {
-    if (!mounted || !_needsScroll) return;
+    if (!mounted || !_needsScroll || _scrollController == null) return;
     _isScrolling = true;
     
     while (mounted && _needsScroll && _isScrolling) {
       await Future.delayed(const Duration(seconds: 2));
-      if (!mounted || !_needsScroll) break;
+      if (!mounted || !_needsScroll || _scrollController == null) break;
       
-      final maxScroll = _scrollController.position.maxScrollExtent;
+      final maxScroll = _scrollController!.position.maxScrollExtent;
       if (maxScroll <= 0) break;
       
       // 滚动到末尾
-      await _scrollController.animateTo(
+      await _scrollController!.animateTo(
         maxScroll,
         duration: Duration(milliseconds: (maxScroll * 30).toInt().clamp(1000, 5000)),
         curve: Curves.linear,
@@ -1281,7 +1287,7 @@ class _MarqueeTextState extends State<_MarqueeText> with SingleTickerProviderSta
       if (!mounted) break;
       
       // 滚动回开头
-      await _scrollController.animateTo(
+      await _scrollController!.animateTo(
         0,
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeOut,
@@ -1295,6 +1301,8 @@ class _MarqueeTextState extends State<_MarqueeText> with SingleTickerProviderSta
 
   @override
   Widget build(BuildContext context) {
+    // 延迟创建 ScrollController
+    _scrollController ??= ScrollController();
     return SingleChildScrollView(
       controller: _scrollController,
       scrollDirection: Axis.horizontal,
