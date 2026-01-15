@@ -12,14 +12,32 @@ import '../widgets/page_layout.dart';
 enum _IssueView { list, detail, create }
 
 /// Issue 列表桌面端页面
-class IssuesDesktop extends StatefulWidget {
+/// 
+/// 使用局部 BlocProvider 提供 IssueBloc 和 IssueDetailBloc（懒加载优化）
+class IssuesDesktop extends StatelessWidget {
   const IssuesDesktop({super.key});
 
   @override
-  State<IssuesDesktop> createState() => _IssuesDesktopState();
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => IssueBloc()),
+        BlocProvider(create: (_) => IssueDetailBloc()),
+      ],
+      child: const _IssuesDesktopContent(),
+    );
+  }
 }
 
-class _IssuesDesktopState extends State<IssuesDesktop> {
+/// Issue 页面内容
+class _IssuesDesktopContent extends StatefulWidget {
+  const _IssuesDesktopContent();
+
+  @override
+  State<_IssuesDesktopContent> createState() => _IssuesDesktopContentState();
+}
+
+class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   Timer? _debounceTimer;

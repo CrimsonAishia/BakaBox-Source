@@ -10,7 +10,9 @@ import '../utils/platform_utils.dart';
 /// - 音量控制
 /// - 音量持久化存储
 /// 
-/// 注意：此服务仅在桌面端有效，移动端调用会直接返回
+/// 注意：
+/// - 此服务仅在桌面端有效，移动端调用会直接返回
+/// - AudioPlayer 延迟初始化，首次播放时才创建，节省内存
 class AudioService {
   static final AudioService _instance = AudioService._internal();
   factory AudioService() => _instance;
@@ -20,29 +22,36 @@ class AudioService {
   
   AudioPlayer? _audioPlayer;
   double _volume = 0.8; // 默认音量 80%
-  bool _isInitialized = false;
+  bool _isVolumeLoaded = false; // 音量配置是否已加载
 
   /// 当前音量 (0.0 - 1.0)
   double get volume => _volume;
 
-  /// 初始化音频服务
+  /// 加载音量配置（不创建 AudioPlayer，节省内存）
   Future<void> initialize() async {
-    if (_isInitialized) return;
+    if (_isVolumeLoaded) return;
     
     try {
       final prefs = await SharedPreferences.getInstance();
       _volume = prefs.getDouble(_keyAudioVolume) ?? 0.8;
-      
-      // 仅桌面端初始化播放器
-      if (PlatformUtils.isDesktopPlatform) {
-        _audioPlayer = AudioPlayer();
-        await _audioPlayer!.setReleaseMode(ReleaseMode.stop);
-      }
-      
-      _isInitialized = true;
-      LogService.i('音频服务已初始化，音量: ${(_volume * 100).toInt()}%');
+      _isVolumeLoaded = true;
+      LogService.d('音量配置已加载: ${(_volume * 100).toInt()}%');
     } catch (e) {
-      LogService.e('初始化音频服务失败', e);
+      LogService.e('加载音量配置失败', e);
+    }
+  }
+  
+  /// 确保 AudioPlayer 已创建（首次播放时调用）
+  Future<void> _ensurePlayerCreated() async {
+    if (_audioPlayer != null) return;
+    if (!PlatformUtils.isDesktopPlatform) return;
+    
+    try {
+      _audioPlayer = AudioPlayer();
+      await _audioPlayer!.setReleaseMode(ReleaseMode.stop);
+      LogService.i('AudioPlayer 已创建');
+    } catch (e) {
+      LogService.e('创建 AudioPlayer 失败', e);
     }
   }
 
@@ -61,9 +70,12 @@ class AudioService {
 
   /// 播放挤服成功音效
   Future<bool> playQueueSuccessSound() async {
-    if (_audioPlayer == null || _volume <= 0) {
-      return false;
-    }
+    if (_volume <= 0) return false;
+    if (!PlatformUtils.isDesktopPlatform) return false;
+    
+    // 延迟创建 AudioPlayer，首次播放时才初始化
+    await _ensurePlayerCreated();
+    if (_audioPlayer == null) return false;
     
     try {
       await _audioPlayer!.setVolume(_volume);
@@ -95,7 +107,7 @@ class AudioService {
     try {
       await _audioPlayer?.dispose();
       _audioPlayer = null;
-      _isInitialized = false;
+      _isVolumeLoaded = false;
       LogService.i('音频服务已释放');
     } catch (e) {
       LogService.e('释放音频服务失败', e);
