@@ -22,6 +22,10 @@ class MobileApp extends StatelessWidget {
         BlocProvider(create: (_) => UpdateBloc()),
         BlocProvider(create: (_) => SettingsBloc()..add(SettingsInit())),
         BlocProvider(create: (_) => AuthBloc()..add(const AuthCheckRequested())),
+        BlocProvider(
+            create: (_) => FeatureStatusBloc()
+              ..add(FeatureStatusLoad())
+              ..add(FeatureStatusStartPeriodicRefresh())),
       ],
       child: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {

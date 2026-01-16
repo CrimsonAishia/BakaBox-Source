@@ -19,12 +19,15 @@ class IssuesDesktop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(create: (_) => IssueBloc()),
-        BlocProvider(create: (_) => IssueDetailBloc()),
-      ],
-      child: const _IssuesDesktopContent(),
+    return FeatureGate(
+      feature: FeatureType.issue,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => IssueBloc()),
+          BlocProvider(create: (_) => IssueDetailBloc()),
+        ],
+        child: const _IssuesDesktopContent(),
+      ),
     );
   }
 }

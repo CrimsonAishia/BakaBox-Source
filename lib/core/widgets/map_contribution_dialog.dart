@@ -9,6 +9,7 @@ import '../bloc/auth/auth_event.dart';
 import '../bloc/map_contribution/map_contribution_bloc.dart';
 import '../bloc/map_contribution/map_contribution_event.dart';
 import '../bloc/map_contribution/map_contribution_state.dart';
+import '../models/feature_status_models.dart';
 import '../models/map_contribution_models.dart';
 import '../utils/contribution_validation_utils.dart';
 import '../utils/log_service.dart';
@@ -16,6 +17,7 @@ import '../utils/toast_utils.dart';
 import '../services/file_upload_service.dart';
 import '../services/image_url_service.dart';
 import 'disk_cached_image.dart';
+import 'feature_gate.dart';
 import '../../desktop/widgets/login_dialog.dart';
 
 /// 地图贡献对话框
@@ -35,11 +37,22 @@ class MapContributionDialog extends StatefulWidget {
   });
 
   /// 显示地图贡献对话框
+  /// 会先检查功能状态，如果功能禁用则显示提示
   static Future<void> show(
     BuildContext context, {
     required String mapName,
     String? mapLabel,
   }) {
+    // 检查功能状态
+    if (!FeatureStatusChecker.isEnabled(context, FeatureType.mapContribution)) {
+      final message = FeatureStatusChecker.getDisabledMessage(
+        context,
+        FeatureType.mapContribution,
+      );
+      ToastUtils.showWarning(context, message);
+      return Future.value();
+    }
+
     return showDialog(
       context: context,
       barrierDismissible: true,
