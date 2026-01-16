@@ -510,14 +510,17 @@ class _CheckInButton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = isDark ? Colors.white70 : const Color(0xFF6B7280);
 
-    // 已签到 - 显示绿色完成状态
+    // 已签到 - 显示绿色完成状态和奖励金额
     if (state.hasCheckedIn) {
+      final rewardText = state.checkInRewardAmount != null
+          ? '+${state.checkInRewardAmount}'
+          : '已签到';
       return SizedBox(
         height: 32,
         child: OutlinedButton.icon(
           onPressed: null,
           icon: const Icon(Icons.check, size: 14),
-          label: const Text('已签到', style: TextStyle(fontSize: 11)),
+          label: Text(rewardText, style: const TextStyle(fontSize: 11)),
           style: OutlinedButton.styleFrom(
             foregroundColor: Colors.green,
             disabledForegroundColor: Colors.green,

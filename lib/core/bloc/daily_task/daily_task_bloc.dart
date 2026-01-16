@@ -16,6 +16,10 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
   String? _lastCheckedDate;
 
   static const String _keyLastCheckDate = 'daily_task_last_check_date';
+  static const String _keyCheckInReward = 'daily_task_checkin_reward';
+  static const String _keyCheckInRewardDate = 'daily_task_checkin_reward_date';
+  static const String _keyShakeReward = 'daily_task_shake_reward';
+  static const String _keyShakeRewardDate = 'daily_task_shake_reward_date';
   static const String _taskId = 'daily_task_check';
 
   DailyTaskBloc() : super(const DailyTaskState()) {
@@ -83,6 +87,44 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
     _lastCheckedDate = todayDate;
   }
 
+  /// 保存签到奖励
+  Future<void> _saveCheckInReward(int reward) async {
+    final prefs = await SharedPreferences.getInstance();
+    final todayDate = _getBeijingDateString();
+    await prefs.setInt(_keyCheckInReward, reward);
+    await prefs.setString(_keyCheckInRewardDate, todayDate);
+  }
+
+  /// 获取今日签到奖励（如果是今天签到的）
+  Future<int?> _getTodayCheckInReward() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rewardDate = prefs.getString(_keyCheckInRewardDate);
+    final todayDate = _getBeijingDateString();
+    if (rewardDate == todayDate) {
+      return prefs.getInt(_keyCheckInReward);
+    }
+    return null;
+  }
+
+  /// 保存摇一摇奖励
+  Future<void> _saveShakeReward(int reward) async {
+    final prefs = await SharedPreferences.getInstance();
+    final todayDate = _getBeijingDateString();
+    await prefs.setInt(_keyShakeReward, reward);
+    await prefs.setString(_keyShakeRewardDate, todayDate);
+  }
+
+  /// 获取今日摇一摇奖励（如果是今天摇的）
+  Future<int?> _getTodayShakeReward() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rewardDate = prefs.getString(_keyShakeRewardDate);
+    final todayDate = _getBeijingDateString();
+    if (rewardDate == todayDate) {
+      return prefs.getInt(_keyShakeReward);
+    }
+    return null;
+  }
+
   Future<void> _onCheckStatusRequested(
     DailyTaskCheckStatusRequested event,
     Emitter<DailyTaskState> emit,
@@ -112,12 +154,20 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
       final checkInResult = results[0] as CheckInStatusResult;
       final shakeResult = results[1] as ShakeStatusResult;
 
+      // 获取今日签到奖励（如果之前在 App 内签到过）
+      final checkInReward = await _getTodayCheckInReward();
+      // 获取今日摇一摇奖励（如果之前在 App 内摇过）
+      final shakeReward = await _getTodayShakeReward();
+
       emit(state.copyWith(
         isCheckingStatus: false,
         hasCheckedIn: checkInResult.hasCheckedIn,
+        checkInRewardAmount: checkInReward,
+        clearCheckInReward: checkInReward == null,
         canShake: shakeResult.canShake,
         hasShaked: shakeResult.alreadyShaked,
-        shakeRewardAmount: shakeResult.rewardAmount,
+        shakeRewardAmount: shakeReward ?? shakeResult.rewardAmount,
+        clearShakeReward: shakeReward == null && shakeResult.rewardAmount == null,
       ));
 
       // 保存检查日期并启动定时任务
@@ -142,9 +192,15 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
     try {
       final result = await _authService.checkIn(mood: event.mood);
 
+      // 保存签到奖励
+      if (result.rewardAmount != null) {
+        await _saveCheckInReward(result.rewardAmount!);
+      }
+
       emit(state.copyWith(
         isCheckingIn: false,
         hasCheckedIn: result.success || result.alreadyCheckedIn,
+        checkInRewardAmount: result.rewardAmount,
       ));
     } catch (e) {
       LogService.e('[DailyTask] 签到失败', e);
@@ -157,6 +213,11 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
     Emitter<DailyTaskState> emit,
   ) async {
     if (event.success) {
+      // 保存摇一摇奖励
+      if (event.rewardAmount != null) {
+        await _saveShakeReward(event.rewardAmount!);
+      }
+
       emit(state.copyWith(
         canShake: false,
         hasShaked: true,
