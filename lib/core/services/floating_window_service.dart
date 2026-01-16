@@ -228,6 +228,11 @@ class FloatingWindowService {
       return true;
     } catch (e) {
       LogService.e('IPC send state update error', e);
+      // 如果是通道未注册错误，说明窗口已关闭，从活跃列表中移除
+      if (e.toString().contains('CHANNEL_UNREGISTERED')) {
+        _activeWindows.remove(windowId);
+        LogService.w('Window $windowId channel unregistered, removed from active windows');
+      }
       return false;
     }
   }

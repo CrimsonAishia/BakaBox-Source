@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../core/bootstrap/app_initializer.dart';
+import '../../core/services/floating_window_service.dart';
 import '../../core/services/notification_window_service.dart';
 import '../../core/services/status_window_service.dart';
 import '../app.dart';
@@ -67,6 +68,16 @@ class MainWindowLauncher {
           if (notificationId != null) {
             debugPrint('[MainWindow] Notification closed: $notificationId');
             NotificationWindowService().onNotificationWindowClosed(notificationId);
+          }
+          return true;
+        case 'floatingWindowClosed':
+          // 处理浮动窗口关闭事件
+          final args = call.arguments as Map<dynamic, dynamic>?;
+          final windowId = args?['windowId'] as String?;
+          if (windowId != null) {
+            debugPrint('[MainWindow] Floating window closed: $windowId');
+            FloatingWindowService().markWindowClosed(windowId);
+            StatusWindowService().onFloatingWindowClosed(windowId);
           }
           return true;
         default:
