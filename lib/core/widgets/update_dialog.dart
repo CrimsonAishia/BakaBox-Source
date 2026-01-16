@@ -34,6 +34,7 @@ class _UpdateDialogState extends State<UpdateDialog> with TickerProviderStateMix
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _buttonWidthAnimation;
+  final ScrollController _scrollController = ScrollController();
   
   // 倒计时相关
   int _countdown = 3;
@@ -71,6 +72,7 @@ class _UpdateDialogState extends State<UpdateDialog> with TickerProviderStateMix
   void dispose() {
     _animationController.dispose();
     _buttonAnimationController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
   
@@ -133,6 +135,7 @@ class _UpdateDialogState extends State<UpdateDialog> with TickerProviderStateMix
   }
 
   Widget _buildHeaderSection() {
+    final versionText = '${widget.updateInfo.currentVersion} → ${widget.updateInfo.latestVersion}';
     return Container(
       height: 160,
       width: double.infinity,
@@ -152,7 +155,20 @@ class _UpdateDialogState extends State<UpdateDialog> with TickerProviderStateMix
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.9), borderRadius: BorderRadius.circular(12)),
-                    child: Text(widget.updateInfo.latestVersion, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.orange)),
+                    child: Text(versionText, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.orange)),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.9), borderRadius: BorderRadius.circular(8)),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.calendar_today_outlined, size: 12, color: Colors.orange),
+                        const SizedBox(width: 4),
+                        Text(widget.updateInfo.formattedPublishDate, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.orange)),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -190,9 +206,11 @@ class _UpdateDialogState extends State<UpdateDialog> with TickerProviderStateMix
             constraints: const BoxConstraints(maxHeight: 200),
             decoration: BoxDecoration(border: Border.all(color: Colors.grey.withValues(alpha: 0.2), width: 1), borderRadius: BorderRadius.circular(8)),
             child: Scrollbar(
+              controller: _scrollController,
               thumbVisibility: true,
               radius: const Radius.circular(6),
               child: SingleChildScrollView(
+                controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(12),
                 child: _buildReleaseNotes(),
@@ -407,6 +425,7 @@ class _UpdateDialogState extends State<UpdateDialog> with TickerProviderStateMix
         );
       
       default:
+        final fileSizeText = widget.updateInfo.fileSize > 0 ? ' (${widget.updateInfo.formattedFileSize})' : '';
         return SizedBox(
           width: double.infinity, height: 48,
           child: Container(
@@ -416,7 +435,7 @@ class _UpdateDialogState extends State<UpdateDialog> with TickerProviderStateMix
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: () => context.read<UpdateBloc>().add(UpdateDownloadAndInstall()),
-                child: Center(child: Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.upgrade, size: 18, color: Colors.white), const SizedBox(width: 8), Text('立即更新', style: theme.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w600))])),
+                child: Center(child: Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.upgrade, size: 18, color: Colors.white), const SizedBox(width: 8), Text('立即更新$fileSizeText', style: theme.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w600))])),
               ),
             ),
           ),
