@@ -659,6 +659,15 @@ class StatusWindowService {
     }
   }
   
+  /// 处理浮动窗口关闭事件（由主窗口调用）
+  void onFloatingWindowClosed(String windowId) {
+    if (_windowId == windowId) {
+      LogService.d('[StatusWindowService] Floating window closed notification received: $windowId');
+      _windowId = null;
+      _cancelCloseTimer();
+    }
+  }
+  
   /// 刷新服务器信息（挤服页面用）
   Future<void> refreshServerInfo() async {
     if (_state.serverAddress == null) return;
@@ -1139,8 +1148,8 @@ class StatusWindowService {
     
     _cancelCloseTimer();
     
-    // 如果窗口已存在，更新状态
-    if (_windowId != null) {
+    // 如果窗口已存在且活跃，更新状态即可
+    if (_windowId != null && _windowService.isWindowActive(_windowId!)) {
       await _updateWindow(
         state: state,
         message: message,
@@ -1153,6 +1162,9 @@ class StatusWindowService {
       );
       return;
     }
+    
+    // 窗口不存在或已关闭，清理并创建新窗口
+    _windowId = null;
     
     try {
       _windowId = await _windowService.openWindow(
@@ -1195,7 +1207,7 @@ class StatusWindowService {
     final effectiveMapNameCn = mapNameCn ?? _state.mapInfo?.mapLabel;
     final effectiveMapBackground = mapBackground ?? _state.mapInfo?.mapUrl;
     
-    await _windowService.sendStateUpdate(
+    final success = await _windowService.sendStateUpdate(
       _windowId!,
       state: state ?? _getWindowState(),
       message: message ?? _state.message ?? '',
@@ -1206,6 +1218,12 @@ class StatusWindowService {
       mapNameCn: effectiveMapNameCn,
       mapBackground: effectiveMapBackground,
     );
+    
+    // 如果发送失败（窗口可能已关闭），清理windowId
+    if (!success && !_windowService.isWindowActive(_windowId!)) {
+      LogService.w('[StatusWindowService] Window $_windowId no longer active, clearing reference');
+      _windowId = null;
+    }
   }
   
   /// 获取窗口状态字符串

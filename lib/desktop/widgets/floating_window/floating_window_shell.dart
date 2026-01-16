@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -144,7 +145,10 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
     _countdownTimer?.cancel();
     _isCountdownActive = false;
     
-    debugPrint('[FloatingWindowShell] Closing window...');
+    debugPrint('[FloatingWindowShell] Closing window: ${widget.windowId}');
+    
+    // 先通知主窗口，窗口即将关闭
+    await _notifyMainWindowClosed();
     
     // 尝试多种关闭方式，确保窗口一定关闭
     try {
@@ -167,6 +171,22 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
           debugPrint('[FloatingWindowShell] All close attempts failed: $e3');
         }
       }
+    }
+  }
+  
+  /// 通知主窗口，浮动窗口已关闭
+  Future<void> _notifyMainWindowClosed() async {
+    try {
+      // 主窗口的 windowId 是 0（或空字符串，取决于版本）
+      // desktop_multi_window 0.3.0 中主窗口 ID 是空字符串
+      final mainController = WindowController.fromWindowId('');
+      await mainController.invokeMethod('floatingWindowClosed', {
+        'windowId': widget.windowId,
+      });
+      debugPrint('[FloatingWindowShell] Notified main window of closure');
+    } catch (e) {
+      debugPrint('[FloatingWindowShell] Failed to notify main window: $e');
+      // 通知失败不影响窗口关闭
     }
   }
 
