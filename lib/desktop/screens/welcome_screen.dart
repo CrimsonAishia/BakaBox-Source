@@ -122,8 +122,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _buildLogo(isDark),
-            const SizedBox(height: 24),
-            _buildTitle(theme, isDark),
             const SizedBox(height: 32),
             _buildActionButtons(context, theme, isDark),
           ],
@@ -151,38 +149,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         .animate()
         .fadeIn(duration: 600.ms)
         .scale(begin: const Offset(0.8, 0.8), end: const Offset(1.0, 1.0), duration: 600.ms, curve: Curves.easeOutBack);
-  }
-
-
-  /// 构建标题
-  Widget _buildTitle(ThemeData theme, bool isDark) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          'ZombieDen',
-          style: theme.textTheme.headlineLarge?.copyWith(
-            fontWeight: FontWeight.w800,
-            fontSize: 36,
-            color: isDark ? Colors.white : const Color(0xFF1E293B),
-            shadows: [Shadow(color: Colors.black.withValues(alpha: 0.3), offset: const Offset(0, 2), blurRadius: 4)],
-          ),
-        ),
-        const SizedBox(width: 12),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [Color(0xFFDC2626), Color(0xFFF97316)]),
-            borderRadius: BorderRadius.circular(6),
-            boxShadow: [BoxShadow(color: const Color(0xFFDC2626).withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 2))],
-          ),
-          child: const Text('CS2', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20, color: Colors.white)),
-        ),
-      ],
-    )
-        .animate()
-        .fadeIn(duration: 600.ms, delay: 200.ms)
-        .slideY(begin: 0.3, end: 0, duration: 500.ms, curve: Curves.easeOutCubic);
   }
 
   /// 构建操作按钮
