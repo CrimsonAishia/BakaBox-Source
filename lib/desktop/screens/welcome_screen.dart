@@ -144,7 +144,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           ),
         ],
       ),
-      child: Image.asset('assets/images/logo.png', width: 120, height: 120, fit: BoxFit.contain),
+      child: Image.asset('assets/images/logo.png', width: 150, height: 150, fit: BoxFit.contain),
     )
         .animate()
         .fadeIn(duration: 600.ms)
