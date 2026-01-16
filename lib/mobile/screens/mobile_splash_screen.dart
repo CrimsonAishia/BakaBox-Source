@@ -33,6 +33,9 @@ class _MobileSplashScreenState extends State<MobileSplashScreen> with TickerProv
     _logoController.forward();
     _glowController.repeat(reverse: true);
 
+    // 初始化应用目录服务（移动端必须在使用图片缓存前初始化）
+    await AppDirectoryService.init();
+
     // 检查更新
     if (mounted) {
       try {
