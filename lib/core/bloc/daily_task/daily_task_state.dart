@@ -11,6 +11,9 @@ class DailyTaskState extends Equatable {
   /// 是否已签到
   final bool hasCheckedIn;
 
+  /// 签到获得的僵尸币数量
+  final int? checkInRewardAmount;
+
   /// 是否可以摇一摇
   final bool? canShake;
 
@@ -24,6 +27,7 @@ class DailyTaskState extends Equatable {
     this.isCheckingStatus = false,
     this.isCheckingIn = false,
     this.hasCheckedIn = false,
+    this.checkInRewardAmount,
     this.canShake,
     this.hasShaked = false,
     this.shakeRewardAmount,
@@ -33,17 +37,21 @@ class DailyTaskState extends Equatable {
     bool? isCheckingStatus,
     bool? isCheckingIn,
     bool? hasCheckedIn,
+    int? checkInRewardAmount,
+    bool clearCheckInReward = false,
     bool? canShake,
     bool? hasShaked,
     int? shakeRewardAmount,
+    bool clearShakeReward = false,
   }) {
     return DailyTaskState(
       isCheckingStatus: isCheckingStatus ?? this.isCheckingStatus,
       isCheckingIn: isCheckingIn ?? this.isCheckingIn,
       hasCheckedIn: hasCheckedIn ?? this.hasCheckedIn,
+      checkInRewardAmount: clearCheckInReward ? null : (checkInRewardAmount ?? this.checkInRewardAmount),
       canShake: canShake ?? this.canShake,
       hasShaked: hasShaked ?? this.hasShaked,
-      shakeRewardAmount: shakeRewardAmount ?? this.shakeRewardAmount,
+      shakeRewardAmount: clearShakeReward ? null : (shakeRewardAmount ?? this.shakeRewardAmount),
     );
   }
 
@@ -52,6 +60,7 @@ class DailyTaskState extends Equatable {
         isCheckingStatus,
         isCheckingIn,
         hasCheckedIn,
+        checkInRewardAmount,
         canShake,
         hasShaked,
         shakeRewardAmount,
