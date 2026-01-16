@@ -135,7 +135,6 @@ class _MobileSplashScreenState extends State<MobileSplashScreen> with TickerProv
                           width: 110,
                           height: 110,
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
                                 color: const Color(0xFF1E88E5).withValues(alpha: 0.3 + 0.2 * _glowController.value),
@@ -144,18 +143,16 @@ class _MobileSplashScreenState extends State<MobileSplashScreen> with TickerProv
                               ),
                             ],
                           ),
-                          child: ClipOval(
-                            child: Image.asset(
-                              'assets/images/logo.png',
+                          child: Image.asset(
+                            'assets/images/logo.png',
+                            width: 110,
+                            height: 110,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
                               width: 110,
                               height: 110,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                width: 110,
-                                height: 110,
-                                decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
-                                child: const Icon(Icons.apps, size: 55, color: Color(0xFF1976D2)),
-                              ),
+                              color: Colors.white,
+                              child: const Icon(Icons.apps, size: 55, color: Color(0xFF1976D2)),
                             ),
                           ),
                         );
