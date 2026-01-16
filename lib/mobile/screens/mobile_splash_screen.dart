@@ -45,6 +45,18 @@ class _MobileSplashScreenState extends State<MobileSplashScreen> with TickerProv
       } catch (_) {}
     }
 
+    // 加载功能状态
+    if (mounted) {
+      try {
+        final featureStatusBloc = context.read<FeatureStatusBloc>();
+        await featureStatusBloc.stream.firstWhere(
+          (state) => state.loadState == FeatureStatusLoadState.loaded ||
+                     state.loadState == FeatureStatusLoadState.error,
+          orElse: () => featureStatusBloc.state,
+        ).timeout(const Duration(milliseconds: 1000), onTimeout: () => featureStatusBloc.state);
+      } catch (_) {}
+    }
+
     await Future.delayed(const Duration(milliseconds: 2500));
     if (mounted) {
       _exitController.forward();

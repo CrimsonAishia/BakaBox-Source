@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../core/bloc/key_binding/key_binding_bloc.dart';
+import '../../core/bloc/feature_status/feature_status_bloc.dart';
+import '../../core/bloc/feature_status/feature_status_state.dart';
+import '../../core/models/feature_status_models.dart';
+import '../../core/widgets/feature_gate.dart';
 import '../widgets/key_binding/key_binding_tool.dart';
 import '../widgets/page_layout.dart';
 
@@ -89,9 +93,12 @@ class _ToolsScreenState extends State<ToolsScreen> {
   Widget _buildToolContent() {
     switch (_openedToolId) {
       case 'key_binding':
-        return BlocProvider(
-          create: (context) => KeyBindingBloc(),
-          child: const KeyBindingTool(),
+        return FeatureGate(
+          feature: FeatureType.keyConfig,
+          child: BlocProvider(
+            create: (context) => KeyBindingBloc(),
+            child: const KeyBindingTool(),
+          ),
         );
       default:
         return const Center(
@@ -281,65 +288,97 @@ class _ToolCard extends StatefulWidget {
 class _ToolCardState extends State<_ToolCard> {
   bool _isHovered = false;
 
+  /// 获取工具对应的功能类型
+  FeatureType? get _featureType {
+    switch (widget.tool.id) {
+      case 'key_binding':
+        return FeatureType.keyConfig;
+      default:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // 如果有对应的功能类型，检查功能状态
+    if (_featureType != null) {
+      return BlocBuilder<FeatureStatusBloc, FeatureStatusState>(
+        builder: (context, state) {
+          // 只有明确加载完成且禁用时才显示为禁用
+          final isEnabled = state.loadState != FeatureStatusLoadState.loaded ||
+              state.status.getStatus(_featureType!).enabled;
+          return _buildCard(context, isDark, isEnabled);
+        },
+      );
+    }
+    
+    return _buildCard(context, isDark, true);
+  }
+
+  Widget _buildCard(BuildContext context, bool isDark, bool isEnabled) {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
+      cursor: isEnabled ? SystemMouseCursors.click : SystemMouseCursors.forbidden,
       child: GestureDetector(
-        onTap: _handleTap,
+        onTap: isEnabled ? _handleTap : null,
         child: AnimatedScale(
-          scale: _isHovered ? 1.02 : 1.0,
+          scale: _isHovered && isEnabled ? 1.02 : 1.0,
           duration: const Duration(milliseconds: 400),
           curve: Curves.easeOutCubic,
           child: AnimatedSlide(
-            offset: Offset(0, _isHovered ? -0.04 : 0),
+            offset: Offset(0, _isHovered && isEnabled ? -0.04 : 0),
             duration: const Duration(milliseconds: 400),
             curve: Curves.easeOutCubic,
-            child: Container(
-              height: 200,
-              decoration: BoxDecoration(
-                color: isDark 
-                    ? const Color(0xFF1E293B).withValues(alpha: 0.9)
-                    : Colors.white.withValues(alpha: 0.8),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: _isHovered
-                      ? const Color(0xFF22C55E).withValues(alpha: 0.4)
-                      : (isDark 
-                          ? const Color(0xFF334155)
-                          : const Color(0xFF22C55E).withValues(alpha: 0.2)),
+            child: Opacity(
+              opacity: isEnabled ? 1.0 : 0.6,
+              child: Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  color: isDark 
+                      ? const Color(0xFF1E293B).withValues(alpha: 0.9)
+                      : Colors.white.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: !isEnabled
+                        ? (isDark ? const Color(0xFF475569) : const Color(0xFFD1D5DB))
+                        : _isHovered
+                            ? const Color(0xFF22C55E).withValues(alpha: 0.4)
+                            : (isDark 
+                                ? const Color(0xFF334155)
+                                : const Color(0xFF22C55E).withValues(alpha: 0.2)),
+                  ),
+                  boxShadow: _isHovered && isEnabled
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFF22C55E).withValues(alpha: isDark ? 0.2 : 0.15),
+                            blurRadius: 40,
+                            offset: const Offset(0, 20),
+                          ),
+                        ]
+                      : null,
                 ),
-                boxShadow: _isHovered
-                    ? [
-                        BoxShadow(
-                          color: const Color(0xFF22C55E).withValues(alpha: isDark ? 0.2 : 0.15),
-                          blurRadius: 40,
-                          offset: const Offset(0, 20),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Stack(
+                    children: [
+                      // 卡片背景装饰
+                      if (isEnabled) _buildBgDecoration(),
+                      // 顶部渐变条
+                      if (isEnabled) _buildTopBar(),
+                      // 状态指示器
+                      _buildStatusIndicator(isEnabled),
+                      // 内容
+                      Positioned.fill(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: _buildContent(isDark, isEnabled),
                         ),
-                      ]
-                    : null,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Stack(
-                  children: [
-                    // 卡片背景装饰
-                    _buildBgDecoration(),
-                    // 顶部渐变条
-                    _buildTopBar(),
-                    // 状态指示器
-                    _buildStatusIndicator(),
-                    // 内容
-                    Positioned.fill(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: _buildContent(isDark),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -399,21 +438,21 @@ class _ToolCardState extends State<_ToolCard> {
     );
   }
 
-  Widget _buildStatusIndicator() {
+  Widget _buildStatusIndicator(bool isEnabled) {
     return Positioned(
       top: 20,
       right: 20,
-      child: _PulsingDot(),
+      child: isEnabled ? _PulsingDot() : _DisabledIndicator(),
     );
   }
 
-  Widget _buildContent(bool isDark) {
+  Widget _buildContent(bool isDark, bool isEnabled) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // 图标容器
-          _buildIconContainer(isDark),
+          _buildIconContainer(isDark, isEnabled),
           const SizedBox(height: 16),
           // 标题
           Text(
@@ -427,7 +466,7 @@ class _ToolCardState extends State<_ToolCard> {
           const SizedBox(height: 8),
           // 描述
           Text(
-            widget.tool.description,
+            isEnabled ? widget.tool.description : '功能暂未开放',
             style: TextStyle(
               fontSize: 13,
               color: isDark ? Colors.white54 : const Color(0xFF6B7280),
@@ -442,14 +481,14 @@ class _ToolCardState extends State<_ToolCard> {
     );
   }
 
-  Widget _buildIconContainer(bool isDark) {
+  Widget _buildIconContainer(bool isDark, bool isEnabled) {
     return Stack(
       alignment: Alignment.center,
       children: [
         // 光晕效果
         AnimatedOpacity(
           duration: const Duration(milliseconds: 400),
-          opacity: _isHovered ? 1.0 : 0.0,
+          opacity: _isHovered && isEnabled ? 1.0 : 0.0,
           child: Container(
             width: 80,
             height: 80,
@@ -469,7 +508,7 @@ class _ToolCardState extends State<_ToolCard> {
           duration: const Duration(milliseconds: 400),
           width: 64,
           height: 64,
-          transform: _isHovered
+          transform: _isHovered && isEnabled
               ? (Matrix4.identity()
                 ..setEntry(0, 0, 1.1)
                 ..setEntry(1, 1, 1.1)
@@ -483,17 +522,21 @@ class _ToolCardState extends State<_ToolCard> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                const Color(0xFF3B82F6).withValues(alpha: _isHovered ? 0.25 : 0.15),
-                const Color(0xFF9333EA).withValues(alpha: _isHovered ? 0.25 : 0.15),
+                (isEnabled ? const Color(0xFF3B82F6) : const Color(0xFF6B7280))
+                    .withValues(alpha: _isHovered && isEnabled ? 0.25 : 0.15),
+                (isEnabled ? const Color(0xFF9333EA) : const Color(0xFF6B7280))
+                    .withValues(alpha: _isHovered && isEnabled ? 0.25 : 0.15),
               ],
             ),
           ),
           child: Icon(
-            widget.tool.icon,
+            isEnabled ? widget.tool.icon : MdiIcons.lockOutline,
             size: 32,
-            color: _isHovered 
-                ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D4ED8))
-                : (isDark ? const Color(0xFF60A5FA) : const Color(0xFF3B82F6)),
+            color: isEnabled
+                ? (_isHovered 
+                    ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D4ED8))
+                    : (isDark ? const Color(0xFF60A5FA) : const Color(0xFF3B82F6)))
+                : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
           ),
         ),
       ],
@@ -566,6 +609,29 @@ class _PulsingDotState extends State<_PulsingDot>
           ),
         );
       },
+    );
+  }
+}
+
+/// 禁用状态指示器
+class _DisabledIndicator extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      width: 12,
+      height: 12,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isDark ? const Color(0xFF475569) : const Color(0xFFD1D5DB),
+      ),
+      child: Center(
+        child: Icon(
+          MdiIcons.lock,
+          size: 8,
+          color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+        ),
+      ),
     );
   }
 }

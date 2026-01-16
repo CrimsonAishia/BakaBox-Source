@@ -37,7 +37,7 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTi
       _progressController.animateTo(0.3, duration: const Duration(milliseconds: 400));
       await Future.delayed(const Duration(milliseconds: 400));
       
-      // 阶段2: 检查更新 (30-80%)
+      // 阶段2: 检查更新 (30-60%)
       if (mounted) {
         setState(() => _loadingText = 'CHECKING UPDATE');
         final updateBloc = context.read<UpdateBloc>();
@@ -45,25 +45,49 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTi
         // 开始更新检查
         updateBloc.add(UpdateAutoCheck());
         
-        // 启动进度条动画到80%
-        _progressController.animateTo(0.8, duration: const Duration(milliseconds: 2000));
+        // 启动进度条动画到60%
+        _progressController.animateTo(0.6, duration: const Duration(milliseconds: 1200));
         
         // 等待更新检查完成
         await updateBloc.stream.firstWhere(
           (state) => state.status != UpdateStatus.checking,
           orElse: () => updateBloc.state,
         ).timeout(
-          const Duration(milliseconds: 2000),
+          const Duration(milliseconds: 1200),
           onTimeout: () => updateBloc.state,
         );
         
-        // 更新检查完成，快速推进到80%
+        // 更新检查完成，快速推进到60%
+        if (_progressController.value < 0.6) {
+          await _progressController.animateTo(0.6, duration: const Duration(milliseconds: 200));
+        }
+      }
+      
+      // 阶段3: 加载功能状态 (60-80%)
+      if (mounted) {
+        setState(() => _loadingText = 'LOADING FEATURES');
+        final featureStatusBloc = context.read<FeatureStatusBloc>();
+        
+        // 启动进度条动画到80%
+        _progressController.animateTo(0.8, duration: const Duration(milliseconds: 800));
+        
+        // 等待功能状态加载完成
+        await featureStatusBloc.stream.firstWhere(
+          (state) => state.loadState == FeatureStatusLoadState.loaded ||
+                     state.loadState == FeatureStatusLoadState.error,
+          orElse: () => featureStatusBloc.state,
+        ).timeout(
+          const Duration(milliseconds: 800),
+          onTimeout: () => featureStatusBloc.state,
+        );
+        
+        // 功能状态加载完成，快速推进到80%
         if (_progressController.value < 0.8) {
           await _progressController.animateTo(0.8, duration: const Duration(milliseconds: 200));
         }
       }
       
-      // 阶段3: 完成 (80-100%)
+      // 阶段4: 完成 (80-100%)
       if (mounted) {
         setState(() => _loadingText = 'LOADING');
         _progressController.animateTo(1.0, duration: const Duration(milliseconds: 400));
