@@ -620,7 +620,7 @@ class GameLauncherService {
   }
 
   /// 自动检测Steam路径（仅Windows）
-  /// 检测顺序：注册表 → 进程 → 常见路径
+  /// 检测顺序：注册表 → 进程
   /// 带缓存，避免重复检测
   Future<String?> detectSteamPath() async {
     if (!PlatformUtils.isWindows) {
@@ -649,27 +649,6 @@ class GameLauncherService {
         _steamPathDetectionAttempted = true;
         _cachedSteamPath = processPath;
         return processPath;
-      }
-
-      // 方法3: 检查常见路径
-      final commonPaths = [
-        'C:\\Program Files (x86)\\Steam',
-        'C:\\Program Files\\Steam',
-        'D:\\Steam',
-        'D:\\Program Files (x86)\\Steam',
-        'E:\\Steam',
-        'E:\\Program Files (x86)\\Steam',
-        'F:\\Steam',
-      ];
-
-      for (final path in commonPaths) {
-        final steamExe = File('$path\\steam.exe');
-        if (await steamExe.exists()) {
-          LogService.i('从常见路径检测到Steam路径: $path');
-          _steamPathDetectionAttempted = true;
-          _cachedSteamPath = path;
-          return path;
-        }
       }
 
       LogService.w('未能自动检测到Steam路径');
@@ -766,31 +745,41 @@ class GameLauncherService {
         steamPath = await detectSteamPath();
       }
       
-      // 常见的游戏路径
-      final possiblePaths = <String>[];
-      
-      // 如果有Steam路径，优先检查
+      // 如果有Steam路径，检查默认游戏安装位置
       if (steamPath != null) {
-        possiblePaths.add('$steamPath\\steamapps\\common\\Counter-Strike Global Offensive');
-      }
-      
-      // 添加其他常见路径
-      possiblePaths.addAll([
-        'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Counter-Strike Global Offensive',
-        'C:\\Program Files\\Steam\\steamapps\\common\\Counter-Strike Global Offensive',
-        'D:\\Steam\\steamapps\\common\\Counter-Strike Global Offensive',
-        'E:\\Steam\\steamapps\\common\\Counter-Strike Global Offensive',
-        'F:\\Steam\\steamapps\\common\\Counter-Strike Global Offensive',
-      ]);
-
-      for (final path in possiblePaths) {
-        // 检查cs2.exe是否存在
-        final exePath = '$path\\game\\bin\\win64\\cs2.exe';
+        final gamePath = '$steamPath\\steamapps\\common\\Counter-Strike Global Offensive';
+        final exePath = '$gamePath\\game\\bin\\win64\\cs2.exe';
         if (await File(exePath).exists()) {
-          LogService.i('检测到游戏路径: $path');
+          LogService.i('检测到游戏路径: $gamePath');
           _gamePathDetectionAttempted = true;
-          _cachedGamePath = path;
-          return path;
+          _cachedGamePath = gamePath;
+          return gamePath;
+        }
+        
+        // 检查Steam库文件夹配置
+        final libraryFoldersFile = File('$steamPath\\steamapps\\libraryfolders.vdf');
+        if (await libraryFoldersFile.exists()) {
+          try {
+            final content = await libraryFoldersFile.readAsString();
+            final pathRegex = RegExp(r'"path"\s+"([^"]+)"');
+            final matches = pathRegex.allMatches(content);
+
+            for (final match in matches) {
+              final libPath = match.group(1)?.replaceAll('\\\\', '\\');
+              if (libPath != null && libPath != steamPath) {
+                final altGamePath = '$libPath\\steamapps\\common\\Counter-Strike Global Offensive';
+                final altExePath = '$altGamePath\\game\\bin\\win64\\cs2.exe';
+                if (await File(altExePath).exists()) {
+                  LogService.i('在Steam库中检测到游戏路径: $altGamePath');
+                  _gamePathDetectionAttempted = true;
+                  _cachedGamePath = altGamePath;
+                  return altGamePath;
+                }
+              }
+            }
+          } catch (e) {
+            LogService.d('解析Steam库文件夹失败: $e');
+          }
         }
       }
 

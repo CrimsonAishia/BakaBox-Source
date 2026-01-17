@@ -22,12 +22,6 @@ class AutoexecService {
     return _gamePathService.hasGamePath();
   }
 
-  /// 尝试自动检测并保存游戏路径
-  /// 返回是否成功检测到路径
-  Future<bool> tryAutoDetectAndSave() async {
-    return _gamePathService.tryAutoDetectAndSaveGamePath();
-  }
-
   /// 读取文件内容
   Future<String?> readContent() async {
     try {
