@@ -157,9 +157,8 @@ class MapData {
   final String mapName;
   final String mapLabel;
   final String mapUrl;
-  final String? mapModeUrl;
 
-  MapData({required this.id, required this.mapName, required this.mapLabel, required this.mapUrl, this.mapModeUrl});
+  MapData({required this.id, required this.mapName, required this.mapLabel, required this.mapUrl});
 
   factory MapData.fromJson(Map<String, dynamic> json) => _$MapDataFromJson(json);
   Map<String, dynamic> toJson() => _$MapDataToJson(this);
