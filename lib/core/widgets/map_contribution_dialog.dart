@@ -1143,8 +1143,8 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         child: GestureDetector(
           onTap: () => _showFullImage(imageUrl),
           child: Container(
-            height: 56,
-            width: 100,
+            height: 80,
+            width: 140,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
               color: isDark
