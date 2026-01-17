@@ -510,8 +510,8 @@ class _NotificationCardState extends State<_NotificationCard> {
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
                                 colors: [
-                                  const Color(0xFF1E293B).withValues(alpha: 0.95),
-                                  const Color(0xFF1E293B).withValues(alpha: 0.7),
+                                  const Color(0xFF1E293B).withValues(alpha: 0.75),
+                                  const Color(0xFF1E293B).withValues(alpha: 0.45),
                                 ],
                               ),
                             ),
@@ -538,6 +538,13 @@ class _NotificationCardState extends State<_NotificationCard> {
                                         color: borderColor,
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
+                                        shadows: [
+                                          Shadow(
+                                            color: Colors.black.withValues(alpha: 0.8),
+                                            offset: const Offset(0, 1),
+                                            blurRadius: 3,
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   if (!isMapChange && notification.serverName != null)
@@ -616,6 +623,13 @@ class _NotificationCardState extends State<_NotificationCard> {
       fontSize: 15,
       fontWeight: FontWeight.w600,
       height: 1.3,
+      shadows: [
+        Shadow(
+          color: Colors.black.withValues(alpha: 0.8),
+          offset: const Offset(0, 1),
+          blurRadius: 3,
+        ),
+      ],
     );
 
     // 获取人数信息（仅换图通知显示）
@@ -623,6 +637,16 @@ class _NotificationCardState extends State<_NotificationCard> {
     final maxPlayers = notification.extraData?['maxPlayers'] as int?;
     final hasPlayers =
         isMapChange && currentPlayers != null && maxPlayers != null;
+
+    // 根据人数比例计算颜色
+    Color playerColor = const Color(0xFF3B82F6); // 默认亮蓝色
+    if (hasPlayers && maxPlayers > 0) {
+      if (currentPlayers >= maxPlayers) {
+        playerColor = const Color(0xFFEF4444); // 满员：亮红色
+      } else if (currentPlayers >= maxPlayers * 0.8) {
+        playerColor = const Color(0xFFFB923C); // 80%以上：亮橙色
+      }
+    }
 
     return Row(
       children: [
@@ -637,27 +661,72 @@ class _NotificationCardState extends State<_NotificationCard> {
             margin: const EdgeInsets.only(left: 8),
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFF4CAF50).withValues(alpha: 0.2),
+              // 增强背景遮罩，确保文字清晰可读
+              color: const Color(0xFF1E293B).withValues(alpha: 0.75),
               borderRadius: BorderRadius.circular(4),
-              border: Border.all(
-                color: const Color(0xFF4CAF50).withValues(alpha: 0.5),
-              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.person,
                   size: 14,
-                  color: Color(0xFF4CAF50),
+                  color: playerColor,
+                  shadows: const [
+                    Shadow(
+                      color: Colors.black,
+                      offset: Offset(0, 1),
+                      blurRadius: 2,
+                    ),
+                  ],
                 ),
                 const SizedBox(width: 4),
+                // 当前人数（动态颜色）
                 Text(
-                  '$currentPlayers/$maxPlayers',
-                  style: const TextStyle(
-                    color: Color(0xFF4CAF50),
+                  '$currentPlayers',
+                  style: TextStyle(
+                    color: playerColor,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
+                    shadows: const [
+                      Shadow(
+                        color: Colors.black,
+                        offset: Offset(0, 1),
+                        blurRadius: 2,
+                      ),
+                    ],
+                  ),
+                ),
+                // 斜杠（浅灰色）
+                const Text(
+                  '/',
+                  style: TextStyle(
+                    color: Color(0xFFD1D5DB), // 更亮的灰色
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black,
+                        offset: Offset(0, 1),
+                        blurRadius: 2,
+                      ),
+                    ],
+                  ),
+                ),
+                // 最大人数（浅灰色）
+                Text(
+                  '$maxPlayers',
+                  style: const TextStyle(
+                    color: Color(0xFFD1D5DB), // 更亮的灰色
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black,
+                        offset: Offset(0, 1),
+                        blurRadius: 2,
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -680,15 +749,32 @@ class _NotificationCardState extends State<_NotificationCard> {
       mapUrl: notification.mapBackground,
     );
 
+    debugPrint('[NotificationCard] Building map background - mapName: ${notification.mapName}, mapBackground: ${notification.mapBackground}, resolved: $mapUrl');
+
+    // 网络图片：使用 DiskCachedImage，下载失败时显示默认背景
     if (mapUrl.startsWith('http://') || mapUrl.startsWith('https://')) {
       return DiskCachedImage(
         imageUrl: mapUrl,
         fit: BoxFit.cover,
-        placeholder: Container(color: const Color(0xFF1E293B)),
-        errorWidget: Container(color: const Color(0xFF1E293B)),
+        // 下载中显示默认背景（而不是纯色）
+        placeholder: Image.asset(
+          MapUtils.defaultMapBackground,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) =>
+              Container(color: const Color(0xFF1E293B)),
+        ),
+        // 下载失败显示默认背景
+        fallbackAsset: MapUtils.defaultMapBackground,
+        errorWidget: Image.asset(
+          MapUtils.defaultMapBackground,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) =>
+              Container(color: const Color(0xFF1E293B)),
+        ),
       );
     }
 
+    // 本地资源图片
     return Image.asset(
       mapUrl,
       fit: BoxFit.cover,
@@ -841,6 +927,13 @@ class _ServerNameTextState extends State<_ServerNameText>
               color: Color(0xFFFBBF24),
               fontSize: 13,
               fontWeight: FontWeight.w600,
+              shadows: [
+                Shadow(
+                  color: Colors.black,
+                  offset: Offset(0, 1),
+                  blurRadius: 3,
+                ),
+              ],
             ),
           ),
         // 服务器名滚动
@@ -858,6 +951,13 @@ class _ServerNameTextState extends State<_ServerNameText>
                   color: Colors.white.withValues(alpha: 0.85),
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
+                  shadows: const [
+                    Shadow(
+                      color: Colors.black,
+                      offset: Offset(0, 1),
+                      blurRadius: 3,
+                    ),
+                  ],
                 ),
                 softWrap: false,
                 maxLines: 1,
