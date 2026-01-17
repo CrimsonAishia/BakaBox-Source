@@ -154,7 +154,6 @@ MapData _$MapDataFromJson(Map<String, dynamic> json) => MapData(
   mapName: json['mapName'] as String,
   mapLabel: json['mapLabel'] as String,
   mapUrl: json['mapUrl'] as String,
-  mapModeUrl: json['mapModeUrl'] as String?,
 );
 
 Map<String, dynamic> _$MapDataToJson(MapData instance) => <String, dynamic>{
@@ -162,7 +161,6 @@ Map<String, dynamic> _$MapDataToJson(MapData instance) => <String, dynamic>{
   'mapName': instance.mapName,
   'mapLabel': instance.mapLabel,
   'mapUrl': instance.mapUrl,
-  'mapModeUrl': instance.mapModeUrl,
 };
 
 MapRuntimeData _$MapRuntimeDataFromJson(Map<String, dynamic> json) =>
