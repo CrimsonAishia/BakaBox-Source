@@ -323,8 +323,8 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     try {
       LogService.d('[KeyBindingBloc] 开始加载 autoexec.cfg');
       
-      // 先尝试自动检测游戏路径
-      final hasPath = await _autoexecService.tryAutoDetectAndSave();
+      // 检查游戏路径是否已配置
+      final hasPath = await _autoexecService.hasGamePath();
       emit(state.copyWith(hasGamePath: hasPath));
       
       if (!hasPath) {

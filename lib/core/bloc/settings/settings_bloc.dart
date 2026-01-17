@@ -30,6 +30,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   final AudioService _audioService = AudioService();
   final GamePathService _gamePathService = GamePathService();
+  final GameLauncherService _gameLauncherService = GameLauncherService();
 
   SettingsBloc() : super(const SettingsState()) {
     on<SettingsInit>(_onInit);
@@ -363,7 +364,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   Future<void> _onDetectGamePath(SettingsDetectGamePath event, Emitter<SettingsState> emit) async {
     emit(state.copyWith(isDetectingPath: true, gamePathError: null));
     try {
-      final gamePath = await _gamePathService.detectGamePath();
+      // 使用 GameLauncherService 的智能检测（基于注册表和进程）
+      final gamePath = await _gameLauncherService.detectGamePath();
       if (gamePath != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_keyGamePath, gamePath);
@@ -374,7 +376,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         ));
         
         // 同步到 GameLauncherService
-        await GameLauncherService().setGamePath(gamePath);
+        await _gameLauncherService.setGamePath(gamePath);
         LogService.i('自动检测到游戏路径: $gamePath');
       } else {
         emit(state.copyWith(
@@ -395,7 +397,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   Future<void> _onDetectSteamPath(SettingsDetectSteamPath event, Emitter<SettingsState> emit) async {
     emit(state.copyWith(isDetectingPath: true, steamPathError: null));
     try {
-      final steamPath = await _gamePathService.detectSteamPath();
+      // 使用 GameLauncherService 的智能检测（基于注册表和进程）
+      final steamPath = await _gameLauncherService.detectSteamPath();
       if (steamPath != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_keySteamPath, steamPath);
@@ -406,7 +409,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         ));
         
         // 同步到 GameLauncherService
-        await GameLauncherService().setSteamPath(steamPath);
+        await _gameLauncherService.setSteamPath(steamPath);
         LogService.i('自动检测到Steam路径: $steamPath');
       } else {
         emit(state.copyWith(
