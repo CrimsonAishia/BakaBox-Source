@@ -42,9 +42,6 @@ class DiskCachedImage extends StatefulWidget {
   /// 图片颜色混合模式
   final BlendMode? colorBlendMode;
   
-  /// 淡入动画时长
-  final Duration fadeInDuration;
-  
   /// 解码缓存宽度（限制图片解码尺寸以节省内存）
   /// 设置后图片会以此宽度解码，而非原图宽度
   final int? cacheWidth;
@@ -68,7 +65,6 @@ class DiskCachedImage extends StatefulWidget {
     this.alignment = Alignment.center,
     this.color,
     this.colorBlendMode,
-    this.fadeInDuration = const Duration(milliseconds: 300),
     this.cacheWidth,
     this.cacheHeight,
     this.fallbackAsset,
@@ -78,38 +74,16 @@ class DiskCachedImage extends StatefulWidget {
   State<DiskCachedImage> createState() => _DiskCachedImageState();
 }
 
-class _DiskCachedImageState extends State<DiskCachedImage>
-    with SingleTickerProviderStateMixin {
+class _DiskCachedImageState extends State<DiskCachedImage> {
   File? _cachedFile;
   bool _isLoading = true;
   bool _hasError = false;
-  bool _animationCompleted = false; // 动画完成后移除 placeholder
   String? _lastUrl; // 记录上次加载的 URL
-
-  // 淡入动画控制器
-  late AnimationController _fadeController;
-  late CurvedAnimation _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: widget.fadeInDuration,
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeIn,
-    );
-    // 动画完成后标记，移除 placeholder 释放内存
-    _fadeController.addStatusListener(_onAnimationStatus);
     _loadImage();
-  }
-
-  void _onAnimationStatus(AnimationStatus status) {
-    if (status == AnimationStatus.completed && mounted) {
-      setState(() => _animationCompleted = true);
-    }
   }
   
   @override
@@ -122,9 +96,6 @@ class _DiskCachedImageState extends State<DiskCachedImage>
   
   @override
   void dispose() {
-    _fadeController.removeStatusListener(_onAnimationStatus);
-    _fadeAnimation.dispose();
-    _fadeController.dispose();
     // 清理文件引用，帮助 GC 回收
     _cachedFile = null;
     _lastUrl = null;
@@ -146,10 +117,6 @@ class _DiskCachedImageState extends State<DiskCachedImage>
     }
     
     _lastUrl = widget.imageUrl;
-    
-    // 重置动画和状态
-    _fadeController.reset();
-    _animationCompleted = false;
 
     setState(() {
       _isLoading = true;
@@ -165,8 +132,6 @@ class _DiskCachedImageState extends State<DiskCachedImage>
           _cachedFile = syncFile;
           _isLoading = false;
         });
-        // 缓存命中也播放淡入动画
-        _fadeController.forward();
       }
       return;
     }
@@ -180,10 +145,6 @@ class _DiskCachedImageState extends State<DiskCachedImage>
         _isLoading = false;
         _hasError = file == null;
       });
-      // 下载完成后播放淡入动画
-      if (file != null) {
-        _fadeController.forward();
-      }
     }
   }
 
@@ -197,7 +158,8 @@ class _DiskCachedImageState extends State<DiskCachedImage>
       return _buildErrorWidget();
     }
 
-    final image = Image.file(
+    // 直接返回图片，不使用淡入动画，避免尺寸跳变
+    return Image.file(
       _cachedFile!,
       key: ValueKey(_cachedFile!.path),
       fit: widget.fit,
@@ -210,23 +172,6 @@ class _DiskCachedImageState extends State<DiskCachedImage>
       cacheHeight: widget.cacheHeight,
       gaplessPlayback: true,
       errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
-    );
-
-    // 动画完成后直接返回图片，不再保留 placeholder
-    if (_animationCompleted) {
-      return image;
-    }
-
-    // 动画进行中，使用 Stack 叠加
-    return Stack(
-      fit: StackFit.passthrough,
-      children: [
-        _buildPlaceholder(),
-        FadeTransition(
-          opacity: _fadeAnimation,
-          child: image,
-        ),
-      ],
     );
   }
   
