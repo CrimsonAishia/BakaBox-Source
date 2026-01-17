@@ -111,7 +111,7 @@ class DiskImageCacheService {
         url,
         options: Options(
           responseType: ResponseType.bytes,
-          receiveTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 30),
         ),
       );
       
