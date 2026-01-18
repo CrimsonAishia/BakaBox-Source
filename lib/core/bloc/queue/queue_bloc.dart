@@ -1,14 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../api/server_api.dart';
+import '../../utils/log_service.dart';
+import '../../utils/storage_utils.dart';
 import '../../models/server_models.dart';
 import '../../services/game_status_service.dart';
 import '../../services/source_server_service.dart';
 import '../../services/status_window_service.dart';
-import '../../utils/log_service.dart';
 import 'queue_event.dart';
 import 'queue_state.dart';
 
@@ -75,9 +75,8 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
   /// 加载保存的配置
   Future<QueueConfig> _loadSavedConfig() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final targetPlayers = prefs.getInt(_keyQueueTargetPlayers) ?? 60;
-      final threadCount = prefs.getInt(_keyQueueThreadCount) ?? 3;
+      final targetPlayers = StorageUtils.getInt(_keyQueueTargetPlayers) ?? 60;
+      final threadCount = StorageUtils.getInt(_keyQueueThreadCount) ?? 3;
       return QueueConfig(
         targetPlayers: targetPlayers,
         threadCount: threadCount,
@@ -92,9 +91,8 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
   /// 保存配置
   Future<void> _saveConfig(QueueConfig config) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_keyQueueTargetPlayers, config.targetPlayers);
-      await prefs.setInt(_keyQueueThreadCount, config.threadCount);
+      await StorageUtils.setInt(_keyQueueTargetPlayers, config.targetPlayers);
+      await StorageUtils.setInt(_keyQueueThreadCount, config.threadCount);
     } catch (e) {
       LogService.e('[QueueBloc] 保存配置失败', e);
     }

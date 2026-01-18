@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/log_service.dart';
+import '../utils/storage_utils.dart';
 
 /// 草稿自动保存服务
 /// 
@@ -86,21 +86,19 @@ class DraftService {
     required List<String> imageUrls,
   }) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      
       // 保存草稿数据
       final draftData = {
         'content': content,
         'imageUrls': imageUrls,
       };
       
-      await prefs.setString(
+      await StorageUtils.setString(
         '$_draftKeyPrefix$draftId',
         json.encode(draftData),
       );
       
       // 保存时间戳
-      await prefs.setInt(
+      await StorageUtils.setInt(
         '$_draftTimestampPrefix$draftId',
         DateTime.now().millisecondsSinceEpoch,
       );
@@ -120,16 +118,14 @@ class DraftService {
   /// - [DraftData?]: 草稿数据，如果不存在或已过期则返回 null
   Future<DraftData?> restoreDraft(String draftId) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      
       // 检查草稿是否存在
-      final draftJson = prefs.getString('$_draftKeyPrefix$draftId');
+      final draftJson = StorageUtils.getString('$_draftKeyPrefix$draftId');
       if (draftJson == null) {
         return null;
       }
       
       // 检查草稿是否过期
-      final timestamp = prefs.getInt('$_draftTimestampPrefix$draftId');
+      final timestamp = StorageUtils.getInt('$_draftTimestampPrefix$draftId');
       if (timestamp != null) {
         final draftTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
         final now = DateTime.now();
@@ -168,10 +164,8 @@ class DraftService {
   /// - [draftId]: 草稿唯一标识
   Future<void> deleteDraft(String draftId) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      
-      await prefs.remove('$_draftKeyPrefix$draftId');
-      await prefs.remove('$_draftTimestampPrefix$draftId');
+      await StorageUtils.remove('$_draftKeyPrefix$draftId');
+      await StorageUtils.remove('$_draftTimestampPrefix$draftId');
       
       LogService.d('草稿已删除: $draftId');
     } catch (e) {
@@ -188,15 +182,13 @@ class DraftService {
   /// - [bool]: 是否存在有效的草稿
   Future<bool> hasDraft(String draftId) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      
-      final draftJson = prefs.getString('$_draftKeyPrefix$draftId');
+      final draftJson = StorageUtils.getString('$_draftKeyPrefix$draftId');
       if (draftJson == null) {
         return false;
       }
       
       // 检查是否过期
-      final timestamp = prefs.getInt('$_draftTimestampPrefix$draftId');
+      final timestamp = StorageUtils.getInt('$_draftTimestampPrefix$draftId');
       if (timestamp != null) {
         final draftTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
         final now = DateTime.now();
@@ -216,14 +208,13 @@ class DraftService {
   /// 清理所有过期草稿
   Future<void> cleanupExpiredDrafts() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final keys = prefs.getKeys();
+      final keys = StorageUtils.getKeys();
       
       final draftKeys = keys.where((key) => key.startsWith(_draftKeyPrefix));
       
       for (final key in draftKeys) {
         final draftId = key.substring(_draftKeyPrefix.length);
-        final timestamp = prefs.getInt('$_draftTimestampPrefix$draftId');
+        final timestamp = StorageUtils.getInt('$_draftTimestampPrefix$draftId');
         
         if (timestamp != null) {
           final draftTime = DateTime.fromMillisecondsSinceEpoch(timestamp);

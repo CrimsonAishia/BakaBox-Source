@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../utils/error_utils.dart';
@@ -9,6 +8,7 @@ import '../../utils/log_service.dart';
 import '../../utils/cache_service.dart';
 import '../../utils/app_directory_service.dart';
 import '../../utils/platform_utils.dart';
+import '../../utils/storage_utils.dart';
 import '../../services/disk_image_cache_service.dart';
 import '../../api/server_api.dart';
 import '../../services/game_launcher_service.dart';
@@ -88,10 +88,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   Future<void> _loadPreferences(Emitter<SettingsState> emit) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final themeModeIndex = prefs.getInt('theme_mode') ?? 0;
-      final notificationPositionIndex = prefs.getInt(_keyNotificationPosition) ?? NotificationPositionType.topRight.index;
-      final floatingWindowPositionIndex = prefs.getInt(_keyFloatingWindowPosition) ?? NotificationPositionType.bottomRight.index;
+      final themeModeIndex = StorageUtils.getInt('theme_mode') ?? 0;
+      final notificationPositionIndex = StorageUtils.getInt(_keyNotificationPosition) ?? NotificationPositionType.topRight.index;
+      final floatingWindowPositionIndex = StorageUtils.getInt(_keyFloatingWindowPosition) ?? NotificationPositionType.bottomRight.index;
       final notificationPosition = NotificationPositionType.values[notificationPositionIndex];
       final floatingWindowPosition = NotificationPositionType.values[floatingWindowPositionIndex];
       
@@ -112,12 +111,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   Future<void> _loadGameSettings(Emitter<SettingsState> emit) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      
-      final gamePath = prefs.getString(_keyGamePath);
-      final steamPath = prefs.getString(_keySteamPath);
-      final platformStr = prefs.getString(_keyLaunchPlatform);
-      final launchOptions = prefs.getStringList(_keyLaunchOptions) ?? [];
+      final gamePath = StorageUtils.getString(_keyGamePath);
+      final steamPath = StorageUtils.getString(_keySteamPath);
+      final platformStr = StorageUtils.getString(_keyLaunchPlatform);
+      final launchOptions = StorageUtils.getStringList(_keyLaunchOptions);
       
       LaunchPlatformType platform = LaunchPlatformType.worldwide;
       if (platformStr == 'perfect') {
@@ -190,8 +187,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   Future<void> _onSetThemeMode(SettingsSetThemeMode event, Emitter<SettingsState> emit) async {
     try {
       emit(state.copyWith(themeMode: event.themeMode));
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('theme_mode', event.themeMode.index);
+      await StorageUtils.setInt('theme_mode', event.themeMode.index);
       LogService.i('主题模式已设置为: ${state.currentThemeModeText}');
     } catch (e) {
       LogService.e('设置主题模式失败', e);
@@ -207,8 +203,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         case ThemeMode.dark: newMode = ThemeMode.system; break;
       }
       emit(state.copyWith(themeMode: newMode));
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('theme_mode', newMode.index);
+      await StorageUtils.setInt('theme_mode', newMode.index);
       LogService.i('主题模式已切换为: ${state.currentThemeModeText}');
     } catch (e) {
       LogService.e('切换主题模式失败', e);
@@ -251,15 +246,14 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       final serverApi = ServerApi();
       serverApi.clearMapInfoCache();
       
-      // 清理偏好设置中的缓存数据
-      final prefs = await SharedPreferences.getInstance();
-      final keysToRemove = prefs.getKeys().where((key) => 
+      // 清理存储中的缓存数据
+      final keysToRemove = StorageUtils.getKeys().where((key) => 
         (key.contains('cache') || key.contains('temp')) &&
         !key.contains('theme') && !key.contains('path') && 
         !key.contains('platform') && !key.contains('options')
       ).toList();
       for (final key in keysToRemove) {
-        await prefs.remove(key);
+        await StorageUtils.remove(key);
       }
       
       await _calculateCacheSize(emit);
@@ -317,8 +311,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         return;
       }
       
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_keyGamePath, event.path);
+      await StorageUtils.setString(_keyGamePath, event.path);
       emit(state.copyWith(
         gamePath: event.path,
         gamePathError: null,
@@ -345,8 +338,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         return;
       }
       
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_keySteamPath, event.path);
+      await StorageUtils.setString(_keySteamPath, event.path);
       emit(state.copyWith(
         steamPath: event.path,
         steamPathError: null,
@@ -367,8 +359,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       // 使用 GameLauncherService 的智能检测（基于注册表和进程）
       final gamePath = await _gameLauncherService.detectGamePath();
       if (gamePath != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_keyGamePath, gamePath);
+        await StorageUtils.setString(_keyGamePath, gamePath);
         emit(state.copyWith(
           gamePath: gamePath, 
           isDetectingPath: false,
@@ -400,8 +391,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       // 使用 GameLauncherService 的智能检测（基于注册表和进程）
       final steamPath = await _gameLauncherService.detectSteamPath();
       if (steamPath != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_keySteamPath, steamPath);
+        await StorageUtils.setString(_keySteamPath, steamPath);
         emit(state.copyWith(
           steamPath: steamPath, 
           isDetectingPath: false,
@@ -429,9 +419,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   Future<void> _onSetLaunchPlatform(SettingsSetLaunchPlatform event, Emitter<SettingsState> emit) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
       final platformStr = event.platform == LaunchPlatformType.perfect ? 'perfect' : 'worldwide';
-      await prefs.setString(_keyLaunchPlatform, platformStr);
+      await StorageUtils.setString(_keyLaunchPlatform, platformStr);
       emit(state.copyWith(launchPlatform: event.platform));
       
       // 同步到 GameLauncherService
@@ -447,8 +436,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   Future<void> _onSetLaunchOptions(SettingsSetLaunchOptions event, Emitter<SettingsState> emit) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(_keyLaunchOptions, event.options);
+      await StorageUtils.setStringList(_keyLaunchOptions, event.options);
       emit(state.copyWith(launchOptions: event.options));
       
       // 同步到 GameLauncherService
@@ -465,8 +453,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       if (!newOptions.contains(event.option)) {
         newOptions.add(event.option);
         
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setStringList(_keyLaunchOptions, newOptions);
+        await StorageUtils.setStringList(_keyLaunchOptions, newOptions);
         emit(state.copyWith(launchOptions: newOptions));
         
         // 同步到 GameLauncherService
@@ -483,8 +470,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       final newOptions = List<String>.from(state.launchOptions);
       newOptions.remove(event.option);
       
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(_keyLaunchOptions, newOptions);
+      await StorageUtils.setStringList(_keyLaunchOptions, newOptions);
       emit(state.copyWith(launchOptions: newOptions));
       
       // 同步到 GameLauncherService
@@ -497,8 +483,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   Future<void> _onClearGamePath(SettingsClearGamePath event, Emitter<SettingsState> emit) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_keyGamePath);
+      await StorageUtils.remove(_keyGamePath);
       emit(state.copyWith(
         gamePath: '',
         gamePathError: null,
@@ -511,8 +496,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   Future<void> _onClearSteamPath(SettingsClearSteamPath event, Emitter<SettingsState> emit) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_keySteamPath);
+      await StorageUtils.remove(_keySteamPath);
       emit(state.copyWith(
         steamPath: '',
         steamPathError: null,
@@ -654,8 +638,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     final List<CacheItemInfo> details = [];
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-
       // 1. 图片和临时文件缓存
       int cacheFilesSize = 0;
       if (PlatformUtils.isDesktopPlatform) {
@@ -682,14 +664,15 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
       // 2. 服务器相关数据（列表、地图信息、自定义服务器、监控列表）
       int serverDataSize = 0;
-      serverDataSize += prefs.getString('cached_server_list')?.length ?? 0;
-      serverDataSize += prefs.getString('cached_map_info')?.length ?? 0;
-      serverDataSize += prefs.getString('custom_server_categories')?.length ?? 0;
-      final monitoredData = prefs.getStringList('monitored_servers');
-      if (monitoredData != null) {
-        for (final item in monitoredData) {
-          serverDataSize += item.length;
-        }
+      final cachedServerList = StorageUtils.getString('cached_server_list');
+      if (cachedServerList != null) serverDataSize += cachedServerList.length;
+      final cachedMapInfo = StorageUtils.getString('cached_map_info');
+      if (cachedMapInfo != null) serverDataSize += cachedMapInfo.length;
+      final customServerCategories = StorageUtils.getString('custom_server_categories');
+      if (customServerCategories != null) serverDataSize += customServerCategories.length;
+      final monitoredData = StorageUtils.getStringList('monitored_servers');
+      for (final item in monitoredData) {
+        serverDataSize += item.length;
       }
       details.add(CacheItemInfo(
         type: CacheType.serverData,
@@ -698,19 +681,29 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         sizeInBytes: serverDataSize,
       ));
 
-      // 3. 用户数据（草稿、公告已读状态）
-      int userDataSize = 0;
-      final draftKeys = prefs.getKeys().where((key) => key.startsWith('draft_')).toList();
+      // 3. 应用数据（草稿、已读状态、应用配置等）
+      int appDataSize = 0;
+      
+      // 草稿和已读状态
+      final draftKeys = StorageUtils.getKeys().where((key) => key.startsWith('draft_')).toList();
       for (final key in draftKeys) {
-        final value = prefs.getString(key);
-        if (value != null) userDataSize += value.length;
+        final value = StorageUtils.getString(key);
+        if (value != null) appDataSize += value.length;
       }
-      userDataSize += prefs.getString('announcement_read_ids')?.length ?? 0;
+      final announcementReadIds = StorageUtils.getString('announcement_read_ids');
+      if (announcementReadIds != null) appDataSize += announcementReadIds.length;
+      
+      // 应用配置存储
+      final storageDir = Directory('${AppDirectoryService.basePath}/storage');
+      if (await storageDir.exists()) {
+        appDataSize += await _calculateDirectorySize(storageDir);
+      }
+      
       details.add(CacheItemInfo(
-        type: CacheType.userData,
-        name: '用户数据',
-        description: '草稿、已读状态等',
-        sizeInBytes: userDataSize,
+        type: CacheType.appData,
+        name: '应用数据',
+        description: '草稿、已读状态、游戏路径、主题等（清理后需重新设置）',
+        sizeInBytes: appDataSize,
       ));
 
       // 4. 日志文件
@@ -735,8 +728,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   /// 根据类型清除缓存
   Future<void> _clearCacheByType(CacheType cacheType) async {
-    final prefs = await SharedPreferences.getInstance();
-    
     switch (cacheType) {
       case CacheType.cacheFiles:
         // 清理磁盘图片缓存
@@ -785,16 +776,24 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         final serverApi = ServerApi();
         serverApi.clearMapInfoCache();
         await CustomServerService.clearAll();
-        await prefs.remove('monitored_servers');
+        await StorageUtils.remove('monitored_servers');
         break;
 
-      case CacheType.userData:
-        final draftKeys = prefs.getKeys().where((key) => key.startsWith('draft_')).toList();
+      case CacheType.appData:
+        // 清理草稿和已读状态
+        final draftKeys = StorageUtils.getKeys().where((key) => key.startsWith('draft_')).toList();
         for (final key in draftKeys) {
-          await prefs.remove(key);
+          await StorageUtils.remove(key);
         }
         final announcementService = AnnouncementReadService();
         await announcementService.clearReadStatus();
+        
+        // 彻底清空应用配置
+        await StorageUtils.clear();
+        
+        // 压缩数据库释放空间
+        await StorageUtils.compact();
+        LogService.i('应用数据已彻底清空并压缩');
         break;
 
       case CacheType.logs:
@@ -807,8 +806,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   Future<void> _onSetNotificationPosition(SettingsSetNotificationPosition event, Emitter<SettingsState> emit) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_keyNotificationPosition, event.position.index);
+      await StorageUtils.setInt(_keyNotificationPosition, event.position.index);
       emit(state.copyWith(notificationPosition: event.position));
       
       // 同步到 NotificationWindowService
@@ -824,8 +822,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   Future<void> _onSetFloatingWindowPosition(SettingsSetFloatingWindowPosition event, Emitter<SettingsState> emit) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_keyFloatingWindowPosition, event.position.index);
+      await StorageUtils.setInt(_keyFloatingWindowPosition, event.position.index);
       emit(state.copyWith(floatingWindowPosition: event.position));
       
       // TODO: 同步到 FloatingWindowService（如果需要）

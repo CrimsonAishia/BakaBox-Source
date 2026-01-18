@@ -1,7 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/log_service.dart';
 import '../utils/platform_utils.dart';
+import '../utils/storage_utils.dart';
 
 /// 音频服务 - 管理应用音效播放
 /// 
@@ -32,8 +32,7 @@ class AudioService {
     if (_isVolumeLoaded) return;
     
     try {
-      final prefs = await SharedPreferences.getInstance();
-      _volume = prefs.getDouble(_keyAudioVolume) ?? 0.8;
+      _volume = StorageUtils.getDouble(_keyAudioVolume) ?? 0.8;
       _isVolumeLoaded = true;
       LogService.d('音量配置已加载: ${(_volume * 100).toInt()}%');
     } catch (e) {
@@ -60,8 +59,7 @@ class AudioService {
     _volume = volume.clamp(0.0, 1.0);
     
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setDouble(_keyAudioVolume, _volume);
+      await StorageUtils.setDouble(_keyAudioVolume, _volume);
       LogService.d('音量已设置: ${(_volume * 100).toInt()}%');
     } catch (e) {
       LogService.e('保存音量设置失败', e);

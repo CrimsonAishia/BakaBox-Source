@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../utils/log_service.dart';
 import '../utils/platform_utils.dart';
+import '../utils/storage_utils.dart';
 import 'console_log_service.dart';
 import 'game_status_service.dart';
 
@@ -558,14 +558,12 @@ class GameLauncherService {
 
   /// 获取游戏路径
   Future<String?> getGamePath() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyGamePath);
+    return StorageUtils.getString(_keyGamePath);
   }
 
   /// 设置游戏路径
   Future<void> setGamePath(String path) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyGamePath, path);
+    await StorageUtils.setString(_keyGamePath, path);
     // 重置缓存，因为用户手动设置了路径
     _gamePathDetectionAttempted = false;
     _cachedGamePath = null;
@@ -574,14 +572,12 @@ class GameLauncherService {
 
   /// 获取Steam路径
   Future<String?> getSteamPath() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keySteamPath);
+    return StorageUtils.getString(_keySteamPath);
   }
 
   /// 设置Steam路径
   Future<void> setSteamPath(String path) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keySteamPath, path);
+    await StorageUtils.setString(_keySteamPath, path);
     // 重置缓存，因为用户手动设置了路径
     _steamPathDetectionAttempted = false;
     _cachedSteamPath = null;
@@ -590,8 +586,7 @@ class GameLauncherService {
 
   /// 获取启动平台
   Future<LaunchPlatform> getLaunchPlatform() async {
-    final prefs = await SharedPreferences.getInstance();
-    final value = prefs.getString(_keyLaunchPlatform);
+    final value = StorageUtils.getString(_keyLaunchPlatform);
     if (value == 'perfect') {
       return LaunchPlatform.perfect;
     }
@@ -600,22 +595,18 @@ class GameLauncherService {
 
   /// 设置启动平台
   Future<void> setLaunchPlatform(LaunchPlatform platform) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyLaunchPlatform, platform == LaunchPlatform.perfect ? 'perfect' : 'worldwide');
+    await StorageUtils.setString(_keyLaunchPlatform, platform == LaunchPlatform.perfect ? 'perfect' : 'worldwide');
     LogService.i('启动平台已设置: ${platform == LaunchPlatform.perfect ? "完美世界" : "国际版"}');
   }
 
   /// 获取自定义启动选项
   Future<List<String>> getLaunchOptions() async {
-    final prefs = await SharedPreferences.getInstance();
-    final options = prefs.getStringList(_keyLaunchOptions);
-    return options ?? [];
+    return StorageUtils.getStringList(_keyLaunchOptions);
   }
 
   /// 设置自定义启动选项
   Future<void> setLaunchOptions(List<String> options) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_keyLaunchOptions, options);
+    await StorageUtils.setStringList(_keyLaunchOptions, options);
     LogService.i('启动选项已设置: ${options.join(" ")}');
   }
 

@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/server_api.dart';
 import '../utils/log_service.dart';
+import '../utils/storage_utils.dart';
 import 'notification_window_service.dart';
 import 'scheduler_service.dart';
 import 'source_server_service.dart';
@@ -306,7 +306,6 @@ class MapChangeMonitorService {
   /// 保存监控列表到本地存储（JSON格式）
   Future<void> _saveMonitoredServers() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
       final List<String> data = _monitoredServers.entries.map((e) {
         // 只有 categoryName 不为空时才标记为自定义分类
         final isCustomCategory = e.value.categoryName != null && e.value.categoryName!.isNotEmpty;
@@ -317,7 +316,7 @@ class MapChangeMonitorService {
           'isCustomCategory': isCustomCategory, // 标记是否为自定义分类
         });
       }).toList();
-      await prefs.setStringList(_storageKey, data);
+      await StorageUtils.setStringList(_storageKey, data);
     } catch (e) {
       LogService.e('[MapChangeMonitor] 保存监控列表失败', e);
     }
@@ -331,8 +330,7 @@ class MapChangeMonitorService {
   ///    这样可以清理历史错误数据（非自定义分类但保存了分类名）
   Future<void> _loadMonitoredServers() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final data = prefs.getStringList(_storageKey) ?? [];
+      final data = StorageUtils.getStringList(_storageKey);
       
       for (final item in data) {
         try {

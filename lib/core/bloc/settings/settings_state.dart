@@ -50,7 +50,7 @@ extension NotificationPositionTypeExtension on NotificationPositionType {
 enum CacheType {
   cacheFiles,       // 图片和临时文件缓存
   serverData,       // 服务器相关数据（列表、地图信息、自定义服务器、监控列表）
-  userData,         // 用户数据（草稿、公告已读状态）
+  appData,          // 应用数据（草稿、已读状态、游戏路径、主题、音量等）
   logs,             // 日志文件
 }
 

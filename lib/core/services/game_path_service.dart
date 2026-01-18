@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/log_service.dart';
+import '../utils/storage_utils.dart';
 
 /// 游戏路径验证结果
 class PathValidationResult {
@@ -23,14 +23,12 @@ class GamePathService {
 
   /// 获取游戏路径
   Future<String?> getGamePath() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyGamePath);
+    return StorageUtils.getString(_keyGamePath);
   }
 
   /// 获取 Steam 路径
   Future<String?> getSteamPath() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keySteamPath);
+    return StorageUtils.getString(_keySteamPath);
   }
 
   /// 检查游戏路径是否已配置
@@ -55,8 +53,7 @@ class GamePathService {
       return false;
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyGamePath, path);
+    await StorageUtils.setString(_keyGamePath, path);
     LogService.i('[GamePathService] 游戏路径已设置: $path');
     return true;
   }
@@ -69,23 +66,20 @@ class GamePathService {
       return false;
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keySteamPath, path);
+    await StorageUtils.setString(_keySteamPath, path);
     LogService.i('[GamePathService] Steam路径已设置: $path');
     return true;
   }
 
   /// 清除游戏路径
   Future<void> clearGamePath() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_keyGamePath);
+    await StorageUtils.remove(_keyGamePath);
     LogService.i('[GamePathService] 游戏路径已清除');
   }
 
   /// 清除 Steam 路径
   Future<void> clearSteamPath() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_keySteamPath);
+    await StorageUtils.remove(_keySteamPath);
     LogService.i('[GamePathService] Steam路径已清除');
   }
 

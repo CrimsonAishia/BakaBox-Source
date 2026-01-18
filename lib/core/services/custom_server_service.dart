@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/server_models.dart';
 import '../utils/log_service.dart';
+import '../utils/storage_utils.dart';
 
 /// 自定义服务器管理服务
 /// 负责保存和加载用户自定义的分类和服务器
@@ -11,9 +11,8 @@ class CustomServerService {
   /// 保存自定义分类列表
   static Future<void> saveCustomCategories(List<ServerCategory> categories) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
       final jsonList = categories.map((c) => c.toJson()).toList();
-      await prefs.setString(_customCategoriesKey, jsonEncode(jsonList));
+      await StorageUtils.setString(_customCategoriesKey, jsonEncode(jsonList));
       LogService.d('保存自定义分类成功，共 ${categories.length} 个');
     } catch (e) {
       LogService.e('保存自定义分类失败: $e', e);
@@ -23,8 +22,7 @@ class CustomServerService {
   /// 加载自定义分类列表
   static Future<List<ServerCategory>> loadCustomCategories() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonString = prefs.getString(_customCategoriesKey);
+      final jsonString = StorageUtils.getString(_customCategoriesKey);
       if (jsonString == null || jsonString.isEmpty) {
         return [];
       }
@@ -137,8 +135,7 @@ class CustomServerService {
   
   /// 清除所有自定义数据
   static Future<void> clearAll() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_customCategoriesKey);
+    await StorageUtils.remove(_customCategoriesKey);
     LogService.i('清除所有自定义分类和服务器');
   }
 }

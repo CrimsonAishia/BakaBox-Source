@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/auth_service.dart';
 import '../../services/scheduler_service.dart';
 import '../../utils/log_service.dart';
+import '../../utils/storage_utils.dart';
 import 'daily_task_event.dart';
 import 'daily_task_state.dart';
 
@@ -68,8 +68,7 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
 
   /// 检查是否需要重新获取状态（跨天了）
   Future<bool> _needsRefresh() async {
-    final prefs = await SharedPreferences.getInstance();
-    final lastCheckDate = prefs.getString(_keyLastCheckDate);
+    final lastCheckDate = StorageUtils.getString(_keyLastCheckDate);
     final todayDate = _getBeijingDateString();
 
     if (lastCheckDate != todayDate) {
@@ -81,46 +80,41 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
 
   /// 保存检查日期
   Future<void> _saveCheckDate() async {
-    final prefs = await SharedPreferences.getInstance();
     final todayDate = _getBeijingDateString();
-    await prefs.setString(_keyLastCheckDate, todayDate);
+    await StorageUtils.setString(_keyLastCheckDate, todayDate);
     _lastCheckedDate = todayDate;
   }
 
   /// 保存签到奖励
   Future<void> _saveCheckInReward(int reward) async {
-    final prefs = await SharedPreferences.getInstance();
     final todayDate = _getBeijingDateString();
-    await prefs.setInt(_keyCheckInReward, reward);
-    await prefs.setString(_keyCheckInRewardDate, todayDate);
+    await StorageUtils.setInt(_keyCheckInReward, reward);
+    await StorageUtils.setString(_keyCheckInRewardDate, todayDate);
   }
 
   /// 获取今日签到奖励（如果是今天签到的）
   Future<int?> _getTodayCheckInReward() async {
-    final prefs = await SharedPreferences.getInstance();
-    final rewardDate = prefs.getString(_keyCheckInRewardDate);
+    final rewardDate = StorageUtils.getString(_keyCheckInRewardDate);
     final todayDate = _getBeijingDateString();
     if (rewardDate == todayDate) {
-      return prefs.getInt(_keyCheckInReward);
+      return StorageUtils.getInt(_keyCheckInReward);
     }
     return null;
   }
 
   /// 保存摇一摇奖励
   Future<void> _saveShakeReward(int reward) async {
-    final prefs = await SharedPreferences.getInstance();
     final todayDate = _getBeijingDateString();
-    await prefs.setInt(_keyShakeReward, reward);
-    await prefs.setString(_keyShakeRewardDate, todayDate);
+    await StorageUtils.setInt(_keyShakeReward, reward);
+    await StorageUtils.setString(_keyShakeRewardDate, todayDate);
   }
 
   /// 获取今日摇一摇奖励（如果是今天摇的）
   Future<int?> _getTodayShakeReward() async {
-    final prefs = await SharedPreferences.getInstance();
-    final rewardDate = prefs.getString(_keyShakeRewardDate);
+    final rewardDate = StorageUtils.getString(_keyShakeRewardDate);
     final todayDate = _getBeijingDateString();
     if (rewardDate == todayDate) {
-      return prefs.getInt(_keyShakeReward);
+      return StorageUtils.getInt(_keyShakeReward);
     }
     return null;
   }
