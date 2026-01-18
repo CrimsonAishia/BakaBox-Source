@@ -16,11 +16,14 @@ class AppInitializer {
   }
 
   /// 初始化桌面端基础服务
-  static Future<void> initDesktopBase() async {
+  /// [skipStorage] 是否跳过存储初始化（子窗口不需要访问存储）
+  static Future<void> initDesktopBase({bool skipStorage = false}) async {
     // 初始化应用目录服务（缓存和日志目录）
     await AppDirectoryService.init();
-    // 初始化 Hive 存储
-    await StorageUtils.init();
+    // 初始化 Hive 存储（子窗口跳过，避免文件锁冲突）
+    if (!skipStorage) {
+      await StorageUtils.init();
+    }
     // 初始化 windowManager
     await windowManager.ensureInitialized();
   }
