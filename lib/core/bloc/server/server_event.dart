@@ -129,3 +129,11 @@ class ServerRefreshMapCache extends ServerEvent {
   @override
   List<Object?> get props => [address, mapName];
 }
+
+/// 切换分类 tab（0=默认分类，1=自定义分类）
+class ServerSwitchTab extends ServerEvent {
+  final int tabIndex;
+  const ServerSwitchTab(this.tabIndex);
+  @override
+  List<Object?> get props => [tabIndex];
+}

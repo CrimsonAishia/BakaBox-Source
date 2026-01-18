@@ -211,7 +211,19 @@ class _ServersDesktopState extends State<ServersDesktop> {
     if (state.selectedCategory == null && 
         state.serverCategories.isNotEmpty && 
         !state.isLoading) {
-      context.read<ServerBloc>().add(ServerSelectCategory(state.serverCategories.first));
+      // 优先选择默认分类（API 分类）的第一个
+      final defaultCategories = state.serverCategories.where((c) => !c.isCustom).toList();
+      if (defaultCategories.isNotEmpty) {
+        context.read<ServerBloc>().add(ServerSelectCategory(defaultCategories.first));
+      } else {
+        // 如果没有默认分类，选择自定义分类的第一个
+        final customCategories = state.serverCategories.where((c) => c.isCustom).toList();
+        if (customCategories.isNotEmpty) {
+          // 切换到自定义 tab
+          context.read<ServerBloc>().add(const ServerSwitchTab(1));
+          context.read<ServerBloc>().add(ServerSelectCategory(customCategories.first));
+        }
+      }
     }
   }
 
@@ -538,27 +550,16 @@ class _ServersDesktopState extends State<ServersDesktop> {
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
-      child: Container(
-        width: 300,
+      child: Padding(
         padding: const EdgeInsets.all(30),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 48, color: isDark ? Colors.white24 : const Color(0xFFCCCCCC)),
+            Icon(
+              icon,
+              size: 48,
+              color: isDark ? Colors.white24 : const Color(0xFFCCCCCC),
+            ),
             const SizedBox(height: 16),
             Text(
               title,
@@ -648,8 +649,8 @@ class _ServersDesktopState extends State<ServersDesktop> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 列标题和添加按钮
-          _buildCategoryHeader(),
+          // Tab 标签栏
+          _buildTabBar(),
           // 分类列表
           Expanded(child: _buildCategoriesList()),
         ],
@@ -657,7 +658,145 @@ class _ServersDesktopState extends State<ServersDesktop> {
     );
   }
 
-  /// 分类列表头部（包含添加按钮）
+  /// 构建 Tab 标签栏
+  Widget _buildTabBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return BlocBuilder<ServerBloc, ServerState>(
+      builder: (context, state) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(15, 15, 15, 10),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+                width: 1,
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              // Tab 标签组
+              Expanded(
+                child: Row(
+                  children: [
+                    _buildTabButton(
+                      label: '默认',
+                      count: state.serverCategories.where((c) => !c.isCustom).length,
+                      isSelected: state.selectedTabIndex == 0,
+                      onTap: () => context.read<ServerBloc>().add(const ServerSwitchTab(0)),
+                      isDark: isDark,
+                    ),
+                    const SizedBox(width: 12),
+                    _buildTabButton(
+                      label: '自定义',
+                      count: state.serverCategories.where((c) => c.isCustom).length,
+                      isSelected: state.selectedTabIndex == 1,
+                      onTap: () => context.read<ServerBloc>().add(const ServerSwitchTab(1)),
+                      isDark: isDark,
+                    ),
+                  ],
+                ),
+              ),
+              // 添加分类按钮（只在自定义 tab 显示）
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: state.selectedTabIndex == 1
+                    ? Tooltip(
+                        message: '添加自定义分类',
+                        child: InkWell(
+                          onTap: _showAddCategoryDialog,
+                          borderRadius: BorderRadius.circular(6),
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.add_rounded,
+                              size: 18,
+                              color: Color(0xFF0080FF),
+                            ),
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 构建单个 Tab 按钮
+  Widget _buildTabButton({
+    required String label,
+    required int count,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required bool isDark,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: isSelected
+                  ? const Color(0xFF0080FF)
+                  : Colors.transparent,
+              width: 2,
+            ),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected
+                    ? (isDark ? Colors.white : const Color(0xFF111827))
+                    : (isDark ? Colors.white54 : const Color(0xFF6B7280)),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? const Color(0xFF0080FF).withValues(alpha: 0.15)
+                    : (isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6)),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '$count',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isSelected
+                      ? const Color(0xFF0080FF)
+                      : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 分类列表头部（包含添加按钮）- 已废弃，功能移至 Tab 栏
+  @Deprecated('Use _buildTabBar instead')
   Widget _buildCategoryHeader() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
@@ -731,13 +870,44 @@ class _ServersDesktopState extends State<ServersDesktop> {
           );
         }
 
-        if (state.serverCategories.isEmpty) {
+        // 根据当前 tab 过滤分类列表
+        final filteredCategories = state.filteredCategories;
+
+        if (filteredCategories.isEmpty) {
+          // 空状态提示
+          final isCustomTab = state.selectedTabIndex == 1;
           return Center(
-            child: Text(
-              '暂无分类数据',
-              style: TextStyle(
-                color: isDark ? Colors.white54 : const Color(0xFF6B7280),
-                fontSize: 16,
+            child: Padding(
+              padding: const EdgeInsets.all(30),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isCustomTab ? Icons.add_circle_outline : Icons.dns_outlined,
+                    size: 48,
+                    color: isDark ? Colors.white24 : const Color(0xFFCCCCCC),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    isCustomTab ? '暂无自定义分类' : '暂无默认分类',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : const Color(0xFF374151),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    isCustomTab
+                        ? '点击上方 + 按钮添加自定义分类'
+                        : '系统默认分类将在此显示',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
           );
@@ -755,10 +925,10 @@ class _ServersDesktopState extends State<ServersDesktop> {
               thumbVisibility: true,
               child: ListView.builder(
                 controller: _categoriesScrollController,
-                padding: const EdgeInsets.all(5),
-                itemCount: state.serverCategories.length,
+                padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                itemCount: filteredCategories.length,
                 itemBuilder: (context, index) {
-                  final category = state.serverCategories[index];
+                  final category = filteredCategories[index];
                   final categoryName = category.modelName ?? '';
                   final isSelected =
                       state.selectedCategory?.modelName == categoryName;

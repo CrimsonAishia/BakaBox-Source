@@ -53,6 +53,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     on<ServerDeleteServer>(_onDeleteServer);
     on<ServerResetCountdown>(_onResetCountdown);
     on<ServerRefreshMapCache>(_onRefreshMapCache);
+    on<ServerSwitchTab>(_onSwitchTab);
   }
 
   /// 重置倒计时（递增 countdownResetKey 触发 UI 重置）
@@ -895,6 +896,33 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       history.removeWhere((time) => now.difference(time) > _refreshWindow);
       return history.isEmpty;
     });
+  }
+  
+  /// 切换分类 tab
+  void _onSwitchTab(ServerSwitchTab event, Emitter<ServerState> emit) {
+    emit(state.copyWith(selectedTabIndex: event.tabIndex));
+    
+    // 检查当前选中的分类是否在新 tab 中
+    final currentCategory = state.selectedCategory;
+    if (currentCategory != null) {
+      final isInNewTab = event.tabIndex == 0 
+          ? !currentCategory.isCustom  // 默认 tab：检查是否为 API 分类
+          : currentCategory.isCustom;  // 自定义 tab：检查是否为自定义分类
+      
+      // 如果当前分类不在新 tab 中，自动选择新 tab 的第一个分类
+      if (!isInNewTab) {
+        final newTabCategories = event.tabIndex == 0
+            ? state.serverCategories.where((c) => !c.isCustom).toList()
+            : state.serverCategories.where((c) => c.isCustom).toList();
+        
+        if (newTabCategories.isNotEmpty) {
+          add(ServerSelectCategory(newTabCategories.first));
+        } else {
+          // 新 tab 没有分类，清除选中状态
+          add(ServerClearCategory());
+        }
+      }
+    }
   }
   
   @override

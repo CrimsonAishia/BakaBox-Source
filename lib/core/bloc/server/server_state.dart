@@ -17,6 +17,7 @@ class ServerState extends Equatable {
   final int countdownResetKey; // 倒计时重置信号，每次需要重置时递增
   final bool isCountdownActive; // 倒计时是否激活
   final Set<String> refreshingMaps; // 正在刷新缓存的服务器地址集合
+  final int selectedTabIndex; // 当前选中的 tab 索引（0=默认分类，1=自定义分类）
 
   const ServerState({
     this.serverCategories = const [],
@@ -34,6 +35,7 @@ class ServerState extends Equatable {
     this.countdownResetKey = 0,
     this.isCountdownActive = false,
     this.refreshingMaps = const {},
+    this.selectedTabIndex = 0,
   });
 
   ServerState copyWith({
@@ -53,6 +55,7 @@ class ServerState extends Equatable {
     int? countdownResetKey,
     bool? isCountdownActive,
     Set<String>? refreshingMaps,
+    int? selectedTabIndex,
   }) {
     return ServerState(
       serverCategories: serverCategories ?? this.serverCategories,
@@ -70,6 +73,7 @@ class ServerState extends Equatable {
       countdownResetKey: countdownResetKey ?? this.countdownResetKey,
       isCountdownActive: isCountdownActive ?? this.isCountdownActive,
       refreshingMaps: refreshingMaps ?? this.refreshingMaps,
+      selectedTabIndex: selectedTabIndex ?? this.selectedTabIndex,
     );
   }
 
@@ -77,12 +81,23 @@ class ServerState extends Equatable {
   int getCategoryOnlineCount(String categoryName) => categoryOnlineCounts[categoryName] ?? 0;
   bool hasCategoryOnlineCount(String categoryName) => categoryOnlineCounts.containsKey(categoryName);
   bool isMapRefreshing(String address) => refreshingMaps.contains(address);
+  
+  /// 获取当前 tab 下的分类列表
+  List<ServerCategory> get filteredCategories {
+    if (selectedTabIndex == 0) {
+      // 默认分类 tab：显示所有 API 分类
+      return serverCategories.where((c) => !c.isCustom).toList();
+    } else {
+      // 自定义分类 tab：显示所有自定义分类
+      return serverCategories.where((c) => c.isCustom).toList();
+    }
+  }
 
   @override
   List<Object?> get props => [
     serverCategories, isLoading, error, successMessage, selectedCategory, servers,
     isLoadingServers, isPaused, categoryOnlineCounts, loadingCategories,
     isLoadingOnlineCounts, hasEverLoadedOnlineCounts, countdownResetKey,
-    isCountdownActive, refreshingMaps,
+    isCountdownActive, refreshingMaps, selectedTabIndex,
   ];
 }
