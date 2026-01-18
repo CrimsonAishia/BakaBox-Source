@@ -6,6 +6,7 @@ import 'package:window_manager/window_manager.dart';
 
 import '../core/core.dart';
 import '../core/services/game_status_service.dart';
+import '../core/services/gsi_service.dart';
 import 'router/desktop_router.dart';
 import '../core/services/console_log_service.dart';
 import '../core/services/map_change_monitor_service.dart';
@@ -140,6 +141,11 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
     try {
       // 首帧渲染完成，上报启动统计
       AnalyticsService.instance.reportStartupIfNeeded();
+      
+      // 启动 GSI 服务（独立服务，不依赖其他服务）
+      final gsiService = GsiService();
+      await gsiService.initialize();
+      await gsiService.start();
       
       // 启动游戏状态监控（桌面端专属，需要先完成初始检测）
       await GameStatusService().startMonitoring();
