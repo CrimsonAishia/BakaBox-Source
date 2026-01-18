@@ -178,8 +178,8 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       backgroundColor: bgColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
-        width: 520,
-        height: 600,
+        width: 600,
+        height: 680,
         padding: const EdgeInsets.all(0),
         child: Column(
           children: [
@@ -506,95 +506,212 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   Widget _buildContributionItem(MapContribution contribution, int index, bool isDark) {
     final isNameType = contribution.type == ContributionType.name;
     final isFirst = index == 0;
-    final secondaryTextColor = isDark ? Colors.white54 : const Color(0xFF6B7280);
-    // 只有自己的、被拒绝的贡献才能编辑
+    final showAuditStatusBar = !contribution.isApproved;
     final canEdit = contribution.isOwner && contribution.isRejected;
-    // 是否需要显示审核相关信息
-    final showAuditInfo = !contribution.isApproved;
+    
+    // 确定边框颜色
+    final Color borderColor;
+    if (showAuditStatusBar) {
+      // 有审核状态：使用状态颜色
+      borderColor = contribution.isPending 
+          ? const Color(0xFFF59E0B).withValues(alpha: 0.4)
+          : const Color(0xFFEF4444).withValues(alpha: 0.4);
+    } else if (isFirst) {
+      // 第一名：蓝色高亮
+      borderColor = const Color(0xFF0080FF).withValues(alpha: 0.5);
+    } else {
+      // 普通状态：灰色边框
+      borderColor = isDark 
+          ? Colors.white.withValues(alpha: 0.1) 
+          : Colors.black.withValues(alpha: 0.08);
+    }
+    
+    // 根据审核状态确定文字颜色（审核状态下使用白色以提高对比度）
+    final Color textColor;
+    final Color secondaryTextColor;
+    if (showAuditStatusBar) {
+      // 审核状态：使用白色/深色以提高对比度
+      textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+      secondaryTextColor = isDark ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF374151);
+    } else {
+      // 正常状态：使用原有颜色
+      textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+      secondaryTextColor = isDark ? Colors.white54 : const Color(0xFF6B7280);
+    }
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOutCubic,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      padding: const EdgeInsets.all(12),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // 审核状态条（顶部）
+        if (showAuditStatusBar)
+          _buildAuditStatusBar(contribution, isDark, canEdit),
+        // 贡献项主体
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOutCubic,
+          margin: EdgeInsets.fromLTRB(
+            16,
+            showAuditStatusBar ? 0 : 4, // 有状态条时顶部不留间距
+            16,
+            4,
+          ),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isFirst
+                ? const Color(0xFF0080FF).withValues(alpha: 0.1)
+                : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02)),
+            borderRadius: BorderRadius.only(
+              topLeft: showAuditStatusBar ? Radius.zero : const Radius.circular(10),
+              topRight: showAuditStatusBar ? Radius.zero : const Radius.circular(10),
+              bottomLeft: const Radius.circular(10),
+              bottomRight: const Radius.circular(10),
+            ),
+            // 统一边框：有状态条时只加左右下边框，否则加完整边框
+            border: showAuditStatusBar
+                ? Border(
+                    left: BorderSide(color: borderColor, width: 1),
+                    right: BorderSide(color: borderColor, width: 1),
+                    bottom: BorderSide(color: borderColor, width: 1),
+                  )
+                : Border.all(
+                    color: borderColor,
+                    width: isFirst ? 1.5 : 1,
+                  ),
+            boxShadow: isFirst
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // 排名标识
+              _buildRankBadge(index, isDark),
+              const SizedBox(width: 12),
+              // 主要内容：贡献内容
+              Expanded(
+                child: isNameType
+                    ? Tooltip(
+                        message: contribution.content,
+                        waitDuration: const Duration(milliseconds: 500),
+                        child: Text(
+                          contribution.content,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: isFirst ? FontWeight.w600 : FontWeight.w500,
+                            color: textColor,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      )
+                    : Align(
+                        alignment: Alignment.centerLeft,
+                        child: _buildImagePreview(
+                            contribution.backgroundImageRef ?? contribution.content, isDark),
+                      ),
+              ),
+              const SizedBox(width: 12),
+              // 右侧信息区域：贡献者信息
+              _buildContributorInfo(contribution, secondaryTextColor),
+              const SizedBox(width: 12),
+              // 投票按钮
+              _buildVoteButton(contribution, isDark),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 构建审核状态条（顶部）
+  Widget _buildAuditStatusBar(MapContribution contribution, bool isDark, bool canEdit) {
+    final isPending = contribution.isPending;
+    final statusColor = isPending ? const Color(0xFFF59E0B) : const Color(0xFFEF4444);
+    final statusIcon = isPending ? MdiIcons.clockOutline : MdiIcons.alertCircleOutline;
+    final statusText = isPending ? '审核中' : '审核失败';
+    final statusMessage = isPending
+        ? '等待管理员审核'
+        : (contribution.auditRemark.isNotEmpty ? contribution.auditRemark : '未通过审核');
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: isFirst
-            ? const Color(0xFF0080FF).withValues(alpha: 0.1)
-            : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02)),
-        borderRadius: BorderRadius.circular(10),
-        border: isFirst
-            ? Border.all(color: const Color(0xFF0080FF).withValues(alpha: 0.5), width: 1.5)
-            : null,
-        boxShadow: isFirst
-            ? [
-                BoxShadow(
-                  color: const Color(0xFF0080FF).withValues(alpha: 0.15),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : null,
+        color: statusColor.withValues(alpha: 0.15),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(10),
+          topRight: Radius.circular(10),
+        ),
+        border: Border.all(
+          color: statusColor.withValues(alpha: 0.4),
+          width: 1,
+        ),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 排名标识
-          _buildRankBadge(index, isDark),
-          const SizedBox(width: 12),
-          // 主要内容：贡献内容
-          Expanded(
-            child: isNameType
-                ? Tooltip(
-                    message: contribution.content,
-                    waitDuration: const Duration(milliseconds: 500),
-                    child: Text(
-                      contribution.content,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: isFirst ? FontWeight.w600 : FontWeight.w500,
-                        color: isDark ? Colors.white : const Color(0xFF1F2937),
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  )
-                : Align(
-                    alignment: Alignment.centerLeft,
-                    child: _buildImagePreview(
-                        contribution.backgroundImageRef ?? contribution.content, isDark),
-                  ),
+          Icon(
+            statusIcon,
+            size: 16,
+            color: statusColor,
           ),
-          const SizedBox(width: 12),
-          // 右侧信息区域
-          // 有审核信息时：两行布局（审核状态+编辑 / 贡献者信息）
-          // 无审核信息时：单行布局（仅贡献者信息）
-          if (showAuditInfo)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 第一行：审核状态和编辑按钮
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildAuditStatusBadge(contribution, isDark),
-                    if (canEdit) ...[
-                      const SizedBox(width: 6),
-                      _buildEditButton(contribution, isDark),
-                    ],
-                  ],
+          const SizedBox(width: 8),
+          Text(
+            statusText,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: statusColor,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '- $statusMessage',
+            style: TextStyle(
+              fontSize: 13,
+              color: isDark ? Colors.white70 : const Color(0xFF374151),
+            ),
+          ),
+          const Spacer(),
+          if (canEdit)
+            Tooltip(
+              message: '修改后重新提交审核',
+              child: Material(
+                color: statusColor.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(6),
+                child: InkWell(
+                  onTap: () => _showEditDialog(contribution),
+                  borderRadius: BorderRadius.circular(6),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          MdiIcons.pencilOutline,
+                          size: 14,
+                          color: statusColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '修改',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: statusColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 4),
-                // 第二行：贡献者信息（水平居中）
-                _buildContributorInfo(contribution, secondaryTextColor),
-              ],
-            )
-          else
-            // 无审核信息时：单行贡献者信息
-            _buildContributorInfo(contribution, secondaryTextColor),
-          const SizedBox(width: 12),
-          // 投票按钮
-          _buildVoteButton(contribution, isDark),
+              ),
+            ),
         ],
       ),
     );
@@ -653,58 +770,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     );
   }
 
-  /// 构建审核状态标识
-  Widget _buildAuditStatusBadge(MapContribution contribution, bool isDark) {
-    final isPending = contribution.isPending;
-    final color = isPending ? const Color(0xFFF59E0B) : const Color(0xFFEF4444);
-    final text = isPending ? '待审核' : '已拒绝';
-    
-    return Tooltip(
-      message: contribution.isRejected && contribution.auditRemark.isNotEmpty
-          ? '拒绝原因: ${contribution.auditRemark}'
-          : text,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: color.withValues(alpha: 0.4)),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w500,
-            color: color,
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 构建编辑按钮
-  Widget _buildEditButton(MapContribution contribution, bool isDark) {
-    return Tooltip(
-      message: '修改后重新提交审核',
-      child: Material(
-        color: const Color(0xFF0080FF).withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
-        child: InkWell(
-          onTap: () => _showEditDialog(contribution),
-          borderRadius: BorderRadius.circular(6),
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            child: Icon(
-              MdiIcons.pencilOutline,
-              size: 16,
-              color: const Color(0xFF0080FF),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   /// 显示编辑对话框
   void _showEditDialog(MapContribution contribution) {
     final isNameType = contribution.type == ContributionType.name;
@@ -723,112 +788,131 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => Dialog(
         backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-        title: Text(
-          '修改名称贡献',
-          style: TextStyle(
-            color: isDark ? Colors.white : const Color(0xFF1F2937),
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (contribution.auditRemark.isNotEmpty) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEF4444).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: const Color(0xFFEF4444).withValues(alpha: 0.3),
-                  ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Container(
+          width: 500,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 标题
+              Text(
+                '修改名称贡献',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF1F2937),
                 ),
-                child: Row(
-                  children: [
-                    Icon(
-                      MdiIcons.alertCircleOutline,
-                      size: 16,
-                      color: const Color(0xFFEF4444),
+              ),
+              const SizedBox(height: 20),
+              // 拒绝原因提示
+              if (contribution.auditRemark.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.3),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '拒绝原因: ${contribution.auditRemark}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isDark ? Colors.white70 : const Color(0xFF374151),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        MdiIcons.alertCircleOutline,
+                        size: 16,
+                        color: const Color(0xFFEF4444),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '拒绝原因: ${contribution.auditRemark}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.white70 : const Color(0xFF374151),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-            TextField(
-              controller: controller,
-              maxLength: 50,
-              style: TextStyle(
-                color: isDark ? Colors.white : const Color(0xFF1F2937),
-              ),
-              decoration: InputDecoration(
-                labelText: '地图中文名称',
-                labelStyle: TextStyle(
-                  color: isDark ? Colors.white54 : const Color(0xFF6B7280),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                    color: isDark ? Colors.white24 : Colors.black12,
+                    ],
                   ),
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFF0080FF)),
+                const SizedBox(height: 16),
+              ],
+              // 输入框
+              TextField(
+                controller: controller,
+                maxLength: 50,
+                autofocus: true,
+                style: TextStyle(
+                  color: isDark ? Colors.white : const Color(0xFF1F2937),
+                ),
+                decoration: InputDecoration(
+                  labelText: '地图中文名称',
+                  labelStyle: TextStyle(
+                    color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: isDark ? Colors.white24 : Colors.black12,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF0080FF)),
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(
-              '取消',
-              style: TextStyle(
-                color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+              const SizedBox(height: 24),
+              // 按钮
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: Text(
+                      '取消',
+                      style: TextStyle(
+                        color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      final newName = controller.text.trim();
+                      if (newName.isEmpty) {
+                        ToastUtils.showError(context, '名称不能为空');
+                        return;
+                      }
+                      if (newName == contribution.content) {
+                        ToastUtils.showError(context, '名称未修改');
+                        return;
+                      }
+                      Navigator.of(dialogContext).pop();
+                      context.read<MapContributionBloc>().add(UpdateNameContribution(
+                        id: contribution.id,
+                        name: newName,
+                      ));
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0080FF),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                    child: const Text('提交'),
+                  ),
+                ],
               ),
-            ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              final newName = controller.text.trim();
-              if (newName.isEmpty) {
-                ToastUtils.showError(context, '名称不能为空');
-                return;
-              }
-              if (newName == contribution.content) {
-                ToastUtils.showError(context, '名称未修改');
-                return;
-              }
-              Navigator.of(dialogContext).pop();
-              context.read<MapContributionBloc>().add(UpdateNameContribution(
-                id: contribution.id,
-                name: newName,
-              ));
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0080FF),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('提交'),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1208,59 +1292,19 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   /// 构建投票按钮组（赞成/反对）
   /// Requirements: 3.1, 4.2, 5.2
   /// 系统数据（isSystem=true）不可投票
+  /// 未审核通过的贡献不可投票
   Widget _buildVoteButton(MapContribution contribution, bool isDark) {
     final upCount = contribution.upCount;
     final downCount = contribution.downCount;
     final voteType = contribution.voteType;
     final isOwner = contribution.isOwner;
     final isSystem = contribution.isSystem;
+    final isApproved = contribution.isApproved;
     final secondaryColor = isDark ? Colors.white70 : const Color(0xFF6B7280);
     final bgColor = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05);
 
-    // 系统数据只显示票数，不显示投票按钮
-    if (isSystem) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              MdiIcons.thumbUp,
-              size: 14,
-              color: secondaryColor.withValues(alpha: 0.6),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '$upCount',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: secondaryColor,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(
-              MdiIcons.thumbDown,
-              size: 14,
-              color: secondaryColor.withValues(alpha: 0.6),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '$downCount',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: secondaryColor,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+    // 系统数据或未审核通过的贡献：显示禁用状态的投票按钮
+    final isDisabled = isSystem || !isApproved;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -1270,23 +1314,24 @@ class _MapContributionDialogState extends State<MapContributionDialog>
           icon: voteType == VoteType.up ? MdiIcons.thumbUp : MdiIcons.thumbUpOutline,
           isActive: voteType == VoteType.up,
           count: upCount,
-          onTap: () => _handleVote(contribution, VoteType.up),
+          onTap: isDisabled ? null : () => _handleVote(contribution, VoteType.up),
           isDark: isDark,
           bgColor: bgColor,
           secondaryColor: secondaryColor,
+          disabled: isDisabled,
         ),
         const SizedBox(width: 8),
-        // 反对按钮（自己的贡献不能踩）
+        // 反对按钮（自己的贡献或禁用状态不能踩）
         _buildSingleVoteButton(
           icon: voteType == VoteType.down ? MdiIcons.thumbDown : MdiIcons.thumbDownOutline,
           isActive: voteType == VoteType.down,
           count: downCount,
-          onTap: isOwner ? null : () => _handleVote(contribution, VoteType.down),
+          onTap: (isOwner || isDisabled) ? null : () => _handleVote(contribution, VoteType.down),
           isDark: isDark,
           bgColor: bgColor,
           secondaryColor: secondaryColor,
           isDownVote: true,
-          disabled: isOwner,
+          disabled: isOwner || isDisabled,
         ),
       ],
     );
@@ -1306,6 +1351,19 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   }) {
     final activeColor = isDownVote ? const Color(0xFFEF4444) : const Color(0xFF0080FF);
     
+    // 确定图标和文字颜色
+    final Color contentColor;
+    if (isActive) {
+      // 激活状态：始终使用白色（无论是否禁用）
+      contentColor = Colors.white;
+    } else if (disabled) {
+      // 未激活且禁用：使用半透明灰色
+      contentColor = secondaryColor.withValues(alpha: 0.3);
+    } else {
+      // 未激活且可用：使用正常灰色
+      contentColor = secondaryColor;
+    }
+    
     return Material(
       color: isActive ? activeColor : bgColor,
       borderRadius: BorderRadius.circular(6),
@@ -1320,9 +1378,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
               Icon(
                 icon,
                 size: 16,
-                color: disabled
-                    ? secondaryColor.withValues(alpha: 0.3)
-                    : (isActive ? Colors.white : secondaryColor),
+                color: contentColor,
               ),
               const SizedBox(width: 4),
               Text(
@@ -1330,9 +1386,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: disabled
-                      ? secondaryColor.withValues(alpha: 0.3)
-                      : (isActive ? Colors.white : secondaryColor),
+                  color: contentColor,
                 ),
               ),
             ],
