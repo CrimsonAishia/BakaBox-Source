@@ -331,6 +331,7 @@ class _ConfigDetailView extends StatelessWidget {
         final allBound = !cfg.needsKeybind || placeholders.isEmpty ||
             KeyPlaceholderParser.validate(cfg.config, state.keyBindings);
         final applied = state.isConfigApplied(cfg.configId);
+        final showAuditStatusBar = !cfg.isApproved;
 
         return Column(
           children: [
@@ -343,6 +344,10 @@ class _ConfigDetailView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // 审核状态横幅（内容区顶部）
+                    if (showAuditStatusBar)
+                      _AuditStatusBanner(config: cfg, onEditConfig: onEditConfig),
+                    if (showAuditStatusBar) const SizedBox(height: 20),
                     if (cfg.needsKeybind && placeholders.isNotEmpty)
                       _KeyBindSection(placeholders: placeholders, bindings: state.keyBindings),
                     if (cfg.needsKeybind && placeholders.isNotEmpty) const SizedBox(height: 20),
@@ -384,11 +389,15 @@ class _DetailHeader extends StatelessWidget {
     final isOwner = backendUserInfo != null && backendUserInfo.id == config.userID;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
+    // 按钮显示逻辑
+    final canEdit = isOwner && config.isRejected; // 只有审核失败时可以编辑
+    final canDelete = isOwner && !config.isPending; // 审核中不能删除，审核失败和审核通过都可以删除
+    
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [const Color(0xFF0080FF).withValues(alpha: 0.08), isDark ? const Color(0xFF1E293B) : Colors.white],
+          colors: [const Color(0xFF0080FF).withValues(alpha: 0.06), isDark ? const Color(0xFF1E293B) : Colors.white],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -399,23 +408,23 @@ class _DetailHeader extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: const Color(0xFF0080FF).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   config.needsKeybind ? MdiIcons.keyboardOutline : MdiIcons.codeJson,
                   color: const Color(0xFF0080FF),
-                  size: 22,
+                  size: 18,
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(config.name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: isDark ? Colors.white : const Color(0xFF1a1a2e))),
+                    Text(config.name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: isDark ? Colors.white : const Color(0xFF1a1a2e))),
                     const SizedBox(height: 4),
                     Row(
                       children: [
@@ -433,20 +442,6 @@ class _DetailHeader extends StatelessWidget {
                           const SizedBox(width: 6),
                           _Badge(label: '我的', color: const Color(0xFF8b5cf6), filled: true),
                         ],
-                        // 审核状态标签
-                        if (config.isPending) ...[
-                          const SizedBox(width: 6),
-                          _Badge(label: '待审核', color: const Color(0xFFF59E0B), filled: true),
-                        ],
-                        if (config.isRejected) ...[
-                          const SizedBox(width: 6),
-                          Tooltip(
-                            message: config.auditRemark.isNotEmpty
-                                ? '拒绝原因: ${config.auditRemark}'
-                                : '已拒绝',
-                            child: _Badge(label: '已拒绝', color: const Color(0xFFEF4444), filled: true),
-                          ),
-                        ],
                       ],
                     ),
                   ],
@@ -455,25 +450,26 @@ class _DetailHeader extends StatelessWidget {
               // 投票按钮
               _DetailVoteButtons(config: config, isOwner: config.isOwner),
               const SizedBox(width: 8),
-              // 编辑和删除按钮（仅对自己的配置显示）
-              if (isOwner) ...[
+              // 编辑和删除按钮（根据审核状态显示）
+              if (canEdit) ...[
                 _ConfigActionButton(
                   icon: MdiIcons.pencilOutline,
                   tooltip: '编辑配置',
                   onTap: () => onEditConfig?.call(config),
                 ),
                 const SizedBox(width: 4),
+              ],
+              if (canDelete)
                 _ConfigActionButton(
                   icon: MdiIcons.deleteOutline,
                   tooltip: '删除配置',
                   color: const Color(0xFFef4444),
                   onTap: () => _confirmDelete(context, config),
                 ),
-              ],
             ],
           ),
-          const SizedBox(height: 14),
-          Text(config.description, style: TextStyle(fontSize: 13, color: isDark ? Colors.white54 : Colors.grey[600], height: 1.5)),
+          const SizedBox(height: 8),
+          Text(config.description, style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : const Color(0xFF6b7280))),
         ],
       ),
     );
@@ -505,6 +501,74 @@ class _DetailHeader extends StatelessWidget {
             },
             style: FilledButton.styleFrom(backgroundColor: const Color(0xFFef4444)),
             child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 审核状态横幅（内容区顶部）
+class _AuditStatusBanner extends StatelessWidget {
+  final KeyConfig config;
+  final void Function(KeyConfig config)? onEditConfig;
+
+  const _AuditStatusBanner({
+    required this.config,
+    this.onEditConfig,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isPending = config.isPending;
+    final statusColor = isPending ? const Color(0xFFF59E0B) : const Color(0xFFEF4444);
+    final statusIcon = isPending ? MdiIcons.clockOutline : MdiIcons.alertCircleOutline;
+    final statusText = isPending ? '审核中' : '审核失败';
+    final statusMessage = isPending
+        ? '等待管理员审核'
+        : (config.auditRemark.isNotEmpty ? config.auditRemark : '未通过审核');
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: statusColor.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            statusIcon,
+            size: 20,
+            color: statusColor,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  statusText,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: statusColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  statusMessage,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? Colors.white70 : const Color(0xFF374151),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -603,31 +667,68 @@ class _DetailFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF334155) : Colors.grey[50],
         border: Border(top: BorderSide(color: isDark ? const Color(0xFF475569) : Colors.grey[200]!)),
       ),
       child: Row(
         children: [
+          // 状态提示（左侧）
           if (!allBound && !applied)
-            Row(
-              children: [
-                Icon(MdiIcons.alertCircleOutline, size: 16, color: const Color(0xFFf59e0b)),
-                const SizedBox(width: 6),
-                const Text('请完成按键绑定', style: TextStyle(fontSize: 12, color: Color(0xFFf59e0b))),
-              ],
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFf59e0b).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFFf59e0b).withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(MdiIcons.alertCircleOutline, size: 18, color: const Color(0xFFf59e0b)),
+                    const SizedBox(width: 10),
+                    const Flexible(
+                      child: Text(
+                        '请完成按键绑定后再应用配置',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFFf59e0b)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           if (applied)
-            Row(
-              children: [
-                Icon(MdiIcons.checkCircle, size: 16, color: const Color(0xFF10b981)),
-                const SizedBox(width: 6),
-                const Text('已应用到本地配置', style: TextStyle(fontSize: 12, color: Color(0xFF10b981))),
-              ],
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10b981).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFF10b981).withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(MdiIcons.checkCircle, size: 18, color: const Color(0xFF10b981)),
+                    const SizedBox(width: 10),
+                    const Flexible(
+                      child: Text(
+                        '已应用到本地配置文件',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF10b981)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          const Spacer(),
-          // 取消应用按钮（仅已应用时显示）
+          if (!allBound || applied) const SizedBox(width: 12),
+          // 操作按钮（右侧）
           if (applied) ...[
             OutlinedButton.icon(
               onPressed: saving
@@ -1025,6 +1126,41 @@ class _PublishViewState extends State<_PublishView> {
     );
   }
 
+  Widget _buildPublishHeader() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [const Color(0xFF0080FF).withValues(alpha: 0.06), isDark ? const Color(0xFF1E293B) : Colors.white],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(MdiIcons.rocketLaunchOutline, size: 18, color: const Color(0xFF0080FF)),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('发布新配置', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: isDark ? Colors.white : const Color(0xFF1a1a2e))),
+              const SizedBox(height: 4),
+              Text('分享给社区', style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : const Color(0xFF6b7280))),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLoginPrompt() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
@@ -1081,36 +1217,7 @@ class _PublishViewState extends State<_PublishView> {
         return Column(
           children: [
             // 头部
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [const Color(0xFF0080FF).withValues(alpha: 0.06), isDark ? const Color(0xFF1E293B) : Colors.white],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0080FF).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(MdiIcons.rocketLaunchOutline, size: 18, color: const Color(0xFF0080FF)),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('发布新配置', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: isDark ? Colors.white : const Color(0xFF1a1a2e))),
-                      Text('分享给社区', style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : const Color(0xFF6b7280))),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            _buildPublishHeader(),
             // 表单
             Expanded(
               child: SingleChildScrollView(
@@ -1362,7 +1469,7 @@ class _PublishViewState extends State<_PublishView> {
           if (hint != null)
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
                   color: hintColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -1373,10 +1480,10 @@ class _PublishViewState extends State<_PublishView> {
                   children: [
                     Icon(
                       isError ? MdiIcons.alertCircleOutline : MdiIcons.informationOutline,
-                      size: 16,
+                      size: 18,
                       color: hintColor,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Flexible(
                       child: Text(
                         hint,
@@ -1546,6 +1653,13 @@ class _EditViewState extends State<_EditView> {
   late TextEditingController _scriptCtrl;
   int? _categoryId;
   late bool _needsKey;
+  
+  // 原始值，用于检测变化
+  late String _originalName;
+  late String _originalDesc;
+  late String _originalScript;
+  late int _originalCategoryId;
+  late bool _originalNeedsKey;
 
   @override
   void initState() {
@@ -1555,6 +1669,18 @@ class _EditViewState extends State<_EditView> {
     _scriptCtrl = TextEditingController(text: widget.config.config);
     _categoryId = widget.config.categoryId;
     _needsKey = widget.config.needsKeybind;
+    
+    // 保存原始值
+    _originalName = widget.config.name;
+    _originalDesc = widget.config.description;
+    _originalScript = widget.config.config;
+    _originalCategoryId = widget.config.categoryId;
+    _originalNeedsKey = widget.config.needsKeybind;
+    
+    // 监听输入变化
+    _nameCtrl.addListener(() => setState(() {}));
+    _descCtrl.addListener(() => setState(() {}));
+    _scriptCtrl.addListener(() => setState(() {}));
   }
 
   @override
@@ -1563,6 +1689,15 @@ class _EditViewState extends State<_EditView> {
     _descCtrl.dispose();
     _scriptCtrl.dispose();
     super.dispose();
+  }
+  
+  /// 检查表单是否有变化
+  bool get _hasChanges {
+    return _nameCtrl.text.trim() != _originalName ||
+        _descCtrl.text.trim() != _originalDesc ||
+        _scriptCtrl.text != _originalScript ||
+        _categoryId != _originalCategoryId ||
+        _needsKey != _originalNeedsKey;
   }
 
   @override
@@ -1671,6 +1806,7 @@ class _EditViewState extends State<_EditView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('编辑配置', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: isDark ? Colors.white : const Color(0xFF1a1a2e))),
+                const SizedBox(height: 4),
                 Text('修改 "${widget.config.name}"', style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : const Color(0xFF6b7280))),
               ],
             ),
@@ -1877,70 +2013,92 @@ class _EditViewState extends State<_EditView> {
     final hasScript = _scriptCtrl.text.trim().isNotEmpty;
     final hasCategory = _categoryId != null;
     
+    // 检查是否有变化
+    final hasChanges = _hasChanges;
+    
     // 生成提示信息
     String? hint;
-    if (!hasName) {
+    Color? hintColor;
+    IconData? hintIcon;
+    
+    if (!hasChanges) {
+      hint = '没有修改内容';
+      hintColor = const Color(0xFF10b981);
+      hintIcon = MdiIcons.checkCircleOutline;
+    } else if (!hasName) {
       hint = '请输入配置名称';
+      hintColor = const Color(0xFFf59e0b);
+      hintIcon = MdiIcons.informationOutline;
     } else if (!hasDesc) {
       hint = '请输入配置描述';
+      hintColor = const Color(0xFFf59e0b);
+      hintIcon = MdiIcons.informationOutline;
     } else if (!hasCategory) {
       hint = '请选择分类';
+      hintColor = const Color(0xFFf59e0b);
+      hintIcon = MdiIcons.informationOutline;
     } else if (!hasScript) {
       hint = '请输入配置脚本';
+      hintColor = const Color(0xFFf59e0b);
+      hintIcon = MdiIcons.informationOutline;
     } else if (_needsKey && !KeyPlaceholderParser.hasPlaceholders(_scriptCtrl.text)) {
       hint = '按键绑定类型需要包含占位符';
+      hintColor = const Color(0xFFf59e0b);
+      hintIcon = MdiIcons.informationOutline;
     }
     
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(color: isDark ? const Color(0xFF334155) : Colors.grey[50], border: Border(top: BorderSide(color: isDark ? const Color(0xFF475569) : Colors.grey[200]!))),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Row(
         children: [
-          // 重新审核提示
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            margin: const EdgeInsets.only(bottom: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF59E0B).withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Row(
-              children: [
-                Icon(MdiIcons.informationOutline, size: 14, color: const Color(0xFFF59E0B)),
-                const SizedBox(width: 6),
-                Text(
-                  '修改后需要重新审核',
-                  style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309)),
+          // 状态提示（左侧）
+          if (hint != null && hintColor != null && hintIcon != null)
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: hintColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: hintColor.withValues(alpha: 0.3),
+                  ),
                 ),
-              ],
-            ),
-          ),
-          Row(
-            children: [
-              if (hint != null)
-                Row(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.info_outline, size: 14, color: isDark ? Colors.white38 : Colors.grey[500]),
-                    const SizedBox(width: 6),
-                    Text(hint, style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : Colors.grey[500])),
+                    Icon(hintIcon, size: 18, color: hintColor),
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Text(
+                        hint,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: hintColor,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              const Spacer(),
-              TextButton(
-                onPressed: () => widget.onComplete?.call(),
-                child: const Text('取消', style: TextStyle(fontSize: 12)),
               ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: (state.isSaving || hint != null) ? null : _submit,
-                icon: state.isSaving
-                    ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Icon(MdiIcons.contentSaveOutline, size: 14, color: Colors.white),
-                label: Text(state.isSaving ? '保存中' : '保存修改', style: const TextStyle(fontSize: 12)),
-                style: FilledButton.styleFrom(backgroundColor: const Color(0xFF8b5cf6), padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10)),
-              ),
-            ],
+            )
+          else
+            const Spacer(),
+          const SizedBox(width: 12),
+          // 操作按钮（右侧）
+          TextButton(
+            onPressed: () => widget.onComplete?.call(),
+            child: const Text('取消', style: TextStyle(fontSize: 12)),
+          ),
+          const SizedBox(width: 8),
+          FilledButton.icon(
+            onPressed: (state.isSaving || hint != null) ? null : _submit,
+            icon: state.isSaving
+                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : Icon(MdiIcons.contentSaveOutline, size: 14, color: Colors.white),
+            label: Text(state.isSaving ? '保存中' : '保存修改', style: const TextStyle(fontSize: 12)),
+            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF8b5cf6), padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10)),
           ),
         ],
       ),
@@ -2079,6 +2237,25 @@ class _ConfigCardState extends State<_ConfigCard> {
     final backendUserInfo = TokenService.instance.userInfo;
     final isOwner = backendUserInfo != null && backendUserInfo.id == widget.config.userID;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final showAuditStatusBar = !widget.config.isApproved;
+    
+    // 确定边框颜色
+    final Color borderColor;
+    if (showAuditStatusBar) {
+      // 有审核状态：使用状态颜色
+      borderColor = widget.config.isPending 
+          ? const Color(0xFFF59E0B).withValues(alpha: 0.4)
+          : const Color(0xFFEF4444).withValues(alpha: 0.4);
+    } else if (widget.selected) {
+      // 选中状态：蓝色
+      borderColor = const Color(0xFF0080FF);
+    } else if (_hovered) {
+      // 悬停状态：灰色
+      borderColor = isDark ? const Color(0xFF475569) : Colors.grey[300]!;
+    } else {
+      // 普通状态：浅灰色
+      borderColor = isDark ? const Color(0xFF334155) : Colors.grey[200]!;
+    }
     
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -2089,158 +2266,143 @@ class _ConfigCardState extends State<_ConfigCard> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: widget.selected
                 ? const Color(0xFF0080FF).withValues(alpha: 0.06)
                 : (_hovered ? (isDark ? const Color(0xFF334155) : Colors.grey[50]) : (isDark ? const Color(0xFF1E293B) : Colors.white)),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: widget.selected ? const Color(0xFF0080FF) : (_hovered ? (isDark ? const Color(0xFF475569) : Colors.grey[300]!) : (isDark ? const Color(0xFF334155) : Colors.grey[200]!)),
+              color: borderColor,
               width: widget.selected ? 1.5 : 1,
             ),
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  // 图标
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: widget.config.needsKeybind
-                          ? const Color(0xFFf59e0b).withValues(alpha: 0.1)
-                          : const Color(0xFF10b981).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      widget.config.needsKeybind ? MdiIcons.keyboardOutline : MdiIcons.autoFix,
-                      size: 18,
-                      color: widget.config.needsKeybind ? const Color(0xFFf59e0b) : const Color(0xFF10b981),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  // 内容
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              // 审核状态条（顶部）
+              if (showAuditStatusBar)
+                _buildAuditStatusBar(widget.config, isDark),
+              // 配置卡片主体
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                widget.config.name,
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF1a1a2e)),
+                        // 图标
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: widget.config.needsKeybind
+                                ? const Color(0xFFf59e0b).withValues(alpha: 0.1)
+                                : const Color(0xFF10b981).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            widget.config.needsKeybind ? MdiIcons.keyboardOutline : MdiIcons.autoFix,
+                            size: 18,
+                            color: widget.config.needsKeybind ? const Color(0xFFf59e0b) : const Color(0xFF10b981),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        // 内容
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      widget.config.name,
+                                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF1a1a2e)),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (isOwner)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      margin: const EdgeInsets.only(left: 4),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF8b5cf6).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text('我的', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Color(0xFF8b5cf6))),
+                                    ),
+                                  if (widget.applied)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      margin: const EdgeInsets.only(left: 4),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF10b981).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text('已应用', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Color(0xFF10b981))),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                widget.config.description,
+                                style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey[500]),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            if (isOwner)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                margin: const EdgeInsets.only(left: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF8b5cf6).withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text('我的', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Color(0xFF8b5cf6))),
-                              ),
-                            // 审核状态标签
-                            if (widget.config.isPending)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                margin: const EdgeInsets.only(left: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text('待审核', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Color(0xFFF59E0B))),
-                              ),
-                            if (widget.config.isRejected)
-                              Tooltip(
-                                message: widget.config.auditRemark.isNotEmpty
-                                    ? '拒绝原因: ${widget.config.auditRemark}'
-                                    : '已拒绝',
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  margin: const EdgeInsets.only(left: 4),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFEF4444).withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Text('已拒绝', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Color(0xFFEF4444))),
-                                ),
-                              ),
-                            if (widget.applied)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                margin: const EdgeInsets.only(left: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF10b981).withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text('已应用', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Color(0xFF10b981))),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          widget.config.description,
-                          style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey[500]),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-              // 底部：用户信息
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  // 用户头像
-                  if (widget.config.userAvatar != null && widget.config.userAvatar!.isNotEmpty)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.network(
-                        widget.config.userAvatar!,
-                        width: 20,
-                        height: 20,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildDefaultAvatar(),
-                      ),
-                    )
-                  else
-                    _buildDefaultAvatar(),
-                  const SizedBox(width: 6),
-                  // 用户名
-                  Expanded(
-                    child: Text(
-                      widget.config.userNickname ?? '未知用户',
-                      style: TextStyle(fontSize: 10, color: Colors.grey[500]),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    // 底部：用户信息
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        // 用户头像
+                        if (widget.config.userAvatar != null && widget.config.userAvatar!.isNotEmpty)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.network(
+                              widget.config.userAvatar!,
+                              width: 20,
+                              height: 20,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _buildDefaultAvatar(),
+                            ),
+                          )
+                        else
+                          _buildDefaultAvatar(),
+                        const SizedBox(width: 6),
+                        // 用户名
+                        Expanded(
+                          child: Text(
+                            widget.config.userNickname ?? '未知用户',
+                            style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        // 投票数
+                        _buildVoteCount(widget.config.upCount, widget.config.downCount),
+                        const SizedBox(width: 8),
+                        // 分类标签
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0080FF).withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            widget.config.category,
+                            style: const TextStyle(fontSize: 9, color: Color(0xFF0080FF)),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  // 投票数
-                  _buildVoteCount(widget.config.upCount, widget.config.downCount),
-                  const SizedBox(width: 8),
-                  // 分类标签
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0080FF).withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      widget.config.category,
-                      style: const TextStyle(fontSize: 9, color: Color(0xFF0080FF)),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -2269,6 +2431,58 @@ class _ConfigCardState extends State<_ConfigCard> {
           style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: Color(0xFFef4444)),
         ),
       ],
+    );
+  }
+
+  /// 构建审核状态条（顶部）
+  Widget _buildAuditStatusBar(KeyConfig config, bool isDark) {
+    final isPending = config.isPending;
+    final statusColor = isPending ? const Color(0xFFF59E0B) : const Color(0xFFEF4444);
+    final statusIcon = isPending ? MdiIcons.clockOutline : MdiIcons.alertCircleOutline;
+    final statusText = isPending ? '审核中' : '已拒绝';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.15),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(10),
+          topRight: Radius.circular(10),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            statusIcon,
+            size: 12,
+            color: statusColor,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            statusText,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: statusColor,
+            ),
+          ),
+          if (config.isRejected && config.auditRemark.isNotEmpty) ...[
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                '- ${config.auditRemark}',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: isDark ? Colors.white70 : const Color(0xFF374151),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
