@@ -638,13 +638,16 @@ class _NotificationCardState extends State<_NotificationCard> {
     final hasPlayers =
         isMapChange && currentPlayers != null && maxPlayers != null;
 
-    // 根据人数比例计算颜色
-    Color playerColor = const Color(0xFF3B82F6); // 默认亮蓝色
+    // 根据人数比例计算颜色（与服务器卡片保持一致）
+    Color primaryColor = const Color(0xFF0080FF); // 默认蓝色
+    Color bgColor = Colors.white; // 默认白色背景
     if (hasPlayers && maxPlayers > 0) {
       if (currentPlayers >= maxPlayers) {
-        playerColor = const Color(0xFFEF4444); // 满员：亮红色
+        primaryColor = const Color(0xFFF44336); // 满员：红色
+        bgColor = const Color(0xFFFEEAEA); // 浅红色背景
       } else if (currentPlayers >= maxPlayers * 0.8) {
-        playerColor = const Color(0xFFFB923C); // 80%以上：亮橙色
+        primaryColor = const Color(0xFFFF9800); // 80%以上：橙色
+        bgColor = const Color(0xFFFFF9E6); // 浅黄色背景
       }
     }
 
@@ -659,74 +662,48 @@ class _NotificationCardState extends State<_NotificationCard> {
         if (hasPlayers)
           Container(
             margin: const EdgeInsets.only(left: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             decoration: BoxDecoration(
-              // 增强背景遮罩，确保文字清晰可读
-              color: const Color(0xFF1E293B).withValues(alpha: 0.75),
+              color: bgColor.withValues(alpha: 0.75),
               borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
               children: [
-                Icon(
-                  Icons.person,
-                  size: 14,
-                  color: playerColor,
-                  shadows: const [
-                    Shadow(
-                      color: Colors.black,
-                      offset: Offset(0, 1),
-                      blurRadius: 2,
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 4),
-                // 当前人数（动态颜色）
+                // 当前人数（使用动态颜色，大字体）
                 Text(
                   '$currentPlayers',
                   style: TextStyle(
-                    color: playerColor,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    shadows: const [
-                      Shadow(
-                        color: Colors.black,
-                        offset: Offset(0, 1),
-                        blurRadius: 2,
-                      ),
-                    ],
+                    color: primaryColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    height: 1,
                   ),
                 ),
-                // 斜杠（浅灰色）
-                const Text(
-                  '/',
-                  style: TextStyle(
-                    color: Color(0xFFD1D5DB), // 更亮的灰色
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black,
-                        offset: Offset(0, 1),
-                        blurRadius: 2,
-                      ),
-                    ],
+                // 斜杠（灰色）
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 2),
+                  child: Text(
+                    '/',
+                    style: TextStyle(
+                      color: Color(0xFF9CA3AF),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w300,
+                      height: 1,
+                    ),
                   ),
                 ),
-                // 最大人数（浅灰色）
+                // 最大人数（灰色，小字体）
                 Text(
                   '$maxPlayers',
                   style: const TextStyle(
-                    color: Color(0xFFD1D5DB), // 更亮的灰色
-                    fontSize: 13,
+                    color: Color(0xFF6B7280),
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black,
-                        offset: Offset(0, 1),
-                        blurRadius: 2,
-                      ),
-                    ],
+                    height: 1,
                   ),
                 ),
               ],
