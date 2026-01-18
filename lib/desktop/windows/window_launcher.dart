@@ -30,8 +30,8 @@ class DesktopWindowLauncher {
       }
     }
 
-    // 初始化桌面端基础服务
-    await AppInitializer.initDesktopBase();
+    // 初始化桌面端基础服务（子窗口跳过存储初始化）
+    await AppInitializer.initDesktopBase(skipStorage: isSubWindow);
 
     // 获取当前窗口控制器
     final controller = await WindowController.fromCurrentEngine();
