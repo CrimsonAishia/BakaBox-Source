@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/update_log_api.dart';
 import '../utils/log_service.dart';
+import '../utils/storage_utils.dart';
 import '../utils/time_utils.dart';
 import 'notification_window_service.dart';
 import 'scheduler_service.dart';
@@ -67,8 +67,7 @@ class UpdateLogMonitorService {
   /// 检查更新日志
   Future<void> checkForUpdates() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final lastCheckTime = prefs.getString(_lastCheckTimeKey);
+      final lastCheckTime = StorageUtils.getString(_lastCheckTimeKey);
 
       // 获取最新的更新日志
       final response = await _updateLogApi.getUpdateLogs(
@@ -84,7 +83,7 @@ class UpdateLogMonitorService {
 
       // 如果是首次检查（没有记录），只记录时间不通知
       if (lastCheckTime == null || lastCheckTime.isEmpty) {
-        await prefs.setString(_lastCheckTimeKey, latestUpdateTime);
+        await StorageUtils.setString(_lastCheckTimeKey, latestUpdateTime);
         LogService.i('[UpdateLogMonitor] 首次检查，记录时间: $latestUpdateTime');
         return;
       }
@@ -106,7 +105,7 @@ class UpdateLogMonitorService {
         );
 
         // 更新记录的时间（保存原始时间用于比较）
-        await prefs.setString(_lastCheckTimeKey, latestUpdateTime);
+        await StorageUtils.setString(_lastCheckTimeKey, latestUpdateTime);
       }
     } catch (e) {
       LogService.e('[UpdateLogMonitor] 检查更新失败', e);

@@ -2,12 +2,12 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../api/update_api.dart';
 import '../models/update_models.dart';
 import '../utils/log_service.dart';
 import '../utils/platform_utils.dart';
+import '../utils/storage_utils.dart';
 
 /// 更新异常
 class UpdateException implements Exception {
@@ -173,8 +173,7 @@ class UpdateService {
 
   /// 是否应该检查更新（间隔限制）
   Future<bool> _shouldCheckForUpdate() async {
-    final prefs = await SharedPreferences.getInstance();
-    final lastCheckTime = prefs.getInt(_keyLastCheckTime) ?? 0;
+    final lastCheckTime = StorageUtils.getInt(_keyLastCheckTime) ?? 0;
     final now = DateTime.now().millisecondsSinceEpoch;
     final elapsedHours = (now - lastCheckTime) / (1000 * 60 * 60);
     return elapsedHours >= _minCheckIntervalHours;
@@ -182,8 +181,7 @@ class UpdateService {
 
   /// 更新最后检查时间
   Future<void> _updateLastCheckTime() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_keyLastCheckTime, DateTime.now().millisecondsSinceEpoch);
+    await StorageUtils.setInt(_keyLastCheckTime, DateTime.now().millisecondsSinceEpoch);
   }
 
   /// 从URL提取文件名

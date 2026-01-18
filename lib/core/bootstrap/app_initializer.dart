@@ -2,6 +2,7 @@ import 'package:window_manager/window_manager.dart';
 import '../services/analytics_service.dart';
 import '../utils/app_directory_service.dart';
 import '../utils/log_service.dart';
+import '../utils/storage_utils.dart';
 
 /// 应用初始化器
 /// 
@@ -18,6 +19,8 @@ class AppInitializer {
   static Future<void> initDesktopBase() async {
     // 初始化应用目录服务（缓存和日志目录）
     await AppDirectoryService.init();
+    // 初始化 Hive 存储
+    await StorageUtils.init();
     // 初始化 windowManager
     await windowManager.ensureInitialized();
   }

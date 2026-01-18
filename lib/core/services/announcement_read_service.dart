@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/log_service.dart';
+import '../utils/storage_utils.dart';
 
 /// 公告已读状态服务
 ///
-/// 负责管理公告的已读状态，使用 SharedPreferences 存储
+/// 负责管理公告的已读状态
 class AnnouncementReadService {
   static const String _storageKey = 'announcement_read_ids';
 
@@ -50,8 +50,7 @@ class AnnouncementReadService {
   /// - [Set<int>]: 已读公告ID集合
   Future<Set<int>> getReadIds() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonStr = prefs.getString(_storageKey);
+      final jsonStr = StorageUtils.getString(_storageKey);
 
       if (jsonStr == null || jsonStr.isEmpty) {
         return <int>{};
@@ -68,8 +67,7 @@ class AnnouncementReadService {
   /// 清除已读状态
   Future<void> clearReadStatus() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_storageKey);
+      await StorageUtils.remove(_storageKey);
       LogService.i('已清除公告已读状态');
     } catch (e) {
       LogService.e('清除公告已读状态失败', e);
@@ -78,8 +76,7 @@ class AnnouncementReadService {
 
   /// 保存已读ID到本地存储
   Future<void> _saveReadIds(Set<int> readIds) async {
-    final prefs = await SharedPreferences.getInstance();
     final jsonStr = json.encode(readIds.toList());
-    await prefs.setString(_storageKey, jsonStr);
+    await StorageUtils.setString(_storageKey, jsonStr);
   }
 }

@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/server_models.dart';
 import '../constants/api_constants.dart';
 import 'log_service.dart';
+import 'storage_utils.dart';
 
 class CacheService {
   static const String _serverListKey = 'cached_server_list';
@@ -12,10 +12,9 @@ class CacheService {
 
   static Future<void> cacheServerList(List<ServerCategory> serverList) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
       final jsonString = json.encode(serverList.map((e) => e.toJson()).toList());
-      await prefs.setString(_serverListKey, jsonString);
-      await prefs.setInt(_serverListTimestampKey, DateTime.now().millisecondsSinceEpoch);
+      await StorageUtils.setString(_serverListKey, jsonString);
+      await StorageUtils.setInt(_serverListTimestampKey, DateTime.now().millisecondsSinceEpoch);
       LogService.d('服务器列表已缓存，共 ${serverList.length} 个分类');
     } catch (e) {
       LogService.e('缓存服务器列表失败: $e', e);
@@ -24,9 +23,8 @@ class CacheService {
 
   static Future<List<ServerCategory>?> getCachedServerList() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonString = prefs.getString(_serverListKey);
-      final timestamp = prefs.getInt(_serverListTimestampKey);
+      final jsonString = StorageUtils.getString(_serverListKey);
+      final timestamp = StorageUtils.getInt(_serverListTimestampKey);
       
       if (jsonString == null || timestamp == null) {
         LogService.d('没有找到缓存的服务器列表');
@@ -56,9 +54,8 @@ class CacheService {
 
   static Future<void> clearServerListCache() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_serverListKey);
-      await prefs.remove(_serverListTimestampKey);
+      await StorageUtils.remove(_serverListKey);
+      await StorageUtils.remove(_serverListTimestampKey);
       LogService.i('服务器列表缓存已清除');
     } catch (e) {
       LogService.e('清除服务器列表缓存失败: $e', e);
@@ -67,8 +64,7 @@ class CacheService {
 
   static Future<bool> isServerListCacheValid() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final timestamp = prefs.getInt(_serverListTimestampKey);
+      final timestamp = StorageUtils.getInt(_serverListTimestampKey);
       if (timestamp == null) return false;
       
       final cacheTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
@@ -85,20 +81,19 @@ class CacheService {
   /// 缓存单个地图信息
   static Future<void> cacheMapInfo(String mapName, MapData mapData) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
       final normalizedName = mapName.toLowerCase().trim();
       
       // 获取现有缓存
-      final existingData = await _getMapInfoCacheData(prefs);
-      final existingTimestamps = await _getMapInfoTimestamps(prefs);
+      final existingData = await _getMapInfoCacheData();
+      final existingTimestamps = await _getMapInfoTimestamps();
       
       // 更新缓存
       existingData[normalizedName] = mapData.toJson();
       existingTimestamps[normalizedName] = DateTime.now().millisecondsSinceEpoch;
       
       // 保存
-      await prefs.setString(_mapInfoKey, json.encode(existingData));
-      await prefs.setString(_mapInfoTimestampKey, json.encode(existingTimestamps));
+      await StorageUtils.setString(_mapInfoKey, json.encode(existingData));
+      await StorageUtils.setString(_mapInfoTimestampKey, json.encode(existingTimestamps));
     } catch (e) {
       LogService.e('缓存地图信息失败 ($mapName): $e', e);
     }
@@ -112,11 +107,10 @@ class CacheService {
   /// - 返回 null 表示需要从 API 获取新数据
   static Future<MapData?> getCachedMapInfo(String mapName) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
       final normalizedName = mapName.toLowerCase().trim();
       
-      final data = await _getMapInfoCacheData(prefs);
-      final timestamps = await _getMapInfoTimestamps(prefs);
+      final data = await _getMapInfoCacheData();
+      final timestamps = await _getMapInfoTimestamps();
       
       if (!data.containsKey(normalizedName)) return null;
       
@@ -140,10 +134,9 @@ class CacheService {
   /// 获取缓存的地图信息（忽略过期时间，用于 API 失败时的 fallback）
   static Future<MapData?> getCachedMapInfoIgnoreExpiry(String mapName) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
       final normalizedName = mapName.toLowerCase().trim();
       
-      final data = await _getMapInfoCacheData(prefs);
+      final data = await _getMapInfoCacheData();
       if (!data.containsKey(normalizedName)) return null;
       
       return MapData.fromJson(data[normalizedName] as Map<String, dynamic>);
@@ -156,9 +149,8 @@ class CacheService {
   /// 清除所有地图信息缓存
   static Future<void> clearMapInfoCache() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_mapInfoKey);
-      await prefs.remove(_mapInfoTimestampKey);
+      await StorageUtils.remove(_mapInfoKey);
+      await StorageUtils.remove(_mapInfoTimestampKey);
       LogService.i('地图信息缓存已清除');
     } catch (e) {
       LogService.e('清除地图信息缓存失败: $e', e);
@@ -168,25 +160,24 @@ class CacheService {
   /// 清除单个地图的缓存
   static Future<void> clearMapInfoCacheForMap(String mapName) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
       final normalizedName = mapName.toLowerCase().trim();
       
-      final data = await _getMapInfoCacheData(prefs);
-      final timestamps = await _getMapInfoTimestamps(prefs);
+      final data = await _getMapInfoCacheData();
+      final timestamps = await _getMapInfoTimestamps();
       
       data.remove(normalizedName);
       timestamps.remove(normalizedName);
       
-      await prefs.setString(_mapInfoKey, json.encode(data));
-      await prefs.setString(_mapInfoTimestampKey, json.encode(timestamps));
+      await StorageUtils.setString(_mapInfoKey, json.encode(data));
+      await StorageUtils.setString(_mapInfoTimestampKey, json.encode(timestamps));
       LogService.i('地图信息缓存已清除: $mapName');
     } catch (e) {
       LogService.e('清除地图信息缓存失败 ($mapName): $e', e);
     }
   }
 
-  static Future<Map<String, dynamic>> _getMapInfoCacheData(SharedPreferences prefs) async {
-    final jsonString = prefs.getString(_mapInfoKey);
+  static Future<Map<String, dynamic>> _getMapInfoCacheData() async {
+    final jsonString = StorageUtils.getString(_mapInfoKey);
     if (jsonString == null) return {};
     try {
       return Map<String, dynamic>.from(json.decode(jsonString));
@@ -195,8 +186,8 @@ class CacheService {
     }
   }
 
-  static Future<Map<String, int>> _getMapInfoTimestamps(SharedPreferences prefs) async {
-    final jsonString = prefs.getString(_mapInfoTimestampKey);
+  static Future<Map<String, int>> _getMapInfoTimestamps() async {
+    final jsonString = StorageUtils.getString(_mapInfoTimestampKey);
     if (jsonString == null) return {};
     try {
       return Map<String, int>.from(json.decode(jsonString));

@@ -30,9 +30,10 @@ dependencies:
   go_router: ^15.1.2
   
   # Local Storage & Caching
-  shared_preferences: ^2.2.2
   sqflite: ^2.3.0
   path: ^1.9.0
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
   
   # UI Components
   pull_to_refresh: ^2.0.0

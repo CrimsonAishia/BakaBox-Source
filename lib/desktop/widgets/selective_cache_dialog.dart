@@ -74,7 +74,7 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
     switch (type) {
       case CacheType.cacheFiles: return Colors.blue;
       case CacheType.serverData: return Colors.green;
-      case CacheType.userData: return Colors.orange;
+      case CacheType.appData: return Colors.purple;
       case CacheType.logs: return Colors.amber;
     }
   }
@@ -83,7 +83,7 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
     switch (type) {
       case CacheType.cacheFiles: return MdiIcons.imageOutline;
       case CacheType.serverData: return MdiIcons.serverNetwork;
-      case CacheType.userData: return MdiIcons.accountOutline;
+      case CacheType.appData: return MdiIcons.databaseOutline;
       case CacheType.logs: return MdiIcons.textBoxOutline;
     }
   }

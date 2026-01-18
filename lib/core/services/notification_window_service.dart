@@ -3,10 +3,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:desktop_multi_window/desktop_multi_window.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../bloc/settings/settings_state.dart';
 import '../utils/log_service.dart';
+import '../utils/storage_utils.dart';
 
 /// 通知类型
 enum NotificationType {
@@ -205,8 +205,7 @@ class NotificationWindowService {
   /// 从设置中加载通知位置
   Future<void> loadNotificationPosition() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final positionIndex = prefs.getInt('notification_position') ?? NotificationPositionType.topRight.index;
+      final positionIndex = StorageUtils.getInt('notification_position') ?? NotificationPositionType.topRight.index;
       _notificationPosition = NotificationPositionType.values[positionIndex];
       LogService.d('[NotificationWindow] Loaded notification position: ${_notificationPosition.displayName}');
     } catch (e) {
