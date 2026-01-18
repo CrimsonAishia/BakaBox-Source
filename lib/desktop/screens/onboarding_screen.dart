@@ -326,38 +326,45 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 大 Logo + 文字 Logo（垂直排列，居中对齐）
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // 大 Logo
-                    Image.asset('assets/images/logo.png', width: 160, height: 160),
-                    const SizedBox(height: 20),
-                    // 文字 Logo
-                    Image.asset(
-                      'assets/images/sidebar-logo.png',
-                      height: 80,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => Text(
-                        'BakaBox',
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.white : const Color(0xFF1E293B),
+                Padding(
+                  padding: const EdgeInsets.only(left: 60),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // 大 Logo
+                      Image.asset('assets/images/logo.png', width: 160, height: 160),
+                      const SizedBox(height: 20),
+                      // 文字 Logo
+                      Image.asset(
+                        'assets/images/sidebar-logo.png',
+                        height: 80,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => Text(
+                          'BakaBox',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ).animate().fadeIn(duration: 500.ms).slideX(begin: -0.1),
                 const SizedBox(height: 12),
                 // 描述
-                Text(
-                  '一键加入服务器，自动挤服，\n自动配置游戏参数，畅享游戏。',
-                  style: TextStyle(
-                    fontSize: 16,
-                    height: 1.7,
-                    color: isDark ? Colors.white54 : const Color(0xFF64748B),
-                  ),
-                ).animate().fadeIn(duration: 500.ms, delay: 300.ms),
+                Padding(
+                  padding: const EdgeInsets.only(left: 60),
+                  child: Text(
+                    '一键加入服务器，自动挤服，\n自动配置游戏参数，畅享游戏。',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      height: 1.7,
+                      color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                    ),
+                  ).animate().fadeIn(duration: 500.ms, delay: 300.ms),
+                ),
                 const SizedBox(height: 40),
                 // 特性标签
                 Wrap(
