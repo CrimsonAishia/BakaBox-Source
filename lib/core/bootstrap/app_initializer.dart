@@ -1,5 +1,4 @@
 import 'package:window_manager/window_manager.dart';
-import '../services/gsi_service.dart';
 import '../services/analytics_service.dart';
 import '../utils/app_directory_service.dart';
 import '../utils/log_service.dart';
@@ -26,9 +25,5 @@ class AppInitializer {
   /// 初始化主窗口服务
   static Future<void> initMainWindowServices() async {
     await LogService.init();
-    // 初始化并自动启动 GSI 服务
-    final gsiService = GsiService();
-    await gsiService.initialize();
-    await gsiService.start();
   }
 }
