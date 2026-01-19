@@ -79,9 +79,6 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
     _loadingMaps.clear();
     // 清理历史数据列表
     _historyData.clear();
-    // 清理图片内存缓存，释放加载的地图图片
-    PaintingBinding.instance.imageCache.clear();
-    PaintingBinding.instance.imageCache.clearLiveImages();
     super.dispose();
   }
 
@@ -868,6 +865,10 @@ class _HistoryCardState extends State<_HistoryCard> {
   bool _isOverlayHovered = false;
   // 延迟显示 overlay，避免快速滑过时频繁创建
   bool _overlayActivated = false;
+  
+  // 延迟任务的取消令牌
+  Timer? _hoverStartTimer;
+  Timer? _hoverEndTimer;
 
   bool get _shouldShowOverlay => _isCardHovered || _isOverlayHovered;
 
@@ -882,28 +883,42 @@ class _HistoryCardState extends State<_HistoryCard> {
 
   void _onHoverStart() {
     setState(() => _isCardHovered = true);
+    // 取消之前的定时器
+    _hoverStartTimer?.cancel();
+    _hoverEndTimer?.cancel();
+    
     // 延迟 200ms 后才显示 overlay，避免快速滑过
     if (!_overlayActivated) {
-      Future.delayed(const Duration(milliseconds: 200), () {
+      _hoverStartTimer = Timer(const Duration(milliseconds: 200), () {
         if (mounted && _isCardHovered && !_overlayActivated) {
           _overlayActivated = true;
           _updateOverlay();
         }
+        _hoverStartTimer = null;
       });
     }
   }
 
   void _onHoverEnd() {
     setState(() => _isCardHovered = false);
+    // 取消之前的定时器
+    _hoverStartTimer?.cancel();
+    _hoverEndTimer?.cancel();
+    
     // 延迟检查，给鼠标移动到 overlay 的时间
-    Future.delayed(const Duration(milliseconds: 50), () {
+    _hoverEndTimer = Timer(const Duration(milliseconds: 50), () {
       if (mounted) _updateOverlay();
+      _hoverEndTimer = null;
     });
   }
 
   void _showOverlay() {
     if (_overlayEntry != null) return;
+    if (!mounted) return;
     if (widget.getTrendData == null) return;
+
+    final overlay = Overlay.maybeOf(context);
+    if (overlay == null) return;
 
     // 懒加载趋势数据
     final trendData = widget.getTrendData!();
@@ -977,7 +992,13 @@ class _HistoryCardState extends State<_HistoryCard> {
       ),
     );
 
-    Overlay.of(context).insert(_overlayEntry!);
+    // 再次检查 mounted 状态，防止在创建 OverlayEntry 期间 widget 被销毁
+    if (!mounted) {
+      _overlayEntry = null;
+      return;
+    }
+    
+    overlay.insert(_overlayEntry!);
   }
 
   void _hideOverlay() {
@@ -987,6 +1008,9 @@ class _HistoryCardState extends State<_HistoryCard> {
 
   @override
   void dispose() {
+    // 取消所有定时器
+    _hoverStartTimer?.cancel();
+    _hoverEndTimer?.cancel();
     _hideOverlay();
     super.dispose();
   }
