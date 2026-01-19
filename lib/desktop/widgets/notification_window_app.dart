@@ -1095,31 +1095,45 @@ class _VerticalMarqueeHtmlState extends State<_VerticalMarqueeHtml>
   late AnimationController _animationController;
   double _scrollDistance = 0;
   final GlobalKey _contentKey = GlobalKey();
+  bool _animationStarted = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _animationController = AnimationController(vsync: this);
+    // 监听滚动位置变化，当内容渲染完成后自动触发
+    _scrollController.addListener(_onScrollChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkAndStartScroll());
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScrollChanged);
     _animationController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
+  void _onScrollChanged() {
+    // 当滚动控制器准备好且还未开始动画时，检查是否可以开始滚动
+    if (!_animationStarted && _scrollController.hasClients) {
+      _checkAndStartScroll();
+    }
+  }
+
   void _checkAndStartScroll() {
-    // 等待布局完成后获取内容高度
+    if (!mounted || !_scrollController.hasClients || _animationStarted) return;
+
+    // 等待下一帧确保布局完成
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scrollController.hasClients) return;
+      if (!mounted || !_scrollController.hasClients || _animationStarted) return;
 
       final maxScroll = _scrollController.position.maxScrollExtent;
       if (maxScroll <= 0) return;
 
       _scrollDistance = maxScroll;
+      _animationStarted = true;
       _startScrollAnimation();
     });
   }
@@ -1142,7 +1156,9 @@ class _VerticalMarqueeHtmlState extends State<_VerticalMarqueeHtml>
 
   void _onAnimationUpdate() {
     if (_scrollController.hasClients) {
-      _scrollController.jumpTo(_animationController.value * _scrollDistance);
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final targetScroll = (_animationController.value * _scrollDistance).clamp(0.0, maxScroll);
+      _scrollController.jumpTo(targetScroll);
     }
   }
 
