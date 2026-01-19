@@ -56,7 +56,7 @@ class StorageUtils {
       await Hive.openBox(_defaultBoxName);
       
       _initialized = true;
-      LogService.i('[StorageUtils] Hive 初始化成功，路径: ${AppDirectoryService.basePath}/storage');
+      LogService.d('[StorageUtils] Hive 初始化成功，路径: ${AppDirectoryService.basePath}/storage');
     } catch (e) {
       LogService.e('[StorageUtils] Hive 初始化失败', e);
       rethrow;
@@ -159,7 +159,7 @@ class StorageUtils {
   /// 清空所有数据
   static Future<void> clear() async {
     await _getBox().clear();
-    LogService.i('[StorageUtils] 所有存储数据已清空');
+    LogService.d('[StorageUtils] 所有存储数据已清空');
   }
   
   /// 获取存储项数量
@@ -207,7 +207,7 @@ class StorageUtils {
   /// 压缩数据库（释放空间）
   static Future<void> compact() async {
     await _getBox().compact();
-    LogService.i('[StorageUtils] 数据库已压缩');
+    LogService.d('[StorageUtils] 数据库已压缩');
   }
   
   /// 获取存储大小（字节）
@@ -236,6 +236,6 @@ class StorageUtils {
   static Future<void> dispose() async {
     await Hive.close();
     _initialized = false;
-    LogService.i('[StorageUtils] Hive 已关闭');
+    LogService.d('[StorageUtils] Hive 已关闭');
   }
 }

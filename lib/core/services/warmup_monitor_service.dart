@@ -86,7 +86,7 @@ class WarmupMonitorService {
     _useGsi = false;
     _startMonitorLoop(isWarmup: false);
     
-    LogService.i('[WarmupMonitor] 服务已初始化，默认使用 API 轮询');
+    LogService.d('[WarmupMonitor] 服务已初始化，默认使用 API 轮询');
   }
 
   /// GSI 数据变化处理
@@ -98,7 +98,7 @@ class WarmupMonitorService {
       if (_isWarmingUp && _currentServerAddress != null) {
         _notificationService.dismissWarmupNotification(_currentServerAddress!);
         _isWarmingUp = false;
-        LogService.i('[WarmupMonitor] GSI: 玩家回到主菜单，关闭热身通知');
+        LogService.d('[WarmupMonitor] GSI: 玩家回到主菜单，关闭热身通知');
       }
       // 主菜单时保持 GSI 监听，但不处理热身逻辑
       // 注意：不切换到 API 轮询，因为 GSI 仍然在工作
@@ -109,7 +109,7 @@ class WarmupMonitorService {
       // GSI 无有效数据，保持/切换到 API 轮询
       if (_useGsi) {
         _useGsi = false;
-        LogService.i('[WarmupMonitor] GSI 数据丢失，切换到 API 轮询');
+        LogService.d('[WarmupMonitor] GSI 数据丢失，切换到 API 轮询');
         
         // 如果当前正在热身但没有 mapRuntime 数据，需要立即获取
         if (_isWarmingUp && _currentMapRuntime == null && _currentMapName != null) {
@@ -125,7 +125,7 @@ class WarmupMonitorService {
     if (!_useGsi) {
       _useGsi = true;
       _scheduler.cancel(_taskId);
-      LogService.i('[WarmupMonitor] GSI 收到有效数据，切换到 GSI 模式');
+      LogService.d('[WarmupMonitor] GSI 收到有效数据，切换到 GSI 模式');
     }
 
     _processGsiState(state);
@@ -198,14 +198,14 @@ class WarmupMonitorService {
         if (_isWarmingUp && _currentServerAddress != null) {
           _notificationService.dismissWarmupNotification(_currentServerAddress!);
           _isWarmingUp = false;
-          LogService.i('[WarmupMonitor/GSI] 地图 $mapName 不支持热身监控，关闭通知');
+          LogService.d('[WarmupMonitor/GSI] 地图 $mapName 不支持热身监控，关闭通知');
         }
         return;
       }
       
       if (!_isWarmingUp) {
         _isWarmingUp = true;
-        LogService.i('[WarmupMonitor/GSI] 检测到热身: $mapName');
+        LogService.d('[WarmupMonitor/GSI] 检测到热身: $mapName');
         // 获取 API 时间并显示通知（只需一次，通知窗口自己倒计时）
         _fetchMapRuntimeAndShowNotification();
       }
@@ -217,7 +217,7 @@ class WarmupMonitorService {
       if (_currentServerAddress != null) {
         _notificationService.dismissWarmupNotification(_currentServerAddress!);
       }
-      LogService.i('[WarmupMonitor/GSI] 热身结束');
+      LogService.d('[WarmupMonitor/GSI] 热身结束');
     }
   }
 
@@ -346,7 +346,7 @@ class WarmupMonitorService {
   void _onGameStatusChanged(GameStatusEvent event) {
     if (!event.isRunning) {
       // 游戏退出，关闭热身通知并停止监控
-      LogService.i('[WarmupMonitor] 游戏已退出，关闭热身通知并停止监控');
+      LogService.d('[WarmupMonitor] 游戏已退出，关闭热身通知并停止监控');
 
       // 停止监控定时器
       _scheduler.cancel(_taskId);
@@ -371,7 +371,7 @@ class WarmupMonitorService {
     } else {
       // 游戏启动，如果 GSI 不可用则重新开始 API 轮询
       if (!_scheduler.hasTask(_taskId) && !_useGsi) {
-        LogService.i('[WarmupMonitor] 游戏已启动，重新开始 API 轮询');
+        LogService.d('[WarmupMonitor] 游戏已启动，重新开始 API 轮询');
         _startMonitorLoop(isWarmup: false);
       }
     }
@@ -425,7 +425,7 @@ class WarmupMonitorService {
         final serverAddress = state.serverAddress;
         if (serverAddress.isNotEmpty) {
           _connectedServerAddress = serverAddress;
-          LogService.i('[WarmupMonitor] 用户进入服务器: $serverAddress');
+          LogService.d('[WarmupMonitor] 用户进入服务器: $serverAddress');
 
           if (serverAddress != _currentServerAddress) {
             if (_isWarmingUp && _currentServerAddress != null) {
@@ -448,7 +448,7 @@ class WarmupMonitorService {
           newGameState == GameState.unknown ||
           newGameState == GameState.failed) {
         if (_connectedServerAddress != null) {
-          LogService.i('[WarmupMonitor] 用户退出服务器');
+          LogService.d('[WarmupMonitor] 用户退出服务器');
           _connectedServerAddress = null;
         }
         if (_isWarmingUp && _currentServerAddress != null) {
@@ -553,7 +553,7 @@ class WarmupMonitorService {
           await _notificationService.dismissWarmupNotification(serverAddress);
         }
 
-        LogService.i('[WarmupMonitor/API] 地图变化: $oldMapName -> $mapName');
+        LogService.d('[WarmupMonitor/API] 地图变化: $oldMapName -> $mapName');
 
         try {
           _currentMapInfo = await _serverApi.getMapInfo(mapName);
@@ -591,7 +591,7 @@ class WarmupMonitorService {
         _isWarmingUp = true;
         _startMonitorLoop(isWarmup: true);
         _showApiWarmupNotification();
-        LogService.i('[WarmupMonitor/API] 检测到热身: $mapName, runtime=$apiRuntime');
+        LogService.d('[WarmupMonitor/API] 检测到热身: $mapName, runtime=$apiRuntime');
       } else if (_isWarmingUp) {
         // 如果 mapRuntime 为 null（可能是 GSI 切换过来还没获取到），跳过本次检测
         if (_currentMapRuntime == null) {
@@ -610,7 +610,7 @@ class WarmupMonitorService {
           _isWarmingUp = false;
           _startMonitorLoop(isWarmup: false);
           await _notificationService.dismissWarmupNotification(serverAddress);
-          LogService.i('[WarmupMonitor/API] 热身结束');
+          LogService.d('[WarmupMonitor/API] 热身结束');
         } else {
           // 更新热身通知显示
           _showApiWarmupNotification();

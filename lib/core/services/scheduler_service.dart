@@ -81,7 +81,7 @@ class SchedulerService {
 
     _tasks[task.id] = entry;
 
-    LogService.i(
+    LogService.d(
         '[Scheduler] 注册任务: ${task.name} (${task.id}), 间隔=${task.interval.inSeconds}秒');
 
     // 立即执行一次
@@ -99,7 +99,7 @@ class SchedulerService {
     final entry = _tasks.remove(taskId);
     if (entry != null) {
       entry.cancel();
-      LogService.i('[Scheduler] 取消任务: $taskId');
+      LogService.d('[Scheduler] 取消任务: $taskId');
     }
   }
 
@@ -109,7 +109,7 @@ class SchedulerService {
       entry.cancel();
     }
     _tasks.clear();
-    LogService.i('[Scheduler] 已取消所有任务');
+    LogService.d('[Scheduler] 已取消所有任务');
   }
 
   /// 检查任务是否存在

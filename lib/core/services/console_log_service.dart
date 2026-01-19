@@ -579,7 +579,7 @@ class ConsoleLogService {
 
     final availability = await checkAvailability();
     if (availability['available'] != true) {
-      LogService.i('[ConsoleLog] 控制台日志文件暂不可用，将持续检测');
+      LogService.d('[ConsoleLog] 控制台日志文件暂不可用，将持续检测');
     }
 
     _logFilePath = await getLogFilePath();
@@ -630,7 +630,7 @@ class ConsoleLogService {
       _checkLogFile();
     });
 
-    LogService.i('[ConsoleLog] 控制台日志监控已启动');
+    LogService.d('[ConsoleLog] 控制台日志监控已启动');
     return;
   }
 
@@ -638,7 +638,7 @@ class ConsoleLogService {
   void _onGameStatusChanged(GameStatusEvent event) {
     if (!event.isRunning) {
       // 游戏退出，重置状态
-      LogService.i('[ConsoleLog] 游戏已退出，重置状态');
+      LogService.d('[ConsoleLog] 游戏已退出，重置状态');
       _currentState = _currentState.copyWith(
         state: GameState.unknown,
         stateText: '游戏未运行',
@@ -674,7 +674,7 @@ class ConsoleLogService {
     _currentState = _currentState.copyWith(stateText: '已停止');
     _updateState(_currentState);
 
-    LogService.i('[ConsoleLog] 控制台日志监控已停止');
+    LogService.d('[ConsoleLog] 控制台日志监控已停止');
     return;
   }
 

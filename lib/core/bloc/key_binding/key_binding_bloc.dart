@@ -67,7 +67,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
           isLoading: false,
           successMessage: event.showSuccessMessage ? '已刷新配置列表' : null,
         ));
-        LogService.i('[KeyBindingBloc] 加载配置列表成功，共 ${response.items.length} 条');
+        LogService.d('[KeyBindingBloc] 加载配置列表成功，共 ${response.items.length} 条');
       } else {
         emit(state.copyWith(
           isLoading: false,
@@ -94,7 +94,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       final categories = await _api.getCategories();
       emit(state.copyWith(categories: categories));
       
-      LogService.i('[KeyBindingBloc] 加载分类列表成功，共 ${categories.length} 个分类');
+      LogService.d('[KeyBindingBloc] 加载分类列表成功，共 ${categories.length} 个分类');
     } catch (e) {
       LogService.e('[KeyBindingBloc] 加载分类列表失败', e);
     }
@@ -249,7 +249,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
         successMessage: '配置 "${event.config.name}" 已成功应用',
       ));
       
-      LogService.i('[KeyBindingBloc] 配置应用成功: ${event.config.name}');
+      LogService.d('[KeyBindingBloc] 配置应用成功: ${event.config.name}');
     } catch (e) {
       LogService.e('[KeyBindingBloc] 应用配置失败', e);
       emit(state.copyWith(
@@ -302,7 +302,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
         successMessage: '配置已成功移除',
       ));
       
-      LogService.i('[KeyBindingBloc] 配置移除成功: ${event.configId}');
+      LogService.d('[KeyBindingBloc] 配置移除成功: ${event.configId}');
     } catch (e) {
       LogService.e('[KeyBindingBloc] 移除配置失败', e);
       emit(state.copyWith(
@@ -361,7 +361,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
           appliedConfigs: appliedConfigs,
         ));
         
-        LogService.i('[KeyBindingBloc] 加载 autoexec.cfg 成功，已应用 ${appliedConfigs.length} 个配置');
+        LogService.d('[KeyBindingBloc] 加载 autoexec.cfg 成功，已应用 ${appliedConfigs.length} 个配置');
       } else {
         emit(state.copyWith(
           isLoadingAutoexec: false,
@@ -401,7 +401,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
           successMessage: 'autoexec.cfg 保存成功',
         ));
         
-        LogService.i('[KeyBindingBloc] 保存 autoexec.cfg 成功');
+        LogService.d('[KeyBindingBloc] 保存 autoexec.cfg 成功');
       } else {
         emit(state.copyWith(
           isSaving: false,
@@ -439,7 +439,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
         // 重新加载内容
         add(KeyBindingLoadAutoexecContent());
         
-        LogService.i('[KeyBindingBloc] 创建 autoexec.cfg 成功');
+        LogService.d('[KeyBindingBloc] 创建 autoexec.cfg 成功');
       } else {
         emit(state.copyWith(
           isSaving: false,
@@ -476,7 +476,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
         // 刷新配置列表（不显示成功提示，避免双重提示）
         add(const KeyBindingLoadConfigs(showSuccessMessage: false));
         
-        LogService.i('[KeyBindingBloc] 发布配置成功: ${event.request.name}');
+        LogService.d('[KeyBindingBloc] 发布配置成功: ${event.request.name}');
       } else {
         emit(state.copyWith(
           isPublishing: false,
@@ -516,7 +516,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       // 刷新配置列表
       add(const KeyBindingLoadConfigs(showSuccessMessage: false));
       
-      LogService.i('[KeyBindingBloc] 删除配置成功: id=${event.id}');
+      LogService.d('[KeyBindingBloc] 删除配置成功: id=${event.id}');
     } catch (e) {
       LogService.e('[KeyBindingBloc] 删除配置失败', e);
       emit(state.copyWith(
@@ -548,7 +548,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
         // 刷新配置列表
         add(const KeyBindingLoadConfigs(showSuccessMessage: false));
         
-        LogService.i('[KeyBindingBloc] 更新配置成功: id=${event.id}');
+        LogService.d('[KeyBindingBloc] 更新配置成功: id=${event.id}');
       } else {
         emit(state.copyWith(
           isSaving: false,
@@ -668,7 +668,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
           selectedConfig: updatedSelectedConfig ?? state.selectedConfig,
         ));
         
-        LogService.i('[KeyBindingBloc] 投票成功: upCount=${response.upCount}, downCount=${response.downCount}');
+        LogService.d('[KeyBindingBloc] 投票成功: upCount=${response.upCount}, downCount=${response.downCount}');
       }
     } catch (e) {
       LogService.e('[KeyBindingBloc] 投票失败', e);
