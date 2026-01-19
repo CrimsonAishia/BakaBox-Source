@@ -801,7 +801,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 const SizedBox(height: 32),
                 // 标题
                 Text(
-                  isLoggedIn ? '绑定成功' : '绑定论坛账号',
+                  isLoggedIn ? '关联成功' : '关联论坛账号',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
