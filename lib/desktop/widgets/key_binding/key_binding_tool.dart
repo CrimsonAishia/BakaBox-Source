@@ -152,11 +152,17 @@ class _LeftPanel extends StatelessWidget {
   Widget _buildToolbar(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      height: 44,
-      padding: const EdgeInsets.symmetric(horizontal: 6),
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(12),
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? const Color(0xFF334155) : Colors.grey[200]!,
+            width: 1,
+          ),
+        ),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Row(
@@ -2612,30 +2618,45 @@ class _ToolbarBtnState extends State<_ToolbarBtn> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          margin: const EdgeInsets.symmetric(horizontal: 2),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: widget.active
-                ? const Color(0xFF0080FF)
-                : (_hovered ? (isDark ? const Color(0xFF334155) : Colors.grey[100]) : Colors.transparent),
-            borderRadius: BorderRadius.circular(20),
+            border: Border(
+              bottom: BorderSide(
+                color: widget.active 
+                    ? const Color(0xFF0080FF) 
+                    : Colors.transparent,
+                width: 2,
+              ),
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(widget.icon, size: 16, color: widget.active ? Colors.white : (isDark ? Colors.white70 : Colors.grey[600])),
+              Icon(
+                widget.icon, 
+                size: 16, 
+                color: widget.active 
+                    ? const Color(0xFF0080FF)
+                    : (_hovered 
+                        ? (isDark ? Colors.white : Colors.grey[800])
+                        : (isDark ? Colors.white60 : Colors.grey[600])),
+              ),
               const SizedBox(width: 6),
               Text(
                 widget.label,
                 style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: widget.active ? Colors.white : (isDark ? Colors.white70 : Colors.grey[700]),
+                  fontSize: 13,
+                  fontWeight: widget.active ? FontWeight.w600 : FontWeight.w500,
+                  color: widget.active 
+                      ? const Color(0xFF0080FF)
+                      : (_hovered 
+                          ? (isDark ? Colors.white : Colors.grey[800])
+                          : (isDark ? Colors.white60 : Colors.grey[600])),
                 ),
               ),
               if (widget.badge) ...[
-                const SizedBox(width: 4),
+                const SizedBox(width: 6),
                 Container(
                   width: 6,
                   height: 6,
