@@ -24,7 +24,8 @@ class ShakeDialog extends StatefulWidget {
   State<ShakeDialog> createState() => _ShakeDialogState();
 }
 
-class _ShakeDialogState extends State<ShakeDialog> {
+class _ShakeDialogState extends State<ShakeDialog>
+    with TickerProviderStateMixin {
   windows_webview.WebviewController? _webViewController;
   bool _isLoading = true;
   bool _isShaking = false;
@@ -33,17 +34,32 @@ class _ShakeDialogState extends State<ShakeDialog> {
   String? _resultMessage;
   int? _rewardAmount;
 
+  // 动画控制器
+  late List<AnimationController> _digitControllers;
+  final List<int> _displayDigits = [0, 0, 0]; // 显示的三个数字
+  bool _showingResult = false;
+
   static const String _shakeUrl =
       'https://bbs.zombieden.cn/plugin.php?id=yinxingfei_zzza:yinxingfei_zzza_hall&yjjs=yes';
 
   @override
   void initState() {
     super.initState();
+    _digitControllers = List.generate(
+      3,
+      (index) => AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 2000),
+      ),
+    );
     _checkStatusFirst();
   }
 
   @override
   void dispose() {
+    for (var controller in _digitControllers) {
+      controller.dispose();
+    }
     _webViewController?.dispose();
     super.dispose();
   }
@@ -126,8 +142,7 @@ class _ShakeDialogState extends State<ShakeDialog> {
           return typeof go_yj === 'function';
         })();
       ''';
-      final result = await _webViewController!.executeScript(checkScript);
-      LogService.d('go_yj 函数存在: $result');
+      await _webViewController!.executeScript(checkScript);
     } catch (e) {
       LogService.e('检查摇一摇状态失败', e);
     }
@@ -142,19 +157,26 @@ class _ShakeDialogState extends State<ShakeDialog> {
       _hasResult = false;
       _resultMessage = null;
       _rewardAmount = null;
+      _showingResult = false;
     });
+
+    _startSlotAnimation();
 
     try {
       await _webViewController!.executeScript('go_yj();');
 
-      await Future.delayed(const Duration(seconds: 3));
+      // 等待页面刷新完成（通过 loadingState 监听器触发 _parseResult）
+      // 或者超时后强制解析（防止页面没有刷新）
+      await Future.delayed(const Duration(seconds: 4));
 
+      // 如果 4 秒后还没有结果，强制解析一次
       if (mounted && !_hasResult) {
         await _parseResult();
       }
     } catch (e) {
       LogService.e('摇一摇执行失败', e);
       if (mounted) {
+        _stopSlotAnimation();
         setState(() {
           _isShaking = false;
           _resultMessage = '摇一摇失败，请重试';
@@ -163,13 +185,148 @@ class _ShakeDialogState extends State<ShakeDialog> {
     }
   }
 
+  /// 启动老虎机滚动动画
+  void _startSlotAnimation() {
+    for (var controller in _digitControllers) {
+      controller.repeat();
+    }
+  }
+
+  /// 停止老虎机滚动动画并显示结果
+  Future<void> _stopSlotAnimation() async {
+    if (_rewardAmount == null) {
+      for (var controller in _digitControllers) {
+        controller.stop();
+      }
+      return;
+    }
+
+    setState(() => _showingResult = true);
+
+    // 将奖励金额拆分为三位数字
+    final digits = _splitIntoDigits(_rewardAmount!);
+
+    // 逐个停止滚动并显示数字
+    for (int i = 0; i < 3; i++) {
+      await Future.delayed(Duration(milliseconds: 300 + i * 200));
+      if (mounted) {
+        setState(() {
+          _displayDigits[i] = digits[i];
+        });
+        _digitControllers[i].stop();
+      }
+    }
+  }
+
+  /// 将数字拆分为三位（百位、十位、个位）
+  List<int> _splitIntoDigits(int number) {
+    final hundreds = (number ~/ 100) % 10;
+    final tens = (number ~/ 10) % 10;
+    final ones = number % 10;
+    return [hundreds, tens, ones];
+  }
+
+  /// 构建单个滚动数字
+  Widget _buildSlotDigit(int index, bool isDark, Color textColor) {
+    final isAnimating = _digitControllers[index].isAnimating;
+
+    return Container(
+      width: 60,
+      height: 80,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: isAnimating
+            ? OverflowBox(
+                maxHeight: 80,
+                minHeight: 80,
+                alignment: Alignment.topCenter,
+                child: AnimatedBuilder(
+                  animation: _digitControllers[index],
+                  builder: (context, child) {
+                    return _buildScrollingNumbers(
+                        _digitControllers[index], textColor);
+                  },
+                ),
+              )
+            : Center(
+                child: Text(
+                  '${_displayDigits[index]}',
+                  style: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.bold,
+                    color: _showingResult ? Colors.amber : textColor,
+                  ),
+                ),
+              ),
+      ),
+    );
+  }
+
+  /// 构建滚动的数字列表
+  Widget _buildScrollingNumbers(
+      AnimationController controller, Color textColor) {
+    // 计算滚动偏移量
+    final offset = controller.value * 10 * 80; // 10个数字，每个高度80
+
+    return SizedBox(
+      height: 80,
+      child: Stack(
+        children: [
+          Positioned(
+            top: -offset,
+            left: 0,
+            right: 0,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(20, (i) {
+                // 生成20个数字（重复两次0-9）以实现无缝循环
+                final digit = i % 10;
+                return SizedBox(
+                  height: 80,
+                  child: Center(
+                    child: Text(
+                      '$digit',
+                      style: TextStyle(
+                        fontSize: 48,
+                        fontWeight: FontWeight.bold,
+                        color: textColor.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 解析摇一摇结果
   Future<void> _parseResult() async {
-    if (_webViewController == null) return;
+    if (_webViewController == null || _hasResult) return; // 防止重复调用
 
     try {
       final extractScript = '''
         (function() {
+          // 检查是否已经摇过
+          var alreadyShaked = document.querySelector('.zzza_hall_bottom_right_yjan_btn11');
+          if (alreadyShaked && alreadyShaked.textContent.includes('已经摇过')) {
+            return 'ALREADY_SHAKED';
+          }
+          
+          // 提取奖励金额
           var input = document.getElementById('zzza_fw1');
           if (input && input.value) {
             return input.value;
@@ -182,21 +339,29 @@ class _ShakeDialogState extends State<ShakeDialog> {
       ''';
 
       final result = await _webViewController!.executeScript(extractScript);
-      LogService.d('摇一摇结果: $result');
 
-      if (mounted) {
+      if (mounted && !_hasResult) {
+        // 再次检查，防止并发调用
+        if (result == 'ALREADY_SHAKED') {
+          // 已经摇过
+          _resultMessage = '今日已摇过，明天再来吧';
+          setState(() {
+            _alreadyShaked = true;
+          });
+        } else if (result != null && result != 'null') {
+          _rewardAmount = int.tryParse(result.toString());
+          _resultMessage = '恭喜获得 $_rewardAmount 僵尸币！';
+        } else {
+          _resultMessage = '摇一摇完成';
+        }
+
+        await _stopSlotAnimation();
+
         setState(() {
           _isShaking = false;
           _hasResult = true;
-          if (result != null && result != 'null') {
-            _rewardAmount = int.tryParse(result.toString());
-            _resultMessage = '恭喜获得 $_rewardAmount 僵尸币！';
-          } else {
-            _resultMessage = '摇一摇完成';
-          }
         });
 
-        // 通知 DailyTaskBloc 摇一摇完成
         if (mounted) {
           context.read<DailyTaskBloc>().add(
                 DailyTaskShakeCompleted(
@@ -206,7 +371,8 @@ class _ShakeDialogState extends State<ShakeDialog> {
       }
     } catch (e) {
       LogService.e('解析摇一摇结果失败', e);
-      if (mounted) {
+      if (mounted && !_hasResult) {
+        await _stopSlotAnimation();
         setState(() {
           _isShaking = false;
           _hasResult = true;
@@ -255,17 +421,31 @@ class _ShakeDialogState extends State<ShakeDialog> {
               ],
             ),
             const SizedBox(height: 24),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 100),
-              transform: _isShaking
-                  ? (Matrix4.identity()..rotateZ(0.05))
-                  : Matrix4.identity(),
-              child: Icon(
-                Icons.casino,
-                size: 80,
-                color: _hasResult && _rewardAmount != null
-                    ? Colors.amber
-                    : const Color(0xFF0080FF),
+            // 老虎机滚动数字显示（始终显示）
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                  width: 2,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(3, (index) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: _buildSlotDigit(
+                      index,
+                      isDark,
+                      textColor,
+                    ),
+                  );
+                }),
               ),
             ),
             const SizedBox(height: 24),
