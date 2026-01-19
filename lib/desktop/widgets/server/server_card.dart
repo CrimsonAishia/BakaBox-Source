@@ -37,7 +37,7 @@ class ServerCard extends StatefulWidget {
 }
 
 class _ServerCardState extends State<ServerCard>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   // RGB 动画控制器（仅热身状态时创建，节省内存）
   AnimationController? _rgbController;
   bool _isConnecting = false;
@@ -83,9 +83,26 @@ class _ServerCardState extends State<ServerCard>
   @override
   void didUpdateWidget(covariant ServerCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 检查热身状态变化，更新定时器和动画控制器
-    _updateWarmupTimer();
-    _updateAnimationController();
+    
+    // 只在热身状态真正改变时更新
+    final oldWarmingUp = oldWidget.server.serverItem.isCustom ? false : MapRuntimeUtils.isWarmingUp(
+      oldWidget.server.mapRuntime,
+      fetchedAt: oldWidget.server.mapRuntimeLastFetched,
+      mapName: oldWidget.server.serverData?.map,
+      hasError: oldWidget.server.mapRuntimeError,
+    );
+    
+    if (oldWarmingUp != _isWarmingUp) {
+      _updateWarmupTimer();
+      _updateAnimationController();
+    }
+    
+    // 检查地址是否改变，更新监控状态
+    final oldAddress = oldWidget.server.serverItem.address ?? oldWidget.server.serverItem.serverAddress;
+    final newAddress = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
+    if (oldAddress != newAddress && newAddress != null) {
+      _isMonitoring = _mapMonitorService.isMonitoring(newAddress);
+    }
   }
   
   /// 更新动画控制器（仅热身状态时创建）
@@ -163,6 +180,7 @@ class _ServerCardState extends State<ServerCard>
   @override
   void dispose() {
     _safeRemoveOverlay();
+    _hidePanelTimer?.cancel();
     _stateSubscription?.cancel();
     _monitorSubscription?.cancel();
     _warmupRefreshTimer?.cancel();
@@ -172,20 +190,32 @@ class _ServerCardState extends State<ServerCard>
 
   /// 显示浮动功能面板
   void _showFloatingPanel() {
-    if (_floatingPanelEntry != null) return;
+    // 如果已有 entry，先安全移除
+    if (_floatingPanelEntry != null) {
+      if (!_floatingPanelEntry!.mounted) {
+        _floatingPanelEntry = null;
+      } else {
+        return;
+      }
+    }
     if (!mounted) return;
     
     final overlay = Overlay.maybeOf(context);
     if (overlay == null) return;
     
+    // 捕获当前 context，避免使用过期的 context
+    final currentContext = context;
+    
     _floatingPanelEntry = OverlayEntry(
-      builder: (context) => _FloatingActionPanel(
+      builder: (overlayContext) => _FloatingActionPanel(
         link: _layerLink,
         server: widget.server,
         isMonitoring: _isMonitoring,
         onMapEdit: () {
           _hideFloatingPanel();
-          _showContributionDialog(context);
+          if (mounted) {
+            _showContributionDialog(currentContext);
+          }
         },
         onMapMonitor: () {
           _hideFloatingPanel();
@@ -197,7 +227,9 @@ class _ServerCardState extends State<ServerCard>
         },
         onDelete: widget.server.serverItem.isCustom ? () {
           _hideFloatingPanel();
-          _showDeleteConfirmDialog(context);
+          if (mounted) {
+            _showDeleteConfirmDialog(currentContext);
+          }
         } : null,
         onHoverChanged: (isHovered) {
           _isPanelHovered = isHovered;
@@ -230,11 +262,17 @@ class _ServerCardState extends State<ServerCard>
   }
 
   /// 尝试隐藏面板（只有当卡片和面板都没有hover时才隐藏）
+  Timer? _hidePanelTimer;
+  
   void _tryHidePanel() {
-    Future.delayed(const Duration(milliseconds: 50), () {
+    // 取消之前的定时器
+    _hidePanelTimer?.cancel();
+    
+    _hidePanelTimer = Timer(const Duration(milliseconds: 50), () {
       if (!_isHovered && !_isPanelHovered && mounted) {
         _hideFloatingPanel();
       }
+      _hidePanelTimer = null;
     });
   }
 
@@ -1178,16 +1216,15 @@ class _ServerCardState extends State<ServerCard>
       return;
     }
 
+    if (!mounted) return;
     setState(() => _isConnecting = true);
 
     final serverName = widget.server.serverData?.hostName ?? address;
     final mapName = widget.server.serverData?.map;
     final mapInfo = widget.server.mapInfo;
-    final statusService = StatusWindowService();
 
-    // 使用 StatusWindowService 执行连接（自动处理浮窗）
-    // connectToServer 会等待连接完成后才返回
-    final success = await statusService.connectToServer(
+    // 使用已有的 StatusWindowService 实例
+    final success = await _statusService.connectToServer(
       serverAddress: address,
       serverName: serverName,
       mapName: mapName,
@@ -1197,7 +1234,7 @@ class _ServerCardState extends State<ServerCard>
 
     // connectToServer 返回后，连接流程已完成，此时显示 Toast
     if (mounted) {
-      final state = statusService.state;
+      final state = _statusService.state;
       if (success) {
         ToastUtils.showSuccess(context, '进去啦！');
       } else if (state.status == OperationStatus.serverFull) {
@@ -1245,6 +1282,8 @@ class _ServerCardState extends State<ServerCard>
   /// 显示地图贡献对话框
   /// Requirements: 4.4
   void _showContributionDialog(BuildContext context) {
+    if (!mounted) return;
+    
     final mapName = widget.server.serverData?.map;
     if (mapName == null) return;
 
@@ -1281,6 +1320,7 @@ class _MarqueeTextState extends State<_MarqueeText> {
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
   }
 
@@ -1288,7 +1328,14 @@ class _MarqueeTextState extends State<_MarqueeText> {
   void didUpdateWidget(_MarqueeText oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.text != widget.text) {
-      _scrollController?.jumpTo(0);
+      // 安全地重置滚动位置
+      if (_scrollController != null && _scrollController!.hasClients) {
+        try {
+          _scrollController!.jumpTo(0);
+        } catch (_) {
+          // 忽略跳转失败
+        }
+      }
       _isScrolling = false;
       WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
     }
@@ -1301,9 +1348,7 @@ class _MarqueeTextState extends State<_MarqueeText> {
   }
 
   void _checkOverflow() {
-    if (!mounted) return;
-    // 延迟创建 ScrollController，只在需要时创建
-    _scrollController ??= ScrollController();
+    if (!mounted || _scrollController == null) return;
     if (!_scrollController!.hasClients) return;
     
     final maxScroll = _scrollController!.position.maxScrollExtent;
@@ -1328,22 +1373,32 @@ class _MarqueeTextState extends State<_MarqueeText> {
       if (maxScroll <= 0) break;
       
       // 滚动到末尾
-      await _scrollController!.animateTo(
-        maxScroll,
-        duration: Duration(milliseconds: (maxScroll * 30).toInt().clamp(1000, 5000)),
-        curve: Curves.linear,
-      );
+      try {
+        await _scrollController!.animateTo(
+          maxScroll,
+          duration: Duration(milliseconds: (maxScroll * 30).toInt().clamp(1000, 5000)),
+          curve: Curves.linear,
+        );
+      } catch (_) {
+        // ScrollController 可能已被 dispose
+        break;
+      }
       
       if (!mounted) break;
       await Future.delayed(const Duration(seconds: 1));
       if (!mounted) break;
       
       // 滚动回开头
-      await _scrollController!.animateTo(
-        0,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeOut,
-      );
+      try {
+        await _scrollController!.animateTo(
+          0,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeOut,
+        );
+      } catch (_) {
+        // ScrollController 可能已被 dispose
+        break;
+      }
       
       if (!mounted) break;
       await Future.delayed(const Duration(seconds: 1));
@@ -1353,8 +1408,6 @@ class _MarqueeTextState extends State<_MarqueeText> {
 
   @override
   Widget build(BuildContext context) {
-    // 延迟创建 ScrollController
-    _scrollController ??= ScrollController();
     return SingleChildScrollView(
       controller: _scrollController,
       scrollDirection: Axis.horizontal,
