@@ -8,7 +8,7 @@ import '../../core/bloc/auth/auth_state.dart';
 import '../../core/utils/toast_utils.dart';
 import 'qq_login_dialog.dart';
 
-/// 绑定论坛账户对话框
+/// 关联论坛账户对话框
 class LoginDialog extends StatefulWidget {
   const LoginDialog({super.key});
 
@@ -117,7 +117,7 @@ class _LoginDialogState extends State<LoginDialog> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '绑定论坛账户',
+                      '关联论坛账户',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -260,7 +260,7 @@ class _LoginDialogState extends State<LoginDialog> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text('关联账户', style: TextStyle(fontSize: 16)),
+                        : const Text('登录', style: TextStyle(fontSize: 16)),
                   ),
                 ),
 

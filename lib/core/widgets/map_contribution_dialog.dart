@@ -1698,7 +1698,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('需要登录'),
-        content: const Text('请先绑定论坛账户后再进行此操作'),
+        content: const Text('请先登录论坛账户后再进行此操作'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
