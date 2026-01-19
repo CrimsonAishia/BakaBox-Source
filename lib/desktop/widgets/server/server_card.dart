@@ -401,6 +401,53 @@ class _ServerCardState extends State<ServerCard>
     );
   }
 
+  /// 换图监控徽章（行内版本 - 在地址行显示）
+  Widget _buildMonitorBadgeInline() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFA500).withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: const Color(0xFFFFA500).withValues(alpha: 0.6),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFFA500).withValues(alpha: 0.4),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            MdiIcons.bellRing,
+            size: 12,
+            color: const Color(0xFFFFA500),
+          ),
+          const SizedBox(width: 4),
+          const Text(
+            '监控中',
+            style: TextStyle(
+              color: Color(0xFFFFA500),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              shadows: [
+                Shadow(
+                  color: Colors.black,
+                  blurRadius: 2,
+                  offset: Offset(0, 1),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMapBackground() {
     // 使用 mapInfo 的背景图
     final mapUrl = widget.server.mapInfo?.mapUrl;
@@ -572,6 +619,11 @@ class _ServerCardState extends State<ServerCard>
               child: Text('|', style: TextStyle(color: Colors.white30)),
             ),
             _buildPingBadge(ping),
+            // 换图监控徽章
+            if (_isMonitoring) ...[
+              const SizedBox(width: 8),
+              _buildMonitorBadgeInline(),
+            ],
           ],
         ),
         const SizedBox(height: 10),
