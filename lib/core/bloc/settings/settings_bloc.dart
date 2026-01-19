@@ -188,7 +188,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     try {
       emit(state.copyWith(themeMode: event.themeMode));
       await StorageUtils.setInt('theme_mode', event.themeMode.index);
-      LogService.i('主题模式已设置为: ${state.currentThemeModeText}');
+      LogService.d('主题模式已设置为: ${state.currentThemeModeText}');
     } catch (e) {
       LogService.e('设置主题模式失败', e);
     }
@@ -204,7 +204,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       }
       emit(state.copyWith(themeMode: newMode));
       await StorageUtils.setInt('theme_mode', newMode.index);
-      LogService.i('主题模式已切换为: ${state.currentThemeModeText}');
+      LogService.d('主题模式已切换为: ${state.currentThemeModeText}');
     } catch (e) {
       LogService.e('切换主题模式失败', e);
     }
@@ -257,7 +257,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       }
       
       await _calculateCacheSize(emit);
-      LogService.i('缓存清理完成');
+      LogService.d('缓存清理完成');
     } catch (e) {
       LogService.e('清理缓存失败', e);
     } finally {
@@ -272,7 +272,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   Future<void> _onCheckForUpdates(SettingsCheckForUpdates event, Emitter<SettingsState> emit) async {
     emit(state.copyWith(isCheckingUpdate: true));
     try {
-      LogService.i('开始检查更新');
+      LogService.d('开始检查更新');
       await Future.delayed(const Duration(milliseconds: 500));
     } catch (e) {
       LogService.e('设置检查更新失败', e);
@@ -286,7 +286,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     try {
       final logDir = await LogService.getLogDirectory();
       if (logDir != null) {
-        LogService.i('日志目录: $logDir');
+        LogService.d('日志目录: $logDir');
         // 刷新日志缓冲区
         await LogService.flush();
       }
@@ -319,7 +319,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       
       // 同步到 GameLauncherService
       await GameLauncherService().setGamePath(event.path);
-      LogService.i('游戏路径已设置: ${event.path}');
+      LogService.d('游戏路径已设置: ${event.path}');
     } catch (e) {
       LogService.e('设置游戏路径失败', e);
       emit(state.copyWith(gamePathError: ErrorUtils.getErrorMessage(e, defaultMessage: '设置游戏路径失败')));
@@ -346,7 +346,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       
       // 同步到 GameLauncherService
       await GameLauncherService().setSteamPath(event.path);
-      LogService.i('Steam路径已设置: ${event.path}');
+      LogService.d('Steam路径已设置: ${event.path}');
     } catch (e) {
       LogService.e('设置Steam路径失败', e);
       emit(state.copyWith(steamPathError: ErrorUtils.getErrorMessage(e, defaultMessage: '设置Steam路径失败')));
@@ -368,7 +368,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         
         // 同步到 GameLauncherService
         await _gameLauncherService.setGamePath(gamePath);
-        LogService.i('自动检测到游戏路径: $gamePath');
+        LogService.d('自动检测到游戏路径: $gamePath');
       } else {
         emit(state.copyWith(
           isDetectingPath: false,
@@ -400,7 +400,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         
         // 同步到 GameLauncherService
         await _gameLauncherService.setSteamPath(steamPath);
-        LogService.i('自动检测到Steam路径: $steamPath');
+        LogService.d('自动检测到Steam路径: $steamPath');
       } else {
         emit(state.copyWith(
           isDetectingPath: false,
@@ -428,7 +428,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
           ? LaunchPlatform.perfect 
           : LaunchPlatform.worldwide;
       await GameLauncherService().setLaunchPlatform(launchPlatform);
-      LogService.i('启动平台已设置: $platformStr');
+      LogService.d('启动平台已设置: $platformStr');
     } catch (e) {
       LogService.e('设置启动平台失败', e);
     }
@@ -441,7 +441,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       
       // 同步到 GameLauncherService
       await GameLauncherService().setLaunchOptions(event.options);
-      LogService.i('启动选项已设置: ${event.options.join(" ")}');
+      LogService.d('启动选项已设置: ${event.options.join(" ")}');
     } catch (e) {
       LogService.e('设置启动选项失败', e);
     }
@@ -458,7 +458,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         
         // 同步到 GameLauncherService
         await GameLauncherService().setLaunchOptions(newOptions);
-        LogService.i('添加启动选项: ${event.option}');
+        LogService.d('添加启动选项: ${event.option}');
       }
     } catch (e) {
       LogService.e('添加启动选项失败', e);
@@ -475,7 +475,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       
       // 同步到 GameLauncherService
       await GameLauncherService().setLaunchOptions(newOptions);
-      LogService.i('移除启动选项: ${event.option}');
+      LogService.d('移除启动选项: ${event.option}');
     } catch (e) {
       LogService.e('移除启动选项失败', e);
     }
@@ -488,7 +488,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         gamePath: '',
         gamePathError: null,
       ));
-      LogService.i('游戏路径已清除');
+      LogService.d('游戏路径已清除');
     } catch (e) {
       LogService.e('清除游戏路径失败', e);
     }
@@ -501,7 +501,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         steamPath: '',
         steamPathError: null,
       ));
-      LogService.i('Steam路径已清除');
+      LogService.d('Steam路径已清除');
     } catch (e) {
       LogService.e('清除Steam路径失败', e);
     }
@@ -573,7 +573,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       await _calculateCacheSize(emit);
       emit(state.copyWith(cacheDetails: newCacheDetails));
       
-      LogService.i('已清除缓存类型: ${event.cacheType.name}');
+      LogService.d('已清除缓存类型: ${event.cacheType.name}');
     } catch (e) {
       LogService.e('清除缓存失败', e);
       // 恢复状态
@@ -603,7 +603,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         isLoading: false,
       ));
       
-      LogService.i('所有缓存已清除');
+      LogService.d('所有缓存已清除');
     } catch (e) {
       LogService.e('清除所有缓存失败', e);
       emit(state.copyWith(isLoading: false));
@@ -626,7 +626,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         isLoading: false,
       ));
       
-      LogService.i('已清除选中的 ${event.cacheTypes.length} 种缓存');
+      LogService.d('已清除选中的 ${event.cacheTypes.length} 种缓存');
     } catch (e) {
       LogService.e('清除选中缓存失败', e);
       emit(state.copyWith(isLoading: false));
@@ -793,7 +793,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         
         // 压缩数据库释放空间
         await StorageUtils.compact();
-        LogService.i('应用数据已彻底清空并压缩');
+        LogService.d('应用数据已彻底清空并压缩');
         break;
 
       case CacheType.logs:
@@ -812,7 +812,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       // 同步到 NotificationWindowService
       NotificationWindowService().setNotificationPosition(event.position);
       
-      LogService.i('通知位置已设置: ${event.position.displayName}');
+      LogService.d('通知位置已设置: ${event.position.displayName}');
     } catch (e) {
       LogService.e('设置通知位置失败', e);
     }
@@ -827,7 +827,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       
       // TODO: 同步到 FloatingWindowService（如果需要）
       
-      LogService.i('浮窗位置已设置: ${event.position.displayName}');
+      LogService.d('浮窗位置已设置: ${event.position.displayName}');
     } catch (e) {
       LogService.e('设置浮窗位置失败', e);
     }

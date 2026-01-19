@@ -83,7 +83,7 @@ class GameStatusService {
       },
     ));
 
-    LogService.i('[GameStatus] 游戏状态监控已启动');
+    LogService.d('[GameStatus] 游戏状态监控已启动');
     return;
   }
 
@@ -96,7 +96,7 @@ class GameStatusService {
     _scheduler.cancel(_taskId);
     _isMonitoring = false;
 
-    LogService.i('[GameStatus] 游戏状态监控已停止');
+    LogService.d('[GameStatus] 游戏状态监控已停止');
     return;
   }
 
@@ -112,14 +112,14 @@ class GameStatusService {
       _lastGameStartTime = DateTime.now();
       await _checkIfMonitorable();
       
-      LogService.i('[GameStatus] 检测到游戏启动，可监控: $_isMonitorable');
+      LogService.d('[GameStatus] 检测到游戏启动，可监控: $_isMonitorable');
       
       _emitStatusEvent();
     } else if (wasRunning && !isRunning) {
       // 游戏刚关闭
       _isMonitorable = false;
       
-      LogService.i('[GameStatus] 检测到游戏关闭');
+      LogService.d('[GameStatus] 检测到游戏关闭');
       
       _emitStatusEvent();
     } else if (isRunning && !_isMonitorable) {
@@ -127,7 +127,7 @@ class GameStatusService {
       // 这处理了 BakaBox 启动后游戏才完全初始化的情况
       await _checkIfMonitorable();
       if (_isMonitorable) {
-        LogService.i('[GameStatus] 重新检测到游戏可监控');
+        LogService.d('[GameStatus] 重新检测到游戏可监控');
         _emitStatusEvent();
       }
     }
@@ -154,7 +154,7 @@ class GameStatusService {
     _isGameRunning = true;
     _lastGameStartTime = DateTime.now();
     
-    LogService.i('[GameStatus] 已标记游戏为可监控');
+    LogService.d('[GameStatus] 已标记游戏为可监控');
     
     _emitStatusEvent();
   }

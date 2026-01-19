@@ -226,14 +226,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       callback: () async => add(const AuthRefreshRequested()),
     ));
 
-    LogService.i('认证定时器已启动');
+    LogService.d('认证定时器已启动');
   }
 
   void _stopTimers() {
     _scheduler.cancel(_taskIdSessionValidation);
     _scheduler.cancel(_taskIdStatsRefresh);
 
-    LogService.i('认证定时器已停止');
+    LogService.d('认证定时器已停止');
   }
 
   @override

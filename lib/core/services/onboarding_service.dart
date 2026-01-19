@@ -37,7 +37,7 @@ class OnboardingService {
     try {
       await StorageUtils.setBool(_keyOnboardingCompleted, true);
       await StorageUtils.setInt(_keyOnboardingVersion, currentOnboardingVersion);
-      LogService.i('[OnboardingService] 引导已完成');
+      LogService.d('[OnboardingService] 引导已完成');
     } catch (e) {
       LogService.e('[OnboardingService] 保存引导状态失败', e);
     }
@@ -46,7 +46,7 @@ class OnboardingService {
   /// 跳过引导
   Future<void> skipOnboarding() async {
     await completeOnboarding();
-    LogService.i('[OnboardingService] 用户跳过引导');
+    LogService.d('[OnboardingService] 用户跳过引导');
   }
 
   /// 重置引导状态（用于测试）
@@ -54,7 +54,7 @@ class OnboardingService {
     try {
       await StorageUtils.remove(_keyOnboardingCompleted);
       await StorageUtils.remove(_keyOnboardingVersion);
-      LogService.i('[OnboardingService] 引导状态已重置');
+      LogService.d('[OnboardingService] 引导状态已重置');
     } catch (e) {
       LogService.e('[OnboardingService] 重置引导状态失败', e);
     }

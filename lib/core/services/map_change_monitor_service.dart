@@ -105,7 +105,7 @@ class MapChangeMonitorService {
   Future<void> initialize() async {
     await _loadMonitoredServers();
     _startMonitorLoop();
-    LogService.i('[MapChangeMonitor] 服务已初始化，监控 ${_monitoredServers.length} 个服务器');
+    LogService.d('[MapChangeMonitor] 服务已初始化，监控 ${_monitoredServers.length} 个服务器');
   }
 
   /// 添加服务器到监控列表
@@ -131,7 +131,7 @@ class MapChangeMonitorService {
     // 如果定时器未启动，启动它
     _startMonitorLoop();
     
-    LogService.i('[MapChangeMonitor] 添加监控: $serverAddress ($serverName)');
+    LogService.d('[MapChangeMonitor] 添加监控: $serverAddress ($serverName)');
   }
 
   /// 从监控列表移除服务器
@@ -147,7 +147,7 @@ class MapChangeMonitorService {
       _stopMonitorLoop();
     }
     
-    LogService.i('[MapChangeMonitor] 移除监控: $serverAddress');
+    LogService.d('[MapChangeMonitor] 移除监控: $serverAddress');
   }
 
   /// 切换监控状态

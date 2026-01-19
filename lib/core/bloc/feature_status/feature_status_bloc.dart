@@ -40,7 +40,7 @@ class FeatureStatusBloc extends Bloc<FeatureStatusEvent, FeatureStatusState> {
         lastUpdated: DateTime.now(),
       ));
 
-      LogService.i('功能状态加载完成: '
+      LogService.d('功能状态加载完成: '
           'keyConfig=${allStatus.keyConfig.enabled}, '
           'issue=${allStatus.issue.enabled}, '
           'mapContribution=${allStatus.mapContribution.enabled}');
