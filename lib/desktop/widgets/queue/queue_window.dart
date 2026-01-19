@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
@@ -42,19 +41,7 @@ class _QueueWindowState extends State<QueueWindow> {
   void dispose() {
     // 确保 Bloc 被正确关闭，释放 Timer 和 StreamSubscription
     _queueBloc.close();
-    // 清理图片内存缓存
-    _clearImageCache();
     super.dispose();
-  }
-  
-  /// 清理图片内存缓存
-  void _clearImageCache() {
-    PaintingBinding.instance.imageCache.clear();
-    PaintingBinding.instance.imageCache.clearLiveImages();
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      PaintingBinding.instance.imageCache.clear();
-      PaintingBinding.instance.imageCache.clearLiveImages();
-    });
   }
 
   @override
@@ -95,7 +82,10 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
     super.initState();
     // 监听全局状态变化，触发 UI 更新
     _stateSubscription = _statusService.stateStream.listen((_) {
-      if (mounted) setState(() {});
+      // 双重检查 mounted 状态，确保安全
+      if (mounted) {
+        setState(() {});
+      }
     });
   }
 
