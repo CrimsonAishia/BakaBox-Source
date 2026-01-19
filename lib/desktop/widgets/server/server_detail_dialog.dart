@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../core/models/server_models.dart';
 import '../../../core/api/server_api.dart';
@@ -73,21 +72,12 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
     super.dispose();
   }
   
-  /// 清理图片内存缓存
-  void _clearImageCache() {
-    PaintingBinding.instance.imageCache.clear();
-    PaintingBinding.instance.imageCache.clearLiveImages();
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      PaintingBinding.instance.imageCache.clear();
-      PaintingBinding.instance.imageCache.clearLiveImages();
-    });
-  }
-  
   /// 关闭 Dialog 前的清理
   void _handleClose() {
-    _clearImageCache();
     _serverDetail = null;
-    Navigator.of(context).pop();
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   void _updateScrollIndicators() {
@@ -108,7 +98,11 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
   void _startAutoRefresh() {
     _refreshTimer = Timer.periodic(
       const Duration(seconds: _refreshInterval),
-      (_) => _fetchPlayerList(),
+      (_) {
+        if (mounted) {
+          _fetchPlayerList();
+        }
+      },
     );
   }
 
