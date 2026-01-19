@@ -2,10 +2,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 
 import '../../core/core.dart';
+import '../../core/constants/policy_constants.dart';
 import '../../core/services/onboarding_service.dart';
 import '../../core/services/game_path_service.dart';
 import '../widgets/qq_login_dialog.dart';
@@ -30,7 +32,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final GameLauncherService _gameLauncherService = GameLauncherService();
 
   int _currentPage = 0;
-  static const int _totalPages = 4;
+  static const int _totalPages = 4; // 恢复到4页
+
+  // 隐私政策同意状态（在完成页使用）
+  bool _agreedToPrivacy = false;
+  bool _agreedToTerms = false;
 
   // 游戏路径设置状态
   String? _gamePath;
@@ -1061,8 +1067,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
 
-  // ==================== 第四步：完成页面 ====================
+  // ==================== 第四步：完成页面（含隐私政策同意） ====================
   Widget _buildCompletePage(bool isDark) {
+    // 检查是否已同意协议
+    final canComplete = _agreedToPrivacy && _agreedToTerms;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 48),
@@ -1107,34 +1116,40 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(height: 16),
             // 副标题
             Text(
-              '现在开始探索 BakaBox 吧',
+              '在开始使用前，请阅读并同意以下协议',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 16,
                 color: isDark ? Colors.white54 : const Color(0xFF64748B),
               ),
             ).animate().fadeIn(duration: 500.ms, delay: 300.ms).slideY(begin: 0.3, duration: 400.ms),
-            const SizedBox(height: 48),
+            const SizedBox(height: 40),
+            // 协议同意卡片
+            _buildCompactAgreementCard(isDark),
+            const SizedBox(height: 32),
             // 开始按钮
             SizedBox(
-              width: 200,
+              width: 240,
               height: 52,
               child: ElevatedButton(
-                onPressed: _completeOnboarding,
+                onPressed: canComplete ? _completeOnboarding : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF3B82F6),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
+                  disabledBackgroundColor: const Color(0xFF3B82F6).withValues(alpha: 0.3),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      '开始使用',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    Text(
+                      canComplete ? '开始使用' : '请先同意协议',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
-                    const SizedBox(width: 8),
-                    Icon(MdiIcons.arrowRight, size: 20),
+                    if (canComplete) ...[
+                      const SizedBox(width: 8),
+                      Icon(MdiIcons.arrowRight, size: 20),
+                    ],
                   ],
                 ),
               ),
@@ -1143,6 +1158,183 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
       ),
     );
+  }
+
+  /// 构建紧凑的协议同意卡片
+  Widget _buildCompactAgreementCard(bool isDark) {
+    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08);
+
+    return Container(
+      width: 500,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // 隐私政策
+          _buildCompactAgreementCheckbox(
+            isDark: isDark,
+            isChecked: _agreedToPrivacy,
+            onTap: () => setState(() => _agreedToPrivacy = !_agreedToPrivacy),
+            label: '隐私政策',
+            onViewTap: () => _showPrivacyDialog(isDark),
+          ),
+          const SizedBox(height: 12),
+          // 用户协议
+          _buildCompactAgreementCheckbox(
+            isDark: isDark,
+            isChecked: _agreedToTerms,
+            onTap: () => setState(() => _agreedToTerms = !_agreedToTerms),
+            label: '用户协议',
+            onViewTap: () => _showTermsDialog(isDark),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 500.ms, delay: 400.ms).slideY(begin: 0.2, duration: 400.ms);
+  }
+
+  /// 构建紧凑的协议复选框
+  Widget _buildCompactAgreementCheckbox({
+    required bool isDark,
+    required bool isChecked,
+    required VoidCallback onTap,
+    required String label,
+    required VoidCallback onViewTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isChecked
+                ? const Color(0xFF3B82F6).withValues(alpha: 0.5)
+                : (isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE2E8F0)),
+          ),
+        ),
+        child: Row(
+          children: [
+            // 复选框
+            Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: isChecked
+                    ? const Color(0xFF3B82F6)
+                    : (isDark ? const Color(0xFF1E293B) : Colors.white),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: isChecked
+                      ? const Color(0xFF3B82F6)
+                      : (isDark ? Colors.white.withValues(alpha: 0.2) : const Color(0xFFCBD5E1)),
+                  width: 1.5,
+                ),
+              ),
+              child: isChecked
+                  ? const Icon(Icons.check, size: 14, color: Colors.white)
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            // 文字
+            Expanded(
+              child: RichText(
+                text: TextSpan(
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  ),
+                  children: [
+                    const TextSpan(text: '我已阅读并同意 '),
+                    TextSpan(
+                      text: '《$label》',
+                      style: const TextStyle(
+                        color: Color(0xFF3B82F6),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // 查看按钮
+            InkWell(
+              onTap: onViewTap,
+              borderRadius: BorderRadius.circular(6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '查看',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: const Color(0xFF3B82F6),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(MdiIcons.openInNew, size: 12, color: const Color(0xFF3B82F6)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 显示隐私政策对话框
+  void _showPrivacyDialog(bool isDark) {
+    showDialog(
+      context: context,
+      builder: (context) => _PolicyDialog(
+        isDark: isDark,
+        title: '隐私政策',
+        content: _getPrivacyPolicyContent(),
+      ),
+    );
+  }
+
+  /// 显示用户协议对话框
+  void _showTermsDialog(bool isDark) {
+    showDialog(
+      context: context,
+      builder: (context) => _PolicyDialog(
+        isDark: isDark,
+        title: '用户协议',
+        content: _getTermsOfServiceContent(),
+      ),
+    );
+  }
+
+  /// 获取隐私政策内容（简化版）
+  String _getPrivacyPolicyContent() {
+    return PolicyConstants.privacyPolicy;
+  }
+
+  /// 获取用户协议内容（简化版）
+  String _getTermsOfServiceContent() {
+    return PolicyConstants.termsOfService;
   }
 
   // ==================== 底部导航 ====================
@@ -1349,4 +1541,196 @@ class _BackgroundPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+
+// ==================== 协议对话框组件 ====================
+class _PolicyDialog extends StatelessWidget {
+  final bool isDark;
+  final String title;
+  final String content;
+
+  const _PolicyDialog({
+    required this.isDark,
+    required this.title,
+    required this.content,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final secondaryTextColor = isDark ? Colors.white70 : const Color(0xFF64748B);
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        width: 700,
+        height: 600,
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.15),
+              blurRadius: 40,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // 标题栏
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    MdiIcons.fileDocumentOutline,
+                    color: const Color(0xFF3B82F6),
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: Icon(Icons.close, color: secondaryTextColor),
+                    onPressed: () => Navigator.pop(context),
+                    splashRadius: 20,
+                  ),
+                ],
+              ),
+            ),
+            // 内容区域 - 使用 Markdown 渲染
+            Expanded(
+              child: Markdown(
+                data: content,
+                styleSheet: MarkdownStyleSheet(
+                  // 段落样式
+                  p: TextStyle(
+                    fontSize: 14,
+                    height: 1.7,
+                    color: secondaryTextColor,
+                  ),
+                  // 标题样式
+                  h1: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                    height: 1.5,
+                  ),
+                  h2: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                    height: 1.5,
+                  ),
+                  h3: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                    height: 1.5,
+                  ),
+                  // 列表样式
+                  listBullet: TextStyle(
+                    fontSize: 14,
+                    color: secondaryTextColor,
+                  ),
+                  // 粗体样式
+                  strong: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                  ),
+                  // 链接样式
+                  a: const TextStyle(
+                    color: Color(0xFF3B82F6),
+                    decoration: TextDecoration.underline,
+                  ),
+                  // 代码样式
+                  code: TextStyle(
+                    fontSize: 13,
+                    fontFamily: 'monospace',
+                    backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                    color: const Color(0xFFEF4444),
+                  ),
+                  codeblockDecoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  // 引用样式
+                  blockquote: TextStyle(
+                    fontSize: 14,
+                    color: secondaryTextColor,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  blockquoteDecoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF334155).withValues(alpha: 0.3) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border(
+                      left: BorderSide(
+                        color: const Color(0xFF3B82F6),
+                        width: 4,
+                      ),
+                    ),
+                  ),
+                  // 水平线样式
+                  horizontalRuleDecoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(
+                        color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                ),
+                padding: const EdgeInsets.all(32),
+              ),
+            ),
+            // 底部按钮
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+                  ),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3B82F6),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text('我知道了', style: TextStyle(fontSize: 15)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
