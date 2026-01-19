@@ -351,6 +351,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         if (state.submitSuccess) {
           ToastUtils.showSuccess(context, '提交成功');
         }
+        if (state.deleteSuccess) {
+          ToastUtils.showSuccess(context, '删除成功');
+        }
       },
       builder: (context, state) {
         final isNameTab = _currentType == ContributionType.name;
@@ -678,7 +681,8 @@ class _MapContributionDialogState extends State<MapContributionDialog>
             ),
           ),
           const Spacer(),
-          if (canEdit)
+          if (canEdit) ...[
+            // 修改按钮
             Tooltip(
               message: '修改后重新提交审核',
               child: Material(
@@ -712,6 +716,42 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                 ),
               ),
             ),
+            const SizedBox(width: 8),
+            // 删除按钮
+            Tooltip(
+              message: '删除',
+              child: Material(
+                color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(6),
+                child: InkWell(
+                  onTap: () => _showDeleteConfirmDialog(contribution),
+                  borderRadius: BorderRadius.circular(6),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          MdiIcons.deleteOutline,
+                          size: 14,
+                          color: const Color(0xFFEF4444),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '删除',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFFEF4444),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -778,6 +818,156 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       _showEditNameDialog(contribution);
     } else {
       _showEditBackgroundDialog(contribution);
+    }
+  }
+
+  /// 显示删除确认对话框
+  void _showDeleteConfirmDialog(MapContribution contribution) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isNameType = contribution.type == ContributionType.name;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Row(
+          children: [
+            Icon(
+              MdiIcons.alertCircleOutline,
+              color: const Color(0xFFEF4444),
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              '确认删除',
+              style: TextStyle(
+                color: isDark ? Colors.white : const Color(0xFF1F2937),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '确定要删除这个贡献吗？',
+              style: TextStyle(
+                fontSize: 15,
+                color: isDark ? Colors.white70 : const Color(0xFF374151),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // 内容预览区域
+            if (isNameType)
+              // 名称贡献：显示文字
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark 
+                      ? Colors.white.withValues(alpha: 0.05) 
+                      : Colors.black.withValues(alpha: 0.03),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isDark 
+                        ? Colors.white.withValues(alpha: 0.1) 
+                        : Colors.black.withValues(alpha: 0.08),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      MdiIcons.textBoxOutline,
+                      size: 16,
+                      color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        contribution.content,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white : const Color(0xFF1F2937),
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              // 背景贡献：显示图片预览
+              Container(
+                height: 120,
+                decoration: BoxDecoration(
+                  color: isDark 
+                      ? Colors.white.withValues(alpha: 0.05) 
+                      : Colors.black.withValues(alpha: 0.03),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isDark 
+                        ? Colors.white.withValues(alpha: 0.1) 
+                        : Colors.black.withValues(alpha: 0.08),
+                  ),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: _ContributionImage(
+                  imageRef: contribution.backgroundImageRef ?? contribution.content,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            const SizedBox(height: 12),
+            Text(
+              '删除后无法恢复',
+              style: TextStyle(
+                fontSize: 13,
+                color: const Color(0xFFEF4444),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(
+              '取消',
+              style: TextStyle(
+                color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              _handleDelete(contribution);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 处理删除操作
+  void _handleDelete(MapContribution contribution) {
+    final isNameType = contribution.type == ContributionType.name;
+    
+    if (isNameType) {
+      context.read<MapContributionBloc>().add(
+        DeleteNameContribution(id: contribution.id),
+      );
+    } else {
+      context.read<MapContributionBloc>().add(
+        DeleteBackgroundContribution(id: contribution.id),
+      );
     }
   }
 
