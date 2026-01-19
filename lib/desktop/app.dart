@@ -7,6 +7,7 @@ import 'package:window_manager/window_manager.dart';
 import '../core/core.dart';
 import '../core/services/game_status_service.dart';
 import '../core/services/gsi_service.dart';
+import '../core/services/policy_service.dart';
 import 'router/desktop_router.dart';
 import '../core/services/console_log_service.dart';
 import '../core/services/map_change_monitor_service.dart';
@@ -14,6 +15,7 @@ import '../core/services/update_log_monitor_service.dart';
 import '../core/services/warmup_monitor_service.dart';
 import 'theme/desktop_theme.dart';
 import 'screens/desktop_home_screen.dart';
+import 'widgets/policy_update_dialog.dart';
 
 /// 桌面端应用入口
 class DesktopApp extends StatefulWidget {
@@ -132,9 +134,25 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkPolicyUpdate();
       _initializeServices();
       _listenForUpdate();
     });
+  }
+
+  /// 检查协议更新
+  Future<void> _checkPolicyUpdate() async {
+    try {
+      final policyService = PolicyService();
+      final needsReAgreement = await policyService.needsReAgreement();
+      
+      if (needsReAgreement && mounted) {
+        // 显示协议更新对话框（不可关闭，必须同意）
+        await PolicyUpdateDialog.show(context);
+      }
+    } catch (e) {
+      LogService.e('[DesktopAppHome] 检查协议更新失败', e);
+    }
   }
 
   Future<void> _initializeServices() async {
