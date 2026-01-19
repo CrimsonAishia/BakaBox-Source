@@ -8,9 +8,9 @@ class PlayerCountUtils {
   /// 根据玩家数量和最大玩家数返回对应的颜色
   /// 
   /// 颜色等级规则：
-  /// - 0-30%: 绿色 (低负载)
-  /// - 30-70%: 黄色 (中等负载)
-  /// - 70-100%: 红色 (高负载)
+  /// - 0-80%: 绿色 (低负载)
+  /// - 80-99%: 橙色 (中等负载)
+  /// - 100%: 红色 (满人)
   /// 
   /// [players] 当前玩家数量
   /// [maxPlayers] 最大玩家数量
@@ -24,22 +24,28 @@ class PlayerCountUtils {
     
     // 确保玩家数量在有效范围内
     final validPlayers = players.clamp(0, maxPlayers);
-    final percentage = validPlayers / maxPlayers;
     
-    if (percentage <= 0.3) {
-      return lowLoadColor;
-    } else if (percentage <= 0.7) {
-      return mediumLoadColor;
-    } else {
+    // 满人 - 红色
+    if (validPlayers >= maxPlayers) {
       return highLoadColor;
     }
+    
+    final percentage = validPlayers / maxPlayers;
+    
+    // 80%以上 - 橙色
+    if (percentage >= 0.8) {
+      return mediumLoadColor;
+    }
+    
+    // 80%以下 - 绿色
+    return lowLoadColor;
   }
 
   /// 低负载颜色 (绿色)
-  static const Color lowLoadColor = Color(0xFF4CAF50);
+  static const Color lowLoadColor = Color(0xFF10B981);
 
-  /// 中等负载颜色 (黄色)
-  static const Color mediumLoadColor = Color(0xFFFFC107);
+  /// 中等负载颜色 (橙色)
+  static const Color mediumLoadColor = Color(0xFFFF9800);
 
   /// 高负载颜色 (红色)
   static const Color highLoadColor = Color(0xFFF44336);
@@ -54,14 +60,19 @@ class PlayerCountUtils {
   static String getLoadLevelText(int players, int maxPlayers) {
     if (maxPlayers <= 0) return '未知';
     
+    // 满人
+    if (players >= maxPlayers) {
+      return '满人';
+    }
+    
     final percentage = getPlayerPercentage(players, maxPlayers);
     
-    if (percentage <= 0.3) {
-      return '低负载';
-    } else if (percentage <= 0.7) {
-      return '中等负载';
-    } else {
+    // 80%以上
+    if (percentage >= 0.8) {
       return '高负载';
     }
+    
+    // 80%以下
+    return '低负载';
   }
 }
