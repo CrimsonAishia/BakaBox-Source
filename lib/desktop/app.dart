@@ -55,7 +55,7 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
       providers: [
         // 全局 Bloc - 所有页面共享
         BlocProvider(create: (_) => AuthBloc()..add(const AuthCheckRequested())),
-        BlocProvider(create: (_) => ServerBloc()..add(ServerFetchList())),
+        BlocProvider(create: (_) => ServerBloc()),
         BlocProvider(create: (_) => ServerStatsBloc()..add(const ServerStatsFetch())),
         BlocProvider(create: (_) => UpdateLogBloc()),
         BlocProvider(create: (_) => UpdateBloc()),
