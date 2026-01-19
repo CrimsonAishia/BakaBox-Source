@@ -9,6 +9,7 @@ import 'package:file_picker/file_picker.dart';
 import '../../core/core.dart';
 import '../../core/constants/policy_constants.dart';
 import '../../core/services/onboarding_service.dart';
+import '../../core/services/policy_service.dart';
 import '../../core/services/game_path_service.dart';
 import '../widgets/qq_login_dialog.dart';
 
@@ -28,6 +29,7 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   final OnboardingService _onboardingService = OnboardingService();
+  final PolicyService _policyService = PolicyService();
   final GamePathService _gamePathService = GamePathService();
   final GameLauncherService _gameLauncherService = GameLauncherService();
 
@@ -196,6 +198,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   /// 完成引导
   Future<void> _completeOnboarding() async {
     try {
+      // 保存协议同意状态
+      await _policyService.agreeToPolicy();
+      // 标记引导完成
       await _onboardingService.completeOnboarding();
       if (mounted) {
         widget.onComplete();
