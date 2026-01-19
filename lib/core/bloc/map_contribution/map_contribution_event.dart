@@ -114,6 +114,26 @@ class UpdateBackgroundContribution extends MapContributionEvent {
   List<Object?> get props => [id, fileId];
 }
 
+/// 删除名称贡献（仅审核失败的可删除）
+class DeleteNameContribution extends MapContributionEvent {
+  final int id;
+
+  const DeleteNameContribution({required this.id});
+
+  @override
+  List<Object?> get props => [id];
+}
+
+/// 删除背景贡献（仅审核失败的可删除）
+class DeleteBackgroundContribution extends MapContributionEvent {
+  final int id;
+
+  const DeleteBackgroundContribution({required this.id});
+
+  @override
+  List<Object?> get props => [id];
+}
+
 /// 清除错误
 class ClearContributionError extends MapContributionEvent {
   const ClearContributionError();

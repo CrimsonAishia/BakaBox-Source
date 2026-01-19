@@ -20,6 +20,9 @@ class MapContributionState extends Equatable {
   /// 提交成功标识（用于显示 Toast 后清除）
   final bool submitSuccess;
   
+  /// 删除成功标识（用于显示 Toast 后清除）
+  final bool deleteSuccess;
+  
   /// 错误信息
   final String? error;
   
@@ -33,6 +36,7 @@ class MapContributionState extends Equatable {
     this.isLoadingBackgrounds = false,
     this.isSubmitting = false,
     this.submitSuccess = false,
+    this.deleteSuccess = false,
     this.error,
     this.currentMapName,
   });
@@ -53,6 +57,7 @@ class MapContributionState extends Equatable {
     bool? isLoadingBackgrounds,
     bool? isSubmitting,
     bool? submitSuccess,
+    bool? deleteSuccess,
     String? error,
     bool clearError = false,
     String? currentMapName,
@@ -64,6 +69,7 @@ class MapContributionState extends Equatable {
       isLoadingBackgrounds: isLoadingBackgrounds ?? this.isLoadingBackgrounds,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       submitSuccess: submitSuccess ?? false,
+      deleteSuccess: deleteSuccess ?? false,
       error: clearError ? null : (error ?? this.error),
       currentMapName: currentMapName ?? this.currentMapName,
     );
@@ -77,6 +83,7 @@ class MapContributionState extends Equatable {
     isLoadingBackgrounds,
     isSubmitting,
     submitSuccess,
+    deleteSuccess,
     error,
     currentMapName,
   ];

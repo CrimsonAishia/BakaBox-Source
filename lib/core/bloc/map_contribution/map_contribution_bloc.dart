@@ -24,6 +24,8 @@ class MapContributionBloc
     on<SubmitBackgroundContribution>(_onSubmitBackgroundContribution);
     on<UpdateNameContribution>(_onUpdateNameContribution);
     on<UpdateBackgroundContribution>(_onUpdateBackgroundContribution);
+    on<DeleteNameContribution>(_onDeleteNameContribution);
+    on<DeleteBackgroundContribution>(_onDeleteBackgroundContribution);
     on<ToggleVote>(_onToggleVote);
     on<RefreshNameContributions>(_onRefreshNameContributions);
     on<RefreshBackgroundContributions>(_onRefreshBackgroundContributions);
@@ -242,6 +244,62 @@ class MapContributionBloc
     } catch (e) {
       emit(state.copyWith(error: _getErrorMessage(e), isSubmitting: false));
       LogService.e('更新背景贡献失败', e);
+    }
+  }
+
+  /// 删除名称贡献（仅审核失败的可删除）
+  Future<void> _onDeleteNameContribution(
+    DeleteNameContribution event,
+    Emitter<MapContributionState> emit,
+  ) async {
+    emit(state.copyWith(isSubmitting: true, clearError: true));
+
+    try {
+      final success = await _api.deleteNameContribution(event.id);
+      if (success) {
+        // 从列表中移除该贡献
+        final updatedList = state.nameContributions
+            .where((c) => c.id != event.id)
+            .toList();
+        emit(state.copyWith(
+          nameContributions: updatedList,
+          isSubmitting: false,
+          deleteSuccess: true,
+        ));
+      } else {
+        emit(state.copyWith(isSubmitting: false));
+      }
+    } catch (e) {
+      emit(state.copyWith(error: _getErrorMessage(e), isSubmitting: false));
+      LogService.e('删除名称贡献失败', e);
+    }
+  }
+
+  /// 删除背景贡献（仅审核失败的可删除）
+  Future<void> _onDeleteBackgroundContribution(
+    DeleteBackgroundContribution event,
+    Emitter<MapContributionState> emit,
+  ) async {
+    emit(state.copyWith(isSubmitting: true, clearError: true));
+
+    try {
+      final success = await _api.deleteBackgroundContribution(event.id);
+      if (success) {
+        // 从列表中移除该贡献
+        final updatedList = state.backgroundContributions
+            .where((c) => c.id != event.id)
+            .toList();
+        emit(state.copyWith(
+          backgroundContributions: updatedList,
+          isSubmitting: false,
+          deleteSuccess: true,
+        ));
+      } else {
+        emit(state.copyWith(isSubmitting: false));
+      }
+    } catch (e) {
+      emit(state.copyWith(error: _getErrorMessage(e), isSubmitting: false));
+      LogService.e('删除背景贡献失败', e);
     }
   }
 
