@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/core.dart';
@@ -229,43 +228,11 @@ class _UpdateLogItemState extends State<UpdateLogItem> with SingleTickerProvider
             ],
           ),
         ),
-        const Spacer(),
-        _buildCopyButton(context, colorScheme),
       ],
     );
   }
 
-  Widget _buildCopyButton(BuildContext context, ColorScheme colorScheme) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [colorScheme.surface, colorScheme.surfaceContainer],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.3), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _copyContent(context),
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.all(10),
-            child: Icon(Icons.copy_rounded, size: 18, color: colorScheme.onSurfaceVariant),
-          ),
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildContentArea(BuildContext context, ColorScheme colorScheme) {
     return Container(
@@ -350,15 +317,4 @@ class _UpdateLogItemState extends State<UpdateLogItem> with SingleTickerProvider
   }
 
   bool _containsHtmlTags(String text) => RegExp(r'<[^>]+>').hasMatch(text);
-
-  void _copyContent(BuildContext context) {
-    final timeStr = Formatters.formatDateTime(widget.log.updateTime);
-    final content = widget.log.rawHtml.isNotEmpty 
-        ? Formatters.htmlToText(widget.log.rawHtml)
-        : widget.log.content;
-    
-    final copyText = '更新时间：$timeStr\n\n$content';
-    Clipboard.setData(ClipboardData(text: copyText));
-    ToastUtils.showSuccess(context, '内容已复制到剪贴板');
-  }
 }

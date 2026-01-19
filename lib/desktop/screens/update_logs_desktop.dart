@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -71,14 +70,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
     context.read<UpdateLogBloc>().add(const UpdateLogFetch());
   }
 
-  void _copyLogContent(SteamWorkChangeLog log) {
-    final formattedTime = Formatters.formatDateTime(log.updateTime);
-    // 复制时使用纯文本内容
-    final plainText = log.content.isNotEmpty ? log.content : Formatters.htmlToText(log.rawHtml);
-    final copyText = '时间: $formattedTime\n\n$plainText';
-    Clipboard.setData(ClipboardData(text: copyText));
-    ToastUtils.showSuccess(context, '复制成功');
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -460,7 +452,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 头部：序号 + 时间 + 最新标签 + 复制按钮
+                // 头部：序号 + 时间 + 最新标签
                 _buildLogHeader(log, index, isLatest),
                 const SizedBox(height: 14),
                 // 分隔线
@@ -535,51 +527,11 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
               style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
             ),
           ),
-        const Spacer(),
-        // 复制按钮
-        _buildCopyButton(log),
       ],
     );
   }
 
-  /// 复制按钮
-  Widget _buildCopyButton(SteamWorkChangeLog log) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _copyLogContent(log),
-        borderRadius: BorderRadius.circular(6),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB),
-            ),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                MdiIcons.contentCopy,
-                size: 14,
-                color: isDark ? Colors.white54 : Colors.grey.shade500,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '复制',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDark ? Colors.white54 : Colors.grey.shade600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+
 
   /// 日志内容 - 渲染 HTML
   Widget _buildLogContent(SteamWorkChangeLog log) {
