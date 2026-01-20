@@ -30,24 +30,18 @@ dependencies:
   go_router: ^15.1.2
   
   # Local Storage & Caching
-  sqflite: ^2.3.0
   path: ^1.9.0
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   
   # UI Components
-  pull_to_refresh: ^2.0.0
-  shimmer: ^3.0.0
   fl_chart: ^0.68.0
   flutter_html: ^3.0.0-beta.2
   flutter_markdown: ^0.7.3
   flutter_quill: ^11.0.0
-  dart_quill_delta: ^10.8.3
-  markdown: ^7.2.2
   
   # Animations
   flutter_staggered_animations: ^1.1.1
-  animations: ^2.0.11
   flutter_animate: ^4.5.0
   curved_navigation_bar: ^1.0.6
   
@@ -57,8 +51,6 @@ dependencies:
   package_info_plus: ^8.0.0
   path_provider: ^2.1.1
   crypto: ^3.0.3
-  mime: ^1.0.5
-  image_picker: ^1.0.7
   
   # Logging
   logger: ^2.0.0
