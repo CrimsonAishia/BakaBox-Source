@@ -38,6 +38,42 @@ enum ThreadStatus {
   failed,
 }
 
+// ==================== 消息常量（统一管理所有消息）====================
+
+class _Messages {
+  // 启动游戏
+  static const launching = '正在启动游戏...';
+  static const gameAlreadyRunning = '游戏已在运行';
+  static const launchSuccess = '游戏启动成功';
+  static const launchFailed = '启动失败';
+  static const launchTimeout = '游戏加载超时';
+  
+  // 连接服务器
+  static const connecting = '正在连接服务器...';
+  static const loading = '正在进入游戏...';
+  static const connectSuccess = '成功进入游戏！';
+  static const connectFailed = '连接失败';
+  static const serverFull = '服务器已满';
+  static const reservedSlots = '服务器预留位置已满\n该服务器为捐助者预留了位置';
+  static const commandSent = '加入命令已发送';
+  static const networkError = '连接异常，请检查网络';
+  
+  // 挤服
+  static const queueing = '挤服中...';
+  static const queuePaused = '已停止挤服';
+  static const queueRetryServerFull = '服务器已满，继续挤服...';
+  static const queueRetryTimeout = '连接超时，继续挤服...';
+  static const queueRetryFailed = '连接失败，继续挤服...';
+  static const queueNetworkUnstable = '网络不稳定，暂停挤服';
+  
+  // 通用
+  static const cancelled = '已取消';
+  static const gameClosed = '游戏已关闭';
+  static const gameNotRunning = '游戏未运行，请先启动游戏';
+  
+  static String loadingMap(String mapName) => '正在加载地图 $mapName';
+}
+
 /// 挤服配置
 class QueueConfig {
   final int targetPlayers;
@@ -195,39 +231,6 @@ class StatusWindowService {
     _updateState(_state.copyWith(isGameRunning: _gameStatusService.isGameRunning));
     LogService.i('[StatusWindowService] 服务已初始化');
   }
-
-  /// 显示测试浮窗（用于设置页面预览）
-  Future<void> showTestWindow({
-    required String serverAddress,
-    required String serverName,
-  }) async {
-    // 如果有正在进行的操作，不显示测试窗口
-    if (_state.type != OperationType.none && _state.status == OperationStatus.running) {
-      LogService.w('[StatusWindowService] 有其他操作正在进行，无法显示测试窗口');
-      return;
-    }
-
-    _cancelCloseTimer();
-
-    // 显示测试浮窗
-    await _showWindow(
-      type: FloatingWindowType.queue,
-      serverAddress: serverAddress,
-      title: serverName,
-      state: 'queueing',
-      message: '测试浮窗显示效果',
-      mapName: 'de_mirage',
-      mapNameCn: '荒漠迷城',
-      currentPlayers: 8,
-      targetPlayers: 10,
-      threadStatuses: ['success', 'requesting', 'idle', 'failed'],
-    );
-
-    // 5秒后自动关闭
-    _scheduleClose(seconds: 5);
-    
-    LogService.d('[StatusWindowService] 显示测试浮窗');
-  }
   
   /// 启动游戏
   Future<bool> launchGame({
@@ -249,7 +252,7 @@ class StatusWindowService {
     _updateState(OperationState(
       type: OperationType.launching,
       status: OperationStatus.running,
-      message: '正在启动游戏...',
+      message: _Messages.launching,
       serverAddress: serverAddress,
       serverName: serverName,
     ));
@@ -260,7 +263,7 @@ class StatusWindowService {
       _updateState(_state.copyWith(
         type: OperationType.none,  // 重置操作类型
         status: OperationStatus.success,
-        message: '游戏已在运行',
+        message: _Messages.gameAlreadyRunning,
         isGameRunning: true,
       ));
       return true;
@@ -272,7 +275,7 @@ class StatusWindowService {
       type: FloatingWindowType.launch,
       title: serverName ?? '启动游戏',
       state: 'launching',
-      message: '正在启动游戏...',
+      message: _Messages.launching,
       // 启动游戏时不传递地图信息，不显示地图背景
     );
     
@@ -283,9 +286,9 @@ class StatusWindowService {
       _updateState(_state.copyWith(
         type: OperationType.none,  // 重置操作类型
         status: OperationStatus.failed,
-        message: result.error ?? '启动失败',
+        message: result.error ?? _Messages.launchFailed,
       ));
-      await _updateWindow(state: 'failed', message: result.error ?? '启动失败');
+      await _updateWindow(state: 'failed', message: result.error ?? _Messages.launchFailed);
       _scheduleClose(seconds: 3);
       return false;
     }
@@ -295,10 +298,10 @@ class StatusWindowService {
       _updateState(_state.copyWith(
         type: OperationType.none,  // 重置操作类型
         status: OperationStatus.success,
-        message: '游戏已在运行',
+        message: _Messages.gameAlreadyRunning,
         isGameRunning: true,
       ));
-      await _updateWindow(state: 'success', message: '游戏已在运行');
+      await _updateWindow(state: 'success', message: _Messages.gameAlreadyRunning);
       _scheduleClose(seconds: 3);
       return true;
     }
@@ -310,10 +313,10 @@ class StatusWindowService {
       _updateState(_state.copyWith(
         type: OperationType.none,  // 重置操作类型（如果没有后续连接）
         status: OperationStatus.success,
-        message: '游戏启动成功',
+        message: _Messages.launchSuccess,
         isGameRunning: true,
       ));
-      await _updateWindow(state: 'success', message: '游戏启动成功');
+      await _updateWindow(state: 'success', message: _Messages.launchSuccess);
       _scheduleClose(seconds: 5);
       
       // 如果有服务器地址，继续连接
@@ -331,9 +334,9 @@ class StatusWindowService {
       _updateState(_state.copyWith(
         type: OperationType.none,  // 重置操作类型
         status: OperationStatus.failed,
-        message: '游戏加载超时',
+        message: _Messages.launchTimeout,
       ));
-      await _updateWindow(state: 'failed', message: '游戏加载超时');
+      await _updateWindow(state: 'failed', message: _Messages.launchTimeout);
       _scheduleClose(seconds: 3);
     }
     
@@ -381,7 +384,7 @@ class StatusWindowService {
     _updateState(OperationState(
       type: OperationType.connecting,
       status: OperationStatus.running,
-      message: '正在连接服务器...',
+      message: _Messages.connecting,
       serverAddress: serverAddress,
       serverName: serverName,
       isGameRunning: true,
@@ -393,7 +396,7 @@ class StatusWindowService {
       serverAddress: serverAddress,
       title: serverName ?? serverAddress,
       state: 'connecting',
-      message: '正在连接服务器...',
+      message: _Messages.connecting,
       mapName: mapName,
       mapNameCn: mapNameCn,
       mapBackground: mapBackground,
@@ -405,9 +408,9 @@ class StatusWindowService {
       _updateState(_state.copyWith(
         type: OperationType.none,  // 重置操作类型
         status: OperationStatus.failed,
-        message: connectResult.error ?? '连接失败',
+        message: connectResult.error ?? _Messages.connectFailed,
       ));
-      await _updateWindow(state: 'failed', message: connectResult.error ?? '连接失败');
+      await _updateWindow(state: 'failed', message: connectResult.error ?? _Messages.connectFailed);
       _scheduleClose(seconds: 3);
       return false;
     }
@@ -423,9 +426,9 @@ class StatusWindowService {
       _updateState(_state.copyWith(
         type: OperationType.none,  // 重置操作类型
         status: OperationStatus.success,
-        message: '成功进入游戏！',
+        message: _Messages.connectSuccess,
       ));
-      await _updateWindow(state: 'success', message: '成功进入游戏！');
+      await _updateWindow(state: 'success', message: _Messages.connectSuccess);
       if (playSuccessSound) {
         _audioService.playQueueSuccessSound();
       }
@@ -435,20 +438,20 @@ class StatusWindowService {
       _updateState(_state.copyWith(
         type: OperationType.none,  // 重置操作类型
         status: OperationStatus.serverFull,
-        message: '服务器已满',
+        message: _Messages.serverFull,
       ));
-      await _updateWindow(state: 'serverFull', message: '服务器已满');
+      await _updateWindow(state: 'serverFull', message: _Messages.serverFull);
       _scheduleClose(seconds: 8);  // 失败状态使用8秒倒计时
       return false;
     } else if (monitorResult.state == GameState.reservedSlots) {
       _updateState(_state.copyWith(
         type: OperationType.none,  // 重置操作类型
         status: OperationStatus.failed,
-        message: '服务器预留位置已满',
+        message: _Messages.reservedSlots,
       ));
       await _updateWindow(
         state: 'reservedSlots',
-        message: '服务器预留位置已满\n该服务器为捐助者预留了位置',
+        message: _Messages.reservedSlots,
       );
       _scheduleClose(seconds: 8);  // 失败状态使用8秒倒计时
       return false;
@@ -456,9 +459,9 @@ class StatusWindowService {
       _updateState(_state.copyWith(
         type: OperationType.none,  // 重置操作类型
         status: OperationStatus.failed,
-        message: monitorResult.message ?? '连接失败',
+        message: monitorResult.message ?? _Messages.connectFailed,
       ));
-      await _updateWindow(state: 'failed', message: monitorResult.message ?? '连接失败');
+      await _updateWindow(state: 'failed', message: monitorResult.message ?? _Messages.connectFailed);
       _scheduleClose(seconds: 8);  // 失败状态使用8秒倒计时
       return false;
     }
@@ -473,7 +476,7 @@ class StatusWindowService {
   }) async {
     // 检查游戏是否运行
     if (!_gameStatusService.isGameRunning) {
-      _updateState(_state.copyWith(error: '游戏未运行，请先启动游戏'));
+      _updateState(_state.copyWith(error: _Messages.gameNotRunning));
       return false;
     }
     
@@ -504,7 +507,7 @@ class StatusWindowService {
     _updateState(OperationState(
       type: OperationType.queueing,
       status: OperationStatus.running,
-      message: '挤服中...',
+      message: _Messages.queueing,
       serverAddress: serverAddress,
       serverName: serverInfo?.hostName ?? serverAddress,
       serverInfo: serverInfo,
@@ -530,7 +533,7 @@ class StatusWindowService {
       serverAddress: serverAddress,
       title: serverInfo?.hostName ?? serverAddress,
       state: 'queueing',
-      message: '挤服中...',
+      message: _Messages.queueing,
       mapName: serverInfo?.map,
       mapNameCn: mapInfo?.mapLabel,
       mapBackground: mapInfo?.mapUrl,
@@ -569,10 +572,10 @@ class StatusWindowService {
     _updateState(_state.copyWith(
       type: OperationType.none,  // 重置操作类型
       status: OperationStatus.paused,
-      message: '已停止挤服',
+      message: _Messages.queuePaused,
     ));
     
-    _updateWindow(state: 'paused', message: '已停止挤服');
+    _updateWindow(state: 'paused', message: _Messages.queuePaused);
     _scheduleClose(seconds: 3);
     
     LogService.d('[StatusWindowService] 挤服已暂停');
@@ -640,7 +643,7 @@ class StatusWindowService {
     _updateState(_state.copyWith(
       type: OperationType.none,  // 重置操作类型
       status: OperationStatus.paused,
-      message: '已取消',
+      message: _Messages.cancelled,
     ));
     
     _scheduleClose(seconds: 2);
@@ -726,9 +729,9 @@ class StatusWindowService {
         _updateState(_state.copyWith(
           type: OperationType.none,  // 重置操作类型
           status: OperationStatus.failed,
-          message: '游戏已关闭',
+          message: _Messages.gameClosed,
         ));
-        _updateWindow(state: 'failed', message: '游戏已关闭');
+        _updateWindow(state: 'failed', message: _Messages.gameClosed);
         _scheduleClose(seconds: 3);
       }
     }
@@ -770,33 +773,33 @@ class StatusWindowService {
         switch (consoleState.state) {
           case GameState.connecting:
             windowState = 'connecting';
-            message = '正在连接服务器...';
+            message = _Messages.connecting;
             break;
           case GameState.loading:
             windowState = 'loading';
             message = consoleState.mapName.isNotEmpty 
-                ? '正在加载地图 ${consoleState.mapName}' 
-                : '正在加载地图...';
+                ? _Messages.loadingMap(consoleState.mapName)
+                : _Messages.loading;
             break;
           case GameState.inGame:
             windowState = 'success';
-            message = '成功进入游戏！';
+            message = _Messages.connectSuccess;
             break;
           case GameState.serverFull:
             windowState = 'serverFull';
-            message = '服务器已满';
+            message = _Messages.serverFull;
             break;
           case GameState.reservedSlots:
             windowState = 'reservedSlots';
-            message = '服务器预留位置已满\n该服务器为特定权限用户预留了位置';
+            message = _Messages.reservedSlots;
             break;
           case GameState.failed:
             windowState = 'failed';
-            message = '连接失败';
+            message = _Messages.connectFailed;
             break;
           default:
             windowState = 'connecting';
-            message = '正在连接...';
+            message = _Messages.connecting;
         }
         
         _updateState(_state.copyWith(message: message));
@@ -883,7 +886,7 @@ class StatusWindowService {
       
       // 连续失败10次，暂停挤服
       if (_consecutiveFailures >= 10 && _isQueueRunning) {
-        LogService.w('[StatusWindowService] 网络不稳定，暂停挤服');
+        LogService.w('[StatusWindowService] ${_Messages.queueNetworkUnstable}');
         pauseQueue();
       }
     } finally {
@@ -915,10 +918,10 @@ class StatusWindowService {
   Future<void> _connectForQueue(String serverAddress) async {
     _updateState(_state.copyWith(
       status: OperationStatus.running,
-      message: '正在连接服务器...',
+      message: _Messages.connecting,
     ));
     
-    await _updateWindow(state: 'connecting', message: '正在连接服务器...');
+    await _updateWindow(state: 'connecting', message: _Messages.connecting);
     
     try {
       final result = await _gameLauncher.connectToServer(serverAddress);
@@ -927,8 +930,8 @@ class StatusWindowService {
         final canMonitor = _gameStatusService.isMonitorable;
         
         if (canMonitor) {
-          _updateState(_state.copyWith(message: '正在进入游戏...'));
-          await _updateWindow(state: 'loading', message: '正在进入游戏...');
+          _updateState(_state.copyWith(message: _Messages.loading));
+          await _updateWindow(state: 'loading', message: _Messages.loading);
           
           final connectionResult = await _monitorConnection(
             mapName: _state.serverInfo?.map,
@@ -941,27 +944,27 @@ class StatusWindowService {
               _updateState(_state.copyWith(
                 type: OperationType.none,  // 重置操作类型
                 status: OperationStatus.success,
-                message: '成功进入游戏！',
+                message: _Messages.connectSuccess,
               ));
-              await _updateWindow(state: 'success', message: '成功进入游戏！');
+              await _updateWindow(state: 'success', message: _Messages.connectSuccess);
               _audioService.playQueueSuccessSound();
               _scheduleClose(seconds: 5);
               break;
               
             case GameState.serverFull:
-              _handleQueueConnectionFailure('服务器已满', serverAddress);
+              _handleQueueConnectionFailure(_Messages.serverFull, serverAddress);
               break;
               
             case GameState.reservedSlots:
-              _handleQueueConnectionFailure('服务器预留位置已满', serverAddress);
+              _handleQueueConnectionFailure(_Messages.reservedSlots, serverAddress);
               break;
               
             case GameState.failed:
-              _handleQueueConnectionFailure(connectionResult.message ?? '连接失败', serverAddress);
+              _handleQueueConnectionFailure(connectionResult.message ?? _Messages.connectFailed, serverAddress);
               break;
               
             default:
-              _handleQueueConnectionFailure(connectionResult.message ?? '连接超时', serverAddress);
+              _handleQueueConnectionFailure(connectionResult.message ?? _Messages.connectFailed, serverAddress);
               break;
           }
         } else {
@@ -969,17 +972,17 @@ class StatusWindowService {
           _updateState(_state.copyWith(
             type: OperationType.none,  // 重置操作类型
             status: OperationStatus.success,
-            message: '加入命令已发送',
+            message: _Messages.commandSent,
           ));
-          await _updateWindow(state: 'success', message: '加入命令已发送');
+          await _updateWindow(state: 'success', message: _Messages.commandSent);
           _audioService.playQueueSuccessSound();
           _scheduleClose(seconds: 5);
         }
       } else {
-        _handleQueueConnectionFailure(result.error ?? '连接失败', serverAddress);
+        _handleQueueConnectionFailure(result.error ?? _Messages.connectFailed, serverAddress);
       }
     } catch (e) {
-      _handleQueueConnectionFailure('连接异常，请检查网络', serverAddress);
+      _handleQueueConnectionFailure(_Messages.networkError, serverAddress);
     }
   }
   
@@ -1001,13 +1004,13 @@ class StatusWindowService {
       _updateState(_state.copyWith(
         type: OperationType.none,
         status: OperationStatus.failed,
-        message: '服务器预留位置已满',
+        message: _Messages.reservedSlots,
         queueConfig: _state.queueConfig.copyWith(enableAutoRetry: false),
       ));
       
       _updateWindow(
         state: 'reservedSlots',
-        message: '服务器预留位置已满\n\n该服务器为特定权限用户预留了位置',
+        message: _Messages.reservedSlots,
       );
       
       _scheduleClose(seconds: 8);  // 失败状态使用8秒倒计时
@@ -1023,10 +1026,10 @@ class StatusWindowService {
       
       // 自动重试 - 直接显示重试消息，不发送终态避免触发浮窗倒计时
       final retryMessage = reason.contains('服务器已满') 
-          ? '服务器已满，继续挤服...'
+          ? _Messages.queueRetryServerFull
           : reason.contains('超时')
-              ? '连接超时，继续挤服...'
-              : '连接失败，继续挤服...';
+              ? _Messages.queueRetryTimeout
+              : _Messages.queueRetryFailed;
       
       // 保持 queueing 类型和 enableAutoRetry 状态
       _updateState(_state.copyWith(
@@ -1054,8 +1057,8 @@ class StatusWindowService {
           _isThreadsRunning = false;
           _isQueueRunning = true;
           
-          _updateState(_state.copyWith(message: '挤服中...'));
-          _updateWindow(state: 'queueing', message: '挤服中...');
+          _updateState(_state.copyWith(message: _Messages.queueing));
+          _updateWindow(state: 'queueing', message: _Messages.queueing);
           _scheduleNextFetch(serverAddress);
           
           LogService.i('[StatusWindowService] 自动重试：重新开始挤服');
