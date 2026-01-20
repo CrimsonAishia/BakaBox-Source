@@ -11,6 +11,7 @@ class FloatingWindowColors {
   static const Color success = Color(0xFF10B981);
   static const Color failed = Color(0xFFEF4444);
   static const Color serverFull = Color(0xFFF59E0B);
+  static const Color reservedSlots = Color(0xFFF59E0B);
   static const Color paused = Color(0xFF6B7280);
   
   // 背景色
@@ -27,6 +28,7 @@ class FloatingWindowColors {
     if (state.isSuccess) return success;
     if (state.isFailed) return failed;
     if (state.isServerFull) return serverFull;
+    if (state.isReservedSlots) return reservedSlots;
     if (state.isPaused) return paused;
     return idle;
   }

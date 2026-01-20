@@ -438,7 +438,19 @@ class StatusWindowService {
         message: '服务器已满',
       ));
       await _updateWindow(state: 'serverFull', message: '服务器已满');
-      _scheduleClose(seconds: 3);
+      _scheduleClose(seconds: 8);  // 失败状态使用8秒倒计时
+      return false;
+    } else if (monitorResult.state == GameState.reservedSlots) {
+      _updateState(_state.copyWith(
+        type: OperationType.none,  // 重置操作类型
+        status: OperationStatus.failed,
+        message: '服务器预留位置已满',
+      ));
+      await _updateWindow(
+        state: 'reservedSlots',
+        message: '服务器预留位置已满\n该服务器为捐助者预留了位置',
+      );
+      _scheduleClose(seconds: 8);  // 失败状态使用8秒倒计时
       return false;
     } else {
       _updateState(_state.copyWith(
@@ -447,7 +459,7 @@ class StatusWindowService {
         message: monitorResult.message ?? '连接失败',
       ));
       await _updateWindow(state: 'failed', message: monitorResult.message ?? '连接失败');
-      _scheduleClose(seconds: 3);
+      _scheduleClose(seconds: 8);  // 失败状态使用8秒倒计时
       return false;
     }
   }
@@ -766,6 +778,9 @@ class StatusWindowService {
           case GameState.serverFull:
             windowState = 'serverFull';
             break;
+          case GameState.reservedSlots:
+            windowState = 'reservedSlots';
+            break;
           case GameState.failed:
             windowState = 'failed';
             break;
@@ -926,6 +941,10 @@ class StatusWindowService {
               _handleQueueConnectionFailure('服务器已满', serverAddress);
               break;
               
+            case GameState.reservedSlots:
+              _handleQueueConnectionFailure('服务器预留位置已满', serverAddress);
+              break;
+              
             case GameState.failed:
               _handleQueueConnectionFailure(connectionResult.message ?? '连接失败', serverAddress);
               break;
@@ -956,6 +975,33 @@ class StatusWindowService {
   /// 处理挤服连接失败
   void _handleQueueConnectionFailure(String reason, String serverAddress) {
     LogService.w('[StatusWindowService] 连接失败: $reason');
+    
+    // 检查是否是服务器预留位置限制（需要立即停止挤服）
+    // 使用更严格的检查，避免误判
+    if (reason.contains('预留位置') || reason.contains('reservedSlots') || reason.contains('RESERVED_FOR_LOBBY')) {
+      LogService.w('[StatusWindowService] 检测到服务器预留位置限制，停止挤服');
+      
+      // 立即停止挤服相关的所有活动
+      _isQueueRunning = false;
+      _isThreadsRunning = false;
+      _isTriggeredConnection = false;
+      _activeThreadIds.clear();
+      
+      _updateState(_state.copyWith(
+        type: OperationType.none,
+        status: OperationStatus.failed,
+        message: '服务器预留位置已满',
+        queueConfig: _state.queueConfig.copyWith(enableAutoRetry: false),
+      ));
+      
+      _updateWindow(
+        state: 'reservedSlots',
+        message: '服务器预留位置已满\n\n该服务器为特定权限用户预留了位置',
+      );
+      
+      _scheduleClose(seconds: 8);  // 失败状态使用8秒倒计时
+      return;
+    }
     
     // 保存当前的自动重试状态（在检查前保存，避免状态被意外修改）
     final enableAutoRetry = _state.queueConfig.enableAutoRetry;
