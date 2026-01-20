@@ -27,12 +27,15 @@ class ShakeDialog extends StatefulWidget {
 class _ShakeDialogState extends State<ShakeDialog>
     with TickerProviderStateMixin {
   windows_webview.WebviewController? _webViewController;
+  StreamSubscription? _loadingStateSubscription; // 添加订阅引用
   bool _isLoading = true;
   bool _isShaking = false;
   bool _hasResult = false;
   bool _alreadyShaked = false;
   String? _resultMessage;
   int? _rewardAmount;
+  bool _showWebView = false; // 是否显示 WebView
+  bool _isDisposed = false; // 标记是否已销毁
 
   // 动画控制器
   late List<AnimationController> _digitControllers;
@@ -57,10 +60,25 @@ class _ShakeDialogState extends State<ShakeDialog>
 
   @override
   void dispose() {
+    _isDisposed = true;
+    
+    // 取消 Stream 订阅
+    _loadingStateSubscription?.cancel();
+    _loadingStateSubscription = null;
+    
+    // 停止所有动画
     for (var controller in _digitControllers) {
+      if (controller.isAnimating) {
+        controller.stop();
+      }
       controller.dispose();
     }
+    
+    // 释放 WebView 控制器
+    // WebView dispose 会自动清理内部资源，包括 WebView2 实例
     _webViewController?.dispose();
+    _webViewController = null;
+    
     super.dispose();
   }
 
@@ -72,7 +90,6 @@ class _ShakeDialogState extends State<ShakeDialog>
 
       if (result.alreadyShaked) {
         setState(() {
-          _isLoading = false;
           _alreadyShaked = true;
           _rewardAmount = result.rewardAmount;
           _resultMessage = result.rewardAmount != null
@@ -80,10 +97,14 @@ class _ShakeDialogState extends State<ShakeDialog>
               : '今日已摇过，明天再来吧';
         });
         // 更新 DailyTaskBloc 状态
-        context.read<DailyTaskBloc>().add(
-              DailyTaskShakeCompleted(
-                  success: true, rewardAmount: result.rewardAmount),
-            );
+        if (mounted) {
+          context.read<DailyTaskBloc>().add(
+                DailyTaskShakeCompleted(
+                    success: true, rewardAmount: result.rewardAmount),
+              );
+        }
+        // 即使已摇过，也初始化 WebView 以便用户查看页面
+        _initializeWebView();
         return;
       }
 
@@ -105,9 +126,12 @@ class _ShakeDialogState extends State<ShakeDialog>
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       );
 
-      // 监听页面加载完成
-      _webViewController!.loadingState.listen((state) {
+      // 监听页面加载完成 - 保存订阅引用以便取消
+      _loadingStateSubscription = _webViewController!.loadingState.listen((state) {
         if (state == windows_webview.LoadingState.navigationCompleted) {
+          // 页面加载完成后，修复浮窗位置
+          _fixFloatingBoxPosition();
+          
           if (mounted && _isShaking) {
             // 摇一摇后页面刷新，解析结果
             _parseResult();
@@ -115,7 +139,9 @@ class _ShakeDialogState extends State<ShakeDialog>
         }
       });
 
+      if (!mounted) return;
       setState(() => _isLoading = false);
+      
       await _webViewController!.loadUrl(_shakeUrl);
 
       // 等待页面加载
@@ -132,9 +158,29 @@ class _ShakeDialogState extends State<ShakeDialog>
     }
   }
 
+  /// 修复浮窗位置
+  Future<void> _fixFloatingBoxPosition() async {
+    if (_webViewController == null || _isDisposed) return;
+
+    try {
+      final fixScript = '''
+        (function() {
+          var box = document.getElementById('yyl-random-box');
+          if (box) {
+            box.style.top = '0';
+            console.log('已修复浮窗位置');
+          }
+        })();
+      ''';
+      await _webViewController!.executeScript(fixScript);
+    } catch (e) {
+      LogService.e('修复浮窗位置失败', e);
+    }
+  }
+
   /// 检查是否可以摇一摇
   Future<void> _checkShakeAvailable() async {
-    if (_webViewController == null) return;
+    if (_webViewController == null || _isDisposed) return;
 
     try {
       final checkScript = '''
@@ -315,7 +361,7 @@ class _ShakeDialogState extends State<ShakeDialog>
 
   /// 解析摇一摇结果
   Future<void> _parseResult() async {
-    if (_webViewController == null || _hasResult) return; // 防止重复调用
+    if (_webViewController == null || _hasResult || _isDisposed) return; // 防止重复调用
 
     try {
       final extractScript = '''
@@ -340,7 +386,7 @@ class _ShakeDialogState extends State<ShakeDialog>
 
       final result = await _webViewController!.executeScript(extractScript);
 
-      if (mounted && !_hasResult) {
+      if (mounted && !_hasResult && !_isDisposed) {
         // 再次检查，防止并发调用
         if (result == 'ALREADY_SHAKED') {
           // 已经摇过
@@ -371,16 +417,18 @@ class _ShakeDialogState extends State<ShakeDialog>
       }
     } catch (e) {
       LogService.e('解析摇一摇结果失败', e);
-      if (mounted && !_hasResult) {
+      if (mounted && !_hasResult && !_isDisposed) {
         await _stopSlotAnimation();
         setState(() {
           _isShaking = false;
           _hasResult = true;
           _resultMessage = '摇一摇完成';
         });
-        context
-            .read<DailyTaskBloc>()
-            .add(const DailyTaskShakeCompleted(success: true));
+        if (mounted) {
+          context
+              .read<DailyTaskBloc>()
+              .add(const DailyTaskShakeCompleted(success: true));
+        }
       }
     }
   }
@@ -397,148 +445,242 @@ class _ShakeDialogState extends State<ShakeDialog>
       backgroundColor: bgColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
-        width: 400,
+        width: _showWebView ? 1200 : 400,
+        height: _showWebView ? 800 : null,
         padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: _showWebView
+            ? _buildWebViewContent(textColor, secondaryTextColor)
+            : _buildMainContent(
+                isDark, textColor, secondaryTextColor, bgColor),
+      ),
+    );
+  }
+
+  /// 构建主内容（摇一摇界面）
+  Widget _buildMainContent(
+      bool isDark, Color textColor, Color secondaryTextColor, Color bgColor) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '摇一摇抽奖',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.close, color: secondaryTextColor),
+              onPressed: () => Navigator.of(context).pop(),
+              splashRadius: 20,
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        // 老虎机滚动数字显示（始终显示）
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark
+                ? const Color(0xFF334155)
+                : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+              width: 2,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(3, (index) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: _buildSlotDigit(
+                  index,
+                  isDark,
+                  textColor,
+                ),
+              );
+            }),
+          ),
+        ),
+        const SizedBox(height: 24),
+        if (_resultMessage != null)
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: _rewardAmount != null
+                  ? Colors.amber.withValues(alpha: 0.1)
+                  : (isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFF1F5F9)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_rewardAmount != null)
+                  const Icon(Icons.monetization_on,
+                      color: Colors.amber, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  _resultMessage!,
+                  style: TextStyle(
+                    color: _rewardAmount != null ? Colors.amber : textColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        if (_isLoading)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              children: [
+                const CircularProgressIndicator(color: Color(0xFF0080FF)),
+                const SizedBox(height: 12),
+                Text('正在加载...',
+                    style: TextStyle(color: secondaryTextColor)),
+              ],
+            ),
+          ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          height: 44,
+          child: ElevatedButton.icon(
+            onPressed:
+                _isLoading || _isShaking || _alreadyShaked || _hasResult
+                    ? null
+                    : _doShake,
+            icon: _isShaking
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Icon(_alreadyShaked || _hasResult
+                    ? Icons.check
+                    : Icons.vibration),
+            label: Text(_isShaking
+                ? '摇奖中...'
+                : (_alreadyShaked || _hasResult ? '已完成' : '摇一摇')),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _alreadyShaked || _hasResult
+                  ? Colors.green
+                  : const Color(0xFF0080FF),
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: _alreadyShaked || _hasResult
+                  ? Colors.green.withValues(alpha: 0.7)
+                  : const Color(0xFF0080FF).withValues(alpha: 0.5),
+              disabledForegroundColor: Colors.white70,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        // 添加"打开页面"按钮
+        SizedBox(
+          width: double.infinity,
+          height: 44,
+          child: OutlinedButton.icon(
+            onPressed: _isLoading || _webViewController == null ? null : () {
+              setState(() => _showWebView = true);
+            },
+            icon: const Icon(Icons.open_in_browser, size: 18),
+            label: const Text('打开页面'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF0080FF),
+              side: const BorderSide(color: Color(0xFF0080FF)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          '每日可摇一次，获得随机僵尸币奖励',
+          style: TextStyle(color: secondaryTextColor, fontSize: 12),
+        ),
+      ],
+    );
+  }
+
+  /// 构建 WebView 内容
+  Widget _buildWebViewContent(Color textColor, Color secondaryTextColor) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                IconButton(
+                  icon: Icon(Icons.arrow_back, color: textColor),
+                  onPressed: () {
+                    setState(() => _showWebView = false);
+                  },
+                  splashRadius: 20,
+                ),
+                const SizedBox(width: 8),
                 Text(
-                  '摇一摇抽奖',
+                  '摇一摇页面',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: textColor,
                   ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.close, color: secondaryTextColor),
-                  onPressed: () => Navigator.of(context).pop(),
-                  splashRadius: 20,
-                ),
               ],
             ),
-            const SizedBox(height: 24),
-            // 老虎机滚动数字显示（始终显示）
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xFF334155)
-                    : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFF0080FF).withValues(alpha: 0.3),
-                  width: 2,
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(3, (index) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: _buildSlotDigit(
-                      index,
-                      isDark,
-                      textColor,
-                    ),
-                  );
-                }),
-              ),
-            ),
-            const SizedBox(height: 24),
-            if (_resultMessage != null)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: _rewardAmount != null
-                      ? Colors.amber.withValues(alpha: 0.1)
-                      : (isDark
-                          ? const Color(0xFF334155)
-                          : const Color(0xFFF1F5F9)),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (_rewardAmount != null)
-                      const Icon(Icons.monetization_on,
-                          color: Colors.amber, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      _resultMessage!,
-                      style: TextStyle(
-                        color: _rewardAmount != null ? Colors.amber : textColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            if (_isLoading)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Column(
-                  children: [
-                    const CircularProgressIndicator(color: Color(0xFF0080FF)),
-                    const SizedBox(height: 12),
-                    Text('正在加载...',
-                        style: TextStyle(color: secondaryTextColor)),
-                  ],
-                ),
-              ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 44,
-              child: ElevatedButton.icon(
-                onPressed:
-                    _isLoading || _isShaking || _alreadyShaked || _hasResult
-                        ? null
-                        : _doShake,
-                icon: _isShaking
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Icon(_alreadyShaked || _hasResult
-                        ? Icons.check
-                        : Icons.vibration),
-                label: Text(_isShaking
-                    ? '摇奖中...'
-                    : (_alreadyShaked || _hasResult ? '已完成' : '摇一摇')),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _alreadyShaked || _hasResult
-                      ? Colors.green
-                      : const Color(0xFF0080FF),
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: _alreadyShaked || _hasResult
-                      ? Colors.green.withValues(alpha: 0.7)
-                      : const Color(0xFF0080FF).withValues(alpha: 0.5),
-                  disabledForegroundColor: Colors.white70,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              '每日可摇一次，获得随机僵尸币奖励',
-              style: TextStyle(color: secondaryTextColor, fontSize: 12),
+            IconButton(
+              icon: Icon(Icons.close, color: secondaryTextColor),
+              onPressed: () => Navigator.of(context).pop(),
+              splashRadius: 20,
             ),
           ],
         ),
-      ),
+        const SizedBox(height: 16),
+        Expanded(
+          child: _webViewController != null
+              ? Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: secondaryTextColor.withValues(alpha: 0.3),
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: windows_webview.Webview(_webViewController!),
+                )
+              : Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const CircularProgressIndicator(
+                          color: Color(0xFF0080FF)),
+                      const SizedBox(height: 16),
+                      Text('正在加载页面...',
+                          style: TextStyle(color: secondaryTextColor)),
+                    ],
+                  ),
+                ),
+        ),
+      ],
     );
   }
 }
