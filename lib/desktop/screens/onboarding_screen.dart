@@ -774,6 +774,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
         setState(() => _isLoggingIn = state.status == AuthStatus.loading);
+        
+        // 登录成功后触发每日任务状态检查（与登录窗口逻辑一致）
+        if (state.isAuthenticated && state.userInfo != null) {
+          context.read<DailyTaskBloc>().add(const DailyTaskCheckStatusRequested());
+        }
         // 登录成功后不自动跳转，让用户看到成功状态后手动点击下一步
       },
       builder: (context, state) {
@@ -823,8 +828,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 // 副标题
                 Text(
                   isLoggedIn
-                      ? '欢迎回来，${state.userInfo?.username ?? "用户"}'
-                      : '绑定后可使用签到、每日任务等功能（可选）',
+                      ? '你已准备好开始使用 BakaBox'
+                      : '关联后可解锁更多功能（可选）',
                   style: TextStyle(fontSize: 15, color: secondaryTextColor),
                 ).animate().fadeIn(duration: 400.ms, delay: 150.ms),
                 const SizedBox(height: 40),
