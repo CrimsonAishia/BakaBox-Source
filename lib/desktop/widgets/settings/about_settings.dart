@@ -78,6 +78,36 @@ class AboutSettings extends StatelessWidget {
                 isLoading: updateState.isChecking,
               ),
             ),
+            _UpdateInfoItem(
+              icon: MdiIcons.accountOutline,
+              iconColor: const Color(0xFF10B981),
+              label: '开发者',
+              value: const Text(
+                AppConstants.appAuthor,
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
+              ),
+              action: const SizedBox.shrink(),
+            ),
+            _UpdateInfoItem(
+              icon: MdiIcons.fileDocumentOutline,
+              iconColor: const Color(0xFFF59E0B),
+              label: '许可证',
+              value: const Text(
+                AppConstants.appLicense,
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
+              ),
+              action: const SizedBox.shrink(),
+            ),
+            _UpdateInfoItem(
+              icon: MdiIcons.copyright,
+              iconColor: const Color(0xFF8B5CF6),
+              label: '版权信息',
+              value: const Text(
+                AppConstants.appCopyright,
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
+              ),
+              action: const SizedBox.shrink(),
+            ),
           ],
         );
       },
