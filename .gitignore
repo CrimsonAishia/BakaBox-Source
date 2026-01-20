@@ -63,6 +63,11 @@ app.*.map.json
 
 # Windows related
 /windows/flutter/ephemeral/
+/windows/flutter/generated_plugin_registrant.cc
+/windows/flutter/generated_plugin_registrant.h
+/windows/flutter/generated_plugins.cmake
+/windows/flutter/generated_plugin_registrant.cc
+/windows/flutter/generated_plugins.cmake
 
 # Release
 scripts/release
