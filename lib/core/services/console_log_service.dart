@@ -68,7 +68,6 @@ enum GameState {
 class ConsoleLogState {
   final bool available;
   final GameState state;
-  final String stateText;
   final String serverAddress;
   final String mapName;
   final DateTime lastUpdate;
@@ -78,7 +77,6 @@ class ConsoleLogState {
   const ConsoleLogState({
     this.available = false,
     this.state = GameState.unknown,
-    this.stateText = '未启动',
     this.serverAddress = '',
     this.mapName = '',
     DateTime? lastUpdate,
@@ -89,7 +87,6 @@ class ConsoleLogState {
   ConsoleLogState copyWith({
     bool? available,
     GameState? state,
-    String? stateText,
     String? serverAddress,
     String? mapName,
     DateTime? lastUpdate,
@@ -99,7 +96,6 @@ class ConsoleLogState {
     return ConsoleLogState(
       available: available ?? this.available,
       state: state ?? this.state,
-      stateText: stateText ?? this.stateText,
       serverAddress: serverAddress ?? this.serverAddress,
       mapName: mapName ?? this.mapName,
       lastUpdate: lastUpdate ?? this.lastUpdate,
@@ -616,7 +612,6 @@ class ConsoleLogService {
     _currentState = ConsoleLogState(
       available: availability['available'] == true,
       state: GameState.mainMenu,
-      stateText: '监控中',
       condebugEnabled: availability['condebugEnabled'] == true,
       lastUpdate: DateTime.now(),
     );
@@ -660,7 +655,6 @@ class ConsoleLogService {
       LogService.d('[ConsoleLog] 游戏已退出，重置状态');
       _currentState = _currentState.copyWith(
         state: GameState.unknown,
-        stateText: '游戏未运行',
         serverAddress: '',
         mapName: '',
         available: false,
@@ -690,7 +684,6 @@ class ConsoleLogService {
     _gameStatusSubscription = null;
     _isMonitoring = false;
 
-    _currentState = _currentState.copyWith(stateText: '已停止');
     _updateState(_currentState);
 
     LogService.d('[ConsoleLog] 控制台日志监控已停止');
@@ -702,7 +695,6 @@ class ConsoleLogService {
     _currentState = ConsoleLogState(
       available: _currentState.available,
       state: GameState.mainMenu,
-      stateText: '等待连接',
       condebugEnabled: _currentState.condebugEnabled,
       lastUpdate: DateTime.now(),
     );
@@ -771,7 +763,7 @@ class ConsoleLogService {
           timer.cancel();
           if (!completer.isCompleted) {
             completer.complete(ConnectionStatusResult.failed(
-              _currentState.stateText,
+              '连接失败',
             ));
           }
           return;
@@ -1084,7 +1076,6 @@ class ConsoleLogService {
         if (isInGame && lastServerAddress != null) {
           _currentState = _currentState.copyWith(
             state: GameState.inGame,
-            stateText: '已在服务器中',
             serverAddress: lastServerAddress,
             mapName: lastMapName ?? '',
           );
@@ -1093,7 +1084,6 @@ class ConsoleLogService {
         } else {
           _currentState = _currentState.copyWith(
             state: GameState.mainMenu,
-            stateText: '主菜单',
             serverAddress: '',
             mapName: '',
           );
@@ -1139,7 +1129,6 @@ class ConsoleLogService {
       
       _updateConnectionState(
         GameState.reservedSlots,
-        '服务器预留位置已满',
         rawLine: line,
       );
       return;
@@ -1178,7 +1167,6 @@ class ConsoleLogService {
         if (_targetServer.isNotEmpty || _currentState.serverAddress.isNotEmpty) {
           _updateConnectionState(
             GameState.failed,
-            '连接超时',
             serverAddress: _targetServer.isNotEmpty ? _targetServer : _currentState.serverAddress,
             rawLine: line,
           );
@@ -1206,7 +1194,6 @@ class ConsoleLogService {
       if (_currentState.state != GameState.failed && _currentState.state != GameState.mainMenu) {
         _updateConnectionState(
           GameState.failed,
-          '连接超时',
           serverAddress: _targetServer.isNotEmpty ? _targetServer : _currentState.serverAddress,
           rawLine: line,
         );
@@ -1223,7 +1210,6 @@ class ConsoleLogService {
       if (_targetServer.isNotEmpty) {
         _updateConnectionState(
           GameState.failed,
-          '连接超时',
           serverAddress: _targetServer,
           rawLine: line,
         );
@@ -1248,10 +1234,8 @@ class ConsoleLogService {
       // 如果之前有远程连接请求且（超时或连接阶段失败），说明是回退到本地服务器
       if (_targetServer.isNotEmpty && (_connectTimedOut || _connectionPhaseFailed)) {
         _isLoopbackFallback = true;
-        final reason = _connectTimedOut ? '连接超时，回退到本地' : '连接失败，回退到本地';
         _updateConnectionState(
           GameState.failed,
-          reason,
           serverAddress: _targetServer,
           rawLine: line,
         );
@@ -1261,7 +1245,6 @@ class ConsoleLogService {
         LogService.d('[ConsoleLog] 检测到连接过程中出现 loopback，连接失败');
         _updateConnectionState(
           GameState.failed,
-          '连接失败',
           serverAddress: _currentState.serverAddress,
           rawLine: line,
         );
@@ -1292,7 +1275,6 @@ class ConsoleLogService {
       
       _updateConnectionState(
         GameState.inGame,
-        '已进入游戏',
         rawLine: line,
       );
       // 重置追踪状态（但不重置 _isInLoopbackMode，因为可能还在服务器中）
@@ -1314,7 +1296,6 @@ class ConsoleLogService {
       
       _updateConnectionState(
         GameState.connecting,
-        '正在连接',
         serverAddress: connectingMatch.group(1),
         rawLine: line,
       );
@@ -1330,7 +1311,6 @@ class ConsoleLogService {
           !_isLoopbackFallback) {
         _updateConnectionState(
           GameState.loading,
-          '正在加载地图',
           mapName: mapMatch.group(1),
           rawLine: line,
         );
@@ -1344,7 +1324,6 @@ class ConsoleLogService {
       if (currentState != GameState.inGame && !_isLoopbackFallback) {
         _updateConnectionState(
           GameState.loading,
-          '正在加载',
           rawLine: line,
         );
       }
@@ -1369,7 +1348,6 @@ class ConsoleLogService {
       if (currentState != GameState.inGame && !_isLoopbackFallback) {
         _updateConnectionState(
           GameState.loading,
-          '已连接，加载中',
           serverAddress: connectedTo,
           rawLine: line,
         );
@@ -1381,7 +1359,6 @@ class ConsoleLogService {
     if (_regexServerFull.hasMatch(line)) {
       _updateConnectionState(
         GameState.serverFull,
-        '服务器已满',
         rawLine: line,
       );
       return;
@@ -1392,7 +1369,6 @@ class ConsoleLogService {
       LogService.d('[ConsoleLog] 检测到用户主动断开连接');
       _updateConnectionState(
         GameState.mainMenu,
-        '已断开连接',
         rawLine: line,
       );
       // 重置连接追踪状态
@@ -1412,7 +1388,6 @@ class ConsoleLogService {
         LogService.d('[ConsoleLog] 检测到回到主菜单');
         _updateConnectionState(
           GameState.mainMenu,
-          '已断开连接',
           rawLine: line,
         );
         // 重置连接追踪状态
@@ -1468,7 +1443,6 @@ class ConsoleLogService {
         if (currentState == GameState.connecting) {
           _updateConnectionState(
             GameState.failed,
-            '连接失败',
             rawLine: line,
           );
         }
@@ -1480,7 +1454,6 @@ class ConsoleLogService {
     if (_regexRetrying.hasMatch(line)) {
       _updateConnectionState(
         GameState.retrying,
-        '重试连接中',
         rawLine: line,
       );
       return;
@@ -1498,7 +1471,6 @@ class ConsoleLogService {
         if (currentState == GameState.inGame) {
           _updateConnectionState(
             GameState.mainMenu,
-            '已断开连接',
             rawLine: line,
           );
         }
@@ -1509,15 +1481,13 @@ class ConsoleLogService {
 
   /// 更新连接状态
   void _updateConnectionState(
-    GameState state,
-    String stateText, {
+    GameState state, {
     String? serverAddress,
     String? mapName,
     String? rawLine,
   }) {
     _currentState = _currentState.copyWith(
       state: state,
-      stateText: stateText,
       serverAddress: serverAddress ?? _currentState.serverAddress,
       mapName: mapName ?? _currentState.mapName,
       lastUpdate: DateTime.now(),
@@ -1530,7 +1500,7 @@ class ConsoleLogService {
       type: state.name,
       state: state,
       message: rawLine ?? '',
-      details: stateText,
+      details: state.name,
     );
     
     _events.add(event);
@@ -1538,10 +1508,10 @@ class ConsoleLogService {
       _events.removeAt(0);
     }
     
-    LogService.d('[ConsoleLog] 状态更新: $state - $stateText');
+    LogService.d('[ConsoleLog] 状态更新: $state');
   }
 
-  /// 获取状态显示文本
+  /// 获取状态显示文本（用于调试或日志）
   String getStateText(ConsoleLogState state) {
     switch (state.state) {
       case GameState.connecting:
@@ -1563,7 +1533,7 @@ class ConsoleLogService {
       case GameState.retrying:
         return '重试连接中';
       case GameState.unknown:
-        return state.stateText.isNotEmpty ? state.stateText : '未知';
+        return '未知';
       case GameState.gameStarting:
         return '游戏启动中';
     }

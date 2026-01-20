@@ -765,33 +765,44 @@ class StatusWindowService {
       maxTimeout: const Duration(seconds: 60),
       onStateChange: (consoleState) async {
         String windowState;
+        String message;
+        
         switch (consoleState.state) {
           case GameState.connecting:
             windowState = 'connecting';
+            message = '正在连接服务器...';
             break;
           case GameState.loading:
             windowState = 'loading';
+            message = consoleState.mapName.isNotEmpty 
+                ? '正在加载地图 ${consoleState.mapName}' 
+                : '正在加载地图...';
             break;
           case GameState.inGame:
             windowState = 'success';
+            message = '成功进入游戏！';
             break;
           case GameState.serverFull:
             windowState = 'serverFull';
+            message = '服务器已满';
             break;
           case GameState.reservedSlots:
             windowState = 'reservedSlots';
+            message = '服务器预留位置已满\n该服务器为特定权限用户预留了位置';
             break;
           case GameState.failed:
             windowState = 'failed';
+            message = '连接失败';
             break;
           default:
             windowState = 'connecting';
+            message = '正在连接...';
         }
         
-        _updateState(_state.copyWith(message: consoleState.stateText));
+        _updateState(_state.copyWith(message: message));
         await _updateWindow(
           state: windowState,
-          message: consoleState.stateText,
+          message: message,
           mapName: consoleState.mapName.isNotEmpty ? consoleState.mapName : mapName,
           mapNameCn: mapNameCn,
           mapBackground: mapBackground,
