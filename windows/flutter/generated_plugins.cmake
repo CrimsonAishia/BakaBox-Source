@@ -4,7 +4,6 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_windows
-  connectivity_plus
   desktop_multi_window
   file_selector_windows
   flutter_alone
