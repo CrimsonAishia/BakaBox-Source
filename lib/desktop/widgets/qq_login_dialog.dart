@@ -26,11 +26,13 @@ class QQLoginDialog extends StatefulWidget {
 
 class _QQLoginDialogState extends State<QQLoginDialog> {
   windows_webview.WebviewController? _webViewController;
-  bool _isLoading = true;
+  StreamSubscription? _urlSubscription; // URL 监听订阅
   Timer? _loadingTimer;
+  bool _isLoading = true;
   bool _isInitialized = false;
   bool _loginDetected = false;
   bool _isExtracting = false;
+  bool _isDisposed = false; // 标记是否已销毁
 
   // 论坛的 QQ 登录入口
   static const String _forumQQLoginUrl =
@@ -44,8 +46,20 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
 
   @override
   void dispose() {
+    _isDisposed = true;
+    
+    // 取消定时器
     _loadingTimer?.cancel();
+    _loadingTimer = null;
+    
+    // 取消 URL 订阅
+    _urlSubscription?.cancel();
+    _urlSubscription = null;
+    
+    // 释放 WebView 控制器
     _webViewController?.dispose();
+    _webViewController = null;
+    
     super.dispose();
   }
 
@@ -58,9 +72,9 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       );
 
-      // 监听 URL 变化事件
-      _webViewController!.url.listen((url) {
-        if (!mounted || _loginDetected) return;
+      // 监听 URL 变化事件 - 保存订阅引用以便取消
+      _urlSubscription = _webViewController!.url.listen((url) {
+        if (!mounted || _loginDetected || _isDisposed) return;
         
         // 检测是否从 QQ 登录页面跳转回论坛（包括 connect.php 回调）
         // 排除初始的登录入口页面 (op=init)
@@ -75,6 +89,7 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
         }
       });
 
+      if (!mounted) return;
       setState(() {
         _isInitialized = true;
         _isLoading = true;
@@ -84,12 +99,14 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
 
       // 2秒后关闭 loading
       _loadingTimer = Timer(const Duration(seconds: 2), () {
-        if (mounted) setState(() => _isLoading = false);
+        if (mounted && !_isDisposed) {
+          setState(() => _isLoading = false);
+        }
       });
     } catch (e) {
       LogService.e('WebView 初始化失败', e);
-      setState(() => _isLoading = false);
-      if (mounted) {
+      if (mounted && !_isDisposed) {
+        setState(() => _isLoading = false);
         ToastUtils.showError(context, 'WebView 初始化失败');
         Navigator.of(context).pop();
       }
@@ -98,11 +115,13 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
 
   /// 检查登录状态
   Future<void> _checkLoginStatus() async {
-    if (!mounted || _webViewController == null) return;
+    if (!mounted || _webViewController == null || _isDisposed) return;
 
     try {
       // 等待页面加载完成
       await Future.delayed(const Duration(seconds: 1));
+      
+      if (_isDisposed) return;
 
       // 检查页面是否包含退出链接（已登录标志）
       final checkScript = '''
@@ -117,19 +136,23 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
       if (result != null && result.toString() == 'true') {
         await _extractCookiesAndLogin();
       } else {
-        setState(() => _isExtracting = false);
-        _loginDetected = false;
+        if (mounted && !_isDisposed) {
+          setState(() => _isExtracting = false);
+          _loginDetected = false;
+        }
       }
     } catch (e) {
       LogService.e('检查登录状态失败', e);
-      setState(() => _isExtracting = false);
-      _loginDetected = false;
+      if (mounted && !_isDisposed) {
+        setState(() => _isExtracting = false);
+        _loginDetected = false;
+      }
     }
   }
 
   /// 提取 Cookie 并完成登录
   Future<void> _extractCookiesAndLogin() async {
-    if (!mounted || _webViewController == null) return;
+    if (!mounted || _webViewController == null || _isDisposed) return;
 
     try {
       // 使用 CDP 获取所有 Cookie（包括 HttpOnly）
@@ -167,14 +190,14 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
       }
 
       // 调用 AuthBloc 完成登录（用户信息由 AuthService 从服务器获取）
-      if (mounted) {
+      if (mounted && !_isDisposed) {
         context.read<AuthBloc>().add(AuthQQLoginRequested(cookies: forumCookies));
         ToastUtils.showSuccess(context, 'QQ 登录成功');
         Navigator.of(context).pop();
       }
     } catch (e) {
       LogService.e('提取 Cookie 失败', e);
-      if (mounted) {
+      if (mounted && !_isDisposed) {
         ToastUtils.showError(context, '获取登录信息失败，请重试');
         setState(() => _isExtracting = false);
         _loginDetected = false;
