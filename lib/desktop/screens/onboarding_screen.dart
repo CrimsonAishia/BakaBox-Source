@@ -597,7 +597,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           // 当前路径显示
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            height: 56, // 固定高度
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(12),
@@ -606,6 +607,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   : null,
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Icon(
                   _gamePath != null ? MdiIcons.checkCircle : MdiIcons.folderQuestion,
@@ -616,31 +618,43 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    _gamePath ?? '请选择 CS2 游戏根目录',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: _gamePath != null
-                          ? (isDark ? Colors.white : const Color(0xFF1E293B))
-                          : (isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                  child: Tooltip(
+                    message: _gamePath ?? '请选择 CS2 游戏根目录',
+                    waitDuration: const Duration(milliseconds: 500),
+                    child: Text(
+                      _gamePath ?? '请选择 CS2 游戏根目录',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: _gamePath != null
+                            ? (isDark ? Colors.white : const Color(0xFF1E293B))
+                            : (isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                if (_gamePath != null)
-                  IconButton(
-                    icon: Icon(
-                      MdiIcons.close,
-                      size: 18,
-                      color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                if (_gamePath != null) ...[
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: IconButton(
+                      icon: Icon(
+                        MdiIcons.close,
+                        size: 16,
+                        color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                      ),
+                      onPressed: () => setState(() {
+                        _gamePath = null;
+                        _gamePathError = null;
+                      }),
+                      padding: EdgeInsets.zero,
+                      tooltip: '清除',
+                      splashRadius: 16,
                     ),
-                    onPressed: () => setState(() {
-                      _gamePath = null;
-                      _gamePathError = null;
-                    }),
-                    splashRadius: 16,
-                    tooltip: '清除',
                   ),
+                ],
               ],
             ),
           ),
