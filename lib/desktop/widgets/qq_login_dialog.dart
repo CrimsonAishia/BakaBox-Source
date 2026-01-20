@@ -33,6 +33,7 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
   bool _loginDetected = false;
   bool _isExtracting = false;
   bool _isDisposed = false; // 标记是否已销毁
+  bool _hasLeftInitialPage = false; // 标记是否已离开初始登录页面
 
   // 论坛的 QQ 登录入口
   static const String _forumQQLoginUrl =
@@ -76,16 +77,39 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
       _urlSubscription = _webViewController!.url.listen((url) {
         if (!mounted || _loginDetected || _isDisposed) return;
         
-        // 检测是否从 QQ 登录页面跳转回论坛（包括 connect.php 回调）
-        // 排除初始的登录入口页面 (op=init)
-        if (url.contains('bbs.zombieden.cn') &&
+        LogService.d('[QQLogin] URL 变化: $url');
+        
+        // 1. 检测是否离开了初始登录页面（跳转到 QQ 登录）
+        if (!_hasLeftInitialPage && 
+            (url.contains('graph.qq.com') || url.contains('ptlogin2.qq.com'))) {
+          _hasLeftInitialPage = true;
+          LogService.d('[QQLogin] 用户开始 QQ 登录流程');
+        }
+        
+        // 2. 只有在用户已经进行过 QQ 登录后，再跳回论坛时才显示 loading
+        // 排除：初始登录页、QQ 登录页、论坛首页等非回调页面
+        if (_hasLeftInitialPage && 
+            url.contains('bbs.zombieden.cn') && 
             !url.contains('op=init') &&
-            !url.contains('graph.qq.com') &&
-            !url.contains('ptlogin2.qq.com')) {
+            !url.contains('graph.qq.com') && 
+            !url.contains('ptlogin2.qq.com') &&
+            url.contains('connect.php')) {  // 确保是 connect.php 回调页面
           
-          _loginDetected = true;
-          setState(() => _isExtracting = true);
-          _checkLoginStatus();
+          // 第一时间进入 loading 状态，遮住 WebView
+          // 使用同步方式立即更新状态，不等待 setState 的异步调度
+          if (!_isExtracting) {
+            LogService.d('[QQLogin] 检测到登录回调，立即显示 loading');
+            _isExtracting = true;  // 先同步更新标志
+            _loginDetected = true;
+            
+            // 立即触发 UI 更新
+            if (mounted) {
+              setState(() {});  // 触发重建，此时 _isExtracting 已经是 true
+            }
+            
+            // 然后异步执行登录检查
+            _checkLoginStatus();
+          }
         }
       });
 
@@ -119,9 +143,9 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
 
     try {
       // 等待页面加载完成
-      await Future.delayed(const Duration(seconds: 1));
+      await Future.delayed(const Duration(milliseconds: 1500));
       
-      if (_isDisposed) return;
+      if (_isDisposed || !mounted) return;
 
       // 检查页面是否包含退出链接（已登录标志）
       final checkScript = '''
@@ -134,18 +158,28 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
 
       final result = await _webViewController!.executeScript(checkScript);
       if (result != null && result.toString() == 'true') {
+        LogService.d('[QQLogin] 检测到已登录状态，开始提取 Cookie');
         await _extractCookiesAndLogin();
       } else {
+        LogService.w('[QQLogin] 未检测到登录状态，可能登录失败或被取消');
         if (mounted && !_isDisposed) {
-          setState(() => _isExtracting = false);
-          _loginDetected = false;
+          setState(() {
+            _isExtracting = false;
+            _loginDetected = false;
+            _hasLeftInitialPage = false; // 重置状态，允许用户重试
+          });
+          ToastUtils.showError(context, '登录失败，请重试');
         }
       }
     } catch (e) {
       LogService.e('检查登录状态失败', e);
       if (mounted && !_isDisposed) {
-        setState(() => _isExtracting = false);
-        _loginDetected = false;
+        setState(() {
+          _isExtracting = false;
+          _loginDetected = false;
+          _hasLeftInitialPage = false; // 重置状态，允许用户重试
+        });
+        ToastUtils.showError(context, '检查登录状态失败，请重试');
       }
     }
   }
