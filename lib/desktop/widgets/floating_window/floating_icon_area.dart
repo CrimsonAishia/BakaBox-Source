@@ -155,6 +155,7 @@ class _FloatingIconAreaState extends State<FloatingIconArea>
     if (state.isSuccess) return MdiIcons.checkCircle;
     if (state.isFailed) return MdiIcons.closeCircle;
     if (state.isServerFull) return MdiIcons.accountGroup;
+    if (state.isReservedSlots) return MdiIcons.lockOutline;
     if (state.isPaused) return MdiIcons.pause;
     return MdiIcons.informationOutline;
   }
