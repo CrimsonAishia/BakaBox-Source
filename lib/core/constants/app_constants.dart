@@ -3,6 +3,10 @@ class AppConstants {
   static const String appName = 'BakaBox';
   static const String appVersion = '1.0.0';
   static const String appDescription = 'CS2 Server Browser';
+  static const String appAuthor = 'Aishia';
+  static const String appLicense = 'MIT License';
+  static const String appCopyright = '© 2025 Aishia';
+  static const String appGithub = 'https://github.com/CrimsonAishia/bakabox_app';
   
   // UI Constants
   static const double defaultPadding = 16.0;
