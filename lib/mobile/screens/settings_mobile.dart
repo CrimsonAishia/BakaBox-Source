@@ -27,9 +27,16 @@ class _SettingsMobileState extends State<SettingsMobile> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: BlocBuilder<SettingsBloc, SettingsState>(
-        builder: (context, settingsState) {
-          return CustomScrollView(
+      body: BlocListener<SettingsBloc, SettingsState>(
+        listener: (context, state) {
+          // 监听需要重启的状态
+          if (state.needsRestart) {
+            _showRestartDialog(context);
+          }
+        },
+        child: BlocBuilder<SettingsBloc, SettingsState>(
+          builder: (context, settingsState) {
+            return CustomScrollView(
             slivers: [
               _buildFixedAppBar(context),
               SliverToBoxAdapter(
@@ -101,6 +108,7 @@ class _SettingsMobileState extends State<SettingsMobile> {
             ],
           );
         },
+        ),
       ),
     );
   }
@@ -495,5 +503,36 @@ class _SettingsMobileState extends State<SettingsMobile> {
         );
       }
     }
+  }
+
+  void _showRestartDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(MdiIcons.restart, color: const Color(0xFFEF4444)),
+            const SizedBox(width: 8),
+            const Text('需要重启应用'),
+          ],
+        ),
+        content: const Text('应用数据已清除，需要重启应用才能生效。点击确定后应用将自动关闭，请手动重新启动。'),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              // 退出应用
+              SystemNavigator.pop();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('确定并退出'),
+          ),
+        ],
+      ),
+    );
   }
 }
