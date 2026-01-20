@@ -66,8 +66,7 @@ class _LoginDialogState extends State<LoginDialog> {
   }
 
   void _openForgotPassword() {
-    launchUrl(Uri.parse(
-        'https://bbs.zombieden.cn/home.php?mod=spacecp&ac=credit&op=base'));
+    launchUrl(Uri.parse('https://bbs.zombieden.cn/member.php?mod=logging&action=login&viewlostpw=1'));
   }
 
   void _openQQLogin(BuildContext context) {
