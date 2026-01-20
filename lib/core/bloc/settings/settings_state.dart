@@ -129,6 +129,9 @@ class SettingsState extends Equatable {
   
   // 浮窗位置设置
   final NotificationPositionType floatingWindowPosition;
+  
+  // 是否需要重启应用（清理应用数据后需要重启）
+  final bool needsRestart;
 
   const SettingsState({
     this.appVersion = '',
@@ -149,6 +152,7 @@ class SettingsState extends Equatable {
     this.isLoadingCacheDetails = false,
     this.notificationPosition = NotificationPositionType.topRight,
     this.floatingWindowPosition = NotificationPositionType.bottomRight,
+    this.needsRestart = false,
   });
   
   /// 获取总缓存大小（字节）
@@ -205,6 +209,7 @@ class SettingsState extends Equatable {
     bool? isLoadingCacheDetails,
     NotificationPositionType? notificationPosition,
     NotificationPositionType? floatingWindowPosition,
+    bool? needsRestart,
   }) {
     return SettingsState(
       appVersion: appVersion ?? this.appVersion,
@@ -225,6 +230,7 @@ class SettingsState extends Equatable {
       isLoadingCacheDetails: isLoadingCacheDetails ?? this.isLoadingCacheDetails,
       notificationPosition: notificationPosition ?? this.notificationPosition,
       floatingWindowPosition: floatingWindowPosition ?? this.floatingWindowPosition,
+      needsRestart: needsRestart ?? this.needsRestart,
     );
   }
 
@@ -248,5 +254,6 @@ class SettingsState extends Equatable {
     isLoadingCacheDetails,
     notificationPosition,
     floatingWindowPosition,
+    needsRestart,
   ];
 }

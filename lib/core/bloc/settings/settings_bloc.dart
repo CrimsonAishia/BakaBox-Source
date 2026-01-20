@@ -613,6 +613,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   Future<void> _onClearSelectedCache(SettingsClearSelectedCache event, Emitter<SettingsState> emit) async {
     emit(state.copyWith(isLoading: true));
     try {
+      // 检查是否包含应用数据清理
+      final bool clearedAppData = event.cacheTypes.contains(CacheType.appData);
+      
       // 清除选中类型的缓存
       for (final cacheType in event.cacheTypes) {
         await _clearCacheByType(cacheType);
@@ -624,9 +627,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       emit(state.copyWith(
         cacheDetails: newCacheDetails,
         isLoading: false,
+        needsRestart: clearedAppData, // 如果清理了应用数据，标记需要重启
       ));
       
-      LogService.d('已清除选中的 ${event.cacheTypes.length} 种缓存');
+      LogService.d('已清除选中的 ${event.cacheTypes.length} 种缓存${clearedAppData ? '，需要重启应用' : ''}');
     } catch (e) {
       LogService.e('清除选中缓存失败', e);
       emit(state.copyWith(isLoading: false));

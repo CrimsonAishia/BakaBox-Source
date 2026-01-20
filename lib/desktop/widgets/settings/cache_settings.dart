@@ -1,9 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../core/bloc/settings/settings_bloc.dart';
 import '../../../core/bloc/settings/settings_event.dart';
 import '../../../core/bloc/settings/settings_state.dart';
+import '../../../core/utils/platform_utils.dart';
 import '../selective_cache_dialog.dart';
 import 'settings_group_title.dart';
 import 'settings_buttons.dart';
@@ -19,6 +21,13 @@ class CacheSettings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 监听需要重启的状态
+    if (settingsState.needsRestart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showRestartDialog(context);
+      });
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -117,6 +126,39 @@ class CacheSettings extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  void _showRestartDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(MdiIcons.restart, color: const Color(0xFFEF4444)),
+            const SizedBox(width: 8),
+            const Text('需要重启应用'),
+          ],
+        ),
+        content: const Text('应用数据已清除，需要重启应用才能生效。点击确定后应用将自动关闭，请手动重新启动。'),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              // 退出应用
+              if (PlatformUtils.isDesktopPlatform) {
+                exit(0);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('确定并退出'),
+          ),
+        ],
+      ),
     );
   }
 
