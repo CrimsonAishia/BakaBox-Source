@@ -565,33 +565,82 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
   }
 
   /// 设置分类筛选
-  void _onSetCategoryFilter(
+  Future<void> _onSetCategoryFilter(
     KeyBindingSetCategoryFilter event,
     Emitter<KeyBindingState> emit,
-  ) {
+  ) async {
     if (event.categoryId == null) {
-      emit(state.copyWith(clearCategoryFilter: true));
+      emit(state.copyWith(clearCategoryFilter: true, isLoading: true, clearError: true));
     } else {
-      emit(state.copyWith(categoryFilter: event.categoryId));
+      emit(state.copyWith(categoryFilter: event.categoryId, isLoading: true, clearError: true));
     }
     
-    // 重新加载配置列表
-    add(KeyBindingLoadConfigs());
+    // 直接加载配置，使用更新后的状态
+    try {
+      final response = await _api.getConfigList(
+        categoryId: state.categoryFilter,
+        keyword: state.searchKeyword,
+        isActive: true,
+      );
+      
+      if (response != null) {
+        emit(state.copyWith(
+          configs: response.items,
+          isLoading: false,
+        ));
+      } else {
+        emit(state.copyWith(
+          isLoading: false,
+          error: '加载配置列表失败',
+        ));
+      }
+    } catch (e) {
+      LogService.e('[KeyBindingBloc] 加载配置列表失败', e);
+      emit(state.copyWith(
+        isLoading: false,
+        error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载配置列表失败'),
+      ));
+    }
   }
 
   /// 设置搜索关键词
-  void _onSetSearchKeyword(
+  /// 设置搜索关键词
+  Future<void> _onSetSearchKeyword(
     KeyBindingSetSearchKeyword event,
     Emitter<KeyBindingState> emit,
-  ) {
+  ) async {
     if (event.keyword == null || event.keyword!.isEmpty) {
-      emit(state.copyWith(clearSearchKeyword: true));
+      emit(state.copyWith(clearSearchKeyword: true, isLoading: true, clearError: true));
     } else {
-      emit(state.copyWith(searchKeyword: event.keyword));
+      emit(state.copyWith(searchKeyword: event.keyword, isLoading: true, clearError: true));
     }
     
-    // 重新加载配置列表
-    add(KeyBindingLoadConfigs());
+    // 直接加载配置，使用更新后的状态
+    try {
+      final response = await _api.getConfigList(
+        categoryId: state.categoryFilter,
+        keyword: state.searchKeyword,
+        isActive: true,
+      );
+      
+      if (response != null) {
+        emit(state.copyWith(
+          configs: response.items,
+          isLoading: false,
+        ));
+      } else {
+        emit(state.copyWith(
+          isLoading: false,
+          error: '加载配置列表失败',
+        ));
+      }
+    } catch (e) {
+      LogService.e('[KeyBindingBloc] 加载配置列表失败', e);
+      emit(state.copyWith(
+        isLoading: false,
+        error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载配置列表失败'),
+      ));
+    }
   }
 
   /// 在文件管理器中打开
