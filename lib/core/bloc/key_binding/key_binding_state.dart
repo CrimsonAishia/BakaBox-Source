@@ -70,28 +70,15 @@ class KeyBindingState extends Equatable {
     this.successMessage,
   });
 
-  /// 获取筛选后的配置列表（已应用的置顶）
+  /// 获取配置列表（已应用的置顶）
+  /// 
+  /// 注意：分类筛选和搜索关键词筛选由服务器端处理，
+  /// 这里只负责将已应用的配置置顶显示
   List<KeyConfig> get filteredConfigs {
-    var result = configs;
-    
-    // 分类筛选
-    if (categoryFilter != null) {
-      result = result.where((c) => c.categoryId == categoryFilter).toList();
-    }
-    
-    // 搜索关键词筛选
-    if (searchKeyword != null && searchKeyword!.isNotEmpty) {
-      final keyword = searchKeyword!.toLowerCase();
-      result = result.where((c) =>
-        c.name.toLowerCase().contains(keyword) ||
-        c.description.toLowerCase().contains(keyword)
-      ).toList();
-    }
-    
     // 已应用的配置置顶
     final appliedIds = appliedConfigs.map((c) => c.configId).toSet();
-    final applied = result.where((c) => appliedIds.contains(c.configId)).toList();
-    final notApplied = result.where((c) => !appliedIds.contains(c.configId)).toList();
+    final applied = configs.where((c) => appliedIds.contains(c.configId)).toList();
+    final notApplied = configs.where((c) => !appliedIds.contains(c.configId)).toList();
     
     return [...applied, ...notApplied];
   }
