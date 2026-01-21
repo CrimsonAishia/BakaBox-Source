@@ -34,8 +34,8 @@ class RichTextEditor extends StatefulWidget {
     super.key,
     required this.controller,
     this.hintText = '输入内容...',
-    this.maxLength = 5000,
-    this.maxImages = 5,
+    this.maxLength = 2000,
+    this.maxImages = 8,
     this.compactMode = false,
     this.draftId,
     this.enableDraftManualSave = true,
@@ -114,6 +114,7 @@ class RichTextEditorState extends State<RichTextEditor> {
   Widget _buildBottomBar(BuildContext context, bool isDark) {
     final count = _getTextLength();
     final isOverLimit = count > widget.maxLength;
+    final isNearLimit = count > (widget.maxLength * 0.9); // 90% 时警告
     final imageCount = _uploadedImages.length;
     final isImageLimit = imageCount >= widget.maxImages;
     
@@ -187,7 +188,8 @@ class RichTextEditorState extends State<RichTextEditor> {
                   _buildStatusChip(
                     icon: null, 
                     text: '$count/${widget.maxLength}', 
-                    isError: isOverLimit, 
+                    isError: isOverLimit,
+                    isWarning: !isOverLimit && isNearLimit,
                     isDark: isDark,
                   ),
                 ],
@@ -237,7 +239,7 @@ class RichTextEditorState extends State<RichTextEditor> {
     Color bgColor, textColor;
     
     if (isError) {
-      bgColor = isDark ? const Color(0xFFDC2626).withValues(alpha: 0.15) : const Color(0xFFFEF2F2);
+      bgColor = isDark ? const Color(0xFFDC2626).withValues(alpha: 0.15) : const Color(0xFFFEE2E2);
       textColor = const Color(0xFFDC2626);
     } else if (isWarning) {
       bgColor = isDark ? const Color(0xFFF59E0B).withValues(alpha: 0.15) : const Color(0xFFFEF3C7);
@@ -249,12 +251,16 @@ class RichTextEditorState extends State<RichTextEditor> {
     
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(6)),
+      decoration: BoxDecoration(
+        color: bgColor, 
+        borderRadius: BorderRadius.circular(6),
+        border: isError ? Border.all(color: const Color(0xFFDC2626).withValues(alpha: 0.3)) : null,
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[Icon(icon, size: 14, color: textColor), const SizedBox(width: 6)],
-          Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: textColor)),
+          Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textColor)),
         ],
       ),
     );

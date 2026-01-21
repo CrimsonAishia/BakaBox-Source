@@ -17,10 +17,10 @@ class FileValidationUtils {
   static const int maxFileSize = 10 * 1024 * 1024;
 
   /// Issue 最大图片数量
-  static const int maxImagesForIssue = 5;
+  static const int maxImagesForIssue = 8;
 
   /// 评论最大图片数量
-  static const int maxImagesForComment = 3;
+  static const int maxImagesForComment = 5;
 
   /// 验证文件类型
   /// 
