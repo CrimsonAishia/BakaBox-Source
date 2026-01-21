@@ -694,12 +694,74 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
   final _scrollController = ScrollController();
   final _commentEditorKey = GlobalKey<RichTextEditorState>();
   List<String> _commentImageUrls = [];
+  
+  // 评论草稿相关
+  bool _showCommentDraftPrompt = false;
+  DraftData? _savedCommentDraft;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkCommentDraftExists();
+  }
 
   @override
   void dispose() {
     _commentController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// 检查评论草稿是否存在
+  Future<void> _checkCommentDraftExists() async {
+    try {
+      final draftId = 'comment_${widget.issueId}';
+      final hasDraft = await DraftService().hasDraft(draftId);
+      if (hasDraft) {
+        final draft = await DraftService().restoreDraft(draftId);
+        if (draft != null && mounted) {
+          setState(() {
+            _savedCommentDraft = draft;
+            _showCommentDraftPrompt = true;
+          });
+        }
+      }
+    } catch (e) {
+      LogService.e('检查评论草稿失败', e);
+    }
+  }
+
+  /// 恢复评论草稿
+  void _restoreCommentDraft() {
+    if (_savedCommentDraft == null) return;
+    
+    // 恢复内容
+    if (_savedCommentDraft!.content.isNotEmpty) {
+      try {
+        final document = QuillDeltaCodec.decode(_savedCommentDraft!.content);
+        _commentController.document = document;
+      } catch (e) {
+        LogService.e('解码评论草稿失败', e);
+      }
+    }
+    
+    // 恢复图片
+    setState(() {
+      _commentImageUrls = _savedCommentDraft!.imageUrls;
+      _showCommentDraftPrompt = false;
+      _savedCommentDraft = null;
+    });
+    
+    ToastUtils.showSuccess(context, '草稿已恢复');
+  }
+
+  /// 忽略评论草稿
+  void _ignoreCommentDraft() {
+    DraftService().deleteDraft('comment_${widget.issueId}');
+    setState(() {
+      _showCommentDraftPrompt = false;
+      _savedCommentDraft = null;
+    });
   }
 
   void _submitComment() {
@@ -710,6 +772,10 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
     // 设置当前用户信息用于构建评论
     context.read<IssueDetailBloc>().add(IssueDetailSetUser(authState.userInfo));
     context.read<IssueDetailBloc>().add(IssueDetailAddComment(content, images: _commentImageUrls));
+    
+    // 提交后删除草稿
+    DraftService().deleteDraft('comment_${widget.issueId}');
+    
     _commentController.clear();
     _commentEditorKey.currentState?.clearImages();
     setState(() {
@@ -871,6 +937,11 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
     return Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: isDark ? const Color(0xFF1E293B) : Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('发表评论', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: isDark ? Colors.white70 : const Color(0xFF374151))),
       const SizedBox(height: 12),
+      // 评论草稿提示条
+      if (_showCommentDraftPrompt) ...[
+        _buildCommentDraftPrompt(),
+        const SizedBox(height: 12),
+      ],
       SizedBox(
         height: 320,
         child: RichTextEditor(
@@ -880,6 +951,8 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
           maxLength: 2000,
           maxImages: 3,
           compactMode: false,
+          draftId: 'comment_${widget.issueId}',
+          enableDraftManualSave: true,
           onImagesChanged: (urls) {
             setState(() {
               _commentImageUrls = urls;
@@ -888,8 +961,106 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
         ),
       ),
       const SizedBox(height: 12),
-      Row(mainAxisAlignment: MainAxisAlignment.end, children: [ElevatedButton(onPressed: state.isSubmitting ? null : _submitComment, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0080FF), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)), child: state.isSubmitting ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('发表评论'))]),
+      Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+        OutlinedButton.icon(
+          onPressed: state.isSubmitting ? null : _saveCommentDraft,
+          icon: const Icon(Icons.save_outlined, size: 18),
+          label: const Text('保存草稿'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF0080FF),
+            side: const BorderSide(color: Color(0xFF0080FF)),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          ),
+        ),
+        const SizedBox(width: 12),
+        ElevatedButton(onPressed: state.isSubmitting ? null : _submitComment, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0080FF), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)), child: state.isSubmitting ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('发表评论'))
+      ]),
     ]));
+  }
+
+  Future<void> _saveCommentDraft() async {
+    final plainText = _commentController.document.toPlainText().trim();
+    if (plainText.isEmpty) {
+      ToastUtils.showWarning(context, '内容为空，无需保存草稿');
+      return;
+    }
+
+    try {
+      final content = QuillDeltaCodec.encode(_commentController.document);
+      
+      await DraftService().saveDraft(
+        draftId: 'comment_${widget.issueId}',
+        content: content,
+        imageUrls: _commentImageUrls,
+      );
+      
+      if (mounted) {
+        ToastUtils.showSuccess(context, '草稿已保存');
+      }
+    } catch (e) {
+      LogService.e('保存草稿失败', e);
+      if (mounted) {
+        ToastUtils.showError(context, '保存草稿失败');
+      }
+    }
+  }
+
+  /// 评论草稿提示条
+  Widget _buildCommentDraftPrompt() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0080FF).withValues(alpha: 0.1) : const Color(0xFFEFF6FF),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF0080FF).withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Icon(Icons.restore_rounded, size: 16, color: Color(0xFF0080FF)),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '发现未保存的评论草稿',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : const Color(0xFF1F2937),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: _ignoreCommentDraft,
+            style: TextButton.styleFrom(
+              foregroundColor: isDark ? Colors.white54 : const Color(0xFF6B7280),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            ),
+            child: const Text('忽略', style: TextStyle(fontSize: 13)),
+          ),
+          const SizedBox(width: 4),
+          ElevatedButton(
+            onPressed: _restoreCommentDraft,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0080FF),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+            child: const Text('恢复', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -912,6 +1083,16 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
   IssueType _selectedType = IssueType.bug;
   bool _isSubmitting = false;
   List<String> _imageUrls = [];
+  
+  // 草稿相关
+  bool _showDraftPrompt = false;
+  DraftData? _savedDraft;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkDraftExists();
+  }
 
   @override
   void dispose() {
@@ -919,6 +1100,72 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
     _contentController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// 检查是否有草稿
+  Future<void> _checkDraftExists() async {
+    try {
+      final hasDraft = await DraftService().hasDraft('issue_create');
+      if (hasDraft) {
+        final draft = await DraftService().restoreDraft('issue_create');
+        if (draft != null && mounted) {
+          setState(() {
+            _savedDraft = draft;
+            _showDraftPrompt = true;
+          });
+        }
+      }
+    } catch (e) {
+      LogService.e('检查草稿失败', e);
+    }
+  }
+
+  /// 恢复草稿
+  void _restoreDraft() {
+    if (_savedDraft == null) return;
+    
+    // 恢复标题
+    if (_savedDraft!.metadata?['title'] != null) {
+      _titleController.text = _savedDraft!.metadata!['title'] as String;
+    }
+    
+    // 恢复类型
+    if (_savedDraft!.metadata?['type'] != null) {
+      final typeValue = _savedDraft!.metadata!['type'] as String;
+      _selectedType = IssueType.values.firstWhere(
+        (t) => t.value == typeValue,
+        orElse: () => IssueType.bug,
+      );
+    }
+    
+    // 恢复内容
+    if (_savedDraft!.content.isNotEmpty) {
+      try {
+        final document = QuillDeltaCodec.decode(_savedDraft!.content);
+        _contentController.document = document;
+      } catch (e) {
+        LogService.e('解码草稿内容失败', e);
+      }
+    }
+    
+    // 恢复图片
+    _imageUrls = _savedDraft!.imageUrls;
+    
+    setState(() {
+      _showDraftPrompt = false;
+      _savedDraft = null;
+    });
+    
+    ToastUtils.showSuccess(context, '草稿已恢复');
+  }
+
+  /// 忽略草稿
+  void _ignoreDraft() {
+    DraftService().deleteDraft('issue_create');
+    setState(() {
+      _showDraftPrompt = false;
+      _savedDraft = null;
+    });
   }
 
   DeviceInfo _collectDeviceInfo() {
@@ -957,7 +1204,13 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
         deviceInfo: _collectDeviceInfo()
       );
       final response = await IssueApi().createIssue(request);
-      if (response != null && mounted) { ToastUtils.showSuccess(context, '反馈提交成功'); widget.onCreated(response.id); }
+      if (response != null && mounted) {
+        // 提交成功后删除草稿
+        await DraftService().deleteDraft('issue_create');
+        
+        ToastUtils.showSuccess(context, '反馈提交成功');
+        widget.onCreated(response.id);
+      }
     } catch (e) { if (mounted) ToastUtils.showError(context, ErrorUtils.getErrorMessage(e, defaultMessage: '提交失败，请稍后重试')); }
     finally { if (mounted) setState(() => _isSubmitting = false); }
   }
@@ -969,11 +1222,53 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(color: isDark ? const Color(0xFF1E293B) : Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB))),
       child: Form(key: _formKey, child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+        _buildDraftPrompt(), const SizedBox(height: 16),
         _buildTypeSelector(), const SizedBox(height: 24), _buildTitleField(), const SizedBox(height: 24), _buildContentField(), const SizedBox(height: 24),
         if (_selectedType == IssueType.bug) ...[_buildDeviceInfoCard(), const SizedBox(height: 24)],
         _buildSubmitButton(),
       ])),
     )));
+  }
+
+  Widget _buildDraftPrompt() {
+    if (!_showDraftPrompt) return const SizedBox.shrink();
+    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0080FF).withValues(alpha: 0.1) : const Color(0xFFEFF6FF),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF0080FF).withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.restore_rounded, size: 22, color: Color(0xFF0080FF)),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('发现未保存的草稿', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF1F2937))),
+                const SizedBox(height: 4),
+                Text('是否恢复之前编辑的内容？', style: TextStyle(fontSize: 13, color: isDark ? Colors.white54 : const Color(0xFF6B7280))),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          TextButton(onPressed: _ignoreDraft, style: TextButton.styleFrom(foregroundColor: isDark ? Colors.white54 : const Color(0xFF6B7280)), child: const Text('忽略')),
+          const SizedBox(width: 8),
+          ElevatedButton(onPressed: _restoreDraft, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0080FF), foregroundColor: Colors.white, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)), child: const Text('恢复')),
+        ],
+      ),
+    );
   }
 
   Widget _buildTypeSelector() {
@@ -1019,6 +1314,8 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
           maxLength: 5000,
           maxImages: 5,
           compactMode: false,
+          draftId: 'issue_create',
+          enableDraftManualSave: true,
           onImagesChanged: (urls) {
             setState(() {
               _imageUrls = urls;
@@ -1042,8 +1339,50 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
     return Row(mainAxisAlignment: MainAxisAlignment.end, children: [
       TextButton(onPressed: _isSubmitting ? null : widget.onBack, child: const Text('取消')),
       const SizedBox(width: 12),
+      OutlinedButton.icon(
+        onPressed: _isSubmitting ? null : _saveDraft,
+        icon: const Icon(Icons.save_outlined, size: 18),
+        label: const Text('保存草稿'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFF0080FF),
+          side: const BorderSide(color: Color(0xFF0080FF)),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        ),
+      ),
+      const SizedBox(width: 12),
       ElevatedButton(onPressed: _isSubmitting ? null : _submit, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0080FF), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
         child: _isSubmitting ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('提交反馈')),
     ]);
+  }
+
+  Future<void> _saveDraft() async {
+    final plainText = _contentController.document.toPlainText().trim();
+    if (plainText.isEmpty && _titleController.text.trim().isEmpty) {
+      ToastUtils.showWarning(context, '内容为空，无需保存草稿');
+      return;
+    }
+
+    try {
+      final content = QuillDeltaCodec.encode(_contentController.document);
+      
+      await DraftService().saveDraft(
+        draftId: 'issue_create',
+        content: content,
+        imageUrls: _imageUrls,
+        metadata: {
+          'title': _titleController.text.trim(),
+          'type': _selectedType.value,
+        },
+      );
+      
+      if (mounted) {
+        ToastUtils.showSuccess(context, '草稿已保存');
+      }
+    } catch (e) {
+      LogService.e('保存草稿失败', e);
+      if (mounted) {
+        ToastUtils.showError(context, '保存草稿失败');
+      }
+    }
   }
 }

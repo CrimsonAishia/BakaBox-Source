@@ -25,7 +25,7 @@ class RichTextEditor extends StatefulWidget {
   final int maxImages;
   final bool compactMode;
   final String? draftId;
-  final bool enableDraftAutoSave;
+  final bool enableDraftManualSave;
   final Function(List<String> imageUrls)? onImagesChanged;
   final VoidCallback? onSubmit;
   final double? minHeight;
@@ -38,7 +38,7 @@ class RichTextEditor extends StatefulWidget {
     this.maxImages = 5,
     this.compactMode = false,
     this.draftId,
-    this.enableDraftAutoSave = true,
+    this.enableDraftManualSave = true,
     this.onImagesChanged,
     this.onSubmit,
     this.minHeight,
@@ -60,9 +60,6 @@ class RichTextEditorState extends State<RichTextEditor> {
   
   bool _isUploading = false;
   String? _uploadingFileName;
-  
-  bool _showDraftRestorePrompt = false;
-  DraftData? _restoredDraft;
 
   /// 清空所有附件图片
   void clearImages() {
@@ -79,15 +76,6 @@ class RichTextEditorState extends State<RichTextEditor> {
   void initState() {
     super.initState();
     widget.controller.addListener(_onTextChanged);
-    
-    if (widget.enableDraftAutoSave && widget.draftId != null) {
-      _restoreDraftIfExists();
-      _draftService.startAutoSave(
-        draftId: widget.draftId!,
-        getContent: () => _getPlainText(),
-        getImageUrls: () => _uploadedImages.map((img) => img.url).toList(),
-      );
-    }
   }
   
   void _onTextChanged() {
@@ -106,56 +94,6 @@ class RichTextEditorState extends State<RichTextEditor> {
     super.dispose();
   }
 
-  Future<void> _restoreDraftIfExists() async {
-    try {
-      final hasDraft = await _draftService.hasDraft(widget.draftId!);
-      if (hasDraft) {
-        final draft = await _draftService.restoreDraft(widget.draftId!);
-        if (draft != null && draft.content.isNotEmpty) {
-          setState(() {
-            _restoredDraft = draft;
-            _showDraftRestorePrompt = true;
-          });
-        }
-      }
-    } catch (e) {
-      LogService.e('恢复草稿失败', e);
-    }
-  }
-
-  void _applyRestoredDraft() {
-    if (_restoredDraft == null) return;
-    
-    widget.controller.document = Document()..insert(0, _restoredDraft!.content);
-    
-    setState(() {
-      _uploadedImages.clear();
-      for (final url in _restoredDraft!.imageUrls) {
-        _uploadedImages.add(UploadedImage(
-          url: url,
-          thumbnailUrl: url,
-          fileSize: 0,
-          fileName: url.split('/').last,
-        ));
-      }
-      _showDraftRestorePrompt = false;
-      _restoredDraft = null;
-    });
-    
-    _notifyImagesChanged();
-    _showSuccess('草稿已恢复');
-  }
-
-  void _ignoreRestoredDraft() {
-    setState(() {
-      _showDraftRestorePrompt = false;
-      _restoredDraft = null;
-    });
-    if (widget.draftId != null) {
-      _draftService.deleteDraft(widget.draftId!);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -164,8 +102,6 @@ class RichTextEditorState extends State<RichTextEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (_showDraftRestorePrompt && _restoredDraft != null)
-          _buildDraftRestorePrompt(context),
         _buildToolbar(context),
         // 编辑器区域
         Expanded(child: _buildEditor(context)),
@@ -319,43 +255,6 @@ class RichTextEditorState extends State<RichTextEditor> {
         children: [
           if (icon != null) ...[Icon(icon, size: 14, color: textColor), const SizedBox(width: 6)],
           Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: textColor)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDraftRestorePrompt(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0080FF).withValues(alpha: 0.15) : const Color(0xFFEFF6FF),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF0080FF).withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: const Color(0xFF0080FF).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-            child: const Icon(Icons.restore_rounded, size: 18, color: Color(0xFF0080FF)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(child: Text('发现未保存的草稿', style: TextStyle(color: isDark ? Colors.white : const Color(0xFF374151), fontWeight: FontWeight.w500))),
-          TextButton(
-            onPressed: _ignoreRestoredDraft,
-            style: TextButton.styleFrom(foregroundColor: isDark ? const Color(0xFF94A3B8) : const Color(0xFF6B7280), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-            child: const Text('忽略'),
-          ),
-          const SizedBox(width: 4),
-          ElevatedButton(
-            onPressed: _applyRestoredDraft,
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0080FF), foregroundColor: Colors.white, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-            child: const Text('恢复'),
-          ),
         ],
       ),
     );

@@ -48,6 +48,7 @@ export 'services/analytics_service.dart';
 export 'services/game_launcher_service.dart';
 export 'services/floating_window_service.dart';
 export 'services/custom_server_service.dart';
+export 'services/draft_service.dart';
 export 'services/image_url_service.dart';
 export 'services/scheduler_service.dart';
 
