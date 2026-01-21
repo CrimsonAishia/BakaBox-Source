@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'store_detection_utils.dart';
+
 /// 平台工具类 - 提供全局的平台检测功能
 class PlatformUtils {
   PlatformUtils._();
@@ -15,6 +17,14 @@ class PlatformUtils {
   static bool get isIOS => !kIsWeb && Platform.isIOS;
   static bool get isWindows => !kIsWeb && Platform.isWindows;
   static bool get isDesktopPlatform => !kIsWeb && Platform.isWindows;
+
+  /// 检测是否从 Microsoft Store 安装（同步版本）
+  /// 
+  /// 注意：首次使用前建议先调用 StoreDetectionUtils.isInstalledFromStore() 初始化
+  /// 这个同步版本使用缓存结果，适合在 getter 中使用
+  static bool get isInstalledFromStore {
+    return StoreDetectionUtils.isInstalledFromStoreSync();
+  }
 
   /// 根据屏幕尺寸判断是否为桌面布局
   static bool isDesktop(BuildContext context) {
@@ -52,6 +62,7 @@ class PlatformUtils {
       'isIOS': isIOS,
       'isWindows': isWindows,
       'isDesktopPlatform': isDesktopPlatform,
+      'isInstalledFromStore': isInstalledFromStore,
       if (context != null) ...{
         'isDesktopLayout': isDesktop(context),
         'isTabletLayout': isTablet(context),

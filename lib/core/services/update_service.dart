@@ -26,6 +26,11 @@ class UpdateService {
 
   /// 检查更新
   Future<AppUpdateInfo> checkForUpdate() async {
+    // 商店版本不支持手动更新
+    if (PlatformUtils.isInstalledFromStore) {
+      throw const UpdateException('商店版本由 Microsoft Store 自动更新');
+    }
+
     try {
       final updateInfo = await _updateApi.checkForUpdate();
       await _updateLastCheckTime();
@@ -37,6 +42,12 @@ class UpdateService {
 
   /// 自动检查更新（带间隔限制）
   Future<AppUpdateInfo?> autoCheckForUpdate() async {
+    // 商店版本不需要自动检查更新
+    if (PlatformUtils.isInstalledFromStore) {
+      LogService.i('商店版本跳过自动更新检查');
+      return null;
+    }
+
     try {
       final shouldCheck = await _shouldCheckForUpdate();
       if (!shouldCheck) {

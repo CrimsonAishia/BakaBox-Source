@@ -90,6 +90,7 @@ dev_dependencies:
   json_serializable: ^6.7.1
   build_runner: ^2.4.8
   glados: ^1.1.1
+  msix: ^3.16.7
 
 flutter:
   uses-material-design: true
@@ -98,3 +99,26 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/audio/
+
+
+# MSIX Configuration for Microsoft Store
+msix_config:
+  display_name: BakaBox
+  publisher_display_name: Aishia Studio
+  identity_name: AishiaStudio.BakaBox
+  msix_version: 1.0.0.0
+  logo_path: windows/runner/resources/app_icon.ico
+  capabilities: internetClient
+  
+  # Publisher identity (需要从 Partner Center 获取)
+  # 提交到商店前需要更新这个值
+  publisher: CN=78264BDC-AE8D-43AA-B460-F031E8B1DDA5
+  
+  # 应用信息
+  app_description: BakaBox - CS2 Server Browser. Browse CS2 community servers, view server details, and join games with one click.
+  
+  # 语言支持
+  languages: zh-CN, en-US
+  
+  # 架构
+  architecture: x64
