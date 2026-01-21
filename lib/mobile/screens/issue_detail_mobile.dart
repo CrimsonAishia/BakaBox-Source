@@ -21,11 +21,16 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   final ScrollController _scrollController = ScrollController();
   final _commentEditorKey = GlobalKey<RichTextEditorState>();
   List<String> _commentImageUrls = [];
+  
+  // 评论草稿相关
+  bool _showCommentDraftPrompt = false;
+  DraftData? _savedCommentDraft;
 
   @override
   void initState() {
     super.initState();
     // IssueDetailBloc 已在路由中初始化并触发 IssueDetailFetch
+    _checkCommentDraftExists();
   }
 
   @override
@@ -33,6 +38,58 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     _commentController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// 检查评论草稿是否存在
+  Future<void> _checkCommentDraftExists() async {
+    try {
+      final draftId = 'comment_${widget.issueId}';
+      final hasDraft = await DraftService().hasDraft(draftId);
+      if (hasDraft) {
+        final draft = await DraftService().restoreDraft(draftId);
+        if (draft != null && mounted) {
+          setState(() {
+            _savedCommentDraft = draft;
+            _showCommentDraftPrompt = true;
+          });
+        }
+      }
+    } catch (e) {
+      LogService.e('检查评论草稿失败', e);
+    }
+  }
+
+  /// 恢复评论草稿
+  void _restoreCommentDraft() {
+    if (_savedCommentDraft == null) return;
+    
+    // 恢复内容
+    if (_savedCommentDraft!.content.isNotEmpty) {
+      try {
+        final document = QuillDeltaCodec.decode(_savedCommentDraft!.content);
+        _commentController.document = document;
+      } catch (e) {
+        LogService.e('解码评论草稿失败', e);
+      }
+    }
+    
+    // 恢复图片
+    setState(() {
+      _commentImageUrls = _savedCommentDraft!.imageUrls;
+      _showCommentDraftPrompt = false;
+      _savedCommentDraft = null;
+    });
+    
+    ToastUtils.showSuccess(context, '草稿已恢复');
+  }
+
+  /// 忽略评论草稿
+  void _ignoreCommentDraft() {
+    DraftService().deleteDraft('comment_${widget.issueId}');
+    setState(() {
+      _showCommentDraftPrompt = false;
+      _savedCommentDraft = null;
+    });
   }
 
   void _submitComment() {
@@ -48,6 +105,10 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     }
     context.read<IssueDetailBloc>().add(IssueDetailSetUser(authState.userInfo));
     context.read<IssueDetailBloc>().add(IssueDetailAddComment(content, images: _commentImageUrls));
+    
+    // 提交后删除草稿
+    DraftService().deleteDraft('comment_${widget.issueId}');
+    
     _commentController.clear();
     _commentEditorKey.currentState?.clearImages();
     setState(() {
@@ -63,6 +124,102 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       return;
     }
     context.read<IssueDetailBloc>().add(const IssueDetailToggleVote());
+  }
+
+  Future<void> _saveCommentDraft() async {
+    final plainText = _commentController.document.toPlainText().trim();
+    if (plainText.isEmpty) {
+      ToastUtils.showWarning(context, '内容为空，无需保存草稿');
+      return;
+    }
+
+    try {
+      final content = QuillDeltaCodec.encode(_commentController.document);
+      
+      await DraftService().saveDraft(
+        draftId: 'comment_${widget.issueId}',
+        content: content,
+        imageUrls: _commentImageUrls,
+      );
+      
+      if (mounted) {
+        ToastUtils.showSuccess(context, '草稿已保存');
+      }
+    } catch (e) {
+      LogService.e('保存草稿失败', e);
+      if (mounted) {
+        ToastUtils.showError(context, '保存草稿失败');
+      }
+    }
+  }
+
+  /// 评论草稿提示条
+  Widget _buildCommentDraftPrompt() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF0080FF).withValues(alpha: 0.1),
+            const Color(0xFF0080FF).withValues(alpha: 0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.restore_rounded,
+              size: 18,
+              color: Color(0xFF0080FF),
+            ),
+          ),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              '发现未保存的评论草稿',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: _ignoreCommentDraft,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              minimumSize: const Size(50, 28),
+            ),
+            child: const Text('忽略', style: TextStyle(fontSize: 12)),
+          ),
+          const SizedBox(width: 4),
+          ElevatedButton(
+            onPressed: _restoreCommentDraft,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0080FF),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              minimumSize: const Size(50, 28),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+            child: const Text('恢复', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -1247,22 +1404,35 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
               ),
               // 编辑器
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: RichTextEditor(
-                    key: _commentEditorKey,
-                    controller: _commentController,
-                    hintText: '写下你的评论...',
-                    maxLength: 2000,
-                    maxImages: 3,
-                    compactMode: true,
-                    draftId: 'comment_${widget.issueId}',
-                    onImagesChanged: (urls) {
-                      setState(() {
-                        _commentImageUrls = urls;
-                      });
-                    },
-                  ),
+                child: Column(
+                  children: [
+                    // 评论草稿提示条
+                    if (_showCommentDraftPrompt) ...[
+                      _buildCommentDraftPrompt(),
+                      const SizedBox(height: 12),
+                    ],
+                    // 编辑器
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: RichTextEditor(
+                          key: _commentEditorKey,
+                          controller: _commentController,
+                          hintText: '写下你的评论...',
+                          maxLength: 2000,
+                          maxImages: 3,
+                          compactMode: true,
+                          draftId: 'comment_${widget.issueId}',
+                          enableDraftManualSave: true,
+                          onImagesChanged: (urls) {
+                            setState(() {
+                              _commentImageUrls = urls;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               // 提交按钮
@@ -1288,45 +1458,64 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                     ),
                   ],
                 ),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: state.isSubmitting
-                        ? null
-                        : () {
-                            _submitComment();
-                            Navigator.of(context).pop();
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0080FF),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                child: Row(
+                  children: [
+                    // 保存草稿按钮
+                    OutlinedButton.icon(
+                      onPressed: state.isSubmitting ? null : _saveCommentDraft,
+                      icon: const Icon(Icons.save_outlined, size: 16),
+                      label: const Text('草稿'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF0080FF),
+                        side: const BorderSide(color: Color(0xFF0080FF)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      elevation: 0,
                     ),
-                    child: state.isSubmitting
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(MdiIcons.send, size: 18),
-                              const SizedBox(width: 8),
-                              const Text(
-                                '发表评论',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                              ),
-                            ],
+                    const SizedBox(width: 12),
+                    // 发表评论按钮
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: state.isSubmitting
+                            ? null
+                            : () {
+                                _submitComment();
+                                Navigator.of(context).pop();
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0080FF),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                  ),
+                          elevation: 0,
+                        ),
+                        child: state.isSubmitting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(MdiIcons.send, size: 18),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    '发表评论',
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

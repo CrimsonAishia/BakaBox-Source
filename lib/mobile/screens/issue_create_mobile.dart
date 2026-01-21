@@ -23,12 +23,88 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
   IssueType _selectedType = IssueType.bug;
   bool _isSubmitting = false;
   List<String> _imageUrls = [];
+  
+  // 草稿相关
+  bool _showDraftPrompt = false;
+  DraftData? _savedDraft;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkDraftExists();
+  }
 
   @override
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
     super.dispose();
+  }
+
+  /// 检查是否有草稿
+  Future<void> _checkDraftExists() async {
+    try {
+      final hasDraft = await DraftService().hasDraft('issue_create');
+      if (hasDraft) {
+        final draft = await DraftService().restoreDraft('issue_create');
+        if (draft != null && mounted) {
+          setState(() {
+            _savedDraft = draft;
+            _showDraftPrompt = true;
+          });
+        }
+      }
+    } catch (e) {
+      LogService.e('检查草稿失败', e);
+    }
+  }
+
+  /// 恢复草稿
+  void _restoreDraft() {
+    if (_savedDraft == null) return;
+    
+    // 恢复标题
+    if (_savedDraft!.metadata?['title'] != null) {
+      _titleController.text = _savedDraft!.metadata!['title'] as String;
+    }
+    
+    // 恢复类型
+    if (_savedDraft!.metadata?['type'] != null) {
+      final typeValue = _savedDraft!.metadata!['type'] as String;
+      _selectedType = IssueType.values.firstWhere(
+        (t) => t.value == typeValue,
+        orElse: () => IssueType.bug,
+      );
+    }
+    
+    // 恢复内容
+    if (_savedDraft!.content.isNotEmpty) {
+      try {
+        final document = QuillDeltaCodec.decode(_savedDraft!.content);
+        _contentController.document = document;
+      } catch (e) {
+        LogService.e('解码草稿内容失败', e);
+      }
+    }
+    
+    // 恢复图片
+    _imageUrls = _savedDraft!.imageUrls;
+    
+    setState(() {
+      _showDraftPrompt = false;
+      _savedDraft = null;
+    });
+    
+    ToastUtils.showSuccess(context, '草稿已恢复');
+  }
+
+  /// 忽略草稿
+  void _ignoreDraft() {
+    DraftService().deleteDraft('issue_create');
+    setState(() {
+      _showDraftPrompt = false;
+      _savedDraft = null;
+    });
   }
 
   DeviceInfo _collectDeviceInfo() {
@@ -38,6 +114,37 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
       osVersion: Platform.operatingSystemVersion,
       deviceModel: 'Mobile',
     );
+  }
+
+  Future<void> _saveDraft() async {
+    final plainText = _contentController.document.toPlainText().trim();
+    if (plainText.isEmpty && _titleController.text.trim().isEmpty) {
+      ToastUtils.showWarning(context, '内容为空，无需保存草稿');
+      return;
+    }
+
+    try {
+      final content = QuillDeltaCodec.encode(_contentController.document);
+      
+      await DraftService().saveDraft(
+        draftId: 'issue_create',
+        content: content,
+        imageUrls: _imageUrls,
+        metadata: {
+          'title': _titleController.text.trim(),
+          'type': _selectedType.value,
+        },
+      );
+      
+      if (mounted) {
+        ToastUtils.showSuccess(context, '草稿已保存');
+      }
+    } catch (e) {
+      LogService.e('保存草稿失败', e);
+      if (mounted) {
+        ToastUtils.showError(context, '保存草稿失败');
+      }
+    }
   }
 
   Future<void> _submit() async {
@@ -79,6 +186,9 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
 
       final issue = await IssueApi().createIssue(request);
       if (issue != null && mounted) {
+        // 提交成功后删除草稿
+        await DraftService().deleteDraft('issue_create');
+        
         ToastUtils.showSuccess(context, '反馈提交成功');
         context.read<IssueBloc>().add(const IssueRefresh());
         context.pop();
@@ -110,6 +220,10 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 草稿恢复提示条
+              if (_showDraftPrompt) _buildDraftPrompt(context),
+              if (_showDraftPrompt) const SizedBox(height: 16),
+              
               _buildTypeSelector(context).animate().fadeIn(duration: 300.ms),
               const SizedBox(height: 24),
               _buildTitleField(context).animate().fadeIn(duration: 300.ms, delay: 100.ms),
@@ -125,6 +239,97 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
         ),
       ),
     );
+  }
+
+  /// 草稿恢复提示条
+  Widget _buildDraftPrompt(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF0080FF).withValues(alpha: 0.1),
+            const Color(0xFF0080FF).withValues(alpha: 0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.restore_rounded,
+              size: 24,
+              color: Color(0xFF0080FF),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '发现未保存的草稿',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '是否恢复之前编辑的内容？',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            children: [
+              TextButton(
+                onPressed: _ignoreDraft,
+                style: TextButton.styleFrom(
+                  foregroundColor: colorScheme.onSurfaceVariant,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  minimumSize: const Size(60, 32),
+                ),
+                child: const Text('忽略', style: TextStyle(fontSize: 13)),
+              ),
+              const SizedBox(height: 4),
+              ElevatedButton(
+                onPressed: _restoreDraft,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0080FF),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  minimumSize: const Size(60, 32),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text('恢复', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 300.ms).slideY(begin: -0.2, end: 0);
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
@@ -157,6 +362,23 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
       ).animate().fadeIn(duration: 300.ms),
       centerTitle: true,
       actions: [
+        // 保存草稿按钮
+        if (!_isSubmitting)
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            child: TextButton.icon(
+              onPressed: _saveDraft,
+              icon: const Icon(Icons.save_outlined, size: 18),
+              label: const Text('草稿'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF0080FF),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
         Container(
           margin: const EdgeInsets.only(right: 12),
           child: _isSubmitting
@@ -475,6 +697,8 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
                 maxLength: 5000,
                 maxImages: 5,
                 compactMode: true,
+                draftId: 'issue_create',
+                enableDraftManualSave: true,
                 onImagesChanged: (urls) {
                   setState(() {
                     _imageUrls = urls;

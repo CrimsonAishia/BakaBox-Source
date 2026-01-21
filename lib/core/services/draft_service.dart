@@ -3,13 +3,10 @@ import 'dart:convert';
 import '../utils/log_service.dart';
 import '../utils/storage_utils.dart';
 
-/// 草稿自动保存服务
+/// 草稿手动保存服务
 /// 
-/// 提供草稿的自动保存和恢复功能
+/// 提供草稿的手动保存和恢复功能
 class DraftService {
-  /// 自动保存间隔（30秒）
-  static const Duration autoSaveInterval = Duration(seconds: 30);
-  
   /// 草稿存储键前缀
   static const String _draftKeyPrefix = 'draft_';
   
@@ -18,61 +15,6 @@ class DraftService {
   
   /// 草稿过期时间（7天）
   static const Duration draftExpiration = Duration(days: 7);
-  
-  /// 自动保存定时器
-  Timer? _autoSaveTimer;
-  
-  /// 当前草稿内容
-  String? _currentContent;
-  
-  /// 当前已上传图片URL列表
-  List<String>? _currentImageUrls;
-
-  /// 开始自动保存
-  /// 
-  /// 参数:
-  /// - [draftId]: 草稿唯一标识（如 'issue_create', 'comment_123'）
-  /// - [getContent]: 获取当前内容的回调
-  /// - [getImageUrls]: 获取当前图片URL列表的回调
-  void startAutoSave({
-    required String draftId,
-    required String Function() getContent,
-    required List<String> Function() getImageUrls,
-  }) {
-    // 取消之前的定时器
-    _autoSaveTimer?.cancel();
-    
-    // 创建新的定时器
-    _autoSaveTimer = Timer.periodic(autoSaveInterval, (timer) async {
-      final content = getContent();
-      final imageUrls = getImageUrls();
-      
-      // 检查内容是否有变化
-      if (content != _currentContent || !_listEquals(imageUrls, _currentImageUrls)) {
-        _currentContent = content;
-        _currentImageUrls = imageUrls;
-        
-        // 保存草稿
-        await saveDraft(
-          draftId: draftId,
-          content: content,
-          imageUrls: imageUrls,
-        );
-      }
-    });
-    
-    LogService.i('草稿自动保存已启动: $draftId');
-  }
-
-  /// 停止自动保存
-  void stopAutoSave() {
-    _autoSaveTimer?.cancel();
-    _autoSaveTimer = null;
-    _currentContent = null;
-    _currentImageUrls = null;
-    
-    LogService.i('草稿自动保存已停止');
-  }
 
   /// 保存草稿
   /// 
@@ -80,16 +22,19 @@ class DraftService {
   /// - [draftId]: 草稿唯一标识
   /// - [content]: 草稿内容
   /// - [imageUrls]: 已上传图片URL列表
+  /// - [metadata]: 额外的元数据（如标题、类型等）
   Future<void> saveDraft({
     required String draftId,
     required String content,
     required List<String> imageUrls,
+    Map<String, dynamic>? metadata,
   }) async {
     try {
       // 保存草稿数据
       final draftData = {
         'content': content,
         'imageUrls': imageUrls,
+        if (metadata != null) 'metadata': metadata,
       };
       
       await StorageUtils.setString(
@@ -151,6 +96,7 @@ class DraftService {
         timestamp: timestamp != null 
             ? DateTime.fromMillisecondsSinceEpoch(timestamp)
             : null,
+        metadata: draftData['metadata'] as Map<String, dynamic>?,
       );
     } catch (e) {
       LogService.e('恢复草稿失败', e);
@@ -231,22 +177,9 @@ class DraftService {
     }
   }
 
-  /// 比较两个列表是否相等
-  bool _listEquals<T>(List<T>? a, List<T>? b) {
-    if (a == null && b == null) return true;
-    if (a == null || b == null) return false;
-    if (a.length != b.length) return false;
-    
-    for (int i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    
-    return true;
-  }
-
   /// 释放资源
   void dispose() {
-    stopAutoSave();
+    // 不再需要停止自动保存
   }
 }
 
@@ -260,15 +193,19 @@ class DraftData {
   
   /// 保存时间戳
   final DateTime? timestamp;
+  
+  /// 额外的元数据（如标题、类型等）
+  final Map<String, dynamic>? metadata;
 
   const DraftData({
     required this.content,
     required this.imageUrls,
     this.timestamp,
+    this.metadata,
   });
 
   @override
   String toString() {
-    return 'DraftData(content: ${content.length} chars, images: ${imageUrls.length}, timestamp: $timestamp)';
+    return 'DraftData(content: ${content.length} chars, images: ${imageUrls.length}, timestamp: $timestamp, metadata: $metadata)';
   }
 }
