@@ -27,6 +27,9 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
     on<DailyTaskCheckInRequested>(_onCheckInRequested);
     on<DailyTaskShakeCompleted>(_onShakeCompleted);
     on<DailyTaskReset>(_onReset);
+    
+    // 从持久化存储中恢复上次检查日期
+    _lastCheckedDate = StorageUtils.getString(_keyLastCheckDate);
   }
 
   /// 获取当前北京时间的日期字符串 (yyyy-MM-dd)
@@ -61,9 +64,11 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
     if (_lastCheckedDate != null && _lastCheckedDate != todayDate) {
       LogService.i('[DailyTask] 检测到跨天: $_lastCheckedDate -> $todayDate，自动刷新状态');
       add(const DailyTaskCheckStatusRequested(forceRefresh: true));
+      // 注意：不在这里更新 _lastCheckedDate，等 API 调用成功后再更新
+    } else {
+      // 首次初始化：如果 _lastCheckedDate 为 null，设置为今天
+      _lastCheckedDate ??= todayDate;
     }
-
-    _lastCheckedDate = todayDate;
   }
 
   /// 检查是否需要重新获取状态（跨天了）
@@ -127,6 +132,7 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
 
     // 检查是否跨天，如果跨天则强制刷新
     final needsRefresh = await _needsRefresh();
+    final isFirstCheck = StorageUtils.getString(_keyLastCheckDate) == null;
 
     // 如果已有状态且没跨天，可以跳过（除非强制刷新）
     if (!needsRefresh && state.canShake != null && !event.forceRefresh) {
@@ -164,8 +170,14 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
         clearShakeReward: shakeReward == null && shakeResult.rewardAmount == null,
       ));
 
-      // 保存检查日期并启动定时任务
-      await _saveCheckDate();
+      // 保存检查日期：首次检查、跨天时、或强制刷新时
+      if (isFirstCheck || needsRefresh || event.forceRefresh) {
+        await _saveCheckDate();  // 同时更新 Storage 和内存变量
+        if (needsRefresh || event.forceRefresh) {
+          LogService.d('[DailyTask] 跨天刷新完成，保存新日期');
+        }
+      }
+      
       _startCheckTask();
     } catch (e) {
       LogService.e('[DailyTask] 检查状态失败', e);
@@ -196,6 +208,13 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
         hasCheckedIn: result.success || result.alreadyCheckedIn,
         checkInRewardAmount: result.rewardAmount,
       ));
+
+      // 签到成功后，更新检查日期为今天
+      // 这样可以防止定时任务误判为跨天
+      if (result.success || result.alreadyCheckedIn) {
+        await _saveCheckDate();
+        LogService.d('[DailyTask] 签到成功，更新检查日期');
+      }
     } catch (e) {
       LogService.e('[DailyTask] 签到失败', e);
       emit(state.copyWith(isCheckingIn: false));
