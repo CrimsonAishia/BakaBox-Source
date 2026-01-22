@@ -57,29 +57,80 @@ class LogService {
     }
   }
   
+  static bool _isRotating = false;
+  
   static Future<void> _openLogFile() async {
     final today = _fileDateFormat.format(DateTime.now());
     final logFile = '${AppDirectoryService.logsPath}${Platform.pathSeparator}bakabox_$today.log';
     
     if (_currentLogFile == logFile && _fileSink != null) return;
     
-    await _fileSink?.flush();
-    await _fileSink?.close();
+    _isRotating = true;
     
-    final file = File(logFile);
-    _fileSink = file.openWrite(mode: FileMode.append);
-    _currentLogFile = logFile;
+    try {
+      // 先保存旧的 sink
+      final oldSink = _fileSink;
+      
+      // 尝试打开新文件
+      final file = File(logFile);
+      final newSink = file.openWrite(mode: FileMode.append);
+      
+      // 更新引用
+      _fileSink = newSink;
+      _currentLogFile = logFile;
+      
+      // 异步关闭旧的 sink（不阻塞），添加超时防止内存泄漏
+      if (oldSink != null) {
+        _closeOldSinkSafely(oldSink);
+      }
+    } catch (e) {
+      debugPrint('切换日志文件异常: $e');
+      rethrow;
+    } finally {
+      _isRotating = false;
+    }
+  }
+  
+  /// 安全关闭旧的 sink，带超时保护
+  static void _closeOldSinkSafely(IOSink sink) {
+    sink.flush()
+      .timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          debugPrint('刷新旧日志文件超时，强制关闭');
+        },
+      )
+      .then((_) => sink.close())
+      .timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          debugPrint('关闭旧日志文件超时');
+        },
+      )
+      .catchError((e) {
+        debugPrint('关闭旧日志文件失败: $e');
+      });
   }
   
   static void _writeToFile(LogLevel level, String tag, String message, [dynamic error, StackTrace? stackTrace]) {
-    if (_fileSink == null) return;
-    
     try {
-      // 检查是否需要切换日志文件（跨天）
+      if (_fileSink == null) return;
+      
+      // 检查是否需要切换日志文件（跨天）- 使用精确匹配
       final today = _fileDateFormat.format(DateTime.now());
-      if (_currentLogFile?.contains(today) != true) {
-        _openLogFile();
+      final expectedLogFile = '${AppDirectoryService.logsPath}${Platform.pathSeparator}bakabox_$today.log';
+      
+      if (_currentLogFile != expectedLogFile && !_isRotating) {
+        // 异步切换日志文件，不阻塞当前写入
+        _openLogFile().catchError((e) {
+          debugPrint('切换日志文件失败: $e');
+        });
+        // 切换期间跳过本次写入，避免写入到错误的文件
+        return;
       }
+      
+      // 如果正在切换中，跳过写入
+      if (_isRotating) return;
       
       final timestamp = _dateFormat.format(DateTime.now());
       final levelStr = level.name.toUpperCase().padRight(5);
@@ -171,28 +222,58 @@ class LogService {
   }
   
   static Future<void> flush() async {
-    await _fileSink?.flush();
+    try {
+      await _fileSink?.flush();
+    } catch (e) {
+      debugPrint('刷新日志文件失败: $e');
+    }
   }
   
   static Future<void> clearLogs() async {
+    // 使用 _isRotating 标志防止并发写入
+    if (_isRotating) {
+      debugPrint('日志正在切换中，无法清除');
+      return;
+    }
+    
+    _isRotating = true;
+    
     try {
-      await _fileSink?.flush();
-      await _fileSink?.close();
+      // 先关闭当前文件
+      final oldSink = _fileSink;
       _fileSink = null;
+      _currentLogFile = null;
       
+      if (oldSink != null) {
+        try {
+          await oldSink.flush();
+          await oldSink.close();
+        } catch (e) {
+          debugPrint('关闭日志文件失败: $e');
+        }
+      }
+      
+      // 删除所有日志文件
       final logsDir = Directory(AppDirectoryService.logsPath);
       if (await logsDir.exists()) {
         await for (final file in logsDir.list()) {
           if (file is File && file.path.endsWith('.log')) {
-            await file.delete();
+            try {
+              await file.delete();
+            } catch (e) {
+              debugPrint('删除日志文件失败 ${file.path}: $e');
+            }
           }
         }
       }
       
+      // 重新打开新的日志文件
       await _openLogFile();
       i('日志文件已清除');
     } catch (e) {
       _log.e('清除日志失败', error: e);
+    } finally {
+      _isRotating = false;
     }
   }
   
@@ -229,16 +310,27 @@ class LogService {
     try {
       final file = File('${AppDirectoryService.logsPath}${Platform.pathSeparator}$fileName');
       final timestamp = _dateFormat.format(DateTime.now());
-      file.writeAsStringSync('[$timestamp] $message\n', mode: FileMode.append);
+      // 使用异步写入避免阻塞，但不等待完成
+      file.writeAsString('[$timestamp] $message\n', mode: FileMode.append, flush: true).catchError((e) {
+        debugPrint('写入自定义日志文件失败: $e');
+        return file; // 返回文件对象以满足类型要求
+      });
     } catch (e) {
-      _log.e('写入自定义日志文件失败', error: e);
+      debugPrint('创建自定义日志文件失败: $e');
     }
   }
   
   static Future<void> dispose() async {
-    await _fileSink?.flush();
-    await _fileSink?.close();
-    _fileSink = null;
-    _initialized = false;
+    try {
+      await _fileSink?.flush();
+      await _fileSink?.close();
+    } catch (e) {
+      debugPrint('关闭日志文件失败: $e');
+    } finally {
+      _fileSink = null;
+      _currentLogFile = null;
+      _isRotating = false;
+      _initialized = false;
+    }
   }
 }
