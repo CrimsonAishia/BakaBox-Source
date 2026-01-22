@@ -31,22 +31,22 @@ class _UserLoginBoxState extends State<UserLoginBox> {
   Widget build(BuildContext context) {
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
-        // 首次构建时，如果已登录，触发状态检查
+        // 首次构建时，如果已登录，触发状态检查（强制刷新）
         if (!_initialized && state.isAuthenticated) {
           context
               .read<DailyTaskBloc>()
-              .add(const DailyTaskCheckStatusRequested());
+              .add(const DailyTaskCheckStatusRequested(forceRefresh: true));
           _wasAuthenticated = true;
           _initialized = true;
           return;
         }
         _initialized = true;
 
-        // 登录成功时触发每日任务状态检查
+        // 登录成功时触发每日任务状态检查（强制刷新）
         if (state.isAuthenticated && !_wasAuthenticated) {
           context
               .read<DailyTaskBloc>()
-              .add(const DailyTaskCheckStatusRequested());
+              .add(const DailyTaskCheckStatusRequested(forceRefresh: true));
         }
         // 登出时重置每日任务状态
         if (!state.isAuthenticated && _wasAuthenticated) {
