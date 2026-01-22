@@ -16,6 +16,9 @@ class LogService {
   static final _dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss.SSS');
   static final _fileDateFormat = DateFormat('yyyy-MM-dd');
   
+  /// 最多保留的日志文件数量（默认 7 个）
+  static const int maxLogFiles = 7;
+  
   /// 获取 logger 实例，如果未初始化则创建一个简单的 logger
   static Logger get _log {
     _logger ??= Logger(
@@ -39,6 +42,10 @@ class LogService {
     _log;
     
     await _initFileLogging();
+    
+    // 清理过期日志
+    await _cleanupOldLogs();
+    
     _initialized = true;
     i('日志服务初始化完成');
   }
@@ -317,6 +324,118 @@ class LogService {
       });
     } catch (e) {
       debugPrint('创建自定义日志文件失败: $e');
+    }
+  }
+  
+  /// 清理多余的日志文件，只保留最新的 N 个
+  static Future<void> _cleanupOldLogs() async {
+    try {
+      final logsDir = Directory(AppDirectoryService.logsPath);
+      if (!await logsDir.exists()) return;
+      
+      // 收集所有日志文件及其日期
+      final logFiles = <MapEntry<DateTime, File>>[];
+      
+      await for (final entity in logsDir.list()) {
+        if (entity is File && entity.path.endsWith('.log')) {
+          try {
+            // 从文件名提取日期（格式：bakabox_yyyy-MM-dd.log）
+            final fileName = entity.path.split(Platform.pathSeparator).last;
+            final dateMatch = RegExp(r'bakabox_(\d{4}-\d{2}-\d{2})\.log').firstMatch(fileName);
+            
+            if (dateMatch != null) {
+              final dateStr = dateMatch.group(1)!;
+              final fileDate = DateTime.parse(dateStr);
+              logFiles.add(MapEntry(fileDate, entity));
+            }
+          } catch (e) {
+            debugPrint('处理日志文件失败 ${entity.path}: $e');
+          }
+        }
+      }
+      
+      // 如果日志文件数量不超过限制，无需清理
+      if (logFiles.length <= maxLogFiles) {
+        debugPrint('当前日志文件数量: ${logFiles.length}，无需清理');
+        return;
+      }
+      
+      // 按日期降序排序（最新的在前）
+      logFiles.sort((a, b) => b.key.compareTo(a.key));
+      
+      // 删除超出限制的旧文件
+      int deletedCount = 0;
+      for (int i = maxLogFiles; i < logFiles.length; i++) {
+        try {
+          final file = logFiles[i].value;
+          final fileName = file.path.split(Platform.pathSeparator).last;
+          await file.delete();
+          deletedCount++;
+          debugPrint('已删除旧日志: $fileName');
+        } catch (e) {
+          debugPrint('删除日志文件失败: $e');
+        }
+      }
+      
+      if (deletedCount > 0) {
+        debugPrint('清理完成，共删除 $deletedCount 个旧日志文件，保留最新 $maxLogFiles 个');
+      }
+    } catch (e) {
+      debugPrint('清理旧日志失败: $e');
+    }
+  }
+  
+  /// 手动触发清理旧日志（可在设置页面调用）
+  static Future<int> cleanupOldLogsManually() async {
+    try {
+      final logsDir = Directory(AppDirectoryService.logsPath);
+      if (!await logsDir.exists()) return 0;
+      
+      // 收集所有日志文件及其日期
+      final logFiles = <MapEntry<DateTime, File>>[];
+      
+      await for (final entity in logsDir.list()) {
+        if (entity is File && entity.path.endsWith('.log')) {
+          try {
+            final fileName = entity.path.split(Platform.pathSeparator).last;
+            final dateMatch = RegExp(r'bakabox_(\d{4}-\d{2}-\d{2})\.log').firstMatch(fileName);
+            
+            if (dateMatch != null) {
+              final dateStr = dateMatch.group(1)!;
+              final fileDate = DateTime.parse(dateStr);
+              logFiles.add(MapEntry(fileDate, entity));
+            }
+          } catch (e) {
+            _log.w('处理日志文件失败 ${entity.path}', error: e);
+          }
+        }
+      }
+      
+      // 如果日志文件数量不超过限制，无需清理
+      if (logFiles.length <= maxLogFiles) {
+        i('当前日志文件数量: ${logFiles.length}，无需清理');
+        return 0;
+      }
+      
+      // 按日期降序排序（最新的在前）
+      logFiles.sort((a, b) => b.key.compareTo(a.key));
+      
+      // 删除超出限制的旧文件
+      int deletedCount = 0;
+      for (int i = maxLogFiles; i < logFiles.length; i++) {
+        try {
+          await logFiles[i].value.delete();
+          deletedCount++;
+        } catch (e) {
+          _log.w('删除日志文件失败', error: e);
+        }
+      }
+      
+      i('手动清理完成，共删除 $deletedCount 个旧日志文件');
+      return deletedCount;
+    } catch (e) {
+      _log.e('手动清理旧日志失败', error: e);
+      return 0;
     }
   }
   
