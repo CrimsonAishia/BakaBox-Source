@@ -246,7 +246,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
         isSaving: false,
         autoexecContent: content,
         appliedConfigs: appliedConfigs,
-        successMessage: '配置 "${event.config.name}" 已成功应用',
+        successMessage: '配置 "${event.config.name}" 已成功应用，重启游戏生效',
       ));
       
       LogService.d('[KeyBindingBloc] 配置应用成功: ${event.config.name}');
@@ -299,7 +299,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
         isSaving: false,
         autoexecContent: newContent,
         appliedConfigs: appliedConfigs,
-        successMessage: '配置已成功移除',
+        successMessage: '配置已成功移除，重启游戏生效',
       ));
       
       LogService.d('[KeyBindingBloc] 配置移除成功: ${event.configId}');
@@ -398,7 +398,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
           isSaving: false,
           autoexecContent: event.content,
           appliedConfigs: appliedConfigs,
-          successMessage: 'autoexec.cfg 保存成功',
+          successMessage: 'autoexec.cfg 保存成功，重启游戏生效',
         ));
         
         LogService.d('[KeyBindingBloc] 保存 autoexec.cfg 成功');
