@@ -14,6 +14,7 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
   final AuthService _authService = AuthService.instance;
   final SchedulerService _scheduler = SchedulerService();
   String? _lastCheckedDate;
+  bool _isRefreshing = false; // 防止重复刷新
 
   static const String _keyLastCheckDate = 'daily_task_last_check_date';
   static const String _keyCheckInReward = 'daily_task_checkin_reward';
@@ -58,29 +59,36 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
 
   /// 检查是否跨天
   void _checkDateChange() {
+    // 如果正在刷新，跳过本次检查
+    if (_isRefreshing) return;
+
     final todayDate = _getBeijingDateString();
-    LogService.d('[DailyTask] 跨天检查: 当前=$todayDate, 上次=$_lastCheckedDate');
 
     if (_lastCheckedDate != null && _lastCheckedDate != todayDate) {
-      LogService.i('[DailyTask] 检测到跨天: $_lastCheckedDate -> $todayDate，自动刷新状态');
+      // 直接删除所有昨天的缓存数据
+      _clearYesterdayCache();
+      
+      _isRefreshing = true;
       add(const DailyTaskCheckStatusRequested(forceRefresh: true));
-      // 注意：不在这里更新 _lastCheckedDate，等 API 调用成功后再更新
-    } else {
-      // 首次初始化：如果 _lastCheckedDate 为 null，设置为今天
-      _lastCheckedDate ??= todayDate;
+    } else if (_lastCheckedDate == null) {
+      // 首次初始化：设置为今天
+      _lastCheckedDate = todayDate;
+      _saveCheckDate();
     }
   }
 
-  /// 检查是否需要重新获取状态（跨天了）
-  Future<bool> _needsRefresh() async {
-    final lastCheckDate = StorageUtils.getString(_keyLastCheckDate);
-    final todayDate = _getBeijingDateString();
+  /// 清除昨天的缓存数据
+  void _clearYesterdayCache() {
+    StorageUtils.remove(_keyCheckInReward);
+    StorageUtils.remove(_keyCheckInRewardDate);
+    StorageUtils.remove(_keyShakeReward);
+    StorageUtils.remove(_keyShakeRewardDate);
+  }
 
-    if (lastCheckDate != todayDate) {
-      LogService.d('[DailyTask] 跨天检测: 上次=$lastCheckDate, 今天=$todayDate, 需要刷新');
-      return true;
-    }
-    return false;
+  /// 检查是否需要重新获取状态（跨天了）
+  bool _needsRefresh() {
+    final todayDate = _getBeijingDateString();
+    return _lastCheckedDate != todayDate;
   }
 
   /// 保存检查日期
@@ -128,16 +136,17 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
     DailyTaskCheckStatusRequested event,
     Emitter<DailyTaskState> emit,
   ) async {
-    if (!_authService.isLoggedIn) return;
+    if (!_authService.isLoggedIn) {
+      _isRefreshing = false;
+      return;
+    }
 
-    // 检查是否跨天，如果跨天则强制刷新
-    final needsRefresh = await _needsRefresh();
-    final isFirstCheck = StorageUtils.getString(_keyLastCheckDate) == null;
+    // 检查是否跨天
+    final needsRefresh = _needsRefresh();
 
     // 如果已有状态且没跨天，可以跳过（除非强制刷新）
     if (!needsRefresh && state.canShake != null && !event.forceRefresh) {
-      LogService.d('[DailyTask] 状态未跨天，跳过刷新');
-      // 确保定时任务在运行
+      _isRefreshing = false;
       _startCheckTask();
       return;
     }
@@ -154,9 +163,8 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
       final checkInResult = results[0] as CheckInStatusResult;
       final shakeResult = results[1] as ShakeStatusResult;
 
-      // 获取今日签到奖励（如果之前在 App 内签到过）
+      // 读取今日奖励（如果缓存已被清除则为 null）
       final checkInReward = await _getTodayCheckInReward();
-      // 获取今日摇一摇奖励（如果之前在 App 内摇过）
       final shakeReward = await _getTodayShakeReward();
 
       emit(state.copyWith(
@@ -166,23 +174,19 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
         clearCheckInReward: checkInReward == null,
         canShake: shakeResult.canShake,
         hasShaked: shakeResult.alreadyShaked,
-        shakeRewardAmount: shakeReward ?? shakeResult.rewardAmount,
-        clearShakeReward: shakeReward == null && shakeResult.rewardAmount == null,
+        shakeRewardAmount: shakeReward,
+        clearShakeReward: shakeReward == null,
       ));
 
-      // 保存检查日期：首次检查、跨天时、或强制刷新时
-      if (isFirstCheck || needsRefresh || event.forceRefresh) {
-        await _saveCheckDate();  // 同时更新 Storage 和内存变量
-        if (needsRefresh || event.forceRefresh) {
-          LogService.d('[DailyTask] 跨天刷新完成，保存新日期');
-        }
-      }
+      // 更新检查日期为今天
+      await _saveCheckDate();
       
+      _isRefreshing = false;
       _startCheckTask();
     } catch (e) {
       LogService.e('[DailyTask] 检查状态失败', e);
       emit(state.copyWith(isCheckingStatus: false));
-      // 即使失败也启动定时任务，下次检查时重试
+      _isRefreshing = false;
       _startCheckTask();
     }
   }
@@ -210,10 +214,8 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
       ));
 
       // 签到成功后，更新检查日期为今天
-      // 这样可以防止定时任务误判为跨天
       if (result.success || result.alreadyCheckedIn) {
         await _saveCheckDate();
-        LogService.d('[DailyTask] 签到成功，更新检查日期');
       }
     } catch (e) {
       LogService.e('[DailyTask] 签到失败', e);
@@ -245,6 +247,7 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
   ) async {
     _stopCheckTask();
     _lastCheckedDate = null;
+    _isRefreshing = false;
     emit(const DailyTaskState());
   }
 
