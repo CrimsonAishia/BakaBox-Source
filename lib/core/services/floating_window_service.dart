@@ -7,6 +7,7 @@ import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter/foundation.dart';
 
 import '../utils/log_service.dart';
+import '../utils/storage_utils.dart';
 
 /// 浮窗类型
 enum FloatingWindowType {
@@ -101,11 +102,14 @@ class FloatingWindowService {
     try {
       LogService.d('Creating floating window: type=${config.type}');
 
+      // 读取浮窗位置设置并添加到 extra 中
+      final configWithPosition = _addPositionToConfig(config);
+
       // 创建窗口
       final controller = await WindowController.create(
         WindowConfiguration(
           hiddenAtLaunch: true,
-          arguments: config.toJson(),
+          arguments: configWithPosition.toJson(),
         ),
       );
 
@@ -117,6 +121,28 @@ class FloatingWindowService {
     } catch (e, stack) {
       LogService.e('Create floating window error: $e\n$stack');
       return null;
+    }
+  }
+
+  /// 添加位置设置到配置中
+  FloatingWindowConfig _addPositionToConfig(FloatingWindowConfig config) {
+    try {
+      // 从存储中读取浮窗位置设置
+      final positionIndex = StorageUtils.getInt('floating_window_position') ?? 8; // 默认右下角
+      
+      // 将位置信息添加到 extra 中
+      final extra = Map<String, dynamic>.from(config.extra ?? {});
+      extra['floatingWindowPosition'] = positionIndex;
+      
+      return FloatingWindowConfig(
+        type: config.type,
+        serverAddress: config.serverAddress,
+        title: config.title,
+        extra: extra,
+      );
+    } catch (e) {
+      LogService.w('Failed to read floating window position, using default: $e');
+      return config;
     }
   }
 
