@@ -258,8 +258,20 @@ class _UpdateDialogState extends State<UpdateDialog> with TickerProviderStateMix
         },
       );
     } else if (isDownloaded) {
-      // 下载完成，显示"立即安装"和"取消"按钮
+      // 下载完成，显示"立即安装"按钮
+      // 强制更新时不显示"取消"按钮
       if (_buttonAnimationController.status == AnimationStatus.completed) _buttonAnimationController.reverse();
+      
+      // 强制更新：只显示"立即安装"按钮
+      if (widget.updateInfo.isForced) {
+        return Row(
+          children: [
+            Expanded(child: _buildUpdateButton(context, status, downloadProgress, isFullWidth: true)),
+          ],
+        );
+      }
+      
+      // 非强制更新：显示"取消"和"立即安装"按钮
       return Row(
         children: [
           if (widget.canSkip) SizedBox(width: 80, child: _buildCloseButton(context)),
@@ -287,16 +299,35 @@ class _UpdateDialogState extends State<UpdateDialog> with TickerProviderStateMix
   Widget _buildCloseButton(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    
+    // 强制更新时禁用取消按钮（理论上不应该显示，但作为双重保险）
+    final isEnabled = !widget.updateInfo.isForced;
+    
     return SizedBox(
       height: 48, width: 80,
       child: Container(
-        decoration: BoxDecoration(color: colorScheme.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2), width: 1.5)),
+        decoration: BoxDecoration(
+          color: isEnabled ? colorScheme.surface : colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: colorScheme.outline.withValues(alpha: isEnabled ? 0.2 : 0.1),
+            width: 1.5,
+          ),
+        ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () => Navigator.of(context).pop(),
-            child: Center(child: Text('取消', style: theme.textTheme.titleMedium?.copyWith(color: colorScheme.onSurface, fontWeight: FontWeight.w500))),
+            onTap: isEnabled ? () => Navigator.of(context).pop() : null,
+            child: Center(
+              child: Text(
+                '取消',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: isEnabled ? colorScheme.onSurface : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -409,6 +440,36 @@ class _UpdateDialogState extends State<UpdateDialog> with TickerProviderStateMix
         );
       
       case UpdateStatus.completed:
+        // Windows: 不会到达此状态（安装后自动退出）
+        // Android/iOS: 安装完成，显示"完成"按钮
+        // 强制更新时：不允许关闭对话框，提示用户重启应用
+        if (widget.updateInfo.isForced) {
+          return SizedBox(
+            width: double.infinity, height: 48,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [Color(0xFF27AE60), Color(0xFF229954)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [BoxShadow(color: const Color(0xFF27AE60).withValues(alpha: 0.3), offset: const Offset(0, 2), blurRadius: 8)],
+              ),
+              child: Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.check_circle, size: 18, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(
+                      '安装完成，请重启应用',
+                      style: theme.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+        
+        // 非强制更新：允许关闭对话框
         return SizedBox(
           width: double.infinity, height: 48,
           child: Container(
