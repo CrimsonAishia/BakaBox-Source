@@ -1903,7 +1903,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
               backgroundColor: const Color(0xFF0080FF),
               foregroundColor: Colors.white,
             ),
-            child: const Text('去绑定'),
+            child: const Text('去登录'),
           ),
         ],
       ),

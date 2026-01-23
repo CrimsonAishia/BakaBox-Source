@@ -126,7 +126,7 @@ class _LoginPromptView extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            '绑定您的论坛账户',
+            '关联您的论坛账户',
             style: TextStyle(
               color: _getSecondaryTextColor(isDark),
               fontSize: 12,

@@ -1034,7 +1034,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
                   : const Text(
-                      '绑定账号',
+                      '关联账号',
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                     ),
             ),
@@ -1396,7 +1396,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   /// 构建下一步按钮（第3页根据登录状态显示不同文字）
   Widget _buildNextButton(bool isDark) {
-    // 第3页（账号绑定）根据登录状态显示不同文字
+    // 第3页（账号关联）根据登录状态显示不同文字
     String buttonText = '下一步';
     if (_currentPage == 2) {
       final authState = context.watch<AuthBloc>().state;

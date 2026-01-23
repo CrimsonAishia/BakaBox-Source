@@ -346,7 +346,7 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '使用 QQ 账号登录，登录成功后将自动绑定',
+                      '使用 QQ 账号登录，登录成功后将自动关联',
                       style: TextStyle(color: secondaryTextColor, fontSize: 12),
                     ),
                   ),

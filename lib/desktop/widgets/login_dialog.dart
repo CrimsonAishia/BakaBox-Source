@@ -89,7 +89,7 @@ class _LoginDialogState extends State<LoginDialog> {
       listener: (context, state) {
         if (state.status == AuthStatus.authenticated) {
           Navigator.of(context).pop();
-          ToastUtils.showSuccess(context, '绑定成功');
+          ToastUtils.showSuccess(context, '关联成功');
         } else if (state.status == AuthStatus.error &&
             state.errorMessage != null) {
           ToastUtils.showError(context, state.errorMessage!);
@@ -236,7 +236,7 @@ class _LoginDialogState extends State<LoginDialog> {
                 ),
                 const SizedBox(height: 16),
 
-                // 绑定按钮
+                // 关联按钮
                 SizedBox(
                   height: 44,
                   child: ElevatedButton(
