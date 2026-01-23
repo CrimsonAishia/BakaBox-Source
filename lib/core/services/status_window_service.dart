@@ -240,6 +240,20 @@ class StatusWindowService {
     String? mapNameCn,
     String? mapBackground,
   }) async {
+    // 检查游戏路径是否已配置
+    final hasGamePath = await _gameLauncher.hasGamePath();
+    if (!hasGamePath) {
+      _updateState(OperationState(
+        type: OperationType.none,
+        status: OperationStatus.failed,
+        message: '请先在设置中配置游戏路径',
+        serverAddress: serverAddress,
+        serverName: serverName,
+        isGameRunning: false,
+      ));
+      return false;
+    }
+    
     // 检查是否有其他操作正在进行
     if (_state.type != OperationType.none && _state.status == OperationStatus.running) {
       LogService.w('[StatusWindowService] 有其他操作正在进行');
@@ -352,6 +366,20 @@ class StatusWindowService {
     String? mapBackground,
     bool playSuccessSound = true,
   }) async {
+    // 检查游戏路径是否已配置
+    final hasGamePath = await _gameLauncher.hasGamePath();
+    if (!hasGamePath) {
+      _updateState(OperationState(
+        type: OperationType.none,
+        status: OperationStatus.failed,
+        message: '请先在设置中配置游戏路径',
+        serverAddress: serverAddress,
+        serverName: serverName,
+        isGameRunning: false,
+      ));
+      return false;
+    }
+    
     // 检查游戏是否运行
     final gameRunning = await _gameLauncher.isCS2Running();
     
@@ -370,6 +398,20 @@ class StatusWindowService {
     final canMonitor = _gameStatusService.isMonitorable;
     
     if (!canMonitor) {
+      // 不可监控时，再次确认游戏是否运行
+      final stillRunning = await _gameLauncher.isCS2Running();
+      if (!stillRunning) {
+        _updateState(OperationState(
+          type: OperationType.none,
+          status: OperationStatus.failed,
+          message: '游戏已关闭，请重新启动',
+          serverAddress: serverAddress,
+          serverName: serverName,
+          isGameRunning: false,
+        ));
+        return false;
+      }
+      
       // 不可监控，直接发送连接命令
       final result = await _gameLauncher.connectToServer(serverAddress);
       if (result.success && playSuccessSound) {
@@ -475,6 +517,19 @@ class StatusWindowService {
     ServerInfo? serverInfo,
     MapData? mapInfo,
   }) async {
+    // 检查游戏路径是否已配置
+    final hasGamePath = await _gameLauncher.hasGamePath();
+    if (!hasGamePath) {
+      _updateState(OperationState(
+        type: OperationType.none,
+        status: OperationStatus.failed,
+        message: '请先在设置中配置游戏路径',
+        serverAddress: serverAddress,
+        isGameRunning: false,
+      ));
+      return false;
+    }
+    
     // 检查游戏是否运行
     if (!_gameStatusService.isGameRunning) {
       _updateState(_state.copyWith(error: _Messages.gameNotRunning));
