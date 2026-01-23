@@ -22,6 +22,9 @@ export 'api/update_log_api.dart';
 export 'api/issue_api.dart';
 export 'api/feature_status_api.dart';
 
+// Exceptions
+export 'exceptions/app_exception.dart';
+
 // Models
 export 'models/announcement_models.dart';
 export 'models/server_models.dart';
