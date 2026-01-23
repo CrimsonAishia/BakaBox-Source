@@ -64,6 +64,8 @@ class UpdateService {
       return updateInfo.hasUpdate ? updateInfo : null;
     } catch (e) {
       LogService.e('自动检查更新失败: $e', e);
+      // 自动检查失败时返回 null，不抛出异常，避免影响应用启动
+      // 用户可以稍后手动检查更新
       return null;
     }
   }

@@ -48,14 +48,23 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTi
         // 启动进度条动画到60%
         _progressController.animateTo(0.6, duration: const Duration(milliseconds: 1200));
         
-        // 等待更新检查完成
-        await updateBloc.stream.firstWhere(
-          (state) => state.status != UpdateStatus.checking,
-          orElse: () => updateBloc.state,
-        ).timeout(
-          const Duration(milliseconds: 1200),
-          onTimeout: () => updateBloc.state,
-        );
+        // 等待更新检查完成，设置合理的超时时间
+        try {
+          await updateBloc.stream.firstWhere(
+            (state) => state.status != UpdateStatus.checking,
+            orElse: () => updateBloc.state,
+          ).timeout(
+            const Duration(milliseconds: 1200),
+            onTimeout: () {
+              // 超时时记录日志，但不影响启动流程
+              LogService.w('[SplashScreen] 更新检查超时，继续启动流程');
+              return updateBloc.state;
+            },
+          );
+        } catch (e) {
+          // 捕获任何异常，确保启动流程不会中断
+          LogService.e('[SplashScreen] 更新检查异常: $e', e);
+        }
         
         // 更新检查完成，快速推进到60%
         if (_progressController.value < 0.6) {
