@@ -707,7 +707,7 @@ class StatusWindowService {
     
     // 游戏关闭时，停止所有操作
     if (!event.isRunning) {
-      LogService.w('[StatusWindowService] 游戏已关闭，停止所有操作');
+      LogService.d('[StatusWindowService] 游戏已关闭，停止所有操作');
       
       // 停止挤服
       _isQueueRunning = false;
