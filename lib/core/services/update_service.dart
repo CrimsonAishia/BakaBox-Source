@@ -5,19 +5,17 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../api/update_api.dart';
+import '../exceptions/app_exception.dart';
 import '../models/update_models.dart';
-import '../utils/log_service.dart';
 import '../utils/platform_utils.dart';
 import '../utils/storage_utils.dart';
 
 /// 更新异常
-class UpdateException implements Exception {
+class UpdateException implements AppException {
+  @override
   final String message;
 
   const UpdateException(this.message);
-
-  @override
-  String toString() => message;
 }
 
 class UpdateService {
@@ -128,7 +126,7 @@ class UpdateService {
           try {
             await File(downloadedFilePath).delete();
           } catch (_) {}
-          throw const UpdateException('文件校验失败，请重新下载');
+          throw const UpdateException('文件完整性校验失败\n下载的文件可能已损坏，请重新下载');
         }
       }
 
@@ -208,7 +206,7 @@ class UpdateService {
           try {
             await File(downloadedFilePath).delete();
           } catch (_) {}
-          throw const UpdateException('文件校验失败，请重新下载');
+          throw const UpdateException('文件完整性校验失败\n下载的文件可能已损坏，请重新下载');
         }
       }
 
