@@ -20,8 +20,11 @@ class _SettingsDesktopState extends State<SettingsDesktop> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 刷新缓存大小
       context.read<SettingsBloc>().add(SettingsRefreshCacheSize());
       context.read<SettingsBloc>().add(SettingsLoadCacheDetails());
+      // 重新初始化以加载最新的游戏路径（可能在 OOBE 中设置）
+      context.read<SettingsBloc>().add(SettingsInit());
     });
   }
 
