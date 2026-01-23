@@ -599,18 +599,93 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                // 内容预览
-                Text(
-                  _getContentPreview(announcement.content),
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isRead
-                        ? const Color(0xFF9CA3AF)
-                        : const Color(0xFF6B7280),
-                    height: 1.5,
+                // 内容预览（使用 Markdown 渲染）
+                SizedBox(
+                  height: 44, // 固定高度约为 2 行
+                  child: Stack(
+                    children: [
+                      SingleChildScrollView(
+                        physics: const NeverScrollableScrollPhysics(),
+                        child: MarkdownBody(
+                          data: announcement.content,
+                          selectable: false,
+                          styleSheet: MarkdownStyleSheet(
+                            p: TextStyle(
+                              fontSize: 13,
+                              color: isRead
+                                  ? const Color(0xFF9CA3AF)
+                                  : const Color(0xFF6B7280),
+                              height: 1.5,
+                            ),
+                            h1: TextStyle(
+                              fontSize: 13,
+                              color: isRead
+                                  ? const Color(0xFF9CA3AF)
+                                  : const Color(0xFF6B7280),
+                              height: 1.5,
+                            ),
+                            h2: TextStyle(
+                              fontSize: 13,
+                              color: isRead
+                                  ? const Color(0xFF9CA3AF)
+                                  : const Color(0xFF6B7280),
+                              height: 1.5,
+                            ),
+                            h3: TextStyle(
+                              fontSize: 13,
+                              color: isRead
+                                  ? const Color(0xFF9CA3AF)
+                                  : const Color(0xFF6B7280),
+                              height: 1.5,
+                            ),
+                            code: TextStyle(
+                              fontSize: 12,
+                              color: isRead
+                                  ? const Color(0xFF9CA3AF)
+                                  : const Color(0xFF6B7280),
+                              backgroundColor: Colors.transparent,
+                            ),
+                            a: TextStyle(
+                              fontSize: 13,
+                              color: isRead
+                                  ? const Color(0xFF9CA3AF)
+                                  : const Color(0xFF6B7280),
+                              decoration: TextDecoration.none,
+                            ),
+                            blockquote: TextStyle(
+                              fontSize: 13,
+                              color: isRead
+                                  ? const Color(0xFF9CA3AF)
+                                  : const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ),
+                      ),
+                      // 底部渐变遮罩，表示内容被截断
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: 20,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                (isRead
+                                    ? Colors.grey.withValues(alpha: 0.05)
+                                    : Colors.white).withValues(alpha: 0),
+                                isRead
+                                    ? Colors.grey.withValues(alpha: 0.05)
+                                    : Colors.white,
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 12),
                 // 底部：作者和操作按钮
@@ -673,19 +748,6 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
     );
   }
 
-  /// 获取内容预览（去除 Markdown 标记）
-  String _getContentPreview(String content) {
-    // 简单去除常见的 Markdown 标记
-    return content
-        .replaceAll(RegExp(r'#{1,6}\s'), '')
-        .replaceAll(RegExp(r'\*{1,2}'), '')
-        .replaceAll(RegExp(r'_{1,2}'), '')
-        .replaceAll(RegExp(r'`{1,3}'), '')
-        .replaceAll(RegExp(r'\[([^\]]+)\]\([^)]+\)'), r'$1')
-        .replaceAll(RegExp(r'\n+'), ' ')
-        .trim();
-  }
-
   /// 标记单个公告为已读
   void _markAsRead(BuildContext context, int announcementId) {
     context.read<AnnouncementBloc>().add(AnnouncementMarkAsRead(announcementId));
@@ -705,237 +767,255 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
   void _showAnnouncementDetail(BuildContext context, AnnouncementItem announcement) {
     // 标记为已读
     _markAsRead(context, announcement.id);
-
-    final typeInfo = AnnouncementUtils.getAnnouncementTypeInfo(announcement.type);
+    
+    // 获取详情
+    context.read<AnnouncementBloc>().add(AnnouncementFetchDetail(announcement.id));
 
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          width: 550,
-          constraints: const BoxConstraints(maxHeight: 500),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 头部
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: typeInfo.color.withValues(alpha: 0.1),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                  border: Border(
-                    bottom: BorderSide(
-                      color: typeInfo.color.withValues(alpha: 0.2),
-                    ),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: typeInfo.color.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        typeInfo.icon,
-                        color: typeInfo.color,
-                        size: 22,
+      builder: (dialogContext) => BlocBuilder<AnnouncementBloc, AnnouncementState>(
+        builder: (context, state) {
+          // 使用详情数据，如果还在加载则使用列表中的数据
+          final detail = state.currentDetail ?? announcement;
+          final typeInfo = AnnouncementUtils.getAnnouncementTypeInfo(detail.type);
+
+          return Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Container(
+              width: 550,
+              constraints: const BoxConstraints(maxHeight: 500),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 头部
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: typeInfo.color.withValues(alpha: 0.1),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      border: Border(
+                        bottom: BorderSide(
+                          color: typeInfo.color.withValues(alpha: 0.2),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: typeInfo.color.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            typeInfo.icon,
+                            color: typeInfo.color,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (announcement.isSticky)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  margin: const EdgeInsets.only(right: 8),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFF9800),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Text(
-                                    '置顶',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w500,
+                              Row(
+                                children: [
+                                  if (detail.isSticky)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      margin: const EdgeInsets.only(right: 8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFF9800),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text(
+                                        '置顶',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: typeInfo.color,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      typeInfo.label,
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: typeInfo.color,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  typeInfo.label,
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                detail.title,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            announcement.title,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.of(dialogContext).pop(),
+                          tooltip: '关闭',
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(context).pop(),
-                      tooltip: '关闭',
-                    ),
-                  ],
-                ),
-              ),
-              // 内容
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Markdown 内容
-                      MarkdownBody(
-                        data: announcement.content,
-                        selectable: true,
-                        onTapLink: (text, href, title) {
-                          if (href != null) {
-                            _launchUrl(href);
-                          }
-                        },
-                        styleSheet: MarkdownStyleSheet(
-                          p: const TextStyle(
-                            fontSize: 14,
-                            height: 1.6,
-                            color: Color(0xFF374151),
-                          ),
-                          h1: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1F2937),
-                          ),
-                          h2: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1F2937),
-                          ),
-                          h3: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1F2937),
-                          ),
-                          code: TextStyle(
-                            backgroundColor: Colors.grey.shade100,
-                            fontFamily: 'monospace',
-                            fontSize: 13,
-                          ),
-                          codeblockDecoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          blockquoteDecoration: BoxDecoration(
-                            border: Border(
-                              left: BorderSide(
-                                color: typeInfo.color,
-                                width: 4,
+                  ),
+                  // 内容
+                  Flexible(
+                    child: state.isLoadingDetail
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(40),
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0080FF)),
                               ),
                             ),
+                          )
+                        : SingleChildScrollView(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Markdown 内容
+                                MarkdownBody(
+                                  data: detail.content,
+                                  selectable: true,
+                                  onTapLink: (text, href, title) {
+                                    if (href != null) {
+                                      _launchUrl(href);
+                                    }
+                                  },
+                                  styleSheet: MarkdownStyleSheet(
+                                    p: const TextStyle(
+                                      fontSize: 14,
+                                      height: 1.6,
+                                      color: Color(0xFF374151),
+                                    ),
+                                    h1: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF1F2937),
+                                    ),
+                                    h2: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF1F2937),
+                                    ),
+                                    h3: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF1F2937),
+                                    ),
+                                    code: TextStyle(
+                                      backgroundColor: Colors.grey.shade100,
+                                      fontFamily: 'monospace',
+                                      fontSize: 13,
+                                    ),
+                                    codeblockDecoration: BoxDecoration(
+                                      color: Colors.grey.shade100,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    blockquoteDecoration: BoxDecoration(
+                                      border: Border(
+                                        left: BorderSide(
+                                          color: typeInfo.color,
+                                          width: 4,
+                                        ),
+                                      ),
+                                    ),
+                                    a: TextStyle(
+                                      color: typeInfo.color,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          a: TextStyle(
-                            color: typeInfo.color,
-                            decoration: TextDecoration.underline,
+                  ),
+                  // 底部信息
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        top: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.person_outline,
+                          size: 16,
+                          color: Colors.grey.shade500,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '系统管理员',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade500,
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 16),
+                        Icon(
+                          Icons.access_time,
+                          size: 16,
+                          color: Colors.grey.shade500,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          AnnouncementUtils.formatRelativeTime(detail.createdAt),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                        const Spacer(),
+                        Icon(
+                          Icons.visibility_outlined,
+                          size: 16,
+                          color: Colors.grey.shade500,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${detail.readCount} 次阅读',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
-              // 底部信息
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.person_outline,
-                      size: 16,
-                      color: Colors.grey.shade500,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '系统管理员',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Icon(
-                      Icons.access_time,
-                      size: 16,
-                      color: Colors.grey.shade500,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      AnnouncementUtils.formatRelativeTime(announcement.createdAt),
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                    const Spacer(),
-                    Icon(
-                      Icons.visibility_outlined,
-                      size: 16,
-                      color: Colors.grey.shade500,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${announcement.readCount} 次阅读',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

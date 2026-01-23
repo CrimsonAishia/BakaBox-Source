@@ -15,11 +15,19 @@ class AnnouncementState extends Equatable {
   /// 错误信息
   final String? error;
 
+  /// 当前查看的公告详情
+  final AnnouncementItem? currentDetail;
+
+  /// 是否正在加载详情
+  final bool isLoadingDetail;
+
   const AnnouncementState({
     this.announcements = const [],
     this.readIds = const {},
     this.isLoading = false,
     this.error,
+    this.currentDetail,
+    this.isLoadingDetail = false,
   });
 
   /// 未读公告数量
@@ -37,15 +45,20 @@ class AnnouncementState extends Equatable {
     bool? isLoading,
     String? error,
     bool clearError = false,
+    AnnouncementItem? currentDetail,
+    bool clearDetail = false,
+    bool? isLoadingDetail,
   }) {
     return AnnouncementState(
       announcements: announcements ?? this.announcements,
       readIds: readIds ?? this.readIds,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
+      currentDetail: clearDetail ? null : (currentDetail ?? this.currentDetail),
+      isLoadingDetail: isLoadingDetail ?? this.isLoadingDetail,
     );
   }
 
   @override
-  List<Object?> get props => [announcements, readIds, isLoading, error];
+  List<Object?> get props => [announcements, readIds, isLoading, error, currentDetail, isLoadingDetail];
 }

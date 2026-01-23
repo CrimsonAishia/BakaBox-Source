@@ -36,12 +36,11 @@ class AnnouncementUtils {
     'success',
     'warning',
     'error',
-    'maintenance',
   ];
 
   /// 获取公告类型信息（颜色、图标、标签）
   /// 
-  /// [type] 公告类型：info, success, warning, error, maintenance
+  /// [type] 公告类型：info, success, warning, error
   /// 返回对应的类型信息，未知类型返回默认样式
   static AnnouncementTypeInfo getAnnouncementTypeInfo(String type) {
     switch (type.toLowerCase()) {
@@ -55,25 +54,19 @@ class AnnouncementUtils {
         return const AnnouncementTypeInfo(
           color: Color(0xFF4CAF50),
           icon: Icons.check_circle_outline,
-          label: '成功',
+          label: '活动',
         );
       case 'warning':
         return const AnnouncementTypeInfo(
           color: Color(0xFFFF9800),
           icon: Icons.warning_amber_outlined,
-          label: '警告',
+          label: '提醒',
         );
       case 'error':
         return const AnnouncementTypeInfo(
           color: Color(0xFFF44336),
           icon: Icons.error_outline,
-          label: '错误',
-        );
-      case 'maintenance':
-        return const AnnouncementTypeInfo(
-          color: Color(0xFF9C27B0),
-          icon: Icons.build_outlined,
-          label: '维护',
+          label: '紧急',
         );
       default:
         // 未知类型返回默认样式
