@@ -21,12 +21,16 @@ typedef StateUpdateCallback = void Function(Map<dynamic, dynamic> args);
 class FloatingWindowStateNotifier extends ChangeNotifier {
   FloatingWindowState _state = const FloatingWindowState();
   bool _initialized = false;
+  int? _autoDismissSeconds;
 
   /// 当前状态
   FloatingWindowState get state => _state;
   
   /// 是否已初始化
   bool get initialized => _initialized;
+  
+  /// 自动关闭倒计时秒数（如果有更新）
+  int? get autoDismissSeconds => _autoDismissSeconds;
   
   /// 兼容旧代码的 lastUpdate getter
   Map<dynamic, dynamic>? get lastUpdate => null;
@@ -48,6 +52,12 @@ class FloatingWindowStateNotifier extends ChangeNotifier {
     final newStateStr = args['state'] as String?;
     
     debugPrint('[FloatingWindowStateNotifier] updateState called: newState=$newStateStr, currentState=${_state.state}');
+    
+    // 检查是否有 autoDismissSeconds 更新
+    if (args.containsKey('autoDismissSeconds')) {
+      _autoDismissSeconds = args['autoDismissSeconds'] as int?;
+      debugPrint('[FloatingWindowStateNotifier] autoDismissSeconds updated: $_autoDismissSeconds');
+    }
     
     // 如果当前是终态，检查是否允许转换
     if (_state.isTerminal && newStateStr != null) {

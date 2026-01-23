@@ -200,6 +200,7 @@ class FloatingWindowService {
     String? mapName,
     String? mapNameCn,
     String? mapBackground,
+    int? autoDismissSeconds,
   }) async {
     if (!_activeWindows.containsKey(windowId)) {
       LogService.w('Window $windowId not found in active windows');
@@ -220,6 +221,7 @@ class FloatingWindowService {
         'mapName': mapName,
         'mapNameCn': mapNameCn,
         'mapBackground': mapBackground,
+        'autoDismissSeconds': autoDismissSeconds,
       };
 
       await controller.invokeMethod('updateState', args);
