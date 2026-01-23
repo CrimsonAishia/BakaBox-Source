@@ -71,6 +71,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       await _loadGameSettings(emit);
       await _loadAudioSettings(emit);
       await _calculateCacheSize(emit);
+    } else {
+      // 即使已初始化，也重新加载游戏设置（可能在 OOBE 中设置了路径）
+      await _loadGameSettings(emit);
     }
   }
 
