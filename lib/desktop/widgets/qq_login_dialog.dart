@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:webview_windows/webview_windows.dart' as windows_webview;
 import '../../core/bloc/auth/auth_bloc.dart';
 import '../../core/bloc/auth/auth_event.dart';
+import '../../core/bloc/auth/auth_state.dart';
 import '../../core/utils/toast_utils.dart';
 import '../../core/utils/log_service.dart';
 
@@ -86,25 +87,27 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
           LogService.d('[QQLogin] 用户开始 QQ 登录流程');
         }
         
-        // 2. 只有在用户已经进行过 QQ 登录后，再跳回论坛时才显示 loading
-        // 排除：初始登录页、QQ 登录页、论坛首页等非回调页面
+        // 2. 检测 QQ 登录后的回调页面
+        // 包括两种情况:
+        //   - connect.php (登录成功)
+        //   - member.php?mod=connect (未绑定账号)
         if (_hasLeftInitialPage && 
             url.contains('bbs.zombieden.cn') && 
             !url.contains('op=init') &&
             !url.contains('graph.qq.com') && 
             !url.contains('ptlogin2.qq.com') &&
-            url.contains('connect.php')) {  // 确保是 connect.php 回调页面
+            (url.contains('connect.php') || 
+             (url.contains('member.php') && url.contains('mod=connect')))) {
           
           // 第一时间进入 loading 状态，遮住 WebView
-          // 使用同步方式立即更新状态，不等待 setState 的异步调度
           if (!_isExtracting) {
             LogService.d('[QQLogin] 检测到登录回调，立即显示 loading');
-            _isExtracting = true;  // 先同步更新标志
+            _isExtracting = true;
             _loginDetected = true;
             
             // 立即触发 UI 更新
             if (mounted) {
-              setState(() {});  // 触发重建，此时 _isExtracting 已经是 true
+              setState(() {});
             }
             
             // 然后异步执行登录检查
@@ -147,28 +150,95 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
       
       if (_isDisposed || !mounted) return;
 
-      // 检查页面是否包含退出链接（已登录标志）
+      // 检查页面内容和 URL
       final checkScript = '''
         (function() {
           const html = document.documentElement.innerHTML;
-          const hasLogout = html.includes('action=logout');
-          return hasLogout;
+          const url = window.location.href;
+          
+          // 检查退出链接（更精确的检测，避免误判）
+          const hasLogout = html.includes('action=logout') || 
+                           html.includes('logging&action=logout') ||
+                           (html.includes('退出') && html.includes('登录'));
+          
+          // 检查绑定账号元素（更精确的检测）
+          const hasBindAccount = html.includes('id="layer_reginfo_t"') && 
+                                html.includes('绑定已有账号');
+          
+          // 检查是否是 member.php?mod=connect 页面（绑定页面的特征）
+          const isMemberConnectPage = url.includes('member.php') && 
+                                      url.includes('mod=connect');
+          
+          // 检查页面是否加载完整（避免误判）
+          const isPageLoaded = html.length > 500 && 
+                              (html.includes('</html>') || html.includes('</body>') || html.includes('</HTML>'));
+          
+          return JSON.stringify({ 
+            hasLogout: hasLogout, 
+            hasBindAccount: hasBindAccount,
+            isMemberConnectPage: isMemberConnectPage,
+            isPageLoaded: isPageLoaded,
+            url: url,
+            htmlLength: html.length
+          });
         })();
       ''';
 
       final result = await _webViewController!.executeScript(checkScript);
-      if (result != null && result.toString() == 'true') {
-        LogService.d('[QQLogin] 检测到已登录状态，开始提取 Cookie');
-        await _extractCookiesAndLogin();
-      } else {
-        LogService.w('[QQLogin] 未检测到登录状态，可能登录失败或被取消');
-        if (mounted && !_isDisposed) {
-          setState(() {
-            _isExtracting = false;
-            _loginDetected = false;
-            _hasLeftInitialPage = false; // 重置状态，允许用户重试
-          });
-          ToastUtils.showError(context, '登录失败，请重试');
+      if (result != null) {
+        final resultStr = result.toString();
+        LogService.d('[QQLogin] 页面检测结果: $resultStr');
+        
+        // 解析结果
+        final hasBindAccount = resultStr.contains('"hasBindAccount":true');
+        final isMemberConnectPage = resultStr.contains('"isMemberConnectPage":true');
+        final hasLogout = resultStr.contains('"hasLogout":true');
+        final isPageLoaded = resultStr.contains('"isPageLoaded":true');
+        
+        // 检查页面是否加载完整
+        if (!isPageLoaded) {
+          LogService.w('[QQLogin] 页面未完全加载，等待重试');
+          if (mounted && !_isDisposed) {
+            setState(() {
+              _isExtracting = false;
+              _loginDetected = false;
+              _hasLeftInitialPage = false;
+            });
+            ToastUtils.showError(context, '页面加载异常，请重试');
+          }
+          return;
+        }
+        
+        // 优先检查是否是绑定页面（最明确的特征）
+        if (hasBindAccount) {
+          // QQ 未绑定论坛账号（有明确的绑定元素）
+          LogService.w('[QQLogin] 检测到 QQ 未绑定论坛账号（发现绑定元素）');
+          if (mounted && !_isDisposed) {
+            ToastUtils.showError(context, 'QQ 未绑定论坛账号，请先在论坛绑定');
+            Navigator.of(context).pop();
+          }
+        } else if (isMemberConnectPage && !hasLogout) {
+          // 在 member.php?mod=connect 页面但没有退出链接（可能是未绑定且未登录）
+          LogService.w('[QQLogin] 检测到 QQ 未绑定论坛账号（在绑定页面且未登录）');
+          if (mounted && !_isDisposed) {
+            ToastUtils.showError(context, 'QQ 未绑定论坛账号，请先在论坛绑定');
+            Navigator.of(context).pop();
+          }
+        } else if (hasLogout) {
+          // 已登录，提取 Cookie
+          LogService.d('[QQLogin] 检测到已登录状态，开始提取 Cookie');
+          await _extractCookiesAndLogin();
+        } else {
+          // 登录失败或状态不明确
+          LogService.w('[QQLogin] 未检测到登录状态，可能登录失败或被取消');
+          if (mounted && !_isDisposed) {
+            setState(() {
+              _isExtracting = false;
+              _loginDetected = false;
+              _hasLeftInitialPage = false;
+            });
+            ToastUtils.showError(context, '登录失败，请重试');
+          }
         }
       }
     } catch (e) {
@@ -177,7 +247,7 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
         setState(() {
           _isExtracting = false;
           _loginDetected = false;
-          _hasLeftInitialPage = false; // 重置状态，允许用户重试
+          _hasLeftInitialPage = false;
         });
         ToastUtils.showError(context, '检查登录状态失败，请重试');
       }
@@ -225,9 +295,54 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
 
       // 调用 AuthBloc 完成登录（用户信息由 AuthService 从服务器获取）
       if (mounted && !_isDisposed) {
-        context.read<AuthBloc>().add(AuthQQLoginRequested(cookies: forumCookies));
-        ToastUtils.showSuccess(context, 'QQ 登录成功');
-        Navigator.of(context).pop();
+        // 监听 AuthBloc 状态变化
+        final authBloc = context.read<AuthBloc>();
+        
+        // 创建一个 Completer 来等待登录完成
+        final completer = Completer<bool>();
+        late final StreamSubscription subscription;
+        
+        subscription = authBloc.stream.listen((state) {
+          if (state.isAuthenticated) {
+            // 登录成功
+            if (!completer.isCompleted) {
+              completer.complete(true);
+              subscription.cancel();
+            }
+          } else if (state.status == AuthStatus.error) {
+            // 登录失败
+            if (!completer.isCompleted) {
+              completer.complete(false);
+              subscription.cancel();
+            }
+          }
+        });
+        
+        // 触发登录事件
+        authBloc.add(AuthQQLoginRequested(cookies: forumCookies));
+        
+        // 等待登录完成（最多等待 10 秒）
+        final success = await completer.future.timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            subscription.cancel();
+            return false;
+          },
+        );
+        
+        if (!mounted || _isDisposed) {
+          subscription.cancel();
+          return;
+        }
+        
+        if (success) {
+          ToastUtils.showSuccess(context, 'QQ 登录成功');
+          Navigator.of(context).pop();
+        } else {
+          setState(() => _isExtracting = false);
+          _loginDetected = false;
+          ToastUtils.showError(context, 'QQ 登录失败，请重试');
+        }
       }
     } catch (e) {
       LogService.e('提取 Cookie 失败', e);
