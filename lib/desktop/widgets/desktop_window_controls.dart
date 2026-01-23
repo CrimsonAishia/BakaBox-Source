@@ -126,10 +126,10 @@ class _AnnouncementButtonState extends State<_AnnouncementButton>
   void initState() {
     super.initState();
     _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.5).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
     
@@ -195,14 +195,33 @@ class _AnnouncementButtonState extends State<_AnnouncementButton>
                 // 未读数量角标
                 if (hasUnread)
                   Positioned(
-                    top: 4,
-                    right: 4,
+                    top: 2,
+                    right: 2,
                     child: AnimatedBuilder(
                       animation: _pulseAnimation,
                       builder: (context, child) {
-                        return Transform.scale(
-                          scale: _pulseAnimation.value,
-                          child: child,
+                        final opacity = 1.0 - (_pulseAnimation.value - 1.0) / 0.5;
+                        return Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // 外层光晕
+                            Transform.scale(
+                              scale: _pulseAnimation.value,
+                              child: Opacity(
+                                opacity: opacity.clamp(0.0, 1.0),
+                                child: Container(
+                                  width: 18,
+                                  height: 16,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF44336),
+                                    borderRadius: BorderRadius.circular(9),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // 固定大小的角标
+                            child!,
+                          ],
                         );
                       },
                       child: Container(
