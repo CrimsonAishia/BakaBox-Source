@@ -5,7 +5,6 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../../core/bloc/settings/settings_state.dart';
 import '../../../core/services/floating_window_service.dart';
-import '../../../core/utils/storage_utils.dart';
 import '../../theme/desktop_theme.dart';
 import 'floating_window_shell.dart';
 import 'floating_window_state.dart';
@@ -211,8 +210,6 @@ class _FloatingWindowInitializerState
         await windowManager.focus();
       });
 
-      debugPrint('[FloatingWindow] Window setup complete at position: $position');
-
       if (mounted) {
         setState(() => _initialized = true);
       }
@@ -224,7 +221,7 @@ class _FloatingWindowInitializerState
     }
   }
 
-  /// 计算浮窗位置（从设置中读取）
+  /// 计算浮窗位置（从配置中读取）
   Future<Offset> _calculateFloatingPosition(
     double screenWidth,
     double workAreaHeight,
@@ -232,34 +229,47 @@ class _FloatingWindowInitializerState
     Size windowSize,
   ) async {
     try {
-      // 从存储中读取浮窗位置设置
-      final positionIndex = StorageUtils.getInt('floating_window_position') ?? 8; // 默认右下角
+      // 从 config.extra 中读取浮窗位置设置
+      final positionIndex = widget.config.extra?['floatingWindowPosition'] as int? ?? 8; // 默认右下角
       final position = NotificationPositionType.values[positionIndex];
       
       const padding = 20.0;
       final availableHeight = workAreaHeight;
       final centerY = workAreaY + (availableHeight - windowSize.height) / 2;
       
+      Offset calculatedPosition;
+      
       switch (position) {
         case NotificationPositionType.topLeft:
-          return Offset(padding, workAreaY + padding);
+          calculatedPosition = Offset(padding, workAreaY + padding);
+          break;
         case NotificationPositionType.topCenter:
-          return Offset((screenWidth - windowSize.width) / 2, workAreaY + padding);
+          calculatedPosition = Offset((screenWidth - windowSize.width) / 2, workAreaY + padding);
+          break;
         case NotificationPositionType.topRight:
-          return Offset(screenWidth - windowSize.width - padding, workAreaY + padding);
+          calculatedPosition = Offset(screenWidth - windowSize.width - padding, workAreaY + padding);
+          break;
         case NotificationPositionType.centerLeft:
-          return Offset(padding, centerY);
+          calculatedPosition = Offset(padding, centerY);
+          break;
         case NotificationPositionType.center:
-          return Offset((screenWidth - windowSize.width) / 2, centerY);
+          calculatedPosition = Offset((screenWidth - windowSize.width) / 2, centerY);
+          break;
         case NotificationPositionType.centerRight:
-          return Offset(screenWidth - windowSize.width - padding, centerY);
+          calculatedPosition = Offset(screenWidth - windowSize.width - padding, centerY);
+          break;
         case NotificationPositionType.bottomLeft:
-          return Offset(padding, workAreaY + availableHeight - windowSize.height - padding);
+          calculatedPosition = Offset(padding, workAreaY + availableHeight - windowSize.height - padding);
+          break;
         case NotificationPositionType.bottomCenter:
-          return Offset((screenWidth - windowSize.width) / 2, workAreaY + availableHeight - windowSize.height - padding);
+          calculatedPosition = Offset((screenWidth - windowSize.width) / 2, workAreaY + availableHeight - windowSize.height - padding);
+          break;
         case NotificationPositionType.bottomRight:
-          return Offset(screenWidth - windowSize.width - padding, workAreaY + availableHeight - windowSize.height - padding);
+          calculatedPosition = Offset(screenWidth - windowSize.width - padding, workAreaY + availableHeight - windowSize.height - padding);
+          break;
       }
+      
+      return calculatedPosition;
     } catch (e) {
       debugPrint('[FloatingWindow] Failed to read position setting, using default: $e');
       // 默认右下角
