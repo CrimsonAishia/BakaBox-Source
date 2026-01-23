@@ -8,10 +8,10 @@ import '../utils/storage_utils.dart';
 /// 提供草稿的手动保存和恢复功能
 class DraftService {
   /// 草稿存储键前缀
-  static const String _draftKeyPrefix = 'draft_';
+  static const String _draftKeyPrefix = 'draft_content_';
   
   /// 草稿时间戳键前缀
-  static const String _draftTimestampPrefix = 'draft_timestamp_';
+  static const String _draftTimestampPrefix = 'draft_ts_';
   
   /// 草稿过期时间（7天）
   static const Duration draftExpiration = Duration(days: 7);
