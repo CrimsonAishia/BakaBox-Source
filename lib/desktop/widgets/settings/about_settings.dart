@@ -67,9 +67,8 @@ class AboutSettings extends StatelessWidget {
               icon: MdiIcons.tagOutline,
               iconColor: const Color(0xFF0080FF),
               label: '当前版本',
-              value: Text(
-                'v${settingsState.appVersion.isNotEmpty ? settingsState.appVersion : AppConstants.appVersion}',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF0080FF)),
+              value: Text('v${settingsState.appVersion}',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
               ),
               action: SettingsPrimaryButton(
                 onPressed: updateState.isChecking ? null : () => _checkForUpdates(context),
@@ -84,17 +83,7 @@ class AboutSettings extends StatelessWidget {
               label: '开发者',
               value: const Text(
                 AppConstants.appAuthor,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
-              ),
-              action: const SizedBox.shrink(),
-            ),
-            _UpdateInfoItem(
-              icon: MdiIcons.fileDocumentOutline,
-              iconColor: const Color(0xFFF59E0B),
-              label: '许可证',
-              value: const Text(
-                AppConstants.appLicense,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
               ),
               action: const SizedBox.shrink(),
             ),
@@ -104,7 +93,7 @@ class AboutSettings extends StatelessWidget {
               label: '版权信息',
               value: const Text(
                 AppConstants.appCopyright,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF6B7280)),
               ),
               action: const SizedBox.shrink(),
             ),
