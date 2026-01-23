@@ -1,5 +1,5 @@
 name: bakabox_app
-description: "BakaBox CS2 Server Browser - Mobile Edition"
+description: "BakaBox - CS2 Launcher"
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -115,7 +115,7 @@ msix_config:
   publisher: CN=78264BDC-AE8D-43AA-B460-F031E8B1DDA5
   
   # 应用信息
-  app_description: BakaBox - CS2 Server Browser. Browse CS2 community servers, view server details, and join games with one click.
+  app_description: BakaBox - CS2 Launcher. Browse CS2 community servers, view server details, and join games with one click.
   
   # 语言支持
   languages: zh-CN, en-US

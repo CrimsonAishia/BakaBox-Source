@@ -420,7 +420,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
           return _buildEmptyState(
             icon: Icons.dns_outlined,
             title: '选择一个服务器分类',
-            subtitle: '点击右侧列表中的分类查看服务器列表',
+            subtitle: '点击右侧列表中的分类查看服务器',
           );
         }
 

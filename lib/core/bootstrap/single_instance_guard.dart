@@ -18,7 +18,7 @@ class SingleInstanceGuard {
     try {
       final config = FlutterAloneConfig.forWindows(
         windowsConfig: const CustomWindowsMutexConfig(
-          customMutexName: 'BakaBox_CS2_Server_Browser_Mutex',
+          customMutexName: 'BakaBox_CS2_Launcher_Mutex',
         ),
         windowConfig: const WindowConfig(
           windowTitle: 'BakaBox',
