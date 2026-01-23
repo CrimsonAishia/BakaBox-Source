@@ -1366,29 +1366,43 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // 上一步按钮
-            if (_currentPage > 0 && _currentPage < _totalPages - 1)
-              TextButton.icon(
-                onPressed: _previousPage,
-                icon: Icon(MdiIcons.arrowLeft, size: 18),
-                label: const Text('上一步'),
-                style: TextButton.styleFrom(
-                  foregroundColor: isDark ? Colors.white54 : const Color(0xFF64748B),
+        child: SizedBox(
+          height: 48, // 固定高度，确保所有页面底部导航高度一致
+          child: Stack(
+            children: [
+              // 页面指示器（居中固定）
+              Align(
+                alignment: Alignment.center,
+                child: _buildPageIndicator(isDark),
+              ),
+              // 按钮层
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // 上一步按钮
+                  if (_currentPage > 0 && _currentPage < _totalPages - 1)
+                    TextButton.icon(
+                      onPressed: _previousPage,
+                      icon: Icon(MdiIcons.arrowLeft, size: 18),
+                      label: const Text('上一步'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: isDark ? Colors.white54 : const Color(0xFF64748B),
+                      ),
+                    )
+                  else
+                    const SizedBox(width: 100),
+                  // 占位符（让按钮对称）
+                  const SizedBox(width: 100),
+                ],
+              ),
+              // 下一步按钮（右对齐）
+              if (_currentPage < _totalPages - 1)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: _buildNextButton(isDark),
                 ),
-              )
-            else
-              const SizedBox(width: 100),
-            // 页面指示器
-            _buildPageIndicator(isDark),
-            // 下一步按钮
-            if (_currentPage < _totalPages - 1)
-              _buildNextButton(isDark)
-            else
-              const SizedBox(width: 100),
-          ],
+            ],
+          ),
         ),
       ),
     );
