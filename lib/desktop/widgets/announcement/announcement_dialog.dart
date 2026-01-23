@@ -190,49 +190,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                             _launchUrl(href);
                           }
                         },
-                        styleSheet: MarkdownStyleSheet(
-                          p: const TextStyle(
-                            fontSize: 14,
-                            height: 1.6,
-                            color: Color(0xFF374151),
-                          ),
-                          h1: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1F2937),
-                          ),
-                          h2: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1F2937),
-                          ),
-                          h3: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1F2937),
-                          ),
-                          code: TextStyle(
-                            backgroundColor: Colors.grey.shade100,
-                            fontFamily: 'monospace',
-                            fontSize: 13,
-                          ),
-                          codeblockDecoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          blockquoteDecoration: BoxDecoration(
-                            border: Border(
-                              left: BorderSide(
-                                color: typeInfo.color,
-                                width: 4,
-                              ),
-                            ),
-                          ),
-                          a: TextStyle(
-                            color: typeInfo.color,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
+                        styleSheet: _buildMarkdownStyleSheet(context, typeInfo),
                       ),
                     ),
             ),
@@ -1035,5 +993,145 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
     if (uri != null && await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+
+  /// 构建 Markdown 样式表（支持深色模式）
+  MarkdownStyleSheet _buildMarkdownStyleSheet(
+    BuildContext context,
+    AnnouncementTypeInfo typeInfo,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return MarkdownStyleSheet(
+      p: TextStyle(
+        fontSize: 14,
+        height: 1.7,
+        color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
+      ),
+      h1: TextStyle(
+        fontSize: 22,
+        fontWeight: FontWeight.bold,
+        color: isDark ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
+        height: 1.4,
+      ),
+      h1Padding: const EdgeInsets.only(top: 16, bottom: 8),
+      h2: TextStyle(
+        fontSize: 19,
+        fontWeight: FontWeight.bold,
+        color: isDark ? const Color(0xFFF3F4F6) : const Color(0xFF1F2937),
+        height: 1.4,
+      ),
+      h2Padding: const EdgeInsets.only(top: 14, bottom: 6),
+      h3: TextStyle(
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
+        color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF374151),
+        height: 1.4,
+      ),
+      h3Padding: const EdgeInsets.only(top: 12, bottom: 4),
+      h4: TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
+      ),
+      h5: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+      ),
+      h6: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
+      ),
+      em: TextStyle(
+        fontStyle: FontStyle.italic,
+        color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
+      ),
+      strong: TextStyle(
+        fontWeight: FontWeight.bold,
+        color: isDark ? const Color(0xFFF3F4F6) : const Color(0xFF1F2937),
+      ),
+      del: TextStyle(
+        decoration: TextDecoration.lineThrough,
+        color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
+      ),
+      blockquote: TextStyle(
+        fontSize: 14,
+        color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+        fontStyle: FontStyle.italic,
+        height: 1.6,
+      ),
+      blockquotePadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 12,
+      ),
+      blockquoteDecoration: BoxDecoration(
+        color: isDark
+            ? typeInfo.color.withValues(alpha: 0.1)
+            : typeInfo.color.withValues(alpha: 0.05),
+        border: Border(
+          left: BorderSide(
+            color: typeInfo.color,
+            width: 4,
+          ),
+        ),
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(4),
+          bottomRight: Radius.circular(4),
+        ),
+      ),
+      code: TextStyle(
+        backgroundColor: isDark ? const Color(0xFF374151) : const Color(0xFFF3F4F6),
+        color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFDC2626),
+        fontFamily: 'Consolas, Monaco, Courier New, monospace',
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+      ),
+      codeblockPadding: const EdgeInsets.all(16),
+      codeblockDecoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF9FAFB),
+        border: Border.all(
+          color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+          width: 1,
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      horizontalRuleDecoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: isDark ? const Color(0xFF374151) : const Color(0xFFD1D5DB),
+            width: 1,
+          ),
+        ),
+      ),
+      listBullet: TextStyle(
+        fontSize: 14,
+        color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+        height: 1.7,
+      ),
+      listIndent: 24,
+      listBulletPadding: const EdgeInsets.only(right: 8),
+      tableHead: TextStyle(
+        fontWeight: FontWeight.w600,
+        color: isDark ? const Color(0xFFF3F4F6) : const Color(0xFF1F2937),
+      ),
+      tableBody: TextStyle(
+        fontSize: 14,
+        color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
+      ),
+      tableBorder: TableBorder.all(
+        color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+        width: 1,
+      ),
+      tableCellsPadding: const EdgeInsets.all(12),
+      tableColumnWidth: const FlexColumnWidth(),
+      a: TextStyle(
+        color: typeInfo.color,
+        decoration: TextDecoration.underline,
+        fontWeight: FontWeight.w500,
+      ),
+      pPadding: const EdgeInsets.only(bottom: 12),
+    );
   }
 }
