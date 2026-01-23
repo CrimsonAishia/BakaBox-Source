@@ -258,7 +258,7 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTi
             ),
             const SizedBox(width: 8),
             Text(
-              'CS2 SERVER BROWSER',
+              'CS2 LAUNCHER',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,

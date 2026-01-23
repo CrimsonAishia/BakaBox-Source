@@ -156,7 +156,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _buildPrimaryButton(icon: MdiIcons.serverNetwork, label: '立即浏览服务器', onPressed: () => widget.onNavigateToServers?.call()),
+        _buildPrimaryButton(icon: MdiIcons.serverNetwork, label: '浏览服务器', onPressed: () => widget.onNavigateToServers?.call()),
         const SizedBox(width: 16),
         _buildSecondaryButton(icon: MdiIcons.forum, label: '社区论坛', onPressed: _openForum, isDark: isDark),
         const SizedBox(width: 16),
