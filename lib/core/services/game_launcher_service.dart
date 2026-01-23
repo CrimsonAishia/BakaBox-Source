@@ -307,7 +307,7 @@ class GameLauncherService {
 
   /// 构建游戏启动URL
   String _buildLaunchUrl(LaunchPlatform platform, List<String> launchOptions) {
-    final options = <String>['-console', '-condebug'];
+    final options = <String>['-condebug'];
     
     // 添加平台参数
     if (platform == LaunchPlatform.perfect) {
@@ -349,7 +349,7 @@ class GameLauncherService {
       final launchOptions = await getLaunchOptions();
 
       // 构建启动参数
-      final args = <String>['-applaunch', _cs2AppId, '-console', '-condebug'];
+      final args = <String>['-applaunch', _cs2AppId, '-condebug'];
       
       // 添加平台参数
       if (platform == LaunchPlatform.perfect) {

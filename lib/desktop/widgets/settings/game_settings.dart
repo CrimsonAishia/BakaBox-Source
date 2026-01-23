@@ -235,7 +235,6 @@ class _GameSettingsState extends State<GameSettings> {
 
   static const List<Map<String, String>> _availableLaunchOptions = [
     {'value': '-novid', 'label': '跳过开场动画 (-novid)'},
-    {'value': '-console', 'label': '启动时打开控制台 (-console)'},
     {'value': '-high', 'label': '高优先级运行 (-high)'},
     {'value': '-nojoy', 'label': '禁用手柄支持 (-nojoy)'},
     {'value': '-fullscreen', 'label': '全屏模式 (-fullscreen)'},

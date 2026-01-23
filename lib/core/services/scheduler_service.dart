@@ -69,7 +69,7 @@ class SchedulerService {
       entry.isRunning = true;
       entry.lastRunTime = DateTime.now();
 
-      LogService.d('[Scheduler] 执行任务: ${task.name} (${task.id})');
+      // LogService.d('[Scheduler] 执行任务: ${task.name} (${task.id})');
       try {
         await task.callback();
       } catch (e) {
