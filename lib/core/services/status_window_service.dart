@@ -288,7 +288,7 @@ class StatusWindowService {
         status: OperationStatus.failed,
         message: result.error ?? _Messages.launchFailed,
       ));
-      await _updateWindow(state: 'failed', message: result.error ?? _Messages.launchFailed);
+      await _updateWindow(state: 'failed', message: result.error ?? _Messages.launchFailed, autoDismissSeconds: 3);
       _scheduleClose(seconds: 3);
       return false;
     }
@@ -301,7 +301,7 @@ class StatusWindowService {
         message: _Messages.gameAlreadyRunning,
         isGameRunning: true,
       ));
-      await _updateWindow(state: 'success', message: _Messages.gameAlreadyRunning);
+      await _updateWindow(state: 'success', message: _Messages.gameAlreadyRunning, autoDismissSeconds: 3);
       _scheduleClose(seconds: 3);
       return true;
     }
@@ -316,7 +316,7 @@ class StatusWindowService {
         message: _Messages.launchSuccess,
         isGameRunning: true,
       ));
-      await _updateWindow(state: 'success', message: _Messages.launchSuccess);
+      await _updateWindow(state: 'success', message: _Messages.launchSuccess, autoDismissSeconds: 5);
       _scheduleClose(seconds: 5);
       
       // 如果有服务器地址，继续连接
@@ -336,7 +336,7 @@ class StatusWindowService {
         status: OperationStatus.failed,
         message: _Messages.launchTimeout,
       ));
-      await _updateWindow(state: 'failed', message: _Messages.launchTimeout);
+      await _updateWindow(state: 'failed', message: _Messages.launchTimeout, autoDismissSeconds: 3);
       _scheduleClose(seconds: 3);
     }
     
@@ -410,7 +410,7 @@ class StatusWindowService {
         status: OperationStatus.failed,
         message: connectResult.error ?? _Messages.connectFailed,
       ));
-      await _updateWindow(state: 'failed', message: connectResult.error ?? _Messages.connectFailed);
+      await _updateWindow(state: 'failed', message: connectResult.error ?? _Messages.connectFailed, autoDismissSeconds: 3);
       _scheduleClose(seconds: 3);
       return false;
     }
@@ -428,7 +428,7 @@ class StatusWindowService {
         status: OperationStatus.success,
         message: _Messages.connectSuccess,
       ));
-      await _updateWindow(state: 'success', message: _Messages.connectSuccess);
+      await _updateWindow(state: 'success', message: _Messages.connectSuccess, autoDismissSeconds: 5);
       if (playSuccessSound) {
         _audioService.playQueueSuccessSound();
       }
@@ -440,7 +440,7 @@ class StatusWindowService {
         status: OperationStatus.serverFull,
         message: _Messages.serverFull,
       ));
-      await _updateWindow(state: 'serverFull', message: _Messages.serverFull);
+      await _updateWindow(state: 'serverFull', message: _Messages.serverFull, autoDismissSeconds: 8);
       _scheduleClose(seconds: 8);  // 失败状态使用8秒倒计时
       return false;
     } else if (monitorResult.state == GameState.reservedSlots) {
@@ -452,6 +452,7 @@ class StatusWindowService {
       await _updateWindow(
         state: 'reservedSlots',
         message: _Messages.reservedSlots,
+        autoDismissSeconds: 8,
       );
       _scheduleClose(seconds: 8);  // 失败状态使用8秒倒计时
       return false;
@@ -461,7 +462,7 @@ class StatusWindowService {
         status: OperationStatus.failed,
         message: monitorResult.message ?? _Messages.connectFailed,
       ));
-      await _updateWindow(state: 'failed', message: monitorResult.message ?? _Messages.connectFailed);
+      await _updateWindow(state: 'failed', message: monitorResult.message ?? _Messages.connectFailed, autoDismissSeconds: 8);
       _scheduleClose(seconds: 8);  // 失败状态使用8秒倒计时
       return false;
     }
@@ -575,7 +576,7 @@ class StatusWindowService {
       message: _Messages.queuePaused,
     ));
     
-    _updateWindow(state: 'paused', message: _Messages.queuePaused);
+    _updateWindow(state: 'paused', message: _Messages.queuePaused, autoDismissSeconds: 3);
     _scheduleClose(seconds: 3);
     
     LogService.d('[StatusWindowService] 挤服已暂停');
@@ -646,6 +647,7 @@ class StatusWindowService {
       message: _Messages.cancelled,
     ));
     
+    _updateWindow(state: 'paused', message: _Messages.cancelled, autoDismissSeconds: 2);
     _scheduleClose(seconds: 2);
   }
   
@@ -731,7 +733,7 @@ class StatusWindowService {
           status: OperationStatus.failed,
           message: _Messages.gameClosed,
         ));
-        _updateWindow(state: 'failed', message: _Messages.gameClosed);
+        _updateWindow(state: 'failed', message: _Messages.gameClosed, autoDismissSeconds: 3);
         _scheduleClose(seconds: 3);
       }
     }
@@ -946,7 +948,7 @@ class StatusWindowService {
                 status: OperationStatus.success,
                 message: _Messages.connectSuccess,
               ));
-              await _updateWindow(state: 'success', message: _Messages.connectSuccess);
+              await _updateWindow(state: 'success', message: _Messages.connectSuccess, autoDismissSeconds: 5);
               _audioService.playQueueSuccessSound();
               _scheduleClose(seconds: 5);
               break;
@@ -974,7 +976,7 @@ class StatusWindowService {
             status: OperationStatus.success,
             message: _Messages.commandSent,
           ));
-          await _updateWindow(state: 'success', message: _Messages.commandSent);
+          await _updateWindow(state: 'success', message: _Messages.commandSent, autoDismissSeconds: 5);
           _audioService.playQueueSuccessSound();
           _scheduleClose(seconds: 5);
         }
@@ -1011,6 +1013,7 @@ class StatusWindowService {
       _updateWindow(
         state: 'reservedSlots',
         message: _Messages.reservedSlots,
+        autoDismissSeconds: 8,
       );
       
       _scheduleClose(seconds: 8);  // 失败状态使用8秒倒计时
@@ -1081,7 +1084,7 @@ class StatusWindowService {
         status: reason.contains('服务器已满') ? OperationStatus.serverFull : OperationStatus.failed,
         message: reason,
       ));
-      _updateWindow(state: windowState, message: reason);
+      _updateWindow(state: windowState, message: reason, autoDismissSeconds: 3);
       _scheduleClose(seconds: 3);
     }
   }
@@ -1260,6 +1263,7 @@ class StatusWindowService {
     String? mapName,
     String? mapNameCn,
     String? mapBackground,
+    int? autoDismissSeconds,
   }) async {
     if (_windowId == null) return;
     
@@ -1277,6 +1281,7 @@ class StatusWindowService {
       mapName: mapName ?? _state.serverInfo?.map,
       mapNameCn: effectiveMapNameCn,
       mapBackground: effectiveMapBackground,
+      autoDismissSeconds: autoDismissSeconds,
     );
     
     // 如果发送失败（窗口可能已关闭），清理windowId

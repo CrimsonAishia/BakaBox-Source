@@ -69,6 +69,9 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
   void _onStateChanged() {
     final state = widget.stateNotifier.state;
     
+    // 检查是否有 autoDismissSeconds 更新
+    final autoDismiss = widget.stateNotifier.autoDismissSeconds;
+    
     // 如果从暂停/终态恢复到活跃状态，取消倒计时
     if (_isCountdownActive && (state.isQueueing || state.isLaunching || state.isConnecting || state.isLoading)) {
       _cancelCountdown();
@@ -77,13 +80,13 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
     
     // 进入终态时启动倒计时
     if (state.isTerminal && !_isCountdownActive) {
-      _startCountdown(state.isSuccess);
+      _startCountdown(state.isSuccess, customSeconds: autoDismiss);
       return;
     }
     
     // 进入暂停状态时启动倒计时
     if (state.isPaused && !_isCountdownActive) {
-      _startCountdown(false, isPaused: true);
+      _startCountdown(false, isPaused: true, customSeconds: autoDismiss);
     }
   }
   
@@ -94,16 +97,22 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
     if (mounted) setState(() {});
   }
 
-  void _startCountdown(bool isSuccess, {bool isPaused = false}) {
+  void _startCountdown(bool isSuccess, {bool isPaused = false, int? customSeconds}) {
     _countdownTimer?.cancel();
     
-    if (isPaused) {
+    // 优先使用自定义秒数，否则使用默认值
+    if (customSeconds != null && customSeconds > 0) {
+      _totalCountdownSeconds = customSeconds;
+    } else if (isPaused) {
       _totalCountdownSeconds = _pausedCountdown;
     } else {
       _totalCountdownSeconds = isSuccess ? _successCountdown : _failureCountdown;
     }
+    
     _countdownSeconds = _totalCountdownSeconds;
     _isCountdownActive = true;
+    
+    debugPrint('[FloatingWindowShell] Starting countdown: $_totalCountdownSeconds seconds (isPaused: $isPaused, customSeconds: $customSeconds)');
     
     if (mounted) setState(() {});
     
