@@ -136,7 +136,7 @@ class UpdateService {
       return downloadedFilePath;
     } catch (e) {
       // 上报下载失败
-      await _reportResult(updateInfo, 'download_failed', errorMessage: e.toString());
+      await _reportResult(updateInfo, 'download_failed', errorMessage: _getErrorMessageForReport(e));
       rethrow;
     }
   }
@@ -158,7 +158,7 @@ class UpdateService {
     } catch (e) {
       // 上报安装启动失败
       if (updateInfo != null) {
-        await _reportResult(updateInfo, 'install_failed', errorMessage: e.toString());
+        await _reportResult(updateInfo, 'install_failed', errorMessage: _getErrorMessageForReport(e));
       }
       rethrow;
     }
@@ -226,10 +226,10 @@ class UpdateService {
       // 判断是下载失败还是安装失败
       if (!downloadSucceeded) {
         // 下载阶段失败
-        await _reportResult(updateInfo, 'download_failed', errorMessage: e.toString());
+        await _reportResult(updateInfo, 'download_failed', errorMessage: _getErrorMessageForReport(e));
       } else {
         // 安装阶段失败
-        await _reportResult(updateInfo, 'install_failed', errorMessage: e.toString());
+        await _reportResult(updateInfo, 'install_failed', errorMessage: _getErrorMessageForReport(e));
       }
       
       if (e is UpdateException) rethrow;
@@ -325,7 +325,7 @@ class UpdateService {
   /// 安装 Windows EXE（静默模式）
   Future<void> _installWindowsExe(String exePath) async {
     try {
-      final result = await Process.start(
+      await Process.start(
         exePath,
         ['/S'],
         mode: ProcessStartMode.detached,
@@ -365,6 +365,17 @@ class UpdateService {
       }
       throw const UpdateException('无法安装APK，请检查安装权限');
     }
+  }
+
+  /// 获取错误信息用于上报
+  /// 
+  /// 对于 AppException，返回 "ExceptionType: message" 格式
+  /// 对于其他异常，返回 toString() 结果
+  String _getErrorMessageForReport(Object e) {
+    if (e is AppException) {
+      return '${e.runtimeType}: ${e.message}';
+    }
+    return e.toString();
   }
 
   /// 上报更新结果（同步等待，确保上报完成）
