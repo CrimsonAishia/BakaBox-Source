@@ -62,7 +62,7 @@ class MobileAppHome extends StatefulWidget {
 }
 
 class _MobileAppHomeState extends State<MobileAppHome> {
-  bool _updateDialogShown = false;
+  bool _hasShownAutoUpdateDialog = false; // 是否已显示自动检查的更新对话框
 
   @override
   void initState() {
@@ -84,8 +84,8 @@ class _MobileAppHomeState extends State<MobileAppHome> {
     final updateBloc = context.read<UpdateBloc>();
 
     // 检查启动屏幕是否已经检测到更新
-    if (updateBloc.state.hasUpdate && updateBloc.state.updateInfo != null && !_updateDialogShown) {
-      _updateDialogShown = true;
+    if (updateBloc.state.hasUpdate && updateBloc.state.updateInfo != null && !_hasShownAutoUpdateDialog) {
+      _hasShownAutoUpdateDialog = true;
       UpdateDialog.show(context, updateBloc.state.updateInfo!);
     }
     // 后续更新状态变化通过 BlocListener 监听，避免内存泄漏
@@ -94,11 +94,30 @@ class _MobileAppHomeState extends State<MobileAppHome> {
   @override
   Widget build(BuildContext context) {
     return BlocListener<UpdateBloc, UpdateState>(
-      listenWhen: (prev, curr) => !prev.hasUpdate && curr.hasUpdate && curr.updateInfo != null,
+      listenWhen: (prev, curr) {
+        // 监听两种情况：
+        // 1. 状态从非 available 变为 available（有更新）
+        // 2. 状态从 checking 变为 idle（无更新）
+        final hasNewUpdate = prev.status != UpdateStatus.available && 
+                             curr.status == UpdateStatus.available && 
+                             curr.updateInfo != null;
+        
+        final checkCompleteNoUpdate = prev.status == UpdateStatus.checking &&
+                                      curr.status == UpdateStatus.idle &&
+                                      curr.updateInfo != null &&
+                                      !curr.updateInfo!.hasUpdate;
+        
+        return hasNewUpdate || checkCompleteNoUpdate;
+      },
       listener: (context, state) {
-        if (!_updateDialogShown) {
-          _updateDialogShown = true;
+        if (state.status == UpdateStatus.available && state.updateInfo != null) {
+          // 有更新：弹出更新对话框
           UpdateDialog.show(context, state.updateInfo!);
+        } else if (state.status == UpdateStatus.idle && 
+                   state.updateInfo != null && 
+                   !state.updateInfo!.hasUpdate) {
+          // 无更新：显示提示
+          ToastUtils.showSuccess(context, '已是最新版本');
         }
       },
       child: const MobileHomeScreen(),

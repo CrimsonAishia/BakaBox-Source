@@ -19,6 +19,7 @@ class UpdateBloc extends Bloc<UpdateEvent, UpdateState> {
     on<UpdateOpenAppStore>(_onOpenAppStore);
     on<UpdateClearError>(_onClearError);
     on<UpdateCancel>(_onCancel);
+    on<UpdateSkip>(_onSkip);
     on<UpdateReset>(_onReset);
   }
 
@@ -154,9 +155,20 @@ class UpdateBloc extends Bloc<UpdateEvent, UpdateState> {
     ));
   }
 
-  void _onCancel(UpdateCancel event, Emitter<UpdateState> emit) {
+  Future<void> _onCancel(UpdateCancel event, Emitter<UpdateState> emit) async {
     if (state.status == UpdateStatus.downloading) {
+      // 上报取消下载
+      if (state.updateInfo != null) {
+        await _updateService.reportCancelled(state.updateInfo!);
+      }
       emit(state.copyWith(status: UpdateStatus.cancelled, downloadProgress: null));
+    }
+  }
+
+  Future<void> _onSkip(UpdateSkip event, Emitter<UpdateState> emit) async {
+    // 上报跳过更新
+    if (state.updateInfo != null) {
+      await _updateService.reportSkipped(state.updateInfo!);
     }
   }
 

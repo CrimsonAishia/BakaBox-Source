@@ -22,4 +22,6 @@ class UpdateClearError extends UpdateEvent {}
 
 class UpdateCancel extends UpdateEvent {}
 
+class UpdateSkip extends UpdateEvent {}
+
 class UpdateReset extends UpdateEvent {}

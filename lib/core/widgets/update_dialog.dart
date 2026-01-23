@@ -93,6 +93,17 @@ class _UpdateDialogState extends State<UpdateDialog> with TickerProviderStateMix
         
         return PopScope(
           canPop: widget.canSkip && !widget.updateInfo.isForced,
+          onPopInvokedWithResult: (didPop, result) {
+            // 只在用户通过系统返回键或点击对话框外部关闭时上报
+            // 点击"取消"按钮会在按钮的 onTap 中上报，这里不重复上报
+            if (didPop && widget.canSkip && !widget.updateInfo.isForced) {
+              // 检查是否是通过"取消"按钮关闭的（通过 result 判断）
+              // 如果 result 为 null，说明是系统返回或点击外部，需要上报
+              if (result == null) {
+                context.read<UpdateBloc>().add(UpdateSkip());
+              }
+            }
+          },
           child: Center(
             child: FadeTransition(
               opacity: _fadeAnimation,
@@ -318,7 +329,12 @@ class _UpdateDialogState extends State<UpdateDialog> with TickerProviderStateMix
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: isEnabled ? () => Navigator.of(context).pop() : null,
+            onTap: isEnabled ? () {
+              // 用户点击取消按钮，上报跳过更新
+              context.read<UpdateBloc>().add(UpdateSkip());
+              // 使用 result 参数标记是通过按钮关闭的
+              Navigator.of(context).pop('button_close');
+            } : null,
             child: Center(
               child: Text(
                 '取消',
