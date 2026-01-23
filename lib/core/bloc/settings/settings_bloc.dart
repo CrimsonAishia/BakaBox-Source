@@ -841,8 +841,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       await StorageUtils.setInt(_keyFloatingWindowPosition, event.position.index);
       emit(state.copyWith(floatingWindowPosition: event.position));
       
-      // TODO: 同步到 FloatingWindowService（如果需要）
-      
       LogService.d('浮窗位置已设置: ${event.position.displayName}');
     } catch (e) {
       LogService.e('设置浮窗位置失败', e);

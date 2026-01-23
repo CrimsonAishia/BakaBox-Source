@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../../../core/bloc/settings/settings_state.dart';
 import '../../../core/services/floating_window_service.dart';
+import '../../../core/utils/storage_utils.dart';
 import '../../theme/desktop_theme.dart';
 import 'floating_window_shell.dart';
 import 'floating_window_state.dart';
@@ -173,15 +175,19 @@ class _FloatingWindowInitializerState
 
       final size = widget.config.windowSize;
 
-      // 获取屏幕尺寸并计算右下角位置
+      // 获取屏幕尺寸
       final screenInfo = await windowManager.getPrimaryScreenSize();
       final screenWidth = screenInfo['screenWidth']!;
       final workAreaHeight = screenInfo['workAreaHeight']!;
       final workAreaY = screenInfo['workAreaY']!;
       
-      const padding = 20.0;
-      final x = screenWidth - size.width - padding;
-      final y = workAreaY + workAreaHeight - size.height - padding;
+      // 从设置中读取浮窗位置
+      final position = await _calculateFloatingPosition(
+        screenWidth,
+        workAreaHeight,
+        workAreaY,
+        size,
+      );
 
       final windowOptions = WindowOptions(
         size: size,
@@ -193,7 +199,7 @@ class _FloatingWindowInitializerState
       );
 
       await windowManager.waitUntilReadyToShow(windowOptions, () async {
-        await windowManager.setPosition(Offset(x, y));
+        await windowManager.setPosition(position);
         await windowManager.setMinimumSize(
             Size(size.width - 60, size.height - 60));
         await windowManager.setMaximumSize(
@@ -205,7 +211,7 @@ class _FloatingWindowInitializerState
         await windowManager.focus();
       });
 
-      debugPrint('[FloatingWindow] Window setup complete');
+      debugPrint('[FloatingWindow] Window setup complete at position: $position');
 
       if (mounted) {
         setState(() => _initialized = true);
@@ -215,6 +221,53 @@ class _FloatingWindowInitializerState
       if (mounted) {
         setState(() => _error = '初始化失败，请重试');
       }
+    }
+  }
+
+  /// 计算浮窗位置（从设置中读取）
+  Future<Offset> _calculateFloatingPosition(
+    double screenWidth,
+    double workAreaHeight,
+    double workAreaY,
+    Size windowSize,
+  ) async {
+    try {
+      // 从存储中读取浮窗位置设置
+      final positionIndex = StorageUtils.getInt('floating_window_position') ?? 8; // 默认右下角
+      final position = NotificationPositionType.values[positionIndex];
+      
+      const padding = 20.0;
+      final availableHeight = workAreaHeight;
+      final centerY = workAreaY + (availableHeight - windowSize.height) / 2;
+      
+      switch (position) {
+        case NotificationPositionType.topLeft:
+          return Offset(padding, workAreaY + padding);
+        case NotificationPositionType.topCenter:
+          return Offset((screenWidth - windowSize.width) / 2, workAreaY + padding);
+        case NotificationPositionType.topRight:
+          return Offset(screenWidth - windowSize.width - padding, workAreaY + padding);
+        case NotificationPositionType.centerLeft:
+          return Offset(padding, centerY);
+        case NotificationPositionType.center:
+          return Offset((screenWidth - windowSize.width) / 2, centerY);
+        case NotificationPositionType.centerRight:
+          return Offset(screenWidth - windowSize.width - padding, centerY);
+        case NotificationPositionType.bottomLeft:
+          return Offset(padding, workAreaY + availableHeight - windowSize.height - padding);
+        case NotificationPositionType.bottomCenter:
+          return Offset((screenWidth - windowSize.width) / 2, workAreaY + availableHeight - windowSize.height - padding);
+        case NotificationPositionType.bottomRight:
+          return Offset(screenWidth - windowSize.width - padding, workAreaY + availableHeight - windowSize.height - padding);
+      }
+    } catch (e) {
+      debugPrint('[FloatingWindow] Failed to read position setting, using default: $e');
+      // 默认右下角
+      const padding = 20.0;
+      return Offset(
+        screenWidth - windowSize.width - padding,
+        workAreaY + workAreaHeight - windowSize.height - padding,
+      );
     }
   }
 
