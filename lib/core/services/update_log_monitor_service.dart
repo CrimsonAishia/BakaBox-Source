@@ -88,27 +88,49 @@ class UpdateLogMonitorService {
         return;
       }
 
-      // 比较时间，如果有新更新则通知
-      if (latestUpdateTime != lastCheckTime) {
-        LogService.i('[UpdateLogMonitor] 检测到新更新: $latestUpdateTime');
+      // 使用时间戳比较，避免字符串格式不一致导致的问题
+      final latestTime = TimeUtils.parseServerTime(latestUpdateTime);
+      final lastTime = TimeUtils.parseServerTime(lastCheckTime);
+      
+      if (latestTime == null || lastTime == null) {
+        LogService.w('[UpdateLogMonitor] 时间解析失败，使用字符串比较');
+        // 降级到字符串比较
+        if (latestUpdateTime != lastCheckTime) {
+          await _sendUpdateNotification(latestLog, latestUpdateTime);
+        }
+        return;
+      }
 
-        // 格式化时间（去掉秒）
-        final displayTime = _formatUpdateTime(latestUpdateTime);
-
-        // 发送通知（优先使用 rawHtml，否则使用 content）
-        final htmlContent = latestLog.rawHtml.isNotEmpty 
-            ? latestLog.rawHtml 
-            : latestLog.content;
-        await _notificationService.showUpdateLogNotification(
-          updateTime: displayTime,
-          content: htmlContent,
-        );
-
-        // 更新记录的时间（保存原始时间用于比较）
-        await StorageUtils.setString(_lastCheckTimeKey, latestUpdateTime);
+      // 比较时间戳，如果有新更新则通知
+      if (latestTime.isAfter(lastTime)) {
+        LogService.i('[UpdateLogMonitor] 检测到新更新: $latestUpdateTime (上次: $lastCheckTime)');
+        await _sendUpdateNotification(latestLog, latestUpdateTime);
       }
     } catch (e) {
       LogService.e('[UpdateLogMonitor] 检查更新失败', e);
+      // 异常时不影响应用运行，静默处理
+    }
+  }
+
+  /// 发送更新通知
+  Future<void> _sendUpdateNotification(dynamic latestLog, String latestUpdateTime) async {
+    try {
+      // 格式化时间（去掉秒）
+      final displayTime = _formatUpdateTime(latestUpdateTime);
+
+      // 发送通知（优先使用 rawHtml，否则使用 content）
+      final htmlContent = latestLog.rawHtml.isNotEmpty 
+          ? latestLog.rawHtml 
+          : latestLog.content;
+      await _notificationService.showUpdateLogNotification(
+        updateTime: displayTime,
+        content: htmlContent,
+      );
+
+      // 更新记录的时间（保存原始时间用于比较）
+      await StorageUtils.setString(_lastCheckTimeKey, latestUpdateTime);
+    } catch (e) {
+      LogService.e('[UpdateLogMonitor] 发送通知失败', e);
     }
   }
 

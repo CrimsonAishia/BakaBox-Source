@@ -44,8 +44,18 @@ class _MobileSplashScreenState extends State<MobileSplashScreen> with TickerProv
         await updateBloc.stream.firstWhere(
           (state) => state.status != UpdateStatus.checking,
           orElse: () => updateBloc.state,
-        ).timeout(const Duration(milliseconds: 1500), onTimeout: () => updateBloc.state);
-      } catch (_) {}
+        ).timeout(
+          const Duration(milliseconds: 1500),
+          onTimeout: () {
+            // 超时时记录日志，但不影响启动流程
+            LogService.w('[MobileSplashScreen] 更新检查超时，继续启动流程');
+            return updateBloc.state;
+          },
+        );
+      } catch (e) {
+        // 捕获任何异常，确保启动流程不会中断
+        LogService.e('[MobileSplashScreen] 更新检查异常: $e', e);
+      }
     }
 
     // 加载功能状态

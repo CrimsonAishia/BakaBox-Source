@@ -48,8 +48,10 @@ class UpdateBloc extends Bloc<UpdateEvent, UpdateState> {
         emit(state.copyWith(status: UpdateStatus.idle));
       }
     } catch (e) {
-      LogService.e('Auto check for update failed: $e', e);
-      emit(state.copyWith(status: UpdateStatus.idle));
+      LogService.e('自动检查更新失败: $e', e);
+      // 自动检查失败时静默处理，不影响用户体验
+      // 但确保状态回到 idle，避免卡在 checking 状态
+      emit(state.copyWith(status: UpdateStatus.idle, clearError: true));
     }
   }
 
