@@ -15,12 +15,77 @@ class AddServerDialog extends StatefulWidget {
 
 class _AddServerDialogState extends State<AddServerDialog> {
   final TextEditingController _addressController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   final _formKey = GlobalKey<FormState>();
 
   @override
+  void initState() {
+    super.initState();
+    // 监听焦点变化，失去焦点时自动格式化
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  @override
   void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
     _addressController.dispose();
     super.dispose();
+  }
+
+  /// 焦点变化时处理
+  void _onFocusChange() {
+    if (!_focusNode.hasFocus) {
+      // 失去焦点时格式化
+      _formatAddress();
+    }
+  }
+
+  /// 智能格式化地址：提取服务器地址
+  void _formatAddress() {
+    final text = _addressController.text;
+    if (text.isEmpty) return;
+    
+    String formatted = text.trim();
+    
+    // 1. 移除常见的命令前缀（不区分大小写）
+    final commandPrefixes = [
+      RegExp(r'^connect\s+', caseSensitive: false),
+      RegExp(r'^join\s+', caseSensitive: false),
+      RegExp(r'^server\s+', caseSensitive: false),
+    ];
+    
+    for (final pattern in commandPrefixes) {
+      if (pattern.hasMatch(formatted)) {
+        formatted = formatted.replaceFirst(pattern, '');
+        break;
+      }
+    }
+    
+    // 2. 移除引号
+    formatted = formatted.replaceAll('"', '').replaceAll("'", '');
+    
+    // 3. 移除多余的空格
+    formatted = formatted.replaceAll(RegExp(r'\s+'), '');
+    
+    // 4. 提取地址:端口格式（支持 IP 和域名）
+    // 匹配模式：域名或IP + : + 端口号
+    final addressPattern = RegExp(
+      r'([a-zA-Z0-9]([a-zA-Z0-9\-\.]*[a-zA-Z0-9])?):(\d+)',
+    );
+    final match = addressPattern.firstMatch(formatted);
+    if (match != null) {
+      formatted = match.group(0) ?? formatted;
+    }
+    
+    // 如果格式化后的文本与原文本不同，更新输入框
+    if (formatted != text && formatted.isNotEmpty) {
+      _addressController.text = formatted;
+      // 将光标移到末尾
+      _addressController.selection = TextSelection.collapsed(
+        offset: formatted.length,
+      );
+    }
   }
 
   @override
@@ -42,18 +107,19 @@ class _AddServerDialogState extends State<AddServerDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '输入服务器地址（IP:端口），例如：192.168.1.100:27015',
+              '输入服务器地址（IP:端口 或 域名:端口），例如：192.168.1.100:27015 或 cs1.zombieden.cn:27016',
               style: TextStyle(fontSize: 14, color: secondaryTextColor),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _addressController,
+              focusNode: _focusNode,
               autofocus: true,
               style: TextStyle(color: textColor),
               decoration: InputDecoration(
                 labelText: '服务器地址',
                 labelStyle: TextStyle(color: secondaryTextColor),
-                hintText: '例如：192.168.1.100:27015',
+                hintText: '例如：192.168.1.100:27015 或 cs1.zombieden.cn:27016',
                 hintStyle: TextStyle(color: secondaryTextColor.withValues(alpha: 0.6)),
                 filled: true,
                 fillColor: inputBgColor,
@@ -78,23 +144,39 @@ class _AddServerDialogState extends State<AddServerDialog> {
                 
                 final address = value.trim();
                 
-                // 验证格式：IP:端口
+                // 验证格式：地址:端口
                 final parts = address.split(':');
                 if (parts.length != 2) {
-                  return '格式错误，应为 IP:端口';
+                  return '格式错误，应为 地址:端口';
                 }
                 
-                // 验证 IP
-                final ip = parts[0];
-                final ipParts = ip.split('.');
-                if (ipParts.length != 4) {
-                  return 'IP 地址格式错误';
+                final host = parts[0];
+                
+                // 验证主机地址（IP 或域名）
+                if (host.isEmpty) {
+                  return '主机地址不能为空';
                 }
                 
-                for (final part in ipParts) {
-                  final num = int.tryParse(part);
-                  if (num == null || num < 0 || num > 255) {
-                    return 'IP 地址格式错误';
+                // 检查是否为 IP 地址
+                final ipParts = host.split('.');
+                final isIpAddress = ipParts.length == 4 && 
+                    ipParts.every((part) {
+                      final num = int.tryParse(part);
+                      return num != null && num >= 0 && num <= 255;
+                    });
+                
+                // 如果不是 IP 地址，验证域名格式
+                if (!isIpAddress) {
+                  // 域名基本验证：只允许字母、数字、点、连字符
+                  final domainPattern = RegExp(r'^[a-zA-Z0-9]([a-zA-Z0-9\-\.]*[a-zA-Z0-9])?$');
+                  if (!domainPattern.hasMatch(host)) {
+                    return '主机地址格式错误（支持 IP 或域名）';
+                  }
+                  
+                  // 域名不能以点或连字符开头/结尾
+                  if (host.startsWith('.') || host.startsWith('-') || 
+                      host.endsWith('.') || host.endsWith('-')) {
+                    return '域名格式错误';
                   }
                 }
                 
@@ -128,6 +210,9 @@ class _AddServerDialogState extends State<AddServerDialog> {
   }
 
   void _handleSubmit() {
+    // 提交前先格式化一次（防止用户直接点击添加按钮）
+    _formatAddress();
+    
     if (_formKey.currentState?.validate() ?? false) {
       Navigator.of(context).pop(_addressController.text.trim());
     }
