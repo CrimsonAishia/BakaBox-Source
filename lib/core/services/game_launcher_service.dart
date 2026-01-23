@@ -110,6 +110,12 @@ class GameLauncherService {
   /// 检查是否为桌面平台
   bool get isDesktopPlatform => PlatformUtils.isDesktopPlatform;
 
+  /// 检查游戏路径是否已配置
+  Future<bool> hasGamePath() async {
+    final path = StorageUtils.getString(_keyGamePath);
+    return path != null && path.isNotEmpty;
+  }
+
   /// 检测CS2是否正在运行
   Future<bool> isCS2Running() async {
     if (!isDesktopPlatform) {
@@ -244,6 +250,12 @@ class GameLauncherService {
       return GameLaunchResult.failure('游戏启动功能仅支持桌面平台');
     }
 
+    // 检查游戏路径是否已配置
+    final hasPath = await hasGamePath();
+    if (!hasPath) {
+      return GameLaunchResult.failure('请先在设置中配置游戏路径');
+    }
+
     LogService.d('收到CS2启动请求');
 
     // 检查游戏是否已在运行
@@ -336,7 +348,7 @@ class GameLauncherService {
       }
       
       if (steamPath == null) {
-        return GameLaunchResult.failure('未找到Steam路径，请在设置中配置');
+        return GameLaunchResult.failure('未找到Steam路径，请在「设置 → 游戏设置」中配置Steam安装路径');
       }
 
       final steamExe = '$steamPath\\steam.exe';
@@ -450,6 +462,12 @@ class GameLauncherService {
   Future<ServerConnectResult> connectToServer(String address) async {
     if (!isDesktopPlatform) {
       return ServerConnectResult.failure('服务器连接功能仅支持桌面平台');
+    }
+
+    // 检查游戏路径是否已配置
+    final hasPath = await hasGamePath();
+    if (!hasPath) {
+      return ServerConnectResult.failure('请先在设置中配置游戏路径');
     }
 
     LogService.d('收到连接服务器请求，目标服务器: $address');
