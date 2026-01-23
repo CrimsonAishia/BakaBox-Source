@@ -417,17 +417,6 @@ class _SettingsMobileState extends State<SettingsMobile> {
   void _checkForUpdates(BuildContext context) {
     context.read<SettingsBloc>().add(SettingsCheckForUpdates());
     context.read<UpdateBloc>().add(UpdateCheck());
-
-    final updateBloc = context.read<UpdateBloc>();
-    updateBloc.stream.first.then((state) {
-      if (context.mounted) {
-        if (state.hasUpdate && state.updateInfo != null) {
-          UpdateDialog.show(context, state.updateInfo!);
-        } else if (state.status != UpdateStatus.checking) {
-          ToastUtils.showSuccess(context, '已是最新版本');
-        }
-      }
-    });
   }
 
   void _showAboutDialog(BuildContext context) {

@@ -1,5 +1,6 @@
 import 'package:window_manager/window_manager.dart';
 import '../services/analytics_service.dart';
+import '../services/update_service.dart';
 import '../utils/app_directory_service.dart';
 import '../utils/log_service.dart';
 import '../utils/storage_utils.dart';
@@ -31,5 +32,17 @@ class AppInitializer {
   /// 初始化主窗口服务
   static Future<void> initMainWindowServices() async {
     await LogService.init();
+    // 检查并上报安装成功（必须在 LogService 和 StorageUtils 初始化后）
+    await _checkInstallSuccess();
+  }
+
+  /// 检查并上报安装成功
+  static Future<void> _checkInstallSuccess() async {
+    try {
+      final updateService = UpdateService();
+      await updateService.checkAndReportInstallSuccess();
+    } catch (e) {
+      // 失败不影响应用启动，静默处理
+    }
   }
 }

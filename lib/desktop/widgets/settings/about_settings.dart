@@ -6,8 +6,6 @@ import '../../../core/bloc/update/update_event.dart';
 import '../../../core/bloc/update/update_state.dart';
 import '../../../core/bloc/settings/settings_state.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/models/update_models.dart';
-import '../../../core/widgets/update_dialog.dart';
 import 'settings_group_title.dart';
 import 'settings_buttons.dart';
 
@@ -48,18 +46,7 @@ class AboutSettings extends StatelessWidget {
   }
 
   Widget _buildUpdateInfoGrid(BuildContext context) {
-    return BlocConsumer<UpdateBloc, UpdateState>(
-      listener: (context, updateState) {
-        if (updateState.status == UpdateStatus.available && updateState.updateInfo != null) {
-          UpdateDialog.show(context, updateState.updateInfo!);
-        } else if (updateState.status == UpdateStatus.idle &&
-            updateState.updateInfo != null &&
-            !updateState.updateInfo!.hasUpdate) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('当前已是最新版本'), backgroundColor: Colors.green),
-          );
-        }
-      },
+    return BlocBuilder<UpdateBloc, UpdateState>(
       builder: (context, updateState) {
         return Column(
           children: [
