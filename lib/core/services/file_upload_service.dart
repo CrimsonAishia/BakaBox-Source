@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import '../api/file_upload_api.dart';
+import '../exceptions/app_exception.dart';
 import '../models/upload_models.dart';
 import '../utils/log_service.dart';
 import '../utils/file_validation_utils.dart';
@@ -535,11 +536,9 @@ class _UploadTask {
 }
 
 /// 文件验证异常
-class FileValidationException implements Exception {
+class FileValidationException implements AppException {
+  @override
   final String message;
   
   FileValidationException(this.message);
-
-  @override
-  String toString() => message;
 }

@@ -8,18 +8,12 @@ class ErrorUtils {
   /// 从异常中提取用户友好的错误信息
   /// 
   /// 优先级：
-  /// 1. AppException（所有自定义异常的基类）
-  /// 2. ApiException（特殊处理）
-  /// 3. 常见网络错误返回友好提示
-  /// 4. 其他异常返回通用错误信息
+  /// 1. AppException（所有自定义异常的基类，包括 UpdateException、ApiException、FileValidationException 等）
+  /// 2. 常见网络错误返回友好提示
+  /// 3. 其他异常返回通用错误信息
   static String getErrorMessage(Object e, {String? defaultMessage}) {
     // AppException 及其子类直接返回 message
     if (e is AppException) {
-      return e.message;
-    }
-    
-    // ApiException 直接返回 message
-    if (e is ApiException) {
       return e.message;
     }
     
