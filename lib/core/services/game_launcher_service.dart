@@ -625,7 +625,7 @@ class GameLauncherService {
   /// 设置自定义启动选项
   Future<void> setLaunchOptions(List<String> options) async {
     await StorageUtils.setStringList(_keyLaunchOptions, options);
-    LogService.i('启动选项已设置: ${options.join(" ")}');
+    LogService.d('启动选项已设置: ${options.join(" ")}');
   }
 
   /// 自动检测Steam路径（仅Windows）
