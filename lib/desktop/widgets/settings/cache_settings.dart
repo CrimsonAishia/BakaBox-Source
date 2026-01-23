@@ -58,49 +58,20 @@ class CacheSettings extends StatelessWidget {
         ? settingsState.formattedTotalCacheSize
         : settingsState.cacheSize;
 
-    return Column(
-      children: [
-        _CacheInfoItem(
-          icon: MdiIcons.harddisk,
-          iconColor: const Color(0xFF0080FF),
-          label: '缓存大小',
-          value: settingsState.isLoadingCacheDetails
-              ? const Text('计算中...', style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)))
-              : Text(
-                  totalSize,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF0080FF)),
-                ),
-          action: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SettingsOutlinedButton(
-                onPressed: settingsState.isLoadingCacheDetails || settingsState.cacheDetails.isEmpty
-                    ? null
-                    : () => _openSelectiveCacheDialog(context),
-                label: '选择性清理',
-                icon: MdiIcons.filterVariant,
-              ),
-              const SizedBox(width: 8),
-              SettingsDangerButton(
-                onPressed: settingsState.isLoading ? null : () => _clearAllCache(context),
-                label: '清理缓存',
-                icon: MdiIcons.deleteOutline,
-                isLoading: settingsState.isLoading,
-              ),
-            ],
-          ),
-        ),
-        _CacheInfoItem(
-          icon: MdiIcons.packageVariant,
-          iconColor: const Color(0xFF10B981),
-          label: '缓存项数量',
-          value: settingsState.isLoadingCacheDetails
-              ? const Text('统计中...', style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)))
-              : Text(
-                  '${settingsState.cacheDetails.length} 个缓存类型',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF374151)),
-                ),
-          action: SettingsOutlinedButton(
+    return _CacheInfoItem(
+      icon: MdiIcons.harddisk,
+      iconColor: const Color(0xFF0080FF),
+      label: '缓存大小',
+      value: settingsState.isLoadingCacheDetails
+          ? const Text('计算中...', style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)))
+          : Text(
+              totalSize,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF0080FF)),
+            ),
+      action: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SettingsOutlinedButton(
             onPressed: settingsState.isLoadingCacheDetails
                 ? null
                 : () => context.read<SettingsBloc>().add(SettingsLoadCacheDetails()),
@@ -108,8 +79,17 @@ class CacheSettings extends StatelessWidget {
             icon: MdiIcons.refresh,
             isLoading: settingsState.isLoadingCacheDetails,
           ),
-        ),
-      ],
+          const SizedBox(width: 8),
+          SettingsDangerButton(
+            onPressed: settingsState.isLoading || settingsState.isLoadingCacheDetails
+                ? null
+                : () => _openSelectiveCacheDialog(context),
+            label: '清理缓存',
+            icon: MdiIcons.deleteOutline,
+            isLoading: settingsState.isLoading,
+          ),
+        ],
+      ),
     );
   }
 
@@ -156,39 +136,6 @@ class CacheSettings extends StatelessWidget {
               foregroundColor: Colors.white,
             ),
             child: const Text('确定并退出'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _clearAllCache(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(MdiIcons.deleteAlertOutline, color: Colors.red),
-            const SizedBox(width: 8),
-            const Text('清除所有缓存'),
-          ],
-        ),
-        content: const Text('确定要清除所有缓存吗？这将删除临时文件和服务器列表缓存，不会影响您的设置。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              context.read<SettingsBloc>().add(SettingsClearAllCache());
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('所有缓存已清除'), backgroundColor: Colors.green),
-              );
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            child: const Text('确定清除'),
           ),
         ],
       ),

@@ -2,11 +2,10 @@ class AppConstants {
   // App Info
   static const String appName = 'BakaBox';
   static const String appVersion = '1.0.0';
-  static const String appDescription = 'CS2 Launcher';
+  static const String appDescription = 'CS2 启动器';
   static const String appAuthor = 'Aishia';
-  static const String appLicense = 'MIT License';
-  static const String appCopyright = '© 2026 Aishia';
-  static const String appGithub = 'https://github.com/CrimsonAishia/bakabox_app';
+  static const String appCopyright = '© 2026 Aishia. All rights reserved.';
+  static const String appWebsite = 'https://bakabox.app';
   
   // UI Constants
   static const double defaultPadding = 16.0;
