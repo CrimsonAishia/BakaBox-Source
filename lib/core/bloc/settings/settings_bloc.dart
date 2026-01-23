@@ -688,12 +688,22 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       // 3. 应用数据（草稿、已读状态、应用配置等）
       int appDataSize = 0;
       
-      // 草稿和已读状态
-      final draftKeys = StorageUtils.getKeys().where((key) => key.startsWith('draft_')).toList();
+      // 草稿内容（使用 draft_content_ 前缀）
+      final draftKeys = StorageUtils.getKeys()
+          .where((key) => key.startsWith('draft_content_'))
+          .toList();
       for (final key in draftKeys) {
         final value = StorageUtils.getString(key);
         if (value != null) appDataSize += value.length;
       }
+      
+      // 草稿时间戳（使用 draft_ts_ 前缀，int 类型）
+      final draftTimestampKeys = StorageUtils.getKeys()
+          .where((key) => key.startsWith('draft_ts_'))
+          .toList();
+      appDataSize += draftTimestampKeys.length * 8; // 每个 int 约 8 字节
+      
+      // 已读状态
       final announcementReadIds = StorageUtils.getString('announcement_read_ids');
       if (announcementReadIds != null) appDataSize += announcementReadIds.length;
       
@@ -784,8 +794,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         break;
 
       case CacheType.appData:
-        // 清理草稿和已读状态
-        final draftKeys = StorageUtils.getKeys().where((key) => key.startsWith('draft_')).toList();
+        // 清理所有草稿相关数据（内容和时间戳）
+        final draftKeys = StorageUtils.getKeys()
+            .where((key) => key.startsWith('draft_'))
+            .toList();
         for (final key in draftKeys) {
           await StorageUtils.remove(key);
         }
