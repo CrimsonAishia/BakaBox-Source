@@ -203,7 +203,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     emit(const AuthState(
       status: AuthStatus.unauthenticated,
-      errorMessage: '绑定已过期，请重新绑定',
+      errorMessage: '账号已过期，请重新关联',
     ));
   }
 
