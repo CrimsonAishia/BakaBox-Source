@@ -32,6 +32,7 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
     on<AnnouncementClearError>(_onClearError);
     on<AnnouncementStartAutoRefresh>(_onStartAutoRefresh);
     on<AnnouncementStopAutoRefresh>(_onStopAutoRefresh);
+    on<AnnouncementFetchDetail>(_onFetchDetail);
   }
   
   /// 启动自动刷新
@@ -206,5 +207,38 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
     Emitter<AnnouncementState> emit,
   ) {
     emit(state.copyWith(clearError: true));
+  }
+
+  /// 处理获取公告详情事件
+  Future<void> _onFetchDetail(
+    AnnouncementFetchDetail event,
+    Emitter<AnnouncementState> emit,
+  ) async {
+    emit(state.copyWith(isLoadingDetail: true, clearError: true));
+
+    try {
+      LogService.d('开始获取公告详情, id: ${event.announcementId}');
+
+      final detail = await _announcementApi.getAnnouncementDetail(event.announcementId);
+
+      if (detail != null) {
+        emit(state.copyWith(
+          currentDetail: detail,
+          isLoadingDetail: false,
+        ));
+        LogService.d('成功获取公告详情: ${detail.title}');
+      } else {
+        emit(state.copyWith(
+          isLoadingDetail: false,
+          error: '公告不存在或已被删除',
+        ));
+      }
+    } catch (e) {
+      LogService.e('获取公告详情失败: $e', e);
+      emit(state.copyWith(
+        isLoadingDetail: false,
+        error: '获取公告详情失败，请稍后重试',
+      ));
+    }
   }
 }

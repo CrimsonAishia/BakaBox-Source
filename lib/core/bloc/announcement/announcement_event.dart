@@ -53,3 +53,15 @@ class AnnouncementStartAutoRefresh extends AnnouncementEvent {}
 /// 
 /// 触发时机：应用退出或需要停止刷新时
 class AnnouncementStopAutoRefresh extends AnnouncementEvent {}
+
+/// 获取公告详情事件
+/// 
+/// 触发时机：用户点击查看公告详情
+class AnnouncementFetchDetail extends AnnouncementEvent {
+  final int announcementId;
+
+  const AnnouncementFetchDetail(this.announcementId);
+
+  @override
+  List<Object?> get props => [announcementId];
+}
