@@ -11,6 +11,7 @@ import '../../../core/utils/map_utils.dart';
 import '../../../core/utils/player_count_utils.dart';
 import '../../../core/utils/toast_utils.dart';
 import '../../../core/widgets/map_background.dart';
+import '../../../core/widgets/csgo_manual_launch_dialog.dart';
 import 'queue_settings.dart';
 
 /// 挤服窗口
@@ -122,12 +123,30 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
         ),
         child: BlocListener<QueueBloc, QueueBlocState>(
           listenWhen: (previous, current) {
-            // 只监听需要 Toast 提示的变化
+            // needManualLaunch 优先级最高，单独处理
+            if (!previous.needManualLaunch && current.needManualLaunch) return true;
+            
+            // 如果 needManualLaunch 为 true，不处理其他状态变化（避免重复提示）
+            if (current.needManualLaunch) return false;
+            
+            // 其他状态变化
             if (previous.error != current.error && current.error != null) return true;
             if (previous.connectionState != current.connectionState) return true;
+            
             return false;
           },
           listener: (context, state) {
+            // 需要手动启动 CSGO
+            if (state.needManualLaunch) {
+              showDialog(
+                context: context,
+                builder: (context) => CsgoManualLaunchDialog(
+                  serverAddress: state.serverAddress ?? widget.serverAddress,
+                ),
+              );
+              return;
+            }
+            
             // 错误提示
             if (state.error != null) {
               ToastUtils.showError(context, state.error!);

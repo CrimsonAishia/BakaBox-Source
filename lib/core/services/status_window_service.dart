@@ -120,6 +120,8 @@ class OperationState {
   
   // 错误信息
   final String? error;
+  final bool needCsgoLegacy; // 是否需要安装 CSGO Legacy
+  final bool needManualLaunch; // 是否需要手动启动 CSGO
 
   const OperationState({
     this.type = OperationType.none,
@@ -133,6 +135,8 @@ class OperationState {
     this.threadStatuses = const [],
     this.isGameRunning = false,
     this.error,
+    this.needCsgoLegacy = false,
+    this.needManualLaunch = false,
   });
 
   OperationState copyWith({
@@ -147,6 +151,8 @@ class OperationState {
     List<ThreadStatus>? threadStatuses,
     bool? isGameRunning,
     String? error,
+    bool? needCsgoLegacy,
+    bool? needManualLaunch,
   }) {
     return OperationState(
       type: type ?? this.type,
@@ -160,6 +166,8 @@ class OperationState {
       threadStatuses: threadStatuses ?? this.threadStatuses,
       isGameRunning: isGameRunning ?? this.isGameRunning,
       error: error,
+      needCsgoLegacy: needCsgoLegacy ?? this.needCsgoLegacy,
+      needManualLaunch: needManualLaunch ?? this.needManualLaunch,
     );
   }
   
@@ -239,6 +247,7 @@ class StatusWindowService {
     String? mapName,
     String? mapNameCn,
     String? mapBackground,
+    String? gameType,
   }) async {
     // 检查游戏路径是否已配置
     final hasGamePath = await _gameLauncher.hasGamePath();
@@ -250,6 +259,24 @@ class StatusWindowService {
         serverAddress: serverAddress,
         serverName: serverName,
         isGameRunning: false,
+      ));
+      return false;
+    }
+    
+    // 检查是否为 CSGO 服务器
+    final isCsgo = gameType != null && 
+        (gameType.toLowerCase().contains('csgo') || gameType.toLowerCase().contains('cs:go'));
+    
+    if (isCsgo) {
+      // CSGO 服务器无法通过 Steam URL 自动启动，需要手动启动
+      _updateState(OperationState(
+        type: OperationType.none,
+        status: OperationStatus.failed,
+        message: '此服务器需要手动启动 CSGO',
+        serverAddress: serverAddress,
+        serverName: serverName,
+        isGameRunning: false,
+        needManualLaunch: true,
       ));
       return false;
     }
@@ -342,6 +369,7 @@ class StatusWindowService {
           mapName: mapName,
           mapNameCn: mapNameCn,
           mapBackground: mapBackground,
+          gameType: gameType,
         );
       }
     } else {
@@ -365,6 +393,7 @@ class StatusWindowService {
     String? mapNameCn,
     String? mapBackground,
     bool playSuccessSound = true,
+    String? gameType,
   }) async {
     // 检查游戏路径是否已配置
     final hasGamePath = await _gameLauncher.hasGamePath();
@@ -384,13 +413,38 @@ class StatusWindowService {
     final gameRunning = await _gameLauncher.isCS2Running();
     
     if (!gameRunning) {
-      // 游戏未运行，先启动
+      // 游戏未运行，判断是否为 CSGO 服务器
+      final isCsgo = gameType != null && 
+          (gameType.toLowerCase().contains('csgo') || gameType.toLowerCase().contains('cs:go'));
+      
+      if (isCsgo) {
+        // CSGO 服务器无法自动启动，直接调用 connectToServer 让它返回错误
+        final result = await _gameLauncher.connectToServer(serverAddress, gameType: gameType);
+        
+        // 处理 CSGO 相关错误
+        if (!result.success) {
+          _updateState(OperationState(
+            type: OperationType.none,
+            status: OperationStatus.failed,
+            message: result.error,
+            serverAddress: serverAddress,
+            serverName: serverName,
+            isGameRunning: false,
+            needCsgoLegacy: result.needCsgoLegacy,
+            needManualLaunch: result.needManualLaunch,
+          ));
+        }
+        return result.success;
+      }
+      
+      // CS2 服务器，先启动游戏
       return await launchGame(
         serverAddress: serverAddress,
         serverName: serverName,
         mapName: mapName,
         mapNameCn: mapNameCn,
         mapBackground: mapBackground,
+        gameType: gameType,
       );
     }
     
@@ -413,7 +467,23 @@ class StatusWindowService {
       }
       
       // 不可监控，直接发送连接命令
-      final result = await _gameLauncher.connectToServer(serverAddress);
+      final result = await _gameLauncher.connectToServer(serverAddress, gameType: gameType);
+      
+      // 检查是否需要安装 CSGO Legacy 或手动启动
+      if (!result.success) {
+        _updateState(OperationState(
+          type: OperationType.none,
+          status: OperationStatus.failed,
+          message: result.error,
+          serverAddress: serverAddress,
+          serverName: serverName,
+          isGameRunning: true,
+          needCsgoLegacy: result.needCsgoLegacy,
+          needManualLaunch: result.needManualLaunch,
+        ));
+        return false;
+      }
+      
       if (result.success && playSuccessSound) {
         _audioService.playQueueSuccessSound();
       }
@@ -445,12 +515,14 @@ class StatusWindowService {
     );
     
     // 发送连接命令
-    final connectResult = await _gameLauncher.connectToServer(serverAddress);
+    final connectResult = await _gameLauncher.connectToServer(serverAddress, gameType: gameType);
     if (!connectResult.success) {
       _updateState(_state.copyWith(
         type: OperationType.none,  // 重置操作类型
         status: OperationStatus.failed,
         message: connectResult.error ?? _Messages.connectFailed,
+        needCsgoLegacy: connectResult.needCsgoLegacy,
+        needManualLaunch: connectResult.needManualLaunch,
       ));
       await _updateWindow(state: 'failed', message: connectResult.error ?? _Messages.connectFailed, autoDismissSeconds: 3);
       _scheduleClose(seconds: 3);
@@ -534,6 +606,26 @@ class StatusWindowService {
     if (!_gameStatusService.isGameRunning) {
       _updateState(_state.copyWith(error: _Messages.gameNotRunning));
       return false;
+    }
+    
+    // 如果是 CSGO 服务器，额外检查 CSGO 是否安装和运行
+    final gameType = serverInfo?.gameType;
+    if (gameType != null && (gameType.toLowerCase().contains('csgo') || gameType.toLowerCase().contains('cs:go'))) {
+      final isInstalled = await _gameLauncher.isCsgoLegacyInstalled();
+      if (!isInstalled) {
+        _updateState(OperationState(
+          type: OperationType.none,
+          status: OperationStatus.failed,
+          message: '此服务器需要 CSGO 客户端',
+          serverAddress: serverAddress,
+          isGameRunning: true,
+          needCsgoLegacy: true,
+        ));
+        return false;
+      }
+      
+      // 注意：这里不需要检查 CSGO 是否运行，因为前面已经检查了 isGameRunning
+      // isGameRunning 会检测 csgo.exe 和 cs2.exe
     }
     
     // 检查是否有其他操作
@@ -981,7 +1073,9 @@ class StatusWindowService {
     await _updateWindow(state: 'connecting', message: _Messages.connecting);
     
     try {
-      final result = await _gameLauncher.connectToServer(serverAddress);
+      // 从状态中获取游戏类型
+      final gameType = _state.serverInfo?.gameType;
+      final result = await _gameLauncher.connectToServer(serverAddress, gameType: gameType);
       
       if (result.success) {
         final canMonitor = _gameStatusService.isMonitorable;

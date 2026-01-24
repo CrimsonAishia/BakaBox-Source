@@ -45,12 +45,16 @@ class ServerConnectResult {
   final String? message;
   final String? error;
   final String? method;
+  final bool needCsgoLegacy; // 是否需要安装 CSGO Legacy
+  final bool needManualLaunch; // 是否需要手动启动（CSGO 已安装但无法自动启动）
 
   ServerConnectResult({
     required this.success,
     this.message,
     this.error,
     this.method,
+    this.needCsgoLegacy = false,
+    this.needManualLaunch = false,
   });
 
   factory ServerConnectResult.success({String? message, String? method}) {
@@ -61,10 +65,12 @@ class ServerConnectResult {
     );
   }
 
-  factory ServerConnectResult.failure(String error) {
+  factory ServerConnectResult.failure(String error, {bool needCsgoLegacy = false, bool needManualLaunch = false}) {
     return ServerConnectResult(
       success: false,
       error: error,
+      needCsgoLegacy: needCsgoLegacy,
+      needManualLaunch: needManualLaunch,
     );
   }
 }
@@ -169,41 +175,31 @@ class GameLauncherService {
     }
 
     try {
-      // 使用 WMIC 获取进程命令行参数
-      final result = await Process.run(
-        'wmic',
-        ['process', 'where', "name='cs2.exe'", 'get', 'CommandLine', '/format:value'],
-        runInShell: true,
-      );
+      // 检测所有游戏进程的启动参数
+      for (final processName in _gameProcessNames) {
+        try {
+          final result = await Process.run(
+            'wmic',
+            ['process', 'where', "name='$processName'", 'get', 'CommandLine', '/format:value'],
+            runInShell: true,
+          );
 
-      if (result.exitCode == 0) {
-        final output = result.stdout.toString().toLowerCase();
-        
-        // 检查是否包含 -condebug 参数
-        if (output.contains('-condebug')) {
-          LogService.d('检测到游戏带 -condebug 参数启动');
-          return true;
-        }
-        
-        // 如果有输出但没有 -condebug，说明游戏在运行但没带参数
-        if (output.contains('commandline=') && output.contains('cs2.exe')) {
-          LogService.d('游戏运行中但未带 -condebug 参数');
-          return false;
-        }
-      }
-
-      // 也检查 csgo.exe（兼容旧版本）
-      final csgoResult = await Process.run(
-        'wmic',
-        ['process', 'where', "name='csgo.exe'", 'get', 'CommandLine', '/format:value'],
-        runInShell: true,
-      );
-
-      if (csgoResult.exitCode == 0) {
-        final output = csgoResult.stdout.toString().toLowerCase();
-        if (output.contains('-condebug')) {
-          LogService.d('检测到 CSGO 带 -condebug 参数启动');
-          return true;
+          if (result.exitCode == 0) {
+            final output = result.stdout.toString().toLowerCase();
+            
+            // 检查是否包含 -condebug 参数
+            if (output.contains('-condebug') && output.contains('commandline=')) {
+              LogService.d('检测到 $processName 带 -condebug 参数启动');
+              return true;
+            }
+            
+            // 如果有输出但没有 -condebug，记录日志但继续检查其他进程
+            if (output.contains('commandline=') && output.contains(processName.toLowerCase())) {
+              LogService.d('$processName 运行中但未带 -condebug 参数');
+            }
+          }
+        } catch (e) {
+          LogService.d('检测进程 $processName 启动参数失败: $e');
         }
       }
 
@@ -215,26 +211,38 @@ class GameLauncherService {
   }
 
   /// 获取游戏进程的完整命令行参数
+  /// 返回第一个找到的游戏进程的命令行
   Future<String?> getCS2CommandLine() async {
     if (!PlatformUtils.isWindows) {
       return null;
     }
 
     try {
-      final result = await Process.run(
-        'wmic',
-        ['process', 'where', "name='cs2.exe'", 'get', 'CommandLine', '/format:value'],
-        runInShell: true,
-      );
+      // 检测所有游戏进程
+      for (final processName in _gameProcessNames) {
+        try {
+          final result = await Process.run(
+            'wmic',
+            ['process', 'where', "name='$processName'", 'get', 'CommandLine', '/format:value'],
+            runInShell: true,
+          );
 
-      if (result.exitCode == 0) {
-        final output = result.stdout.toString();
-        final lines = output.split('\n');
-        for (final line in lines) {
-          final trimmed = line.trim();
-          if (trimmed.startsWith('CommandLine=')) {
-            return trimmed.substring('CommandLine='.length).trim();
+          if (result.exitCode == 0) {
+            final output = result.stdout.toString();
+            final lines = output.split('\n');
+            for (final line in lines) {
+              final trimmed = line.trim();
+              if (trimmed.startsWith('CommandLine=')) {
+                final cmdLine = trimmed.substring('CommandLine='.length).trim();
+                if (cmdLine.isNotEmpty) {
+                  LogService.d('获取到 $processName 命令行参数');
+                  return cmdLine;
+                }
+              }
+            }
           }
+        } catch (e) {
+          LogService.d('获取 $processName 命令行参数失败: $e');
         }
       }
       return null;
@@ -391,11 +399,15 @@ class GameLauncherService {
   }
 
   /// 使用命令行连接服务器
-  Future<ServerConnectResult> _connectUsingCmdWindows(String serverAddress, String? password) async {
+  /// 
+  /// [gameType] 游戏类型，用于判断启动 CS2 还是 CSGO
+  /// 
+  /// 注意：调用此方法前，CSGO 服务器应该已经通过 connectToServer 进行了检查
+  Future<ServerConnectResult> _connectUsingCmdWindows(String serverAddress, String? password, {String? gameType}) async {
     try {
       LogService.d('使用命令行连接服务器: $serverAddress');
 
-      // 构建Steam URL
+      // 构建Steam URL（统一格式，不区分 CS2 和 CSGO）
       String steamUrl;
       if (password != null && password.isNotEmpty) {
         steamUrl = 'steam://run/$_cs2AppId//+connect $serverAddress +password $password';
@@ -425,6 +437,66 @@ class GameLauncherService {
     } catch (e) {
       LogService.e('连接服务器失败', e);
       return ServerConnectResult.failure('连接服务器失败，请检查Steam是否正常运行');
+    }
+  }
+
+  /// 判断是否为 CSGO 服务器
+  /// 
+  /// 根据 gameType 字段判断：
+  /// - 如果包含 "csgo" 或 "cs:go"（不区分大小写），返回 true
+  /// - 否则返回 false（默认为 CS2）
+  bool _isCsgoServer(String? gameType) {
+    if (gameType == null || gameType.isEmpty) {
+      return false;
+    }
+    
+    final lowerGameType = gameType.toLowerCase();
+    return lowerGameType.contains('csgo') || lowerGameType.contains('cs:go');
+  }
+
+  /// 检测是否安装了 CSGO Legacy 分支
+  /// 
+  /// 通过检查 CSGO 特有的文件来判断是否安装了 Legacy 分支
+  /// 返回值：
+  /// - true: 已安装 CSGO Legacy
+  /// - false: 未安装
+  Future<bool> isCsgoLegacyInstalled() async {
+    try {
+      // 获取游戏路径
+      String? gamePath = await getGamePath();
+      if (gamePath == null || gamePath.isEmpty) {
+        gamePath = await detectGamePath();
+      }
+      
+      if (gamePath == null) {
+        LogService.w('无法检测游戏路径，无法判断 CSGO Legacy 是否安装');
+        return false;
+      }
+
+      // CSGO Legacy 的特征文件
+      // csgo.exe 是 CSGO 的主程序，只有安装了 Legacy 分支才会存在
+      final csgoExePath = '$gamePath\\game\\bin\\win64\\csgo.exe';
+      final csgoExeExists = await File(csgoExePath).exists();
+      
+      if (csgoExeExists) {
+        LogService.d('检测到 CSGO Legacy 已安装: $csgoExePath');
+        return true;
+      }
+
+      // 备用检测：检查 csgo 文件夹
+      final csgoFolder = Directory('$gamePath\\game\\csgo');
+      final csgoFolderExists = await csgoFolder.exists();
+      
+      if (csgoFolderExists) {
+        LogService.d('检测到 CSGO 文件夹: ${csgoFolder.path}');
+        return true;
+      }
+
+      LogService.d('未检测到 CSGO Legacy 安装');
+      return false;
+    } catch (e) {
+      LogService.e('检测 CSGO Legacy 安装状态失败', e);
+      return false;
     }
   }
 
@@ -459,7 +531,8 @@ class GameLauncherService {
   /// 连接到服务器（通过Steam URL）
   /// 
   /// [address] 服务器地址，格式为 ip:port 或 ip:port;password=xxx
-  Future<ServerConnectResult> connectToServer(String address) async {
+  /// [gameType] 游戏类型，用于判断启动 CS2 还是 CSGO（可选，如果不传则默认启动 CS2）
+  Future<ServerConnectResult> connectToServer(String address, {String? gameType}) async {
     if (!isDesktopPlatform) {
       return ServerConnectResult.failure('服务器连接功能仅支持桌面平台');
     }
@@ -470,7 +543,35 @@ class GameLauncherService {
       return ServerConnectResult.failure('请先在设置中配置游戏路径');
     }
 
-    LogService.d('收到连接服务器请求，目标服务器: $address');
+    LogService.d('收到连接服务器请求，目标服务器: $address, 游戏类型: $gameType');
+
+    // 判断是否为 CSGO 服务器
+    final isCsgo = _isCsgoServer(gameType);
+    
+    // 如果是 CSGO 服务器，先进行检查
+    if (isCsgo) {
+      // 检查是否安装了 Legacy 分支
+      final isInstalled = await isCsgoLegacyInstalled();
+      if (!isInstalled) {
+        LogService.w('尝试连接 CSGO 服务器，但未检测到 CSGO Legacy 安装');
+        return ServerConnectResult.failure(
+          '此服务器需要 CSGO 客户端',
+          needCsgoLegacy: true,
+        );
+      }
+      
+      // 检查 CSGO 是否正在运行
+      final isRunning = await isCS2Running(); // 这个方法会检测 csgo.exe 和 cs2.exe
+      if (!isRunning) {
+        LogService.w('CSGO 未运行，需要用户手动启动');
+        return ServerConnectResult.failure(
+          '请先在 Steam 中启动 CSGO',
+          needManualLaunch: true,
+        );
+      }
+      
+      LogService.i('检测到 CSGO 正在运行，使用普通 connect 命令连接');
+    }
 
     // 解析地址和密码
     String serverAddress;
@@ -490,34 +591,70 @@ class GameLauncherService {
     }
 
     // 使用Steam URL连接
-    return await _connectUsingSteamUrl(serverAddress, password);
+    return await _connectUsingSteamUrl(serverAddress, password, gameType: gameType);
   }
 
   /// 连接到密码服务器
   /// 
   /// [address] 服务器地址，格式为 ip:port
   /// [password] 服务器密码
-  Future<ServerConnectResult> connectToPasswordServer(String address, String password) async {
+  /// [gameType] 游戏类型，用于判断启动 CS2 还是 CSGO（可选）
+  Future<ServerConnectResult> connectToPasswordServer(String address, String password, {String? gameType}) async {
     if (!isDesktopPlatform) {
       return ServerConnectResult.failure('服务器连接功能仅支持桌面平台');
     }
 
-    LogService.i('收到连接密码服务器请求，目标服务器: $address');
-    return await _connectUsingSteamUrl(address, password);
+    LogService.i('收到连接密码服务器请求，目标服务器: $address, 游戏类型: $gameType');
+    
+    // 判断是否为 CSGO 服务器
+    final isCsgo = _isCsgoServer(gameType);
+    
+    // 如果是 CSGO 服务器，先进行检查
+    if (isCsgo) {
+      // 检查是否安装了 Legacy 分支
+      final isInstalled = await isCsgoLegacyInstalled();
+      if (!isInstalled) {
+        LogService.w('尝试连接 CSGO 服务器，但未检测到 CSGO Legacy 安装');
+        return ServerConnectResult.failure(
+          '此服务器需要 CSGO 客户端',
+          needCsgoLegacy: true,
+        );
+      }
+      
+      // 检查 CSGO 是否正在运行
+      final isRunning = await isCS2Running();
+      if (!isRunning) {
+        LogService.w('CSGO 未运行，需要用户手动启动');
+        return ServerConnectResult.failure(
+          '请先在 Steam 中启动 CSGO',
+          needManualLaunch: true,
+        );
+      }
+      
+      LogService.i('检测到 CSGO 正在运行，使用普通 connect 命令连接');
+    }
+    
+    return await _connectUsingSteamUrl(address, password, gameType: gameType);
   }
 
   /// 使用Steam URL连接服务器
-  Future<ServerConnectResult> _connectUsingSteamUrl(String serverAddress, String? password) async {
+  /// 
+  /// [gameType] 游戏类型，用于判断启动 CS2 还是 CSGO
+  /// - 如果 gameType 包含 "csgo" 或 "cs:go"（不区分大小写），则启动 CSGO
+  /// - 否则启动 CS2
+  /// 
+  /// 注意：调用此方法前，CSGO 服务器应该已经通过 connectToServer 进行了检查
+  Future<ServerConnectResult> _connectUsingSteamUrl(String serverAddress, String? password, {String? gameType}) async {
     // Windows使用命令行方式
     if (PlatformUtils.isWindows) {
-      return await _connectUsingCmdWindows(serverAddress, password);
+      return await _connectUsingCmdWindows(serverAddress, password, gameType: gameType);
     }
 
     // 其他平台使用url_launcher
     try {
       LogService.d('使用Steam URL连接服务器: $serverAddress');
 
-      // 构建Steam URL
+      // 构建Steam URL（统一格式，不区分 CS2 和 CSGO）
       String steamUrl;
       if (password != null && password.isNotEmpty) {
         steamUrl = 'steam://run/$_cs2AppId//+connect $serverAddress +password $password';
@@ -549,13 +686,47 @@ class GameLauncherService {
   /// 启动游戏并连接到服务器
   /// 
   /// [address] 服务器地址，格式为 ip:port 或 ip:port;password=xxx
-  Future<ServerConnectResult> launchAndConnect(String address) async {
+  /// [gameType] 游戏类型，用于判断启动 CS2 还是 CSGO（可选）
+  /// 
+  /// 注意：CSGO 服务器无法自动启动，会返回 needManualLaunch 错误
+  Future<ServerConnectResult> launchAndConnect(String address, {String? gameType}) async {
     if (!isDesktopPlatform) {
       return ServerConnectResult.failure('游戏启动功能仅支持桌面平台');
     }
 
-    LogService.i('启动游戏并连接到服务器: $address');
+    LogService.i('启动游戏并连接到服务器: $address, 游戏类型: $gameType');
 
+    // 判断是否为 CSGO 服务器
+    final isCsgo = _isCsgoServer(gameType);
+    
+    // 如果是 CSGO 服务器，无法自动启动
+    if (isCsgo) {
+      // 检查是否安装了 Legacy 分支
+      final isInstalled = await isCsgoLegacyInstalled();
+      if (!isInstalled) {
+        LogService.w('尝试启动 CSGO 服务器，但未检测到 CSGO Legacy 安装');
+        return ServerConnectResult.failure(
+          '此服务器需要 CSGO 客户端',
+          needCsgoLegacy: true,
+        );
+      }
+      
+      // 检查 CSGO 是否正在运行
+      final isRunning = await isCS2Running();
+      if (!isRunning) {
+        LogService.w('无法自动启动 CSGO，需要用户手动启动');
+        return ServerConnectResult.failure(
+          '请先在 Steam 中启动 CSGO',
+          needManualLaunch: true,
+        );
+      }
+      
+      // CSGO 已在运行，直接连接
+      LogService.i('检测到 CSGO 正在运行，直接连接');
+      return await connectToServer(address, gameType: gameType);
+    }
+
+    // CS2 服务器，正常启动并连接
     // 解析地址和密码
     String serverAddress;
     String? password;
@@ -569,7 +740,7 @@ class GameLauncherService {
     }
 
     // 直接使用Steam URL启动并连接
-    return await _connectUsingSteamUrl(serverAddress, password);
+    return await _connectUsingSteamUrl(serverAddress, password, gameType: gameType);
   }
 
   // ==================== 配置管理 ====================

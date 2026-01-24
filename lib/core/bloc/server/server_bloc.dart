@@ -471,13 +471,36 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     if (address == null) return;
 
     final gameLauncher = GameLauncherService();
+    // 获取服务器的游戏类型
+    final gameType = event.server.serverData?.gameType;
+    
     try {
       final result = event.password?.isNotEmpty == true
-          ? await gameLauncher.connectToPasswordServer(address, event.password!)
-          : await gameLauncher.connectToServer(address);
-      LogService.i(result.success ? '连接命令已发送: ${result.message}' : '连接失败: ${result.error}');
+          ? await gameLauncher.connectToPasswordServer(address, event.password!, gameType: gameType)
+          : await gameLauncher.connectToServer(address, gameType: gameType);
+      
+      if (result.success) {
+        LogService.i('连接命令已发送: ${result.message}');
+        emit(state.copyWith(
+          successMessage: result.message,
+          needCsgoLegacy: false,
+          needManualLaunch: false,
+        ));
+      } else {
+        LogService.w('连接失败: ${result.error}');
+        emit(state.copyWith(
+          error: result.error,
+          needCsgoLegacy: result.needCsgoLegacy,
+          needManualLaunch: result.needManualLaunch,
+        ));
+      }
     } catch (e) {
       LogService.e('连接服务器异常: $e', e);
+      emit(state.copyWith(
+        error: '连接服务器异常',
+        needCsgoLegacy: false,
+        needManualLaunch: false,
+      ));
     }
   }
 

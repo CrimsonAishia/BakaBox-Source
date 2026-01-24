@@ -18,6 +18,8 @@ class ServerState extends Equatable {
   final bool isCountdownActive; // 倒计时是否激活
   final Set<String> refreshingMaps; // 正在刷新缓存的服务器地址集合
   final int selectedTabIndex; // 当前选中的 tab 索引（0=默认分类，1=自定义分类）
+  final bool needCsgoLegacy; // 是否需要安装 CSGO Legacy
+  final bool needManualLaunch; // 是否需要手动启动 CSGO
 
   const ServerState({
     this.serverCategories = const [],
@@ -36,6 +38,8 @@ class ServerState extends Equatable {
     this.isCountdownActive = false,
     this.refreshingMaps = const {},
     this.selectedTabIndex = 0,
+    this.needCsgoLegacy = false,
+    this.needManualLaunch = false,
   });
 
   ServerState copyWith({
@@ -56,6 +60,8 @@ class ServerState extends Equatable {
     bool? isCountdownActive,
     Set<String>? refreshingMaps,
     int? selectedTabIndex,
+    bool? needCsgoLegacy,
+    bool? needManualLaunch,
   }) {
     return ServerState(
       serverCategories: serverCategories ?? this.serverCategories,
@@ -74,6 +80,8 @@ class ServerState extends Equatable {
       isCountdownActive: isCountdownActive ?? this.isCountdownActive,
       refreshingMaps: refreshingMaps ?? this.refreshingMaps,
       selectedTabIndex: selectedTabIndex ?? this.selectedTabIndex,
+      needCsgoLegacy: needCsgoLegacy ?? this.needCsgoLegacy,
+      needManualLaunch: needManualLaunch ?? this.needManualLaunch,
     );
   }
 
@@ -98,6 +106,6 @@ class ServerState extends Equatable {
     serverCategories, isLoading, error, successMessage, selectedCategory, servers,
     isLoadingServers, isPaused, categoryOnlineCounts, loadingCategories,
     isLoadingOnlineCounts, hasEverLoadedOnlineCounts, countdownResetKey,
-    isCountdownActive, refreshingMaps, selectedTabIndex,
+    isCountdownActive, refreshingMaps, selectedTabIndex, needCsgoLegacy, needManualLaunch,
   ];
 }
