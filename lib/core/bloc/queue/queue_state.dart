@@ -76,6 +76,9 @@ class QueueBlocState extends Equatable {
   
   /// 服务器地址
   final String? serverAddress;
+  
+  /// 是否需要手动启动 CSGO
+  final bool needManualLaunch;
 
   const QueueBlocState({
     this.status = QueueStatus.idle,
@@ -92,6 +95,7 @@ class QueueBlocState extends Equatable {
     this.error,
     this.isInitialized = false,
     this.serverAddress,
+    this.needManualLaunch = false,
   });
 
   /// 是否正在挤服
@@ -131,6 +135,7 @@ class QueueBlocState extends Equatable {
     String? error,
     bool? isInitialized,
     String? serverAddress,
+    bool? needManualLaunch,
   }) {
     return QueueBlocState(
       status: status ?? this.status,
@@ -147,6 +152,7 @@ class QueueBlocState extends Equatable {
       error: error,
       isInitialized: isInitialized ?? this.isInitialized,
       serverAddress: serverAddress ?? this.serverAddress,
+      needManualLaunch: needManualLaunch ?? this.needManualLaunch,
     );
   }
 
@@ -166,5 +172,6 @@ class QueueBlocState extends Equatable {
     error,
     isInitialized,
     serverAddress,
+    needManualLaunch,
   ];
 }

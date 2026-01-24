@@ -12,6 +12,8 @@ import '../../../core/utils/toast_utils.dart';
 import '../../../core/services/status_window_service.dart';
 import '../../../core/services/map_change_monitor_service.dart';
 import '../../../core/widgets/map_background.dart';
+import '../../../core/widgets/csgo_legacy_install_dialog.dart';
+import '../../../core/widgets/csgo_manual_launch_dialog.dart';
 import 'server_history_dialog.dart';
 import 'server_card_skeleton.dart';
 import '../queue/queue_window.dart';
@@ -1222,6 +1224,7 @@ class _ServerCardState extends State<ServerCard>
     final serverName = widget.server.serverData?.hostName ?? address;
     final mapName = widget.server.serverData?.map;
     final mapInfo = widget.server.mapInfo;
+    final gameType = widget.server.serverData?.gameType;
 
     // 使用已有的 StatusWindowService 实例
     final success = await _statusService.connectToServer(
@@ -1230,6 +1233,7 @@ class _ServerCardState extends State<ServerCard>
       mapName: mapName,
       mapNameCn: mapInfo?.mapLabel,
       mapBackground: mapInfo?.mapUrl,
+      gameType: gameType,
     );
 
     // connectToServer 返回后，连接流程已完成，此时显示 Toast
@@ -1237,6 +1241,12 @@ class _ServerCardState extends State<ServerCard>
       final state = _statusService.state;
       if (success) {
         ToastUtils.showSuccess(context, '进去啦！');
+      } else if (state.needCsgoLegacy) {
+        // 需要安装 CSGO Legacy，显示教程对话框
+        _showCsgoLegacyInstallDialog();
+      } else if (state.needManualLaunch) {
+        // CSGO 已安装但未运行，显示手动启动对话框
+        _showCsgoManualLaunchDialog(address);
       } else if (state.status == OperationStatus.serverFull) {
         ToastUtils.showWarning(context, '服务器已满');
       } else if (state.message != null && state.message!.isNotEmpty) {
@@ -1244,6 +1254,22 @@ class _ServerCardState extends State<ServerCard>
       }
       setState(() => _isConnecting = false);
     }
+  }
+
+  void _showCsgoLegacyInstallDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => const CsgoLegacyInstallDialog(),
+    );
+  }
+
+  void _showCsgoManualLaunchDialog(String serverAddress) {
+    showDialog(
+      context: context,
+      builder: (context) => CsgoManualLaunchDialog(
+        serverAddress: serverAddress,
+      ),
+    );
   }
 
   void _copyConnectCommand(String address) {

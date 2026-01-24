@@ -259,6 +259,7 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
     emit(state.copyWith(
       isLaunchingGame: true,
       launchMessage: '正在启动游戏...',
+      needManualLaunch: false, // 重置状态
     ));
     
     final success = await _statusService.launchGame(
@@ -267,13 +268,16 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
       mapName: state.serverInfo?.map,
       mapNameCn: state.mapInfo?.mapLabel,
       mapBackground: state.mapInfo?.mapUrl,
+      gameType: state.serverInfo?.gameType,
     );
     
+    // 只在这里设置一次 needManualLaunch
     emit(state.copyWith(
       isLaunchingGame: false,
       launchMessage: success ? '启动成功' : null,
       isGameRunning: success,
       error: success ? null : '游戏启动失败',
+      needManualLaunch: _statusService.state.needManualLaunch,
     ));
   }
 
@@ -293,7 +297,7 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
   ) {
     final serviceState = event.state;
     
-    // 如果正在启动游戏，忽略服务状态更新
+    // 如果正在启动游戏，忽略服务状态更新（避免干扰 _onLaunchGame）
     if (state.isLaunchingGame) {
       return;
     }
@@ -369,6 +373,8 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
       isGameRunning: serviceState.isGameRunning,
       config: updatedConfig,
       error: serviceState.error,
+      // 保持当前的 needManualLaunch 状态，不被 StatusWindowService 覆盖
+      // needManualLaunch 只由 _onLaunchGame 控制
     ));
   }
 
