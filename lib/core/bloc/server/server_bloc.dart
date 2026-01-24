@@ -492,69 +492,106 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       final isFirstLoad = !state.hasEverLoadedOnlineCounts;
       if (isFirstLoad) emit(state.copyWith(isLoadingOnlineCounts: true));
       
-      // 先重置所有分类人数为 0（避免累加到旧数据）
-      final resetCounts = <String, int>{};
+      // 记录当前选中分类名
+      final selectedCategoryName = state.selectedCategory?.modelName;
+      
+      // 从现有的 categoryOnlineCounts 复制，保留当前选中分类的人数
+      final currentCounts = Map<String, int>.from(state.categoryOnlineCounts);
+      
+      // 为所有分类初始化默认值 0（如果还没有记录）
       for (final category in state.serverCategories) {
         final categoryName = category.modelName ?? '';
-        resetCounts[categoryName] = 0;
+        if (!currentCounts.containsKey(categoryName)) {
+          currentCounts[categoryName] = 0;
+        }
       }
-      emit(state.copyWith(categoryOnlineCounts: resetCounts));
       
-      // 记录当前选中分类名，用于跳过重复查询
-      final selectedCategoryName = state.selectedCategory?.modelName;
+      // 先 emit 初始化的数据（显示 0）
+      if (!emit.isDone && isFirstLoad) {
+        emit(state.copyWith(
+          categoryOnlineCounts: currentCounts,
+          isLoadingOnlineCounts: true,
+          hasEverLoadedOnlineCounts: true,
+        ));
+      }
+      
+      // 创建共享的 Map 用于收集所有分类的人数（避免并发覆盖）
+      final sharedCounts = Map<String, int>.from(currentCounts);
       
       final futures = <Future<void>>[];
       
       for (final category in state.serverCategories) {
         final categoryName = category.modelName ?? '';
         
-        // 当前选中分类且已有服务器数据时，直接从 state.servers 计算，不再发起网络请求
-        if (categoryName == selectedCategoryName && state.servers.any((s) => s.serverData != null)) {
-          int totalOnline = state.servers.fold(0, (sum, s) => sum + (s.serverData?.players ?? 0));
-          final updatedCounts = Map<String, int>.from(state.categoryOnlineCounts)..[categoryName] = totalOnline;
-          emit(state.copyWith(categoryOnlineCounts: updatedCounts));
+        // 跳过当前选中的分类，由 _updateCurrentCategoryOnlineCount 负责更新
+        // 避免与 _fetchServersInfo 并发查询导致数据覆盖
+        if (categoryName == selectedCategoryName) {
+          // 如果已有服务器数据，立即更新；否则保留现有值，等待 _fetchServersInfo 完成
+          if (state.servers.any((s) => s.serverData != null)) {
+            int totalOnline = state.servers.fold(0, (sum, s) => sum + (s.serverData?.players ?? 0));
+            sharedCounts[categoryName] = totalOnline;
+            if (!emit.isDone) {
+              emit(state.copyWith(categoryOnlineCounts: Map<String, int>.from(sharedCounts)));
+            }
+          }
           continue;
         }
         
-        futures.add(_fetchCategoryOnlineCountAsync(category, selectedCategoryName, emit));
+        // 其他分类：异步查询人数，每个完成后立即更新
+        futures.add(_fetchCategoryOnlineCountWithEmit(category, sharedCounts, emit));
       }
       
       if (futures.isNotEmpty) await Future.wait(futures);
       
+      // 所有分类查询完成，关闭加载状态
       if (!emit.isDone) {
-        emit(state.copyWith(isLoadingOnlineCounts: false, hasEverLoadedOnlineCounts: true));
+        emit(state.copyWith(isLoadingOnlineCounts: false));
       }
     } finally {
       _isUpdatingCategoryOnlineCounts = false;
     }
   }
 
-  Future<void> _fetchCategoryOnlineCountAsync(ServerCategory category, String? selectedCategoryName, Emitter<ServerState> emit) async {
+  /// 获取单个分类的在线人数（查询完成后立即更新状态）
+  /// 使用共享的 countsMap 避免并发覆盖问题
+  Future<void> _fetchCategoryOnlineCountWithEmit(
+    ServerCategory category, 
+    Map<String, int> countsMap,
+    Emitter<ServerState> emit,
+  ) async {
     final categoryName = category.modelName ?? '';
     
-    // 如果是当前选中分类，跳过（由 _updateCurrentCategoryOnlineCount 处理，避免重复查询导致人数翻倍）
-    if (categoryName == selectedCategoryName) return;
-    
-    // 收集所有服务器人数后一次性更新，避免并发累加时的竞态条件
-    final futures = <Future<int>>[];
-    
-    for (final serverItem in category.serverList) {
-      final address = serverItem.address ?? serverItem.serverAddress;
-      if (address != null) {
-        futures.add(_fetchSingleServerPlayerCount(address));
-      }
-    }
-    
-    if (futures.isNotEmpty) {
-      final results = await Future.wait(futures);
-      final totalPlayers = results.fold(0, (sum, count) => sum + count);
+    try {
+      // 收集所有服务器人数
+      final futures = <Future<int>>[];
       
-      // 一次性更新该分类的总人数
+      for (final serverItem in category.serverList) {
+        final address = serverItem.address ?? serverItem.serverAddress;
+        if (address != null) {
+          futures.add(_fetchSingleServerPlayerCount(address));
+        }
+      }
+      
+      int totalPlayers = 0;
+      if (futures.isNotEmpty) {
+        final results = await Future.wait(futures);
+        totalPlayers = results.fold(0, (sum, count) => sum + count);
+      }
+      
+      // 更新共享 Map（线程安全，因为 Dart 是单线程）
+      countsMap[categoryName] = totalPlayers;
+      
+      // 查询完成后立即 emit
+      // 从 state.categoryOnlineCounts 获取最新值，只更新当前分类
+      // 这样可以保留其他分类的最新人数（包括当前选中分类）
       if (!emit.isDone) {
-        final updatedCounts = Map<String, int>.from(state.categoryOnlineCounts)
-          ..[categoryName] = totalPlayers;
+        final updatedCounts = Map<String, int>.from(state.categoryOnlineCounts);
+        updatedCounts[categoryName] = totalPlayers;
         emit(state.copyWith(categoryOnlineCounts: updatedCounts));
       }
+    } catch (e) {
+      // 查询失败时保持为 0（已在初始化中设置）
+      LogService.e('获取分类在线人数失败 ($categoryName): $e', e);
     }
   }
   
@@ -887,15 +924,6 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     }
     
     LogService.d('清理 ServerBloc 缓存: 移除 ${toRemove.length} 条旧数据');
-  }
-  
-  /// 清理刷新历史中的过期记录
-  void _cleanupRefreshHistory() {
-    final now = DateTime.now();
-    _refreshHistory.removeWhere((_, history) {
-      history.removeWhere((time) => now.difference(time) > _refreshWindow);
-      return history.isEmpty;
-    });
   }
   
   /// 切换分类 tab

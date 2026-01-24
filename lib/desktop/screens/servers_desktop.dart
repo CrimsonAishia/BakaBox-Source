@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,6 +15,8 @@ import '../widgets/add_server_dialog.dart';
 
 /// 自动刷新间隔（秒）
 const int _kRefreshInterval = 15;
+/// 分类人数刷新间隔（秒）- 未选中分类的刷新频率
+const int _kCategoryCountsRefreshInterval = 60;
 
 class ServersDesktop extends StatefulWidget {
   const ServersDesktop({super.key});
@@ -38,6 +41,10 @@ class _ServersDesktopState extends State<ServersDesktop> {
   
   // Ping 相关
   int _lastPingRequestId = 0;
+  
+  // 分类人数刷新定时器
+  Timer? _categoryCountsRefreshTimer;
+  int _categoryCountsCountdown = _kCategoryCountsRefreshInterval;
 
   @override
   void initState() {
@@ -47,6 +54,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
     _serversScrollController.addListener(_updateServersScrollIndicators);
     // 监听分类列表滚动
     _categoriesScrollController.addListener(_updateCategoriesScrollIndicators);
+    
+    // 启动分类人数刷新定时器
+    _startCategoryCountsRefreshTimer();
   }
   
   void _updateServersScrollIndicators() {
@@ -237,9 +247,37 @@ class _ServersDesktopState extends State<ServersDesktop> {
     context.read<ServerBloc>().add(ServerSelectCategory(category));
   }
 
+  /// 启动分类人数刷新定时器
+  void _startCategoryCountsRefreshTimer() {
+    _categoryCountsRefreshTimer?.cancel();
+    _categoryCountsCountdown = _kCategoryCountsRefreshInterval;
+    
+    _categoryCountsRefreshTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      
+      _categoryCountsCountdown--;
+      
+      if (_categoryCountsCountdown <= 0) {
+        // 触发分类人数刷新
+        _serverBloc?.add(ServerUpdateCategoryOnlineCounts());
+        _categoryCountsCountdown = _kCategoryCountsRefreshInterval;
+      }
+    });
+  }
+  
+  /// 停止分类人数刷新定时器
+  void _stopCategoryCountsRefreshTimer() {
+    _categoryCountsRefreshTimer?.cancel();
+    _categoryCountsRefreshTimer = null;
+  }
+
   @override
   void dispose() {
     _serverBloc?.add(ServerStopPeriodicRefresh());
+    _stopCategoryCountsRefreshTimer();
     _serversScrollController.removeListener(_updateServersScrollIndicators);
     _categoriesScrollController.removeListener(_updateCategoriesScrollIndicators);
     _serversScrollController.dispose();
@@ -791,50 +829,6 @@ class _ServersDesktopState extends State<ServersDesktop> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  /// 分类列表头部（包含添加按钮）- 已废弃，功能移至 Tab 栏
-  @Deprecated('Use _buildTabBar instead')
-  Widget _buildCategoryHeader() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(
-      padding: const EdgeInsets.all(15),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              '服务器分类',
-              style: TextStyle(
-                color: isDark ? Colors.white70 : const Color(0xFF6B7280),
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-          // 添加分类按钮
-          Tooltip(
-            message: '添加自定义分类',
-            child: InkWell(
-              onTap: _showAddCategoryDialog,
-              borderRadius: BorderRadius.circular(6),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0080FF).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Icon(
-                  Icons.add_rounded,
-                  size: 20,
-                  color: Color(0xFF0080FF),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
