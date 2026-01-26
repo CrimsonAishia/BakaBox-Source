@@ -168,6 +168,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       LogService.e('服务器刷新异常: $e', e);
     } finally {
       // 无论成功、失败、超时，都要清除 loading 状态
+      // lastRefreshTime 由 _fetchServersInfo 记录，如果超时则不会记录
       if (!emit.isDone && requestId == _currentRequestId) {
         final updatedLoadingCategories = Set<String>.from(state.loadingCategories)..remove(categoryName);
         emit(state.copyWith(loadingCategories: updatedLoadingCategories));
@@ -202,7 +203,10 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     
     if (!emit.isDone && requestId == _currentRequestId) {
       _updateCurrentCategoryOnlineCount(emit);
-      emit(state.copyWith(isLoadingServers: false));
+      emit(state.copyWith(
+        isLoadingServers: false,
+        lastRefreshTime: DateTime.now(), // 记录刷新时间
+      ));
     }
     
     _clearRecentlyUpdatedAfterDelay(requestId);

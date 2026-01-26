@@ -20,6 +20,7 @@ class ServerState extends Equatable {
   final int selectedTabIndex; // 当前选中的 tab 索引（0=默认分类，1=自定义分类）
   final bool needCsgoLegacy; // 是否需要安装 CSGO Legacy
   final bool needManualLaunch; // 是否需要手动启动 CSGO
+  final DateTime? lastRefreshTime; // 最后一次刷新时间
 
   const ServerState({
     this.serverCategories = const [],
@@ -40,6 +41,7 @@ class ServerState extends Equatable {
     this.selectedTabIndex = 0,
     this.needCsgoLegacy = false,
     this.needManualLaunch = false,
+    this.lastRefreshTime,
   });
 
   ServerState copyWith({
@@ -62,6 +64,7 @@ class ServerState extends Equatable {
     int? selectedTabIndex,
     bool? needCsgoLegacy,
     bool? needManualLaunch,
+    DateTime? lastRefreshTime,
   }) {
     return ServerState(
       serverCategories: serverCategories ?? this.serverCategories,
@@ -82,6 +85,7 @@ class ServerState extends Equatable {
       selectedTabIndex: selectedTabIndex ?? this.selectedTabIndex,
       needCsgoLegacy: needCsgoLegacy ?? this.needCsgoLegacy,
       needManualLaunch: needManualLaunch ?? this.needManualLaunch,
+      lastRefreshTime: lastRefreshTime ?? this.lastRefreshTime,
     );
   }
 
@@ -107,5 +111,6 @@ class ServerState extends Equatable {
     isLoadingServers, isPaused, categoryOnlineCounts, loadingCategories,
     isLoadingOnlineCounts, hasEverLoadedOnlineCounts, countdownResetKey,
     isCountdownActive, refreshingMaps, selectedTabIndex, needCsgoLegacy, needManualLaunch,
+    lastRefreshTime,
   ];
 }
