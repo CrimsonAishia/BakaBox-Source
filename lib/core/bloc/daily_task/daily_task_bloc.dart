@@ -131,6 +131,18 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
 
       LogService.d('[DailyTask] 本地缓存：checkInReward=$checkInReward, shakeReward=$shakeReward');
 
+      // 摇一摇奖励逻辑：
+      // 1. 如果本地有缓存 → 使用缓存
+      // 2. 如果本地没有缓存但已摇过 → 使用服务器返回的金额并保存
+      // 3. 如果未摇过 → 不显示金额（即使服务器返回了预设金额）
+      int? finalShakeReward = shakeReward;
+      if (shakeReward == null && shakeResult.alreadyShaked && shakeResult.rewardAmount != null) {
+        // 已摇过但本地没有缓存，使用服务器返回的金额并保存
+        finalShakeReward = shakeResult.rewardAmount;
+        await _saveShakeReward(finalShakeReward!);
+        LogService.d('[DailyTask] 已摇过但无缓存，保存服务器返回的奖励：$finalShakeReward');
+      }
+
       emit(state.copyWith(
         isCheckingStatus: false,
         hasCheckedIn: checkInResult.hasCheckedIn,
@@ -138,8 +150,8 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
         clearCheckInReward: checkInReward == null,
         canShake: shakeResult.canShake,
         hasShaked: shakeResult.alreadyShaked,
-        shakeRewardAmount: shakeReward,
-        clearShakeReward: shakeReward == null,
+        shakeRewardAmount: finalShakeReward,
+        clearShakeReward: finalShakeReward == null,
       ));
 
       // 更新检查日期（确保成功后才更新）

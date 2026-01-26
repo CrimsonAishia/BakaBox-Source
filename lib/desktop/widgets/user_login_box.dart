@@ -595,7 +595,7 @@ class _ShakeButton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = isDark ? Colors.white70 : const Color(0xFF6B7280);
 
-    // 已摇过 - 显示绿色完成状态和奖励金额，但仍可点击打开摇一摇弹窗
+    // 已摇过 - 显示绿色完成状态和奖励金额，按钮禁用
     if (state.hasShaked) {
       final rewardText = state.shakeRewardAmount != null
           ? '+${state.shakeRewardAmount}'
@@ -603,11 +603,12 @@ class _ShakeButton extends StatelessWidget {
       return SizedBox(
         height: 32,
         child: OutlinedButton.icon(
-          onPressed: () => ShakeDialog.show(context),
+          onPressed: null, // 已摇过，禁用按钮
           icon: const Icon(Icons.check, size: 14),
           label: Text(rewardText, style: const TextStyle(fontSize: 11)),
           style: OutlinedButton.styleFrom(
             foregroundColor: Colors.green,
+            disabledForegroundColor: Colors.green,
             side: BorderSide(color: Colors.green.withValues(alpha: 0.5)),
             padding: const EdgeInsets.symmetric(horizontal: 8),
             shape: RoundedRectangleBorder(
