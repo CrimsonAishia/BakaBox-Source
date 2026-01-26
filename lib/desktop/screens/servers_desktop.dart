@@ -208,6 +208,14 @@ class _ServersDesktopState extends State<ServersDesktop> {
           } else {
             // 分类已加载，检查是否需要自动选择第一个分类
             _autoSelectFirstCategory(bloc.state);
+            
+            // 检查是否需要立即刷新：如果距离上次刷新超过5秒，立即刷新
+            final lastRefresh = bloc.state.lastRefreshTime;
+            if (lastRefresh != null && 
+                bloc.state.selectedCategory != null &&
+                DateTime.now().difference(lastRefresh).inSeconds > 5) {
+              bloc.add(ServerRefreshServers());
+            }
           }
           bloc.add(ServerStartPeriodicRefresh());
         }
