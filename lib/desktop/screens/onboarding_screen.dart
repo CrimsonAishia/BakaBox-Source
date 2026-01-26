@@ -789,9 +789,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       listener: (context, state) {
         setState(() => _isLoggingIn = state.status == AuthStatus.loading);
         
-        // 登录成功后触发每日任务状态检查（强制刷新）
+        // 登录成功后触发每日任务状态检查
         if (state.isAuthenticated && state.userInfo != null) {
-          context.read<DailyTaskBloc>().add(const DailyTaskCheckStatusRequested(forceRefresh: true));
+          context.read<DailyTaskBloc>().add(const DailyTaskCheckStatusRequested());
         }
         // 登录成功后不自动跳转，让用户看到成功状态后手动点击下一步
       },

@@ -9,13 +9,7 @@ abstract class DailyTaskEvent extends Equatable {
 
 /// 检查每日任务状态（签到+摇一摇）
 class DailyTaskCheckStatusRequested extends DailyTaskEvent {
-  /// 是否强制刷新（忽略跨天检查）
-  final bool forceRefresh;
-  
-  const DailyTaskCheckStatusRequested({this.forceRefresh = false});
-
-  @override
-  List<Object?> get props => [forceRefresh];
+  const DailyTaskCheckStatusRequested();
 }
 
 /// 执行签到
