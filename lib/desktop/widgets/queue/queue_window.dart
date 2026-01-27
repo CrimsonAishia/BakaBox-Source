@@ -366,6 +366,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
             disabled: state.isQueueActive || state.isConnecting,
             isGameRunning: state.isGameRunning,
             maxPlayers: state.serverInfo?.maxPlayers ?? 64,
+            gameType: state.serverInfo?.gameType,
             onTargetPlayersChanged: (value) {
               context.read<QueueBloc>().add(QueueSetTargetPlayers(value));
             },

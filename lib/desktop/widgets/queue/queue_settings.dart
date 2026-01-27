@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
+import '../../../core/utils/server_item_utils.dart';
+
 /// 挤服设置面板
 class QueueSettings extends StatelessWidget {
   final int targetPlayers;
@@ -9,6 +11,7 @@ class QueueSettings extends StatelessWidget {
   final bool disabled;
   final bool isGameRunning;
   final int maxPlayers; // 服务器最大人数
+  final String? gameType; // 游戏类型，用于判断是否为 CSGO
   final ValueChanged<int>? onTargetPlayersChanged;
   final ValueChanged<int>? onThreadCountChanged;
   final ValueChanged<bool>? onAutoRetryChanged;
@@ -21,6 +24,7 @@ class QueueSettings extends StatelessWidget {
     this.disabled = false,
     this.isGameRunning = false,
     this.maxPlayers = 64,
+    this.gameType,
     this.onTargetPlayersChanged,
     this.onThreadCountChanged,
     this.onAutoRetryChanged,
@@ -30,6 +34,9 @@ class QueueSettings extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    
+    // 判断是否为 CSGO 服务器
+    final isCsgoServer = ServerItemUtils.isCsgoServer(gameType);
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -74,10 +81,12 @@ class QueueSettings extends StatelessWidget {
           
           // 线程数量设置
           _buildThreadCountSlider(context, isDark),
-          const SizedBox(height: 16),
           
-          // 自动重试开关
-          _buildAutoRetrySwitch(context, isDark),
+          // 自动重试开关（CSGO 服务器不显示）
+          if (!isCsgoServer) ...[
+            const SizedBox(height: 16),
+            _buildAutoRetrySwitch(context, isDark),
+          ],
         ],
       ),
     );
