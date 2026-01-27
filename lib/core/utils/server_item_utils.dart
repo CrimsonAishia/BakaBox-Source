@@ -99,6 +99,20 @@ class ServerItemUtils {
     if (percentage > 0) return ServerPopularityStatus.low;
     return ServerPopularityStatus.empty;
   }
+
+  /// 判断是否为 CSGO 服务器
+  /// 
+  /// 根据 gameType 字段判断：
+  /// - 如果包含 "csgo" 或 "cs:go"（不区分大小写），返回 true
+  /// - 否则返回 false（默认为 CS2）
+  static bool isCsgoServer(String? gameType) {
+    if (gameType == null || gameType.isEmpty) {
+      return false;
+    }
+    
+    final lowerGameType = gameType.toLowerCase();
+    return lowerGameType.contains('csgo') || lowerGameType.contains('cs:go');
+  }
 }
 
 enum ServerPopularityStatus { empty, low, medium, high, full }

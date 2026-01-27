@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../utils/log_service.dart';
 import '../utils/platform_utils.dart';
+import '../utils/server_item_utils.dart';
 import '../utils/storage_utils.dart';
 import 'console_log_service.dart';
 import 'game_status_service.dart';
@@ -486,20 +487,6 @@ class GameLauncherService {
     }
   }
 
-  /// 判断是否为 CSGO 服务器
-  /// 
-  /// 根据 gameType 字段判断：
-  /// - 如果包含 "csgo" 或 "cs:go"（不区分大小写），返回 true
-  /// - 否则返回 false（默认为 CS2）
-  bool _isCsgoServer(String? gameType) {
-    if (gameType == null || gameType.isEmpty) {
-      return false;
-    }
-    
-    final lowerGameType = gameType.toLowerCase();
-    return lowerGameType.contains('csgo') || lowerGameType.contains('cs:go');
-  }
-
   /// 验证游戏类型是否匹配
   /// 
   /// 返回值：
@@ -507,7 +494,7 @@ class GameLauncherService {
   /// - ServerConnectResult: 验证失败，返回错误结果
   Future<ServerConnectResult?> _validateGameTypeMatch(String? gameType) async {
     // 判断是否为 CSGO 服务器
-    final isCsgo = _isCsgoServer(gameType);
+    final isCsgo = ServerItemUtils.isCsgoServer(gameType);
     
     // 检查游戏是否正在运行
     final isRunning = await isCS2Running();
@@ -660,7 +647,7 @@ class GameLauncherService {
     }
     
     // 判断是否为 CSGO 服务器
-    final isCsgo = _isCsgoServer(gameType);
+    final isCsgo = ServerItemUtils.isCsgoServer(gameType);
     final isRunning = await isCS2Running();
     
     // 验证 CSGO 前置条件
@@ -709,7 +696,7 @@ class GameLauncherService {
     }
     
     // 判断是否为 CSGO 服务器
-    final isCsgo = _isCsgoServer(gameType);
+    final isCsgo = ServerItemUtils.isCsgoServer(gameType);
     final isRunning = await isCS2Running();
     
     // 验证 CSGO 前置条件
@@ -787,7 +774,7 @@ class GameLauncherService {
     }
     
     // 判断是否为 CSGO 服务器
-    final isCsgo = _isCsgoServer(gameType);
+    final isCsgo = ServerItemUtils.isCsgoServer(gameType);
     final isRunning = await isCS2Running();
     
     // 如果是 CSGO 服务器，无法自动启动
