@@ -12,6 +12,47 @@ class CsgoManualLaunchDialog extends StatelessWidget {
     required this.serverAddress,
   });
 
+  /// 构建步骤项
+  Widget _buildStep(BuildContext context, String number, String text, bool isDark) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: Colors.orange.withValues(alpha: 0.2),
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(
+              number,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.orange,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.white70 : Colors.black87,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -98,7 +139,7 @@ class CsgoManualLaunchDialog extends StatelessWidget {
                   
                   // 启动说明
                   Text(
-                    '请在 Steam 中手动启动 CSGO：',
+                    '请按以下步骤在 Steam 中启动 CSGO：',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -117,28 +158,65 @@ class CsgoManualLaunchDialog extends StatelessWidget {
                         color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.1),
                       ),
                     ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildStep(
+                          context,
+                          '1',
+                          '打开 Steam 客户端',
+                          isDark,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildStep(
+                          context,
+                          '2',
+                          '找到「Counter-Strike 2」游戏',
+                          isDark,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildStep(
+                          context,
+                          '3',
+                          '点击「开始游戏」按钮',
+                          isDark,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildStep(
+                          context,
+                          '4',
+                          '在弹出的启动选项对话框中选择「Legacy Version of CS:GO」',
+                          isDark,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // 提示信息
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.blue.withValues(alpha: 0.3),
+                      ),
+                    ),
                     child: Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Icon(
-                            Icons.play_arrow,
-                            color: Colors.orange,
-                            size: 20,
-                          ),
+                        const Icon(
+                          Icons.lightbulb_outline,
+                          color: Colors.blue,
+                          size: 18,
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            '打开 Steam 客户端 → 找到 Counter-Strike 2 → 点击启动选项旁的下拉箭头 → 选择「Legacy Version of CS:GO」',
+                            '启动后，点击服务器卡片即可连接',
                             style: TextStyle(
-                              fontSize: 13,
-                              color: isDark ? Colors.white70 : Colors.black87,
-                              height: 1.5,
+                              fontSize: 12,
+                              color: isDark ? Colors.blue.shade200 : Colors.blue.shade700,
                             ),
                           ),
                         ),
