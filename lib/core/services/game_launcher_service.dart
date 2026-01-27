@@ -456,7 +456,7 @@ class GameLauncherService {
 
   /// 检测是否安装了 CSGO Legacy 分支
   /// 
-  /// 通过检查 CSGO 特有的文件来判断是否安装了 Legacy 分支
+  /// 通过检查 CSGO 特有的可执行文件来判断是否安装了 Legacy 分支
   /// 返回值：
   /// - true: 已安装 CSGO Legacy
   /// - false: 未安装
@@ -473,9 +473,10 @@ class GameLauncherService {
         return false;
       }
 
-      // CSGO Legacy 的特征文件
-      // csgo.exe 是 CSGO 的主程序，只有安装了 Legacy 分支才会存在
-      final csgoExePath = '$gamePath\\game\\bin\\win64\\csgo.exe';
+      // CSGO Legacy 的特征文件：csgo.exe
+      // 这是 CSGO 的主程序，只有安装了 Legacy 分支才会存在
+      // CS2 只有 cs2.exe，不会有 csgo.exe
+      final csgoExePath = '$gamePath\\csgo.exe';
       final csgoExeExists = await File(csgoExePath).exists();
       
       if (csgoExeExists) {
@@ -483,16 +484,7 @@ class GameLauncherService {
         return true;
       }
 
-      // 备用检测：检查 csgo 文件夹
-      final csgoFolder = Directory('$gamePath\\game\\csgo');
-      final csgoFolderExists = await csgoFolder.exists();
-      
-      if (csgoFolderExists) {
-        LogService.d('检测到 CSGO 文件夹: ${csgoFolder.path}');
-        return true;
-      }
-
-      LogService.d('未检测到 CSGO Legacy 安装');
+      LogService.d('未检测到 CSGO Legacy 安装（csgo.exe 不存在）');
       return false;
     } catch (e) {
       LogService.e('检测 CSGO Legacy 安装状态失败', e);
