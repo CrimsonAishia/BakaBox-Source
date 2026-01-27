@@ -59,7 +59,15 @@ class _UserLoginBoxState extends State<UserLoginBox> {
           return _LoggedInView(
             userInfo: state.userInfo!,
             isExpanded: _isExpanded,
-            onToggleExpand: () => setState(() => _isExpanded = !_isExpanded),
+            onToggleExpand: () {
+              setState(() => _isExpanded = !_isExpanded);
+              // 展开时触发状态检查（懒加载，检测跨天）
+              if (_isExpanded) {
+                context
+                    .read<DailyTaskBloc>()
+                    .add(const DailyTaskCheckStatusRequested());
+              }
+            },
           );
         }
         return const _LoginPromptView();
