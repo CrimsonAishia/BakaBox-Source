@@ -163,6 +163,52 @@ class GameLauncherService {
     return false;
   }
 
+  /// 检测当前运行的游戏类型
+  /// 
+  /// 返回值：
+  /// - 'cs2': CS2 正在运行
+  /// - 'csgo': CSGO 正在运行
+  /// - null: 没有游戏运行
+  Future<String?> getRunningGameType() async {
+    if (!isDesktopPlatform) {
+      return null;
+    }
+
+    try {
+      if (PlatformUtils.isWindows) {
+        // 检测 cs2.exe
+        final cs2Result = await Process.run(
+          'tasklist',
+          ['/FI', 'IMAGENAME eq cs2.exe', '/FO', 'CSV'],
+          runInShell: true,
+        );
+        
+        if (cs2Result.exitCode == 0 && 
+            cs2Result.stdout.toString().toLowerCase().contains('cs2.exe')) {
+          LogService.d('检测到 CS2 正在运行');
+          return 'cs2';
+        }
+
+        // 检测 csgo.exe
+        final csgoResult = await Process.run(
+          'tasklist',
+          ['/FI', 'IMAGENAME eq csgo.exe', '/FO', 'CSV'],
+          runInShell: true,
+        );
+        
+        if (csgoResult.exitCode == 0 && 
+            csgoResult.stdout.toString().toLowerCase().contains('csgo.exe')) {
+          LogService.d('检测到 CSGO 正在运行');
+          return 'csgo';
+        }
+      }
+      return null;
+    } catch (e) {
+      LogService.e('检测游戏类型失败', e);
+      return null;
+    }
+  }
+
   /// 检测游戏是否带有 -condebug 参数启动（判断是否可监控）
   /// 
   /// 返回值：
@@ -312,8 +358,8 @@ class GameLauncherService {
       // 等待游戏启动
       final started = await _waitForGameStart();
       if (started) {
-        // 标记为可监控
-        gameStatusService.markAsMonitorable();
+        // 标记为可监控，并保存游戏类型（启动的是 CS2）
+        gameStatusService.markAsMonitorable(gameType: 'cs2');
         LogService.d('游戏已成功启动');
         return GameLaunchResult.success(message: '游戏启动成功');
       } else {
@@ -454,6 +500,76 @@ class GameLauncherService {
     return lowerGameType.contains('csgo') || lowerGameType.contains('cs:go');
   }
 
+  /// 验证游戏类型是否匹配
+  /// 
+  /// 返回值：
+  /// - null: 验证通过或无需验证
+  /// - ServerConnectResult: 验证失败，返回错误结果
+  Future<ServerConnectResult?> _validateGameTypeMatch(String? gameType) async {
+    // 判断是否为 CSGO 服务器
+    final isCsgo = _isCsgoServer(gameType);
+    
+    // 检查游戏是否正在运行
+    final isRunning = await isCS2Running();
+    
+    // 如果游戏正在运行，检查游戏类型是否匹配
+    if (isRunning) {
+      // 从 GameStatusService 获取已保存的游戏类型
+      final gameStatusService = GameStatusService();
+      final runningGameType = gameStatusService.runningGameType;
+      
+      if (runningGameType != null) {
+        // 检查游戏类型是否匹配
+        final isRunningCsgo = runningGameType == 'csgo';
+        
+        if (isCsgo && !isRunningCsgo) {
+          // 服务器是 CSGO，但运行的是 CS2
+          LogService.w('尝试连接 CSGO 服务器，但当前运行的是 CS2');
+          return ServerConnectResult.failure('此服务器需要 CSGO 客户端，请关闭 CS2 后重试');
+        } else if (!isCsgo && isRunningCsgo) {
+          // 服务器是 CS2，但运行的是 CSGO
+          LogService.w('尝试连接 CS2 服务器，但当前运行的是 CSGO');
+          return ServerConnectResult.failure('此服务器需要 CS2 客户端，请关闭 CSGO 后重试');
+        }
+      }
+    }
+    
+    return null; // 验证通过
+  }
+
+  /// 验证 CSGO 服务器的前置条件
+  /// 
+  /// 返回值：
+  /// - null: 验证通过
+  /// - ServerConnectResult: 验证失败，返回错误结果
+  Future<ServerConnectResult?> _validateCsgoPrerequisites(bool isCsgo, bool isRunning) async {
+    if (!isCsgo) {
+      return null; // 不是 CSGO 服务器，无需检查
+    }
+    
+    // 检查是否安装了 Legacy 分支
+    final isInstalled = await isCsgoLegacyInstalled();
+    if (!isInstalled) {
+      LogService.w('尝试连接 CSGO 服务器，但未检测到 CSGO Legacy 安装');
+      return ServerConnectResult.failure(
+        '此服务器需要 CSGO 客户端',
+        needCsgoLegacy: true,
+      );
+    }
+    
+    // 检查 CSGO 是否正在运行
+    if (!isRunning) {
+      LogService.w('CSGO 未运行，需要用户手动启动');
+      return ServerConnectResult.failure(
+        '请先在 Steam 中启动 CSGO',
+        needManualLaunch: true,
+      );
+    }
+    
+    LogService.i('检测到 CSGO 正在运行，使用普通 connect 命令连接');
+    return null; // 验证通过
+  }
+
   /// 检测是否安装了 CSGO Legacy 分支
   /// 
   /// 通过检查 CSGO 特有的可执行文件来判断是否安装了 Legacy 分支
@@ -537,32 +653,20 @@ class GameLauncherService {
 
     LogService.d('收到连接服务器请求，目标服务器: $address, 游戏类型: $gameType');
 
+    // 验证游戏类型是否匹配
+    final typeValidation = await _validateGameTypeMatch(gameType);
+    if (typeValidation != null) {
+      return typeValidation; // 验证失败，返回错误
+    }
+    
     // 判断是否为 CSGO 服务器
     final isCsgo = _isCsgoServer(gameType);
+    final isRunning = await isCS2Running();
     
-    // 如果是 CSGO 服务器，先进行检查
-    if (isCsgo) {
-      // 检查是否安装了 Legacy 分支
-      final isInstalled = await isCsgoLegacyInstalled();
-      if (!isInstalled) {
-        LogService.w('尝试连接 CSGO 服务器，但未检测到 CSGO Legacy 安装');
-        return ServerConnectResult.failure(
-          '此服务器需要 CSGO 客户端',
-          needCsgoLegacy: true,
-        );
-      }
-      
-      // 检查 CSGO 是否正在运行
-      final isRunning = await isCS2Running(); // 这个方法会检测 csgo.exe 和 cs2.exe
-      if (!isRunning) {
-        LogService.w('CSGO 未运行，需要用户手动启动');
-        return ServerConnectResult.failure(
-          '请先在 Steam 中启动 CSGO',
-          needManualLaunch: true,
-        );
-      }
-      
-      LogService.i('检测到 CSGO 正在运行，使用普通 connect 命令连接');
+    // 验证 CSGO 前置条件
+    final csgoValidation = await _validateCsgoPrerequisites(isCsgo, isRunning);
+    if (csgoValidation != null) {
+      return csgoValidation; // 验证失败，返回错误
     }
 
     // 解析地址和密码
@@ -598,32 +702,20 @@ class GameLauncherService {
 
     LogService.i('收到连接密码服务器请求，目标服务器: $address, 游戏类型: $gameType');
     
+    // 验证游戏类型是否匹配
+    final typeValidation = await _validateGameTypeMatch(gameType);
+    if (typeValidation != null) {
+      return typeValidation; // 验证失败，返回错误
+    }
+    
     // 判断是否为 CSGO 服务器
     final isCsgo = _isCsgoServer(gameType);
+    final isRunning = await isCS2Running();
     
-    // 如果是 CSGO 服务器，先进行检查
-    if (isCsgo) {
-      // 检查是否安装了 Legacy 分支
-      final isInstalled = await isCsgoLegacyInstalled();
-      if (!isInstalled) {
-        LogService.w('尝试连接 CSGO 服务器，但未检测到 CSGO Legacy 安装');
-        return ServerConnectResult.failure(
-          '此服务器需要 CSGO 客户端',
-          needCsgoLegacy: true,
-        );
-      }
-      
-      // 检查 CSGO 是否正在运行
-      final isRunning = await isCS2Running();
-      if (!isRunning) {
-        LogService.w('CSGO 未运行，需要用户手动启动');
-        return ServerConnectResult.failure(
-          '请先在 Steam 中启动 CSGO',
-          needManualLaunch: true,
-        );
-      }
-      
-      LogService.i('检测到 CSGO 正在运行，使用普通 connect 命令连接');
+    // 验证 CSGO 前置条件
+    final csgoValidation = await _validateCsgoPrerequisites(isCsgo, isRunning);
+    if (csgoValidation != null) {
+      return csgoValidation; // 验证失败，返回错误
     }
     
     return await _connectUsingSteamUrl(address, password, gameType: gameType);
@@ -688,29 +780,22 @@ class GameLauncherService {
 
     LogService.i('启动游戏并连接到服务器: $address, 游戏类型: $gameType');
 
+    // 验证游戏类型是否匹配
+    final typeValidation = await _validateGameTypeMatch(gameType);
+    if (typeValidation != null) {
+      return typeValidation; // 验证失败，返回错误
+    }
+    
     // 判断是否为 CSGO 服务器
     final isCsgo = _isCsgoServer(gameType);
+    final isRunning = await isCS2Running();
     
     // 如果是 CSGO 服务器，无法自动启动
     if (isCsgo) {
-      // 检查是否安装了 Legacy 分支
-      final isInstalled = await isCsgoLegacyInstalled();
-      if (!isInstalled) {
-        LogService.w('尝试启动 CSGO 服务器，但未检测到 CSGO Legacy 安装');
-        return ServerConnectResult.failure(
-          '此服务器需要 CSGO 客户端',
-          needCsgoLegacy: true,
-        );
-      }
-      
-      // 检查 CSGO 是否正在运行
-      final isRunning = await isCS2Running();
-      if (!isRunning) {
-        LogService.w('无法自动启动 CSGO，需要用户手动启动');
-        return ServerConnectResult.failure(
-          '请先在 Steam 中启动 CSGO',
-          needManualLaunch: true,
-        );
+      // 验证 CSGO 前置条件
+      final csgoValidation = await _validateCsgoPrerequisites(isCsgo, isRunning);
+      if (csgoValidation != null) {
+        return csgoValidation; // 验证失败，返回错误
       }
       
       // CSGO 已在运行，直接连接

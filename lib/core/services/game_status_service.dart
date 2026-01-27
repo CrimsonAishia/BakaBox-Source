@@ -10,11 +10,13 @@ class GameStatusEvent {
   final bool isRunning;
   final bool isMonitorable;
   final DateTime timestamp;
+  final String? gameType; // 游戏类型：'cs2' 或 'csgo'
 
   const GameStatusEvent({
     required this.isRunning,
     required this.isMonitorable,
     required this.timestamp,
+    this.gameType,
   });
 }
 
@@ -33,6 +35,7 @@ class GameStatusService {
   bool _isGameRunning = false;
   bool _isMonitorable = false;  // 是否可监控（带 -condebug 启动）
   DateTime? _lastGameStartTime;
+  String? _runningGameType;  // 当前运行的游戏类型：'cs2' 或 'csgo'
   
   // 监控
   bool _isMonitoring = false;
@@ -53,6 +56,9 @@ class GameStatusService {
   
   /// 是否正在监控
   bool get isMonitoring => _isMonitoring;
+  
+  /// 当前运行的游戏类型（'cs2' 或 'csgo'）
+  String? get runningGameType => _runningGameType;
 
   /// 单例模式
   static final GameStatusService _instance = GameStatusService._internal();
@@ -108,28 +114,45 @@ class GameStatusService {
     _isGameRunning = isRunning;
     
     if (!wasRunning && isRunning) {
-      // 游戏刚启动，检测是否可监控
+      // 游戏刚启动，检测游戏类型和是否可监控
       _lastGameStartTime = DateTime.now();
+      await _detectGameType();
       await _checkIfMonitorable();
       
-      LogService.d('[GameStatus] 检测到游戏启动，可监控: $_isMonitorable');
+      LogService.d('[GameStatus] 检测到游戏启动，类型: $_runningGameType, 可监控: $_isMonitorable');
       
       _emitStatusEvent();
     } else if (wasRunning && !isRunning) {
-      // 游戏刚关闭
+      // 游戏刚关闭，清空游戏类型
       _isMonitorable = false;
+      _runningGameType = null;
       
-      LogService.d('[GameStatus] 检测到游戏关闭');
+      LogService.d('[GameStatus] 检测到游戏关闭，已清空游戏类型');
       
       _emitStatusEvent();
     } else if (isRunning && !_isMonitorable) {
       // 游戏运行中但之前未检测到可监控，重新检测
       // 这处理了 BakaBox 启动后游戏才完全初始化的情况
+      if (_runningGameType == null) {
+        await _detectGameType();
+      }
       await _checkIfMonitorable();
       if (_isMonitorable) {
         LogService.d('[GameStatus] 重新检测到游戏可监控');
         _emitStatusEvent();
       }
+    }
+  }
+
+  /// 检测游戏类型
+  Future<void> _detectGameType() async {
+    final gameType = await _gameLauncher.getRunningGameType();
+    _runningGameType = gameType;
+    
+    if (gameType != null) {
+      LogService.d('[GameStatus] 检测到游戏类型: $gameType');
+    } else {
+      LogService.w('[GameStatus] 无法检测游戏类型');
     }
   }
 
@@ -149,12 +172,20 @@ class GameStatusService {
 
   /// 标记游戏为可监控状态
   /// 在 GameLauncher 成功启动游戏后调用
-  void markAsMonitorable() {
+  /// 
+  /// [gameType] 启动的游戏类型（'cs2' 或 'csgo'）
+  void markAsMonitorable({String? gameType}) {
     _isMonitorable = true;
     _isGameRunning = true;
     _lastGameStartTime = DateTime.now();
     
-    LogService.d('[GameStatus] 已标记游戏为可监控');
+    // 如果提供了游戏类型，保存它
+    if (gameType != null) {
+      _runningGameType = gameType;
+      LogService.d('[GameStatus] 已标记游戏为可监控，类型: $gameType');
+    } else {
+      LogService.d('[GameStatus] 已标记游戏为可监控');
+    }
     
     _emitStatusEvent();
   }
@@ -167,6 +198,7 @@ class GameStatusService {
       'isMonitorable': _isMonitorable,
       'isMonitoring': _isMonitoring,
       'lastStartTime': _lastGameStartTime,
+      'gameType': _runningGameType,
     };
   }
 
@@ -182,6 +214,7 @@ class GameStatusService {
       isRunning: _isGameRunning,
       isMonitorable: _isMonitorable,
       timestamp: DateTime.now(),
+      gameType: _runningGameType,
     ));
   }
 
