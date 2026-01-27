@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/bloc/daily_task/daily_task_bloc.dart';
 import '../../core/bloc/daily_task/daily_task_event.dart';
 import '../../core/services/auth_service.dart';
@@ -448,6 +449,26 @@ class _ShakeDialogState extends State<ShakeDialog>
               ),
             ),
             const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 40,
+              child: OutlinedButton.icon(
+                onPressed: _openInBrowser,
+                icon: const Icon(Icons.open_in_browser, size: 16),
+                label: const Text('打开页面'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                  side: BorderSide(
+                    color: (isDark ? Colors.white70 : const Color(0xFF6B7280))
+                        .withValues(alpha: 0.3),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             Text(
               '每日可摇一次，获得随机僵尸币奖励',
               style: TextStyle(color: secondaryTextColor, fontSize: 12),
@@ -456,5 +477,26 @@ class _ShakeDialogState extends State<ShakeDialog>
         ),
       ),
     );
+  }
+
+  /// 在浏览器中打开摇摇乐页面
+  Future<void> _openInBrowser() async {
+    const url = 'https://bbs.zombieden.cn/plugin.php?id=yinxingfei_zzza:yinxingfei_zzza_hall';
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        LogService.d('已在浏览器中打开摇摇乐页面');
+      } else {
+        if (mounted) {
+          ToastUtils.showError(context, '无法打开浏览器');
+        }
+      }
+    } catch (e) {
+      LogService.e('打开浏览器失败', e);
+      if (mounted) {
+        ToastUtils.showError(context, '打开浏览器失败');
+      }
+    }
   }
 }
