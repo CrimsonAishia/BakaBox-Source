@@ -515,7 +515,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     final isNameType = contribution.type == ContributionType.name;
     final isFirst = index == 0;
     final showAuditStatusBar = !contribution.isApproved;
-    final canEdit = contribution.isOwner && contribution.isRejected;
+    final canEdit = contribution.isOwner && (contribution.isRejected || contribution.isPending);
     
     // 确定边框颜色
     final Color borderColor;

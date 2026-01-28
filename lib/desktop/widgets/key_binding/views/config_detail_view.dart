@@ -87,8 +87,8 @@ class DetailHeader extends StatelessWidget {
     final isOwner = backendUserInfo != null && backendUserInfo.id == config.userID;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    final canEdit = isOwner && config.isRejected;
-    final canDelete = isOwner && !config.isPending;
+    final canEdit = isOwner && (config.isRejected || config.isPending);
+    final canDelete = isOwner && (config.isRejected || config.isPending);
     
     return Container(
       padding: const EdgeInsets.all(16),
