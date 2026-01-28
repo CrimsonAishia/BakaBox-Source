@@ -306,3 +306,164 @@ class ContributionVoteResponse extends Equatable {
   @override
   List<Object?> get props => [success, newVoteCount, upCount, downCount, hasVoted, voteType];
 }
+
+/// 地图信息（用于分组展示）
+@JsonSerializable()
+class MapInfo extends Equatable {
+  final String mapName;
+  final String mapLabel;
+  final String? mapBackground;
+  @JsonKey(defaultValue: 0)
+  final int contribCount;
+  @JsonKey(defaultValue: 0)
+  final int nameCount;
+  @JsonKey(defaultValue: 0)
+  final int backgroundCount;
+
+  const MapInfo({
+    required this.mapName,
+    required this.mapLabel,
+    this.mapBackground,
+    this.contribCount = 0,
+    this.nameCount = 0,
+    this.backgroundCount = 0,
+  });
+
+  factory MapInfo.fromJson(Map<String, dynamic> json) =>
+      _$MapInfoFromJson(json);
+  Map<String, dynamic> toJson() => _$MapInfoToJson(this);
+
+  @override
+  List<Object?> get props => [mapName, mapLabel, mapBackground, contribCount, nameCount, backgroundCount];
+}
+
+/// 地图贡献分组
+@JsonSerializable()
+class MapContributionGroup extends Equatable {
+  final MapInfo mapInfo;
+  final List<MapContribution> items;
+
+  const MapContributionGroup({
+    required this.mapInfo,
+    required this.items,
+  });
+
+  factory MapContributionGroup.fromJson(Map<String, dynamic> json) =>
+      _$MapContributionGroupFromJson(json);
+  Map<String, dynamic> toJson() => _$MapContributionGroupToJson(this);
+
+  @override
+  List<Object?> get props => [mapInfo, items];
+}
+
+/// 分页参数
+@JsonSerializable()
+class PaginationParams extends Equatable {
+  final int pageIndex;
+  final int pageSize;
+  @JsonKey(defaultValue: 'created_at DESC')
+  final String orderBy;
+
+  const PaginationParams({
+    this.pageIndex = 1,
+    this.pageSize = 20,
+    this.orderBy = 'created_at DESC',
+  });
+
+  factory PaginationParams.fromJson(Map<String, dynamic> json) =>
+      _$PaginationParamsFromJson(json);
+  Map<String, dynamic> toJson() => _$PaginationParamsToJson(this);
+
+  @override
+  List<Object?> get props => [pageIndex, pageSize, orderBy];
+}
+
+/// 地图贡献列表请求参数
+@JsonSerializable()
+class MapContributionListRequest extends Equatable {
+  final PaginationParams pagination;
+  final String? mapName;
+  final String? type;
+  final int? userId;
+  final String? auditStatus;
+  final String? keyword;
+  final String? keywordType;
+  final String? startAt;
+  final String? endAt;
+
+  const MapContributionListRequest({
+    required this.pagination,
+    this.mapName,
+    this.type,
+    this.userId,
+    this.auditStatus,
+    this.keyword,
+    this.keywordType,
+    this.startAt,
+    this.endAt,
+  });
+
+  factory MapContributionListRequest.fromJson(Map<String, dynamic> json) =>
+      _$MapContributionListRequestFromJson(json);
+  Map<String, dynamic> toJson() => _$MapContributionListRequestToJson(this);
+
+  @override
+  List<Object?> get props => [pagination, mapName, type, userId, auditStatus, keyword, keywordType, startAt, endAt];
+}
+
+/// 地图贡献列表响应
+@JsonSerializable()
+class MapContributionListResponse extends Equatable {
+  final int total;
+  final List<MapContributionGroup> groups;
+
+  const MapContributionListResponse({
+    required this.total,
+    required this.groups,
+  });
+
+  factory MapContributionListResponse.fromJson(Map<String, dynamic> json) =>
+      _$MapContributionListResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$MapContributionListResponseToJson(this);
+
+  @override
+  List<Object?> get props => [total, groups];
+}
+
+/// 地图列表响应（用于"全部地图" Tab）
+@JsonSerializable()
+class MapListResponse extends Equatable {
+  final int total;
+  final List<MapInfo> items;
+
+  const MapListResponse({
+    required this.total,
+    required this.items,
+  });
+
+  factory MapListResponse.fromJson(Map<String, dynamic> json) =>
+      _$MapListResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$MapListResponseToJson(this);
+
+  @override
+  List<Object?> get props => [total, items];
+}
+
+/// 地图列表请求参数
+@JsonSerializable()
+class MapListRequest extends Equatable {
+  final PaginationParams pagination;
+  final String? mapName;
+
+  const MapListRequest({
+    required this.pagination,
+    this.mapName,
+  });
+
+  factory MapListRequest.fromJson(Map<String, dynamic> json) =>
+      _$MapListRequestFromJson(json);
+  Map<String, dynamic> toJson() => _$MapListRequestToJson(this);
+
+  @override
+  List<Object?> get props => [pagination, mapName];
+}

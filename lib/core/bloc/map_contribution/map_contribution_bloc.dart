@@ -31,6 +31,10 @@ class MapContributionBloc
     on<RefreshBackgroundContributions>(_onRefreshBackgroundContributions);
     on<ClearContributionError>(_onClearError);
     on<ResetContributionState>(_onReset);
+    on<LoadAllMaps>(_onLoadAllMaps);
+    on<LoadMyMapContributions>(_onLoadMyMapContributions);
+    on<RefreshAllMaps>(_onRefreshAllMaps);
+    on<RefreshMyMapContributions>(_onRefreshMyMapContributions);
   }
 
   /// 提取错误信息
@@ -387,5 +391,81 @@ class MapContributionBloc
     Emitter<MapContributionState> emit,
   ) {
     emit(const MapContributionState());
+  }
+
+  /// 加载所有地图列表
+  Future<void> _onLoadAllMaps(
+    LoadAllMaps event,
+    Emitter<MapContributionState> emit,
+  ) async {
+    emit(state.copyWith(
+      isLoadingAllMaps: true,
+      clearError: true,
+      allMapsRequest: event.request,
+    ));
+
+    try {
+      final response = await _api.getAllMaps(event.request);
+      if (response != null) {
+        emit(state.copyWith(
+          allMaps: response.items,
+          allMapsTotal: response.total,
+          isLoadingAllMaps: false,
+        ));
+      } else {
+        emit(state.copyWith(isLoadingAllMaps: false));
+      }
+    } catch (e) {
+      emit(state.copyWith(error: _getErrorMessage(e), isLoadingAllMaps: false));
+      LogService.e('加载所有地图列表失败', e);
+    }
+  }
+
+  /// 加载我的地图贡献列表（按地图分组）
+  Future<void> _onLoadMyMapContributions(
+    LoadMyMapContributions event,
+    Emitter<MapContributionState> emit,
+  ) async {
+    emit(state.copyWith(
+      isLoadingMyMaps: true,
+      clearError: true,
+      myMapsRequest: event.request,
+    ));
+
+    try {
+      final response = await _api.getMyContributions(event.request);
+      if (response != null) {
+        emit(state.copyWith(
+          myMapGroups: response.groups,
+          myMapsTotal: response.total,
+          isLoadingMyMaps: false,
+        ));
+      } else {
+        emit(state.copyWith(isLoadingMyMaps: false));
+      }
+    } catch (e) {
+      emit(state.copyWith(error: _getErrorMessage(e), isLoadingMyMaps: false));
+      LogService.e('加载我的地图贡献列表失败', e);
+    }
+  }
+
+  /// 刷新所有地图列表
+  Future<void> _onRefreshAllMaps(
+    RefreshAllMaps event,
+    Emitter<MapContributionState> emit,
+  ) async {
+    if (state.allMapsRequest != null) {
+      add(LoadAllMaps(request: state.allMapsRequest!));
+    }
+  }
+
+  /// 刷新我的地图贡献列表
+  Future<void> _onRefreshMyMapContributions(
+    RefreshMyMapContributions event,
+    Emitter<MapContributionState> emit,
+  ) async {
+    if (state.myMapsRequest != null) {
+      add(LoadMyMapContributions(request: state.myMapsRequest!));
+    }
   }
 }

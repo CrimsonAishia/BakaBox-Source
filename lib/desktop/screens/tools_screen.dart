@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../core/bloc/key_binding/key_binding_bloc.dart';
+import '../../core/bloc/map_contribution/map_contribution_bloc.dart';
 import '../../core/bloc/feature_status/feature_status_bloc.dart';
 import '../../core/bloc/feature_status/feature_status_state.dart';
 import '../../core/models/feature_status_models.dart';
 import '../../core/widgets/feature_gate.dart';
 import '../widgets/key_binding/key_binding_tool.dart';
 import '../widgets/page_layout.dart';
+import 'map_database_desktop.dart';
 
 /// 工具箱页面
 class ToolsScreen extends StatefulWidget {
@@ -28,6 +30,13 @@ class _ToolsScreenState extends State<ToolsScreen> {
       name: '按键绑定',
       description: '管理 CS2 游戏快捷键配置',
       icon: MdiIcons.keyboardOutline,
+      isFullScreen: true,
+    ),
+    _ToolItem(
+      id: 'map_database',
+      name: '地图数据库',
+      description: '查看和管理地图信息贡献',
+      icon: MdiIcons.database,
       isFullScreen: true,
     ),
   ];
@@ -98,6 +107,14 @@ class _ToolsScreenState extends State<ToolsScreen> {
           child: BlocProvider(
             create: (context) => KeyBindingBloc(),
             child: const KeyBindingTool(),
+          ),
+        );
+      case 'map_database':
+        return FeatureGate(
+          feature: FeatureType.mapContribution,
+          child: BlocProvider(
+            create: (context) => MapContributionBloc(),
+            child: const MapDatabaseDesktop(),
           ),
         );
       default:
@@ -293,6 +310,8 @@ class _ToolCardState extends State<_ToolCard> {
     switch (widget.tool.id) {
       case 'key_binding':
         return FeatureType.keyConfig;
+      case 'map_database':
+        return FeatureType.mapContribution;
       default:
         return null;
     }

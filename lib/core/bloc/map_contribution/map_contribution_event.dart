@@ -143,3 +143,33 @@ class ClearContributionError extends MapContributionEvent {
 class ResetContributionState extends MapContributionEvent {
   const ResetContributionState();
 }
+
+/// 加载所有地图列表
+class LoadAllMaps extends MapContributionEvent {
+  final MapListRequest request;
+
+  const LoadAllMaps({required this.request});
+
+  @override
+  List<Object?> get props => [request];
+}
+
+/// 加载我的地图贡献列表（按地图分组）
+class LoadMyMapContributions extends MapContributionEvent {
+  final MapContributionListRequest request;
+
+  const LoadMyMapContributions({required this.request});
+
+  @override
+  List<Object?> get props => [request];
+}
+
+/// 刷新所有地图列表
+class RefreshAllMaps extends MapContributionEvent {
+  const RefreshAllMaps();
+}
+
+/// 刷新我的地图贡献列表
+class RefreshMyMapContributions extends MapContributionEvent {
+  const RefreshMyMapContributions();
+}
