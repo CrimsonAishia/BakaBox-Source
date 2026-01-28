@@ -7,6 +7,7 @@ import '../../../../core/bloc/auth/auth_state.dart';
 import '../../../../core/bloc/key_binding/key_binding_bloc.dart';
 import '../../../../core/bloc/key_binding/key_binding_event.dart';
 import '../../../../core/bloc/key_binding/key_binding_state.dart';
+import '../../../../core/constants/credit_constants.dart';
 import '../../../../core/models/key_config_models.dart';
 import '../../../../core/utils/key_placeholder_parser.dart';
 import '../components/common_widgets.dart';
@@ -34,8 +35,6 @@ class _PublishViewState extends State<PublishView> {
   final _scriptCtrl = TextEditingController();
   int? _categoryId;
   bool _needsKey = false;
-
-  static const int _minCreditsRequired = 500;
 
   @override
   void initState() {
@@ -66,7 +65,7 @@ class _PublishViewState extends State<PublishView> {
     if (userInfo == null) return false;
     
     final credits = int.tryParse(userInfo.credits ?? '0') ?? 0;
-    if (credits < _minCreditsRequired) {
+    if (credits < CreditConstants.minCredits) {
       _showCreditsPrompt(credits);
       return false;
     }
@@ -84,24 +83,27 @@ class _PublishViewState extends State<PublishView> {
           children: [
             Icon(MdiIcons.starCircleOutline, color: const Color(0xFFf59e0b), size: 24),
             const SizedBox(width: 10),
-            Text('积分不足', style: TextStyle(fontSize: 16, color: isDark ? Colors.white : null)),
+            Text(CreditConstants.insufficientCreditsTitle, style: TextStyle(fontSize: 16, color: isDark ? Colors.white : null)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('发布配置需要 $_minCreditsRequired 论坛积分', style: TextStyle(color: isDark ? Colors.white70 : null)),
+            Text(
+              CreditConstants.getPublishConfigCreditsMessage(CreditConstants.minCredits),
+              style: TextStyle(color: isDark ? Colors.white70 : null),
+            ),
             const SizedBox(height: 8),
             Row(
               children: [
-                Text('您当前积分：', style: TextStyle(color: isDark ? Colors.white54 : Colors.grey[600])),
+                Text(CreditConstants.getCurrentCreditsLabel(), style: TextStyle(color: isDark ? Colors.white54 : Colors.grey[600])),
                 Text('$currentCredits', style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFFef4444))),
               ],
             ),
             const SizedBox(height: 12),
             Text(
-              '积分可通过论坛发帖、回复等方式获取',
+              CreditConstants.creditsAcquisitionHint,
               style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.grey[500]),
             ),
           ],
@@ -177,7 +179,7 @@ class _PublishViewState extends State<PublishView> {
 
   Widget _buildPublishForm(BuildContext context, AuthState authState) {
     final credits = int.tryParse(authState.userInfo?.credits ?? '0') ?? 0;
-    final hasEnoughCredits = credits >= _minCreditsRequired;
+    final hasEnoughCredits = credits >= CreditConstants.minCredits;
     
     return BlocBuilder<KeyBindingBloc, KeyBindingState>(
       builder: (context, state) {

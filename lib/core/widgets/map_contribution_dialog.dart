@@ -9,6 +9,7 @@ import '../bloc/auth/auth_event.dart';
 import '../bloc/map_contribution/map_contribution_bloc.dart';
 import '../bloc/map_contribution/map_contribution_event.dart';
 import '../bloc/map_contribution/map_contribution_state.dart';
+import '../constants/credit_constants.dart';
 import '../models/feature_status_models.dart';
 import '../models/map_contribution_models.dart';
 import '../utils/contribution_validation_utils.dart';
@@ -1841,9 +1842,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
 
   // ========== 事件处理 ==========
 
-  /// 贡献所需的最低积分
-  static const int _minCreditsRequired = 500;
-
   /// 检查登录状态
   /// Requirements: 1.1, 2.1, 3.1
   bool _checkLogin() {
@@ -1862,7 +1860,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     if (userInfo == null) return false;
     
     final credits = int.tryParse(userInfo.credits ?? '0') ?? 0;
-    if (credits < _minCreditsRequired) {
+    if (credits < CreditConstants.minCredits) {
       _showCreditsPrompt(credits);
       return false;
     }
@@ -1874,8 +1872,11 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('积分不足'),
-        content: Text('贡献功能需要 $_minCreditsRequired 论坛积分，您当前积分为 $currentCredits'),
+        title: Text(CreditConstants.insufficientCreditsTitle),
+        content: Text(CreditConstants.getMapContributionCreditsMessage(
+          CreditConstants.minCredits,
+          currentCredits,
+        )),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
