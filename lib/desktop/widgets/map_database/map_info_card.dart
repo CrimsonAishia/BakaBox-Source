@@ -5,6 +5,7 @@ import '../../../core/services/image_url_service.dart';
 import '../../../core/widgets/disk_cached_image.dart';
 import '../../../core/widgets/map_contribution_dialog.dart';
 import '../../../core/widgets/marquee_text.dart';
+import 'map_history_dialog.dart';
 
 /// 地图信息卡片组件
 /// 
@@ -26,6 +27,14 @@ class _MapInfoCardState extends State<MapInfoCard> {
 
   void _showContributionDialog() {
     MapContributionDialog.show(
+      context,
+      mapName: widget.mapInfo.mapName,
+      mapLabel: widget.mapInfo.mapLabel,
+    );
+  }
+
+  void _showHistoryDialog() {
+    MapHistoryDialog.show(
       context,
       mapName: widget.mapInfo.mapName,
       mapLabel: widget.mapInfo.mapLabel,
@@ -167,9 +176,7 @@ class _MapInfoCardState extends State<MapInfoCard> {
                           child: _buildBottomButton(
                             icon: Icons.history,
                             label: '运行记录',
-                            onPressed: () {
-                              // TODO: 实现运行记录功能
-                            },
+                            onPressed: _showHistoryDialog,
                           ),
                         ),
                       ],

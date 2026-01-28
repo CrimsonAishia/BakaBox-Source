@@ -467,3 +467,91 @@ class MapListRequest extends Equatable {
   @override
   List<Object?> get props => [pagination, mapName];
 }
+
+/// 地图历史记录中的玩家数据点
+@JsonSerializable()
+class MapHistoryPlayerInfo extends Equatable {
+  final int playerCount;
+  @ServerTimeConverter()
+  final DateTime createdAt;
+
+  const MapHistoryPlayerInfo({
+    required this.playerCount,
+    required this.createdAt,
+  });
+
+  factory MapHistoryPlayerInfo.fromJson(Map<String, dynamic> json) =>
+      _$MapHistoryPlayerInfoFromJson(json);
+  Map<String, dynamic> toJson() => _$MapHistoryPlayerInfoToJson(this);
+
+  @override
+  List<Object?> get props => [playerCount, createdAt];
+}
+
+/// 地图历史记录项
+@JsonSerializable()
+class MapHistoryRecord extends Equatable {
+  final int id;
+  final String address;
+  final String mapName;
+  final int maxPlayers;
+  @ServerTimeConverter()
+  final DateTime createdAt;
+  @JsonKey(defaultValue: <MapHistoryPlayerInfo>[])
+  final List<MapHistoryPlayerInfo> infos;
+
+  const MapHistoryRecord({
+    required this.id,
+    required this.address,
+    required this.mapName,
+    required this.maxPlayers,
+    required this.createdAt,
+    required this.infos,
+  });
+
+  factory MapHistoryRecord.fromJson(Map<String, dynamic> json) =>
+      _$MapHistoryRecordFromJson(json);
+  Map<String, dynamic> toJson() => _$MapHistoryRecordToJson(this);
+
+  @override
+  List<Object?> get props => [id, address, mapName, maxPlayers, createdAt, infos];
+}
+
+/// 地图历史记录响应
+@JsonSerializable()
+class MapHistoryResponse extends Equatable {
+  final int total;
+  @JsonKey(defaultValue: <MapHistoryRecord>[])
+  final List<MapHistoryRecord> data;
+
+  const MapHistoryResponse({
+    required this.total,
+    required this.data,
+  });
+
+  factory MapHistoryResponse.fromJson(Map<String, dynamic> json) =>
+      _$MapHistoryResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$MapHistoryResponseToJson(this);
+
+  @override
+  List<Object?> get props => [total, data];
+}
+
+/// 地图历史记录请求参数
+@JsonSerializable()
+class MapHistoryRequest extends Equatable {
+  final String mapName;
+  final PaginationParams pagination;
+
+  const MapHistoryRequest({
+    required this.mapName,
+    required this.pagination,
+  });
+
+  factory MapHistoryRequest.fromJson(Map<String, dynamic> json) =>
+      _$MapHistoryRequestFromJson(json);
+  Map<String, dynamic> toJson() => _$MapHistoryRequestToJson(this);
+
+  @override
+  List<Object?> get props => [mapName, pagination];
+}
