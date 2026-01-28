@@ -338,7 +338,7 @@ class _ServerHistoryModalState extends State<ServerHistoryModal> with SingleTick
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(color: colorScheme.surfaceContainer, borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [Icon(Icons.trending_up, size: 15, color: colorScheme.primary), const SizedBox(width: 5), Text('玩家数量趋势', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: colorScheme.onSurface)), const Spacer(), Text('${playerInfos.length}个数据点', style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant))]),
+        Row(children: [Icon(Icons.trending_up, size: 15, color: colorScheme.primary), const SizedBox(width: 5), Expanded(child: Text('玩家数量趋势', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: colorScheme.onSurface), overflow: TextOverflow.ellipsis)), const SizedBox(width: 8), Text('${playerInfos.length}个数据点', style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant))]),
         const SizedBox(height: 10),
         Container(height: 160, decoration: BoxDecoration(color: colorScheme.surface, borderRadius: BorderRadius.circular(8), border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2))), child: _TrendChartWidget(playerInfos: playerInfos, maxCount: maxCount)),
         const SizedBox(height: 10),
