@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/core.dart';
-import '../router/mobile_router.dart';
 
 class SettingsMobile extends StatefulWidget {
   const SettingsMobile({super.key});
@@ -63,15 +61,16 @@ class _SettingsMobileState extends State<SettingsMobile> {
                         onTap: () => _showStorageDialog(context),
                       ),
                       const SizedBox(height: AppConstants.defaultPadding),
-                      _buildMenuCard(
-                        context,
-                        title: '问题反馈',
-                        subtitle: '提交Bug、功能建议或问题咨询',
-                        icon: MdiIcons.commentQuestionOutline,
-                        iconColor: const Color(0xFFF59E0B),
-                        onTap: () => context.push(MobileRoutes.issues),
-                      ),
-                      const SizedBox(height: AppConstants.defaultPadding),
+                      // 问题反馈入口已隐藏
+                      // _buildMenuCard(
+                      //   context,
+                      //   title: '问题反馈',
+                      //   subtitle: '提交Bug、功能建议或问题咨询',
+                      //   icon: MdiIcons.commentQuestionOutline,
+                      //   iconColor: const Color(0xFFF59E0B),
+                      //   onTap: () => context.push(MobileRoutes.issues),
+                      // ),
+                      // const SizedBox(height: AppConstants.defaultPadding),
                       _buildMenuCard(
                         context,
                         title: '检查更新',
