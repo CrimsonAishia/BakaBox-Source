@@ -234,3 +234,69 @@ Map<String, dynamic> _$MapListRequestToJson(MapListRequest instance) =>
       'pagination': instance.pagination,
       'mapName': instance.mapName,
     };
+
+MapHistoryPlayerInfo _$MapHistoryPlayerInfoFromJson(
+  Map<String, dynamic> json,
+) => MapHistoryPlayerInfo(
+  playerCount: (json['playerCount'] as num).toInt(),
+  createdAt: const ServerTimeConverter().fromJson(json['createdAt'] as String),
+);
+
+Map<String, dynamic> _$MapHistoryPlayerInfoToJson(
+  MapHistoryPlayerInfo instance,
+) => <String, dynamic>{
+  'playerCount': instance.playerCount,
+  'createdAt': const ServerTimeConverter().toJson(instance.createdAt),
+};
+
+MapHistoryRecord _$MapHistoryRecordFromJson(
+  Map<String, dynamic> json,
+) => MapHistoryRecord(
+  id: (json['id'] as num).toInt(),
+  address: json['address'] as String,
+  mapName: json['mapName'] as String,
+  maxPlayers: (json['maxPlayers'] as num).toInt(),
+  createdAt: const ServerTimeConverter().fromJson(json['createdAt'] as String),
+  infos:
+      (json['infos'] as List<dynamic>?)
+          ?.map((e) => MapHistoryPlayerInfo.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      [],
+);
+
+Map<String, dynamic> _$MapHistoryRecordToJson(MapHistoryRecord instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'address': instance.address,
+      'mapName': instance.mapName,
+      'maxPlayers': instance.maxPlayers,
+      'createdAt': const ServerTimeConverter().toJson(instance.createdAt),
+      'infos': instance.infos,
+    };
+
+MapHistoryResponse _$MapHistoryResponseFromJson(Map<String, dynamic> json) =>
+    MapHistoryResponse(
+      total: (json['total'] as num).toInt(),
+      data:
+          (json['data'] as List<dynamic>?)
+              ?.map((e) => MapHistoryRecord.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+    );
+
+Map<String, dynamic> _$MapHistoryResponseToJson(MapHistoryResponse instance) =>
+    <String, dynamic>{'total': instance.total, 'data': instance.data};
+
+MapHistoryRequest _$MapHistoryRequestFromJson(Map<String, dynamic> json) =>
+    MapHistoryRequest(
+      mapName: json['mapName'] as String,
+      pagination: PaginationParams.fromJson(
+        json['pagination'] as Map<String, dynamic>,
+      ),
+    );
+
+Map<String, dynamic> _$MapHistoryRequestToJson(MapHistoryRequest instance) =>
+    <String, dynamic>{
+      'mapName': instance.mapName,
+      'pagination': instance.pagination,
+    };

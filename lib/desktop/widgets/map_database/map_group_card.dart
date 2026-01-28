@@ -4,6 +4,7 @@ import '../../../core/models/map_contribution_models.dart';
 import '../../../core/services/image_url_service.dart';
 import '../../../core/widgets/disk_cached_image.dart';
 import '../../../core/widgets/marquee_text.dart';
+import 'map_history_dialog.dart';
 
 /// 地图大卡片组件
 /// 
@@ -26,6 +27,14 @@ class MapGroupCard extends StatefulWidget {
 
 class _MapGroupCardState extends State<MapGroupCard> {
   bool _isHovered = false;
+
+  void _showHistoryDialog() {
+    MapHistoryDialog.show(
+      context,
+      mapName: widget.group.mapInfo.mapName,
+      mapLabel: widget.group.mapInfo.mapLabel,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -171,9 +180,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
                           child: _buildBottomButton(
                             icon: Icons.history,
                             label: '运行记录',
-                            onPressed: () {
-                              // TODO: 实现运行记录功能
-                            },
+                            onPressed: _showHistoryDialog,
                           ),
                         ),
                       ],

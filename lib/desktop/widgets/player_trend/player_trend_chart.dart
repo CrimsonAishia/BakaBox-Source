@@ -130,29 +130,11 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
     final isMultiDay = _isMultiDay ?? false;
     final yAxisMax = _yAxisMax ?? 10.0;
 
-    return Container(
+    return SizedBox(
       width: widget.width,
       height: widget.height,
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF1E293B)
-            : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
-        border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.white.withValues(alpha: 0.1)
-              : const Color(0xFFE2E8F0),
-        ),
-      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(8),
         child: LineChart(
           LineChartData(
             gridData: FlGridData(
@@ -341,20 +323,9 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
 
   /// 构建空状态
   Widget _buildEmptyState() {
-    return Container(
+    return SizedBox(
       width: widget.width,
       height: widget.height,
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF1E293B)
-            : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.white.withValues(alpha: 0.1)
-              : const Color(0xFFE2E8F0),
-        ),
-      ),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
