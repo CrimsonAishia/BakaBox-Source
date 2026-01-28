@@ -791,12 +791,12 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     }
     
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 100),
+      constraints: const BoxConstraints(maxWidth: 120),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _buildContributorAvatar(contributor, size: 18),
+          _buildContributorAvatar(contributor, size: 36),
           const SizedBox(width: 4),
           Flexible(
             child: Tooltip(
