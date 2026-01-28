@@ -338,7 +338,7 @@ class _ServerHistoryModalState extends State<ServerHistoryModal> with SingleTick
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(color: colorScheme.surfaceContainer, borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [Icon(Icons.trending_up, size: 15, color: colorScheme.primary), const SizedBox(width: 5), Expanded(child: Text('玩家数量趋势', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: colorScheme.onSurface), overflow: TextOverflow.ellipsis)), const SizedBox(width: 8), Text('${playerInfos.length}个数据点', style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant))]),
+        Row(children: [Icon(Icons.trending_up, size: 15, color: colorScheme.primary), const SizedBox(width: 5), Text('玩家数量趋势', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: colorScheme.onSurface)), const Spacer(), Text('${playerInfos.length}个数据点', style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant))]),
         const SizedBox(height: 10),
         Container(height: 160, decoration: BoxDecoration(color: colorScheme.surface, borderRadius: BorderRadius.circular(8), border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2))), child: _TrendChartWidget(playerInfos: playerInfos, maxCount: maxCount)),
         const SizedBox(height: 10),
@@ -409,7 +409,78 @@ class _TrendChartWidgetState extends State<_TrendChartWidget> {
 
   void _showDetail(BuildContext context, Offset globalPosition, PlayerTrendInfo playerInfo) {
     _removeOverlay();
-    _overlayEntry = OverlayEntry(builder: (context) => Positioned(left: globalPosition.dx - 80, top: globalPosition.dy - 80, child: Material(color: Colors.transparent, child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.8), borderRadius: BorderRadius.circular(8), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))]), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text(_formatFullTime(playerInfo.createdAt), style: const TextStyle(color: Colors.white, fontSize: 14)), const SizedBox(height: 4), Text('人数：${playerInfo.playerCount}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12))])))));
+    
+    // 获取屏幕尺寸
+    final screenSize = MediaQuery.of(context).size;
+    const tooltipWidth = 160.0;
+    const tooltipHeight = 70.0;
+    const padding = 16.0;
+    
+    // 计算浮窗位置，确保不超出屏幕
+    double left = globalPosition.dx - tooltipWidth / 2;
+    double top = globalPosition.dy - tooltipHeight - 10;
+    
+    // 左右边界检查
+    if (left < padding) {
+      left = padding;
+    } else if (left + tooltipWidth > screenSize.width - padding) {
+      left = screenSize.width - tooltipWidth - padding;
+    }
+    
+    // 上下边界检查
+    if (top < padding) {
+      // 如果上方空间不足，显示在点击位置下方
+      top = globalPosition.dy + 10;
+    }
+    if (top + tooltipHeight > screenSize.height - padding) {
+      top = screenSize.height - tooltipHeight - padding;
+    }
+    
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        left: left,
+        top: top,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: tooltipWidth,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.8),
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _formatFullTime(playerInfo.createdAt),
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '人数：${playerInfo.playerCount}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
     Overlay.of(context).insert(_overlayEntry!);
     _autoRemoveTimer = Timer(const Duration(seconds: 2), () => _removeOverlay());
   }
