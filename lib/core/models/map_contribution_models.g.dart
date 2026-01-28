@@ -121,3 +121,116 @@ Map<String, dynamic> _$ContributionVoteResponseToJson(
   'hasVoted': instance.hasVoted,
   'voteType': _$VoteTypeEnumMap[instance.voteType],
 };
+
+MapInfo _$MapInfoFromJson(Map<String, dynamic> json) => MapInfo(
+  mapName: json['mapName'] as String,
+  mapLabel: json['mapLabel'] as String,
+  mapBackground: json['mapBackground'] as String?,
+  contribCount: (json['contribCount'] as num?)?.toInt() ?? 0,
+  nameCount: (json['nameCount'] as num?)?.toInt() ?? 0,
+  backgroundCount: (json['backgroundCount'] as num?)?.toInt() ?? 0,
+);
+
+Map<String, dynamic> _$MapInfoToJson(MapInfo instance) => <String, dynamic>{
+  'mapName': instance.mapName,
+  'mapLabel': instance.mapLabel,
+  'mapBackground': instance.mapBackground,
+  'contribCount': instance.contribCount,
+  'nameCount': instance.nameCount,
+  'backgroundCount': instance.backgroundCount,
+};
+
+MapContributionGroup _$MapContributionGroupFromJson(
+  Map<String, dynamic> json,
+) => MapContributionGroup(
+  mapInfo: MapInfo.fromJson(json['mapInfo'] as Map<String, dynamic>),
+  items: (json['items'] as List<dynamic>)
+      .map((e) => MapContribution.fromJson(e as Map<String, dynamic>))
+      .toList(),
+);
+
+Map<String, dynamic> _$MapContributionGroupToJson(
+  MapContributionGroup instance,
+) => <String, dynamic>{'mapInfo': instance.mapInfo, 'items': instance.items};
+
+PaginationParams _$PaginationParamsFromJson(Map<String, dynamic> json) =>
+    PaginationParams(
+      pageIndex: (json['pageIndex'] as num?)?.toInt() ?? 1,
+      pageSize: (json['pageSize'] as num?)?.toInt() ?? 20,
+      orderBy: json['orderBy'] as String? ?? 'created_at DESC',
+    );
+
+Map<String, dynamic> _$PaginationParamsToJson(PaginationParams instance) =>
+    <String, dynamic>{
+      'pageIndex': instance.pageIndex,
+      'pageSize': instance.pageSize,
+      'orderBy': instance.orderBy,
+    };
+
+MapContributionListRequest _$MapContributionListRequestFromJson(
+  Map<String, dynamic> json,
+) => MapContributionListRequest(
+  pagination: PaginationParams.fromJson(
+    json['pagination'] as Map<String, dynamic>,
+  ),
+  mapName: json['mapName'] as String?,
+  type: json['type'] as String?,
+  userId: (json['userId'] as num?)?.toInt(),
+  auditStatus: json['auditStatus'] as String?,
+  keyword: json['keyword'] as String?,
+  keywordType: json['keywordType'] as String?,
+  startAt: json['startAt'] as String?,
+  endAt: json['endAt'] as String?,
+);
+
+Map<String, dynamic> _$MapContributionListRequestToJson(
+  MapContributionListRequest instance,
+) => <String, dynamic>{
+  'pagination': instance.pagination,
+  'mapName': instance.mapName,
+  'type': instance.type,
+  'userId': instance.userId,
+  'auditStatus': instance.auditStatus,
+  'keyword': instance.keyword,
+  'keywordType': instance.keywordType,
+  'startAt': instance.startAt,
+  'endAt': instance.endAt,
+};
+
+MapContributionListResponse _$MapContributionListResponseFromJson(
+  Map<String, dynamic> json,
+) => MapContributionListResponse(
+  total: (json['total'] as num).toInt(),
+  groups: (json['groups'] as List<dynamic>)
+      .map((e) => MapContributionGroup.fromJson(e as Map<String, dynamic>))
+      .toList(),
+);
+
+Map<String, dynamic> _$MapContributionListResponseToJson(
+  MapContributionListResponse instance,
+) => <String, dynamic>{'total': instance.total, 'groups': instance.groups};
+
+MapListResponse _$MapListResponseFromJson(Map<String, dynamic> json) =>
+    MapListResponse(
+      total: (json['total'] as num).toInt(),
+      items: (json['items'] as List<dynamic>)
+          .map((e) => MapInfo.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+Map<String, dynamic> _$MapListResponseToJson(MapListResponse instance) =>
+    <String, dynamic>{'total': instance.total, 'items': instance.items};
+
+MapListRequest _$MapListRequestFromJson(Map<String, dynamic> json) =>
+    MapListRequest(
+      pagination: PaginationParams.fromJson(
+        json['pagination'] as Map<String, dynamic>,
+      ),
+      mapName: json['mapName'] as String?,
+    );
+
+Map<String, dynamic> _$MapListRequestToJson(MapListRequest instance) =>
+    <String, dynamic>{
+      'pagination': instance.pagination,
+      'mapName': instance.mapName,
+    };
