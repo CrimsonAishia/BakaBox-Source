@@ -35,17 +35,8 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     
-    // 监听tab切换，用于显示/隐藏状态筛选器
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging) {
-        setState(() {
-          // 切换到"全部地图"时重置状态筛选
-          if (_tabController.index == 0) {
-            _selectedStatus = null;
-          }
-        });
-      }
-    });
+    // 监听 tab 切换（包括点击和滑动）
+    _tabController.addListener(_onTabChanged);
     
     // 初始加载全部地图数据
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -55,9 +46,31 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
 
   @override
   void dispose() {
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// Tab 切换监听器（处理点击和滑动）
+  void _onTabChanged() {
+    // indexIsChanging 为 true 表示正在切换（滑动开始）
+    // indexIsChanging 为 false 且 index 改变表示切换完成
+    if (!_tabController.indexIsChanging) {
+      // 切换完成后加载数据
+      setState(() {
+        // 重置页码
+        _currentPage = 1;
+        
+        // 切换到"全部地图"时重置状态筛选
+        if (_tabController.index == 0) {
+          _selectedStatus = null;
+          _loadAllMaps();
+        } else {
+          _loadMyMaps();
+        }
+      });
+    }
   }
 
   void _loadAllMaps({int page = 1}) {
@@ -215,13 +228,6 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
                   Expanded(
                     child: TabBar(
                       controller: _tabController,
-                      onTap: (index) {
-                        if (index == 0) {
-                          _loadAllMaps();
-                        } else {
-                          _loadMyMaps();
-                        }
-                      },
                       indicator: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
