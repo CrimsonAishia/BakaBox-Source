@@ -27,6 +27,30 @@ class MapGroupCard extends StatefulWidget {
 
 class _MapGroupCardState extends State<MapGroupCard> {
   bool _isHovered = false;
+  Future<String>? _signedUrlFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSignedUrl();
+  }
+
+  @override
+  void didUpdateWidget(MapGroupCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.group.mapInfo.mapBackground != widget.group.mapInfo.mapBackground) {
+      _loadSignedUrl();
+    }
+  }
+
+  void _loadSignedUrl() {
+    final bg = widget.group.mapInfo.mapBackground;
+    if (bg != null && bg.isNotEmpty) {
+      _signedUrlFuture = ImageUrlService.instance.getSignedUrl(bg);
+    } else {
+      _signedUrlFuture = null;
+    }
+  }
 
   void _showHistoryDialog() {
     MapHistoryDialog.show(
@@ -310,8 +334,9 @@ class _MapGroupCardState extends State<MapGroupCard> {
       );
     }
 
+    // 使用缓存的 Future，避免每次 rebuild 都重新请求
     return FutureBuilder<String>(
-      future: ImageUrlService.instance.getSignedUrl(mapInfo.mapBackground!),
+      future: _signedUrlFuture,
       builder: (context, snapshot) {
         final imageUrl = snapshot.data ?? mapInfo.mapBackground!;
         return DiskCachedImage(

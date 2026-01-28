@@ -50,9 +50,12 @@ class _MapHistoryTabState extends State<MapHistoryTab> {
   @override
   void dispose() {
     _scrollController.dispose();
+    
+    // 清理大列表和缓存，防止内存泄漏
     _historyData.clear();
     _serverNameCache.clear();
     _loadingServers.clear();
+    
     super.dispose();
   }
 
@@ -568,6 +571,11 @@ class _HistoryListItemState extends State<_HistoryListItem> with SingleTickerPro
   @override
   void dispose() {
     _animationController.dispose();
+    
+    // 清理趋势数据，释放内存
+    _trendData?.clear();
+    _trendData = null;
+    
     super.dispose();
   }
 

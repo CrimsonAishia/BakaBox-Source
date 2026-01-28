@@ -123,6 +123,10 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     _nameFocusNode.dispose();
     _scrollController.removeListener(_updateScrollIndicators);
     _scrollController.dispose();
+    
+    // 清理 File 引用，释放文件句柄
+    _selectedImage = null;
+    
     super.dispose();
   }
 
@@ -2114,6 +2118,7 @@ class _ContributionImageState extends State<_ContributionImage> {
   String? _signedUrl;
   bool _isLoading = true;
   bool _hasError = false;
+  bool _disposed = false;
 
   @override
   void initState() {
@@ -2129,15 +2134,25 @@ class _ContributionImageState extends State<_ContributionImage> {
     }
   }
 
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
   Future<void> _loadSignedUrl() async {
-    setState(() {
-      _isLoading = true;
-      _hasError = false;
-    });
+    if (_disposed) return;
+    
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
+      });
+    }
 
     try {
       final url = await ImageUrlService.instance.getSignedUrl(widget.imageRef);
-      if (mounted) {
+      if (!_disposed && mounted) {
         setState(() {
           _signedUrl = url;
           _isLoading = false;
@@ -2145,7 +2160,7 @@ class _ContributionImageState extends State<_ContributionImage> {
       }
     } catch (e) {
       LogService.d('加载签名URL失败: $e');
-      if (mounted) {
+      if (!_disposed && mounted) {
         setState(() {
           _hasError = true;
           _isLoading = false;
