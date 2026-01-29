@@ -9,6 +9,7 @@ import '../exceptions/app_exception.dart';
 import '../models/update_models.dart';
 import '../utils/platform_utils.dart';
 import '../utils/storage_utils.dart';
+import '../utils/log_service.dart';
 
 /// 更新异常
 class UpdateException implements AppException {
@@ -331,19 +332,33 @@ class UpdateService {
         mode: ProcessStartMode.detached,
       );
       
-      // 等待一下确保进程启动成功
-      await Future.delayed(const Duration(milliseconds: 500));
-      
+      // Process.start 返回时进程已启动，直接退出让安装程序接管
       exit(0);
     } catch (e) {
-      // 静默安装失败，尝试手动启动安装程序
-      final uri = Uri.file(exePath);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
-        // 手动安装不退出程序，让用户自己决定
-      } else {
-        throw const UpdateException('无法启动安装程序，请手动运行');
+      // 静默安装启动失败，记录异常并重试
+      LogService.e('静默安装启动失败', e);
+      
+      // 尝试使用 ShellExecute 以管理员权限启动（会触发 UAC）
+      try {
+        await Process.start(
+          'cmd',
+          ['/c', 'start', '', exePath, '/S'],
+          mode: ProcessStartMode.detached,
+          runInShell: true,
+        );
+      } catch (e2) {
+        LogService.e('通过 cmd start 启动也失败', e2);
+        // 最后尝试直接打开
+        final uri = Uri.file(exePath);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri);
+        } else {
+          throw const UpdateException('无法启动安装程序，请手动运行');
+        }
       }
+      
+      // 无论如何都退出程序，让安装程序接管
+      exit(0);
     }
   }
 
