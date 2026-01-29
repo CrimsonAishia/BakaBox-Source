@@ -54,6 +54,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     on<ServerResetCountdown>(_onResetCountdown);
     on<ServerRefreshMapCache>(_onRefreshMapCache);
     on<ServerSwitchTab>(_onSwitchTab);
+    on<ServerEditServer>(_onEditServer);
+    on<ServerUpdateEditedServer>(_onUpdateEditedServer);
+    on<ServerReorderServers>(_onReorderServers);
   }
 
   /// 重置倒计时（递增 countdownResetKey 触发 UI 重置）
@@ -976,6 +979,224 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           // 新 tab 没有分类，清除选中状态
           add(ServerClearCategory());
         }
+      }
+    }
+  }
+  
+  /// 编辑自定义服务器地址
+  Future<void> _onEditServer(ServerEditServer event, Emitter<ServerState> emit) async {
+    try {
+      // 清理旧地址的缓存
+      _failureCountCache.remove(event.oldServerAddress);
+      _mapRuntimeCache.remove(event.oldServerAddress);
+      _mapRuntimeLastFetchedCache.remove(event.oldServerAddress);
+      _serverMapCache.remove(event.oldServerAddress);
+      
+      // 取消旧地址的换图监控（如果有）
+      final monitorService = MapChangeMonitorService();
+      if (monitorService.isMonitoring(event.oldServerAddress)) {
+        await monitorService.removeMonitor(event.oldServerAddress);
+        LogService.i('编辑服务器时取消换图监控: ${event.oldServerAddress}');
+      }
+      
+      final updatedCategory = await CustomServerService.editServerInCategory(
+        event.categoryName,
+        event.oldServerAddress,
+        event.newServerAddress,
+      );
+      
+      // 更新分类列表
+      final categoryIndex = state.serverCategories.indexWhere(
+        (c) => c.modelName == event.categoryName,
+      );
+      
+      if (categoryIndex != -1) {
+        final updatedCategories = List<ServerCategory>.from(state.serverCategories);
+        updatedCategories[categoryIndex] = updatedCategory;
+        
+        // 如果当前选中的是该分类，只更新被编辑的服务器，而不是刷新整个列表
+        if (state.selectedCategory?.modelName == event.categoryName) {
+          final servers = List<ExtendedServerItem>.from(state.servers);
+          final serverIndex = servers.indexWhere(
+            (s) => (s.serverItem.address ?? s.serverItem.serverAddress) == event.oldServerAddress,
+          );
+          
+          if (serverIndex != -1) {
+            // 创建新的 ServerItem
+            final newServerItem = ServerItem(
+              address: event.newServerAddress,
+              serverAddress: event.newServerAddress,
+              isCustom: true,
+            );
+            
+            // 创建新的 ExtendedServerItem，标记为加载中以触发数据获取
+            servers[serverIndex] = ExtendedServerItem(
+              serverItem: newServerItem,
+              isLoading: true,
+              serverData: null, // 清空旧数据
+              mapInfo: null,
+              mapRuntime: null,
+            );
+            
+            emit(state.copyWith(
+              serverCategories: updatedCategories,
+              selectedCategory: updatedCategory,
+              servers: servers,
+              successMessage: '服务器地址已更新',
+            ));
+            
+            // 异步获取被编辑服务器的数据（不阻塞 UI）
+            _fetchEditedServerData(event.newServerAddress, serverIndex);
+          } else {
+            emit(state.copyWith(
+              serverCategories: updatedCategories,
+              selectedCategory: updatedCategory,
+              successMessage: '服务器地址已更新',
+            ));
+          }
+        } else {
+          emit(state.copyWith(
+            serverCategories: updatedCategories,
+            successMessage: '服务器地址已更新',
+          ));
+        }
+        
+        LogService.i('编辑服务器成功: ${event.oldServerAddress} -> ${event.newServerAddress}');
+      }
+    } catch (e) {
+      LogService.e('编辑服务器失败: $e', e);
+      emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '编辑服务器失败')));
+    }
+  }
+  
+  /// 异步获取被编辑服务器的数据
+  void _fetchEditedServerData(String serverAddress, int serverIndex) async {
+    try {
+      // 获取服务器数据
+      final info = await _getServerInfo(serverAddress);
+      
+      // 检查服务器是否还在列表中且地址匹配
+      if (serverIndex >= state.servers.length) return;
+      final currentServer = state.servers[serverIndex];
+      if ((currentServer.serverItem.address ?? currentServer.serverItem.serverAddress) != serverAddress) return;
+      
+      if (info != null) {
+        final serverData = _convertSourceServerInfo(info);
+        
+        // 使用 add 发送更新事件，而不是直接 emit（因为这是异步方法）
+        add(ServerUpdateEditedServer(
+          serverAddress: serverAddress,
+          serverData: serverData,
+        ));
+        
+        // 获取地图信息
+        final mapName = info.map;
+        if (mapName != 'graphics_settings') {
+          final serverApi = ServerApi();
+          serverApi.getMapInfo(mapName).then((mapInfo) {
+            if (mapInfo != null) {
+              add(ServerUpdateSingleServer(address: serverAddress, mapInfo: mapInfo));
+            }
+          }).catchError((e) {
+            LogService.e('获取地图信息失败: $e', e);
+          });
+        }
+      } else {
+        // 获取失败
+        add(ServerUpdateEditedServer(
+          serverAddress: serverAddress,
+          serverData: null,
+          hasError: true,
+        ));
+      }
+    } catch (e) {
+      LogService.e('获取服务器数据失败: $serverAddress, $e', e);
+      add(ServerUpdateEditedServer(
+        serverAddress: serverAddress,
+        serverData: null,
+        hasError: true,
+      ));
+    }
+  }
+  
+  /// 处理被编辑服务器的数据更新
+  void _onUpdateEditedServer(ServerUpdateEditedServer event, Emitter<ServerState> emit) {
+    final index = state.servers.indexWhere(
+      (s) => (s.serverItem.address ?? s.serverItem.serverAddress) == event.serverAddress,
+    );
+    if (index == -1) return;
+    
+    final servers = List<ExtendedServerItem>.from(state.servers);
+    final current = servers[index];
+    
+    servers[index] = current.copyWith(
+      isLoading: false,
+      serverData: event.serverData,
+      hasError: event.hasError,
+    );
+    
+    emit(state.copyWith(servers: servers));
+  }
+  
+  /// 重新排序自定义服务器
+  Future<void> _onReorderServers(ServerReorderServers event, Emitter<ServerState> emit) async {
+    // 先进行乐观更新（立即更新 UI），避免与 ReorderableListView 动画冲突
+    if (state.selectedCategory?.modelName == event.categoryName) {
+      final servers = List<ExtendedServerItem>.from(state.servers);
+      if (event.oldIndex >= 0 && event.oldIndex < servers.length &&
+          event.newIndex >= 0 && event.newIndex < servers.length) {
+        final item = servers.removeAt(event.oldIndex);
+        servers.insert(event.newIndex, item);
+        
+        // 立即更新服务器列表顺序
+        emit(state.copyWith(servers: servers));
+      }
+    }
+    
+    // 然后异步保存到存储
+    try {
+      final updatedCategory = await CustomServerService.reorderServersInCategory(
+        event.categoryName,
+        event.oldIndex,
+        event.newIndex,
+      );
+      
+      // 更新分类列表
+      final categoryIndex = state.serverCategories.indexWhere(
+        (c) => c.modelName == event.categoryName,
+      );
+      
+      if (categoryIndex != -1) {
+        final updatedCategories = List<ServerCategory>.from(state.serverCategories);
+        updatedCategories[categoryIndex] = updatedCategory;
+        
+        emit(state.copyWith(
+          serverCategories: updatedCategories,
+          selectedCategory: state.selectedCategory?.modelName == event.categoryName 
+              ? updatedCategory 
+              : state.selectedCategory,
+        ));
+        
+        LogService.i('重新排序服务器成功: ${event.oldIndex} -> ${event.newIndex}');
+      }
+    } catch (e) {
+      LogService.e('重新排序服务器失败: $e', e);
+      // 如果保存失败，回滚 UI 状态
+      if (state.selectedCategory?.modelName == event.categoryName) {
+        final servers = List<ExtendedServerItem>.from(state.servers);
+        if (event.newIndex >= 0 && event.newIndex < servers.length &&
+            event.oldIndex >= 0 && event.oldIndex <= servers.length) {
+          final item = servers.removeAt(event.newIndex);
+          servers.insert(event.oldIndex, item);
+          emit(state.copyWith(
+            servers: servers,
+            error: ErrorUtils.getErrorMessage(e, defaultMessage: '排序失败'),
+          ));
+        } else {
+          emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '排序失败')));
+        }
+      } else {
+        emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '排序失败')));
       }
     }
   }

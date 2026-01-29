@@ -15,6 +15,7 @@ import '../widgets/add_server_dialog.dart';
 
 /// 自动刷新间隔（秒）
 const int _kRefreshInterval = 15;
+
 /// 分类人数刷新间隔（秒）- 未选中分类的刷新频率
 const int _kCategoryCountsRefreshInterval = 60;
 
@@ -28,37 +29,40 @@ class ServersDesktop extends StatefulWidget {
 class _ServersDesktopState extends State<ServersDesktop> {
   ServerBloc? _serverBloc;
   bool _isInitialized = false;
-  
+
   // ScrollController for lists
   final ScrollController _serversScrollController = ScrollController();
   final ScrollController _categoriesScrollController = ScrollController();
-  
+
   // 滚动指示器状态
   bool _canScrollUpServers = false;
   bool _canScrollDownServers = false;
   bool _canScrollUpCategories = false;
   bool _canScrollDownCategories = false;
-  
+
   // Ping 相关
   int _lastPingRequestId = 0;
-  
+
   // 分类人数刷新定时器
   Timer? _categoryCountsRefreshTimer;
   int _categoryCountsCountdown = _kCategoryCountsRefreshInterval;
 
+  // 卡片管理模式（排序模式）
+  bool _isReorderMode = false;
+
   @override
   void initState() {
     super.initState();
-    
+
     // 监听服务器列表滚动
     _serversScrollController.addListener(_updateServersScrollIndicators);
     // 监听分类列表滚动
     _categoriesScrollController.addListener(_updateCategoriesScrollIndicators);
-    
+
     // 启动分类人数刷新定时器
     _startCategoryCountsRefreshTimer();
   }
-  
+
   void _updateServersScrollIndicators() {
     if (!_serversScrollController.hasClients) return;
     final position = _serversScrollController.position;
@@ -71,34 +75,37 @@ class _ServersDesktopState extends State<ServersDesktop> {
       });
     }
   }
-  
+
   void _updateCategoriesScrollIndicators() {
     if (!_categoriesScrollController.hasClients) return;
     final position = _categoriesScrollController.position;
     final canUp = position.pixels > 0;
     final canDown = position.pixels < position.maxScrollExtent;
-    if (canUp != _canScrollUpCategories || canDown != _canScrollDownCategories) {
+    if (canUp != _canScrollUpCategories ||
+        canDown != _canScrollDownCategories) {
       setState(() {
         _canScrollUpCategories = canUp;
         _canScrollDownCategories = canDown;
       });
     }
   }
-  
+
   /// 延迟获取所有服务器的 ping
   void _scheduleDelayedPingFetch() {
     final requestId = ++_lastPingRequestId;
-    
+
     // 延迟 500ms 后获取 ping
     Future.delayed(const Duration(milliseconds: 500), () {
       if (!mounted || requestId != _lastPingRequestId) return;
-      
+
       // 从 bloc 获取最新的服务器列表
       final bloc = _serverBloc;
       if (bloc == null) return;
-      
+
       final currentServers = bloc.state.servers;
-      final serversWithData = currentServers.where((s) => s.serverData != null).toList();
+      final serversWithData = currentServers
+          .where((s) => s.serverData != null)
+          .toList();
       if (serversWithData.isNotEmpty) {
         _fetchAllServerPings(serversWithData);
       } else {
@@ -107,9 +114,11 @@ class _ServersDesktopState extends State<ServersDesktop> {
           if (!mounted || requestId != _lastPingRequestId) return;
           final bloc = _serverBloc;
           if (bloc == null) return;
-          
+
           final laterServers = bloc.state.servers;
-          final serversWithDataLater = laterServers.where((s) => s.serverData != null).toList();
+          final serversWithDataLater = laterServers
+              .where((s) => s.serverData != null)
+              .toList();
           if (serversWithDataLater.isNotEmpty) {
             _fetchAllServerPings(serversWithDataLater);
           }
@@ -117,12 +126,12 @@ class _ServersDesktopState extends State<ServersDesktop> {
       }
     });
   }
-  
+
   /// 批量获取所有服务器的 ping
   Future<void> _fetchAllServerPings(List<ExtendedServerItem> servers) async {
     final bloc = _serverBloc;
     if (bloc == null || servers.isEmpty) return;
-    
+
     // 串行获取 ping，避免同时创建多个 Ping 实例
     for (final server in servers) {
       if (!mounted) break;
@@ -132,7 +141,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
 
   /// 获取单个服务器的 ping
   Future<void> _fetchServerPing(
-      ExtendedServerItem server, ServerBloc bloc) async {
+    ExtendedServerItem server,
+    ServerBloc bloc,
+  ) async {
     final address = server.serverItem.address;
     if (address == null || address.isEmpty) return;
 
@@ -144,25 +155,27 @@ class _ServersDesktopState extends State<ServersDesktop> {
       // forceCodepage: true 解决 Windows 中文系统编码问题
       // encoding: Utf8Codec(allowMalformed: true) 忽略非 UTF-8 字符
       final ping = Ping(
-        ip, 
-        count: 3, 
+        ip,
+        count: 3,
         timeout: 3,
         forceCodepage: true,
         encoding: const Utf8Codec(allowMalformed: true),
       );
       final results = <Duration>[];
-      
+
       await for (final event in ping.stream) {
         if (!mounted) break;
         if (event.response != null && event.response!.time != null) {
           results.add(event.response!.time!);
         }
       }
-      
+
       if (results.isNotEmpty && mounted) {
         // 计算平均延迟
-        final avgMs = results.map((d) => d.inMilliseconds).reduce((a, b) => a + b) ~/ results.length;
-        
+        final avgMs =
+            results.map((d) => d.inMilliseconds).reduce((a, b) => a + b) ~/
+            results.length;
+
         // 计算 ping 状态
         String pingStatus;
         if (avgMs < 50) {
@@ -183,10 +196,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
           pingStatus: pingStatus,
         );
 
-        bloc.add(ServerUpdateSingleServer(
-          address: address,
-          pingInfo: pingInfo,
-        ));
+        bloc.add(
+          ServerUpdateSingleServer(address: address, pingInfo: pingInfo),
+        );
       }
     } catch (e) {
       // 忽略 ping 获取失败
@@ -208,10 +220,10 @@ class _ServersDesktopState extends State<ServersDesktop> {
           } else {
             // 分类已加载，检查是否需要自动选择第一个分类
             _autoSelectFirstCategory(bloc.state);
-            
+
             // 检查是否需要立即刷新：如果距离上次刷新超过5秒，立即刷新
             final lastRefresh = bloc.state.lastRefreshTime;
-            if (lastRefresh != null && 
+            if (lastRefresh != null &&
                 bloc.state.selectedCategory != null &&
                 DateTime.now().difference(lastRefresh).inSeconds > 5) {
               bloc.add(ServerRefreshServers());
@@ -226,20 +238,28 @@ class _ServersDesktopState extends State<ServersDesktop> {
   /// 桌面端自动选择第一个分类（如果没有选中分类）
   void _autoSelectFirstCategory(ServerState state) {
     if (!mounted) return;
-    if (state.selectedCategory == null && 
-        state.serverCategories.isNotEmpty && 
+    if (state.selectedCategory == null &&
+        state.serverCategories.isNotEmpty &&
         !state.isLoading) {
       // 优先选择默认分类（API 分类）的第一个
-      final defaultCategories = state.serverCategories.where((c) => !c.isCustom).toList();
+      final defaultCategories = state.serverCategories
+          .where((c) => !c.isCustom)
+          .toList();
       if (defaultCategories.isNotEmpty) {
-        context.read<ServerBloc>().add(ServerSelectCategory(defaultCategories.first));
+        context.read<ServerBloc>().add(
+          ServerSelectCategory(defaultCategories.first),
+        );
       } else {
         // 如果没有默认分类，选择自定义分类的第一个
-        final customCategories = state.serverCategories.where((c) => c.isCustom).toList();
+        final customCategories = state.serverCategories
+            .where((c) => c.isCustom)
+            .toList();
         if (customCategories.isNotEmpty) {
           // 切换到自定义 tab
           context.read<ServerBloc>().add(const ServerSwitchTab(1));
-          context.read<ServerBloc>().add(ServerSelectCategory(customCategories.first));
+          context.read<ServerBloc>().add(
+            ServerSelectCategory(customCategories.first),
+          );
         }
       }
     }
@@ -259,15 +279,17 @@ class _ServersDesktopState extends State<ServersDesktop> {
   void _startCategoryCountsRefreshTimer() {
     _categoryCountsRefreshTimer?.cancel();
     _categoryCountsCountdown = _kCategoryCountsRefreshInterval;
-    
-    _categoryCountsRefreshTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+
+    _categoryCountsRefreshTimer = Timer.periodic(const Duration(seconds: 1), (
+      timer,
+    ) {
       if (!mounted) {
         timer.cancel();
         return;
       }
-      
+
       _categoryCountsCountdown--;
-      
+
       if (_categoryCountsCountdown <= 0) {
         // 触发分类人数刷新
         _serverBloc?.add(ServerUpdateCategoryOnlineCounts());
@@ -275,7 +297,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
       }
     });
   }
-  
+
   /// 停止分类人数刷新定时器
   void _stopCategoryCountsRefreshTimer() {
     _categoryCountsRefreshTimer?.cancel();
@@ -287,7 +309,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
     _serverBloc?.add(ServerStopPeriodicRefresh());
     _stopCategoryCountsRefreshTimer();
     _serversScrollController.removeListener(_updateServersScrollIndicators);
-    _categoriesScrollController.removeListener(_updateCategoriesScrollIndicators);
+    _categoriesScrollController.removeListener(
+      _updateCategoriesScrollIndicators,
+    );
     _serversScrollController.dispose();
     _categoriesScrollController.dispose();
     super.dispose();
@@ -357,7 +381,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
         if (state.selectedCategory == null) {
           return const SizedBox.shrink();
         }
-        
+
         return CompactRefreshProgress(
           refreshInterval: _kRefreshInterval,
           onRefresh: () => _handleRefresh(state),
@@ -424,7 +448,74 @@ class _ServersDesktopState extends State<ServersDesktop> {
                   ),
                 ),
               ),
-              // 始终占位，避免高度变动
+              // 管理按钮（仅自定义分类显示）
+              AnimatedOpacity(
+                opacity: canAddServer ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 200),
+                child: IgnorePointer(
+                  ignoring: !canAddServer,
+                  child: Tooltip(
+                    message: _isReorderMode ? '完成排序' : '管理卡片',
+                    child: InkWell(
+                      onTap: () {
+                        setState(() => _isReorderMode = !_isReorderMode);
+                      },
+                      borderRadius: BorderRadius.circular(6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _isReorderMode
+                              ? const Color(0xFF3B82F6).withValues(alpha: 0.2)
+                              : (isDark
+                                    ? Colors.white.withValues(alpha: 0.08)
+                                    : Colors.black.withValues(alpha: 0.06)),
+                          borderRadius: BorderRadius.circular(6),
+                          border: _isReorderMode
+                              ? Border.all(
+                                  color: const Color(
+                                    0xFF3B82F6,
+                                  ).withValues(alpha: 0.5),
+                                  width: 1,
+                                )
+                              : null,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _isReorderMode
+                                  ? Icons.check_rounded
+                                  : Icons.reorder_rounded,
+                              size: 18,
+                              color: _isReorderMode
+                                  ? const Color(0xFF3B82F6)
+                                  : (isDark ? Colors.white70 : Colors.black54),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _isReorderMode ? '完成' : '管理',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: _isReorderMode
+                                    ? const Color(0xFF3B82F6)
+                                    : (isDark
+                                          ? Colors.white70
+                                          : Colors.black54),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              if (canAddServer) const SizedBox(width: 8),
+              // 添加服务器按钮
               AnimatedOpacity(
                 opacity: canAddServer ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 200),
@@ -483,9 +574,11 @@ class _ServersDesktopState extends State<ServersDesktop> {
         if (state.servers.isEmpty) {
           final isCustomCategory = state.selectedCategory?.isCustom ?? false;
           return _buildEmptyState(
-            icon: isCustomCategory ? Icons.add_circle_outline : Icons.cloud_off_outlined,
+            icon: isCustomCategory
+                ? Icons.add_circle_outline
+                : Icons.cloud_off_outlined,
             title: isCustomCategory ? '暂无服务器' : '暂无服务器数据',
-            subtitle: isCustomCategory 
+            subtitle: isCustomCategory
                 ? '点击上方 + 按钮添加服务器到此分类'
                 : '请点击刷新按钮或选择其他分类',
           );
@@ -503,58 +596,28 @@ class _ServersDesktopState extends State<ServersDesktop> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateServersScrollIndicators();
     });
-    
+
     return Stack(
       children: [
-        Scrollbar(
-          controller: _serversScrollController,
-          thumbVisibility: true,
-          child: BlocBuilder<ServerBloc, ServerState>(
-            builder: (context, state) {
-              // 使用 state.servers 确保数据一致性
-              final currentServers = state.servers;
-              return ListView.builder(
-                controller: _serversScrollController,
-                padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
-                itemCount: currentServers.length,
-                itemBuilder: (context, index) {
-                  final server = currentServers[index];
-                  // 每个卡片独立判断：加载中且无数据时显示骨架屏
-                  final showSkeleton = server.isLoading && server.serverData == null;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 15),
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
-                      child: showSkeleton
-                          ? const ServerCardSkeleton()
-                          : ServerCard(
-                              key: ValueKey(server.serverItem.address),
-                              server: server,
-                              // 只有自定义分类才传递分类名（用于换图通知显示）
-                              categoryName: state.selectedCategory?.isCustom == true
-                                  ? state.selectedCategory?.modelName
-                                  : null,
-                              onTap: () => _showServerDetails(server),
-                              onDelete: server.serverItem.isCustom
-                                  ? () {
-                                      final categoryName = state.selectedCategory?.modelName;
-                                      final address = server.serverItem.address ?? 
-                                                      server.serverItem.serverAddress;
-                                      if (categoryName != null && address != null) {
-                                        context.read<ServerBloc>().add(ServerDeleteServer(
-                                          categoryName: categoryName,
-                                          serverAddress: address,
-                                        ));
-                                      }
-                                    }
-                                  : null,
-                            ),
-                    ),
-                  );
-                },
+        BlocBuilder<ServerBloc, ServerState>(
+          builder: (context, state) {
+            final currentServers = state.servers;
+            final isCustomCategory = state.selectedCategory?.isCustom == true;
+            final categoryName = state.selectedCategory?.modelName;
+
+            // 自定义分类且处于管理模式时使用可拖拽排序列表
+            if (isCustomCategory && categoryName != null && _isReorderMode) {
+              return _buildReorderableServerList(
+                context,
+                state,
+                currentServers,
+                categoryName,
               );
-            },
-          ),
+            }
+
+            // 其他情况使用普通列表
+            return _buildNormalServerList(context, state, currentServers);
+          },
         ),
         // 顶部滚动指示器
         if (_canScrollUpServers)
@@ -573,6 +636,194 @@ class _ServersDesktopState extends State<ServersDesktop> {
             child: _buildScrollIndicator(isTop: false),
           ),
       ],
+    );
+  }
+
+  /// 构建普通服务器列表（非自定义分类）
+  Widget _buildNormalServerList(
+    BuildContext context,
+    ServerState state,
+    List<ExtendedServerItem> servers,
+  ) {
+    return Scrollbar(
+      controller: _serversScrollController,
+      thumbVisibility: true,
+      child: ListView.builder(
+        controller: _serversScrollController,
+        padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+        itemCount: servers.length,
+        itemBuilder: (context, index) =>
+            _buildServerCardItem(context, state, servers[index], index),
+      ),
+    );
+  }
+
+  /// 构建可拖拽排序的服务器列表（自定义分类）
+  Widget _buildReorderableServerList(
+    BuildContext context,
+    ServerState state,
+    List<ExtendedServerItem> servers,
+    String categoryName,
+  ) {
+    return Scrollbar(
+      controller: _serversScrollController,
+      thumbVisibility: true,
+      child: ReorderableListView.builder(
+        scrollController: _serversScrollController,
+        padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+        itemCount: servers.length,
+        buildDefaultDragHandles: false, // 禁用默认拖拽手柄，使用自定义的
+        onReorder: (oldIndex, newIndex) {
+          // ReorderableListView 的 newIndex 在向下移动时需要调整
+          if (newIndex > oldIndex) {
+            newIndex -= 1;
+          }
+          if (oldIndex != newIndex) {
+            context.read<ServerBloc>().add(
+              ServerReorderServers(
+                categoryName: categoryName,
+                oldIndex: oldIndex,
+                newIndex: newIndex,
+              ),
+            );
+          }
+        },
+        proxyDecorator: (child, index, animation) {
+          // 拖拽时的装饰器 - 只添加阴影，不包裹额外的 Material
+          return AnimatedBuilder(
+            animation: animation,
+            builder: (context, child) {
+              final double animValue = Curves.easeInOut.transform(
+                animation.value,
+              );
+              return Transform.scale(
+                scale: 1.0 + (0.02 * animValue), // 轻微放大效果
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF3B82F6).withValues(
+                          alpha: 0.4 * animValue,
+                        ),
+                        blurRadius: 20 * animValue,
+                        spreadRadius: 2 * animValue,
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3 * animValue),
+                        blurRadius: 15 * animValue,
+                        offset: Offset(0, 8 * animValue),
+                      ),
+                    ],
+                  ),
+                  child: child,
+                ),
+              );
+            },
+            child: child,
+          );
+        },
+        itemBuilder: (context, index) {
+          final server = servers[index];
+          // 使用服务器地址作为唯一 key，确保拖拽时的稳定性
+          final serverKey = server.serverItem.address ?? 
+              server.serverItem.serverAddress ?? 
+              'server_$index';
+          return _buildDraggableServerCardItem(
+            key: ValueKey(serverKey),
+            context: context,
+            state: state,
+            server: server,
+            index: index,
+          );
+        },
+      ),
+    );
+  }
+
+  /// 构建单个服务器卡片项（用于普通列表）
+  Widget _buildServerCardItem(
+    BuildContext context,
+    ServerState state,
+    ExtendedServerItem server,
+    int index,
+  ) {
+    final showSkeleton = server.isLoading && server.serverData == null;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: showSkeleton
+            ? const ServerCardSkeleton()
+            : ServerCard(
+                key: ValueKey(server.serverItem.address),
+                server: server,
+                categoryName: state.selectedCategory?.isCustom == true
+                    ? state.selectedCategory?.modelName
+                    : null,
+                onTap: () => _showServerDetails(server),
+                onDelete: server.serverItem.isCustom
+                    ? () {
+                        final categoryName = state.selectedCategory?.modelName;
+                        final address =
+                            server.serverItem.address ??
+                            server.serverItem.serverAddress;
+                        if (categoryName != null && address != null) {
+                          context.read<ServerBloc>().add(
+                            ServerDeleteServer(
+                              categoryName: categoryName,
+                              serverAddress: address,
+                            ),
+                          );
+                        }
+                      }
+                    : null,
+              ),
+      ),
+    );
+  }
+
+  /// 构建可拖拽的服务器卡片项（用于可排序列表）
+  Widget _buildDraggableServerCardItem({
+    required Key key,
+    required BuildContext context,
+    required ServerState state,
+    required ExtendedServerItem server,
+    required int index,
+  }) {
+    final showSkeleton = server.isLoading && server.serverData == null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      key: key,
+      padding: const EdgeInsets.only(bottom: 15),
+      child: showSkeleton
+          ? const ServerCardSkeleton()
+          : _ReorderableCardWrapper(
+              index: index,
+              isDark: isDark,
+              child: ServerCard(
+                key: ValueKey('card_${server.serverItem.address}'),
+                server: server,
+                categoryName: state.selectedCategory?.modelName,
+                disableHoverPanel: true, // 排序模式下禁用浮动面板避免Overlay冲突
+                onTap: () => _showServerDetails(server),
+                onDelete: () {
+                  final categoryName = state.selectedCategory?.modelName;
+                  final address =
+                      server.serverItem.address ??
+                      server.serverItem.serverAddress;
+                  if (categoryName != null && address != null) {
+                    context.read<ServerBloc>().add(
+                      ServerDeleteServer(
+                        categoryName: categoryName,
+                        serverAddress: address,
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
     );
   }
 
@@ -647,8 +898,11 @@ class _ServersDesktopState extends State<ServersDesktop> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.warning_amber_rounded,
-                size: 48, color: Colors.orange.shade400),
+            Icon(
+              Icons.warning_amber_rounded,
+              size: 48,
+              color: Colors.orange.shade400,
+            ),
             const SizedBox(height: 16),
             Text(
               error,
@@ -664,9 +918,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
               onPressed: () {
                 final state = context.read<ServerBloc>().state;
                 if (state.selectedCategory != null) {
-                  context
-                      .read<ServerBloc>()
-                      .add(ServerSelectCategory(state.selectedCategory!));
+                  context.read<ServerBloc>().add(
+                    ServerSelectCategory(state.selectedCategory!),
+                  );
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -714,7 +968,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+                color: isDark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFE5E7EB),
                 width: 1,
               ),
             ),
@@ -727,17 +983,25 @@ class _ServersDesktopState extends State<ServersDesktop> {
                   children: [
                     _buildTabButton(
                       label: '默认',
-                      count: state.serverCategories.where((c) => !c.isCustom).length,
+                      count: state.serverCategories
+                          .where((c) => !c.isCustom)
+                          .length,
                       isSelected: state.selectedTabIndex == 0,
-                      onTap: () => context.read<ServerBloc>().add(const ServerSwitchTab(0)),
+                      onTap: () => context.read<ServerBloc>().add(
+                        const ServerSwitchTab(0),
+                      ),
                       isDark: isDark,
                     ),
                     const SizedBox(width: 12),
                     _buildTabButton(
                       label: '自定义',
-                      count: state.serverCategories.where((c) => c.isCustom).length,
+                      count: state.serverCategories
+                          .where((c) => c.isCustom)
+                          .length,
                       isSelected: state.selectedTabIndex == 1,
-                      onTap: () => context.read<ServerBloc>().add(const ServerSwitchTab(1)),
+                      onTap: () => context.read<ServerBloc>().add(
+                        const ServerSwitchTab(1),
+                      ),
                       isDark: isDark,
                     ),
                   ],
@@ -755,10 +1019,14 @@ class _ServersDesktopState extends State<ServersDesktop> {
                           child: Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+                              color: const Color(
+                                0xFF0080FF,
+                              ).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
-                                color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                                color: const Color(
+                                  0xFF0080FF,
+                                ).withValues(alpha: 0.3),
                                 width: 1,
                               ),
                             ),
@@ -795,9 +1063,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: isSelected
-                  ? const Color(0xFF0080FF)
-                  : Colors.transparent,
+              color: isSelected ? const Color(0xFF0080FF) : Colors.transparent,
               width: 2,
             ),
           ),
@@ -821,7 +1087,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
               decoration: BoxDecoration(
                 color: isSelected
                     ? const Color(0xFF0080FF).withValues(alpha: 0.15)
-                    : (isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6)),
+                    : (isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFF3F4F6)),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -900,9 +1168,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    isCustomTab
-                        ? '点击上方 + 按钮添加自定义分类'
-                        : '系统默认分类将在此显示',
+                    isCustomTab ? '点击上方 + 按钮添加自定义分类' : '系统默认分类将在此显示',
                     style: TextStyle(
                       fontSize: 14,
                       color: isDark ? Colors.white54 : const Color(0xFF6B7280),
@@ -934,10 +1200,13 @@ class _ServersDesktopState extends State<ServersDesktop> {
                   final categoryName = category.modelName ?? '';
                   final isSelected =
                       state.selectedCategory?.modelName == categoryName;
-                  final onlineCount = state.getCategoryOnlineCount(categoryName);
+                  final onlineCount = state.getCategoryOnlineCount(
+                    categoryName,
+                  );
                   // 只在首次加载且该分类还没有获取到人数时显示loading
                   // 一旦该分类有了人数数据（即使是0），就不再显示loading
-                  final isLoadingOnlineCount = !state.hasEverLoadedOnlineCounts && 
+                  final isLoadingOnlineCount =
+                      !state.hasEverLoadedOnlineCounts &&
                       state.isLoadingOnlineCounts &&
                       !state.hasCategoryOnlineCount(categoryName);
 
@@ -949,9 +1218,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
                     onTap: () => _onCategoryTap(category),
                     onDelete: category.isCustom
                         ? () {
-                            context
-                                .read<ServerBloc>()
-                                .add(ServerDeleteCategory(categoryName));
+                            context.read<ServerBloc>().add(
+                              ServerDeleteCategory(categoryName),
+                            );
                           }
                         : null,
                   );
@@ -979,7 +1248,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
       },
     );
   }
-  
+
   /// 构建滚动指示器
   Widget _buildScrollIndicator({required bool isTop}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1040,20 +1309,118 @@ class _ServersDesktopState extends State<ServersDesktop> {
   void _showAddServerDialog() {
     final state = context.read<ServerBloc>().state;
     final categoryName = state.selectedCategory?.modelName;
-    
+
     if (categoryName == null) return;
-    
+
     showDialog<String>(
       context: context,
       builder: (context) => AddServerDialog(categoryName: categoryName),
     ).then((serverAddress) {
       if (!mounted) return;
       if (serverAddress != null && serverAddress.isNotEmpty) {
-        context.read<ServerBloc>().add(ServerAddServer(
-          categoryName: categoryName,
-          serverAddress: serverAddress,
-        ));
+        context.read<ServerBloc>().add(
+          ServerAddServer(
+            categoryName: categoryName,
+            serverAddress: serverAddress,
+          ),
+        );
       }
     });
+  }
+}
+
+/// 可拖拽卡片包装器 - 支持整体长按拖拽和 hover 提示
+class _ReorderableCardWrapper extends StatefulWidget {
+  final int index;
+  final bool isDark;
+  final Widget child;
+
+  const _ReorderableCardWrapper({
+    required this.index,
+    required this.isDark,
+    required this.child,
+  });
+
+  @override
+  State<_ReorderableCardWrapper> createState() =>
+      _ReorderableCardWrapperState();
+}
+
+class _ReorderableCardWrapperState extends State<_ReorderableCardWrapper> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return ReorderableDragStartListener(
+      index: widget.index,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.grab,
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: Stack(
+          children: [
+            // 卡片内容
+            widget.child,
+            // Hover 黑色遮罩和长按提示
+            Positioned.fill(
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: _isHovered ? 1.0 : 0.0,
+                child: IgnorePointer(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: widget.isDark
+                              ? const Color(0xFF1E293B).withValues(alpha: 0.95)
+                              : Colors.white.withValues(alpha: 0.95),
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.drag_indicator_rounded,
+                              color: Color(0xFF3B82F6),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '长按拖动排序',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: widget.isDark
+                                    ? Colors.white
+                                    : Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
