@@ -18,13 +18,15 @@ import 'server_history_dialog.dart';
 import 'server_card_skeleton.dart';
 import '../queue/queue_window.dart';
 import '../../../core/widgets/map_contribution_dialog.dart';
+import '../edit_server_dialog.dart';
 
 /// 服务器卡片
 class ServerCard extends StatefulWidget {
   final ExtendedServerItem server;
-  final String? categoryName;  // 分类名称
+  final String? categoryName; // 分类名称
   final VoidCallback? onTap;
   final VoidCallback? onDelete; // 删除回调（仅自定义服务器）
+  final bool disableHoverPanel; // 是否禁用悬浮面板（排序模式时用）
 
   const ServerCard({
     super.key,
@@ -32,33 +34,33 @@ class ServerCard extends StatefulWidget {
     this.categoryName,
     this.onTap,
     this.onDelete,
+    this.disableHoverPanel = false,
   });
 
   @override
   State<ServerCard> createState() => _ServerCardState();
 }
 
-class _ServerCardState extends State<ServerCard>
-    with TickerProviderStateMixin {
+class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   // RGB 动画控制器（仅热身状态时创建，节省内存）
   AnimationController? _rgbController;
   bool _isConnecting = false;
   bool _isHovered = false;
-  
+
   // 浮动面板相关
   OverlayEntry? _floatingPanelEntry;
   final LayerLink _layerLink = LayerLink();
   bool _isPanelHovered = false; // 追踪面板hover状态
-  
+
   // 监听 StatusWindowService 状态
   final StatusWindowService _statusService = StatusWindowService();
   StreamSubscription<OperationState>? _stateSubscription;
-  
+
   // 换图监控服务
   final MapChangeMonitorService _mapMonitorService = MapChangeMonitorService();
   StreamSubscription<Set<String>>? _monitorSubscription;
   bool _isMonitoring = false;
-  
+
   // 热身时间刷新定时器
   Timer? _warmupRefreshTimer;
 
@@ -67,46 +69,56 @@ class _ServerCardState extends State<ServerCard>
     super.initState();
     // 延迟创建动画控制器，只在热身状态时创建
     _updateAnimationController();
-    
+
     // 监听状态变化，当操作完成或游戏关闭时重置连接状态
     _stateSubscription = _statusService.stateStream.listen(_onStatusChanged);
-    
+
     // 初始化换图监控状态
-    final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
+    final address =
+        widget.server.serverItem.address ??
+        widget.server.serverItem.serverAddress;
     if (address != null) {
       _isMonitoring = _mapMonitorService.isMonitoring(address);
     }
-    _monitorSubscription = _mapMonitorService.monitorStateStream.listen(_onMonitorStateChanged);
-    
+    _monitorSubscription = _mapMonitorService.monitorStateStream.listen(
+      _onMonitorStateChanged,
+    );
+
     // 如果处于热身状态，启动刷新定时器
     _updateWarmupTimer();
   }
-  
+
   @override
   void didUpdateWidget(covariant ServerCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // 只在热身状态真正改变时更新
-    final oldWarmingUp = oldWidget.server.serverItem.isCustom ? false : MapRuntimeUtils.isWarmingUp(
-      oldWidget.server.mapRuntime,
-      fetchedAt: oldWidget.server.mapRuntimeLastFetched,
-      mapName: oldWidget.server.serverData?.map,
-      hasError: oldWidget.server.mapRuntimeError,
-    );
-    
+    final oldWarmingUp = oldWidget.server.serverItem.isCustom
+        ? false
+        : MapRuntimeUtils.isWarmingUp(
+            oldWidget.server.mapRuntime,
+            fetchedAt: oldWidget.server.mapRuntimeLastFetched,
+            mapName: oldWidget.server.serverData?.map,
+            hasError: oldWidget.server.mapRuntimeError,
+          );
+
     if (oldWarmingUp != _isWarmingUp) {
       _updateWarmupTimer();
       _updateAnimationController();
     }
-    
+
     // 检查地址是否改变，更新监控状态
-    final oldAddress = oldWidget.server.serverItem.address ?? oldWidget.server.serverItem.serverAddress;
-    final newAddress = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
+    final oldAddress =
+        oldWidget.server.serverItem.address ??
+        oldWidget.server.serverItem.serverAddress;
+    final newAddress =
+        widget.server.serverItem.address ??
+        widget.server.serverItem.serverAddress;
     if (oldAddress != newAddress && newAddress != null) {
       _isMonitoring = _mapMonitorService.isMonitoring(newAddress);
     }
   }
-  
+
   /// 更新动画控制器（仅热身状态时创建）
   void _updateAnimationController() {
     if (_isWarmingUp && _rgbController == null) {
@@ -121,7 +133,7 @@ class _ServerCardState extends State<ServerCard>
       _rgbController = null;
     }
   }
-  
+
   /// 更新热身刷新定时器
   void _updateWarmupTimer() {
     if (_isWarmingUp && _warmupRefreshTimer == null) {
@@ -140,10 +152,12 @@ class _ServerCardState extends State<ServerCard>
       _warmupRefreshTimer = null;
     }
   }
-  
+
   void _onMonitorStateChanged(Set<String> monitoredAddresses) {
     if (!mounted) return;
-    final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
+    final address =
+        widget.server.serverItem.address ??
+        widget.server.serverItem.serverAddress;
     if (address != null) {
       final newState = monitoredAddresses.contains(address);
       if (newState != _isMonitoring) {
@@ -151,12 +165,14 @@ class _ServerCardState extends State<ServerCard>
       }
     }
   }
-  
+
   void _onStatusChanged(OperationState state) {
     if (!mounted) return;
-    
-    final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
-    
+
+    final address =
+        widget.server.serverItem.address ??
+        widget.server.serverItem.serverAddress;
+
     // 触发重建以更新按钮状态
     setState(() {
       // 重置连接状态的条件：
@@ -165,14 +181,19 @@ class _ServerCardState extends State<ServerCard>
       // 3. 状态被重置（type=none, status=idle）
       if (_isConnecting) {
         final isCurrentServer = state.serverAddress == address;
-        final isReset = state.type == OperationType.none && state.status == OperationStatus.idle;
-        final isCompleted = state.status == OperationStatus.success ||
+        final isReset =
+            state.type == OperationType.none &&
+            state.status == OperationStatus.idle;
+        final isCompleted =
+            state.status == OperationStatus.success ||
             state.status == OperationStatus.failed ||
             state.status == OperationStatus.serverFull ||
             state.status == OperationStatus.paused;
-        
+
         // 当状态被重置，或当前服务器操作完成，或游戏关闭时，重置连接状态
-        if (isReset || (isCurrentServer && isCompleted) || !state.isGameRunning) {
+        if (isReset ||
+            (isCurrentServer && isCompleted) ||
+            !state.isGameRunning) {
           _isConnecting = false;
         }
       }
@@ -201,13 +222,13 @@ class _ServerCardState extends State<ServerCard>
       }
     }
     if (!mounted) return;
-    
+
     final overlay = Overlay.maybeOf(context);
     if (overlay == null) return;
-    
+
     // 捕获当前 context，避免使用过期的 context
     final currentContext = context;
-    
+
     _floatingPanelEntry = OverlayEntry(
       builder: (overlayContext) => _FloatingActionPanel(
         link: _layerLink,
@@ -227,12 +248,22 @@ class _ServerCardState extends State<ServerCard>
           _hideFloatingPanel();
           _refreshMapCache();
         },
-        onDelete: widget.server.serverItem.isCustom ? () {
-          _hideFloatingPanel();
-          if (mounted) {
-            _showDeleteConfirmDialog(currentContext);
-          }
-        } : null,
+        onDelete: widget.server.serverItem.isCustom
+            ? () {
+                _hideFloatingPanel();
+                if (mounted) {
+                  _showDeleteConfirmDialog(currentContext);
+                }
+              }
+            : null,
+        onEditIp: widget.server.serverItem.isCustom
+            ? () {
+                _hideFloatingPanel();
+                if (mounted) {
+                  _showEditIpDialog(currentContext);
+                }
+              }
+            : null,
         onHoverChanged: (isHovered) {
           _isPanelHovered = isHovered;
           if (!isHovered) {
@@ -265,11 +296,11 @@ class _ServerCardState extends State<ServerCard>
 
   /// 尝试隐藏面板（只有当卡片和面板都没有hover时才隐藏）
   Timer? _hidePanelTimer;
-  
+
   void _tryHidePanel() {
     // 取消之前的定时器
     _hidePanelTimer?.cancel();
-    
+
     _hidePanelTimer = Timer(const Duration(milliseconds: 50), () {
       if (!_isHovered && !_isPanelHovered && mounted) {
         _hideFloatingPanel();
@@ -281,6 +312,9 @@ class _ServerCardState extends State<ServerCard>
   /// 处理卡片hover状态变化
   void _onCardHoverChanged(bool isHovered) {
     setState(() => _isHovered = isHovered);
+    // 如果禁用了悬浮面板（排序模式），不显示面板
+    if (widget.disableHoverPanel) return;
+
     if (isHovered) {
       _showFloatingPanel();
     } else {
@@ -288,13 +322,12 @@ class _ServerCardState extends State<ServerCard>
     }
   }
 
-
   bool get _isWarmingUp {
     // 自定义服务器不进行热身检测
     if (widget.server.serverItem.isCustom) {
       return false;
     }
-    
+
     return MapRuntimeUtils.isWarmingUp(
       widget.server.mapRuntime,
       fetchedAt: widget.server.mapRuntimeLastFetched,
@@ -314,13 +347,14 @@ class _ServerCardState extends State<ServerCard>
         child: _rgbController != null
             ? AnimatedBuilder(
                 animation: _rgbController!,
-                builder: (context, child) => _buildCardContent(_getRgbColor(_rgbController!.value)),
+                builder: (context, child) =>
+                    _buildCardContent(_getRgbColor(_rgbController!.value)),
               )
             : _buildCardContent(const Color(0xFF0080FF)),
       ),
     );
   }
-  
+
   /// 构建卡片内容
   Widget _buildCardContent(Color rgbColor) {
     return AnimatedContainer(
@@ -432,10 +466,7 @@ class _ServerCardState extends State<ServerCard>
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: rgbColor,
-            width: 2,
-          ),
+          border: Border.all(color: rgbColor, width: 2),
         ),
       ),
     );
@@ -462,11 +493,7 @@ class _ServerCardState extends State<ServerCard>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            MdiIcons.bellRing,
-            size: 12,
-            color: const Color(0xFFFFA500),
-          ),
+          Icon(MdiIcons.bellRing, size: 12, color: const Color(0xFFFFA500)),
           const SizedBox(width: 4),
           const Text(
             '监控中',
@@ -491,14 +518,14 @@ class _ServerCardState extends State<ServerCard>
   Widget _buildMapBackground() {
     // 使用 mapInfo 的背景图
     final mapUrl = widget.server.mapInfo?.mapUrl;
-    
+
     // 卡片高度 165，宽度约 400-600
     // 使用 2 倍分辨率保证清晰度，同时限制解码尺寸节省内存
     return MapBackground(
       mapName: widget.server.serverData?.map,
       imageUrl: mapUrl,
-      cacheWidth: 800,   // 2x 显示宽度
-      cacheHeight: 330,  // 2x 显示高度
+      cacheWidth: 800, // 2x 显示宽度
+      cacheHeight: 330, // 2x 显示高度
     );
   }
 
@@ -506,15 +533,15 @@ class _ServerCardState extends State<ServerCard>
   Widget _buildRefreshIndicator() {
     return BlocBuilder<ServerBloc, ServerState>(
       builder: (context, state) {
-        final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
+        final address =
+            widget.server.serverItem.address ??
+            widget.server.serverItem.serverAddress;
         if (address == null || !(state.isMapRefreshing(address))) {
           return const SizedBox.shrink();
         }
 
         // 使用骨架屏覆盖整个卡片
-        return const Positioned.fill(
-          child: ServerCardSkeleton(),
-        );
+        return const Positioned.fill(child: ServerCardSkeleton());
       },
     );
   }
@@ -571,8 +598,8 @@ class _ServerCardState extends State<ServerCard>
     // 确保中文名不为空字符串
     final chineseName = (mapLabel?.isNotEmpty == true) ? mapLabel : null;
     // 显示格式：有中文名时 "英文名 (中文名)"，否则只显示英文名
-    final displayMapName = chineseName != null 
-        ? '$mapName ($chineseName)' 
+    final displayMapName = chineseName != null
+        ? '$mapName ($chineseName)'
         : mapName;
 
     // 只使用系统 ping 的结果
@@ -610,7 +637,10 @@ class _ServerCardState extends State<ServerCard>
                 fontSize: 16,
                 shadows: [
                   Shadow(
-                      color: Colors.black, blurRadius: 2, offset: Offset(0, 1)),
+                    color: Colors.black,
+                    blurRadius: 2,
+                    offset: Offset(0, 1),
+                  ),
                   Shadow(color: Colors.black, blurRadius: 6),
                 ],
               ),
@@ -623,9 +653,10 @@ class _ServerCardState extends State<ServerCard>
                   fontSize: 16,
                   shadows: [
                     Shadow(
-                        color: Colors.black,
-                        blurRadius: 2,
-                        offset: Offset(0, 1)),
+                      color: Colors.black,
+                      blurRadius: 2,
+                      offset: Offset(0, 1),
+                    ),
                     Shadow(color: Colors.black, blurRadius: 6),
                   ],
                 ),
@@ -645,15 +676,16 @@ class _ServerCardState extends State<ServerCard>
                 fontFamily: 'monospace',
                 shadows: [
                   Shadow(
-                      color: Colors.black, blurRadius: 2, offset: Offset(0, 1)),
+                    color: Colors.black,
+                    blurRadius: 2,
+                    offset: Offset(0, 1),
+                  ),
                   Shadow(color: Colors.black, blurRadius: 6),
                 ],
               ),
             ),
             // 复制图标
-            _CopyIconButton(
-              onTap: () => _copyConnectCommand(address),
-            ),
+            _CopyIconButton(onTap: () => _copyConnectCommand(address)),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 8),
               child: Text('|', style: TextStyle(color: Colors.white30)),
@@ -728,20 +760,25 @@ class _ServerCardState extends State<ServerCard>
   Widget _buildButtonGroup() {
     final data = widget.server.serverData;
     final isDisabled = data == null || widget.server.isLoading;
-    final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
+    final address =
+        widget.server.serverItem.address ??
+        widget.server.serverItem.serverAddress;
     final isCustomServer = widget.server.serverItem.isCustom; // 判断是否为自定义服务器
-    
+
     // 检查全局操作状态
     final globalState = _statusService.state;
-    final isGlobalBusy = globalState.type != OperationType.none && 
+    final isGlobalBusy =
+        globalState.type != OperationType.none &&
         globalState.status == OperationStatus.running;
-    final isCurrentServerBusy = globalState.serverAddress == address && isGlobalBusy;
-    final isOtherServerBusy = globalState.serverAddress != address && isGlobalBusy;
-    
+    final isCurrentServerBusy =
+        globalState.serverAddress == address && isGlobalBusy;
+    final isOtherServerBusy =
+        globalState.serverAddress != address && isGlobalBusy;
+
     // 确定连接按钮的文本和状态
     String connectText;
     bool connectDisabled;
-    
+
     if (_isConnecting || isCurrentServerBusy) {
       if (globalState.type == OperationType.launching) {
         connectText = '启动中...';
@@ -773,7 +810,9 @@ class _ServerCardState extends State<ServerCard>
           text: '挤服',
           bgColor: const Color(0xFFFF6E6E),
           textColor: Colors.white,
-          onPressed: isDisabled || isGlobalBusy ? null : () => _showQueueWindow(context),
+          onPressed: isDisabled || isGlobalBusy
+              ? null
+              : () => _showQueueWindow(context),
         ),
         _buildBtn(
           text: '玩家',
@@ -795,10 +834,11 @@ class _ServerCardState extends State<ServerCard>
 
   /// 显示删除确认对话框
   void _showDeleteConfirmDialog(BuildContext context) {
-    final address = widget.server.serverItem.address ?? 
-                    widget.server.serverItem.serverAddress ?? 
-                    '未知地址';
-    
+    final address =
+        widget.server.serverItem.address ??
+        widget.server.serverItem.serverAddress ??
+        '未知地址';
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -825,9 +865,41 @@ class _ServerCardState extends State<ServerCard>
     );
   }
 
+  /// 显示编辑IP对话框
+  void _showEditIpDialog(BuildContext context) {
+    final address =
+        widget.server.serverItem.address ??
+        widget.server.serverItem.serverAddress ??
+        '';
+    final categoryName = widget.categoryName ?? '';
+
+    if (address.isEmpty || categoryName.isEmpty) return;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => EditServerDialog(
+        currentAddress: address,
+        categoryName: categoryName,
+        onConfirm: (newAddress) {
+          if (mounted) {
+            context.read<ServerBloc>().add(
+              ServerEditServer(
+                categoryName: categoryName,
+                oldServerAddress: address,
+                newServerAddress: newAddress,
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+
   /// 切换换图监控
   Future<void> _toggleMapMonitor() async {
-    final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
+    final address =
+        widget.server.serverItem.address ??
+        widget.server.serverItem.serverAddress;
     if (address == null) return;
 
     final serverName = widget.server.serverData?.hostName ?? address;
@@ -841,27 +913,25 @@ class _ServerCardState extends State<ServerCard>
     );
 
     if (mounted) {
-      ToastUtils.showSuccess(
-        context,
-        isNowMonitoring ? '已开启换图监控' : '已关闭换图监控',
-      );
+      ToastUtils.showSuccess(context, isNowMonitoring ? '已开启换图监控' : '已关闭换图监控');
     }
   }
 
   /// 刷新地图信息
   void _refreshMapCache() {
-    final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
+    final address =
+        widget.server.serverItem.address ??
+        widget.server.serverItem.serverAddress;
     final mapName = widget.server.serverData?.map;
-    
+
     if (address == null || mapName == null) {
       return;
     }
 
     // 通过 context 获取 ServerBloc 并发送刷新事件
-    context.read<ServerBloc>().add(ServerRefreshMapCache(
-      address: address,
-      mapName: mapName,
-    ));
+    context.read<ServerBloc>().add(
+      ServerRefreshMapCache(address: address, mapName: mapName),
+    );
   }
 
   Widget _buildBtn({
@@ -894,8 +964,9 @@ class _ServerCardState extends State<ServerCard>
   }
 
   /// 是否处于离线/维护状态
-  bool get _isOffline => widget.server.hasError && widget.server.serverData == null;
-  
+  bool get _isOffline =>
+      widget.server.hasError && widget.server.serverData == null;
+
   /// 是否处于服务器启动状态（graphics_settings 地图）
   bool get _isStarting => widget.server.serverData?.map == 'graphics_settings';
 
@@ -908,7 +979,7 @@ class _ServerCardState extends State<ServerCard>
     if (_isOffline) {
       return _buildOfflineStatus();
     }
-    
+
     // 服务器启动状态显示
     if (_isStarting) {
       return _buildStartingStatus();
@@ -975,11 +1046,7 @@ class _ServerCardState extends State<ServerCard>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 28,
-          ),
+          Icon(icon, color: color, size: 28),
           const SizedBox(height: 6),
           Text(
             text,
@@ -1209,7 +1276,8 @@ class _ServerCardState extends State<ServerCard>
   void _handleConnect() async {
     if (_isConnecting) return;
 
-    final address = widget.server.serverItem.address ??
+    final address =
+        widget.server.serverItem.address ??
         widget.server.serverItem.serverAddress;
     if (address == null) {
       if (mounted) {
@@ -1266,9 +1334,8 @@ class _ServerCardState extends State<ServerCard>
   void _showCsgoManualLaunchDialog(String serverAddress) {
     showDialog(
       context: context,
-      builder: (context) => CsgoManualLaunchDialog(
-        serverAddress: serverAddress,
-      ),
+      builder: (context) =>
+          CsgoManualLaunchDialog(serverAddress: serverAddress),
     );
   }
 
@@ -1285,7 +1352,8 @@ class _ServerCardState extends State<ServerCard>
   }
 
   void _showQueueWindow(BuildContext context) async {
-    final address = widget.server.serverItem.address ??
+    final address =
+        widget.server.serverItem.address ??
         widget.server.serverItem.serverAddress;
     if (address == null) return;
 
@@ -1309,30 +1377,22 @@ class _ServerCardState extends State<ServerCard>
   /// Requirements: 4.4
   void _showContributionDialog(BuildContext context) {
     if (!mounted) return;
-    
+
     final mapName = widget.server.serverData?.map;
     if (mapName == null) return;
 
     final mapLabel = widget.server.mapInfo?.mapLabel;
-    
-    MapContributionDialog.show(
-      context,
-      mapName: mapName,
-      mapLabel: mapLabel,
-    );
+
+    MapContributionDialog.show(context, mapName: mapName, mapLabel: mapLabel);
   }
 }
-
 
 /// 滚动文本组件 - 文本过长时自动滚动
 class _MarqueeText extends StatefulWidget {
   final String text;
   final TextStyle style;
 
-  const _MarqueeText({
-    required this.text,
-    required this.style,
-  });
+  const _MarqueeText({required this.text, required this.style});
 
   @override
   State<_MarqueeText> createState() => _MarqueeTextState();
@@ -1376,7 +1436,7 @@ class _MarqueeTextState extends State<_MarqueeText> {
   void _checkOverflow() {
     if (!mounted || _scrollController == null) return;
     if (!_scrollController!.hasClients) return;
-    
+
     final maxScroll = _scrollController!.position.maxScrollExtent;
     final needsScroll = maxScroll > 0;
     if (needsScroll != _needsScroll) {
@@ -1390,30 +1450,32 @@ class _MarqueeTextState extends State<_MarqueeText> {
   void _startScrolling() async {
     if (!mounted || !_needsScroll || _scrollController == null) return;
     _isScrolling = true;
-    
+
     while (mounted && _needsScroll && _isScrolling) {
       await Future.delayed(const Duration(seconds: 2));
       if (!mounted || !_needsScroll || _scrollController == null) break;
-      
+
       final maxScroll = _scrollController!.position.maxScrollExtent;
       if (maxScroll <= 0) break;
-      
+
       // 滚动到末尾
       try {
         await _scrollController!.animateTo(
           maxScroll,
-          duration: Duration(milliseconds: (maxScroll * 30).toInt().clamp(1000, 5000)),
+          duration: Duration(
+            milliseconds: (maxScroll * 30).toInt().clamp(1000, 5000),
+          ),
           curve: Curves.linear,
         );
       } catch (_) {
         // ScrollController 可能已被 dispose
         break;
       }
-      
+
       if (!mounted) break;
       await Future.delayed(const Duration(seconds: 1));
       if (!mounted) break;
-      
+
       // 滚动回开头
       try {
         await _scrollController!.animateTo(
@@ -1425,7 +1487,7 @@ class _MarqueeTextState extends State<_MarqueeText> {
         // ScrollController 可能已被 dispose
         break;
       }
-      
+
       if (!mounted) break;
       await Future.delayed(const Duration(seconds: 1));
     }
@@ -1438,15 +1500,10 @@ class _MarqueeTextState extends State<_MarqueeText> {
       controller: _scrollController,
       scrollDirection: Axis.horizontal,
       physics: const NeverScrollableScrollPhysics(),
-      child: Text(
-        widget.text,
-        style: widget.style,
-        maxLines: 1,
-      ),
+      child: Text(widget.text, style: widget.style, maxLines: 1),
     );
   }
 }
-
 
 /// 复制图标按钮 - 带hover效果和鼠标指针变化
 class _CopyIconButton extends StatefulWidget {
@@ -1491,6 +1548,7 @@ class _FloatingActionPanel extends StatefulWidget {
   final VoidCallback? onMapMonitor;
   final VoidCallback? onRefreshCache;
   final VoidCallback? onDelete;
+  final VoidCallback? onEditIp; // 编辑IP回调
   final ValueChanged<bool>? onHoverChanged;
 
   const _FloatingActionPanel({
@@ -1501,6 +1559,7 @@ class _FloatingActionPanel extends StatefulWidget {
     this.onMapMonitor,
     this.onRefreshCache,
     this.onDelete,
+    this.onEditIp,
     this.onHoverChanged,
   });
 
@@ -1537,15 +1596,30 @@ class _FloatingActionPanelState extends State<_FloatingActionPanel>
   }
 
   /// 构建按钮列表
-  List<_FloatingButtonConfig> _buildButtonConfigs(bool isDisabled, bool isRefreshing) {
+  List<_FloatingButtonConfig> _buildButtonConfigs(
+    bool isDisabled,
+    bool isRefreshing,
+  ) {
+    final isCustomServer = widget.server.serverItem.isCustom;
+
     return [
-      _FloatingButtonConfig(
-        icon: MdiIcons.pencilOutline,
-        label: '编辑地图',
-        color: const Color(0xFF8B5CF6),
-        isDisabled: isDisabled,
-        onTap: isDisabled ? null : widget.onMapEdit,
-      ),
+      // 编辑IP按钮（仅自定义服务器显示）
+      if (isCustomServer && widget.onEditIp != null)
+        _FloatingButtonConfig(
+          icon: MdiIcons.pencilOutline,
+          label: '编辑IP',
+          color: const Color(0xFF0EA5E9),
+          onTap: widget.onEditIp,
+        ),
+      // 编辑地图按钮（非自定义服务器显示）
+      if (!isCustomServer)
+        _FloatingButtonConfig(
+          icon: MdiIcons.imageEditOutline,
+          label: '编辑地图',
+          color: const Color(0xFF8B5CF6),
+          isDisabled: isDisabled,
+          onTap: isDisabled ? null : widget.onMapEdit,
+        ),
       _FloatingButtonConfig(
         icon: MdiIcons.refresh,
         label: '刷新缓存',
@@ -1579,14 +1653,17 @@ class _FloatingActionPanelState extends State<_FloatingActionPanel>
     final data = widget.server.serverData;
     final isDisabled = data == null || widget.server.isLoading;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // 获取刷新状态
-    final address = widget.server.serverItem.address ?? widget.server.serverItem.serverAddress;
-    
+    final address =
+        widget.server.serverItem.address ??
+        widget.server.serverItem.serverAddress;
+
     return BlocBuilder<ServerBloc, ServerState>(
       builder: (context, state) {
-        final isRefreshing = address != null && (state.isMapRefreshing(address));
-        
+        final isRefreshing =
+            address != null && (state.isMapRefreshing(address));
+
         // 构建按钮配置列表
         final buttons = _buildButtonConfigs(isDisabled, isRefreshing);
 
@@ -1601,14 +1678,15 @@ class _FloatingActionPanelState extends State<_FloatingActionPanel>
         // 将按钮分配到各列
         final columns = <List<_FloatingButtonConfig>>[];
         for (var i = 0; i < buttons.length; i += maxPerColumn) {
-          columns.add(buttons.sublist(
-            i,
-            (i + maxPerColumn).clamp(0, buttons.length),
-          ));
+          columns.add(
+            buttons.sublist(i, (i + maxPerColumn).clamp(0, buttons.length)),
+          );
         }
 
         // 深色/浅色主题颜色
-        final borderColor = isDark ? const Color(0xFF475569) : const Color(0xFF94A3B8);
+        final borderColor = isDark
+            ? const Color(0xFF475569)
+            : const Color(0xFF94A3B8);
         final bgGradientColors = isDark
             ? [const Color(0xF01E293B), const Color(0xE80F172A)]
             : [const Color(0xF0FFFFFF), const Color(0xE8F8FAFC)];
@@ -1662,13 +1740,17 @@ class _FloatingActionPanelState extends State<_FloatingActionPanel>
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: shadowColor.withValues(alpha: isDark ? 0.3 : 0.12),
+                          color: shadowColor.withValues(
+                            alpha: isDark ? 0.3 : 0.12,
+                          ),
                           blurRadius: 16,
                           offset: const Offset(4, 4),
                           spreadRadius: 0,
                         ),
                         BoxShadow(
-                          color: shadowColor.withValues(alpha: isDark ? 0.2 : 0.06),
+                          color: shadowColor.withValues(
+                            alpha: isDark ? 0.2 : 0.06,
+                          ),
                           blurRadius: 6,
                           offset: const Offset(2, 2),
                         ),
@@ -1773,16 +1855,32 @@ class _FloatingActionButtonState extends State<_FloatingActionButton> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // 深色/浅色主题颜色
-    final disabledBgColor = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
-    final normalBgColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
-    final borderColor = isDark ? const Color(0xFF475569) : const Color(0xFFE2E8F0);
-    final disabledIconColor = isDark ? const Color(0xFF64748B) : const Color(0xFFCBD5E1);
-    final normalIconColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final disabledTextColor = isDark ? const Color(0xFF64748B) : const Color(0xFFCBD5E1);
-    final normalTextColor = isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569);
+    final disabledBgColor = isDark
+        ? const Color(0xFF334155)
+        : const Color(0xFFE2E8F0);
+    final normalBgColor = isDark
+        ? const Color(0xFF1E293B)
+        : const Color(0xFFF1F5F9);
+    final borderColor = isDark
+        ? const Color(0xFF475569)
+        : const Color(0xFFE2E8F0);
+    final disabledIconColor = isDark
+        ? const Color(0xFF64748B)
+        : const Color(0xFFCBD5E1);
+    final normalIconColor = isDark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF64748B);
+    final disabledTextColor = isDark
+        ? const Color(0xFF64748B)
+        : const Color(0xFFCBD5E1);
+    final normalTextColor = isDark
+        ? const Color(0xFFCBD5E1)
+        : const Color(0xFF475569);
 
     final button = MouseRegion(
-      cursor: isDisabled ? SystemMouseCursors.forbidden : SystemMouseCursors.click,
+      cursor: isDisabled
+          ? SystemMouseCursors.forbidden
+          : SystemMouseCursors.click,
       onEnter: (_) {
         if (!isDisabled) setState(() => _isHovered = true);
       },
@@ -1811,17 +1909,17 @@ class _FloatingActionButtonState extends State<_FloatingActionButton> {
                   color: widget.isActive && !isDisabled
                       ? widget.color
                       : isDisabled
-                          ? disabledBgColor
-                          : _isHovered
-                              ? widget.color.withValues(alpha: isDark ? 0.25 : 0.15)
-                              : normalBgColor,
+                      ? disabledBgColor
+                      : _isHovered
+                      ? widget.color.withValues(alpha: isDark ? 0.25 : 0.15)
+                      : normalBgColor,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: widget.isActive && !isDisabled
                         ? widget.color
                         : isHighlighted && !isDisabled
-                            ? widget.color.withValues(alpha: isDark ? 0.6 : 0.4)
-                            : borderColor,
+                        ? widget.color.withValues(alpha: isDark ? 0.6 : 0.4)
+                        : borderColor,
                     width: 1,
                   ),
                 ),
@@ -1831,10 +1929,10 @@ class _FloatingActionButtonState extends State<_FloatingActionButton> {
                   color: isDisabled
                       ? disabledIconColor
                       : widget.isActive
-                          ? Colors.white
-                          : _isHovered
-                              ? widget.color
-                              : normalIconColor,
+                      ? Colors.white
+                      : _isHovered
+                      ? widget.color
+                      : normalIconColor,
                 ),
               ),
               const SizedBox(height: 4),
@@ -1848,8 +1946,8 @@ class _FloatingActionButtonState extends State<_FloatingActionButton> {
                   color: isDisabled
                       ? disabledTextColor
                       : isHighlighted
-                          ? widget.color
-                          : normalTextColor,
+                      ? widget.color
+                      : normalTextColor,
                   letterSpacing: 0.2,
                 ),
               ),
@@ -1888,10 +1986,12 @@ class _DashedBorderPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     final path = Path()
-      ..addRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, 0, size.width, size.height),
-        Radius.circular(radius),
-      ));
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, size.width, size.height),
+          Radius.circular(radius),
+        ),
+      );
 
     final dashPath = _createDashedPath(path);
     canvas.drawPath(dashPath, paint);

@@ -133,6 +133,81 @@ class CustomServerService {
     return updatedCategory;
   }
   
+  /// 编辑分类中的服务器地址
+  static Future<ServerCategory> editServerInCategory(
+    String categoryName,
+    String oldServerAddress,
+    String newServerAddress,
+  ) async {
+    final categories = await loadCustomCategories();
+    
+    final categoryIndex = categories.indexWhere((c) => c.modelName == categoryName);
+    if (categoryIndex == -1) {
+      throw Exception('分类 "$categoryName" 不存在');
+    }
+    
+    final category = categories[categoryIndex];
+    
+    // 检查新地址是否已存在
+    if (category.serverList.any((s) => 
+        (s.address ?? s.serverAddress) == newServerAddress)) {
+      throw Exception('服务器地址已存在');
+    }
+    
+    // 查找并更新服务器地址
+    final serverIndex = category.serverList.indexWhere((s) =>
+        (s.address ?? s.serverAddress) == oldServerAddress);
+    if (serverIndex == -1) {
+      throw Exception('服务器 "$oldServerAddress" 不存在');
+    }
+    
+    final updatedServerList = List<ServerItem>.from(category.serverList);
+    updatedServerList[serverIndex] = ServerItem(
+      address: newServerAddress,
+      serverAddress: newServerAddress,
+      isCustom: true,
+    );
+    
+    final updatedCategory = category.copyWith(serverList: updatedServerList);
+    categories[categoryIndex] = updatedCategory;
+    await saveCustomCategories(categories);
+    
+    LogService.i('编辑服务器地址: $oldServerAddress -> $newServerAddress (分类: $categoryName)');
+    return updatedCategory;
+  }
+  
+  /// 重新排序分类中的服务器
+  static Future<ServerCategory> reorderServersInCategory(
+    String categoryName,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    final categories = await loadCustomCategories();
+    
+    final categoryIndex = categories.indexWhere((c) => c.modelName == categoryName);
+    if (categoryIndex == -1) {
+      throw Exception('分类 "$categoryName" 不存在');
+    }
+    
+    final category = categories[categoryIndex];
+    
+    if (oldIndex < 0 || oldIndex >= category.serverList.length ||
+        newIndex < 0 || newIndex >= category.serverList.length) {
+      throw Exception('索引超出范围');
+    }
+    
+    final updatedServerList = List<ServerItem>.from(category.serverList);
+    final item = updatedServerList.removeAt(oldIndex);
+    updatedServerList.insert(newIndex, item);
+    
+    final updatedCategory = category.copyWith(serverList: updatedServerList);
+    categories[categoryIndex] = updatedCategory;
+    await saveCustomCategories(categories);
+    
+    LogService.i('重新排序服务器: $oldIndex -> $newIndex (分类: $categoryName)');
+    return updatedCategory;
+  }
+  
   /// 清除所有自定义数据
   static Future<void> clearAll() async {
     await StorageUtils.remove(_customCategoriesKey);

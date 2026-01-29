@@ -137,3 +137,45 @@ class ServerSwitchTab extends ServerEvent {
   @override
   List<Object?> get props => [tabIndex];
 }
+
+/// 编辑自定义服务器地址
+class ServerEditServer extends ServerEvent {
+  final String categoryName;
+  final String oldServerAddress;
+  final String newServerAddress;
+  const ServerEditServer({
+    required this.categoryName,
+    required this.oldServerAddress,
+    required this.newServerAddress,
+  });
+  @override
+  List<Object?> get props => [categoryName, oldServerAddress, newServerAddress];
+}
+
+/// 更新被编辑服务器的数据（内部事件）
+class ServerUpdateEditedServer extends ServerEvent {
+  final String serverAddress;
+  final ServerInfo? serverData;
+  final bool hasError;
+  const ServerUpdateEditedServer({
+    required this.serverAddress,
+    this.serverData,
+    this.hasError = false,
+  });
+  @override
+  List<Object?> get props => [serverAddress, serverData, hasError];
+}
+
+/// 重新排序自定义服务器
+class ServerReorderServers extends ServerEvent {
+  final String categoryName;
+  final int oldIndex;
+  final int newIndex;
+  const ServerReorderServers({
+    required this.categoryName,
+    required this.oldIndex,
+    required this.newIndex,
+  });
+  @override
+  List<Object?> get props => [categoryName, oldIndex, newIndex];
+}
