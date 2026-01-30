@@ -108,22 +108,25 @@ class SearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return TextField(
-      controller: controller,
-      style: TextStyle(fontSize: 13, color: isDark ? Colors.white : const Color(0xFF1a1a2e)),
-      decoration: InputDecoration(
-        hintText: '搜索...',
-        hintStyle: TextStyle(fontSize: 13, color: isDark ? Colors.white38 : Colors.grey[400]),
-        prefixIcon: Icon(Icons.search, size: 18, color: isDark ? Colors.white38 : Colors.grey[400]),
-        filled: true,
-        fillColor: isDark ? const Color(0xFF334155) : Colors.grey[100],
-        contentPadding: const EdgeInsets.symmetric(vertical: 0),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: BorderSide.none,
+    return SizedBox(
+      height: 36,
+      child: TextField(
+        controller: controller,
+        style: TextStyle(fontSize: 12, color: isDark ? Colors.white : const Color(0xFF1a1a2e)),
+        decoration: InputDecoration(
+          hintText: '搜索...',
+          hintStyle: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.grey[400]),
+          prefixIcon: Icon(Icons.search, size: 18, color: isDark ? Colors.white38 : Colors.grey[400]),
+          filled: true,
+          fillColor: isDark ? const Color(0xFF334155) : Colors.grey[100],
+          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide.none,
+          ),
         ),
+        onChanged: onChanged,
       ),
-      onChanged: onChanged,
     );
   }
 }
@@ -131,14 +134,20 @@ class SearchField extends StatelessWidget {
 /// 分类下拉
 class CategoryDropdown extends StatefulWidget {
   final int? selectedCategoryId;
+  final bool showMyConfigs;
+  final bool isAuthenticated;
   final List<CategoryItem> categories;
   final ValueChanged<int?> onChanged;
+  final ValueChanged<bool>? onMyConfigsChanged;
 
   const CategoryDropdown({
     super.key,
     required this.selectedCategoryId,
+    this.showMyConfigs = false,
+    this.isAuthenticated = false,
     required this.categories,
     required this.onChanged,
+    this.onMyConfigsChanged,
   });
 
   @override
@@ -152,45 +161,79 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    final selectedCategory = widget.categories.cast<CategoryItem?>().firstWhere(
-      (c) => c?.id == widget.selectedCategoryId,
-      orElse: () => null,
-    );
-    final displayName = selectedCategory?.name ?? '全部';
+    String displayName;
+    if (widget.showMyConfigs) {
+      displayName = '我的';
+    } else {
+      final selectedCategory = widget.categories.cast<CategoryItem?>().firstWhere(
+        (c) => c?.id == widget.selectedCategoryId,
+        orElse: () => null,
+      );
+      displayName = selectedCategory?.name ?? '全部';
+    }
     
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       cursor: SystemMouseCursors.click,
-      child: PopupMenuButton<int?>(
+      child: PopupMenuButton<dynamic>(
         itemBuilder: (context) => [
+          // 全部选项
           PopupMenuItem(
-            value: null,
+            value: 'all',
             onTap: () {
-              Future.delayed(Duration.zero, () => widget.onChanged(null));
+              Future.delayed(Duration.zero, () {
+                widget.onMyConfigsChanged?.call(false);
+                widget.onChanged(null);
+              });
             },
             child: Row(
               children: [
-                if (widget.selectedCategoryId == null)
+                if (!widget.showMyConfigs && widget.selectedCategoryId == null)
                   const Padding(
                     padding: EdgeInsets.only(right: 8),
-                    child: Icon(Icons.check, size: 16),
+                    child: Icon(Icons.check, size: 16, color: Color(0xFF0080FF)),
                   ),
                 const Text('全部'),
               ],
             ),
           ),
+          // 我的配置选项（仅登录后显示）
+          if (widget.isAuthenticated)
+            PopupMenuItem(
+              value: 'mine',
+              onTap: () {
+                Future.delayed(Duration.zero, () {
+                  widget.onMyConfigsChanged?.call(true);
+                });
+              },
+              child: Row(
+                children: [
+                  if (widget.showMyConfigs)
+                    const Padding(
+                      padding: EdgeInsets.only(right: 8),
+                      child: Icon(Icons.check, size: 16, color: Color(0xFF0080FF)),
+                    ),
+                  const Text('我的'),
+                ],
+              ),
+            ),
+          const PopupMenuDivider(),
+          // 分类选项
           ...widget.categories.map((c) => PopupMenuItem(
             value: c.id,
             onTap: () {
-              Future.delayed(Duration.zero, () => widget.onChanged(c.id));
+              Future.delayed(Duration.zero, () {
+                widget.onMyConfigsChanged?.call(false);
+                widget.onChanged(c.id);
+              });
             },
             child: Row(
               children: [
-                if (widget.selectedCategoryId == c.id)
+                if (!widget.showMyConfigs && widget.selectedCategoryId == c.id)
                   const Padding(
                     padding: EdgeInsets.only(right: 8),
-                    child: Icon(Icons.check, size: 16),
+                    child: Icon(Icons.check, size: 16, color: Color(0xFF0080FF)),
                   ),
                 Text(c.name),
               ],
@@ -199,12 +242,18 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
         ],
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: _hovered 
-                ? (isDark ? const Color(0xFF475569) : Colors.grey[200]) 
-                : (isDark ? const Color(0xFF334155) : Colors.grey[100]),
+            color: widget.showMyConfigs
+                ? const Color(0xFF0080FF).withValues(alpha: 0.1)
+                : (_hovered 
+                    ? (isDark ? const Color(0xFF475569) : Colors.grey[200]) 
+                    : (isDark ? const Color(0xFF334155) : Colors.grey[100])),
             borderRadius: BorderRadius.circular(20),
+            border: widget.showMyConfigs
+                ? Border.all(color: const Color(0xFF0080FF).withValues(alpha: 0.3))
+                : null,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -213,14 +262,19 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
                 displayName,
                 style: TextStyle(
                   fontSize: 12,
-                  color: isDark ? Colors.white70 : Colors.grey[700],
+                  fontWeight: widget.showMyConfigs ? FontWeight.w600 : FontWeight.normal,
+                  color: widget.showMyConfigs 
+                      ? const Color(0xFF0080FF)
+                      : (isDark ? Colors.white70 : Colors.grey[700]),
                 ),
               ),
               const SizedBox(width: 4),
               Icon(
                 Icons.arrow_drop_down,
                 size: 18,
-                color: isDark ? Colors.white54 : Colors.grey[600],
+                color: widget.showMyConfigs 
+                    ? const Color(0xFF0080FF)
+                    : (isDark ? Colors.white54 : Colors.grey[600]),
               ),
             ],
           ),

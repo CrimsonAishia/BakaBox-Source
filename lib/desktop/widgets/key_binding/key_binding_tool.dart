@@ -22,7 +22,7 @@ class _KeyBindingToolState extends State<KeyBindingTool> {
   int _rightMode = 0;
   
   // 正在编辑的配置（模式3时使用）
-  var _editingConfig;
+  dynamic _editingConfig;
 
   @override
   void initState() {

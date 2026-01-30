@@ -8,6 +8,7 @@ class ConfigCard extends StatefulWidget {
   final KeyConfig config;
   final bool selected;
   final bool applied;
+  final bool showAuditStatus;
   final VoidCallback onTap;
 
   const ConfigCard({
@@ -15,6 +16,7 @@ class ConfigCard extends StatefulWidget {
     required this.config,
     required this.selected,
     required this.applied,
+    this.showAuditStatus = false,
     required this.onTap,
   });
 
@@ -30,7 +32,8 @@ class _ConfigCardState extends State<ConfigCard> {
     final backendUserInfo = TokenService.instance.userInfo;
     final isOwner = backendUserInfo != null && backendUserInfo.id == widget.config.userID;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final showAuditStatusBar = !widget.config.isApproved;
+    // 只有在 showAuditStatus 为 true 且配置未通过审核时才显示审核状态栏
+    final showAuditStatusBar = widget.showAuditStatus && !widget.config.isApproved;
     
     final Color borderColor;
     if (showAuditStatusBar) {
