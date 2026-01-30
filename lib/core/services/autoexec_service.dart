@@ -203,8 +203,8 @@ class AutoexecService {
     // 先移除已存在的同ID配置块
     content = removeConfigBlock(content, configId);
     
-    // 替换占位符
-    final processedScript = KeyPlaceholderParser.replace(configScript, keyBindings);
+    // 替换占位符（应用时不显示标签，因为理论上不应该有未绑定的情况）
+    final processedScript = KeyPlaceholderParser.replace(configScript, keyBindings, showLabelOnMissing: false);
     
     // 生成按键标识（用于标记）
     final keyLabel = keyBindings.isNotEmpty 

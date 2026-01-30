@@ -38,10 +38,15 @@ class KeyPlaceholderParser {
   ///
   /// [script] 配置脚本
   /// [keyBindings] 按键映射，key 为标签名，value 为按键值
-  static String replace(String script, Map<String, String> keyBindings) {
+  /// [showLabelOnMissing] 未绑定时是否显示标签名，默认为 true
+  static String replace(String script, Map<String, String> keyBindings, {bool showLabelOnMissing = true}) {
     return script.replaceAllMapped(placeholderPattern, (match) {
       final label = match.group(1)!;
-      return keyBindings[label] ?? match.group(0)!;
+      final key = keyBindings[label];
+      if (key != null && key.isNotEmpty) {
+        return key;
+      }
+      return showLabelOnMissing ? '[$label:未绑定]' : '';
     });
   }
 
