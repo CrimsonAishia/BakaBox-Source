@@ -122,6 +122,14 @@ class KeyBindingSetSearchKeyword extends KeyBindingEvent {
   List<Object?> get props => [keyword];
 }
 
+/// 设置是否显示用户自己的配置
+class KeyBindingSetShowMyConfigs extends KeyBindingEvent {
+  final bool showMyConfigs;
+  const KeyBindingSetShowMyConfigs(this.showMyConfigs);
+  @override
+  List<Object?> get props => [showMyConfigs];
+}
+
 /// 在文件管理器中打开 autoexec.cfg 目录
 class KeyBindingOpenInExplorer extends KeyBindingEvent {}
 
@@ -130,6 +138,14 @@ class KeyBindingCopyAutoexecContent extends KeyBindingEvent {}
 
 /// 清除消息（成功/错误）
 class KeyBindingClearMessages extends KeyBindingEvent {}
+
+/// 加载用户自己的配置列表
+class KeyBindingLoadMyConfigs extends KeyBindingEvent {
+  final bool showSuccessMessage;
+  const KeyBindingLoadMyConfigs({this.showSuccessMessage = false});
+  @override
+  List<Object?> get props => [showSuccessMessage];
+}
 
 /// 投票
 class KeyBindingVote extends KeyBindingEvent {

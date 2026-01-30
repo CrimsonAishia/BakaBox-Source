@@ -6,6 +6,12 @@ class KeyBindingState extends Equatable {
   /// 配置列表
   final List<KeyConfig> configs;
   
+  /// 用户自己的配置列表
+  final List<KeyConfig> myConfigs;
+  
+  /// 是否正在加载用户配置
+  final bool isLoadingMyConfigs;
+  
   /// 分类列表
   final List<KeyConfigCategory> categories;
   
@@ -33,6 +39,9 @@ class KeyBindingState extends Equatable {
   /// 搜索关键词
   final String? searchKeyword;
   
+  /// 是否显示用户自己的配置
+  final bool showMyConfigs;
+  
   /// 是否正在发布配置
   final bool isPublishing;
   
@@ -53,6 +62,8 @@ class KeyBindingState extends Equatable {
 
   const KeyBindingState({
     this.configs = const [],
+    this.myConfigs = const [],
+    this.isLoadingMyConfigs = false,
     this.categories = const [],
     this.isLoading = false,
     this.error,
@@ -62,6 +73,7 @@ class KeyBindingState extends Equatable {
     this.appliedConfigs = const [],
     this.categoryFilter,
     this.searchKeyword,
+    this.showMyConfigs = false,
     this.isPublishing = false,
     this.isSaving = false,
     this.isLoadingAutoexec = false,
@@ -83,6 +95,15 @@ class KeyBindingState extends Equatable {
     return [...applied, ...notApplied];
   }
 
+  /// 获取用户配置列表（审核中的置顶）
+  List<KeyConfig> get filteredMyConfigs {
+    // 审核中的配置置顶
+    final pending = myConfigs.where((c) => c.isPending).toList();
+    final others = myConfigs.where((c) => !c.isPending).toList();
+    
+    return [...pending, ...others];
+  }
+
   /// 检查配置是否已应用
   bool isConfigApplied(String configId) {
     return appliedConfigs.any((block) => block.configId == configId);
@@ -99,6 +120,8 @@ class KeyBindingState extends Equatable {
 
   KeyBindingState copyWith({
     List<KeyConfig>? configs,
+    List<KeyConfig>? myConfigs,
+    bool? isLoadingMyConfigs,
     List<KeyConfigCategory>? categories,
     bool? isLoading,
     String? error,
@@ -113,6 +136,7 @@ class KeyBindingState extends Equatable {
     bool clearCategoryFilter = false,
     String? searchKeyword,
     bool clearSearchKeyword = false,
+    bool? showMyConfigs,
     bool? isPublishing,
     bool? isSaving,
     bool? isLoadingAutoexec,
@@ -123,6 +147,8 @@ class KeyBindingState extends Equatable {
   }) {
     return KeyBindingState(
       configs: configs ?? this.configs,
+      myConfigs: myConfigs ?? this.myConfigs,
+      isLoadingMyConfigs: isLoadingMyConfigs ?? this.isLoadingMyConfigs,
       categories: categories ?? this.categories,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
@@ -132,6 +158,7 @@ class KeyBindingState extends Equatable {
       appliedConfigs: appliedConfigs ?? this.appliedConfigs,
       categoryFilter: clearCategoryFilter ? null : (categoryFilter ?? this.categoryFilter),
       searchKeyword: clearSearchKeyword ? null : (searchKeyword ?? this.searchKeyword),
+      showMyConfigs: showMyConfigs ?? this.showMyConfigs,
       isPublishing: isPublishing ?? this.isPublishing,
       isSaving: isSaving ?? this.isSaving,
       isLoadingAutoexec: isLoadingAutoexec ?? this.isLoadingAutoexec,
@@ -144,6 +171,8 @@ class KeyBindingState extends Equatable {
   @override
   List<Object?> get props => [
     configs,
+    myConfigs,
+    isLoadingMyConfigs,
     categories,
     isLoading,
     error,
@@ -153,6 +182,7 @@ class KeyBindingState extends Equatable {
     appliedConfigs,
     categoryFilter,
     searchKeyword,
+    showMyConfigs,
     isPublishing,
     isSaving,
     isLoadingAutoexec,

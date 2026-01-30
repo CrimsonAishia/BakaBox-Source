@@ -39,9 +39,11 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     on<KeyBindingUpdateConfig>(_onUpdateConfig);
     on<KeyBindingSetCategoryFilter>(_onSetCategoryFilter);
     on<KeyBindingSetSearchKeyword>(_onSetSearchKeyword);
+    on<KeyBindingSetShowMyConfigs>(_onSetShowMyConfigs);
     on<KeyBindingOpenInExplorer>(_onOpenInExplorer);
     on<KeyBindingCopyAutoexecContent>(_onCopyAutoexecContent);
     on<KeyBindingClearMessages>(_onClearMessages);
+    on<KeyBindingLoadMyConfigs>(_onLoadMyConfigs);
     on<KeyBindingVote>(_onVote);
   }
 
@@ -475,6 +477,8 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
         
         // 刷新配置列表（不显示成功提示，避免双重提示）
         add(const KeyBindingLoadConfigs(showSuccessMessage: false));
+        // 刷新用户配置列表
+        add(const KeyBindingLoadMyConfigs(showSuccessMessage: false));
         
         LogService.d('[KeyBindingBloc] 发布配置成功: ${event.request.name}');
       } else {
@@ -515,6 +519,8 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       
       // 刷新配置列表
       add(const KeyBindingLoadConfigs(showSuccessMessage: false));
+      // 刷新用户配置列表
+      add(const KeyBindingLoadMyConfigs(showSuccessMessage: false));
       
       LogService.d('[KeyBindingBloc] 删除配置成功: id=${event.id}');
     } catch (e) {
@@ -569,16 +575,19 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     KeyBindingSetCategoryFilter event,
     Emitter<KeyBindingState> emit,
   ) async {
-    if (event.categoryId == null) {
+    // 使用事件中的 categoryId，而不是 state 中的值
+    final categoryId = event.categoryId;
+    
+    if (categoryId == null) {
       emit(state.copyWith(clearCategoryFilter: true, isLoading: true, clearError: true));
     } else {
-      emit(state.copyWith(categoryFilter: event.categoryId, isLoading: true, clearError: true));
+      emit(state.copyWith(categoryFilter: categoryId, isLoading: true, clearError: true));
     }
     
-    // 直接加载配置，使用更新后的状态
+    // 直接加载配置，使用事件中的 categoryId
     try {
       final response = await _api.getConfigList(
-        categoryId: state.categoryFilter,
+        categoryId: categoryId,
         keyword: state.searchKeyword,
         isActive: true,
       );
@@ -604,42 +613,40 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
   }
 
   /// 设置搜索关键词
-  /// 设置搜索关键词
   Future<void> _onSetSearchKeyword(
     KeyBindingSetSearchKeyword event,
     Emitter<KeyBindingState> emit,
   ) async {
     if (event.keyword == null || event.keyword!.isEmpty) {
-      emit(state.copyWith(clearSearchKeyword: true, isLoading: true, clearError: true));
+      emit(state.copyWith(clearSearchKeyword: true));
     } else {
-      emit(state.copyWith(searchKeyword: event.keyword, isLoading: true, clearError: true));
+      emit(state.copyWith(searchKeyword: event.keyword));
     }
     
-    // 直接加载配置，使用更新后的状态
-    try {
-      final response = await _api.getConfigList(
-        categoryId: state.categoryFilter,
-        keyword: state.searchKeyword,
-        isActive: true,
-      );
-      
-      if (response != null) {
-        emit(state.copyWith(
-          configs: response.items,
-          isLoading: false,
-        ));
-      } else {
-        emit(state.copyWith(
-          isLoading: false,
-          error: '加载配置列表失败',
-        ));
-      }
-    } catch (e) {
-      LogService.e('[KeyBindingBloc] 加载配置列表失败', e);
-      emit(state.copyWith(
-        isLoading: false,
-        error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载配置列表失败'),
-      ));
+    // 根据当前模式加载对应的配置列表
+    if (state.showMyConfigs) {
+      add(const KeyBindingLoadMyConfigs());
+    } else {
+      add(const KeyBindingLoadConfigs());
+    }
+  }
+
+  /// 设置是否显示用户自己的配置
+  Future<void> _onSetShowMyConfigs(
+    KeyBindingSetShowMyConfigs event,
+    Emitter<KeyBindingState> emit,
+  ) async {
+    emit(state.copyWith(
+      showMyConfigs: event.showMyConfigs,
+      clearCategoryFilter: true,
+    ));
+    
+    if (event.showMyConfigs) {
+      // 加载用户配置
+      add(const KeyBindingLoadMyConfigs());
+    } else {
+      // 加载公开配置
+      add(const KeyBindingLoadConfigs());
     }
   }
 
@@ -673,6 +680,42 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     Emitter<KeyBindingState> emit,
   ) {
     emit(state.copyWith(clearError: true, clearSuccessMessage: true));
+  }
+
+  /// 加载用户自己的配置列表
+  Future<void> _onLoadMyConfigs(
+    KeyBindingLoadMyConfigs event,
+    Emitter<KeyBindingState> emit,
+  ) async {
+    emit(state.copyWith(isLoadingMyConfigs: true, clearError: true));
+    
+    try {
+      LogService.d('[KeyBindingBloc] 开始加载用户配置列表');
+      
+      final response = await _api.getMyConfigList(
+        keyword: state.searchKeyword,
+      );
+      
+      if (response != null) {
+        emit(state.copyWith(
+          myConfigs: response.items,
+          isLoadingMyConfigs: false,
+          successMessage: event.showSuccessMessage ? '已刷新我的配置列表' : null,
+        ));
+        LogService.d('[KeyBindingBloc] 加载用户配置列表成功，共 ${response.items.length} 条');
+      } else {
+        emit(state.copyWith(
+          isLoadingMyConfigs: false,
+          error: '加载我的配置列表失败',
+        ));
+      }
+    } catch (e) {
+      LogService.e('[KeyBindingBloc] 加载用户配置列表失败', e);
+      emit(state.copyWith(
+        isLoadingMyConfigs: false,
+        error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载我的配置列表失败'),
+      ));
+    }
   }
 
   /// 投票

@@ -91,17 +91,24 @@ class LeftPanel extends StatelessWidget {
             ),
           ),
           BlocBuilder<KeyBindingBloc, KeyBindingState>(
-            builder: (context, state) => Tooltip(
-              message: '刷新配置列表',
-              child: common.IconButton(
-                icon: Icons.refresh_rounded,
-                loading: state.isLoading,
-                onTap: () {
-                  context.read<KeyBindingBloc>().add(const KeyBindingLoadConfigs(showSuccessMessage: true));
-                  context.read<KeyBindingBloc>().add(KeyBindingLoadCategories());
-                },
-              ),
-            ),
+            builder: (context, state) {
+              final isLoading = state.showMyConfigs ? state.isLoadingMyConfigs : state.isLoading;
+              return Tooltip(
+                message: '刷新配置列表',
+                child: common.IconButton(
+                  icon: Icons.refresh_rounded,
+                  loading: isLoading,
+                  onTap: () {
+                    if (state.showMyConfigs) {
+                      context.read<KeyBindingBloc>().add(const KeyBindingLoadMyConfigs(showSuccessMessage: true));
+                    } else {
+                      context.read<KeyBindingBloc>().add(const KeyBindingLoadConfigs(showSuccessMessage: true));
+                    }
+                    context.read<KeyBindingBloc>().add(KeyBindingLoadCategories());
+                  },
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -138,13 +145,20 @@ class LeftPanel extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 BlocBuilder<KeyBindingBloc, KeyBindingState>(
-                  builder: (context, state) => CategoryDropdown(
-                    selectedCategoryId: state.categoryFilter,
-                    categories: state.categories
-                        .map((c) => CategoryItem(id: c.id, name: c.name))
-                        .toList(),
-                    onChanged: (v) => context.read<KeyBindingBloc>().add(
-                      KeyBindingSetCategoryFilter(v),
+                  builder: (context, state) => BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, authState) => CategoryDropdown(
+                      selectedCategoryId: state.categoryFilter,
+                      showMyConfigs: state.showMyConfigs,
+                      isAuthenticated: authState.isAuthenticated,
+                      categories: state.categories
+                          .map((c) => CategoryItem(id: c.id, name: c.name))
+                          .toList(),
+                      onChanged: (v) => context.read<KeyBindingBloc>().add(
+                        KeyBindingSetCategoryFilter(v),
+                      ),
+                      onMyConfigsChanged: (v) => context.read<KeyBindingBloc>().add(
+                        KeyBindingSetShowMyConfigs(v),
+                      ),
                     ),
                   ),
                 ),
@@ -154,26 +168,28 @@ class LeftPanel extends StatelessWidget {
           Expanded(
             child: BlocBuilder<KeyBindingBloc, KeyBindingState>(
               builder: (context, state) {
-                if (state.isLoading && state.configs.isEmpty) {
+                final isLoading = state.showMyConfigs ? state.isLoadingMyConfigs : state.isLoading;
+                final configs = state.showMyConfigs ? state.filteredMyConfigs : state.filteredConfigs;
+                
+                if (isLoading && configs.isEmpty) {
                   return const Center(
                     child: CircularProgressIndicator(strokeWidth: 2),
                   );
                 }
                 
-                final configs = state.filteredConfigs;
                 if (configs.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          MdiIcons.packageVariant,
+                          state.showMyConfigs ? MdiIcons.packageVariantRemove : MdiIcons.packageVariant,
                           size: 40,
                           color: isDark ? Colors.white24 : Colors.grey[300],
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '暂无配置',
+                          state.showMyConfigs ? '还没有发布过配置' : '暂无配置',
                           style: TextStyle(
                             color: isDark ? Colors.white38 : Colors.grey[400],
                             fontSize: 13,
@@ -195,6 +211,7 @@ class LeftPanel extends StatelessWidget {
                       config: cfg,
                       selected: selected,
                       applied: applied,
+                      showAuditStatus: state.showMyConfigs,
                       onTap: () {
                         context.read<KeyBindingBloc>().add(KeyBindingSelectConfig(cfg));
                         onConfigTap();
