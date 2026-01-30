@@ -66,6 +66,10 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
             create: (_) => FeatureStatusBloc()
               ..add(FeatureStatusLoad())
               ..add(FeatureStatusStartPeriodicRefresh())),
+        BlocProvider(
+            create: (_) => NotificationBloc()
+              ..add(const NotificationFetchUnreadCount())
+              ..add(const NotificationStartAutoRefresh())),
       ],
       child: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {

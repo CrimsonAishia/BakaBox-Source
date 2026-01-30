@@ -4,32 +4,84 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../core/core.dart';
-import 'announcement/announcement_dialog.dart';
+import 'notification/notification_panel.dart';
 
 /// 桌面端自定义窗口控制按钮组件
 /// 
 /// 提供窗口最小化和关闭功能：
-/// - 公告按钮：显示系统公告
+/// - 消息中心按钮：显示公告和通知
 /// - 最小化按钮：将窗口最小化到任务栏 (Requirements 8.1)
 /// - 关闭按钮：显示退出确认对话框 (Requirements 8.2)
-class DesktopWindowControls extends StatelessWidget {
+class DesktopWindowControls extends StatefulWidget {
   const DesktopWindowControls({super.key});
+
+  @override
+  State<DesktopWindowControls> createState() => _DesktopWindowControlsState();
+}
+
+class _DesktopWindowControlsState extends State<DesktopWindowControls> {
+  final GlobalKey _bellKey = GlobalKey();
+  OverlayEntry? _panelOverlay;
 
   /// 显示退出确认对话框，用户确认后关闭窗口
   Future<void> _handleClose(BuildContext context) async {
     final result = await ExitDialog.show(context);
     if (result == true) {
-      // 先隐藏窗口，用户看到窗口立即消失
-      // 然后异步销毁，避免卡顿感
       await windowManager.hide();
       FloatingWindowService().closeAllWindows();
       await windowManager.destroy();
     }
   }
 
-  /// 显示公告对话框
-  void _showAnnouncementDialog(BuildContext context) {
-    AnnouncementDialog.show(context);
+  /// 显示消息中心面板
+  void _showNotificationPanel() {
+    if (_panelOverlay != null) {
+      _hideNotificationPanel();
+      return;
+    }
+
+    final renderBox = _bellKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final position = renderBox.localToGlobal(Offset.zero);
+    final size = renderBox.size;
+
+    _panelOverlay = OverlayEntry(
+      builder: (context) => Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _hideNotificationPanel,
+              behavior: HitTestBehavior.opaque,
+              child: Container(color: Colors.transparent),
+            ),
+          ),
+          Positioned(
+            top: position.dy + size.height + 8,
+            right: 16,
+            child: Material(
+              color: Colors.transparent,
+              child: NotificationPanel(
+                onClose: _hideNotificationPanel,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    Overlay.of(context).insert(_panelOverlay!);
+  }
+
+  void _hideNotificationPanel() {
+    _panelOverlay?.remove();
+    _panelOverlay = null;
+  }
+
+  @override
+  void dispose() {
+    _hideNotificationPanel();
+    super.dispose();
   }
 
   @override
@@ -63,13 +115,20 @@ class DesktopWindowControls extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 公告按钮
+          // 消息中心按钮（公告+通知）
           BlocBuilder<AnnouncementBloc, AnnouncementState>(
-            builder: (context, state) {
-              return _AnnouncementButton(
-                unreadCount: state.unreadCount,
-                onPressed: () => _showAnnouncementDialog(context),
-                isDark: isDark,
+            builder: (context, announcementState) {
+              return BlocBuilder<NotificationBloc, NotificationState>(
+                builder: (context, notificationState) {
+                  final totalUnread = announcementState.unreadCount + 
+                                      notificationState.unreadCount;
+                  return _MessageCenterButton(
+                    key: _bellKey,
+                    unreadCount: totalUnread,
+                    onPressed: _showNotificationPanel,
+                    isDark: isDark,
+                  );
+                },
               );
             },
           ),
@@ -100,27 +159,29 @@ class DesktopWindowControls extends StatelessWidget {
   }
 }
 
-/// 公告按钮组件
-class _AnnouncementButton extends StatefulWidget {
+/// 消息中心按钮组件（公告+通知）
+class _MessageCenterButton extends StatefulWidget {
   final int unreadCount;
   final VoidCallback onPressed;
   final bool isDark;
 
-  const _AnnouncementButton({
+  const _MessageCenterButton({
+    super.key,
     required this.unreadCount,
     required this.onPressed,
     required this.isDark,
   });
 
   @override
-  State<_AnnouncementButton> createState() => _AnnouncementButtonState();
+  State<_MessageCenterButton> createState() => _MessageCenterButtonState();
 }
 
-class _AnnouncementButtonState extends State<_AnnouncementButton> 
+class _MessageCenterButtonState extends State<_MessageCenterButton> 
     with SingleTickerProviderStateMixin {
   bool _isHovered = false;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
+  int _lastUnreadCount = 0;
 
   @override
   void initState() {
@@ -133,20 +194,24 @@ class _AnnouncementButtonState extends State<_AnnouncementButton>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
     
+    _lastUnreadCount = widget.unreadCount;
     if (widget.unreadCount > 0) {
       _pulseController.repeat(reverse: true);
     }
   }
 
   @override
-  void didUpdateWidget(_AnnouncementButton oldWidget) {
+  void didUpdateWidget(_MessageCenterButton oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.unreadCount > 0 && !_pulseController.isAnimating) {
+    
+    // 未读数增加时触发动画
+    if (widget.unreadCount > _lastUnreadCount) {
       _pulseController.repeat(reverse: true);
     } else if (widget.unreadCount == 0 && _pulseController.isAnimating) {
       _pulseController.stop();
       _pulseController.reset();
     }
+    _lastUnreadCount = widget.unreadCount;
   }
 
   @override
@@ -160,7 +225,7 @@ class _AnnouncementButtonState extends State<_AnnouncementButton>
     final hasUnread = widget.unreadCount > 0;
     
     return Tooltip(
-      message: hasUnread ? '${widget.unreadCount} 条未读公告' : '系统公告',
+      message: hasUnread ? '${widget.unreadCount} 条未读消息' : '消息中心',
       child: MouseRegion(
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
@@ -173,7 +238,7 @@ class _AnnouncementButtonState extends State<_AnnouncementButton>
             decoration: BoxDecoration(
               color: _isHovered 
                   ? (hasUnread 
-                      ? const Color(0xFFFF9800).withValues(alpha: 0.15)
+                      ? const Color(0xFF0080FF).withValues(alpha: 0.15)
                       : (widget.isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.05)))
                   : Colors.transparent,
               borderRadius: const BorderRadius.only(
@@ -184,15 +249,13 @@ class _AnnouncementButtonState extends State<_AnnouncementButton>
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // 铃铛图标
                 Icon(
                   hasUnread ? Icons.notifications_active : Icons.notifications_outlined,
                   size: 16,
                   color: hasUnread 
-                      ? const Color(0xFFFF9800)
+                      ? const Color(0xFF0080FF)
                       : (widget.isDark ? Colors.white70 : const Color(0xFF6B7280)),
                 ),
-                // 未读数量角标
                 if (hasUnread)
                   Positioned(
                     top: 2,
@@ -204,7 +267,6 @@ class _AnnouncementButtonState extends State<_AnnouncementButton>
                         return Stack(
                           alignment: Alignment.center,
                           children: [
-                            // 外层光晕
                             Transform.scale(
                               scale: _pulseAnimation.value,
                               child: Opacity(
@@ -219,7 +281,6 @@ class _AnnouncementButtonState extends State<_AnnouncementButton>
                                 ),
                               ),
                             ),
-                            // 固定大小的角标
                             child!,
                           ],
                         );

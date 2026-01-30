@@ -156,4 +156,11 @@ class TimeUtils {
     if (difference.inMinutes > 0) return '${difference.inMinutes}分钟前';
     return '刚刚';
   }
+
+  /// 格式化时间戳（秒）为相对时间
+  static String formatTimestampRelative(int? timestamp) {
+    if (timestamp == null) return '';
+    final dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+    return formatDateTimeRelative(dateTime);
+  }
 }
