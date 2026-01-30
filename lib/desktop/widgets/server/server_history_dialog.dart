@@ -14,10 +14,7 @@ import '../player_trend/player_trend_chart.dart';
 class ServerHistoryDialog extends StatefulWidget {
   final ExtendedServerItem server;
 
-  const ServerHistoryDialog({
-    super.key,
-    required this.server,
-  });
+  const ServerHistoryDialog({super.key, required this.server});
 
   @override
   State<ServerHistoryDialog> createState() => _ServerHistoryDialogState();
@@ -83,7 +80,10 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
   }
 
   /// 获取服务器历史数据
-  Future<void> _fetchServerHistory({bool isLoadMore = false, bool resetData = true}) async {
+  Future<void> _fetchServerHistory({
+    bool isLoadMore = false,
+    bool resetData = true,
+  }) async {
     if (!mounted) return;
 
     final address = widget.server.serverItem.address;
@@ -172,9 +172,10 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
 
     // 收集需要加载的地图
     final mapsToLoadInfo = <String>[];
-    
+
     for (final mapName in uniqueMapNames) {
-      if (!_mapInfoCache.containsKey(mapName) && !_loadingMaps.contains(mapName)) {
+      if (!_mapInfoCache.containsKey(mapName) &&
+          !_loadingMaps.contains(mapName)) {
         mapsToLoadInfo.add(mapName);
         _loadingMaps.add(mapName);
       }
@@ -182,12 +183,12 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
 
     // 并行加载所有数据
     final futures = <Future>[];
-    
+
     // 加载地图信息
     for (final mapName in mapsToLoadInfo) {
       futures.add(_loadMapInfoSilent(mapName));
     }
-    
+
     // 等待所有加载完成后统一刷新
     if (futures.isNotEmpty) {
       await Future.wait(futures);
@@ -281,7 +282,7 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
     final earliest = TimeUtils.parseServerTime(sortedInfos.first.createdAt);
     final latest = TimeUtils.parseServerTime(sortedInfos.last.createdAt);
     if (earliest == null || latest == null) return '无数据';
-    
+
     final diff = latest.difference(earliest);
     return TimeUtils.formatDuration(diff);
   }
@@ -360,7 +361,9 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
                     ),
                   )
                 : const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _isLoading ? null : () => _fetchServerHistory(resetData: true),
+            onPressed: _isLoading
+                ? null
+                : () => _fetchServerHistory(resetData: true),
             tooltip: '刷新',
           ),
           // 关闭按钮
@@ -387,7 +390,11 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
         children: [
           Row(
             children: [
-              Icon(MdiIcons.calendarClock, color: const Color(0xFF0080FF), size: 18),
+              Icon(
+                MdiIcons.calendarClock,
+                color: const Color(0xFF0080FF),
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Text(
                 '已加载 ${_historyData.length} / $_totalRecords 条',
@@ -412,14 +419,20 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
                               onPressed: _clearSearch,
                             )
                           : null,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+                        borderSide: BorderSide(
+                          color: Colors.grey.withValues(alpha: 0.3),
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+                        borderSide: BorderSide(
+                          color: Colors.grey.withValues(alpha: 0.3),
+                        ),
                       ),
                     ),
                     onChanged: (_) => setState(() {}),
@@ -433,7 +446,10 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0080FF),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   minimumSize: const Size(0, 36),
                 ),
                 child: const Text('搜索'),
@@ -455,7 +471,10 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
                   const SizedBox(width: 4),
                   Text(
                     '搜索"$_searchQuery"的结果',
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF0080FF)),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF0080FF),
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -677,7 +696,9 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: isLatest ? const Color(0xFFF59E0B) : const Color(0xFF64748B),
+              color: isLatest
+                  ? const Color(0xFFF59E0B)
+                  : const Color(0xFF64748B),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -699,14 +720,18 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
                 Icon(
                   isLatest ? MdiIcons.fire : MdiIcons.clockOutline,
                   size: 16,
-                  color: isLatest ? const Color(0xFFF59E0B) : const Color(0xFF64748B),
+                  color: isLatest
+                      ? const Color(0xFFF59E0B)
+                      : const Color(0xFF64748B),
                 ),
                 const SizedBox(width: 6),
                 Text(
                   _formatDateTime(snapshot.createdAt),
                   style: TextStyle(
                     fontSize: 13,
-                    color: isLatest ? const Color(0xFFF59E0B) : const Color(0xFF64748B),
+                    color: isLatest
+                        ? const Color(0xFFF59E0B)
+                        : const Color(0xFF64748B),
                     fontWeight: isLatest ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
@@ -742,8 +767,8 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
     return MapBackground(
       mapName: mapName,
       imageUrl: mapUrl,
-      cacheWidth: 776,   // 2x 显示宽度
-      cacheHeight: 280,  // 2x 显示高度
+      cacheWidth: 776, // 2x 显示宽度
+      cacheHeight: 280, // 2x 显示高度
     );
   }
 
@@ -755,10 +780,7 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
       children: [
         Icon(icon, size: 14, color: chipColor),
         const SizedBox(width: 4),
-        Text(
-          text,
-          style: TextStyle(color: chipColor, fontSize: 12),
-        ),
+        Text(text, style: TextStyle(color: chipColor, fontSize: 12)),
       ],
     );
   }
@@ -865,7 +887,7 @@ class _HistoryCardState extends State<_HistoryCard> {
   bool _isOverlayHovered = false;
   // 延迟显示 overlay，避免快速滑过时频繁创建
   bool _overlayActivated = false;
-  
+
   // 延迟任务的取消令牌
   Timer? _hoverStartTimer;
   Timer? _hoverEndTimer;
@@ -886,7 +908,7 @@ class _HistoryCardState extends State<_HistoryCard> {
     // 取消之前的定时器
     _hoverStartTimer?.cancel();
     _hoverEndTimer?.cancel();
-    
+
     // 延迟 200ms 后才显示 overlay，避免快速滑过
     if (!_overlayActivated) {
       _hoverStartTimer = Timer(const Duration(milliseconds: 200), () {
@@ -904,7 +926,7 @@ class _HistoryCardState extends State<_HistoryCard> {
     // 取消之前的定时器
     _hoverStartTimer?.cancel();
     _hoverEndTimer?.cancel();
-    
+
     // 延迟检查，给鼠标移动到 overlay 的时间
     _hoverEndTimer = Timer(const Duration(milliseconds: 50), () {
       if (mounted) _updateOverlay();
@@ -942,49 +964,68 @@ class _HistoryCardState extends State<_HistoryCard> {
             },
             child: Material(
               color: Colors.transparent,
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 16,
-                      spreadRadius: 2,
+              child: Builder(
+                builder: (context) {
+                  final isDark =
+                      Theme.of(context).brightness == Brightness.dark;
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: isDark
+                          ? null
+                          : Border.all(
+                              color: Colors.grey.withValues(alpha: 0.2),
+                            ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(
+                            alpha: isDark ? 0.3 : 0.15,
+                          ),
+                          blurRadius: 16,
+                          spreadRadius: 2,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(MdiIcons.chartLine, color: const Color(0xFFFBBF24), size: 16),
-                        const SizedBox(width: 6),
-                        const Text(
-                          '玩家趋势',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                        Row(
+                          children: [
+                            Icon(
+                              MdiIcons.chartLine,
+                              color: const Color(0xFFFBBF24),
+                              size: 16,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '玩家趋势',
+                              style: TextStyle(
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF1E293B),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 160,
+                          child: PlayerTrendChart(
+                            infos: trendData,
+                            maxPlayers: widget.maxPlayers,
+                            width: 316,
+                            height: 160,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: 160,
-                      child: PlayerTrendChart(
-                        infos: trendData,
-                        maxPlayers: widget.maxPlayers,
-                        width: 316,
-                        height: 160,
-                      ),
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
             ),
           ),
@@ -997,7 +1038,7 @@ class _HistoryCardState extends State<_HistoryCard> {
       _overlayEntry = null;
       return;
     }
-    
+
     overlay.insert(_overlayEntry!);
   }
 
@@ -1021,8 +1062,8 @@ class _HistoryCardState extends State<_HistoryCard> {
     final borderColor = _isCardHovered
         ? const Color(0xFF0080FF)
         : widget.isLatest
-            ? const Color(0xFFF59E0B)
-            : Colors.grey.withValues(alpha: 0.3);
+        ? const Color(0xFFF59E0B)
+        : Colors.grey.withValues(alpha: 0.3);
 
     return RepaintBoundary(
       child: CompositedTransformTarget(
@@ -1050,7 +1091,10 @@ class _HistoryCardState extends State<_HistoryCard> {
                 children: [
                   // 地图背景
                   RepaintBoundary(
-                    child: widget.buildMapBackground(widget.mapUrl, widget.mapName),
+                    child: widget.buildMapBackground(
+                      widget.mapUrl,
+                      widget.mapName,
+                    ),
                   ),
                   // 渐变遮罩
                   const _GradientOverlay(),
@@ -1093,11 +1137,7 @@ class _HistoryCardState extends State<_HistoryCard> {
                   ),
                   // 右上角静态黄点
                   if (widget.hasTrendData)
-                    const Positioned(
-                      top: 12,
-                      right: 12,
-                      child: _StaticDot(),
-                    ),
+                    const Positioned(top: 12, right: 12, child: _StaticDot()),
                 ],
               ),
             ),
@@ -1119,10 +1159,7 @@ class _GradientOverlay extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Colors.transparent,
-            Colors.black.withValues(alpha: 0.7),
-          ],
+          colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
         ),
       ),
     );

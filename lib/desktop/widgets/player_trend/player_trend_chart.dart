@@ -37,7 +37,7 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
   List<PlayerTrendInfo>? _sortedData;
   bool? _isMultiDay;
   double? _yAxisMax;
-  
+
   // 用于检测数据是否变化
   List<PlayerTrendInfo>? _lastInfos;
   int? _lastMaxPlayers;
@@ -57,7 +57,7 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
       _processData();
     }
   }
-  
+
   @override
   void dispose() {
     // 清理缓存数据，帮助 GC 回收
@@ -69,13 +69,14 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
 
   void _processData() {
     // 如果数据没变，不重新处理
-    if (identical(widget.infos, _lastInfos) && widget.maxPlayers == _lastMaxPlayers) {
+    if (identical(widget.infos, _lastInfos) &&
+        widget.maxPlayers == _lastMaxPlayers) {
       return;
     }
-    
+
     _lastInfos = widget.infos;
     _lastMaxPlayers = widget.maxPlayers;
-    
+
     // 按时间排序
     _sortedData = List<PlayerTrendInfo>.from(widget.infos)
       ..sort((a, b) {
@@ -88,8 +89,8 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
     final maxPlayerCount = _sortedData!.isEmpty
         ? 0
         : _sortedData!
-            .map((e) => e.playerCount)
-            .reduce((a, b) => a > b ? a : b);
+              .map((e) => e.playerCount)
+              .reduce((a, b) => a > b ? a : b);
     _yAxisMax = _calculateYAxisMax(maxPlayerCount);
   }
 
@@ -136,6 +137,7 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
       child: Padding(
         padding: const EdgeInsets.all(8),
         child: LineChart(
+          key: ValueKey(Theme.of(context).brightness),
           LineChartData(
             gridData: FlGridData(
               show: true,
@@ -155,9 +157,7 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
             minY: 0,
             maxY: yAxisMax,
             lineTouchData: _buildLineTouchData(data),
-            lineBarsData: [
-              _buildLineChartBarData(data),
-            ],
+            lineBarsData: [_buildLineChartBarData(data)],
           ),
         ),
       ),
@@ -166,8 +166,9 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
 
   /// 计算Y轴最大值
   double _calculateYAxisMax(int maxPlayerCount) {
-    final yAxisMax =
-        widget.maxPlayers > maxPlayerCount ? widget.maxPlayers : maxPlayerCount;
+    final yAxisMax = widget.maxPlayers > maxPlayerCount
+        ? widget.maxPlayers
+        : maxPlayerCount;
     if (yAxisMax >= 58) {
       return 70;
     }
@@ -176,7 +177,10 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
 
   /// 构建坐标轴标题数据
   FlTitlesData _buildTitlesData(
-      List<PlayerTrendInfo> data, bool isMultiDay, double yAxisMax) {
+    List<PlayerTrendInfo> data,
+    bool isMultiDay,
+    double yAxisMax,
+  ) {
     final labelInterval = data.length > 10 ? (data.length / 5).ceil() : 1;
 
     return FlTitlesData(
@@ -193,7 +197,8 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
 
             // 只显示部分标签
             if (data.length > 10) {
-              final shouldShow = index == 0 ||
+              final shouldShow =
+                  index == 0 ||
                   index == data.length - 1 ||
                   index % labelInterval == 0;
               if (!shouldShow) return const SizedBox.shrink();
@@ -247,8 +252,8 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
       touchTooltipData: LineTouchTooltipData(
         getTooltipColor: (touchedSpot) =>
             Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF334155)
-                : Colors.white,
+            ? const Color(0xFF334155)
+            : Colors.white,
         tooltipRoundedRadius: 8,
         tooltipPadding: const EdgeInsets.all(12),
         tooltipBorder: BorderSide(
