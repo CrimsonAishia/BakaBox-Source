@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 import '../../core/core.dart';
-import '../widgets/announcement/announcement_tip.dart';
 import '../widgets/desktop_window_controls.dart';
 import '../widgets/desktop_navigation.dart';
 
@@ -91,7 +90,6 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
     if (_currentIndex == index) return;
     
     // 页面切换时清理 Flutter 图片缓存，释放内存
-    // 图片已通过 DiskImageCacheService 缓存到磁盘，内存缓存可以安全清理
     PaintingBinding.instance.imageCache.clear();
     
     setState(() {
@@ -151,10 +149,11 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
               ],
             ),
             if (isDesktop)
-              const Positioned(top: 12, right: 12, child: DesktopWindowControls()),
-            // 新公告提示
-            if (isDesktop)
-              const AnnouncementTip(),
+              Positioned(
+                top: 12,
+                right: 12,
+                child: DesktopWindowControls(),
+              ),
             if (isDesktop)
               const Positioned(
                 top: 0, left: 0, right: 120, height: 56,
