@@ -678,14 +678,22 @@ class _MapContributionDialogState extends State<MapContributionDialog>
             ),
           ),
           const SizedBox(width: 4),
-          Text(
-            '- $statusMessage',
-            style: TextStyle(
-              fontSize: 13,
-              color: isDark ? Colors.white70 : const Color(0xFF374151),
+          Expanded(
+            child: Tooltip(
+              message: statusMessage,
+              waitDuration: const Duration(milliseconds: 500),
+              child: Text(
+                '- $statusMessage',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? Colors.white70 : const Color(0xFF374151),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
-          const Spacer(),
+          const SizedBox(width: 8),
           if (canEdit) ...[
             // 修改按钮
             Tooltip(

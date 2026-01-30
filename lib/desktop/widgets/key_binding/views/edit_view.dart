@@ -237,12 +237,18 @@ class _EditViewState extends State<EditView> {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  widget.config.auditRemark,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isDark ? Colors.white70 : Colors.grey[700],
-                    height: 1.4,
+                Tooltip(
+                  message: widget.config.auditRemark,
+                  waitDuration: const Duration(milliseconds: 500),
+                  child: Text(
+                    widget.config.auditRemark,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark ? Colors.white70 : Colors.grey[700],
+                      height: 1.4,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
