@@ -305,9 +305,9 @@ class _EditViewState extends State<EditView> {
   Widget _buildTypeSelector() {
     return Row(
       children: [
-        Expanded(child: HoverTypeOption(icon: MdiIcons.autoFix, title: '自动应用', selected: !_needsKey, onTap: () => setState(() => _needsKey = false))),
+        Expanded(child: HoverTypeOption(icon: MdiIcons.autoFix, title: '自动应用', subtitle: '直接生效，无需选择按键', selected: !_needsKey, onTap: () => setState(() => _needsKey = false))),
         const SizedBox(width: 10),
-        Expanded(child: HoverTypeOption(icon: MdiIcons.keyboardOutline, title: '按键绑定', selected: _needsKey, onTap: () => setState(() => _needsKey = true))),
+        Expanded(child: HoverTypeOption(icon: MdiIcons.keyboardOutline, title: '按键绑定', subtitle: '需要用户选择绑定按键', selected: _needsKey, onTap: () => setState(() => _needsKey = true))),
       ],
     );
   }
@@ -414,6 +414,8 @@ class _EditViewState extends State<EditView> {
   Widget _buildBottomBar(KeyBindingState state) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasChanges = _hasChanges;
+    final hasPlaceholders = KeyPlaceholderParser.hasPlaceholders(_scriptCtrl.text);
+    const double fixedHeight = 44.0;
     
     String? hint;
     Color? hintColor;
@@ -423,6 +425,10 @@ class _EditViewState extends State<EditView> {
       hint = '没有修改内容';
       hintColor = const Color(0xFF10b981);
       hintIcon = MdiIcons.checkCircleOutline;
+    } else if (_needsKey && !hasPlaceholders) {
+      hint = '请在脚本中插入按键绑定';
+      hintColor = const Color(0xFFf59e0b);
+      hintIcon = MdiIcons.informationOutline;
     }
     
     return Container(
@@ -440,7 +446,8 @@ class _EditViewState extends State<EditView> {
           if (hint != null && hintColor != null && hintIcon != null)
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                height: fixedHeight,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
                   color: hintColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -468,27 +475,33 @@ class _EditViewState extends State<EditView> {
           else
             const Spacer(),
           const SizedBox(width: 12),
-          TextButton(
-            onPressed: () => widget.onComplete?.call(),
-            child: const Text('取消', style: TextStyle(fontSize: 12)),
+          SizedBox(
+            height: fixedHeight,
+            child: TextButton(
+              onPressed: () => widget.onComplete?.call(),
+              child: const Text('取消', style: TextStyle(fontSize: 12)),
+            ),
           ),
           const SizedBox(width: 8),
-          FilledButton.icon(
-            onPressed: (state.isSaving || hint != null) ? null : _submit,
-            icon: state.isSaving
-                ? const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : Icon(MdiIcons.contentSaveOutline, size: 14, color: Colors.white),
-            label: Text(
-              state.isSaving ? '保存中' : '保存修改',
-              style: const TextStyle(fontSize: 12),
-            ),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF8b5cf6),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          SizedBox(
+            height: fixedHeight,
+            child: FilledButton.icon(
+              onPressed: (state.isSaving || hint != null) ? null : _submit,
+              icon: state.isSaving
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : Icon(MdiIcons.contentSaveOutline, size: 14, color: Colors.white),
+              label: Text(
+                state.isSaving ? '保存中' : '保存修改',
+                style: const TextStyle(fontSize: 12),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF8b5cf6),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
             ),
           ),
         ],

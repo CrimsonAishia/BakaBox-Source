@@ -365,6 +365,8 @@ class DetailFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    const double fixedHeight = 44.0; // 统一高度
+    
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -376,7 +378,8 @@ class DetailFooter extends StatelessWidget {
           if (!allBound && !applied)
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                height: fixedHeight,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
                   color: const Color(0xFFf59e0b).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -400,7 +403,8 @@ class DetailFooter extends StatelessWidget {
           if (applied)
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                height: fixedHeight,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
                   color: const Color(0xFF10b981).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -421,34 +425,42 @@ class DetailFooter extends StatelessWidget {
                 ),
               ),
             ),
+          // 当没有提示信息时，用 Spacer 把按钮推到右边
+          if (allBound && !applied) const Spacer(),
           if (!allBound || applied) const SizedBox(width: 12),
           if (applied) ...[
-            OutlinedButton.icon(
-              onPressed: saving
-                  ? null
-                  : () => context.read<KeyBindingBloc>().add(KeyBindingRemoveAppliedConfig(config.configId)),
-              icon: Icon(MdiIcons.closeCircleOutline, size: 16, color: saving ? Colors.grey : const Color(0xFFef4444)),
-              label: Text('取消应用', style: TextStyle(color: saving ? Colors.grey : const Color(0xFFef4444))),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: saving ? Colors.grey[300]! : const Color(0xFFef4444).withValues(alpha: 0.5)),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            SizedBox(
+              height: fixedHeight,
+              child: OutlinedButton.icon(
+                onPressed: saving
+                    ? null
+                    : () => context.read<KeyBindingBloc>().add(KeyBindingRemoveAppliedConfig(config.configId)),
+                icon: Icon(MdiIcons.closeCircleOutline, size: 16, color: saving ? Colors.grey : const Color(0xFFef4444)),
+                label: Text('取消应用', style: TextStyle(color: saving ? Colors.grey : const Color(0xFFef4444))),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: saving ? Colors.grey[300]! : const Color(0xFFef4444).withValues(alpha: 0.5)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
               ),
             ),
             const SizedBox(width: 10),
           ],
-          FilledButton.icon(
-            onPressed: (allBound && !saving)
-                ? () => context.read<KeyBindingBloc>().add(KeyBindingApplyConfig(config: config, keyBindings: bindings))
-                : null,
-            icon: saving
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : Icon(applied ? Icons.refresh : Icons.check, size: 18),
-            label: Text(saving ? '应用中' : (applied ? '重新应用' : '应用配置')),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF0080FF),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          SizedBox(
+            height: fixedHeight,
+            child: FilledButton.icon(
+              onPressed: (allBound && !saving)
+                  ? () => context.read<KeyBindingBloc>().add(KeyBindingApplyConfig(config: config, keyBindings: bindings))
+                  : null,
+              icon: saving
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : Icon(applied ? Icons.refresh : Icons.check, size: 18),
+              label: Text(saving ? '应用中' : (applied ? '重新应用' : '应用配置')),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF0080FF),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
             ),
           ),
         ],

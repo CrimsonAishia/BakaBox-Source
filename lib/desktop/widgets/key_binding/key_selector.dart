@@ -116,10 +116,10 @@ class _KeySelectorState extends State<KeySelector> {
       return specialKeys[key]!;
     }
 
-    // 字母和数字键
+    // 字母和数字键 - 统一转为大写
     final keyLabel = key.keyLabel;
     if (keyLabel.isNotEmpty) {
-      return keyLabel.toLowerCase();
+      return keyLabel.toUpperCase();
     }
 
     return key.debugName ?? 'UNKNOWN';
@@ -192,6 +192,8 @@ class _KeySelectorState extends State<KeySelector> {
                     ),
                     const SizedBox(height: 4),
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
                       children: [
                         if (hasKey) ...[
                           Text(

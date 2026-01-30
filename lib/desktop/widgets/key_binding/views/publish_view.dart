@@ -385,6 +385,7 @@ class _PublishViewState extends State<PublishView> {
           child: HoverTypeOption(
             icon: MdiIcons.autoFix,
             title: '自动应用',
+            subtitle: '直接生效，无需选择按键',
             selected: !_needsKey,
             onTap: () => setState(() => _needsKey = false),
           ),
@@ -394,6 +395,7 @@ class _PublishViewState extends State<PublishView> {
           child: HoverTypeOption(
             icon: MdiIcons.keyboardOutline,
             title: '按键绑定',
+            subtitle: '需要用户选择绑定按键',
             selected: _needsKey,
             onTap: () => setState(() => _needsKey = true),
           ),
@@ -526,6 +528,8 @@ class _PublishViewState extends State<PublishView> {
     final hasDesc = _descCtrl.text.trim().isNotEmpty;
     final hasScript = _scriptCtrl.text.trim().isNotEmpty;
     final hasCategory = _categoryId != null;
+    final hasPlaceholders = KeyPlaceholderParser.hasPlaceholders(_scriptCtrl.text);
+    const double fixedHeight = 44.0;
     
     String? hint;
     if (!hasEnoughCredits) {
@@ -538,6 +542,8 @@ class _PublishViewState extends State<PublishView> {
       hint = '请选择分类';
     } else if (!hasScript) {
       hint = '请输入配置脚本';
+    } else if (_needsKey && !hasPlaceholders) {
+      hint = '请在脚本中插入按键绑定';
     }
     
     final hintColor = !hasEnoughCredits ? const Color(0xFFef4444) : const Color(0xFFf59e0b);
@@ -557,7 +563,8 @@ class _PublishViewState extends State<PublishView> {
           if (hint != null)
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                height: fixedHeight,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
                   color: hintColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -585,27 +592,33 @@ class _PublishViewState extends State<PublishView> {
           else
             const Spacer(),
           const SizedBox(width: 12),
-          TextButton(
-            onPressed: _clear,
-            child: const Text('清空', style: TextStyle(fontSize: 12)),
+          SizedBox(
+            height: fixedHeight,
+            child: TextButton(
+              onPressed: _clear,
+              child: const Text('清空', style: TextStyle(fontSize: 12)),
+            ),
           ),
           const SizedBox(width: 8),
-          FilledButton.icon(
-            onPressed: (state.isPublishing || hint != null) ? null : _submit,
-            icon: state.isPublishing
-                ? const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : Icon(MdiIcons.rocketLaunchOutline, size: 14, color: Colors.white),
-            label: Text(
-              state.isPublishing ? '发布中' : '发布',
-              style: const TextStyle(fontSize: 12),
-            ),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF0080FF),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          SizedBox(
+            height: fixedHeight,
+            child: FilledButton.icon(
+              onPressed: (state.isPublishing || hint != null) ? null : _submit,
+              icon: state.isPublishing
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : Icon(MdiIcons.rocketLaunchOutline, size: 14, color: Colors.white),
+              label: Text(
+                state.isPublishing ? '发布中' : '发布',
+                style: const TextStyle(fontSize: 12),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF0080FF),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
             ),
           ),
         ],

@@ -355,6 +355,7 @@ class _HoverChipState extends State<HoverChip> {
 class HoverTypeOption extends StatefulWidget {
   final IconData icon;
   final String title;
+  final String? subtitle;
   final bool selected;
   final VoidCallback onTap;
 
@@ -362,6 +363,7 @@ class HoverTypeOption extends StatefulWidget {
     super.key,
     required this.icon,
     required this.title,
+    this.subtitle,
     required this.selected,
     required this.onTap,
   });
@@ -404,15 +406,31 @@ class _HoverTypeOptionState extends State<HoverTypeOption> {
                 size: 18,
                 color: widget.selected ? const Color(0xFF0080FF) : (isDark ? Colors.white54 : Colors.grey[500]),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Expanded(
-                child: Text(
-                  widget.title, 
-                  style: TextStyle(
-                    fontSize: 12, 
-                    fontWeight: FontWeight.w500, 
-                    color: widget.selected ? const Color(0xFF0080FF) : (isDark ? Colors.white70 : Colors.grey[700]),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.title, 
+                      style: TextStyle(
+                        fontSize: 12, 
+                        fontWeight: FontWeight.w500, 
+                        color: widget.selected ? const Color(0xFF0080FF) : (isDark ? Colors.white70 : Colors.grey[700]),
+                      ),
+                    ),
+                    if (widget.subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.subtitle!,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: isDark ? Colors.white38 : Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               if (widget.selected) const Icon(Icons.check_circle, size: 16, color: Color(0xFF0080FF)),
