@@ -748,18 +748,21 @@ class _HistoryListItemState extends State<_HistoryListItem> with SingleTickerPro
                     const SizedBox(height: 12),
                     // 懒加载趋势图
                     if (_trendData != null)
-                      SizedBox(
-                        height: 160,
-                        child: PlayerTrendChart(
-                          infos: _trendData!,
-                          maxPlayers: widget.totalSlots,
-                          width: double.infinity,
-                          height: 160,
+                      ClipRect(
+                        clipBehavior: Clip.none,
+                        child: SizedBox(
+                          height: 180,
+                          child: PlayerTrendChart(
+                            infos: _trendData!,
+                            maxPlayers: widget.totalSlots,
+                            width: double.infinity,
+                            height: 180,
+                          ),
                         ),
                       )
                     else
                       const SizedBox(
-                        height: 160,
+                        height: 180,
                         child: Center(
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
