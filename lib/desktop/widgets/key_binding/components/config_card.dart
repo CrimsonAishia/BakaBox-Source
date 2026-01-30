@@ -241,15 +241,19 @@ class _ConfigCardState extends State<ConfigCard> {
           ),
           if (config.isRejected && config.auditRemark.isNotEmpty) ...[
             const SizedBox(width: 4),
-            Flexible(
-              child: Text(
-                '- ${config.auditRemark}',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: isDark ? Colors.white70 : const Color(0xFF374151),
+            Expanded(
+              child: Tooltip(
+                message: config.auditRemark,
+                waitDuration: const Duration(milliseconds: 500),
+                child: Text(
+                  '- ${config.auditRemark}',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isDark ? Colors.white70 : const Color(0xFF374151),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
