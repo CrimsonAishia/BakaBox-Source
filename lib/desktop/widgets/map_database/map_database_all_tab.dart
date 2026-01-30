@@ -47,13 +47,14 @@ class MapDatabaseAllTab extends StatelessWidget {
                       
                       return GridView.builder(
                         key: PageStorageKey('map_database_all_grid_page_$currentPage'),
-                        padding: const EdgeInsets.all(24),
-                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(20),
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: crossAxisCount,
                           childAspectRatio: 3.0,
-                          crossAxisSpacing: 20,
-                          mainAxisSpacing: 20,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
                         ),
                         itemCount: state.allMaps.length,
                         itemBuilder: (context, index) {
