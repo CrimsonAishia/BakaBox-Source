@@ -21,6 +21,7 @@ export 'api/update_api.dart';
 export 'api/update_log_api.dart';
 export 'api/issue_api.dart';
 export 'api/feature_status_api.dart';
+export 'api/character_api.dart';
 
 // Exceptions
 export 'exceptions/app_exception.dart';
@@ -34,6 +35,7 @@ export 'models/update_log_models.dart';
 export 'models/user_info.dart';
 export 'models/issue_models.dart';
 export 'models/feature_status_models.dart';
+export 'models/character_models.dart';
 
 // Bloc
 export 'bloc/bloc.dart';
