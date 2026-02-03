@@ -98,6 +98,7 @@ flutter:
   assets:
     - assets/images/
     - assets/images/tutorials/
+    - assets/images/character_gallery/
     - assets/icons/
     - assets/audio/
 

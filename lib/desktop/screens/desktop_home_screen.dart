@@ -14,6 +14,7 @@ import 'update_logs_desktop.dart';
 import 'issues_desktop.dart';
 import 'tools_screen.dart';
 import 'settings_desktop.dart';
+import 'character_gallery_desktop.dart';
 
 /// 桌面端主屏幕
 class DesktopHomeScreen extends StatefulWidget {
@@ -37,6 +38,10 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
       activeColor: const Color(0xFF0080FF), inactiveColor: const Color(0xFF64748B),
     ),
     NavigationItem(
+      icon: MdiIcons.accountGroup, selectedIcon: MdiIcons.accountGroupOutline, label: '角色图鉴',
+      activeColor: const Color(0xFF0080FF), inactiveColor: const Color(0xFF64748B),
+    ),
+    NavigationItem(
       icon: MdiIcons.fileDocumentOutline, selectedIcon: MdiIcons.fileDocument, label: '更新日志',
       activeColor: const Color(0xFF0080FF), inactiveColor: const Color(0xFF64748B),
     ),
@@ -55,10 +60,11 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
     return switch (index) {
       0 => WelcomeScreen(onNavigateToServers: () => _onIndexChanged(1)),
       1 => const ServersDesktop(),
-      2 => const UpdateLogsDesktop(),
-      3 => const ToolsScreen(),
-      4 => const SettingsDesktop(),
-      5 => const IssuesDesktop(),
+      2 => const CharacterGalleryDesktop(),
+      3 => const UpdateLogsDesktop(),
+      4 => const ToolsScreen(),
+      5 => const SettingsDesktop(),
+      6 => const IssuesDesktop(),
       _ => const SizedBox.shrink(),
     };
   }
@@ -125,8 +131,8 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
                   currentIndex: _currentIndex,
                   onIndexChanged: _onIndexChanged,
                   items: _navigationItems,
-                  onFeedbackTap: () => _onIndexChanged(5),
-                  isFeedbackSelected: _currentIndex == 5,
+                  onFeedbackTap: () => _onIndexChanged(6),
+                  isFeedbackSelected: _currentIndex == 6,
                 ),
                 Expanded(
                   child: AnimatedBuilder(

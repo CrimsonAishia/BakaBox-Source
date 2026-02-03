@@ -12,7 +12,7 @@ import '../widgets/map_database/map_database_my_tab.dart';
 /// 地图数据库页面（桌面端）
 /// 
 /// 显示所有地图的贡献信息和用户自己的贡献
-/// 包含两个 Tab：全部地图、我的贡�?
+/// 包含两个 Tab：全部地图、我的贡献
 class MapDatabaseDesktop extends StatefulWidget {
   const MapDatabaseDesktop({super.key});
 
@@ -210,7 +210,7 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
         ),
         child: Column(
           children: [
-            // Tab 栏和搜索栏合�?
+            // Tab 栏和搜索栏合并
             Container(
               decoration: BoxDecoration(
                 border: Border(
@@ -224,7 +224,7 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
               ),
               child: Row(
                 children: [
-                  // Tab �?
+                  // Tab 栏
                   Expanded(
                     child: TabBar(
                       controller: _tabController,
