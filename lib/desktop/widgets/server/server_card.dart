@@ -20,6 +20,26 @@ import '../queue/queue_window.dart';
 import '../../../core/widgets/map_contribution_dialog.dart';
 import '../edit_server_dialog.dart';
 
+/// 全局浮动面板管理器 - 确保同时只显示一个面板
+class _FloatingPanelManager {
+  static _ServerCardState? _currentCard;
+
+  /// 显示新面板前，隐藏之前的面板
+  static void showPanel(_ServerCardState card) {
+    if (_currentCard != null && _currentCard != card) {
+      _currentCard?._hideFloatingPanelImmediate();
+    }
+    _currentCard = card;
+  }
+
+  /// 清除当前面板引用
+  static void clearPanel(_ServerCardState card) {
+    if (_currentCard == card) {
+      _currentCard = null;
+    }
+  }
+}
+
 /// 服务器卡片
 class ServerCard extends StatefulWidget {
   final ExtendedServerItem server;
@@ -91,6 +111,13 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   @override
   void didUpdateWidget(covariant ServerCard oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    // 检查排序模式变化，如果切换到禁用状态，立即隐藏面板
+    if (!oldWidget.disableHoverPanel && widget.disableHoverPanel) {
+      if (_floatingPanelEntry != null) {
+        _hideFloatingPanel();
+      }
+    }
 
     // 只在热身状态真正改变时更新
     final oldWarmingUp = oldWidget.server.serverItem.isCustom
@@ -202,6 +229,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _FloatingPanelManager.clearPanel(this);
     _safeRemoveOverlay();
     _hidePanelTimer?.cancel();
     _stateSubscription?.cancel();
@@ -224,7 +252,14 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     if (!mounted) return;
 
     final overlay = Overlay.maybeOf(context);
-    if (overlay == null) return;
+    if (overlay == null) {
+      // Overlay 不可用，清理全局管理器状态
+      _FloatingPanelManager.clearPanel(this);
+      return;
+    }
+
+    // 通知全局管理器，隐藏其他面板
+    _FloatingPanelManager.showPanel(this);
 
     // 捕获当前 context，避免使用过期的 context
     final currentContext = context;
@@ -265,6 +300,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
               }
             : null,
         onHoverChanged: (isHovered) {
+          if (!mounted) return;
           _isPanelHovered = isHovered;
           if (!isHovered) {
             _tryHidePanel();
@@ -272,7 +308,14 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         },
       ),
     );
-    overlay.insert(_floatingPanelEntry!);
+    
+    try {
+      overlay.insert(_floatingPanelEntry!);
+    } catch (e) {
+      // 插入失败，清理状态
+      _floatingPanelEntry = null;
+      _FloatingPanelManager.clearPanel(this);
+    }
   }
 
   /// 安全移除 overlay entry
@@ -291,6 +334,16 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
   /// 隐藏浮动功能面板
   void _hideFloatingPanel() {
+    _FloatingPanelManager.clearPanel(this);
+    _safeRemoveOverlay();
+  }
+
+  /// 立即隐藏面板（被全局管理器调用）
+  void _hideFloatingPanelImmediate() {
+    _hidePanelTimer?.cancel();
+    _hidePanelTimer = null;
+    _isHovered = false;
+    _isPanelHovered = false;
     _safeRemoveOverlay();
   }
 
@@ -301,8 +354,14 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     // 取消之前的定时器
     _hidePanelTimer?.cancel();
 
-    _hidePanelTimer = Timer(const Duration(milliseconds: 50), () {
-      if (!_isHovered && !_isPanelHovered && mounted) {
+    _hidePanelTimer = Timer(const Duration(milliseconds: 100), () {
+      if (!mounted) {
+        _hidePanelTimer = null;
+        return;
+      }
+      
+      // 双重检查：确保卡片和面板都没有hover
+      if (!_isHovered && !_isPanelHovered) {
         _hideFloatingPanel();
       }
       _hidePanelTimer = null;
@@ -311,11 +370,26 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
   /// 处理卡片hover状态变化
   void _onCardHoverChanged(bool isHovered) {
-    setState(() => _isHovered = isHovered);
+    if (!mounted) return;
+    
+    // 使用 setState 确保状态更新
+    if (_isHovered != isHovered) {
+      setState(() => _isHovered = isHovered);
+    }
+    
     // 如果禁用了悬浮面板（排序模式），不显示面板
-    if (widget.disableHoverPanel) return;
+    if (widget.disableHoverPanel) {
+      // 确保排序模式下隐藏任何已显示的面板
+      if (_floatingPanelEntry != null) {
+        _hideFloatingPanel();
+      }
+      return;
+    }
 
     if (isHovered) {
+      // 取消任何待执行的隐藏操作
+      _hidePanelTimer?.cancel();
+      _hidePanelTimer = null;
       _showFloatingPanel();
     } else {
       _tryHidePanel();
