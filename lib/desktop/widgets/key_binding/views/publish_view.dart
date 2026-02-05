@@ -15,7 +15,6 @@ import '../../login_dialog.dart';
 
 /// 发布视图
 /// 
-/// TODO: 从原 key_binding_tool.dart 中提取完整的 _PublishView 实现
 /// 包括：
 /// - 登录提示
 /// - 发布表单（名称、描述、分类、类型、脚本）

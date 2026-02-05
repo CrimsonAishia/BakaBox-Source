@@ -9,7 +9,6 @@ import '../components/common_widgets.dart' as common;
 
 /// Autoexec 视图
 /// 
-/// TODO: 从原 key_binding_tool.dart 中提取完整的 _AutoexecView 实现
 /// 包括：
 /// - 已应用配置列表
 /// - 编辑器模式
