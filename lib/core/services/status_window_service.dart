@@ -54,7 +54,6 @@ class _Messages {
   static const connectSuccess = '成功进入游戏！';
   static const connectFailed = '连接失败';
   static const serverFull = '服务器已满';
-  static const reservedSlots = '服务器预留位置已满\n该服务器为捐助者预留了位置';
   static const commandSent = '加入命令已发送';
   static const networkError = '连接异常，请检查网络';
   
@@ -557,19 +556,6 @@ class StatusWindowService {
       await _updateWindow(state: 'serverFull', message: _Messages.serverFull, autoDismissSeconds: 8);
       _scheduleClose(seconds: 8);  // 失败状态使用8秒倒计时
       return false;
-    } else if (monitorResult.state == GameState.reservedSlots) {
-      _updateState(_state.copyWith(
-        type: OperationType.none,  // 重置操作类型
-        status: OperationStatus.failed,
-        message: _Messages.reservedSlots,
-      ));
-      await _updateWindow(
-        state: 'reservedSlots',
-        message: _Messages.reservedSlots,
-        autoDismissSeconds: 8,
-      );
-      _scheduleClose(seconds: 8);  // 失败状态使用8秒倒计时
-      return false;
     } else {
       _updateState(_state.copyWith(
         type: OperationType.none,  // 重置操作类型
@@ -938,10 +924,6 @@ class StatusWindowService {
             windowState = 'serverFull';
             message = _Messages.serverFull;
             break;
-          case GameState.reservedSlots:
-            windowState = 'reservedSlots';
-            message = _Messages.reservedSlots;
-            break;
           case GameState.failed:
             windowState = 'failed';
             message = _Messages.connectFailed;
@@ -1106,10 +1088,6 @@ class StatusWindowService {
               _handleQueueConnectionFailure(_Messages.serverFull, serverAddress);
               break;
               
-            case GameState.reservedSlots:
-              _handleQueueConnectionFailure(_Messages.reservedSlots, serverAddress);
-              break;
-              
             case GameState.failed:
               _handleQueueConnectionFailure(connectionResult.message ?? _Messages.connectFailed, serverAddress);
               break;
@@ -1140,34 +1118,6 @@ class StatusWindowService {
   /// 处理挤服连接失败
   void _handleQueueConnectionFailure(String reason, String serverAddress) {
     LogService.w('[StatusWindowService] 连接失败: $reason');
-    
-    // 检查是否是服务器预留位置限制（需要立即停止挤服）
-    // 使用更严格的检查，避免误判
-    if (reason.contains('预留位置') || reason.contains('reservedSlots') || reason.contains('RESERVED_FOR_LOBBY')) {
-      LogService.w('[StatusWindowService] 检测到服务器预留位置限制，停止挤服');
-      
-      // 立即停止挤服相关的所有活动
-      _isQueueRunning = false;
-      _isThreadsRunning = false;
-      _isTriggeredConnection = false;
-      _activeThreadIds.clear();
-      
-      _updateState(_state.copyWith(
-        type: OperationType.none,
-        status: OperationStatus.failed,
-        message: _Messages.reservedSlots,
-        queueConfig: _state.queueConfig.copyWith(enableAutoRetry: false),
-      ));
-      
-      _updateWindow(
-        state: 'reservedSlots',
-        message: _Messages.reservedSlots,
-        autoDismissSeconds: 8,
-      );
-      
-      _scheduleClose(seconds: 8);  // 失败状态使用8秒倒计时
-      return;
-    }
     
     // 保存当前的自动重试状态（在检查前保存，避免状态被意外修改）
     final enableAutoRetry = _state.queueConfig.enableAutoRetry;
