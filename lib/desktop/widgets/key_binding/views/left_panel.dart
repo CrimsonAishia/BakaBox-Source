@@ -207,11 +207,12 @@ class LeftPanel extends StatelessWidget {
                     final cfg = configs[i];
                     final selected = state.selectedConfig?.id == cfg.id;
                     final applied = state.isConfigApplied(cfg.configId);
+                    
                     return ConfigCard(
                       config: cfg,
                       selected: selected,
                       applied: applied,
-                      showAuditStatus: state.showMyConfigs,
+                      showAuditStatus: true,
                       onTap: () {
                         context.read<KeyBindingBloc>().add(KeyBindingSelectConfig(cfg));
                         onConfigTap();
