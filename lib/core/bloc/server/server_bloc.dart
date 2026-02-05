@@ -57,6 +57,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     on<ServerEditServer>(_onEditServer);
     on<ServerUpdateEditedServer>(_onUpdateEditedServer);
     on<ServerReorderServers>(_onReorderServers);
+    on<ServerForceRefresh>(_onForceRefresh);
   }
 
   /// 重置倒计时（递增 countdownResetKey 触发 UI 重置）
@@ -151,6 +152,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     final categoryName = state.selectedCategory!.modelName ?? '';
     // 如果正在加载，直接返回（避免重复请求）
     if (state.isCategoryLoading(categoryName)) {
+      LogService.d('分类 $categoryName 正在加载中，跳过刷新');
       return;
     }
     
@@ -171,8 +173,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       LogService.e('服务器刷新异常: $e', e);
     } finally {
       // 无论成功、失败、超时，都要清除 loading 状态
-      // lastRefreshTime 由 _fetchServersInfo 记录，如果超时则不会记录
-      if (!emit.isDone && requestId == _currentRequestId) {
+      // 注意：即使 requestId 不匹配（用户切换了分类），也要清除当前分类的 loading 状态
+      // 否则会导致该分类永远处于 loading 状态，无法再次刷新
+      if (!emit.isDone) {
         final updatedLoadingCategories = Set<String>.from(state.loadingCategories)..remove(categoryName);
         emit(state.copyWith(loadingCategories: updatedLoadingCategories));
       }
@@ -1197,6 +1200,66 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         }
       } else {
         emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '排序失败')));
+      }
+    }
+  }
+  
+  /// 强制刷新：重置所有状态，用于手动点击刷新时恢复正常
+  Future<void> _onForceRefresh(ServerForceRefresh event, Emitter<ServerState> emit) async {
+    if (state.selectedCategory == null) return;
+    
+    // 1. 强制清除所有 loading 状态
+    final clearedLoadingCategories = <String>{};
+    
+    // 2. 递增 requestId，取消所有进行中的请求
+    final requestId = ++_currentRequestId;
+    
+    // 3. 重置防重入标记
+    _isUpdatingCategoryOnlineCounts = false;
+    
+    // 4. 重置服务器列表为加载状态
+    final servers = state.servers.map((server) {
+      final address = server.serverItem.address ?? server.serverItem.serverAddress;
+      return ExtendedServerItem(
+        serverItem: server.serverItem,
+        isLoading: true,
+        // 保留缓存的数据
+        mapRuntime: address != null ? _mapRuntimeCache[address] : null,
+        mapRuntimeLastFetched: address != null ? _mapRuntimeLastFetchedCache[address] : null,
+        mapRuntimeError: false,
+        consecutiveFailures: 0,
+        isOffline: false,
+      );
+    }).toList();
+    
+    // 5. 发射重置后的状态
+    emit(state.copyWith(
+      servers: servers,
+      isLoadingServers: servers.isNotEmpty,
+      loadingCategories: clearedLoadingCategories,
+      error: null,
+      successMessage: null,
+    ));
+    
+    LogService.i('强制刷新：已重置所有状态，开始重新加载服务器数据');
+    
+    // 6. 重新获取服务器信息
+    if (servers.isNotEmpty) {
+      try {
+        await _fetchServersInfo(requestId, emit).timeout(
+          const Duration(seconds: 15),
+          onTimeout: () {
+            LogService.w('强制刷新超时（15秒）');
+          },
+        );
+      } catch (e) {
+        LogService.e('强制刷新异常: $e', e);
+        if (!emit.isDone) {
+          emit(state.copyWith(
+            isLoadingServers: false,
+            error: '刷新失败，请重试',
+          ));
+        }
       }
     }
   }
