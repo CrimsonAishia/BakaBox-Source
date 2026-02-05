@@ -57,9 +57,6 @@ enum GameState {
   /// 服务器满员
   serverFull,
 
-  /// 服务器预留位置限制（权限不足）
-  reservedSlots,
-
   /// 重试连接中
   retrying,
 }
@@ -117,9 +114,7 @@ class ConsoleLogState {
 
   /// 便捷方法：连接是否失败
   bool get isConnectionFailed =>
-      state == GameState.failed || 
-      state == GameState.serverFull || 
-      state == GameState.reservedSlots;
+      state == GameState.failed || state == GameState.serverFull;
 }
 
 /// 默认日期时间（用于const构造函数）
@@ -180,14 +175,6 @@ class ConnectionStatusResult {
       success: false,
       state: GameState.serverFull,
       message: '服务器已满',
-    );
-  }
-
-  factory ConnectionStatusResult.reservedSlots() {
-    return const ConnectionStatusResult(
-      success: false,
-      state: GameState.reservedSlots,
-      message: '服务器预留位置已满',
     );
   }
 
@@ -306,13 +293,7 @@ class ConsoleLogService {
   final _regexMapLoaded = RegExp(r'ChangeGameUIState:.*CSGO_GAME_UI_STATE_LOADINGSCREEN');
   
   // 服务器状态
-  final _regexServerFull = RegExp(r'[Ss]erver is full|[Nn]o free slots|SERVERFULL');
-  
-  // 服务器预留位置限制（权限不足被踢出）
-  // 包括两种情况：
-  // 1. REJECT_SERVERFULL - 服务器满员预留位置
-  // 2. REJECT_RESERVED_FOR_LOBBY - 为大厅预留的位置
-  final _regexReservedSlots = RegExp(r'REJECT_SERVERFULL|REJECT_RESERVED_FOR_LOBBY');
+  final _regexServerFull = RegExp(r'[Ss]erver is full|[Nn]o free slots|SERVERFULL|REJECT_SERVERFULL');
   
   // 玩家进入游戏 - 使用更可靠的标志
   // 注意：不再使用 ChangeGameUIState LOADINGSCREEN -> INGAME，因为它可能在 SERVERFULL 之前触发
@@ -775,13 +756,6 @@ class ConsoleLogService {
           }
           return;
           
-        case GameState.reservedSlots:
-          timer.cancel();
-          if (!completer.isCompleted) {
-            completer.complete(ConnectionStatusResult.reservedSlots());
-          }
-          return;
-          
         default:
           break;
       }
@@ -816,11 +790,6 @@ class ConsoleLogService {
   /// 检查服务器是否满员
   bool isServerFull() {
     return _currentState.state == GameState.serverFull;
-  }
-
-  /// 检查是否因预留位置被拒绝
-  bool isReservedSlots() {
-    return _currentState.state == GameState.reservedSlots;
   }
 
   /// 获取事件历史
@@ -1120,34 +1089,14 @@ class ConsoleLogService {
     line = line.trim();
     if (line.isEmpty) return;
 
-    // ========== 最高优先级：服务器预留位置限制 ==========
-    // 必须在所有断开连接检测之前，因为 NETWORK_DISCONNECT_REJECT_SERVERFULL 包含 DISCONNECT
-    if (_regexReservedSlots.hasMatch(line)) {
-      // 标记连接失败和 loopback 回退，防止后续检测覆盖状态
-      _connectionPhaseFailed = true;
-      _isLoopbackFallback = true;  // 关键：标记为 loopback 回退，让后续 spawning 检测忽略
-      
-      _updateConnectionState(
-        GameState.reservedSlots,
-        rawLine: line,
-      );
-      return;
-    }
-
     // 检测远程连接请求（记录目标服务器）
     final remoteMatch = _regexRemoteConnect.firstMatch(line);
     if (remoteMatch != null) {
       _targetServer = remoteMatch.group(1) ?? '';
-      
-      // 如果当前是预留位置限制状态，不要重置标志
-      // 因为可能是自动重试，我们需要保持这个状态
-      if (_currentState.state != GameState.reservedSlots) {
-        _isLoopbackFallback = false;
-        _connectTimedOut = false;
-        _connectionPhaseFailed = false;
-        _isInLoopbackMode = false;  // 新的远程连接，退出 loopback 模式
-      }
-      
+      _isLoopbackFallback = false;
+      _connectTimedOut = false;
+      _connectionPhaseFailed = false;
+      _isInLoopbackMode = false;  // 新的远程连接，退出 loopback 模式
       LogService.d('[ConsoleLog] 检测到远程连接请求，目标服务器: $_targetServer');
       return;
     }
@@ -1223,17 +1172,13 @@ class ConsoleLogService {
     if (_regexLoopbackConnect.hasMatch(line)) {
       // 标记进入 loopback 模式
       _isInLoopbackMode = true;
-      
-      // 【关键】如果已经是预留位置限制状态，不要覆盖
-      // 必须在最前面检查，因为 _connectionPhaseFailed 标志可能已经设置
-      if (_currentState.state == GameState.reservedSlots) {
-        LogService.d('[ConsoleLog] 已是预留位置限制状态，忽略 loopback 连接');
-        return;
-      }
+      LogService.d('[ConsoleLog] 检测到 loopback 连接，进入 loopback 模式');
       
       // 如果之前有远程连接请求且（超时或连接阶段失败），说明是回退到本地服务器
       if (_targetServer.isNotEmpty && (_connectTimedOut || _connectionPhaseFailed)) {
         _isLoopbackFallback = true;
+        final reason = _connectTimedOut ? '连接超时，回退到本地' : '连接失败，回退到本地';
+        LogService.d('[ConsoleLog] 检测到回退到本地服务器，目标服务器: $_targetServer, 原因: $reason');
         _updateConnectionState(
           GameState.failed,
           serverAddress: _targetServer,
@@ -1287,13 +1232,6 @@ class ConsoleLogService {
     // 检查开始连接
     final connectingMatch = _regexConnecting.firstMatch(line);
     if (connectingMatch != null) {
-      // 如果当前是预留位置限制状态，不要改变状态
-      // 因为可能是自动重试，我们需要保持这个终态
-      if (_currentState.state == GameState.reservedSlots) {
-        LogService.d('[ConsoleLog] 预留位置状态，忽略新的连接请求');
-        return;
-      }
-      
       _updateConnectionState(
         GameState.connecting,
         serverAddress: connectingMatch.group(1),
@@ -1433,11 +1371,9 @@ class ConsoleLogService {
 
     // 检查连接失败
     if (_regexConnectFailed.hasMatch(line)) {
-      // 排除一些正常的断开情况和预留位置限制
+      // 排除一些正常的断开情况
       if (!line.contains('LOOPSHUTDOWN') && 
           !line.contains('SERVERFULL') && 
-          !line.contains('REJECT_SERVERFULL') &&  // 预留位置限制已在最前面处理
-          !line.contains('REJECT_RESERVED_FOR_LOBBY') &&  // 大厅预留位置已在最前面处理
           !line.contains('LOOPDEACTIVATE')) {
         final currentState = _currentState.state;
         if (currentState == GameState.connecting) {
@@ -1461,12 +1397,10 @@ class ConsoleLogService {
 
     // 检查断开连接（通用检测，排除内部状态切换）
     if (_regexDisconnect.hasMatch(line)) {
-      // 排除内部状态切换和预留位置限制
+      // 排除内部状态切换
       if (!line.contains('LOOPSHUTDOWN') && 
           !line.contains('LOOPDEACTIVATE') &&
-          !line.contains('DISCONNECT_BY_USER') &&  // 已在上面处理
-          !line.contains('REJECT_SERVERFULL') &&  // 预留位置限制已在最前面处理
-          !line.contains('REJECT_RESERVED_FOR_LOBBY')) {  // 大厅预留位置已在最前面处理
+          !line.contains('DISCONNECT_BY_USER')) {  // 已在上面处理
         final currentState = _currentState.state;
         if (currentState == GameState.inGame) {
           _updateConnectionState(
@@ -1528,8 +1462,6 @@ class ConsoleLogService {
         return '连接失败';
       case GameState.serverFull:
         return '服务器已满';
-      case GameState.reservedSlots:
-        return '服务器预留位置已满';
       case GameState.retrying:
         return '重试连接中';
       case GameState.unknown:

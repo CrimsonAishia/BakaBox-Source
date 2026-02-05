@@ -304,7 +304,6 @@ class FloatingInfoArea extends StatelessWidget {
       return state.state == 'timeout' ? '连接超时' : '连接失败';
     }
     if (state.isServerFull) return '服务器满';
-    if (state.isReservedSlots) return '预留位置';
     if (state.isPaused) return '已停止';
     return '准备中';
   }

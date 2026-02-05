@@ -24,13 +24,12 @@ class FloatingWindowState {
     DateTime? lastUpdate,
   }) : lastUpdate = lastUpdate ?? const _DefaultDateTime();
 
-  /// 是否为终态（成功/失败/超时/服务器满/预留位置限制）
+  /// 是否为终态（成功/失败/超时/服务器满）
   bool get isTerminal => _isTerminalState(state);
 
   bool get isSuccess => state == 'success';
   bool get isFailed => state == 'failed' || state == 'timeout';
   bool get isServerFull => state == 'serverFull';
-  bool get isReservedSlots => state == 'reservedSlots';
   bool get isLoading => state == 'loading';
   bool get isConnecting => state == 'connecting';
   bool get isLaunching => state == 'launching';
@@ -97,8 +96,7 @@ class FloatingWindowState {
     return state == 'success' ||
         state == 'failed' ||
         state == 'timeout' ||
-        state == 'serverFull' ||
-        state == 'reservedSlots';
+        state == 'serverFull';
   }
 
   @override
