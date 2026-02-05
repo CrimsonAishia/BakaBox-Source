@@ -156,9 +156,12 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
         stickyItems,
       );
 
-      // 保留现有的已读状态
+      // 重新加载已读状态，确保与本地存储同步
+      final readIds = await _readService.getReadIds();
+
       emit(state.copyWith(
         announcements: announcements,
+        readIds: readIds,
         isLoading: false,
       ));
 
