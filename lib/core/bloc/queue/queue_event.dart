@@ -13,11 +13,12 @@ abstract class QueueEvent extends Equatable {
 /// 初始化挤服
 class QueueInitialize extends QueueEvent {
   final String serverAddress;
+  final bool isCustomServer;
 
-  const QueueInitialize(this.serverAddress);
+  const QueueInitialize(this.serverAddress, {this.isCustomServer = false});
 
   @override
-  List<Object?> get props => [serverAddress];
+  List<Object?> get props => [serverAddress, isCustomServer];
 }
 
 /// 开始挤服
@@ -58,6 +59,16 @@ class QueueSetAutoRetry extends QueueEvent {
 
   @override
   List<Object?> get props => [enable];
+}
+
+/// 设置是否捐助者
+class QueueSetDonator extends QueueEvent {
+  final bool isDonator;
+
+  const QueueSetDonator(this.isDonator);
+
+  @override
+  List<Object?> get props => [isDonator];
 }
 
 /// 启动游戏

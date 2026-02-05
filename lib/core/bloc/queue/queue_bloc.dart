@@ -15,6 +15,7 @@ import 'queue_state.dart';
 // 配置存储键
 const String _keyQueueTargetPlayers = 'queue_target_players';
 const String _keyQueueThreadCount = 'queue_thread_count';
+const String _keyQueueIsDonator = 'queue_is_donator';
 
 /// 挤服Bloc
 /// 
@@ -33,6 +34,7 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
     on<QueueSetTargetPlayers>(_onSetTargetPlayers);
     on<QueueSetThreadCount>(_onSetThreadCount);
     on<QueueSetAutoRetry>(_onSetAutoRetry);
+    on<QueueSetDonator>(_onSetDonator);
     on<QueueLaunchGame>(_onLaunchGame);
     on<QueueRefreshServerInfo>(_onRefreshServerInfo);
     on<QueueStateUpdated>(_onStateUpdated);
@@ -61,6 +63,7 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
     emit(state.copyWith(
       isInitialized: true,
       serverAddress: event.serverAddress,
+      isCustomServer: event.isCustomServer,
       isGameRunning: currentState.isGameRunning,
       config: savedConfig,
     ));
@@ -77,10 +80,12 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
     try {
       final targetPlayers = StorageUtils.getInt(_keyQueueTargetPlayers) ?? 60;
       final threadCount = StorageUtils.getInt(_keyQueueThreadCount) ?? 3;
+      final isDonator = StorageUtils.getBool(_keyQueueIsDonator, defaultValue: false);
       return QueueConfig(
         targetPlayers: targetPlayers,
         threadCount: threadCount,
         enableAutoRetry: false, // 自动重试不保存，每次默认关闭
+        isDonator: isDonator,
       );
     } catch (e) {
       LogService.e('[QueueBloc] 加载配置失败', e);
@@ -93,6 +98,7 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
     try {
       await StorageUtils.setInt(_keyQueueTargetPlayers, config.targetPlayers);
       await StorageUtils.setInt(_keyQueueThreadCount, config.threadCount);
+      await StorageUtils.setBool(_keyQueueIsDonator, config.isDonator);
     } catch (e) {
       LogService.e('[QueueBloc] 保存配置失败', e);
     }
@@ -146,7 +152,7 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
           LogService.d('[QueueBloc] 获取地图信息失败: $e');
         }
         
-        // 调整目标人数不超过服务器最大人数-1（满人时无法进入）
+        // 调整目标人数不超过允许的最大值
         var config = state.config;
         final maxTarget = sourceInfo.maxPlayers - 1;
         if (maxTarget > 0 && config.targetPlayers > maxTarget) {
@@ -245,6 +251,42 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
     emit(state.copyWith(
       config: state.config.copyWith(enableAutoRetry: event.enable),
     ));
+  }
+
+  /// 设置是否捐助者
+  Future<void> _onSetDonator(
+    QueueSetDonator event,
+    Emitter<QueueBlocState> emit,
+  ) async {
+    // 正在挤服或连接时不允许修改
+    if (state.status == QueueStatus.running || state.status == QueueStatus.connecting) {
+      emit(state.copyWith(error: '挤服中无法修改捐助者设置'));
+      return;
+    }
+    
+    final maxPlayers = state.serverInfo?.maxPlayers ?? 64;
+    
+    // 切换捐助者状态时，调整目标人数
+    int newTargetPlayers;
+    if (event.isDonator) {
+      // 开启捐助者：保持当前设置，但不超过 maxPlayers - 1
+      newTargetPlayers = state.config.targetPlayers.clamp(1, maxPlayers - 1);
+    } else {
+      // 关闭捐助者：如果当前超过59，则设为59
+      final maxNonDonator = 59;
+      newTargetPlayers = state.config.targetPlayers > maxNonDonator 
+          ? maxNonDonator 
+          : state.config.targetPlayers;
+    }
+    
+    // 更新配置
+    final newConfig = state.config.copyWith(
+      isDonator: event.isDonator,
+      targetPlayers: newTargetPlayers,
+    );
+    
+    emit(state.copyWith(config: newConfig));
+    await _saveConfig(newConfig);
   }
 
   /// 启动游戏

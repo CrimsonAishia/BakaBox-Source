@@ -17,11 +17,13 @@ import 'queue_settings.dart';
 /// 挤服窗口
 class QueueWindow extends StatefulWidget {
   final String serverAddress;
+  final bool isCustomServer; // 是否为自定义服务器
   final VoidCallback? onClose;
 
   const QueueWindow({
     super.key,
     required this.serverAddress,
+    this.isCustomServer = false,
     this.onClose,
   });
 
@@ -35,7 +37,7 @@ class _QueueWindowState extends State<QueueWindow> {
   @override
   void initState() {
     super.initState();
-    _queueBloc = QueueBloc()..add(QueueInitialize(widget.serverAddress));
+    _queueBloc = QueueBloc()..add(QueueInitialize(widget.serverAddress, isCustomServer: widget.isCustomServer));
   }
 
   @override
@@ -116,7 +118,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         width: 420,
-        constraints: const BoxConstraints(maxHeight: 530),
+        constraints: const BoxConstraints(maxHeight: 580),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
@@ -363,10 +365,13 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
             targetPlayers: state.config.targetPlayers,
             threadCount: state.config.threadCount,
             enableAutoRetry: state.config.enableAutoRetry,
+            isDonator: state.config.isDonator,
             disabled: state.isQueueActive || state.isConnecting,
             isGameRunning: state.isGameRunning,
             maxPlayers: state.serverInfo?.maxPlayers ?? 64,
             gameType: state.serverInfo?.gameType,
+            mapName: state.serverInfo?.map,
+            isCustomServer: state.isCustomServer,
             onTargetPlayersChanged: (value) {
               context.read<QueueBloc>().add(QueueSetTargetPlayers(value));
             },
@@ -375,6 +380,9 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
             },
             onAutoRetryChanged: (value) {
               context.read<QueueBloc>().add(QueueSetAutoRetry(value));
+            },
+            onDonatorChanged: (value) {
+              context.read<QueueBloc>().add(QueueSetDonator(value));
             },
           ),
           const SizedBox(height: 16),

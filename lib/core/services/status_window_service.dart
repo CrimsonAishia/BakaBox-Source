@@ -78,22 +78,26 @@ class QueueConfig {
   final int targetPlayers;
   final int threadCount;
   final bool enableAutoRetry;
+  final bool isDonator;
 
   const QueueConfig({
     this.targetPlayers = 60,
     this.threadCount = 3,
     this.enableAutoRetry = false,
+    this.isDonator = false,
   });
 
   QueueConfig copyWith({
     int? targetPlayers,
     int? threadCount,
     bool? enableAutoRetry,
+    bool? isDonator,
   }) {
     return QueueConfig(
       targetPlayers: targetPlayers ?? this.targetPlayers,
       threadCount: threadCount ?? this.threadCount,
       enableAutoRetry: enableAutoRetry ?? this.enableAutoRetry,
+      isDonator: isDonator ?? this.isDonator,
     );
   }
 }
