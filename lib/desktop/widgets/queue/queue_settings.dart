@@ -8,26 +8,34 @@ class QueueSettings extends StatelessWidget {
   final int targetPlayers;
   final int threadCount;
   final bool enableAutoRetry;
+  final bool isDonator;
   final bool disabled;
   final bool isGameRunning;
   final int maxPlayers; // 服务器最大人数
   final String? gameType; // 游戏类型，用于判断是否为 CSGO
+  final String? mapName; // 地图名称，用于判断是否显示捐助者选项
+  final bool isCustomServer; // 是否为自定义服务器
   final ValueChanged<int>? onTargetPlayersChanged;
   final ValueChanged<int>? onThreadCountChanged;
   final ValueChanged<bool>? onAutoRetryChanged;
+  final ValueChanged<bool>? onDonatorChanged;
 
   const QueueSettings({
     super.key,
     required this.targetPlayers,
     required this.threadCount,
     required this.enableAutoRetry,
+    required this.isDonator,
     this.disabled = false,
     this.isGameRunning = false,
     this.maxPlayers = 64,
     this.gameType,
+    this.mapName,
+    this.isCustomServer = false,
     this.onTargetPlayersChanged,
     this.onThreadCountChanged,
     this.onAutoRetryChanged,
+    this.onDonatorChanged,
   });
 
   @override
@@ -37,6 +45,9 @@ class QueueSettings extends StatelessWidget {
     
     // 判断是否为 CSGO 服务器
     final isCsgoServer = ServerItemUtils.isCsgoServer(gameType);
+    
+    // 判断是否显示捐助者选项（只在 ze_ 和 zm_ 开头的地图显示，且非自定义服务器）
+    final shouldShowDonatorOption = !isCustomServer && _shouldShowDonatorOption(mapName);
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -82,6 +93,12 @@ class QueueSettings extends StatelessWidget {
           // 线程数量设置
           _buildThreadCountSlider(context, isDark),
           
+          // 捐助者选项（只在 ze_ 和 zm_ 地图显示，放在自动重试上边）
+          if (shouldShowDonatorOption) ...[
+            const SizedBox(height: 16),
+            _buildDonatorSwitch(context, isDark),
+          ],
+          
           // 自动重试开关（CSGO 服务器不显示）
           if (!isCsgoServer) ...[
             const SizedBox(height: 16),
@@ -92,10 +109,27 @@ class QueueSettings extends StatelessWidget {
     );
   }
 
+  /// 判断是否应该显示捐助者选项
+  bool _shouldShowDonatorOption(String? mapName) {
+    if (mapName == null || mapName.isEmpty) return false;
+    final lowerMapName = mapName.toLowerCase();
+    return lowerMapName.startsWith('ze_') || lowerMapName.startsWith('zm_');
+  }
+
   Widget _buildTargetPlayersSlider(BuildContext context, bool isDark) {
     final theme = Theme.of(context);
-    // 目标人数最大值为 maxPlayers - 1，因为满人时无法进入
-    final effectiveMaxPlayers = (maxPlayers > 1 ? maxPlayers : 64) - 1;
+    
+    // 根据捐助者状态决定最大值
+    int effectiveMaxPlayers;
+    if (isDonator) {
+      // 捐助者：可以拉到 maxPlayers - 1（因为满人时无法进入）
+      effectiveMaxPlayers = (maxPlayers > 1 ? maxPlayers : 64) - 1;
+    } else {
+      // 非捐助者：最多只能拉到59人，但不超过 maxPlayers - 1
+      final serverMax = (maxPlayers > 1 ? maxPlayers : 64) - 1;
+      effectiveMaxPlayers = serverMax < 59 ? serverMax : 59;
+    }
+    
     final effectiveTargetPlayers = targetPlayers.clamp(1, effectiveMaxPlayers);
     
     return Column(
@@ -173,6 +207,92 @@ class QueueSettings extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDonatorSwitch(BuildContext context, bool isDark) {
+    final theme = Theme.of(context);
+    
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              Icon(
+                MdiIcons.heartCircle,
+                size: 16,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Row(
+                  children: [
+                    Text(
+                      '捐助者',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Tooltip(
+                      richMessage: TextSpan(
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: '这是啥？\n',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                          TextSpan(
+                            text: '捐助者可以进入60人以上的服务器',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white70 : Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      preferBelow: false,
+                      verticalOffset: 20,
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.help,
+                        child: Icon(
+                          MdiIcons.helpCircleOutline,
+                          size: 18,
+                          color: theme.colorScheme.primary.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        Switch(
+          value: isDonator,
+          onChanged: disabled ? null : onDonatorChanged,
         ),
       ],
     );
