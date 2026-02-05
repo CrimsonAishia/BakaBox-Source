@@ -974,6 +974,8 @@ class UnifiedEditHistoryItem extends Equatable {
   final EditTargetType targetType;
   final int targetId;
   final String? targetName; // 符卡/技能名称
+  final String? spellCardType; // 符卡类型（仅targetType为spell_card时有值）：normal/ultimate/passive
+  final String? zombieSkillType; // 僵尸技能类型（仅targetType为zombie_skill时有值）：active/passive
   final int editorId;
   final String? editorName;
   final String fieldChanged;
@@ -988,6 +990,8 @@ class UnifiedEditHistoryItem extends Equatable {
     required this.targetType,
     required this.targetId,
     this.targetName,
+    this.spellCardType,
+    this.zombieSkillType,
     required this.editorId,
     this.editorName,
     required this.fieldChanged,
@@ -1004,8 +1008,8 @@ class UnifiedEditHistoryItem extends Equatable {
 
   @override
   List<Object?> get props => [
-    id, targetType, targetId, targetName, editorId, editorName,
-    fieldChanged, oldValue, newValue, editReason, editedAt, version,
+    id, targetType, targetId, targetName, spellCardType, zombieSkillType,
+    editorId, editorName, fieldChanged, oldValue, newValue, editReason, editedAt, version,
   ];
 }
 

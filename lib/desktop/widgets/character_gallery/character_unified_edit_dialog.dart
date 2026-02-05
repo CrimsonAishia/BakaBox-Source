@@ -207,6 +207,11 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
     _descriptionController.dispose();
     _acquisitionCostController.dispose();
     _acquisitionCustomController.dispose();
+    // 释放内联编辑的临时控制器
+    _tempDescriptionController?.dispose();
+    _tempCooldownController?.dispose();
+    _tempDamageController?.dispose();
+    _tempCostController?.dispose();
     super.dispose();
   }
 
@@ -551,6 +556,22 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
         })
         .toList();
 
+    // 按类型分组：被动、大符卡、小符卡
+    final passive = spellCards.where((c) => c.type == SpellCardType.passive).toList();
+    final ultimate = spellCards.where((c) => c.type == SpellCardType.ultimate).toList();
+    final normal = spellCards.where((c) => c.type == SpellCardType.normal).toList();
+    
+    // 新增符卡也按类型分组
+    final newPassive = _spellCardCreates.asMap().entries
+        .where((e) => e.value.type == 'passive').toList();
+    final newUltimate = _spellCardCreates.asMap().entries
+        .where((e) => e.value.type == 'ultimate').toList();
+    final newNormal = _spellCardCreates.asMap().entries
+        .where((e) => e.value.type == 'normal').toList();
+
+    final gold = CharacterGalleryTheme.getGold(context);
+    final vermillion = CharacterGalleryTheme.getVermillion(context);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -567,15 +588,65 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
           if (spellCards.isEmpty && _spellCardCreates.isEmpty)
             _buildEmptyHint('暂无符卡数据')
           else ...[
-            // 现有符卡
-            ...spellCards.map((card) => _buildSpellCardItem(card)),
-            // 新增的符卡
-            ..._spellCardCreates.asMap().entries.map(
-                  (entry) => _buildNewSpellCardItem(entry.key, entry.value),
-                ),
+            // 被动技能
+            if (passive.isNotEmpty || newPassive.isNotEmpty) ...[
+              _buildSpellCardGroupHeader('被动技能', const Color(0xFF4A7C59)),
+              const SizedBox(height: 8),
+              ...passive.map((card) => _buildSpellCardItem(card)),
+              ...newPassive.map((entry) => _buildNewSpellCardItem(entry.key, entry.value)),
+              const SizedBox(height: 16),
+            ],
+            // 大符卡
+            if (ultimate.isNotEmpty || newUltimate.isNotEmpty) ...[
+              _buildSpellCardGroupHeader('大符卡', gold),
+              const SizedBox(height: 8),
+              ...ultimate.map((card) => _buildSpellCardItem(card)),
+              ...newUltimate.map((entry) => _buildNewSpellCardItem(entry.key, entry.value)),
+              const SizedBox(height: 16),
+            ],
+            // 小符卡
+            if (normal.isNotEmpty || newNormal.isNotEmpty) ...[
+              _buildSpellCardGroupHeader('小符卡', vermillion),
+              const SizedBox(height: 8),
+              ...normal.map((card) => _buildSpellCardItem(card)),
+              ...newNormal.map((entry) => _buildNewSpellCardItem(entry.key, entry.value)),
+            ],
           ],
         ],
       ),
+    );
+  }
+
+  /// 符卡分组标题
+  Widget _buildSpellCardGroupHeader(String title, Color color) {
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+    return Row(
+      children: [
+        Container(
+          width: 3,
+          height: 14,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: TextStyle(
+            color: scrollBrown,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: color.withValues(alpha: 0.3),
+          ),
+        ),
+      ],
     );
   }
 
