@@ -33,7 +33,8 @@ class _ConfigCardState extends State<ConfigCard> {
     final isOwner = backendUserInfo != null && backendUserInfo.id == widget.config.userID;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     // 只有在 showAuditStatus 为 true 且配置未通过审核时才显示审核状态栏
-    final showAuditStatusBar = widget.showAuditStatus && !widget.config.isApproved;
+    // 显示条件：审核中(pending)或已拒绝(rejected)
+    final showAuditStatusBar = widget.showAuditStatus && (widget.config.isPending || widget.config.isRejected);
     
     final Color borderColor;
     if (showAuditStatusBar) {
