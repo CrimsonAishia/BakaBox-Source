@@ -10,7 +10,6 @@ import '../components/common_widgets.dart';
 
 /// 编辑视图
 /// 
-/// TODO: 从原 key_binding_tool.dart 中提取完整的 _EditView 实现
 /// 包括：
 /// - 编辑表单（与发布视图类似）
 /// - 审核拒绝原因提示
