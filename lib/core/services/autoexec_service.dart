@@ -8,9 +8,13 @@ import 'game_path_service.dart';
 class AutoexecService {
   final GamePathService _gamePathService = GamePathService();
   
-  /// 配置块标记
-  static const String configStartMarker = '# ==== ZEDBOX_CONFIG_START';
-  static const String configEndMarker = '# ==== ZEDBOX_CONFIG_END';
+  /// 配置块标记（新版本使用 BAKABOX，兼容旧版本 ZEDBOX）
+  static const String configStartMarker = '# ==== BAKABOX_CONFIG_START';
+  static const String configEndMarker = '# ==== BAKABOX_CONFIG_END';
+  
+  /// 旧版本标记（用于兼容性读取）
+  static const String legacyConfigStartMarker = '# ==== ZEDBOX_CONFIG_START';
+  static const String legacyConfigEndMarker = '# ==== ZEDBOX_CONFIG_END';
 
   /// 获取 autoexec.cfg 文件路径
   Future<String?> getAutoexecPath() async {
@@ -106,7 +110,7 @@ class AutoexecService {
     return File(path).exists();
   }
 
-  /// 解析配置块
+  /// 解析配置块（兼容 BAKABOX 和 ZEDBOX 标记）
   List<ConfigBlock> parseConfigBlocks(String content) {
     final blocks = <ConfigBlock>[];
     final lines = content.split('\n');
@@ -120,16 +124,17 @@ class AutoexecService {
     for (int i = 0; i < lines.length; i++) {
       final line = lines[i];
       
-      // 检查配置块开始
-      // 格式: # ==== ZEDBOX_CONFIG_START:configId:bindKey ====
+      // 检查配置块开始（兼容新旧格式）
+      // 新格式: # ==== BAKABOX_CONFIG_START:configId:bindKey ====
+      // 旧格式: # ==== ZEDBOX_CONFIG_START:configId:bindKey ====
       final startMatch = RegExp(
-        r'# ==== ZEDBOX_CONFIG_START:([^:]+):([^\s]+)'
+        r'# ==== (BAKABOX|ZEDBOX)_CONFIG_START:([^:]+):([^\s]+)'
       ).firstMatch(line);
       
       if (startMatch != null) {
         inConfigBlock = true;
-        currentConfigId = startMatch.group(1);
-        currentBindKey = startMatch.group(2);
+        currentConfigId = startMatch.group(2);
+        currentBindKey = startMatch.group(3);
         currentConfigName = null;
         currentContent.clear();
         currentContent.writeln(line);
@@ -144,10 +149,11 @@ class AutoexecService {
         }
       }
       
-      // 检查配置块结束
-      // 格式: # ==== ZEDBOX_CONFIG_END:configId ====
+      // 检查配置块结束（兼容新旧格式）
+      // 新格式: # ==== BAKABOX_CONFIG_END:configId ====
+      // 旧格式: # ==== ZEDBOX_CONFIG_END:configId ====
       final endMatch = RegExp(
-        r'# ==== ZEDBOX_CONFIG_END:([^\s]+)'
+        r'# ==== (BAKABOX|ZEDBOX)_CONFIG_END:([^\s]+)'
       ).firstMatch(line);
       
       if (endMatch != null && inConfigBlock) {
@@ -238,21 +244,23 @@ class AutoexecService {
     return content;
   }
 
-  /// 移除配置块
+  /// 移除配置块（兼容 BAKABOX 和 ZEDBOX 标记）
   String removeConfigBlock(String content, String configId) {
     final lines = content.split('\n');
     final result = <String>[];
     bool inTargetBlock = false;
     
     for (final line in lines) {
-      // 检查是否进入目标配置块
-      if (line.contains('$configStartMarker:$configId:')) {
+      // 检查是否进入目标配置块（兼容新旧格式）
+      if (line.contains('$configStartMarker:$configId:') || 
+          line.contains('$legacyConfigStartMarker:$configId:')) {
         inTargetBlock = true;
         continue;
       }
       
-      // 检查是否离开目标配置块
-      if (line.contains('$configEndMarker:$configId')) {
+      // 检查是否离开目标配置块（兼容新旧格式）
+      if (line.contains('$configEndMarker:$configId') || 
+          line.contains('$legacyConfigEndMarker:$configId')) {
         inTargetBlock = false;
         continue;
       }
@@ -272,15 +280,22 @@ class AutoexecService {
     return content.replaceAll(RegExp(r'\n{3,}'), '\n\n');
   }
 
-  /// 检查配置是否已应用
+  /// 检查配置是否已应用（兼容 BAKABOX 和 ZEDBOX 标记）
   bool isConfigApplied(String content, String configId) {
-    return content.contains('$configStartMarker:$configId:');
+    return content.contains('$configStartMarker:$configId:') ||
+           content.contains('$legacyConfigStartMarker:$configId:');
   }
 
-  /// 获取已应用配置的按键绑定
+  /// 获取已应用配置的按键绑定（兼容 BAKABOX 和 ZEDBOX 标记）
   String? getAppliedKeyBinding(String content, String configId) {
-    final match = RegExp(
+    // 先尝试新格式
+    var match = RegExp(
       '$configStartMarker:${RegExp.escape(configId)}:([^\\s]+)'
+    ).firstMatch(content);
+    
+    // 如果没找到，尝试旧格式
+    match ??= RegExp(
+      '$legacyConfigStartMarker:${RegExp.escape(configId)}:([^\\s]+)'
     ).firstMatch(content);
     
     if (match != null) {
