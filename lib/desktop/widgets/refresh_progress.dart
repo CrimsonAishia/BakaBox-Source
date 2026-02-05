@@ -5,11 +5,17 @@ import 'package:flutter/material.dart';
 class CompactRefreshProgress extends StatefulWidget {
   final int refreshInterval;
   final VoidCallback? onRefresh;
+  /// 手动点击刷新时的回调（用于强制刷新，重置所有状态）
+  final VoidCallback? onForceRefresh;
+  /// 外部传入的刷新状态，用于同步 Bloc 的实际刷新状态
+  final bool isRefreshing;
 
   const CompactRefreshProgress({
     super.key,
     this.refreshInterval = 15,
     this.onRefresh,
+    this.onForceRefresh,
+    this.isRefreshing = false,
   });
 
   @override
@@ -19,7 +25,10 @@ class CompactRefreshProgress extends StatefulWidget {
 class _CompactRefreshProgressState extends State<CompactRefreshProgress> {
   Timer? _timer;
   int _remaining = 0;
-  bool _isRefreshing = false;  // 内部管理的刷新状态
+  bool _internalRefreshing = false;  // 内部刷新动画状态（用于显示短暂的刷新动画）
+  
+  /// 实际的刷新状态：内部动画状态 或 外部传入的刷新状态
+  bool get _isRefreshing => _internalRefreshing || widget.isRefreshing;
 
   @override
   void initState() {
@@ -34,6 +43,15 @@ class _CompactRefreshProgressState extends State<CompactRefreshProgress> {
     // refreshInterval 变化时重新计算
     if (widget.refreshInterval != oldWidget.refreshInterval) {
       _remaining = widget.refreshInterval;
+    }
+    
+    // 外部刷新状态从 true 变为 false 时，重置倒计时
+    // 这确保了当 Bloc 刷新完成后，倒计时从头开始
+    if (oldWidget.isRefreshing && !widget.isRefreshing) {
+      setState(() {
+        _internalRefreshing = false;
+        _remaining = widget.refreshInterval;
+      });
     }
   }
 
@@ -51,24 +69,31 @@ class _CompactRefreshProgressState extends State<CompactRefreshProgress> {
       setState(() {
         _remaining--;
         if (_remaining <= 0) {
-          // 触发刷新，显示短暂的刷新动画
-          _triggerRefresh();
+          // 自动刷新：使用普通刷新
+          _triggerRefresh(isManual: false);
         }
       });
     });
   }
 
-  void _triggerRefresh() {
-    _isRefreshing = true;
+  void _triggerRefresh({required bool isManual}) {
+    _internalRefreshing = true;
     _remaining = widget.refreshInterval;  // 立即重置
-    widget.onRefresh?.call();
     
-    // 1秒后结束刷新动画
+    // 手动刷新使用强制刷新（重置所有状态），自动刷新使用普通刷新
+    if (isManual && widget.onForceRefresh != null) {
+      widget.onForceRefresh!();
+    } else {
+      widget.onRefresh?.call();
+    }
+    
+    // 最短显示 1 秒刷新动画，之后由外部 isRefreshing 状态控制
     Future.delayed(const Duration(seconds: 1), () {
       if (mounted) {
         setState(() {
-          _isRefreshing = false;
-          _remaining = widget.refreshInterval - 1;  // 刷新动画占用1秒，所以从14开始
+          _internalRefreshing = false;
+          // 注意：不在这里重置 _remaining，因为已经在上面重置过了
+          // 倒计时会在 Timer 中继续递减
         });
       }
     });
@@ -76,7 +101,7 @@ class _CompactRefreshProgressState extends State<CompactRefreshProgress> {
 
   void _manualRefresh() {
     if (_isRefreshing) return;
-    _triggerRefresh();
+    _triggerRefresh(isManual: true);
     setState(() {});  // 触发 UI 更新
   }
 

@@ -435,12 +435,31 @@ class _ServersDesktopState extends State<ServersDesktop> {
           return const SizedBox.shrink();
         }
 
+        final categoryName = state.selectedCategory?.modelName ?? '';
+        final isRefreshing = state.isCategoryLoading(categoryName) || state.isLoadingServers;
+
+        // 使用分类名作为 key，切换分类时重建组件，重置倒计时
         return CompactRefreshProgress(
+          key: ValueKey('refresh_$categoryName'),
           refreshInterval: _kRefreshInterval,
+          isRefreshing: isRefreshing,
           onRefresh: () => _handleRefresh(state),
+          onForceRefresh: () => _handleForceRefresh(),
         );
       },
     );
+  }
+
+  /// 处理自动刷新
+  void _handleRefresh(ServerState state) {
+    if (state.selectedCategory != null) {
+      context.read<ServerBloc>().add(ServerRefreshServers());
+    }
+  }
+
+  /// 处理手动强制刷新（重置所有状态）
+  void _handleForceRefresh() {
+    context.read<ServerBloc>().add(ServerForceRefresh());
   }
 
   /// 主内容区域（左右布局）
@@ -1330,12 +1349,6 @@ class _ServersDesktopState extends State<ServersDesktop> {
         ),
       ),
     );
-  }
-
-  void _handleRefresh(ServerState state) {
-    if (state.selectedCategory != null) {
-      context.read<ServerBloc>().add(ServerRefreshServers());
-    }
   }
 
   void _showServerDetails(ExtendedServerItem server) {

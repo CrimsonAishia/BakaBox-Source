@@ -179,3 +179,6 @@ class ServerReorderServers extends ServerEvent {
   @override
   List<Object?> get props => [categoryName, oldIndex, newIndex];
 }
+
+/// 强制刷新服务器列表（重置所有状态，用于手动点击刷新）
+class ServerForceRefresh extends ServerEvent {}
