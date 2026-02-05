@@ -43,11 +43,17 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
   void initState() {
     super.initState();
     _viewingDetail = widget.initialDetail;
-    context.read<AnnouncementBloc>().add(AnnouncementFetch());
+    
+    // 如果已有公告数据，使用刷新而不是重新获取，避免重置已读状态
+    final bloc = context.read<AnnouncementBloc>();
+    if (bloc.state.announcements.isEmpty) {
+      bloc.add(AnnouncementFetch());
+    } else {
+      bloc.add(AnnouncementRefresh(silent: true));
+    }
+    
     if (widget.initialDetail != null) {
-      context.read<AnnouncementBloc>().add(
-        AnnouncementFetchDetail(widget.initialDetail!.id),
-      );
+      bloc.add(AnnouncementFetchDetail(widget.initialDetail!.id));
     }
   }
 
