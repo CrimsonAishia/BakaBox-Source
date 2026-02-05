@@ -197,30 +197,6 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
       ),
       child: Row(
         children: [
-          // 印章风格图标
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: washiColor,
-              border: Border.all(
-                color: scrollBrown,
-                width: 2,
-              ),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Center(
-              child: Text(
-                '史',
-                style: TextStyle(
-                  color: scrollBrown,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
           Expanded(
             child: Text(
               '编辑历史',
@@ -235,14 +211,14 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
           if (_total > 0)
             Builder(
               builder: (context) {
-                final gold = CharacterGalleryTheme.getGold(context);
+                final vermillion = CharacterGalleryTheme.getVermillion(context);
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: gold.withValues(alpha: 0.12),
+                    color: vermillion.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(
-                      color: gold.withValues(alpha: 0.4),
+                      color: vermillion.withValues(alpha: 0.4),
                     ),
                   ),
                   child: Row(
@@ -251,13 +227,13 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
                       Icon(
                         Icons.history_rounded,
                         size: 14,
-                        color: gold,
+                        color: vermillion,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         '$_total 条',
                         style: TextStyle(
-                          color: gold,
+                          color: vermillion,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -546,7 +522,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 标题行：图标 + 类型 + 名称 + 字段 + 操作标签
+        // 标题行：图标 + 类型 + 子类型标签 + 名称 + 字段 + 操作标签
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -560,6 +536,16 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
                 fontWeight: FontWeight.w600,
               ),
             ),
+            // 符卡类型标签
+            if (item.targetType == EditTargetType.spellCard && item.spellCardType != null) ...[
+              const SizedBox(width: 6),
+              _buildSubTypeBadge(context, item.spellCardType!),
+            ],
+            // 僵尸技能类型标签
+            if (item.targetType == EditTargetType.zombieSkill && item.zombieSkillType != null) ...[
+              const SizedBox(width: 6),
+              _buildSubTypeBadge(context, item.zombieSkillType!),
+            ],
             if (!isSubModel && item.targetName != null) ...[
               Text(
                 ' · ',
@@ -612,6 +598,42 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
         ],
       ],
     );
+  }
+
+  /// 子类型标签（符卡类型或技能类型）
+  Widget _buildSubTypeBadge(BuildContext context, String subType) {
+    final (String label, Color color) = _getSubTypeInfo(context, subType);
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
+        borderRadius: BorderRadius.circular(3),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  /// 获取子类型信息（标签和颜色）
+  (String, Color) _getSubTypeInfo(BuildContext context, String subType) {
+    final gold = CharacterGalleryTheme.getGold(context);
+    final vermillion = CharacterGalleryTheme.getVermillion(context);
+    
+    return switch (subType) {
+      'ultimate' => ('大符卡', gold),
+      'passive' => ('被动', const Color(0xFF4A7C59)),
+      'normal' => ('小符卡', vermillion),
+      'active' => ('主动', vermillion),
+      _ => (subType, CharacterGalleryTheme.getScrollBrown(context)),
+    };
   }
 
   // 紧凑的变更详情

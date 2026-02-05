@@ -22,12 +22,10 @@ class CharacterGalleryDesktop extends StatefulWidget {
   State<CharacterGalleryDesktop> createState() => _CharacterGalleryDesktopState();
 }
 
-class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop>
-    with SingleTickerProviderStateMixin {
+class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _listScrollController = ScrollController();
   final ScrollController _detailScrollController = ScrollController();
-  late AnimationController _petalController;
   Timer? _searchDebounce;
 
   // 滚动指示器状态
@@ -42,10 +40,6 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop>
     _listScrollController.addListener(_onScroll);
     _listScrollController.addListener(_updateListScrollIndicators);
     _detailScrollController.addListener(_updateDetailScrollIndicators);
-    _petalController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 20),
-    )..repeat();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final bloc = context.read<CharacterGalleryBloc>();
@@ -99,7 +93,6 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop>
     _listScrollController.dispose();
     _detailScrollController.removeListener(_updateDetailScrollIndicators);
     _detailScrollController.dispose();
-    _petalController.dispose();
     super.dispose();
   }
 
@@ -152,8 +145,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop>
                 ),
               ),
             ),
-            // 樱花飘落动画
-            Positioned.fill(child: SakuraPetals(controller: _petalController)),
+
             // 主内容
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 55, 16, 16),
