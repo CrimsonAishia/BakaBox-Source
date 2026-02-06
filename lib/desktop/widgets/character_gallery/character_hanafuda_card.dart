@@ -188,7 +188,7 @@ class AcquisitionTag extends StatelessWidget {
             AcquisitionType.custom => (
               '',
               acquisition!.customSource ?? '特殊',
-              CharacterGalleryTheme.sakuraPink,
+              CharacterGalleryTheme.getCustomSourceColor(context),
             ),
             AcquisitionType.unknown => (
               '',

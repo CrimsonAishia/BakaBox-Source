@@ -737,6 +737,7 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
         _ => value,
       };
     }
+
     return value;
   }
 

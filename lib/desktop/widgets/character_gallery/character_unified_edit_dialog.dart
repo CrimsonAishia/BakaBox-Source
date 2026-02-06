@@ -130,8 +130,12 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
     _initZombieSkillEditsFromPendingRequest(parsedData?.zombieSkills);
 
     // 根据角色类型决定 Tab 数量
+    // 东方角色: 基本信息、获取来源、符卡系统
+    // 僵尸角色: 基本信息、来源说明、技能系统
+    // 普通角色: 基本信息、获取来源
     final isTouhou = widget.character.category == CharacterCategory.touhou;
-    final tabCount = isTouhou ? 3 : 2;
+    final isZombie = widget.character.category == CharacterCategory.zombie;
+    final tabCount = (isTouhou || isZombie) ? 3 : 2;
 
     _tabController = TabController(length: tabCount, vsync: this);
   }
@@ -240,9 +244,8 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
   }
 
   bool get _hasChanges {
-    final isZombie = widget.character.category == CharacterCategory.zombie;
     return _descriptionChanged ||
-        (!isZombie && _acquisitionChanged) || // 僵尸不计算获取来源变更
+        _acquisitionChanged || // 僵尸角色也支持来源编辑
         _spellCardEdits.isNotEmpty ||
         _spellCardCreates.isNotEmpty ||
         _spellCardDeletes.isNotEmpty ||
@@ -284,7 +287,11 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                 controller: _tabController,
                 children: [
                   _buildBasicInfoTab(),
-                  if (!isZombie) _buildAcquisitionTab(), // 僵尸不显示获取来源
+                  // 僵尸角色使用专用的来源说明 Tab，其他角色使用获取来源 Tab
+                  if (isZombie)
+                    _buildZombieOriginTab()
+                  else
+                    _buildAcquisitionTab(),
                   if (isTouhou) _buildSpellCardsTab(),
                   if (isZombie) _buildZombieSkillsTab(),
                 ],
@@ -413,7 +420,8 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
         labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
         tabs: [
           const Tab(text: '基本信息'),
-          if (!isZombie) const Tab(text: '获取来源'), // 僵尸不显示获取来源
+          // 僵尸角色显示"来源说明"，其他角色显示"获取来源"
+          Tab(text: isZombie ? '来源说明' : '获取来源'),
           if (isTouhou) const Tab(text: '符卡系统'),
           if (isZombie) const Tab(text: '技能系统'),
         ],
@@ -568,6 +576,137 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
             _buildChangeIndicator('获取来源已修改'),
           ],
         ],
+      ),
+    );
+  }
+
+  /// 僵尸来源预设选项（直接存储中文值）
+  static const List<String> _zombieOriginPresets = ['随机母体', '感染变化'];
+
+  /// 判断当前来源是否为预设值
+  bool get _isZombieOriginPreset =>
+      _zombieOriginPresets.contains(_acquisitionCustomController.text);
+
+  /// 获取当前选中的僵尸来源（预设值或 null 表示自定义）
+  String? get _currentZombieOriginPreset {
+    if (_acquisitionType != AcquisitionType.custom) {
+      return null; // 默认选自定义
+    }
+    final source = _acquisitionCustomController.text;
+    if (_zombieOriginPresets.contains(source)) {
+      return source;
+    }
+    return null; // 自定义
+  }
+
+  /// 僵尸来源说明 Tab（专用于 zombie 类型角色）
+  Widget _buildZombieOriginTab() {
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+
+    // 预设选项的颜色
+    const presetColors = {
+      '随机母体': Color(0xFFB44D4D), // 红色 - 母体
+      '感染变化': Color(0xFF6B8E5A), // 绿色 - 感染
+    };
+    const customColor = Color(0xFF4A7C59); // 深绿色 - 自定义
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle('来源类型', Icons.category_outlined),
+          const SizedBox(height: 12),
+
+          // 预设选项
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              ..._zombieOriginPresets.map(
+                (preset) => _buildZombieOriginChip(
+                  preset,
+                  preset,
+                  presetColors[preset] ?? scrollBrown,
+                ),
+              ),
+              // 自定义选项
+              _buildZombieOriginChip('自定义', null, customColor),
+            ],
+          ),
+
+          // 自定义输入框（仅在选择"自定义"时显示）
+          if (_currentZombieOriginPreset == null && !_isZombieOriginPreset) ...[
+            const SizedBox(height: 20),
+            _buildSectionTitle('自定义来源', Icons.edit_outlined),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: 400,
+              child: TextField(
+                controller: _acquisitionCustomController,
+                onChanged: (_) => _checkAcquisitionChanged(),
+                style: TextStyle(color: inkColor, fontSize: 14),
+                decoration: _buildInputDecoration('例：管理员设置、活动奖励...'),
+              ),
+            ),
+          ],
+
+          if (_acquisitionChanged) ...[
+            const SizedBox(height: 12),
+            _buildChangeIndicator('来源已修改'),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// 构建僵尸来源选择芯片
+  /// [label] 显示的文本
+  /// [value] 存储的值，null 表示自定义选项
+  Widget _buildZombieOriginChip(String label, String? value, Color color) {
+    final isSelected = value == null
+        ? _currentZombieOriginPreset == null && !_isZombieOriginPreset
+        : _acquisitionCustomController.text == value;
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+    final inputBg = CharacterGalleryTheme.getInputBackground(context);
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _acquisitionType = AcquisitionType.custom;
+          if (value == null) {
+            // 选择自定义时，如果当前是预设值则清空
+            if (_isZombieOriginPreset) {
+              _acquisitionCustomController.text = '';
+            }
+          } else {
+            // 选择预设值时，直接设置为该值
+            _acquisitionCustomController.text = value;
+          }
+          _checkAcquisitionChanged();
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withValues(alpha: 0.15) : inputBg,
+          border: Border.all(
+            color: isSelected ? color : scrollBrown.withValues(alpha: 0.3),
+            width: isSelected ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? color : inkColor,
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+          ),
+        ),
       ),
     );
   }
@@ -2955,15 +3094,13 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
       return;
     }
 
-    // 僵尸角色不提交获取来源
-    final isZombie = widget.character.category == CharacterCategory.zombie;
-
     // 构建通用的编辑数据
     final description = _descriptionChanged
         ? _descriptionController.text
         : null;
-    // 获取途径：如果类型是 unknown，则传 null（表示清除获取途径），否则传具体数据
-    final acquisition = (!isZombie && _acquisitionChanged)
+    // 获取途径/来源说明：如果类型是 unknown，则传 null（表示清除），否则传具体数据
+    // 注意：僵尸角色也可以提交来源说明
+    final acquisition = _acquisitionChanged
         ? (_acquisitionType == AcquisitionType.unknown
               ? null
               : AcquisitionEditData(
