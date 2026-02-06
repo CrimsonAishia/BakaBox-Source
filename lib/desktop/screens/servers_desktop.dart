@@ -347,6 +347,8 @@ class _ServersDesktopState extends State<ServersDesktop> {
 
   @override
   void dispose() {
+    // 强制隐藏所有浮动面板，防止页面切换后面板残留
+    ServerCardFloatingPanelHelper.hideAllPanels();
     _serverBloc?.add(ServerStopPeriodicRefresh());
     _stopCategoryCountsRefreshTimer();
     _serversScrollController.removeListener(_updateServersScrollIndicators);

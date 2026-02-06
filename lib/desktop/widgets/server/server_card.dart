@@ -23,6 +23,7 @@ import '../edit_server_dialog.dart';
 /// 全局浮动面板管理器 - 确保同时只显示一个面板
 class _FloatingPanelManager {
   static _ServerCardState? _currentCard;
+  static OverlayEntry? _currentEntry;
 
   /// 显示新面板前，隐藏之前的面板
   static void showPanel(_ServerCardState card) {
@@ -32,11 +33,43 @@ class _FloatingPanelManager {
     _currentCard = card;
   }
 
+  /// 注册当前显示的 OverlayEntry
+  static void registerEntry(OverlayEntry entry) {
+    _currentEntry = entry;
+  }
+
   /// 清除当前面板引用
   static void clearPanel(_ServerCardState card) {
     if (_currentCard == card) {
       _currentCard = null;
+      _currentEntry = null;
     }
+  }
+
+  /// 强制隐藏所有面板（页面切换时调用）
+  static void hideAllPanels() {
+    // 先尝试通过 card 隐藏
+    _currentCard?._hideFloatingPanelImmediate();
+    _currentCard = null;
+    
+    // 兜底：直接移除 entry
+    final entry = _currentEntry;
+    _currentEntry = null;
+    if (entry != null && entry.mounted) {
+      try {
+        entry.remove();
+      } catch (_) {
+        // 忽略移除时的错误
+      }
+    }
+  }
+}
+
+/// 服务器卡片浮动面板工具类 - 提供公开的清理方法
+class ServerCardFloatingPanelHelper {
+  /// 强制隐藏所有浮动面板（页面切换时调用）
+  static void hideAllPanels() {
+    _FloatingPanelManager.hideAllPanels();
   }
 }
 
@@ -311,6 +344,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     
     try {
       overlay.insert(_floatingPanelEntry!);
+      // 注册到全局管理器，确保页面切换时能被清理
+      _FloatingPanelManager.registerEntry(_floatingPanelEntry!);
     } catch (e) {
       // 插入失败，清理状态
       _floatingPanelEntry = null;
