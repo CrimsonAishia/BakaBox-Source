@@ -7,36 +7,36 @@ class CharacterGalleryTheme {
   // ===== 亮色模式颜色 =====
   /// 和纸米黄
   static const washiColorLight = Color(0xFFF5F0E6);
-  
+
   /// 卷轴木纹棕
   static const scrollBrownLight = Color(0xFF8B4513);
-  
+
   /// 墨色
   static const inkColorLight = Color(0xFF2C1810);
 
   // ===== 暗色模式颜色 =====
   /// 暗色和纸（深灰带暖调）
   static const washiColorDark = Color(0xFF2A2520);
-  
+
   /// 暗色卷轴棕（柔和的棕色）
   static const scrollBrownDark = Color(0xFFB8956A);
-  
+
   /// 暗色墨色（浅色文字）
   static const inkColorDark = Color(0xFFE8E0D8);
 
   // ===== 通用颜色（两种模式共用） =====
   /// 朱红
   static const vermillion = Color(0xFFC41E3A);
-  
+
   /// 亮红色（暗色模式用）
   static const vermillionBright = Color(0xFFFF5A6E);
-  
+
   /// 金色
   static const gold = Color(0xFFD4AF37);
-  
+
   /// 亮金色（暗色模式用）
   static const goldBright = Color(0xFFFFD966);
-  
+
   /// 樱花粉
   static const sakuraPink = Color(0xFFFFB7C5);
 
@@ -115,31 +115,29 @@ class CharacterGalleryTheme {
 
   /// 根据当前主题获取金色（暗色模式下更亮）
   static Color getGold(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? goldBright
-        : gold;
+    return Theme.of(context).brightness == Brightness.dark ? goldBright : gold;
   }
 
   // ===== 属性数值颜色（冷却、伤害、消耗等） =====
-  
+
   /// 冷却时间颜色（青色系）
   static Color getCooldownColor(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFF26A69A)  // 暗色模式：亮青色
+        ? const Color(0xFF26A69A) // 暗色模式：亮青色
         : const Color(0xFF00796B); // 浅色模式：深青色
   }
 
   /// 伤害颜色（红色系）
   static Color getDamageColor(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFFE57373)  // 暗色模式：浅红色
+        ? const Color(0xFFE57373) // 暗色模式：浅红色
         : const Color(0xFFD32F2F); // 浅色模式：深红色
   }
 
   /// P点消耗颜色（蓝色系）
   static Color getPCostColor(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFF64B5F6)  // 暗色模式：浅蓝色
+        ? const Color(0xFF64B5F6) // 暗色模式：浅蓝色
         : const Color(0xFF1976D2); // 浅色模式：深蓝色
   }
 
@@ -151,14 +149,21 @@ class CharacterGalleryTheme {
   /// 特殊效果颜色（紫色系）
   static Color getSpecialColor(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFFBA68C8)  // 暗色模式：浅紫色
+        ? const Color(0xFFBA68C8) // 暗色模式：浅紫色
         : const Color(0xFF7B1FA2); // 浅色模式：深紫色
   }
 
   /// B点消耗颜色（橙色系）
   static Color getBCostColor(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
-        ? goldBright  // 暗色模式：亮金色
+        ? goldBright // 暗色模式：亮金色
         : const Color(0xFFFF8000); // 浅色模式：橙色 rgb(255,128,0)
+  }
+
+  /// 自定义来源颜色（紫色系）
+  static Color getCustomSourceColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFFCE93D8) // 暗色模式：浅紫色
+        : const Color(0xFF9C27B0); // 浅色模式：深紫色
   }
 }

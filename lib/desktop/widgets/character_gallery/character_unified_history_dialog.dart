@@ -711,6 +711,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
         _ => value,
       };
     }
+
     return value;
   }
 
