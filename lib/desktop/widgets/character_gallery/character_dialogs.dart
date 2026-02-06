@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/bloc/character_gallery/character_gallery_bloc.dart';
 import '../../../core/bloc/character_gallery/character_gallery_event.dart';
@@ -15,6 +16,8 @@ class DialogTextField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final int maxLines;
+  final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
 
   const DialogTextField({
     super.key,
@@ -22,6 +25,8 @@ class DialogTextField extends StatelessWidget {
     required this.controller,
     required this.hint,
     this.maxLines = 1,
+    this.keyboardType,
+    this.inputFormatters,
   });
 
   @override
@@ -45,6 +50,8 @@ class DialogTextField extends StatelessWidget {
         TextField(
           controller: controller,
           maxLines: maxLines,
+          keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
           style: TextStyle(color: inkColor, fontSize: 14),
           decoration: InputDecoration(
             hintText: hint,
@@ -663,6 +670,11 @@ class _EditSpellCardDialogState extends State<EditSpellCardDialog> {
                       label: '冷却时间(秒)',
                       controller: _cooldownController,
                       hint: '60',
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                        _SingleDecimalPointFormatter(),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -671,6 +683,9 @@ class _EditSpellCardDialogState extends State<EditSpellCardDialog> {
                       label: '伤害',
                       controller: _damageController,
                       hint: '150-300',
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[\d\-~\/.\s]')),
+                      ],
                     ),
                   ),
                 ],
@@ -680,6 +695,11 @@ class _EditSpellCardDialogState extends State<EditSpellCardDialog> {
                 label: widget.type == 'ultimate' ? '消耗B点' : '消耗P点',
                 controller: _costController,
                 hint: widget.type == 'ultimate' ? '100' : '50',
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                  _SingleDecimalPointFormatter(),
+                ],
               ),
               const SizedBox(height: 12),
               // TODO: 视频上传功能暂时隐藏，等待服务器端转换方案
@@ -832,6 +852,11 @@ class _EditZombieSkillDialogState extends State<EditZombieSkillDialog> {
                       label: '冷却时间(秒)',
                       controller: _cooldownController,
                       hint: '15',
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                        _SingleDecimalPointFormatter(),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -840,6 +865,9 @@ class _EditZombieSkillDialogState extends State<EditZombieSkillDialog> {
                       label: '伤害',
                       controller: _damageController,
                       hint: '50-80',
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[\d\-~\/.\s]')),
+                      ],
                     ),
                   ),
                 ],
@@ -1238,6 +1266,11 @@ class _AddSpellCardDialogState extends State<AddSpellCardDialog> {
                       label: '冷却时间(秒)',
                       controller: _cooldownController,
                       hint: '60',
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                        _SingleDecimalPointFormatter(),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1246,6 +1279,9 @@ class _AddSpellCardDialogState extends State<AddSpellCardDialog> {
                       label: '伤害',
                       controller: _damageController,
                       hint: '150-300',
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[\d\-~\/.\s]')),
+                      ],
                     ),
                   ),
                 ],
@@ -1255,6 +1291,11 @@ class _AddSpellCardDialogState extends State<AddSpellCardDialog> {
                 label: _selectedType == 'ultimate' ? '消耗B点' : '消耗P点',
                 controller: _costController,
                 hint: _selectedType == 'ultimate' ? '100' : '50',
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                  _SingleDecimalPointFormatter(),
+                ],
               ),
               const SizedBox(height: 12),
               EditReasonSelector(
@@ -1457,6 +1498,11 @@ class _AddZombieSkillDialogState extends State<AddZombieSkillDialog> {
                       label: '冷却时间(秒)',
                       controller: _cooldownController,
                       hint: '15',
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                        _SingleDecimalPointFormatter(),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1465,6 +1511,9 @@ class _AddZombieSkillDialogState extends State<AddZombieSkillDialog> {
                       label: '伤害',
                       controller: _damageController,
                       hint: '50-80',
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[\d\-~\/.\s]')),
+                      ],
                     ),
                   ),
                 ],
@@ -1596,5 +1645,21 @@ class _AddZombieSkillDialogState extends State<AddZombieSkillDialog> {
         ],
       ),
     );
+  }
+}
+
+/// 确保只有一个小数点的格式化器
+class _SingleDecimalPointFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+    // 如果有多个小数点，拒绝输入
+    if ('.'.allMatches(text).length > 1) {
+      return oldValue;
+    }
+    return newValue;
   }
 }

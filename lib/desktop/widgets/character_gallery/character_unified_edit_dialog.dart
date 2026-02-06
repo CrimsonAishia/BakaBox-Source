@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/bloc/character_gallery/character_gallery_bloc.dart';
 import '../../../core/bloc/character_gallery/character_gallery_event.dart';
@@ -640,6 +641,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
               child: TextField(
                 controller: _acquisitionCostController,
                 keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 onChanged: (_) => _checkAcquisitionChanged(),
                 style: TextStyle(color: inkColor, fontSize: 14),
                 decoration: _buildInputDecoration('例：2000'),
@@ -1384,6 +1386,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
             suffix: '秒',
             inkColor: inkColor,
             overlayColor: overlayColor,
+            fieldType: StatFieldType.number,
           ),
         ),
         const SizedBox(width: 8),
@@ -1396,6 +1399,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
             hint: '150-300',
             inkColor: inkColor,
             overlayColor: overlayColor,
+            fieldType: StatFieldType.damage,
           ),
         ),
         const SizedBox(width: 8),
@@ -1411,6 +1415,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
             suffix: card.type == SpellCardType.ultimate ? 'B' : 'P',
             inkColor: inkColor,
             overlayColor: overlayColor,
+            fieldType: StatFieldType.number,
           ),
         ),
       ],
@@ -1426,6 +1431,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
     String? suffix,
     required Color inkColor,
     required Color overlayColor,
+    StatFieldType fieldType = StatFieldType.text,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -1442,6 +1448,10 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
               height: 22,
               child: TextField(
                 controller: controller,
+                keyboardType: fieldType == StatFieldType.number
+                    ? const TextInputType.numberWithOptions(decimal: true)
+                    : TextInputType.text,
+                inputFormatters: _getInputFormatters(fieldType),
                 style: TextStyle(
                   color: inkColor,
                   fontSize: 13,
@@ -1485,6 +1495,19 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
         ],
       ),
     );
+  }
+
+  List<TextInputFormatter>? _getInputFormatters(StatFieldType fieldType) {
+    return switch (fieldType) {
+      StatFieldType.number => [
+        FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+        _SingleDecimalPointFormatter(),
+      ],
+      StatFieldType.damage => [
+        FilteringTextInputFormatter.allow(RegExp(r'[\d\-~\/.\s]')),
+      ],
+      StatFieldType.text => null,
+    };
   }
 
   Widget _buildNewSpellCardItem(int index, SpellCardCreateData data) {
@@ -2015,6 +2038,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
             suffix: '秒',
             inkColor: inkColor,
             overlayColor: overlayColor,
+            fieldType: StatFieldType.number,
           ),
         ),
         const SizedBox(width: 8),
@@ -2027,6 +2051,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
             hint: '50-80',
             inkColor: inkColor,
             overlayColor: overlayColor,
+            fieldType: StatFieldType.damage,
           ),
         ),
         const SizedBox(width: 8),
@@ -2039,6 +2064,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
             hint: '中距离',
             inkColor: inkColor,
             overlayColor: overlayColor,
+            fieldType: StatFieldType.text,
           ),
         ),
         const SizedBox(width: 8),
@@ -2051,6 +2077,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
             hint: '减速50%',
             inkColor: inkColor,
             overlayColor: overlayColor,
+            fieldType: StatFieldType.text,
           ),
         ),
       ],
@@ -3312,5 +3339,28 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
         ),
       );
     }
+  }
+}
+
+/// 输入字段类型
+enum StatFieldType {
+  number, // 数字（冷却、消耗）
+  damage, // 伤害（允许范围如 150-300）
+  text,   // 文本（范围、特殊效果）
+}
+
+/// 确保只有一个小数点的格式化器
+class _SingleDecimalPointFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+    // 如果有多个小数点，拒绝输入
+    if ('.'.allMatches(text).length > 1) {
+      return oldValue;
+    }
+    return newValue;
   }
 }

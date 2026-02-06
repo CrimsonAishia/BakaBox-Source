@@ -1,8 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../core/models/character_models.dart';
 import '../../../core/utils/toast_utils.dart';
 import 'character_gallery_theme.dart';
 import 'character_edit_data_models.dart';
+
+/// 输入字段类型
+enum ZombieFieldType {
+  number, // 数字（冷却）
+  damage, // 伤害（允许范围如 50-80）
+  text,   // 文本（范围、特殊效果、描述）
+}
+
+/// 确保只有一个小数点的格式化器
+class _SingleDecimalPointFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+    if ('.'.allMatches(text).length > 1) {
+      return oldValue;
+    }
+    return newValue;
+  }
+}
 
 /// 僵尸技能编辑子弹窗（东方风格）
 class ZombieSkillEditSubDialog extends StatefulWidget {
@@ -138,6 +161,7 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
                                   '冷却时间(秒)',
                                   _cooldownController,
                                   '15',
+                                  fieldType: ZombieFieldType.number,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -146,6 +170,7 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
                                   '伤害',
                                   _damageController,
                                   '50-80',
+                                  fieldType: ZombieFieldType.damage,
                                 ),
                               ),
                             ],
@@ -287,6 +312,7 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
     TextEditingController controller,
     String hint, {
     int maxLines = 1,
+    ZombieFieldType fieldType = ZombieFieldType.text,
   }) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
@@ -307,6 +333,10 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
         TextField(
           controller: controller,
           maxLines: maxLines,
+          keyboardType: fieldType == ZombieFieldType.number
+              ? const TextInputType.numberWithOptions(decimal: true)
+              : TextInputType.text,
+          inputFormatters: _getInputFormatters(fieldType),
           style: TextStyle(color: inkColor, fontSize: 14),
           decoration: InputDecoration(
             hintText: hint,
@@ -336,6 +366,19 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
         ),
       ],
     );
+  }
+
+  List<TextInputFormatter>? _getInputFormatters(ZombieFieldType fieldType) {
+    return switch (fieldType) {
+      ZombieFieldType.number => [
+        FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+        _SingleDecimalPointFormatter(),
+      ],
+      ZombieFieldType.damage => [
+        FilteringTextInputFormatter.allow(RegExp(r'[\d\-~\/.\s]')),
+      ],
+      ZombieFieldType.text => null,
+    };
   }
 
   Widget _buildFooter(Color accentColor) {
@@ -510,6 +553,7 @@ class _ZombieSkillCreateSubDialogState
                                   '冷却时间(秒)',
                                   _cooldownController,
                                   '15',
+                                  fieldType: ZombieFieldType.number,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -518,6 +562,7 @@ class _ZombieSkillCreateSubDialogState
                                   '伤害',
                                   _damageController,
                                   '50-80',
+                                  fieldType: ZombieFieldType.damage,
                                 ),
                               ),
                             ],
@@ -645,6 +690,7 @@ class _ZombieSkillCreateSubDialogState
     TextEditingController controller,
     String hint, {
     int maxLines = 1,
+    ZombieFieldType fieldType = ZombieFieldType.text,
   }) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
@@ -666,6 +712,10 @@ class _ZombieSkillCreateSubDialogState
         TextField(
           controller: controller,
           maxLines: maxLines,
+          keyboardType: fieldType == ZombieFieldType.number
+              ? const TextInputType.numberWithOptions(decimal: true)
+              : TextInputType.text,
+          inputFormatters: _getInputFormatters(fieldType),
           style: TextStyle(color: inkColor, fontSize: 14),
           decoration: InputDecoration(
             hintText: hint,
@@ -692,6 +742,19 @@ class _ZombieSkillCreateSubDialogState
         ),
       ],
     );
+  }
+
+  List<TextInputFormatter>? _getInputFormatters(ZombieFieldType fieldType) {
+    return switch (fieldType) {
+      ZombieFieldType.number => [
+        FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+        _SingleDecimalPointFormatter(),
+      ],
+      ZombieFieldType.damage => [
+        FilteringTextInputFormatter.allow(RegExp(r'[\d\-~\/.\s]')),
+      ],
+      ZombieFieldType.text => null,
+    };
   }
 
   Widget _buildTypeSelector() {
@@ -948,6 +1011,7 @@ class _NewZombieSkillEditSubDialogState
                                   '冷却时间(秒)',
                                   _cooldownController,
                                   '15',
+                                  fieldType: ZombieFieldType.number,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -956,6 +1020,7 @@ class _NewZombieSkillEditSubDialogState
                                   '伤害',
                                   _damageController,
                                   '50-80',
+                                  fieldType: ZombieFieldType.damage,
                                 ),
                               ),
                             ],
@@ -1083,6 +1148,7 @@ class _NewZombieSkillEditSubDialogState
     TextEditingController controller,
     String hint, {
     int maxLines = 1,
+    ZombieFieldType fieldType = ZombieFieldType.text,
   }) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
@@ -1104,6 +1170,10 @@ class _NewZombieSkillEditSubDialogState
         TextField(
           controller: controller,
           maxLines: maxLines,
+          keyboardType: fieldType == ZombieFieldType.number
+              ? const TextInputType.numberWithOptions(decimal: true)
+              : TextInputType.text,
+          inputFormatters: _getInputFormatters(fieldType),
           style: TextStyle(color: inkColor, fontSize: 14),
           decoration: InputDecoration(
             hintText: hint,
@@ -1130,6 +1200,19 @@ class _NewZombieSkillEditSubDialogState
         ),
       ],
     );
+  }
+
+  List<TextInputFormatter>? _getInputFormatters(ZombieFieldType fieldType) {
+    return switch (fieldType) {
+      ZombieFieldType.number => [
+        FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+        _SingleDecimalPointFormatter(),
+      ],
+      ZombieFieldType.damage => [
+        FilteringTextInputFormatter.allow(RegExp(r'[\d\-~\/.\s]')),
+      ],
+      ZombieFieldType.text => null,
+    };
   }
 
   Widget _buildTypeSelector() {
