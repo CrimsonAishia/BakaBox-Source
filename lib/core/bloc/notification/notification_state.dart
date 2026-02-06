@@ -1,9 +1,9 @@
 import 'package:equatable/equatable.dart';
 import '../../models/notification_models.dart';
 
-/// 通知状态
+/// 消息状态
 class NotificationState extends Equatable {
-  /// 通知列表
+  /// 消息列表
   final List<NotificationItem> notifications;
 
   /// 未读数量
@@ -76,21 +76,23 @@ class NotificationState extends Equatable {
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       error: clearError ? null : (error ?? this.error),
       filterType: filterType ?? this.filterType,
-      filterIsRead: clearFilterIsRead ? null : (filterIsRead ?? this.filterIsRead),
+      filterIsRead: clearFilterIsRead
+          ? null
+          : (filterIsRead ?? this.filterIsRead),
     );
   }
 
   @override
   List<Object?> get props => [
-        notifications,
-        unreadCount,
-        currentPage,
-        totalPages,
-        total,
-        isLoading,
-        isLoadingMore,
-        error,
-        filterType,
-        filterIsRead,
-      ];
+    notifications,
+    unreadCount,
+    currentPage,
+    totalPages,
+    total,
+    isLoading,
+    isLoadingMore,
+    error,
+    filterType,
+    filterIsRead,
+  ];
 }

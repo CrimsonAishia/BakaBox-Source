@@ -17,10 +17,7 @@ import '../announcement/announcement_dialog.dart';
 class NotificationPanel extends StatefulWidget {
   final VoidCallback? onClose;
 
-  const NotificationPanel({
-    super.key,
-    this.onClose,
-  });
+  const NotificationPanel({super.key, this.onClose});
 
   @override
   State<NotificationPanel> createState() => _NotificationPanelState();
@@ -30,7 +27,7 @@ class _NotificationPanelState extends State<NotificationPanel>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ScrollController _notificationScrollController = ScrollController();
-  
+
   // 筛选状态
   bool _announcementShowUnreadOnly = false;
   bool _notificationShowUnreadOnly = false;
@@ -196,7 +193,8 @@ class _NotificationPanelState extends State<NotificationPanel>
       builder: (context, announcementState) {
         return BlocBuilder<NotificationBloc, NotificationState>(
           builder: (context, notificationState) {
-            final total = announcementState.unreadCount + notificationState.unreadCount;
+            final total =
+                announcementState.unreadCount + notificationState.unreadCount;
             if (total == 0) {
               return Text(
                 '暂无未读消息',
@@ -260,10 +258,13 @@ class _NotificationPanelState extends State<NotificationPanel>
         labelColor: isDark ? Colors.white : const Color(0xFF1F2937),
         unselectedLabelColor: isDark ? Colors.white54 : const Color(0xFF6B7280),
         labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
         tabs: [
           _buildTab('公告', _buildAnnouncementBadge()),
-          _buildTab('通知', _buildNotificationBadge()),
+          _buildTab('消息', _buildNotificationBadge()),
         ],
       ),
     );
@@ -274,10 +275,7 @@ class _NotificationPanelState extends State<NotificationPanel>
       height: 36,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(label),
-          badge,
-        ],
+        children: [Text(label), badge],
       ),
     );
   }
@@ -337,7 +335,9 @@ class _NotificationPanelState extends State<NotificationPanel>
 
               // 根据筛选条件过滤
               final filteredAnnouncements = _announcementShowUnreadOnly
-                  ? state.announcements.where((item) => !state.readIds.contains(item.id)).toList()
+                  ? state.announcements
+                        .where((item) => !state.readIds.contains(item.id))
+                        .toList()
                   : state.announcements;
 
               if (filteredAnnouncements.isEmpty) {
@@ -365,13 +365,19 @@ class _NotificationPanelState extends State<NotificationPanel>
                     isRead: isRead,
                     isDark: isDark,
                     onTap: () {
-                      context.read<AnnouncementBloc>().add(AnnouncementMarkAsRead(item.id));
+                      context.read<AnnouncementBloc>().add(
+                        AnnouncementMarkAsRead(item.id),
+                      );
                       widget.onClose?.call();
                       AnnouncementDialog.showDetail(context, item);
                     },
-                    onMarkRead: isRead ? null : () {
-                      context.read<AnnouncementBloc>().add(AnnouncementMarkAsRead(item.id));
-                    },
+                    onMarkRead: isRead
+                        ? null
+                        : () {
+                            context.read<AnnouncementBloc>().add(
+                              AnnouncementMarkAsRead(item.id),
+                            );
+                          },
                   );
                 },
               );
@@ -393,7 +399,8 @@ class _NotificationPanelState extends State<NotificationPanel>
               // 筛选切换
               _buildFilterChips(
                 showUnreadOnly: _announcementShowUnreadOnly,
-                onChanged: (value) => setState(() => _announcementShowUnreadOnly = value),
+                onChanged: (value) =>
+                    setState(() => _announcementShowUnreadOnly = value),
                 isDark: isDark,
               ),
               const Spacer(),
@@ -403,7 +410,9 @@ class _NotificationPanelState extends State<NotificationPanel>
                   onTap: () {
                     for (final item in state.announcements) {
                       if (!state.isRead(item.id)) {
-                        context.read<AnnouncementBloc>().add(AnnouncementMarkAsRead(item.id));
+                        context.read<AnnouncementBloc>().add(
+                          AnnouncementMarkAsRead(item.id),
+                        );
                       }
                     }
                   },
@@ -491,7 +500,7 @@ class _NotificationPanelState extends State<NotificationPanel>
     );
   }
 
-  /// 通知 Tab
+  /// 消息 Tab
   Widget _buildNotificationTab(bool isDark) {
     return Column(
       children: [
@@ -514,7 +523,7 @@ class _NotificationPanelState extends State<NotificationPanel>
 
               if (filteredNotifications.isEmpty) {
                 return _buildEmptyState(
-                  _notificationShowUnreadOnly ? '暂无未读通知' : '暂无通知',
+                  _notificationShowUnreadOnly ? '暂无未读消息' : '暂无消息',
                   Icons.notifications_off_outlined,
                   isDark,
                 );
@@ -523,7 +532,9 @@ class _NotificationPanelState extends State<NotificationPanel>
               return ListView.builder(
                 controller: _notificationScrollController,
                 padding: const EdgeInsets.only(bottom: 12),
-                itemCount: filteredNotifications.length + (state.isLoadingMore ? 1 : 0),
+                itemCount:
+                    filteredNotifications.length +
+                    (state.isLoadingMore ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index == filteredNotifications.length) {
                     return _buildLoadingMore();
@@ -536,14 +547,22 @@ class _NotificationPanelState extends State<NotificationPanel>
                     isDark: isDark,
                     onTap: () {
                       if (!notification.isRead) {
-                        context.read<NotificationBloc>().add(NotificationMarkRead(notification.id));
+                        context.read<NotificationBloc>().add(
+                          NotificationMarkRead(notification.id),
+                        );
                       }
                     },
-                    onMarkRead: notification.isRead ? null : () {
-                      context.read<NotificationBloc>().add(NotificationMarkRead(notification.id));
-                    },
+                    onMarkRead: notification.isRead
+                        ? null
+                        : () {
+                            context.read<NotificationBloc>().add(
+                              NotificationMarkRead(notification.id),
+                            );
+                          },
                     onDelete: () {
-                      context.read<NotificationBloc>().add(NotificationDelete(notification.id));
+                      context.read<NotificationBloc>().add(
+                        NotificationDelete(notification.id),
+                      );
                     },
                   );
                 },
@@ -555,7 +574,7 @@ class _NotificationPanelState extends State<NotificationPanel>
     );
   }
 
-  /// 通知工具栏
+  /// 消息工具栏
   Widget _buildNotificationToolbar(bool isDark) {
     return BlocBuilder<NotificationBloc, NotificationState>(
       builder: (context, state) {
@@ -566,7 +585,8 @@ class _NotificationPanelState extends State<NotificationPanel>
               // 筛选切换
               _buildFilterChips(
                 showUnreadOnly: _notificationShowUnreadOnly,
-                onChanged: (value) => setState(() => _notificationShowUnreadOnly = value),
+                onChanged: (value) =>
+                    setState(() => _notificationShowUnreadOnly = value),
                 isDark: isDark,
               ),
               const Spacer(),
@@ -574,7 +594,9 @@ class _NotificationPanelState extends State<NotificationPanel>
                 _buildActionButton(
                   label: '全部已读',
                   onTap: () {
-                    context.read<NotificationBloc>().add(const NotificationMarkAllRead());
+                    context.read<NotificationBloc>().add(
+                      const NotificationMarkAllRead(),
+                    );
                   },
                   isDark: isDark,
                 ),
@@ -583,7 +605,9 @@ class _NotificationPanelState extends State<NotificationPanel>
                 icon: Icons.refresh,
                 tooltip: '刷新',
                 onTap: () {
-                  context.read<NotificationBloc>().add(const NotificationRefresh());
+                  context.read<NotificationBloc>().add(
+                    const NotificationRefresh(),
+                  );
                 },
                 isDark: isDark,
               ),
@@ -745,7 +769,9 @@ class _NotificationPanelState extends State<NotificationPanel>
             _buildActionButton(
               label: '重试',
               onTap: () {
-                context.read<NotificationBloc>().add(const NotificationRefresh());
+                context.read<NotificationBloc>().add(
+                  const NotificationRefresh(),
+                );
               },
               isDark: isDark,
             ),
@@ -755,7 +781,6 @@ class _NotificationPanelState extends State<NotificationPanel>
     );
   }
 }
-
 
 /// 公告项组件
 class _AnnouncementItemWidget extends StatefulWidget {
@@ -784,7 +809,8 @@ class _AnnouncementItemWidget extends StatefulWidget {
   });
 
   @override
-  State<_AnnouncementItemWidget> createState() => _AnnouncementItemWidgetState();
+  State<_AnnouncementItemWidget> createState() =>
+      _AnnouncementItemWidgetState();
 }
 
 class _AnnouncementItemWidgetState extends State<_AnnouncementItemWidget> {
@@ -836,22 +862,22 @@ class _AnnouncementItemWidgetState extends State<_AnnouncementItemWidget> {
               decoration: BoxDecoration(
                 color: widget.isRead
                     ? (_isHovered
-                        ? (widget.isDark
-                            ? Colors.white.withValues(alpha: 0.05)
-                            : const Color(0xFFF9FAFB))
-                        : Colors.transparent)
+                          ? (widget.isDark
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : const Color(0xFFF9FAFB))
+                          : Colors.transparent)
                     : (widget.isDark
-                        ? typeColor.withValues(alpha: 0.12)
-                        : typeColor.withValues(alpha: 0.08)),
+                          ? typeColor.withValues(alpha: 0.12)
+                          : typeColor.withValues(alpha: 0.08)),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: _isHovered
                       ? (widget.isDark
-                          ? Colors.white.withValues(alpha: 0.15)
-                          : const Color(0xFFE5E7EB))
+                            ? Colors.white.withValues(alpha: 0.15)
+                            : const Color(0xFFE5E7EB))
                       : (widget.isRead
-                          ? Colors.transparent
-                          : typeColor.withValues(alpha: 0.25)),
+                            ? Colors.transparent
+                            : typeColor.withValues(alpha: 0.25)),
                 ),
               ),
               child: Row(
@@ -864,8 +890,8 @@ class _AnnouncementItemWidgetState extends State<_AnnouncementItemWidget> {
                     decoration: BoxDecoration(
                       color: widget.isRead
                           ? (widget.isDark
-                              ? Colors.white.withValues(alpha: 0.08)
-                              : const Color(0xFFF3F4F6))
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : const Color(0xFFF3F4F6))
                           : typeColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -903,10 +929,16 @@ class _AnnouncementItemWidgetState extends State<_AnnouncementItemWidget> {
                                 widget.title,
                                 style: TextStyle(
                                   fontSize: 13,
-                                  fontWeight: widget.isRead ? FontWeight.w500 : FontWeight.w600,
+                                  fontWeight: widget.isRead
+                                      ? FontWeight.w500
+                                      : FontWeight.w600,
                                   color: widget.isRead
-                                      ? (widget.isDark ? Colors.white54 : const Color(0xFF9CA3AF))
-                                      : (widget.isDark ? Colors.white : const Color(0xFF1F2937)),
+                                      ? (widget.isDark
+                                            ? Colors.white54
+                                            : const Color(0xFF9CA3AF))
+                                      : (widget.isDark
+                                            ? Colors.white
+                                            : const Color(0xFF1F2937)),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -920,8 +952,12 @@ class _AnnouncementItemWidgetState extends State<_AnnouncementItemWidget> {
                           style: TextStyle(
                             fontSize: 12,
                             color: widget.isRead
-                                ? (widget.isDark ? Colors.white38 : const Color(0xFFD1D5DB))
-                                : (widget.isDark ? Colors.white54 : const Color(0xFF6B7280)),
+                                ? (widget.isDark
+                                      ? Colors.white38
+                                      : const Color(0xFFD1D5DB))
+                                : (widget.isDark
+                                      ? Colors.white54
+                                      : const Color(0xFF6B7280)),
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -931,7 +967,9 @@ class _AnnouncementItemWidgetState extends State<_AnnouncementItemWidget> {
                           TimeUtils.formatTimestampRelative(widget.createdAt),
                           style: TextStyle(
                             fontSize: 11,
-                            color: widget.isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                            color: widget.isDark
+                                ? Colors.white38
+                                : const Color(0xFF9CA3AF),
                           ),
                         ),
                       ],
@@ -942,8 +980,12 @@ class _AnnouncementItemWidgetState extends State<_AnnouncementItemWidget> {
                     Icons.chevron_right,
                     size: 18,
                     color: widget.isRead
-                        ? (widget.isDark ? Colors.white24 : const Color(0xFFE5E7EB))
-                        : (widget.isDark ? Colors.white24 : const Color(0xFFD1D5DB)),
+                        ? (widget.isDark
+                              ? Colors.white24
+                              : const Color(0xFFE5E7EB))
+                        : (widget.isDark
+                              ? Colors.white24
+                              : const Color(0xFFD1D5DB)),
                   ),
                 ],
               ),
@@ -1003,8 +1045,7 @@ class _AnnouncementItemWidgetState extends State<_AnnouncementItemWidget> {
   }
 }
 
-
-/// 通知项组件
+/// 消息项组件
 class _NotificationItemWidget extends StatefulWidget {
   final int index;
   final NotificationItem notification;
@@ -1023,7 +1064,8 @@ class _NotificationItemWidget extends StatefulWidget {
   });
 
   @override
-  State<_NotificationItemWidget> createState() => _NotificationItemWidgetState();
+  State<_NotificationItemWidget> createState() =>
+      _NotificationItemWidgetState();
 }
 
 class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
@@ -1033,7 +1075,9 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
   Widget build(BuildContext context) {
     final notification = widget.notification;
     final typeColor = _getTypeColor(notification.type);
-    final displayColor = notification.isRead ? const Color(0xFF9CA3AF) : typeColor;
+    final displayColor = notification.isRead
+        ? const Color(0xFF9CA3AF)
+        : typeColor;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -1050,22 +1094,22 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
               decoration: BoxDecoration(
                 color: notification.isRead
                     ? (_isHovered
-                        ? (widget.isDark
-                            ? Colors.white.withValues(alpha: 0.05)
-                            : const Color(0xFFF9FAFB))
-                        : Colors.transparent)
+                          ? (widget.isDark
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : const Color(0xFFF9FAFB))
+                          : Colors.transparent)
                     : (widget.isDark
-                        ? typeColor.withValues(alpha: 0.08)
-                        : typeColor.withValues(alpha: 0.05)),
+                          ? typeColor.withValues(alpha: 0.08)
+                          : typeColor.withValues(alpha: 0.05)),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: _isHovered
                       ? (widget.isDark
-                          ? Colors.white.withValues(alpha: 0.15)
-                          : const Color(0xFFE5E7EB))
+                            ? Colors.white.withValues(alpha: 0.15)
+                            : const Color(0xFFE5E7EB))
                       : (notification.isRead
-                          ? Colors.transparent
-                          : typeColor.withValues(alpha: 0.2)),
+                            ? Colors.transparent
+                            : typeColor.withValues(alpha: 0.2)),
                 ),
               ),
               child: Row(
@@ -1108,10 +1152,16 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
                                 notification.title,
                                 style: TextStyle(
                                   fontSize: 13,
-                                  fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.w600,
+                                  fontWeight: notification.isRead
+                                      ? FontWeight.w500
+                                      : FontWeight.w600,
                                   color: notification.isRead
-                                      ? (widget.isDark ? Colors.white54 : const Color(0xFF9CA3AF))
-                                      : (widget.isDark ? Colors.white : const Color(0xFF1F2937)),
+                                      ? (widget.isDark
+                                            ? Colors.white54
+                                            : const Color(0xFF9CA3AF))
+                                      : (widget.isDark
+                                            ? Colors.white
+                                            : const Color(0xFF1F2937)),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -1127,7 +1177,11 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
                           onTapLink: (text, href, title) {
                             if (href != null) {
                               final uri = Uri.tryParse(href);
-                              if (uri != null) launchUrl(uri, mode: LaunchMode.externalApplication);
+                              if (uri != null)
+                                launchUrl(
+                                  uri,
+                                  mode: LaunchMode.externalApplication,
+                                );
                             }
                           },
                           styleSheet: MarkdownStyleSheet(
@@ -1135,8 +1189,12 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
                               fontSize: 12,
                               height: 1.4,
                               color: notification.isRead
-                                  ? (widget.isDark ? Colors.white38 : const Color(0xFFD1D5DB))
-                                  : (widget.isDark ? Colors.white60 : const Color(0xFF6B7280)),
+                                  ? (widget.isDark
+                                        ? Colors.white38
+                                        : const Color(0xFFD1D5DB))
+                                  : (widget.isDark
+                                        ? Colors.white60
+                                        : const Color(0xFF6B7280)),
                             ),
                             a: TextStyle(
                               fontSize: 12,
@@ -1145,18 +1203,26 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
                             ),
                             code: TextStyle(
                               fontSize: 11,
-                              backgroundColor: widget.isDark 
-                                  ? Colors.white.withValues(alpha: 0.1) 
+                              backgroundColor: widget.isDark
+                                  ? Colors.white.withValues(alpha: 0.1)
                                   : const Color(0xFFF3F4F6),
                               color: notification.isRead
-                                  ? (widget.isDark ? Colors.white38 : const Color(0xFFD1D5DB))
-                                  : (widget.isDark ? Colors.white70 : const Color(0xFF374151)),
+                                  ? (widget.isDark
+                                        ? Colors.white38
+                                        : const Color(0xFFD1D5DB))
+                                  : (widget.isDark
+                                        ? Colors.white70
+                                        : const Color(0xFF374151)),
                             ),
                             listBullet: TextStyle(
                               fontSize: 12,
                               color: notification.isRead
-                                  ? (widget.isDark ? Colors.white38 : const Color(0xFFD1D5DB))
-                                  : (widget.isDark ? Colors.white60 : const Color(0xFF6B7280)),
+                                  ? (widget.isDark
+                                        ? Colors.white38
+                                        : const Color(0xFFD1D5DB))
+                                  : (widget.isDark
+                                        ? Colors.white60
+                                        : const Color(0xFF6B7280)),
                             ),
                           ),
                         ),
@@ -1165,7 +1231,9 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
                           Formatters.formatDate(notification.createdAt),
                           style: TextStyle(
                             fontSize: 11,
-                            color: widget.isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                            color: widget.isDark
+                                ? Colors.white38
+                                : const Color(0xFF9CA3AF),
                           ),
                         ),
                       ],
