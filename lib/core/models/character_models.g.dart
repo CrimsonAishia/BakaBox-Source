@@ -938,8 +938,8 @@ SpellCardTierItem _$SpellCardTierItemFromJson(Map<String, dynamic> json) =>
       ),
       description: json['description'] as String?,
       iconUrl: json['iconUrl'] as String?,
-      cost: (json['cost'] as num?)?.toInt(),
-      cooldown: (json['cooldown'] as num?)?.toInt(),
+      cost: (json['cost'] as num?)?.toDouble(),
+      cooldown: (json['cooldown'] as num?)?.toDouble(),
       damage: json['damage'] as String?,
     );
 
