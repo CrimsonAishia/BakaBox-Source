@@ -132,11 +132,7 @@ class AcquisitionInfo extends Equatable {
   final int? cost;
   final String? customSource;
 
-  const AcquisitionInfo({
-    required this.type,
-    this.cost,
-    this.customSource,
-  });
+  const AcquisitionInfo({required this.type, this.cost, this.customSource});
 
   factory AcquisitionInfo.fromJson(Map<String, dynamic> json) =>
       _$AcquisitionInfoFromJson(json);
@@ -183,7 +179,20 @@ class SpellCard extends Equatable {
   Map<String, dynamic> toJson() => _$SpellCardToJson(this);
 
   @override
-  List<Object?> get props => [id, subModelId, name, type, tier, description, iconUrl, videoUrl, cost, cooldown, damage, tips];
+  List<Object?> get props => [
+    id,
+    subModelId,
+    name,
+    type,
+    tier,
+    description,
+    iconUrl,
+    videoUrl,
+    cost,
+    cooldown,
+    damage,
+    tips,
+  ];
 }
 
 /// 僵尸技能
@@ -220,7 +229,19 @@ class ZombieSkill extends Equatable {
   Map<String, dynamic> toJson() => _$ZombieSkillToJson(this);
 
   @override
-  List<Object?> get props => [id, name, type, description, iconUrl, videoUrl, cooldown, damage, range, special, tips];
+  List<Object?> get props => [
+    id,
+    name,
+    type,
+    description,
+    iconUrl,
+    videoUrl,
+    cooldown,
+    damage,
+    range,
+    special,
+    tips,
+  ];
 }
 
 /// 子模型
@@ -260,8 +281,17 @@ class CharacterSubModel extends Equatable {
 
   @override
   List<Object?> get props => [
-    id, characterId, name, type, description, thumbnailUrl,
-    preview, glbModelUrl, acquisition, isDefault, sortOrder,
+    id,
+    characterId,
+    name,
+    type,
+    description,
+    thumbnailUrl,
+    preview,
+    glbModelUrl,
+    acquisition,
+    isDefault,
+    sortOrder,
   ];
 }
 
@@ -313,9 +343,22 @@ class CharacterModel extends Equatable {
 
   @override
   List<Object?> get props => [
-    id, name, nameEn, category, description, thumbnailUrl, preview,
-    glbModelUrl, acquisition, subModels, defaultSubModelId,
-    spellCards, zombieSkills, createdAt, viewCount, contributorCount,
+    id,
+    name,
+    nameEn,
+    category,
+    description,
+    thumbnailUrl,
+    preview,
+    glbModelUrl,
+    acquisition,
+    subModels,
+    defaultSubModelId,
+    spellCards,
+    zombieSkills,
+    createdAt,
+    viewCount,
+    contributorCount,
   ];
 }
 
@@ -352,8 +395,16 @@ class CharacterListItem extends Equatable {
 
   @override
   List<Object?> get props => [
-    id, name, nameEn, category, thumbnailUrl, acquisition,
-    viewCount, hasSpellCards, hasZombieSkills, subModelCount,
+    id,
+    name,
+    nameEn,
+    category,
+    thumbnailUrl,
+    acquisition,
+    viewCount,
+    hasSpellCards,
+    hasZombieSkills,
+    subModelCount,
   ];
 }
 
@@ -413,8 +464,16 @@ class CreateSpellCardRequest extends Equatable {
 
   @override
   List<Object?> get props => [
-    characterId, subModelId, name, type, description,
-    iconUrl, cost, cooldown, damage, tips,
+    characterId,
+    subModelId,
+    name,
+    type,
+    description,
+    iconUrl,
+    cost,
+    cooldown,
+    damage,
+    tips,
   ];
 }
 
@@ -466,8 +525,16 @@ class CreateZombieSkillRequest extends Equatable {
 
   @override
   List<Object?> get props => [
-    characterId, name, type, description, iconUrl,
-    cooldown, damage, range, special, tips,
+    characterId,
+    name,
+    type,
+    description,
+    iconUrl,
+    cooldown,
+    damage,
+    range,
+    special,
+    tips,
   ];
 }
 
@@ -512,7 +579,15 @@ class EditSpellCardRequest extends Equatable {
   Map<String, dynamic> toJson() => _$EditSpellCardRequestToJson(this);
 
   @override
-  List<Object?> get props => [id, description, damage, cost, cooldown, tips, editReason];
+  List<Object?> get props => [
+    id,
+    description,
+    damage,
+    cost,
+    cooldown,
+    tips,
+    editReason,
+  ];
 }
 
 /// 编辑僵尸技能请求
@@ -543,7 +618,16 @@ class EditZombieSkillRequest extends Equatable {
   Map<String, dynamic> toJson() => _$EditZombieSkillRequestToJson(this);
 
   @override
-  List<Object?> get props => [id, description, damage, range, cooldown, special, tips, editReason];
+  List<Object?> get props => [
+    id,
+    description,
+    damage,
+    range,
+    cooldown,
+    special,
+    tips,
+    editReason,
+  ];
 }
 
 /// 编辑获取来源请求
@@ -600,6 +684,7 @@ class ContentEditHistoryItem extends Equatable {
   final int id;
   final int editorId;
   final String? editorName;
+  final String? editorAvatar;
   final String fieldChanged;
   final String? oldValue;
   final String? newValue;
@@ -611,6 +696,7 @@ class ContentEditHistoryItem extends Equatable {
     required this.id,
     required this.editorId,
     this.editorName,
+    this.editorAvatar,
     required this.fieldChanged,
     this.oldValue,
     this.newValue,
@@ -625,8 +711,16 @@ class ContentEditHistoryItem extends Equatable {
 
   @override
   List<Object?> get props => [
-    id, editorId, editorName, fieldChanged, oldValue,
-    newValue, editReason, editedAt, version,
+    id,
+    editorId,
+    editorName,
+    editorAvatar,
+    fieldChanged,
+    oldValue,
+    newValue,
+    editReason,
+    editedAt,
+    version,
   ];
 }
 
@@ -662,11 +756,7 @@ class AcquisitionEditData extends Equatable {
   final int? cost;
   final String? customSource;
 
-  const AcquisitionEditData({
-    required this.type,
-    this.cost,
-    this.customSource,
-  });
+  const AcquisitionEditData({required this.type, this.cost, this.customSource});
 
   factory AcquisitionEditData.fromJson(Map<String, dynamic> json) =>
       _$AcquisitionEditDataFromJson(json);
@@ -704,7 +794,16 @@ class SpellCardEditItem extends Equatable {
   Map<String, dynamic> toJson() => _$SpellCardEditItemToJson(this);
 
   @override
-  List<Object?> get props => [id, description, damage, cost, cooldown, tips, videoFileId, tier];
+  List<Object?> get props => [
+    id,
+    description,
+    damage,
+    cost,
+    cooldown,
+    tips,
+    videoFileId,
+    tier,
+  ];
 }
 
 /// 新增符卡项
@@ -739,7 +838,18 @@ class SpellCardCreateItem extends Equatable {
   Map<String, dynamic> toJson() => _$SpellCardCreateItemToJson(this);
 
   @override
-  List<Object?> get props => [name, type, tier, description, iconUrl, videoFileId, cost, cooldown, damage, tips];
+  List<Object?> get props => [
+    name,
+    type,
+    tier,
+    description,
+    iconUrl,
+    videoFileId,
+    cost,
+    cooldown,
+    damage,
+    tips,
+  ];
 }
 
 /// 符卡编辑数据
@@ -787,7 +897,16 @@ class ZombieSkillEditItem extends Equatable {
   Map<String, dynamic> toJson() => _$ZombieSkillEditItemToJson(this);
 
   @override
-  List<Object?> get props => [id, description, damage, range, cooldown, special, tips, videoFileId];
+  List<Object?> get props => [
+    id,
+    description,
+    damage,
+    range,
+    cooldown,
+    special,
+    tips,
+    videoFileId,
+  ];
 }
 
 /// 新增僵尸技能项
@@ -822,7 +941,18 @@ class ZombieSkillCreateItem extends Equatable {
   Map<String, dynamic> toJson() => _$ZombieSkillCreateItemToJson(this);
 
   @override
-  List<Object?> get props => [name, type, description, iconUrl, videoFileId, cooldown, damage, range, special, tips];
+  List<Object?> get props => [
+    name,
+    type,
+    description,
+    iconUrl,
+    videoFileId,
+    cooldown,
+    damage,
+    range,
+    special,
+    tips,
+  ];
 }
 
 /// 僵尸技能编辑数据
@@ -864,7 +994,13 @@ class SubModelUnifiedEditRequest extends Equatable {
   Map<String, dynamic> toJson() => _$SubModelUnifiedEditRequestToJson(this);
 
   @override
-  List<Object?> get props => [editReason, description, acquisition, spellCards, zombieSkills];
+  List<Object?> get props => [
+    editReason,
+    description,
+    acquisition,
+    spellCards,
+    zombieSkills,
+  ];
 }
 
 /// 统一编辑子模型响应
@@ -935,9 +1071,19 @@ class MyEditRequestItem extends Equatable {
 
   @override
   List<Object?> get props => [
-    id, characterId, characterName, subModelId, subModelName,
-    userId, userName, editReason, editData, auditStatus,
-    auditRemark, auditAt, createdAt,
+    id,
+    characterId,
+    characterName,
+    subModelId,
+    subModelName,
+    userId,
+    userName,
+    editReason,
+    editData,
+    auditStatus,
+    auditRemark,
+    auditAt,
+    createdAt,
   ];
 }
 
@@ -947,10 +1093,7 @@ class MyEditRequestListResponse extends Equatable {
   final List<MyEditRequestItem> items;
   final int total;
 
-  const MyEditRequestListResponse({
-    required this.items,
-    required this.total,
-  });
+  const MyEditRequestListResponse({required this.items, required this.total});
 
   factory MyEditRequestListResponse.fromJson(Map<String, dynamic> json) =>
       _$MyEditRequestListResponseFromJson(json);
@@ -959,7 +1102,6 @@ class MyEditRequestListResponse extends Equatable {
   @override
   List<Object?> get props => [items, total];
 }
-
 
 // ============ 统一编辑历史 API 相关模型 ============
 
@@ -970,10 +1112,13 @@ class UnifiedEditHistoryItem extends Equatable {
   final EditTargetType targetType;
   final int targetId;
   final String? targetName; // 符卡/技能名称
-  final String? spellCardType; // 符卡类型（仅targetType为spell_card时有值）：normal/ultimate/passive
-  final String? zombieSkillType; // 僵尸技能类型（仅targetType为zombie_skill时有值）：active/passive
+  final String?
+  spellCardType; // 符卡类型（仅targetType为spell_card时有值）：normal/ultimate/passive
+  final String?
+  zombieSkillType; // 僵尸技能类型（仅targetType为zombie_skill时有值）：active/passive
   final int editorId;
   final String? editorName;
+  final String? editorAvatar;
   final String fieldChanged;
   final String? oldValue;
   final String? newValue;
@@ -990,6 +1135,7 @@ class UnifiedEditHistoryItem extends Equatable {
     this.zombieSkillType,
     required this.editorId,
     this.editorName,
+    this.editorAvatar,
     required this.fieldChanged,
     this.oldValue,
     this.newValue,
@@ -1004,8 +1150,21 @@ class UnifiedEditHistoryItem extends Equatable {
 
   @override
   List<Object?> get props => [
-    id, targetType, targetId, targetName, spellCardType, zombieSkillType,
-    editorId, editorName, fieldChanged, oldValue, newValue, editReason, editedAt, version,
+    id,
+    targetType,
+    targetId,
+    targetName,
+    spellCardType,
+    zombieSkillType,
+    editorId,
+    editorName,
+    editorAvatar,
+    fieldChanged,
+    oldValue,
+    newValue,
+    editReason,
+    editedAt,
+    version,
   ];
 }
 
@@ -1015,10 +1174,7 @@ class UnifiedEditHistoryResponse extends Equatable {
   final List<UnifiedEditHistoryItem> list;
   final int total;
 
-  const UnifiedEditHistoryResponse({
-    required this.list,
-    required this.total,
-  });
+  const UnifiedEditHistoryResponse({required this.list, required this.total});
 
   factory UnifiedEditHistoryResponse.fromJson(Map<String, dynamic> json) =>
       _$UnifiedEditHistoryResponseFromJson(json);
@@ -1028,7 +1184,6 @@ class UnifiedEditHistoryResponse extends Equatable {
   List<Object?> get props => [list, total];
 }
 
-
 // ============ 编辑申请管理 API 相关模型 ============
 
 /// 待审核状态查询响应
@@ -1037,10 +1192,7 @@ class PendingRequestCheckResponse extends Equatable {
   final bool hasPending;
   final int? requestId;
 
-  const PendingRequestCheckResponse({
-    required this.hasPending,
-    this.requestId,
-  });
+  const PendingRequestCheckResponse({required this.hasPending, this.requestId});
 
   factory PendingRequestCheckResponse.fromJson(Map<String, dynamic> json) =>
       _$PendingRequestCheckResponseFromJson(json);
@@ -1101,8 +1253,9 @@ class EditRequestDetailResponse extends Equatable {
   /// 解析 editData JSON 字符串为结构化数据
   EditRequestParsedData? get parsedEditData {
     try {
-      final Map<String, dynamic> json = 
-          Map<String, dynamic>.from(jsonDecode(editData) as Map);
+      final Map<String, dynamic> json = Map<String, dynamic>.from(
+        jsonDecode(editData) as Map,
+      );
       return EditRequestParsedData.fromJson(json);
     } catch (e) {
       return null;
@@ -1111,8 +1264,17 @@ class EditRequestDetailResponse extends Equatable {
 
   @override
   List<Object?> get props => [
-    id, characterId, characterName, subModelId, subModelName,
-    editReason, editData, auditStatus, auditRemark, auditAt, createdAt,
+    id,
+    characterId,
+    characterName,
+    subModelId,
+    subModelName,
+    editReason,
+    editData,
+    auditStatus,
+    auditRemark,
+    auditAt,
+    createdAt,
   ];
 }
 
@@ -1136,9 +1298,13 @@ class EditRequestParsedData extends Equatable {
   Map<String, dynamic> toJson() => _$EditRequestParsedDataToJson(this);
 
   @override
-  List<Object?> get props => [description, acquisition, spellCards, zombieSkills];
+  List<Object?> get props => [
+    description,
+    acquisition,
+    spellCards,
+    zombieSkills,
+  ];
 }
-
 
 // ============ 符卡评级列表 API 相关模型 ============
 
@@ -1180,8 +1346,18 @@ class SpellCardTierItem extends Equatable {
 
   @override
   List<Object?> get props => [
-    id, characterId, characterName, subModelId, name, type, tier,
-    description, iconUrl, cost, cooldown, damage,
+    id,
+    characterId,
+    characterName,
+    subModelId,
+    name,
+    type,
+    tier,
+    description,
+    iconUrl,
+    cost,
+    cooldown,
+    damage,
   ];
 }
 

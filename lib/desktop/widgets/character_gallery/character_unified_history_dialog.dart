@@ -493,12 +493,33 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.edit_outlined,
-                  size: 16,
-                  color: scrollBrown.withValues(alpha: 0.6),
+                Container(
+                  width: 20,
+                  height: 20,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: scrollBrown.withValues(alpha: 0.1),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child:
+                      (firstItem.editorAvatar != null &&
+                          firstItem.editorAvatar!.isNotEmpty)
+                      ? Image.network(
+                          firstItem.editorAvatar!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.edit_outlined,
+                            size: 12,
+                            color: scrollBrown.withValues(alpha: 0.6),
+                          ),
+                        )
+                      : Icon(
+                          Icons.edit_outlined,
+                          size: 12,
+                          color: scrollBrown.withValues(alpha: 0.6),
+                        ),
                 ),
-                const SizedBox(width: 8),
                 Text(
                   firstItem.editorName ?? '用户${firstItem.editorId}',
                   style: TextStyle(
