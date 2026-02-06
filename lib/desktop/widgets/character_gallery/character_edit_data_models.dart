@@ -4,8 +4,8 @@ import '../../../core/models/character_models.dart';
 class SpellCardEditData {
   final String? description;
   final String? damage;
-  final int? cooldown;
-  final int? cost;
+  final double? cooldown;
+  final double? cost;
   final SpellCardTier? tier;
 
   SpellCardEditData({
@@ -23,8 +23,8 @@ class SpellCardCreateData {
   final String type;
   final String? description;
   final String? damage;
-  final int? cooldown;
-  final int? cost;
+  final double? cooldown;
+  final double? cost;
   final SpellCardTier? tier;
 
   SpellCardCreateData({
@@ -42,7 +42,7 @@ class SpellCardCreateData {
 class ZombieSkillEditData {
   final String? description;
   final String? damage;
-  final int? cooldown;
+  final double? cooldown;
   final String? range;
   final String? special;
 
@@ -61,7 +61,7 @@ class ZombieSkillCreateData {
   final String type;
   final String? description;
   final String? damage;
-  final int? cooldown;
+  final double? cooldown;
   final String? range;
   final String? special;
 

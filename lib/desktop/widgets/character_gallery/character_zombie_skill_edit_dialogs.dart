@@ -18,7 +18,8 @@ class ZombieSkillEditSubDialog extends StatefulWidget {
   });
 
   @override
-  State<ZombieSkillEditSubDialog> createState() => _ZombieSkillEditSubDialogState();
+  State<ZombieSkillEditSubDialog> createState() =>
+      _ZombieSkillEditSubDialogState();
 }
 
 class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
@@ -35,7 +36,10 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
       text: widget.existingEdit?.description ?? widget.skill.description,
     );
     _cooldownController = TextEditingController(
-      text: (widget.existingEdit?.cooldown ?? widget.skill.cooldown)?.toString() ?? '',
+      text:
+          (widget.existingEdit?.cooldown ?? widget.skill.cooldown)
+              ?.toString() ??
+          '',
     );
     _damageController = TextEditingController(
       text: widget.existingEdit?.damage ?? widget.skill.damage ?? '',
@@ -120,21 +124,50 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildTextField('效果描述', _descriptionController, '描述技能的效果...', maxLines: 3),
+                          _buildTextField(
+                            '效果描述',
+                            _descriptionController,
+                            '描述技能的效果...',
+                            maxLines: 3,
+                          ),
                           const SizedBox(height: 16),
                           Row(
                             children: [
-                              Expanded(child: _buildTextField('冷却时间(秒)', _cooldownController, '15')),
+                              Expanded(
+                                child: _buildTextField(
+                                  '冷却时间(秒)',
+                                  _cooldownController,
+                                  '15',
+                                ),
+                              ),
                               const SizedBox(width: 12),
-                              Expanded(child: _buildTextField('伤害', _damageController, '50-80')),
+                              Expanded(
+                                child: _buildTextField(
+                                  '伤害',
+                                  _damageController,
+                                  '50-80',
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16),
                           Row(
                             children: [
-                              Expanded(child: _buildTextField('作用范围', _rangeController, '中距离')),
+                              Expanded(
+                                child: _buildTextField(
+                                  '作用范围',
+                                  _rangeController,
+                                  '中距离',
+                                ),
+                              ),
                               const SizedBox(width: 12),
-                              Expanded(child: _buildTextField('特殊效果', _specialController, '减速50%')),
+                              Expanded(
+                                child: _buildTextField(
+                                  '特殊效果',
+                                  _specialController,
+                                  '减速50%',
+                                ),
+                              ),
                             ],
                           ),
                         ],
@@ -154,7 +187,7 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
   Widget _buildHeader(String symbol, String typeLabel, Color accentColor) {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -165,7 +198,10 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
               color: accentColor,
               fontSize: 24,
               shadows: [
-                Shadow(color: accentColor.withValues(alpha: 0.5), blurRadius: 8),
+                Shadow(
+                  color: accentColor.withValues(alpha: 0.5),
+                  blurRadius: 8,
+                ),
               ],
             ),
           ),
@@ -186,7 +222,10 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: accentColor.withValues(alpha: 0.15),
                         border: Border.all(color: accentColor),
@@ -243,11 +282,16 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, String hint, {int maxLines = 1}) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller,
+    String hint, {
+    int maxLines = 1,
+  }) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final inputBg = CharacterGalleryTheme.getInputBackground(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -269,7 +313,10 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
             hintStyle: TextStyle(color: inkColor.withValues(alpha: 0.4)),
             filled: true,
             fillColor: inputBg,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
               borderSide: BorderSide(color: scrollBrown.withValues(alpha: 0.3)),
@@ -280,7 +327,10 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
-              borderSide: BorderSide(color: CharacterGalleryTheme.getVermillion(context), width: 2),
+              borderSide: BorderSide(
+                color: CharacterGalleryTheme.getVermillion(context),
+                width: 2,
+              ),
             ),
           ),
         ),
@@ -290,7 +340,7 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
 
   Widget _buildFooter(Color accentColor) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -309,13 +359,21 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
           const SizedBox(width: 12),
           ElevatedButton(
             onPressed: () {
-              widget.onSave(ZombieSkillEditData(
-                description: _descriptionController.text,
-                damage: _damageController.text.isNotEmpty ? _damageController.text : null,
-                cooldown: int.tryParse(_cooldownController.text),
-                range: _rangeController.text.isNotEmpty ? _rangeController.text : null,
-                special: _specialController.text.isNotEmpty ? _specialController.text : null,
-              ));
+              widget.onSave(
+                ZombieSkillEditData(
+                  description: _descriptionController.text,
+                  damage: _damageController.text.isNotEmpty
+                      ? _damageController.text
+                      : null,
+                  cooldown: double.tryParse(_cooldownController.text),
+                  range: _rangeController.text.isNotEmpty
+                      ? _rangeController.text
+                      : null,
+                  special: _specialController.text.isNotEmpty
+                      ? _specialController.text
+                      : null,
+                ),
+              );
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
@@ -331,7 +389,6 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
   }
 }
 
-
 /// 僵尸技能创建子弹窗（东方风格）
 class ZombieSkillCreateSubDialog extends StatefulWidget {
   final void Function(ZombieSkillCreateData) onSave;
@@ -339,10 +396,12 @@ class ZombieSkillCreateSubDialog extends StatefulWidget {
   const ZombieSkillCreateSubDialog({super.key, required this.onSave});
 
   @override
-  State<ZombieSkillCreateSubDialog> createState() => _ZombieSkillCreateSubDialogState();
+  State<ZombieSkillCreateSubDialog> createState() =>
+      _ZombieSkillCreateSubDialogState();
 }
 
-class _ZombieSkillCreateSubDialogState extends State<ZombieSkillCreateSubDialog> {
+class _ZombieSkillCreateSubDialogState
+    extends State<ZombieSkillCreateSubDialog> {
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
   late TextEditingController _cooldownController;
@@ -437,21 +496,50 @@ class _ZombieSkillCreateSubDialogState extends State<ZombieSkillCreateSubDialog>
                           const SizedBox(height: 16),
                           _buildTypeSelector(),
                           const SizedBox(height: 16),
-                          _buildTextField('效果描述 *', _descriptionController, '描述技能的效果...', maxLines: 3),
+                          _buildTextField(
+                            '效果描述 *',
+                            _descriptionController,
+                            '描述技能的效果...',
+                            maxLines: 3,
+                          ),
                           const SizedBox(height: 16),
                           Row(
                             children: [
-                              Expanded(child: _buildTextField('冷却时间(秒)', _cooldownController, '15')),
+                              Expanded(
+                                child: _buildTextField(
+                                  '冷却时间(秒)',
+                                  _cooldownController,
+                                  '15',
+                                ),
+                              ),
                               const SizedBox(width: 12),
-                              Expanded(child: _buildTextField('伤害', _damageController, '50-80')),
+                              Expanded(
+                                child: _buildTextField(
+                                  '伤害',
+                                  _damageController,
+                                  '50-80',
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16),
                           Row(
                             children: [
-                              Expanded(child: _buildTextField('作用范围', _rangeController, '中距离')),
+                              Expanded(
+                                child: _buildTextField(
+                                  '作用范围',
+                                  _rangeController,
+                                  '中距离',
+                                ),
+                              ),
                               const SizedBox(width: 12),
-                              Expanded(child: _buildTextField('特殊效果', _specialController, '减速50%')),
+                              Expanded(
+                                child: _buildTextField(
+                                  '特殊效果',
+                                  _specialController,
+                                  '减速50%',
+                                ),
+                              ),
                             ],
                           ),
                         ],
@@ -471,7 +559,7 @@ class _ZombieSkillCreateSubDialogState extends State<ZombieSkillCreateSubDialog>
   Widget _buildHeader(String symbol, Color accentColor) {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -482,7 +570,10 @@ class _ZombieSkillCreateSubDialogState extends State<ZombieSkillCreateSubDialog>
               color: accentColor,
               fontSize: 24,
               shadows: [
-                Shadow(color: accentColor.withValues(alpha: 0.5), blurRadius: 8),
+                Shadow(
+                  color: accentColor.withValues(alpha: 0.5),
+                  blurRadius: 8,
+                ),
               ],
             ),
           ),
@@ -500,7 +591,10 @@ class _ZombieSkillCreateSubDialogState extends State<ZombieSkillCreateSubDialog>
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF4A7C59).withValues(alpha: 0.15),
                     border: Border.all(color: const Color(0xFF4A7C59)),
@@ -546,12 +640,17 @@ class _ZombieSkillCreateSubDialogState extends State<ZombieSkillCreateSubDialog>
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, String hint, {int maxLines = 1}) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller,
+    String hint, {
+    int maxLines = 1,
+  }) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final inputBg = CharacterGalleryTheme.getInputBackground(context);
     final vermillion = CharacterGalleryTheme.getVermillion(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -573,7 +672,10 @@ class _ZombieSkillCreateSubDialogState extends State<ZombieSkillCreateSubDialog>
             hintStyle: TextStyle(color: inkColor.withValues(alpha: 0.4)),
             filled: true,
             fillColor: inputBg,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
               borderSide: BorderSide(color: scrollBrown.withValues(alpha: 0.3)),
@@ -595,7 +697,7 @@ class _ZombieSkillCreateSubDialogState extends State<ZombieSkillCreateSubDialog>
   Widget _buildTypeSelector() {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final vermillion = CharacterGalleryTheme.getVermillion(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -624,7 +726,7 @@ class _ZombieSkillCreateSubDialogState extends State<ZombieSkillCreateSubDialog>
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final inputBg = CharacterGalleryTheme.getInputBackground(context);
-    
+
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() => _selectedType = type),
@@ -655,7 +757,7 @@ class _ZombieSkillCreateSubDialogState extends State<ZombieSkillCreateSubDialog>
 
   Widget _buildFooter() {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -696,19 +798,24 @@ class _ZombieSkillCreateSubDialogState extends State<ZombieSkillCreateSubDialog>
       return;
     }
 
-    widget.onSave(ZombieSkillCreateData(
-      name: _nameController.text,
-      type: _selectedType,
-      description: _descriptionController.text,
-      damage: _damageController.text.isNotEmpty ? _damageController.text : null,
-      cooldown: int.tryParse(_cooldownController.text),
-      range: _rangeController.text.isNotEmpty ? _rangeController.text : null,
-      special: _specialController.text.isNotEmpty ? _specialController.text : null,
-    ));
+    widget.onSave(
+      ZombieSkillCreateData(
+        name: _nameController.text,
+        type: _selectedType,
+        description: _descriptionController.text,
+        damage: _damageController.text.isNotEmpty
+            ? _damageController.text
+            : null,
+        cooldown: double.tryParse(_cooldownController.text),
+        range: _rangeController.text.isNotEmpty ? _rangeController.text : null,
+        special: _specialController.text.isNotEmpty
+            ? _specialController.text
+            : null,
+      ),
+    );
     Navigator.pop(context);
   }
 }
-
 
 /// 新增僵尸技能编辑子弹窗（东方风格，允许编辑名称和类型）
 class NewZombieSkillEditSubDialog extends StatefulWidget {
@@ -722,10 +829,12 @@ class NewZombieSkillEditSubDialog extends StatefulWidget {
   });
 
   @override
-  State<NewZombieSkillEditSubDialog> createState() => _NewZombieSkillEditSubDialogState();
+  State<NewZombieSkillEditSubDialog> createState() =>
+      _NewZombieSkillEditSubDialogState();
 }
 
-class _NewZombieSkillEditSubDialogState extends State<NewZombieSkillEditSubDialog> {
+class _NewZombieSkillEditSubDialogState
+    extends State<NewZombieSkillEditSubDialog> {
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
   late TextEditingController _cooldownController;
@@ -738,8 +847,12 @@ class _NewZombieSkillEditSubDialogState extends State<NewZombieSkillEditSubDialo
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.data.name);
-    _descriptionController = TextEditingController(text: widget.data.description ?? '');
-    _cooldownController = TextEditingController(text: widget.data.cooldown?.toString() ?? '');
+    _descriptionController = TextEditingController(
+      text: widget.data.description ?? '',
+    );
+    _cooldownController = TextEditingController(
+      text: widget.data.cooldown?.toString() ?? '',
+    );
     _damageController = TextEditingController(text: widget.data.damage ?? '');
     _rangeController = TextEditingController(text: widget.data.range ?? '');
     _specialController = TextEditingController(text: widget.data.special ?? '');
@@ -821,21 +934,50 @@ class _NewZombieSkillEditSubDialogState extends State<NewZombieSkillEditSubDialo
                           const SizedBox(height: 16),
                           _buildTypeSelector(),
                           const SizedBox(height: 16),
-                          _buildTextField('效果描述 *', _descriptionController, '描述技能的效果...', maxLines: 3),
+                          _buildTextField(
+                            '效果描述 *',
+                            _descriptionController,
+                            '描述技能的效果...',
+                            maxLines: 3,
+                          ),
                           const SizedBox(height: 16),
                           Row(
                             children: [
-                              Expanded(child: _buildTextField('冷却时间(秒)', _cooldownController, '15')),
+                              Expanded(
+                                child: _buildTextField(
+                                  '冷却时间(秒)',
+                                  _cooldownController,
+                                  '15',
+                                ),
+                              ),
                               const SizedBox(width: 12),
-                              Expanded(child: _buildTextField('伤害', _damageController, '50-80')),
+                              Expanded(
+                                child: _buildTextField(
+                                  '伤害',
+                                  _damageController,
+                                  '50-80',
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16),
                           Row(
                             children: [
-                              Expanded(child: _buildTextField('作用范围', _rangeController, '中距离')),
+                              Expanded(
+                                child: _buildTextField(
+                                  '作用范围',
+                                  _rangeController,
+                                  '中距离',
+                                ),
+                              ),
                               const SizedBox(width: 12),
-                              Expanded(child: _buildTextField('特殊效果', _specialController, '减速50%')),
+                              Expanded(
+                                child: _buildTextField(
+                                  '特殊效果',
+                                  _specialController,
+                                  '减速50%',
+                                ),
+                              ),
                             ],
                           ),
                         ],
@@ -855,7 +997,7 @@ class _NewZombieSkillEditSubDialogState extends State<NewZombieSkillEditSubDialo
   Widget _buildHeader(String symbol, Color accentColor) {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -866,7 +1008,10 @@ class _NewZombieSkillEditSubDialogState extends State<NewZombieSkillEditSubDialo
               color: accentColor,
               fontSize: 24,
               shadows: [
-                Shadow(color: accentColor.withValues(alpha: 0.5), blurRadius: 8),
+                Shadow(
+                  color: accentColor.withValues(alpha: 0.5),
+                  blurRadius: 8,
+                ),
               ],
             ),
           ),
@@ -884,7 +1029,10 @@ class _NewZombieSkillEditSubDialogState extends State<NewZombieSkillEditSubDialo
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF4A7C59).withValues(alpha: 0.15),
                     border: Border.all(color: const Color(0xFF4A7C59)),
@@ -930,12 +1078,17 @@ class _NewZombieSkillEditSubDialogState extends State<NewZombieSkillEditSubDialo
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, String hint, {int maxLines = 1}) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller,
+    String hint, {
+    int maxLines = 1,
+  }) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final inputBg = CharacterGalleryTheme.getInputBackground(context);
     final vermillion = CharacterGalleryTheme.getVermillion(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -957,7 +1110,10 @@ class _NewZombieSkillEditSubDialogState extends State<NewZombieSkillEditSubDialo
             hintStyle: TextStyle(color: inkColor.withValues(alpha: 0.4)),
             filled: true,
             fillColor: inputBg,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
               borderSide: BorderSide(color: scrollBrown.withValues(alpha: 0.3)),
@@ -979,7 +1135,7 @@ class _NewZombieSkillEditSubDialogState extends State<NewZombieSkillEditSubDialo
   Widget _buildTypeSelector() {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final vermillion = CharacterGalleryTheme.getVermillion(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1008,7 +1164,7 @@ class _NewZombieSkillEditSubDialogState extends State<NewZombieSkillEditSubDialo
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final inputBg = CharacterGalleryTheme.getInputBackground(context);
-    
+
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() => _selectedType = type),
@@ -1039,7 +1195,7 @@ class _NewZombieSkillEditSubDialogState extends State<NewZombieSkillEditSubDialo
 
   Widget _buildFooter() {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1080,15 +1236,21 @@ class _NewZombieSkillEditSubDialogState extends State<NewZombieSkillEditSubDialo
       return;
     }
 
-    widget.onSave(ZombieSkillCreateData(
-      name: _nameController.text,
-      type: _selectedType,
-      description: _descriptionController.text,
-      damage: _damageController.text.isNotEmpty ? _damageController.text : null,
-      cooldown: int.tryParse(_cooldownController.text),
-      range: _rangeController.text.isNotEmpty ? _rangeController.text : null,
-      special: _specialController.text.isNotEmpty ? _specialController.text : null,
-    ));
+    widget.onSave(
+      ZombieSkillCreateData(
+        name: _nameController.text,
+        type: _selectedType,
+        description: _descriptionController.text,
+        damage: _damageController.text.isNotEmpty
+            ? _damageController.text
+            : null,
+        cooldown: double.tryParse(_cooldownController.text),
+        range: _rangeController.text.isNotEmpty ? _rangeController.text : null,
+        special: _specialController.text.isNotEmpty
+            ? _specialController.text
+            : null,
+      ),
+    );
     Navigator.pop(context);
   }
 }

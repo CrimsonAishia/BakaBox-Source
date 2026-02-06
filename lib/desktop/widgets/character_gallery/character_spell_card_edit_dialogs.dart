@@ -36,7 +36,9 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
       text: widget.existingEdit?.description ?? widget.card.description,
     );
     _cooldownController = TextEditingController(
-      text: (widget.existingEdit?.cooldown ?? widget.card.cooldown)?.toString() ?? '',
+      text:
+          (widget.existingEdit?.cooldown ?? widget.card.cooldown)?.toString() ??
+          '',
     );
     _damageController = TextEditingController(
       text: widget.existingEdit?.damage ?? widget.card.damage ?? '',
@@ -58,7 +60,10 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final style = SpellCardFormStyle.fromSpellCardType(context, widget.card.type);
+    final style = SpellCardFormStyle.fromSpellCardType(
+      context,
+      widget.card.type,
+    );
     final washiColor = CharacterGalleryTheme.getWashiColor(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isUltimate = widget.card.type == SpellCardType.ultimate;
@@ -109,7 +114,8 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
                         children: [
                           SpellCardTierDropdown(
                             value: _selectedTier,
-                            onChanged: (value) => setState(() => _selectedTier = value),
+                            onChanged: (value) =>
+                                setState(() => _selectedTier = value),
                           ),
                           const SizedBox(height: 16),
                           SpellCardTextField(
@@ -127,7 +133,10 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
                                   controller: _cooldownController,
                                   hint: '60',
                                   icon: Icons.timer_outlined,
-                                  iconColor: CharacterGalleryTheme.getCooldownColor(context),
+                                  iconColor:
+                                      CharacterGalleryTheme.getCooldownColor(
+                                        context,
+                                      ),
                                   suffix: '秒',
                                 ),
                               ),
@@ -165,17 +174,20 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
   }
 
   void _onSave() {
-    widget.onSave(SpellCardEditData(
-      description: _descriptionController.text,
-      damage: _damageController.text.isNotEmpty ? _damageController.text : null,
-      cooldown: int.tryParse(_cooldownController.text),
-      cost: int.tryParse(_costController.text),
-      tier: _selectedTier,
-    ));
+    widget.onSave(
+      SpellCardEditData(
+        description: _descriptionController.text,
+        damage: _damageController.text.isNotEmpty
+            ? _damageController.text
+            : null,
+        cooldown: double.tryParse(_cooldownController.text),
+        cost: double.tryParse(_costController.text),
+        tier: _selectedTier,
+      ),
+    );
     Navigator.pop(context);
   }
 }
-
 
 /// 符卡创建子弹窗（东方风格）
 class SpellCardCreateSubDialog extends StatefulWidget {
@@ -184,7 +196,8 @@ class SpellCardCreateSubDialog extends StatefulWidget {
   const SpellCardCreateSubDialog({super.key, required this.onSave});
 
   @override
-  State<SpellCardCreateSubDialog> createState() => _SpellCardCreateSubDialogState();
+  State<SpellCardCreateSubDialog> createState() =>
+      _SpellCardCreateSubDialogState();
 }
 
 class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
@@ -275,12 +288,14 @@ class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
                           const SizedBox(height: 16),
                           SpellCardTypeSelector(
                             selectedType: _selectedType,
-                            onChanged: (type) => setState(() => _selectedType = type),
+                            onChanged: (type) =>
+                                setState(() => _selectedType = type),
                           ),
                           const SizedBox(height: 16),
                           SpellCardTierDropdown(
                             value: _selectedTier,
-                            onChanged: (value) => setState(() => _selectedTier = value),
+                            onChanged: (value) =>
+                                setState(() => _selectedTier = value),
                           ),
                           const SizedBox(height: 16),
                           SpellCardTextField(
@@ -298,7 +313,10 @@ class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
                                   controller: _cooldownController,
                                   hint: '60',
                                   icon: Icons.timer_outlined,
-                                  iconColor: CharacterGalleryTheme.getCooldownColor(context),
+                                  iconColor:
+                                      CharacterGalleryTheme.getCooldownColor(
+                                        context,
+                                      ),
                                   suffix: '秒',
                                 ),
                               ),
@@ -345,19 +363,22 @@ class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
       return;
     }
 
-    widget.onSave(SpellCardCreateData(
-      name: _nameController.text,
-      type: _selectedType,
-      description: _descriptionController.text,
-      damage: _damageController.text.isNotEmpty ? _damageController.text : null,
-      cooldown: int.tryParse(_cooldownController.text),
-      cost: int.tryParse(_costController.text),
-      tier: _selectedTier,
-    ));
+    widget.onSave(
+      SpellCardCreateData(
+        name: _nameController.text,
+        type: _selectedType,
+        description: _descriptionController.text,
+        damage: _damageController.text.isNotEmpty
+            ? _damageController.text
+            : null,
+        cooldown: double.tryParse(_cooldownController.text),
+        cost: double.tryParse(_costController.text),
+        tier: _selectedTier,
+      ),
+    );
     Navigator.pop(context);
   }
 }
-
 
 /// 新增符卡编辑子弹窗（东方风格，允许编辑名称和类型）
 class NewSpellCardEditSubDialog extends StatefulWidget {
@@ -371,7 +392,8 @@ class NewSpellCardEditSubDialog extends StatefulWidget {
   });
 
   @override
-  State<NewSpellCardEditSubDialog> createState() => _NewSpellCardEditSubDialogState();
+  State<NewSpellCardEditSubDialog> createState() =>
+      _NewSpellCardEditSubDialogState();
 }
 
 class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
@@ -387,10 +409,16 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.data.name);
-    _descriptionController = TextEditingController(text: widget.data.description ?? '');
-    _cooldownController = TextEditingController(text: widget.data.cooldown?.toString() ?? '');
+    _descriptionController = TextEditingController(
+      text: widget.data.description ?? '',
+    );
+    _cooldownController = TextEditingController(
+      text: widget.data.cooldown?.toString() ?? '',
+    );
     _damageController = TextEditingController(text: widget.data.damage ?? '');
-    _costController = TextEditingController(text: widget.data.cost?.toString() ?? '');
+    _costController = TextEditingController(
+      text: widget.data.cost?.toString() ?? '',
+    );
     _selectedType = widget.data.type;
     _selectedTier = widget.data.tier;
   }
@@ -464,12 +492,14 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
                           const SizedBox(height: 16),
                           SpellCardTypeSelector(
                             selectedType: _selectedType,
-                            onChanged: (type) => setState(() => _selectedType = type),
+                            onChanged: (type) =>
+                                setState(() => _selectedType = type),
                           ),
                           const SizedBox(height: 16),
                           SpellCardTierDropdown(
                             value: _selectedTier,
-                            onChanged: (value) => setState(() => _selectedTier = value),
+                            onChanged: (value) =>
+                                setState(() => _selectedTier = value),
                           ),
                           const SizedBox(height: 16),
                           SpellCardTextField(
@@ -487,7 +517,10 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
                                   controller: _cooldownController,
                                   hint: '60',
                                   icon: Icons.timer_outlined,
-                                  iconColor: CharacterGalleryTheme.getCooldownColor(context),
+                                  iconColor:
+                                      CharacterGalleryTheme.getCooldownColor(
+                                        context,
+                                      ),
                                   suffix: '秒',
                                 ),
                               ),
@@ -533,15 +566,19 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
       return;
     }
 
-    widget.onSave(SpellCardCreateData(
-      name: _nameController.text,
-      type: _selectedType,
-      description: _descriptionController.text,
-      damage: _damageController.text.isNotEmpty ? _damageController.text : null,
-      cooldown: int.tryParse(_cooldownController.text),
-      cost: int.tryParse(_costController.text),
-      tier: _selectedTier,
-    ));
+    widget.onSave(
+      SpellCardCreateData(
+        name: _nameController.text,
+        type: _selectedType,
+        description: _descriptionController.text,
+        damage: _damageController.text.isNotEmpty
+            ? _damageController.text
+            : null,
+        cooldown: double.tryParse(_cooldownController.text),
+        cost: double.tryParse(_costController.text),
+        tier: _selectedTier,
+      ),
+    );
     Navigator.pop(context);
   }
 }

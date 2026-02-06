@@ -154,8 +154,8 @@ class SpellCard extends Equatable {
   final String description;
   final String? iconUrl;
   final String? videoUrl; // 演示视频URL（WebM格式）
-  final int? cost; // 消耗资源（普通符卡消耗P点，终极符卡消耗B点）
-  final int? cooldown;
+  final double? cost; // 消耗资源（普通符卡消耗P点，终极符卡消耗B点）
+  final double? cooldown;
   final String? damage;
   final List<String>? tips;
 
@@ -204,7 +204,7 @@ class ZombieSkill extends Equatable {
   final String description;
   final String? iconUrl;
   final String? videoUrl; // 演示视频URL（WebM格式）
-  final int? cooldown;
+  final double? cooldown;
   final String? damage;
   final String? range;
   final String? special;
@@ -440,8 +440,8 @@ class CreateSpellCardRequest extends Equatable {
   final SpellCardType type;
   final String description;
   final String? iconUrl;
-  final int? cost; // 消耗资源（普通符卡消耗P点，终极符卡消耗B点）
-  final int? cooldown;
+  final double? cost; // 消耗资源（普通符卡消耗P点，终极符卡消耗B点）
+  final double? cooldown;
   final String? damage;
   final List<String>? tips;
 
@@ -500,7 +500,7 @@ class CreateZombieSkillRequest extends Equatable {
   final ZombieSkillType type;
   final String description;
   final String? iconUrl;
-  final int? cooldown;
+  final double? cooldown;
   final String? damage;
   final String? range;
   final String? special;
@@ -559,8 +559,8 @@ class EditSpellCardRequest extends Equatable {
   final int id;
   final String? description;
   final String? damage;
-  final int? cost;
-  final int? cooldown;
+  final double? cost;
+  final double? cooldown;
   final List<String>? tips;
   final String? editReason;
 
@@ -597,7 +597,7 @@ class EditZombieSkillRequest extends Equatable {
   final String? description;
   final String? damage;
   final String? range;
-  final int? cooldown;
+  final double? cooldown;
   final String? special;
   final List<String>? tips;
   final String? editReason;
@@ -772,8 +772,8 @@ class SpellCardEditItem extends Equatable {
   final int id;
   final String? description;
   final String? damage;
-  final int? cost;
-  final int? cooldown;
+  final double? cost;
+  final double? cooldown;
   final List<String>? tips;
   final int? videoFileId; // 演示视频文件ID
   final String? tier; // 评级 T0/T1/T2/T3/T4/T5/unranked
@@ -815,8 +815,8 @@ class SpellCardCreateItem extends Equatable {
   final String? description;
   final String? iconUrl;
   final int? videoFileId;
-  final int? cost;
-  final int? cooldown;
+  final double? cost;
+  final double? cooldown;
   final String? damage;
   final List<String>? tips;
 
@@ -876,7 +876,7 @@ class ZombieSkillEditItem extends Equatable {
   final String? description;
   final String? damage;
   final String? range;
-  final int? cooldown;
+  final double? cooldown;
   final String? special;
   final List<String>? tips;
   final int? videoFileId; // 演示视频文件ID
@@ -917,7 +917,7 @@ class ZombieSkillCreateItem extends Equatable {
   final String? description;
   final String? iconUrl;
   final int? videoFileId;
-  final int? cooldown;
+  final double? cooldown;
   final String? damage;
   final String? range;
   final String? special;

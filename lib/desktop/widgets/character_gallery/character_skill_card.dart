@@ -9,9 +9,9 @@ class SkillCard extends StatelessWidget {
   final String name;
   final String type;
   final String description;
-  final int? cooldown;
+  final double? cooldown;
   final String? damage;
-  final int? cost;
+  final double? cost;
   final String? range;
   final String? special; // 特殊效果（僵尸技能）
   final bool isSpellCard;
@@ -81,9 +81,7 @@ class SkillCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: cardBg,
-        border: Border.all(
-          color: scrollBrown.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: scrollBrown.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Column(
@@ -109,10 +107,15 @@ class SkillCard extends StatelessWidget {
                 ),
               ),
               // 评级标签（仅符卡显示）
-              if (isSpellCard && tier != null && tier != SpellCardTier.unranked) ...[
+              if (isSpellCard &&
+                  tier != null &&
+                  tier != SpellCardTier.unranked) ...[
                 const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: _getTierColor(tier!).withValues(alpha: 0.15),
                     border: Border.all(color: _getTierColor(tier!)),
@@ -168,7 +171,11 @@ class SkillCard extends StatelessWidget {
             ),
           ),
           // 数值信息
-          if (cooldown != null || damage != null || cost != null || range != null || special != null) ...[
+          if (cooldown != null ||
+              damage != null ||
+              cost != null ||
+              range != null ||
+              special != null) ...[
             const SizedBox(height: 8),
             Wrap(
               spacing: 12,
@@ -194,7 +201,9 @@ class SkillCard extends StatelessWidget {
                     icon: Icons.local_fire_department,
                     label: type == 'ultimate' ? 'B点' : 'P点',
                     value: '$cost',
-                    color: type == 'ultimate' ? CharacterGalleryTheme.getBCostColor(context) : CharacterGalleryTheme.getPCostColor(context),
+                    color: type == 'ultimate'
+                        ? CharacterGalleryTheme.getBCostColor(context)
+                        : CharacterGalleryTheme.getPCostColor(context),
                   ),
                 // 僵尸技能显示范围
                 if (!isSpellCard && range != null)
@@ -237,9 +246,7 @@ class EmptySkillHint extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cardBg,
-        border: Border.all(
-          color: scrollBrown.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: scrollBrown.withValues(alpha: 0.2)),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
