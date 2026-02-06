@@ -324,6 +324,8 @@ class UpdateService {
   }
 
   /// 安装 Windows EXE（静默模式）
+  /// 
+  /// 直接启动安装程序，NSIS 脚本会等待本程序退出后再继续安装
   Future<void> _installWindowsExe(String exePath) async {
     try {
       await Process.start(
@@ -332,13 +334,12 @@ class UpdateService {
         mode: ProcessStartMode.detached,
       );
       
-      // Process.start 返回时进程已启动，直接退出让安装程序接管
+      // 立即退出，安装程序会等待本进程退出
       exit(0);
     } catch (e) {
-      // 静默安装启动失败，记录异常并重试
-      LogService.e('静默安装启动失败', e);
+      LogService.e('启动安装程序失败', e);
       
-      // 尝试使用 ShellExecute 以管理员权限启动（会触发 UAC）
+      // 备用方案：通过 cmd 启动
       try {
         await Process.start(
           'cmd',
@@ -346,19 +347,19 @@ class UpdateService {
           mode: ProcessStartMode.detached,
           runInShell: true,
         );
+        exit(0);
       } catch (e2) {
-        LogService.e('通过 cmd start 启动也失败', e2);
-        // 最后尝试直接打开
+        LogService.e('cmd 方式启动也失败', e2);
+        
+        // 最后尝试直接打开（非静默）
         final uri = Uri.file(exePath);
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri);
+          exit(0);
         } else {
           throw const UpdateException('无法启动安装程序，请手动运行');
         }
       }
-      
-      // 无论如何都退出程序，让安装程序接管
-      exit(0);
     }
   }
 
