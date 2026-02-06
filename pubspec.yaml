@@ -59,6 +59,7 @@ dependencies:
   file_picker: ^8.0.0
   desktop_multi_window: ^0.3.0
   flutter_alone: ^3.2.4
+  crop_your_image: ^2.0.0
   # Use the forked window_manager with showWithoutActivating support
   window_manager:
     git:

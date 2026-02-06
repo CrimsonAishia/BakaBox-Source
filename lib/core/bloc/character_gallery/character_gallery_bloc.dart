@@ -443,6 +443,7 @@ class CharacterGalleryBloc
         acquisition: event.acquisition,
         spellCards: spellCardsData,
         zombieSkills: zombieSkillsData,
+        previewImages: event.previewImages,
       );
 
       final response = await _api.editSubModelUnified(
@@ -626,6 +627,7 @@ class CharacterGalleryBloc
         acquisition: event.acquisition,
         spellCards: spellCardsData,
         zombieSkills: zombieSkillsData,
+        previewImages: event.previewImages,
       );
 
       final response = await _api.updateEditRequest(event.requestId, request);

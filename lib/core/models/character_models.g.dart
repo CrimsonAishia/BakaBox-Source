@@ -657,6 +657,26 @@ Map<String, dynamic> _$ZombieSkillsEditDataToJson(
   'deletes': instance.deletes,
 };
 
+PreviewImagesEditData _$PreviewImagesEditDataFromJson(
+  Map<String, dynamic> json,
+) => PreviewImagesEditData(
+  thumbnailFileId: (json['thumbnailFileId'] as num?)?.toInt(),
+  previewFrontId: (json['previewFrontId'] as num?)?.toInt(),
+  previewLeftId: (json['previewLeftId'] as num?)?.toInt(),
+  previewRightId: (json['previewRightId'] as num?)?.toInt(),
+  previewBackId: (json['previewBackId'] as num?)?.toInt(),
+);
+
+Map<String, dynamic> _$PreviewImagesEditDataToJson(
+  PreviewImagesEditData instance,
+) => <String, dynamic>{
+  'thumbnailFileId': instance.thumbnailFileId,
+  'previewFrontId': instance.previewFrontId,
+  'previewLeftId': instance.previewLeftId,
+  'previewRightId': instance.previewRightId,
+  'previewBackId': instance.previewBackId,
+};
+
 SubModelUnifiedEditRequest _$SubModelUnifiedEditRequestFromJson(
   Map<String, dynamic> json,
 ) => SubModelUnifiedEditRequest(
@@ -675,6 +695,11 @@ SubModelUnifiedEditRequest _$SubModelUnifiedEditRequestFromJson(
       : ZombieSkillsEditData.fromJson(
           json['zombieSkills'] as Map<String, dynamic>,
         ),
+  previewImages: json['previewImages'] == null
+      ? null
+      : PreviewImagesEditData.fromJson(
+          json['previewImages'] as Map<String, dynamic>,
+        ),
 );
 
 Map<String, dynamic> _$SubModelUnifiedEditRequestToJson(
@@ -685,6 +710,7 @@ Map<String, dynamic> _$SubModelUnifiedEditRequestToJson(
   'acquisition': instance.acquisition,
   'spellCards': instance.spellCards,
   'zombieSkills': instance.zombieSkills,
+  'previewImages': instance.previewImages,
 };
 
 SubModelUnifiedEditResponse _$SubModelUnifiedEditResponseFromJson(

@@ -10,6 +10,7 @@ import 'character_dialogs.dart';
 import 'character_edit_data_models.dart';
 import 'character_spell_card_edit_dialogs.dart';
 import 'character_zombie_skill_edit_dialogs.dart';
+import 'preview_images_upload_widget.dart';
 
 /// 统一编辑弹窗 - 整合所有编辑功能
 class UnifiedEditDialog extends StatefulWidget {
@@ -58,6 +59,16 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
   final Map<int, ZombieSkillEditData> _zombieSkillEdits = {};
   final List<ZombieSkillCreateData> _zombieSkillCreates = [];
   final Set<int> _zombieSkillDeletes = {};
+
+  // 预览图编辑追踪
+  int? _thumbnailFileId;
+  int? _previewFrontId;
+  int? _previewLeftId;
+  int? _previewRightId;
+  int? _previewBackId;
+  bool _previewImagesChanged = false;
+  final GlobalKey<PreviewImagesUploadWidgetState> _previewImagesKey =
+      GlobalKey();
 
   // 内联编辑状态
   int? _editingSpellCardId;
@@ -130,12 +141,13 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
     _initZombieSkillEditsFromPendingRequest(parsedData?.zombieSkills);
 
     // 根据角色类型决定 Tab 数量
-    // 东方角色: 基本信息、获取来源、符卡系统
-    // 僵尸角色: 基本信息、来源说明、技能系统
-    // 普通角色: 基本信息、获取来源
+    // 所有角色: 基本信息、预览图、获取来源/来源说明、符卡系统/技能系统
+    // 东方角色: 基本信息、预览图、获取来源、符卡系统 = 4个
+    // 僵尸角色: 基本信息、预览图、来源说明、技能系统 = 4个
+    // 普通角色: 基本信息、预览图、获取来源 = 3个
     final isTouhou = widget.character.category == CharacterCategory.touhou;
     final isZombie = widget.character.category == CharacterCategory.zombie;
-    final tabCount = (isTouhou || isZombie) ? 3 : 2;
+    final tabCount = (isTouhou || isZombie) ? 4 : 3;
 
     _tabController = TabController(length: tabCount, vsync: this);
   }
@@ -246,6 +258,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
   bool get _hasChanges {
     return _descriptionChanged ||
         _acquisitionChanged || // 僵尸角色也支持来源编辑
+        _previewImagesChanged || // 预览图编辑
         _spellCardEdits.isNotEmpty ||
         _spellCardCreates.isNotEmpty ||
         _spellCardDeletes.isNotEmpty ||
@@ -287,6 +300,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                 controller: _tabController,
                 children: [
                   _buildBasicInfoTab(),
+                  _buildPreviewImagesTab(),
                   // 僵尸角色使用专用的来源说明 Tab，其他角色使用获取来源 Tab
                   if (isZombie)
                     _buildZombieOriginTab()
@@ -420,6 +434,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
         labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
         tabs: [
           const Tab(text: '基本信息'),
+          const Tab(text: '预览图'),
           // 僵尸角色显示"来源说明"，其他角色显示"获取来源"
           Tab(text: isZombie ? '来源说明' : '获取来源'),
           if (isTouhou) const Tab(text: '符卡系统'),
@@ -489,6 +504,79 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
           if (_descriptionChanged) ...[
             const SizedBox(height: 8),
             _buildChangeIndicator('介绍已修改'),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreviewImagesTab() {
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+
+    // 获取当前预览图URL
+    final preview = widget.subModel.preview ?? widget.character.preview;
+    final thumbnailUrl = widget.subModel.thumbnailUrl;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 说明文字
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: scrollBrown.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: scrollBrown.withValues(alpha: 0.2)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, color: scrollBrown, size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '上传角色的预览图。缩略图用于列表展示，四方向预览图用于详情页展示。所有图片均为可选。',
+                    style: TextStyle(
+                      color: inkColor.withValues(alpha: 0.7),
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // 预览图上传组件
+          PreviewImagesUploadWidget(
+            key: _previewImagesKey,
+            thumbnailUrl: thumbnailUrl,
+            frontUrl: preview?.front,
+            leftUrl: preview?.left,
+            rightUrl: preview?.right,
+            backUrl: preview?.back,
+            onChanged: (fileIds) {
+              setState(() {
+                _thumbnailFileId = fileIds['thumbnailFileId'];
+                _previewFrontId = fileIds['previewFrontId'];
+                _previewLeftId = fileIds['previewLeftId'];
+                _previewRightId = fileIds['previewRightId'];
+                _previewBackId = fileIds['previewBackId'];
+                _previewImagesChanged =
+                    _thumbnailFileId != null ||
+                    _previewFrontId != null ||
+                    _previewLeftId != null ||
+                    _previewRightId != null ||
+                    _previewBackId != null;
+              });
+            },
+          ),
+
+          if (_previewImagesChanged) ...[
+            const SizedBox(height: 12),
+            _buildChangeIndicator('预览图已修改'),
           ],
         ],
       ),
@@ -3176,6 +3264,17 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
         ? _zombieSkillDeletes.toList()
         : null;
 
+    // 构建预览图编辑数据
+    final previewImages = _previewImagesChanged
+        ? PreviewImagesEditData(
+            thumbnailFileId: _thumbnailFileId,
+            previewFrontId: _previewFrontId,
+            previewLeftId: _previewLeftId,
+            previewRightId: _previewRightId,
+            previewBackId: _previewBackId,
+          )
+        : null;
+
     // 根据模式选择不同的事件
     if (widget.isEditMode) {
       // 修改模式：调用 UpdateEditRequest
@@ -3191,6 +3290,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
           zombieSkillCreates: zombieSkillCreates,
           zombieSkillUpdates: zombieSkillUpdates,
           zombieSkillDeletes: zombieSkillDeletes,
+          previewImages: previewImages,
         ),
       );
     } else {
@@ -3208,6 +3308,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
           zombieSkillCreates: zombieSkillCreates,
           zombieSkillUpdates: zombieSkillUpdates,
           zombieSkillDeletes: zombieSkillDeletes,
+          previewImages: previewImages,
         ),
       );
     }

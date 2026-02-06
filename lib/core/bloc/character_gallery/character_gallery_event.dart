@@ -86,10 +86,7 @@ class LoadSpellCards extends CharacterGalleryEvent {
   final int characterId;
   final int subModelId;
 
-  const LoadSpellCards({
-    required this.characterId,
-    required this.subModelId,
-  });
+  const LoadSpellCards({required this.characterId, required this.subModelId});
 
   @override
   List<Object?> get props => [characterId, subModelId];
@@ -109,6 +106,7 @@ class SubmitUnifiedEdit extends CharacterGalleryEvent {
   final List<ZombieSkillCreateItem>? zombieSkillCreates;
   final List<ZombieSkillEditItem>? zombieSkillUpdates;
   final List<int>? zombieSkillDeletes;
+  final PreviewImagesEditData? previewImages;
 
   const SubmitUnifiedEdit({
     required this.characterId,
@@ -122,13 +120,23 @@ class SubmitUnifiedEdit extends CharacterGalleryEvent {
     this.zombieSkillCreates,
     this.zombieSkillUpdates,
     this.zombieSkillDeletes,
+    this.previewImages,
   });
 
   @override
   List<Object?> get props => [
-    characterId, subModelId, editReason, description,
-    acquisition, spellCardCreates, spellCardUpdates, spellCardDeletes,
-    zombieSkillCreates, zombieSkillUpdates, zombieSkillDeletes,
+    characterId,
+    subModelId,
+    editReason,
+    description,
+    acquisition,
+    spellCardCreates,
+    spellCardUpdates,
+    spellCardDeletes,
+    zombieSkillCreates,
+    zombieSkillUpdates,
+    zombieSkillDeletes,
+    previewImages,
   ];
 }
 
@@ -137,10 +145,7 @@ class LoadMyEditRequests extends CharacterGalleryEvent {
   final int pageIndex;
   final int pageSize;
 
-  const LoadMyEditRequests({
-    this.pageIndex = 1,
-    this.pageSize = 20,
-  });
+  const LoadMyEditRequests({this.pageIndex = 1, this.pageSize = 20});
 
   @override
   List<Object?> get props => [pageIndex, pageSize];
@@ -181,6 +186,7 @@ class UpdateEditRequest extends CharacterGalleryEvent {
   final List<ZombieSkillCreateItem>? zombieSkillCreates;
   final List<ZombieSkillEditItem>? zombieSkillUpdates;
   final List<int>? zombieSkillDeletes;
+  final PreviewImagesEditData? previewImages;
 
   const UpdateEditRequest({
     required this.requestId,
@@ -193,13 +199,22 @@ class UpdateEditRequest extends CharacterGalleryEvent {
     this.zombieSkillCreates,
     this.zombieSkillUpdates,
     this.zombieSkillDeletes,
+    this.previewImages,
   });
 
   @override
   List<Object?> get props => [
-    requestId, editReason, description, acquisition,
-    spellCardCreates, spellCardUpdates, spellCardDeletes,
-    zombieSkillCreates, zombieSkillUpdates, zombieSkillDeletes,
+    requestId,
+    editReason,
+    description,
+    acquisition,
+    spellCardCreates,
+    spellCardUpdates,
+    spellCardDeletes,
+    zombieSkillCreates,
+    zombieSkillUpdates,
+    zombieSkillDeletes,
+    previewImages,
   ];
 }
 

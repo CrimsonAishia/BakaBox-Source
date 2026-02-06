@@ -972,6 +972,45 @@ class ZombieSkillsEditData extends Equatable {
   List<Object?> get props => [creates, updates, deletes];
 }
 
+/// 预览图编辑数据
+@JsonSerializable()
+class PreviewImagesEditData extends Equatable {
+  final int? thumbnailFileId; // 可选 - 缩略图
+  final int? previewFrontId; // 可选 - 正面预览图
+  final int? previewLeftId; // 可选 - 左侧预览图
+  final int? previewRightId; // 可选 - 右侧预览图
+  final int? previewBackId; // 可选 - 背面预览图
+
+  const PreviewImagesEditData({
+    this.thumbnailFileId,
+    this.previewFrontId,
+    this.previewLeftId,
+    this.previewRightId,
+    this.previewBackId,
+  });
+
+  factory PreviewImagesEditData.fromJson(Map<String, dynamic> json) =>
+      _$PreviewImagesEditDataFromJson(json);
+  Map<String, dynamic> toJson() => _$PreviewImagesEditDataToJson(this);
+
+  @override
+  List<Object?> get props => [
+    thumbnailFileId,
+    previewFrontId,
+    previewLeftId,
+    previewRightId,
+    previewBackId,
+  ];
+
+  /// 是否有任何修改
+  bool get hasAnyChange =>
+      thumbnailFileId != null ||
+      previewFrontId != null ||
+      previewLeftId != null ||
+      previewRightId != null ||
+      previewBackId != null;
+}
+
 /// 统一编辑子模型请求
 @JsonSerializable()
 class SubModelUnifiedEditRequest extends Equatable {
@@ -980,6 +1019,7 @@ class SubModelUnifiedEditRequest extends Equatable {
   final AcquisitionEditData? acquisition;
   final SpellCardsEditData? spellCards;
   final ZombieSkillsEditData? zombieSkills;
+  final PreviewImagesEditData? previewImages;
 
   const SubModelUnifiedEditRequest({
     required this.editReason,
@@ -987,6 +1027,7 @@ class SubModelUnifiedEditRequest extends Equatable {
     this.acquisition,
     this.spellCards,
     this.zombieSkills,
+    this.previewImages,
   });
 
   factory SubModelUnifiedEditRequest.fromJson(Map<String, dynamic> json) =>
@@ -1000,6 +1041,7 @@ class SubModelUnifiedEditRequest extends Equatable {
     acquisition,
     spellCards,
     zombieSkills,
+    previewImages,
   ];
 }
 

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../core/api/character_api.dart';
 import '../../../core/models/character_models.dart';
+import '../../../core/services/image_url_service.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/image_viewer_dialog.dart';
 import 'character_gallery_theme.dart';
 
 /// 统一编辑历史对话框 - 日式卷轴风格
@@ -137,6 +139,11 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
       'name' => '名称',
       'type' => '类型',
       'tier' => '评级',
+      'thumbnailFileId' => '缩略图',
+      'previewFrontId' => '正面预览图',
+      'previewLeftId' => '左侧预览图',
+      'previewRightId' => '右侧预览图',
+      'previewBackId' => '背面预览图',
       _ => field,
     };
   }
@@ -712,7 +719,21 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
       };
     }
 
+    // 预览图字段显示为"图片 ID: xxx"
+    if (_isImageField(field)) {
+      return '已更新';
+    }
+
     return value;
+  }
+
+  /// 判断是否是预览图字段
+  bool _isImageField(String field) {
+    return field == 'thumbnailFileId' ||
+        field == 'previewFrontId' ||
+        field == 'previewLeftId' ||
+        field == 'previewRightId' ||
+        field == 'previewBackId';
   }
 
   // 紧凑的变更详情
@@ -720,6 +741,11 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
     BuildContext context,
     UnifiedEditHistoryItem item,
   ) {
+    // 预览图字段使用图片展示
+    if (_isImageField(item.fieldChanged)) {
+      return _buildImageChangeDetail(context, item);
+    }
+
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final vermillion = CharacterGalleryTheme.getVermillion(context);
@@ -817,6 +843,112 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
           ),
         ],
       ),
+    );
+  }
+
+  /// 预览图变更详情 - 显示旧/新图片缩略图
+  Widget _buildImageChangeDetail(
+    BuildContext context,
+    UnifiedEditHistoryItem item,
+  ) {
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+    final vermillion = CharacterGalleryTheme.getVermillion(context);
+
+    final oldFileId = int.tryParse(item.oldValue ?? '');
+    final newFileId = int.tryParse(item.newValue ?? '');
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: scrollBrown.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: scrollBrown.withValues(alpha: 0.08)),
+      ),
+      child: Row(
+        children: [
+          // 旧图
+          _buildImageValueBox(
+            context,
+            label: '旧',
+            labelColor: inkColor.withValues(alpha: 0.5),
+            labelBgColor: inkColor.withValues(alpha: 0.08),
+            fileId: oldFileId,
+            borderColor: inkColor.withValues(alpha: 0.15),
+          ),
+          // 箭头
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Icon(
+              Icons.arrow_forward_rounded,
+              size: 16,
+              color: vermillion.withValues(alpha: 0.5),
+            ),
+          ),
+          // 新图
+          _buildImageValueBox(
+            context,
+            label: '新',
+            labelColor: vermillion,
+            labelBgColor: vermillion.withValues(alpha: 0.12),
+            fileId: newFileId,
+            borderColor: vermillion.withValues(alpha: 0.3),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImageValueBox(
+    BuildContext context, {
+    required String label,
+    required Color labelColor,
+    required Color labelBgColor,
+    required int? fileId,
+    required Color borderColor,
+  }) {
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+          margin: const EdgeInsets.only(bottom: 6),
+          decoration: BoxDecoration(
+            color: labelBgColor,
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: labelColor,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        if (fileId == null)
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: inkColor.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: borderColor),
+            ),
+            child: Center(
+              child: Text(
+                '(空)',
+                style: TextStyle(
+                  color: inkColor.withValues(alpha: 0.3),
+                  fontSize: 10,
+                ),
+              ),
+            ),
+          )
+        else
+          _FileIdImage(fileId: fileId, size: 56, borderColor: borderColor),
+      ],
     );
   }
 
@@ -990,6 +1122,162 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 通过 fileId 异步加载并显示图片缩略图（带 hover 效果和点击预览）
+class _FileIdImage extends StatefulWidget {
+  final int fileId;
+  final double size;
+  final Color borderColor;
+
+  const _FileIdImage({
+    required this.fileId,
+    required this.size,
+    required this.borderColor,
+  });
+
+  @override
+  State<_FileIdImage> createState() => _FileIdImageState();
+}
+
+class _FileIdImageState extends State<_FileIdImage> {
+  String? _url;
+  bool _loading = true;
+  bool _error = false;
+  bool _isHovered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUrl();
+  }
+
+  @override
+  void didUpdateWidget(covariant _FileIdImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.fileId != widget.fileId) {
+      setState(() {
+        _url = null;
+        _loading = true;
+        _error = false;
+      });
+      _loadUrl();
+    }
+  }
+
+  Future<void> _loadUrl() async {
+    try {
+      final url =
+          await ImageUrlService.instance.getSignedUrlById(widget.fileId);
+      if (mounted) {
+        setState(() {
+          _url = url;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _error = true;
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  void _showPreview() {
+    if (_url == null) return;
+    ImageViewerDialog.show(context, imageUrls: [_url!], initialIndex: 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+    final gold = CharacterGalleryTheme.getGold(context);
+    final hasImage = !_loading && !_error && _url != null;
+
+    return MouseRegion(
+      cursor: hasImage ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: hasImage ? _showPreview : null,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: widget.size,
+          height: widget.size,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: _isHovered && hasImage ? gold : widget.borderColor,
+              width: _isHovered && hasImage ? 2 : 1,
+            ),
+            boxShadow: _isHovered && hasImage
+                ? [
+                    BoxShadow(
+                      color: gold.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : null,
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              if (_loading)
+                Center(
+                  child: SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 1.5,
+                      color: inkColor.withValues(alpha: 0.3),
+                    ),
+                  ),
+                )
+              else if (_error || _url == null)
+                Center(
+                  child: Icon(
+                    Icons.broken_image_outlined,
+                    size: 18,
+                    color: inkColor.withValues(alpha: 0.3),
+                  ),
+                )
+              else
+                Image.network(
+                  _url!,
+                  fit: BoxFit.cover,
+                  width: widget.size,
+                  height: widget.size,
+                  errorBuilder: (_, __, ___) => Center(
+                    child: Icon(
+                      Icons.broken_image_outlined,
+                      size: 18,
+                      color: inkColor.withValues(alpha: 0.3),
+                    ),
+                  ),
+                ),
+              // Hover 遮罩 + 放大图标
+              if (_isHovered && hasImage)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    child: Center(
+                      child: Icon(
+                        Icons.zoom_in,
+                        size: 20,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
