@@ -631,16 +631,31 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(4),
+                        width: 22,
+                        height: 22,
                         decoration: BoxDecoration(
                           color: scrollBrown.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: Icon(
-                          Icons.person_outline_rounded,
-                          size: 14,
-                          color: scrollBrown,
-                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child:
+                            (item.editorAvatar != null &&
+                                item.editorAvatar!.isNotEmpty)
+                            ? Image.network(
+                                item.editorAvatar!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Icon(
+                                      Icons.person_outline_rounded,
+                                      size: 14,
+                                      color: scrollBrown,
+                                    ),
+                              )
+                            : Icon(
+                                Icons.person_outline_rounded,
+                                size: 14,
+                                color: scrollBrown,
+                              ),
                       ),
                       const SizedBox(width: 6),
                       Text(
