@@ -16,10 +16,10 @@ class CharacterGalleryState extends Equatable {
   final String? keyword;
   final String orderBy;
   
-  // 是否显示符卡梯队视图
+  // 是否显示符卡评级视图
   final bool showSpellCardTierView;
   
-  // 符卡梯队列表状态
+  // 符卡评级列表状态
   final LoadState spellCardTierLoadState;
   final List<SpellCardTierGroup> spellCardTierGroups;
   final int spellCardTierTotalCount;
@@ -52,10 +52,10 @@ class CharacterGalleryState extends Equatable {
   final LoadState deleteRequestState;
   final String? deleteRequestError;
   
-  // 符卡梯队视图中选中的符卡ID
+  // 符卡评级视图中选中的符卡ID
   final int? selectedSpellCardId;
   
-  // 符卡梯队展开状态（key: tier字符串, value: 是否展开）
+  // 符卡评级展开状态（key: tier字符串, value: 是否展开）
   final Set<String> expandedTiers;
   
   // 错误信息

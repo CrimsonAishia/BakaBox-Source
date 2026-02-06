@@ -203,17 +203,18 @@ class UpdateEditRequest extends CharacterGalleryEvent {
   ];
 }
 
-/// 加载符卡梯队列表
+/// 加载符卡评级列表
 class LoadSpellCardTierList extends CharacterGalleryEvent {
   final SpellCardType? type; // 可选，筛选符卡类型
+  final String? keyword; // 可选，搜索关键词
 
-  const LoadSpellCardTierList({this.type});
+  const LoadSpellCardTierList({this.type, this.keyword});
 
   @override
-  List<Object?> get props => [type];
+  List<Object?> get props => [type, keyword];
 }
 
-/// 从符卡梯队列表跳转到角色详情
+/// 从符卡评级列表跳转到角色详情
 class NavigateToCharacterFromSpellCard extends CharacterGalleryEvent {
   final int spellCardId;
   final int characterId;
@@ -229,7 +230,7 @@ class NavigateToCharacterFromSpellCard extends CharacterGalleryEvent {
   List<Object?> get props => [spellCardId, characterId, subModelId];
 }
 
-/// 切换梯队展开/折叠状态
+/// 切换评级展开/折叠状态
 class ToggleTierExpanded extends CharacterGalleryEvent {
   final String tier;
 

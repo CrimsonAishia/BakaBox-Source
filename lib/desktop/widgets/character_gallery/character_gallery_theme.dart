@@ -81,10 +81,16 @@ class CharacterGalleryTheme {
   }
 
   /// 根据当前主题获取半透明白色/黑色
+  /// 浅色模式下透明度会自动提高到 0.7
   static Color getOverlayColor(BuildContext context, {double alpha = 0.5}) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? Colors.black.withValues(alpha: alpha)
-        : Colors.white.withValues(alpha: alpha);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (isDark) {
+      return Colors.black.withValues(alpha: alpha);
+    } else {
+      // 浅色模式下提高透明度
+      final lightAlpha = (alpha + 0.2).clamp(0.0, 1.0);
+      return Colors.white.withValues(alpha: lightAlpha);
+    }
   }
 
   /// 根据当前主题获取分隔线颜色
@@ -112,5 +118,47 @@ class CharacterGalleryTheme {
     return Theme.of(context).brightness == Brightness.dark
         ? goldBright
         : gold;
+  }
+
+  // ===== 属性数值颜色（冷却、伤害、消耗等） =====
+  
+  /// 冷却时间颜色（青色系）
+  static Color getCooldownColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF26A69A)  // 暗色模式：亮青色
+        : const Color(0xFF00796B); // 浅色模式：深青色
+  }
+
+  /// 伤害颜色（红色系）
+  static Color getDamageColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFFE57373)  // 暗色模式：浅红色
+        : const Color(0xFFD32F2F); // 浅色模式：深红色
+  }
+
+  /// P点消耗颜色（蓝色系）
+  static Color getPCostColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF64B5F6)  // 暗色模式：浅蓝色
+        : const Color(0xFF1976D2); // 浅色模式：深蓝色
+  }
+
+  /// 范围颜色（棕色系，使用 scrollBrown）
+  static Color getRangeColor(BuildContext context) {
+    return getScrollBrown(context);
+  }
+
+  /// 特殊效果颜色（紫色系）
+  static Color getSpecialColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFFBA68C8)  // 暗色模式：浅紫色
+        : const Color(0xFF7B1FA2); // 浅色模式：深紫色
+  }
+
+  /// B点消耗颜色（橙色系）
+  static Color getBCostColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? goldBright  // 暗色模式：亮金色
+        : const Color(0xFFFF8000); // 浅色模式：橙色 rgb(255,128,0)
   }
 }

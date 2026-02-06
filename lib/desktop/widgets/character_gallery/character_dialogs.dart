@@ -29,7 +29,7 @@ class DialogTextField extends StatelessWidget {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final inputBg = CharacterGalleryTheme.getInputBackground(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -54,22 +54,23 @@ class DialogTextField extends StatelessWidget {
             ),
             filled: true,
             fillColor: inputBg,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(4),
-              borderSide: BorderSide(
-                color: scrollBrown.withValues(alpha: 0.4),
-              ),
+              borderSide: BorderSide(color: scrollBrown.withValues(alpha: 0.4)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(4),
-              borderSide: BorderSide(
-                color: scrollBrown.withValues(alpha: 0.4),
-              ),
+              borderSide: BorderSide(color: scrollBrown.withValues(alpha: 0.4)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(4),
-              borderSide: BorderSide(color: CharacterGalleryTheme.getVermillion(context)),
+              borderSide: BorderSide(
+                color: CharacterGalleryTheme.getVermillion(context),
+              ),
             ),
           ),
         ),
@@ -145,7 +146,7 @@ class _EditReasonSelectorState extends State<EditReasonSelector> {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final inputBg = CharacterGalleryTheme.getInputBackground(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -176,11 +177,13 @@ class _EditReasonSelectorState extends State<EditReasonSelector> {
           spacing: 8,
           runSpacing: 8,
           children: [
-            ..._reasons.map((reason) => _ReasonChip(
-                  label: reason,
-                  isSelected: _selectedReason == reason && !_useCustom,
-                  onTap: () => _onReasonSelected(reason),
-                )),
+            ..._reasons.map(
+              (reason) => _ReasonChip(
+                label: reason,
+                isSelected: _selectedReason == reason && !_useCustom,
+                onTap: () => _onReasonSelected(reason),
+              ),
+            ),
             _ReasonChip(
               label: '其他',
               isSelected: _useCustom,
@@ -203,7 +206,10 @@ class _EditReasonSelectorState extends State<EditReasonSelector> {
               ),
               filled: true,
               fillColor: inputBg,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
                 borderSide: BorderSide(
@@ -218,7 +224,9 @@ class _EditReasonSelectorState extends State<EditReasonSelector> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(4),
-                borderSide: BorderSide(color: CharacterGalleryTheme.getVermillion(context)),
+                borderSide: BorderSide(
+                  color: CharacterGalleryTheme.getVermillion(context),
+                ),
               ),
             ),
           ),
@@ -254,7 +262,7 @@ class _ReasonChipState extends State<_ReasonChip> {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final cardBg = CharacterGalleryTheme.getCardBackground(context);
-    
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
@@ -266,20 +274,24 @@ class _ReasonChipState extends State<_ReasonChip> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: widget.isSelected
-                ? (widget.isOther 
-                    ? scrollBrown 
-                    : CharacterGalleryTheme.getVermillion(context))
+                ? (widget.isOther
+                      ? scrollBrown
+                      : CharacterGalleryTheme.getVermillion(context))
                 : _isHovered
-                    ? CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.08)
-                    : cardBg,
+                ? CharacterGalleryTheme.getVermillion(
+                    context,
+                  ).withValues(alpha: 0.08)
+                : cardBg,
             border: Border.all(
               color: widget.isSelected
-                  ? (widget.isOther 
-                      ? scrollBrown 
-                      : CharacterGalleryTheme.getVermillion(context))
+                  ? (widget.isOther
+                        ? scrollBrown
+                        : CharacterGalleryTheme.getVermillion(context))
                   : _isHovered
-                      ? CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.5)
-                      : scrollBrown.withValues(alpha: 0.4),
+                  ? CharacterGalleryTheme.getVermillion(
+                      context,
+                    ).withValues(alpha: 0.5)
+                  : scrollBrown.withValues(alpha: 0.4),
             ),
             borderRadius: BorderRadius.circular(4),
           ),
@@ -289,20 +301,16 @@ class _ReasonChipState extends State<_ReasonChip> {
               if (widget.isSelected)
                 Padding(
                   padding: const EdgeInsets.only(right: 4),
-                  child: Icon(
-                    Icons.check,
-                    size: 14,
-                    color: Colors.white,
-                  ),
+                  child: Icon(Icons.check, size: 14, color: Colors.white),
                 ),
               Text(
                 widget.label,
                 style: TextStyle(
-                  color: widget.isSelected 
-                      ? Colors.white 
-                      : inkColor,
+                  color: widget.isSelected ? Colors.white : inkColor,
                   fontSize: 12,
-                  fontWeight: widget.isSelected ? FontWeight.w600 : FontWeight.w500,
+                  fontWeight: widget.isSelected
+                      ? FontWeight.w600
+                      : FontWeight.w500,
                 ),
               ),
             ],
@@ -335,7 +343,7 @@ class AcquisitionTypeChip extends StatelessWidget {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final cardBg = CharacterGalleryTheme.getCardBackground(context);
     final vermillion = CharacterGalleryTheme.getVermillion(context);
-    
+
     return GestureDetector(
       onTap: () => onSelect(type),
       child: Container(
@@ -343,9 +351,7 @@ class AcquisitionTypeChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected ? vermillion : cardBg,
           border: Border.all(
-            color: isSelected
-                ? vermillion
-                : scrollBrown.withValues(alpha: 0.4),
+            color: isSelected ? vermillion : scrollBrown.withValues(alpha: 0.4),
           ),
           borderRadius: BorderRadius.circular(4),
         ),
@@ -390,10 +396,12 @@ class _EditSubModelAcquisitionDialogState
     super.initState();
     final currentAcquisition = widget.subModel.acquisition;
     _selectedType = currentAcquisition?.type ?? AcquisitionType.unknown;
-    _costController =
-        TextEditingController(text: currentAcquisition?.cost?.toString() ?? '');
-    _customSourceController =
-        TextEditingController(text: currentAcquisition?.customSource ?? '');
+    _costController = TextEditingController(
+      text: currentAcquisition?.cost?.toString() ?? '',
+    );
+    _customSourceController = TextEditingController(
+      text: currentAcquisition?.customSource ?? '',
+    );
     _editReasonController = TextEditingController();
   }
 
@@ -409,11 +417,13 @@ class _EditSubModelAcquisitionDialogState
   Widget build(BuildContext context) {
     final washiColor = CharacterGalleryTheme.getWashiColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     // 判断是否已维护：如果原始数据不为null且不是unknown，则认为已维护
     final currentAcquisition = widget.subModel.acquisition;
-    final isMaintained = currentAcquisition != null && currentAcquisition.type != AcquisitionType.unknown;
-    
+    final isMaintained =
+        currentAcquisition != null &&
+        currentAcquisition.type != AcquisitionType.unknown;
+
     return AlertDialog(
       backgroundColor: washiColor,
       shape: RoundedRectangleBorder(
@@ -480,7 +490,9 @@ class _EditSubModelAcquisitionDialogState
               DialogTextField(
                 label: _selectedType == AcquisitionType.gold ? '金数量' : '点数量',
                 controller: _costController,
-                hint: _selectedType == AcquisitionType.gold ? '例：2000' : '例：500',
+                hint: _selectedType == AcquisitionType.gold
+                    ? '例：2000'
+                    : '例：500',
               ),
             if (_selectedType == AcquisitionType.custom)
               DialogTextField(
@@ -492,11 +504,7 @@ class _EditSubModelAcquisitionDialogState
             EditReasonSelector(
               controller: _editReasonController,
               isRequired: true, // 修改获取来源需要必填理由
-              customReasons: const [
-                '修正价格信息',
-                '更新获取途径',
-                '根据游戏更新调整',
-              ],
+              customReasons: const ['修正价格信息', '更新获取途径', '根据游戏更新调整'],
             ),
           ],
         ),
@@ -522,18 +530,20 @@ class _EditSubModelAcquisitionDialogState
       return;
     }
 
-    context.read<CharacterGalleryBloc>().add(SubmitUnifiedEdit(
-          characterId: widget.characterId,
-          subModelId: widget.subModel.id,
-          editReason: _editReasonController.text,
-          acquisition: AcquisitionEditData(
-            type: _selectedType,
-            cost: int.tryParse(_costController.text),
-            customSource: _customSourceController.text.isNotEmpty
-                ? _customSourceController.text
-                : null,
-          ),
-        ));
+    context.read<CharacterGalleryBloc>().add(
+      SubmitUnifiedEdit(
+        characterId: widget.characterId,
+        subModelId: widget.subModel.id,
+        editReason: _editReasonController.text,
+        acquisition: AcquisitionEditData(
+          type: _selectedType,
+          cost: int.tryParse(_costController.text),
+          customSource: _customSourceController.text.isNotEmpty
+              ? _customSourceController.text
+              : null,
+        ),
+      ),
+    );
   }
 }
 
@@ -593,10 +603,13 @@ class _EditSpellCardDialogState extends State<EditSpellCardDialog> {
   void initState() {
     super.initState();
     _descriptionController = TextEditingController(text: widget.description);
-    _cooldownController =
-        TextEditingController(text: widget.cooldown?.toString() ?? '');
+    _cooldownController = TextEditingController(
+      text: widget.cooldown?.toString() ?? '',
+    );
     _damageController = TextEditingController(text: widget.damage ?? '');
-    _costController = TextEditingController(text: widget.cost?.toString() ?? '');
+    _costController = TextEditingController(
+      text: widget.cost?.toString() ?? '',
+    );
     _editReasonController = TextEditingController();
   }
 
@@ -614,7 +627,7 @@ class _EditSpellCardDialogState extends State<EditSpellCardDialog> {
   Widget build(BuildContext context) {
     final washiColor = CharacterGalleryTheme.getWashiColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return AlertDialog(
       backgroundColor: washiColor,
       shape: RoundedRectangleBorder(
@@ -690,20 +703,24 @@ class _EditSpellCardDialogState extends State<EditSpellCardDialog> {
       return;
     }
 
-    context.read<CharacterGalleryBloc>().add(SubmitUnifiedEdit(
-          characterId: widget.characterId,
-          subModelId: widget.subModelId,
-          editReason: _editReasonController.text,
-          spellCardUpdates: [
-            SpellCardEditItem(
-              id: widget.spellCardId,
-              description: _descriptionController.text,
-              damage: _damageController.text.isNotEmpty ? _damageController.text : null,
-              cooldown: int.tryParse(_cooldownController.text),
-              cost: int.tryParse(_costController.text),
-            ),
-          ],
-        ));
+    context.read<CharacterGalleryBloc>().add(
+      SubmitUnifiedEdit(
+        characterId: widget.characterId,
+        subModelId: widget.subModelId,
+        editReason: _editReasonController.text,
+        spellCardUpdates: [
+          SpellCardEditItem(
+            id: widget.spellCardId,
+            description: _descriptionController.text,
+            damage: _damageController.text.isNotEmpty
+                ? _damageController.text
+                : null,
+            cooldown: int.tryParse(_cooldownController.text),
+            cost: int.tryParse(_costController.text),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -755,8 +772,9 @@ class _EditZombieSkillDialogState extends State<EditZombieSkillDialog> {
   void initState() {
     super.initState();
     _descriptionController = TextEditingController(text: widget.description);
-    _cooldownController =
-        TextEditingController(text: widget.cooldown?.toString() ?? '');
+    _cooldownController = TextEditingController(
+      text: widget.cooldown?.toString() ?? '',
+    );
     _damageController = TextEditingController(text: widget.damage ?? '');
     _rangeController = TextEditingController(text: widget.range ?? '');
     _specialController = TextEditingController(text: widget.special ?? '');
@@ -778,7 +796,7 @@ class _EditZombieSkillDialogState extends State<EditZombieSkillDialog> {
   Widget build(BuildContext context) {
     final washiColor = CharacterGalleryTheme.getWashiColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return AlertDialog(
       backgroundColor: washiColor,
       shape: RoundedRectangleBorder(
@@ -868,21 +886,29 @@ class _EditZombieSkillDialogState extends State<EditZombieSkillDialog> {
       return;
     }
 
-    context.read<CharacterGalleryBloc>().add(SubmitUnifiedEdit(
-          characterId: widget.characterId,
-          subModelId: widget.subModelId,
-          editReason: _editReasonController.text,
-          zombieSkillUpdates: [
-            ZombieSkillEditItem(
-              id: widget.skillId,
-              description: _descriptionController.text,
-              damage: _damageController.text.isNotEmpty ? _damageController.text : null,
-              range: _rangeController.text.isNotEmpty ? _rangeController.text : null,
-              cooldown: int.tryParse(_cooldownController.text),
-              special: _specialController.text.isNotEmpty ? _specialController.text : null,
-            ),
-          ],
-        ));
+    context.read<CharacterGalleryBloc>().add(
+      SubmitUnifiedEdit(
+        characterId: widget.characterId,
+        subModelId: widget.subModelId,
+        editReason: _editReasonController.text,
+        zombieSkillUpdates: [
+          ZombieSkillEditItem(
+            id: widget.skillId,
+            description: _descriptionController.text,
+            damage: _damageController.text.isNotEmpty
+                ? _damageController.text
+                : null,
+            range: _rangeController.text.isNotEmpty
+                ? _rangeController.text
+                : null,
+            cooldown: int.tryParse(_cooldownController.text),
+            special: _specialController.text.isNotEmpty
+                ? _specialController.text
+                : null,
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -912,7 +938,9 @@ class _EditCharacterDescriptionDialogState
   @override
   void initState() {
     super.initState();
-    _descriptionController = TextEditingController(text: widget.currentDescription);
+    _descriptionController = TextEditingController(
+      text: widget.currentDescription,
+    );
     _editReasonController = TextEditingController();
   }
 
@@ -927,7 +955,7 @@ class _EditCharacterDescriptionDialogState
   Widget build(BuildContext context) {
     final washiColor = CharacterGalleryTheme.getWashiColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return AlertDialog(
       backgroundColor: washiColor,
       shape: RoundedRectangleBorder(
@@ -971,12 +999,14 @@ class _EditCharacterDescriptionDialogState
       return;
     }
 
-    context.read<CharacterGalleryBloc>().add(SubmitUnifiedEdit(
-          characterId: widget.characterId,
-          subModelId: widget.subModelId,
-          editReason: _editReasonController.text,
-          description: _descriptionController.text,
-        ));
+    context.read<CharacterGalleryBloc>().add(
+      SubmitUnifiedEdit(
+        characterId: widget.characterId,
+        subModelId: widget.subModelId,
+        editReason: _editReasonController.text,
+        description: _descriptionController.text,
+      ),
+    );
   }
 }
 
@@ -991,7 +1021,7 @@ Widget _buildDialogTitle({
   String? subtitle,
 }) {
   final inkColor = CharacterGalleryTheme.getInkColor(context);
-  
+
   return Row(
     children: [
       Container(
@@ -1035,16 +1065,10 @@ Widget _buildDialogTitle({
 Widget _buildTypeLabel(BuildContext context, String label) {
   final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
   final vermillion = CharacterGalleryTheme.getVermillion(context);
-  
+
   return Row(
     children: [
-      Text(
-        '类型: ',
-        style: TextStyle(
-          color: scrollBrown,
-          fontSize: 13,
-        ),
-      ),
+      Text('类型: ', style: TextStyle(color: scrollBrown, fontSize: 13)),
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
@@ -1072,15 +1096,12 @@ List<Widget> _buildDialogActions({
   bool isVideoUploading = false,
 }) {
   final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-  
+
   return [
     Builder(
       builder: (ctx) => TextButton(
         onPressed: () => Navigator.pop(ctx),
-        child: Text(
-          '取消',
-          style: TextStyle(color: scrollBrown),
-        ),
+        child: Text('取消', style: TextStyle(color: scrollBrown)),
       ),
     ),
     BlocConsumer<CharacterGalleryBloc, CharacterGalleryState>(
@@ -1175,7 +1196,7 @@ class _AddSpellCardDialogState extends State<AddSpellCardDialog> {
   Widget build(BuildContext context) {
     final washiColor = CharacterGalleryTheme.getWashiColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return AlertDialog(
       backgroundColor: washiColor,
       shape: RoundedRectangleBorder(
@@ -1238,11 +1259,7 @@ class _AddSpellCardDialogState extends State<AddSpellCardDialog> {
               const SizedBox(height: 12),
               EditReasonSelector(
                 controller: _editReasonController,
-                customReasons: const [
-                  '补充遗漏符卡',
-                  '根据游戏更新添加',
-                  '添加新版本内容',
-                ],
+                customReasons: const ['补充遗漏符卡', '根据游戏更新添加', '添加新版本内容'],
               ),
             ],
           ),
@@ -1254,7 +1271,7 @@ class _AddSpellCardDialogState extends State<AddSpellCardDialog> {
 
   Widget _buildTypeSelector() {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1285,7 +1302,7 @@ class _AddSpellCardDialogState extends State<AddSpellCardDialog> {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final cardBg = CharacterGalleryTheme.getCardBackground(context);
     final vermillion = CharacterGalleryTheme.getVermillion(context);
-    
+
     return GestureDetector(
       onTap: () => setState(() => _selectedType = type),
       child: Container(
@@ -1293,9 +1310,7 @@ class _AddSpellCardDialogState extends State<AddSpellCardDialog> {
         decoration: BoxDecoration(
           color: isSelected ? vermillion : cardBg,
           border: Border.all(
-            color: isSelected
-                ? vermillion
-                : scrollBrown.withValues(alpha: 0.4),
+            color: isSelected ? vermillion : scrollBrown.withValues(alpha: 0.4),
           ),
           borderRadius: BorderRadius.circular(4),
         ),
@@ -1325,21 +1340,25 @@ class _AddSpellCardDialogState extends State<AddSpellCardDialog> {
       return;
     }
 
-    context.read<CharacterGalleryBloc>().add(SubmitUnifiedEdit(
-          characterId: widget.characterId,
-          subModelId: widget.subModelId,
-          editReason: _editReasonController.text,
-          spellCardCreates: [
-            SpellCardCreateItem(
-              name: _nameController.text,
-              type: _selectedType,
-              description: _descriptionController.text,
-              damage: _damageController.text.isNotEmpty ? _damageController.text : null,
-              cooldown: int.tryParse(_cooldownController.text),
-              cost: int.tryParse(_costController.text),
-            ),
-          ],
-        ));
+    context.read<CharacterGalleryBloc>().add(
+      SubmitUnifiedEdit(
+        characterId: widget.characterId,
+        subModelId: widget.subModelId,
+        editReason: _editReasonController.text,
+        spellCardCreates: [
+          SpellCardCreateItem(
+            name: _nameController.text,
+            type: _selectedType,
+            description: _descriptionController.text,
+            damage: _damageController.text.isNotEmpty
+                ? _damageController.text
+                : null,
+            cooldown: int.tryParse(_cooldownController.text),
+            cost: int.tryParse(_costController.text),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -1396,7 +1415,7 @@ class _AddZombieSkillDialogState extends State<AddZombieSkillDialog> {
   Widget build(BuildContext context) {
     final washiColor = CharacterGalleryTheme.getWashiColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return AlertDialog(
       backgroundColor: washiColor,
       shape: RoundedRectangleBorder(
@@ -1473,11 +1492,7 @@ class _AddZombieSkillDialogState extends State<AddZombieSkillDialog> {
               const SizedBox(height: 12),
               EditReasonSelector(
                 controller: _editReasonController,
-                customReasons: const [
-                  '补充遗漏技能',
-                  '根据游戏更新添加',
-                  '添加新版本内容',
-                ],
+                customReasons: const ['补充遗漏技能', '根据游戏更新添加', '添加新版本内容'],
               ),
             ],
           ),
@@ -1489,7 +1504,7 @@ class _AddZombieSkillDialogState extends State<AddZombieSkillDialog> {
 
   Widget _buildTypeSelector() {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1519,7 +1534,7 @@ class _AddZombieSkillDialogState extends State<AddZombieSkillDialog> {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final cardBg = CharacterGalleryTheme.getCardBackground(context);
     final vermillion = CharacterGalleryTheme.getVermillion(context);
-    
+
     return GestureDetector(
       onTap: () => setState(() => _selectedType = type),
       child: Container(
@@ -1527,9 +1542,7 @@ class _AddZombieSkillDialogState extends State<AddZombieSkillDialog> {
         decoration: BoxDecoration(
           color: isSelected ? vermillion : cardBg,
           border: Border.all(
-            color: isSelected
-                ? vermillion
-                : scrollBrown.withValues(alpha: 0.4),
+            color: isSelected ? vermillion : scrollBrown.withValues(alpha: 0.4),
           ),
           borderRadius: BorderRadius.circular(4),
         ),
@@ -1559,21 +1572,29 @@ class _AddZombieSkillDialogState extends State<AddZombieSkillDialog> {
       return;
     }
 
-    context.read<CharacterGalleryBloc>().add(SubmitUnifiedEdit(
-          characterId: widget.characterId,
-          subModelId: widget.subModelId,
-          editReason: _editReasonController.text,
-          zombieSkillCreates: [
-            ZombieSkillCreateItem(
-              name: _nameController.text,
-              type: _selectedType,
-              description: _descriptionController.text,
-              damage: _damageController.text.isNotEmpty ? _damageController.text : null,
-              cooldown: int.tryParse(_cooldownController.text),
-              range: _rangeController.text.isNotEmpty ? _rangeController.text : null,
-              special: _specialController.text.isNotEmpty ? _specialController.text : null,
-            ),
-          ],
-        ));
+    context.read<CharacterGalleryBloc>().add(
+      SubmitUnifiedEdit(
+        characterId: widget.characterId,
+        subModelId: widget.subModelId,
+        editReason: _editReasonController.text,
+        zombieSkillCreates: [
+          ZombieSkillCreateItem(
+            name: _nameController.text,
+            type: _selectedType,
+            description: _descriptionController.text,
+            damage: _damageController.text.isNotEmpty
+                ? _damageController.text
+                : null,
+            cooldown: int.tryParse(_cooldownController.text),
+            range: _rangeController.text.isNotEmpty
+                ? _rangeController.text
+                : null,
+            special: _specialController.text.isNotEmpty
+                ? _specialController.text
+                : null,
+          ),
+        ],
+      ),
+    );
   }
 }

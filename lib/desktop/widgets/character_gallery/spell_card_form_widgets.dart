@@ -231,7 +231,7 @@ class SpellCardDamageField extends StatelessWidget {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final inputBg = CharacterGalleryTheme.getInputBackground(context);
-    final damageColor = const Color(0xFFE57373); // 浅红色，区别于消耗的金色
+    final damageColor = CharacterGalleryTheme.getDamageColor(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -284,7 +284,7 @@ class SpellCardDamageField extends StatelessWidget {
   }
 }
 
-/// 符卡梯队下拉选择器
+/// 符卡评级下拉选择器
 class SpellCardTierDropdown extends StatelessWidget {
   final SpellCardTier? value;
   final ValueChanged<SpellCardTier?> onChanged;
@@ -304,7 +304,6 @@ class SpellCardTierDropdown extends StatelessWidget {
       SpellCardTier.t3 => const Color(0xFF44BB44),
       SpellCardTier.t4 => const Color(0xFF4488FF),
       SpellCardTier.t5 => const Color(0xFF8888AA),
-      SpellCardTier.roadside => const Color(0xFF666666),
       SpellCardTier.unranked => scrollBrown,
     };
   }
@@ -318,7 +317,7 @@ class SpellCardTierDropdown extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '符卡梯队',
+          '符卡评级',
           style: TextStyle(
             color: scrollBrown,
             fontSize: 13,
@@ -338,7 +337,7 @@ class SpellCardTierDropdown extends StatelessWidget {
               value: value,
               isExpanded: true,
               hint: Text(
-                '选择梯队（可选）',
+                '选择评级（可选）',
                 style: TextStyle(color: scrollBrown.withValues(alpha: 0.5)),
               ),
               items: [
@@ -684,7 +683,7 @@ class SpellCardCostField extends StatelessWidget {
     // 大符卡用金色，小符卡用蓝色（区别于伤害的红色）
     final costColor = isUltimate 
         ? CharacterGalleryTheme.getGold(context) 
-        : const Color(0xFF64B5F6); // 蓝色
+        : CharacterGalleryTheme.getPCostColor(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -96,7 +96,6 @@ const _$SpellCardTierEnumMap = {
   SpellCardTier.t3: 'T3',
   SpellCardTier.t4: 'T4',
   SpellCardTier.t5: 'T5',
-  SpellCardTier.roadside: 'roadside',
   SpellCardTier.unranked: 'unranked',
 };
 

@@ -19,7 +19,8 @@ class CharacterGalleryDesktop extends StatefulWidget {
   const CharacterGalleryDesktop({super.key});
 
   @override
-  State<CharacterGalleryDesktop> createState() => _CharacterGalleryDesktopState();
+  State<CharacterGalleryDesktop> createState() =>
+      _CharacterGalleryDesktopState();
 }
 
 class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
@@ -49,7 +50,6 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       }
     });
   }
-
 
   void _onScroll() {
     if (_listScrollController.position.pixels >=
@@ -103,12 +103,16 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     final washiColor = CharacterGalleryTheme.getWashiColor(context);
 
     return BlocListener<CharacterGalleryBloc, CharacterGalleryState>(
-      listenWhen: (prev, curr) => prev.deleteRequestState != curr.deleteRequestState,
+      listenWhen: (prev, curr) =>
+          prev.deleteRequestState != curr.deleteRequestState,
       listener: (context, state) {
         if (state.deleteRequestState == LoadState.success) {
           ToastUtils.showSuccess(context, '编辑申请已撤销');
         } else if (state.deleteRequestState == LoadState.failure) {
-          ToastUtils.showError(context, state.deleteRequestError ?? '撤销失败，请稍后重试');
+          ToastUtils.showError(
+            context,
+            state.deleteRequestError ?? '撤销失败，请稍后重试',
+          );
         }
       },
       child: Scaffold(
@@ -165,18 +169,12 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       decoration: BoxDecoration(
         color: washiColor.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: scrollBrown.withValues(alpha: 0.4),
-          width: 1,
-        ),
+        border: Border.all(color: scrollBrown.withValues(alpha: 0.4), width: 1),
       ),
       child: Column(
         children: [
           _buildToolbar(),
-          Container(
-            height: 1,
-            color: scrollBrown.withValues(alpha: 0.3),
-          ),
+          Container(height: 1, color: scrollBrown.withValues(alpha: 0.3)),
           Expanded(
             child: Row(
               children: [
@@ -191,10 +189,9 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     );
   }
 
-
   Widget _buildToolbar() {
     return BlocBuilder<CharacterGalleryBloc, CharacterGalleryState>(
-      buildWhen: (prev, curr) => 
+      buildWhen: (prev, curr) =>
           prev.selectedCategory != curr.selectedCategory ||
           prev.showSpellCardTierView != curr.showSpellCardTierView,
       builder: (context, state) {
@@ -204,32 +201,40 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
             children: [
               CategoryButton(
                 label: '東方',
-                isSelected: state.selectedCategory == CharacterCategory.touhou && !state.showSpellCardTierView,
-                onTap: () => context
-                    .read<CharacterGalleryBloc>()
-                    .add(ChangeCategory(CharacterCategory.touhou)),
+                isSelected:
+                    state.selectedCategory == CharacterCategory.touhou &&
+                    !state.showSpellCardTierView,
+                onTap: () => context.read<CharacterGalleryBloc>().add(
+                  ChangeCategory(CharacterCategory.touhou),
+                ),
               ),
               const SizedBox(width: 8),
               CategoryButton(
                 label: '僵尸',
-                isSelected: state.selectedCategory == CharacterCategory.zombie && !state.showSpellCardTierView,
-                onTap: () => context
-                    .read<CharacterGalleryBloc>()
-                    .add(ChangeCategory(CharacterCategory.zombie)),
+                isSelected:
+                    state.selectedCategory == CharacterCategory.zombie &&
+                    !state.showSpellCardTierView,
+                onTap: () => context.read<CharacterGalleryBloc>().add(
+                  ChangeCategory(CharacterCategory.zombie),
+                ),
               ),
               const SizedBox(width: 8),
               CategoryButton(
                 label: '普通',
-                isSelected: state.selectedCategory == CharacterCategory.normal && !state.showSpellCardTierView,
-                onTap: () => context
-                    .read<CharacterGalleryBloc>()
-                    .add(ChangeCategory(CharacterCategory.normal)),
+                isSelected:
+                    state.selectedCategory == CharacterCategory.normal &&
+                    !state.showSpellCardTierView,
+                onTap: () => context.read<CharacterGalleryBloc>().add(
+                  ChangeCategory(CharacterCategory.normal),
+                ),
               ),
               const SizedBox(width: 8),
               // 分隔线
               Builder(
                 builder: (context) {
-                  final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+                  final scrollBrown = CharacterGalleryTheme.getScrollBrown(
+                    context,
+                  );
                   return Container(
                     width: 1,
                     height: 20,
@@ -238,13 +243,13 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 },
               ),
               const SizedBox(width: 8),
-              // 符卡梯队按钮
+              // 符卡评级按钮
               CategoryButton(
                 label: '符卡',
                 isSelected: state.showSpellCardTierView,
-                onTap: () => context
-                    .read<CharacterGalleryBloc>()
-                    .add(const LoadSpellCardTierList()),
+                onTap: () => context.read<CharacterGalleryBloc>().add(
+                  const LoadSpellCardTierList(),
+                ),
               ),
               const Spacer(),
               _buildSearchBox(),
@@ -276,18 +281,10 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
             color: inkColor.withValues(alpha: 0.4),
             fontSize: 13,
           ),
-          prefixIcon: Icon(
-            Icons.search,
-            color: scrollBrown,
-            size: 18,
-          ),
+          prefixIcon: Icon(Icons.search, color: scrollBrown, size: 18),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
-                  icon: Icon(
-                    Icons.clear,
-                    color: scrollBrown,
-                    size: 16,
-                  ),
+                  icon: Icon(Icons.clear, color: scrollBrown, size: 16),
                   onPressed: () {
                     _searchController.clear();
                     _onSearchChanged('');
@@ -298,19 +295,17 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               : null,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(4),
-            borderSide: BorderSide(
-              color: scrollBrown.withValues(alpha: 0.4),
-            ),
+            borderSide: BorderSide(color: scrollBrown.withValues(alpha: 0.4)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(4),
-            borderSide: BorderSide(
-              color: scrollBrown.withValues(alpha: 0.4),
-            ),
+            borderSide: BorderSide(color: scrollBrown.withValues(alpha: 0.4)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(4),
-            borderSide: BorderSide(color: CharacterGalleryTheme.getVermillion(context)),
+            borderSide: BorderSide(
+              color: CharacterGalleryTheme.getVermillion(context),
+            ),
           ),
           contentPadding: const EdgeInsets.symmetric(vertical: 8),
           isDense: true,
@@ -327,12 +322,12 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   void _onSearchChanged(String value) {
     // 取消之前的定时器
     _searchDebounce?.cancel();
-    
+
     // 设置新的定时器，500ms 后触发搜索
     _searchDebounce = Timer(const Duration(milliseconds: 500), () {
       context.read<CharacterGalleryBloc>().add(SearchCharacters(value));
     });
-    
+
     // 更新清除按钮显示状态
     setState(() {});
   }
@@ -342,31 +337,30 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     return SizedBox(
       width: 20,
       child: CustomPaint(
-        painter: TraditionalDividerPainter(
-          color: scrollBrown,
-        ),
+        painter: TraditionalDividerPainter(color: scrollBrown),
         size: const Size(20, double.infinity),
       ),
     );
   }
 
-
   Widget _buildCharacterGrid() {
     return BlocBuilder<CharacterGalleryBloc, CharacterGalleryState>(
       builder: (context, state) {
-        // 如果是符卡梯队视图，显示符卡列表
+        // 如果是符卡评级视图，显示符卡列表
         if (state.showSpellCardTierView) {
           return _buildSpellCardTierList(state);
         }
-        
-        if (state.listLoadState == LoadState.loading && state.characters.isEmpty) {
+
+        if (state.listLoadState == LoadState.loading &&
+            state.characters.isEmpty) {
           return Center(
             child: CircularProgressIndicator(
               color: CharacterGalleryTheme.getVermillion(context),
             ),
           );
         }
-        if (state.listLoadState == LoadState.failure && state.characters.isEmpty) {
+        if (state.listLoadState == LoadState.failure &&
+            state.characters.isEmpty) {
           return _buildErrorState(state.error ?? '加载失败');
         }
         if (state.characters.isEmpty) {
@@ -388,17 +382,33 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
               ),
-              itemCount: state.characters.length,
+              itemCount:
+                  state.characters.length +
+                  (state.listLoadState == LoadState.loading &&
+                          state.characters.isNotEmpty
+                      ? 1
+                      : 0),
               itemBuilder: (context, index) {
+                // 如果是最后一项且正在加载，显示加载指示器
+                if (index == state.characters.length) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: CircularProgressIndicator(
+                        color: CharacterGalleryTheme.getVermillion(context),
+                      ),
+                    ),
+                  );
+                }
+
                 final character = state.characters[index];
-                final isSelected =
-                    state.selectedCharacter?.id == character.id;
+                final isSelected = state.selectedCharacter?.id == character.id;
                 return HanafudaCard(
                   character: character,
                   isSelected: isSelected,
-                  onTap: () => context
-                      .read<CharacterGalleryBloc>()
-                      .add(LoadCharacterDetail(character.id)),
+                  onTap: () => context.read<CharacterGalleryBloc>().add(
+                    LoadCharacterDetail(character.id),
+                  ),
                 );
               },
             ),
@@ -434,14 +444,19 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         return Stack(
           children: [
             KeyedSubtree(
-              key: ValueKey('${state.selectedCharacter!.id}_${state.selectedSubModelId}'),
+              key: ValueKey(
+                '${state.selectedCharacter!.id}_${state.selectedSubModelId}',
+              ),
               child: _buildCharacterDetail(state),
             ),
-            // 编辑浮动按钮（包含待审核状态）
+            // 编辑浮动按钮（包含待审核状态）- 监听登录状态变化
             Positioned(
               right: 16,
               bottom: 16,
-              child: _buildEditFab(state),
+              child: BlocBuilder<AuthBloc, AuthState>(
+                builder: (context, authState) =>
+                    _buildEditFab(state, authState.isAuthenticated),
+              ),
             ),
           ],
         );
@@ -449,19 +464,20 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     );
   }
 
-  Widget _buildEditFab(CharacterGalleryState state) {
+  Widget _buildEditFab(CharacterGalleryState state, bool isLoggedIn) {
     final character = state.selectedCharacter;
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final cardBg = CharacterGalleryTheme.getCardBackground(context);
-    
+
     // 没有选中角色时不显示按钮
     if (character == null) {
       return const SizedBox.shrink();
     }
-    
+
     // 获取当前子模型，如果没有子模型则创建一个虚拟的默认子模型
-    final currentSubModel = state.currentSubModel ?? _createDefaultSubModel(character);
+    final currentSubModel =
+        state.currentSubModel ?? _createDefaultSubModel(character);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -476,9 +492,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               decoration: BoxDecoration(
                 color: cardBg,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: scrollBrown.withValues(alpha: 0.4),
-                ),
+                border: Border.all(color: scrollBrown.withValues(alpha: 0.4)),
                 boxShadow: [
                   BoxShadow(
                     color: inkColor.withValues(alpha: 0.1),
@@ -490,11 +504,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.history_rounded,
-                    color: scrollBrown,
-                    size: 18,
-                  ),
+                  Icon(Icons.history_rounded, color: scrollBrown, size: 18),
                   const SizedBox(width: 6),
                   Text(
                     '历史',
@@ -509,18 +519,25 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
             ),
           ),
         ),
-        const SizedBox(width: 10),
-        // 有待审核申请时显示待审核按钮组，否则显示编辑按钮
-        if (state.hasPendingRequest)
-          _buildPendingRequestButtons(character, currentSubModel, state)
-        else
-          _buildEditButton(character, currentSubModel, state.spellCards),
+        // 未登录时不显示编辑按钮
+        if (isLoggedIn) ...[
+          const SizedBox(width: 10),
+          // 有待审核申请时显示待审核按钮组，否则显示编辑按钮
+          if (state.hasPendingRequest)
+            _buildPendingRequestButtons(character, currentSubModel, state)
+          else
+            _buildEditButton(character, currentSubModel, state.spellCards),
+        ],
       ],
     );
   }
 
   /// 编辑按钮
-  Widget _buildEditButton(CharacterModel character, CharacterSubModel subModel, List<SpellCard> spellCards) {
+  Widget _buildEditButton(
+    CharacterModel character,
+    CharacterSubModel subModel,
+    List<SpellCard> spellCards,
+  ) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -542,11 +559,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.edit_outlined,
-                color: Colors.white,
-                size: 18,
-              ),
+              Icon(Icons.edit_outlined, color: Colors.white, size: 18),
               const SizedBox(width: 6),
               Text(
                 '编辑',
@@ -564,7 +577,11 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   }
 
   /// 待审核状态按钮组（修改 + 撤销）
-  Widget _buildPendingRequestButtons(CharacterModel character, CharacterSubModel subModel, CharacterGalleryState state) {
+  Widget _buildPendingRequestButtons(
+    CharacterModel character,
+    CharacterSubModel subModel,
+    CharacterGalleryState state,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
@@ -621,10 +638,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
               '|',
-              style: TextStyle(
-                color: Colors.orange.shade300,
-                fontSize: 13,
-              ),
+              style: TextStyle(color: Colors.orange.shade300, fontSize: 13),
             ),
           ),
           // 撤销
@@ -647,13 +661,16 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     );
   }
 
-  void _openUnifiedHistoryDialog(CharacterModel character, CharacterSubModel subModel) {
+  void _openUnifiedHistoryDialog(
+    CharacterModel character,
+    CharacterSubModel subModel,
+  ) {
     // 如果子模型 ID 为 0（虚拟子模型），则不打开历史对话框
     if (subModel.id == 0) {
       ToastUtils.showInfo(context, '该角色暂无编辑历史');
       return;
     }
-    
+
     showDialog(
       context: context,
       builder: (context) => UnifiedHistoryDialog(
@@ -704,7 +721,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   ) async {
     final washiColor = CharacterGalleryTheme.getWashiColor(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
-    
+
     // 显示加载中
     showDialog(
       context: context,
@@ -725,10 +742,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               const SizedBox(height: 16),
               Text(
                 '加载申请详情...',
-                style: TextStyle(
-                  color: inkColor,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: inkColor, fontSize: 14),
               ),
             ],
           ),
@@ -740,15 +754,15 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       // 获取申请详情
       final api = CharacterApi();
       final detail = await api.getEditRequestDetail(pendingRequestId);
-      
+
       if (!mounted) return;
       Navigator.pop(context); // 关闭加载对话框
-      
+
       if (detail == null) {
         ToastUtils.showError(context, '获取申请详情失败');
         return;
       }
-      
+
       // 打开编辑对话框，传入申请详情
       showDialog(
         context: context,
@@ -772,16 +786,14 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     final washiColor = CharacterGalleryTheme.getWashiColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: washiColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: scrollBrown.withValues(alpha: 0.4),
-          ),
+          side: BorderSide(color: scrollBrown.withValues(alpha: 0.4)),
         ),
         title: Row(
           children: [
@@ -807,10 +819,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              '取消',
-              style: TextStyle(color: scrollBrown),
-            ),
+            child: Text('取消', style: TextStyle(color: scrollBrown)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -873,7 +882,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               const SizedBox(height: 20),
               _buildNameSection(character, state),
               const SizedBox(height: 16),
-              if (character.subModels != null && character.subModels!.length > 1)
+              if (character.subModels != null &&
+                  character.subModels!.length > 1)
                 _buildSubModelSelector(state),
               // 角色介绍（优先使用子模型介绍，兜底使用角色介绍）
               SectionDivider(title: '角色介绍'),
@@ -921,9 +931,15 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     final spellCards = state.spellCards;
 
     // 分组：被动、大符卡、小符卡
-    final passive = spellCards.where((c) => c.type == SpellCardType.passive).toList();
-    final ultimate = spellCards.where((c) => c.type == SpellCardType.ultimate).toList();
-    final normal = spellCards.where((c) => c.type == SpellCardType.normal).toList();
+    final passive = spellCards
+        .where((c) => c.type == SpellCardType.passive)
+        .toList();
+    final ultimate = spellCards
+        .where((c) => c.type == SpellCardType.ultimate)
+        .toList();
+    final normal = spellCards
+        .where((c) => c.type == SpellCardType.normal)
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -944,14 +960,20 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           ],
           // 大符卡
           if (ultimate.isNotEmpty) ...[
-            _buildSpellCardGroupHeader('大符卡', CharacterGalleryTheme.getGold(context)),
+            _buildSpellCardGroupHeader(
+              '大符卡',
+              CharacterGalleryTheme.getGold(context),
+            ),
             const SizedBox(height: 8),
             ...ultimate.map((card) => _buildTouhouSpellCard(card)),
             const SizedBox(height: 16),
           ],
           // 小符卡
           if (normal.isNotEmpty) ...[
-            _buildSpellCardGroupHeader('小符卡', CharacterGalleryTheme.getVermillion(context)),
+            _buildSpellCardGroupHeader(
+              '小符卡',
+              CharacterGalleryTheme.getVermillion(context),
+            ),
             const SizedBox(height: 8),
             ...normal.map((card) => _buildTouhouSpellCard(card)),
           ],
@@ -984,10 +1006,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: Container(
-            height: 1,
-            color: color.withValues(alpha: 0.3),
-          ),
+          child: Container(height: 1, color: color.withValues(alpha: 0.3)),
         ),
       ],
     );
@@ -1000,9 +1019,14 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final vermillion = CharacterGalleryTheme.getVermillion(context);
     final gold = CharacterGalleryTheme.getGold(context);
-    
+
     // 类型对应的颜色、符号和背景图
-    final (Color borderColor, Color bgColor, String symbol, String bgAsset) = switch (type) {
+    final (
+      Color borderColor,
+      Color bgColor,
+      String symbol,
+      String bgAsset,
+    ) = switch (type) {
       SpellCardType.passive => (
         const Color(0xFF4A7C59),
         const Color(0xFF4A7C59).withValues(alpha: isDark ? 0.15 : 0.08),
@@ -1045,7 +1069,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 opacity: AlwaysStoppedAnimation(isDark ? 0.3 : 0.6),
               ),
             ),
-            
+
             // 内容层
             Padding(
               padding: const EdgeInsets.all(12),
@@ -1053,7 +1077,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 标题行：符号 + 名称 + 梯队
+                  // 标题行：符号 + 名称 + 评级
                   Row(
                     children: [
                       Text(
@@ -1061,16 +1085,15 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                         style: TextStyle(
                           color: borderColor,
                           fontSize: 14,
-                          shadows: isDark ? null : [
-                            Shadow(
-                              color: Colors.white,
-                              blurRadius: 3,
-                            ),
-                            Shadow(
-                              color: Colors.white.withValues(alpha: 0.8),
-                              blurRadius: 6,
-                            ),
-                          ],
+                          shadows: isDark
+                              ? null
+                              : [
+                                  Shadow(color: Colors.white, blurRadius: 3),
+                                  Shadow(
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    blurRadius: 6,
+                                  ),
+                                ],
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -1081,30 +1104,40 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                             color: inkColor,
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
-                            shadows: isDark ? null : [
-                              Shadow(
-                                color: Colors.white,
-                                blurRadius: 4,
-                              ),
-                              Shadow(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                blurRadius: 8,
-                              ),
-                              Shadow(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                blurRadius: 12,
-                              ),
-                            ],
+                            shadows: isDark
+                                ? null
+                                : [
+                                    Shadow(color: Colors.white, blurRadius: 4),
+                                    Shadow(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.9,
+                                      ),
+                                      blurRadius: 8,
+                                    ),
+                                    Shadow(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.7,
+                                      ),
+                                      blurRadius: 12,
+                                    ),
+                                  ],
                           ),
                         ),
                       ),
-                      // 梯队标签
-                      if (card.tier != null && card.tier != SpellCardTier.unranked)
+                      // 评级标签
+                      if (card.tier != null &&
+                          card.tier != SpellCardTier.unranked)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.85),
-                            border: Border.all(color: _getSpellCardTierColor(card.tier!)),
+                            color: (isDark ? Colors.black : Colors.white)
+                                .withValues(alpha: 0.85),
+                            border: Border.all(
+                              color: _getSpellCardTierColor(card.tier!),
+                            ),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -1118,7 +1151,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                         ),
                     ],
                   ),
-                  
+
                   // 分隔线
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1137,7 +1170,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                       ),
                     ),
                   ),
-                  
+
                   // 描述
                   Text(
                     card.description,
@@ -1146,25 +1179,26 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                       fontSize: 13,
                       height: 1.4,
                       fontWeight: FontWeight.w500,
-                      shadows: isDark ? null : [
-                        Shadow(
-                          color: Colors.white,
-                          blurRadius: 4,
-                        ),
-                        Shadow(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          blurRadius: 8,
-                        ),
-                        Shadow(
-                          color: Colors.white.withValues(alpha: 0.7),
-                          blurRadius: 12,
-                        ),
-                      ],
+                      shadows: isDark
+                          ? null
+                          : [
+                              Shadow(color: Colors.white, blurRadius: 4),
+                              Shadow(
+                                color: Colors.white.withValues(alpha: 0.9),
+                                blurRadius: 8,
+                              ),
+                              Shadow(
+                                color: Colors.white.withValues(alpha: 0.7),
+                                blurRadius: 12,
+                              ),
+                            ],
                     ),
                   ),
-                  
+
                   // 属性行（如果有）
-                  if (card.cooldown != null || card.damage != null || card.cost != null) ...[
+                  if (card.cooldown != null ||
+                      card.damage != null ||
+                      card.cost != null) ...[
                     const SizedBox(height: 10),
                     _buildSpellCardStats(card, borderColor),
                   ],
@@ -1180,103 +1214,109 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   /// 符卡属性行
   Widget _buildSpellCardStats(SpellCard card, Color accentColor) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final gold = CharacterGalleryTheme.getGold(context);
     final statItems = <Widget>[];
-    
+
     if (card.cooldown != null) {
-      statItems.add(_buildStatItem(
-        Icons.timer_outlined,
-        '冷却',
-        '${card.cooldown}s',
-        const Color(0xFF26A69A), // 青色
-        isDark,
-      ));
+      statItems.add(
+        _buildStatItem(
+          Icons.timer_outlined,
+          '冷却',
+          '${card.cooldown}s',
+          CharacterGalleryTheme.getCooldownColor(context),
+          isDark,
+        ),
+      );
     }
-    
+
     if (card.damage != null) {
-      statItems.add(_buildStatItem(
-        Icons.flash_on,
-        '伤害',
-        card.damage!,
-        const Color(0xFFE57373), // 浅红色
-        isDark,
-      ));
+      statItems.add(
+        _buildStatItem(
+          Icons.flash_on,
+          '伤害',
+          card.damage!,
+          CharacterGalleryTheme.getDamageColor(context),
+          isDark,
+        ),
+      );
     }
-    
+
     if (card.cost != null) {
       final isUltimate = card.type == SpellCardType.ultimate;
-      statItems.add(_buildStatItem(
-        Icons.local_fire_department,
-        isUltimate ? 'B点' : 'P点',
-        '${card.cost}',
-        isUltimate ? gold : const Color(0xFF64B5F6), // 金色或蓝色
-        isDark,
-      ));
+      statItems.add(
+        _buildStatItem(
+          Icons.local_fire_department,
+          isUltimate ? 'B点' : 'P点',
+          '${card.cost}',
+          isUltimate
+              ? CharacterGalleryTheme.getBCostColor(context)
+              : CharacterGalleryTheme.getPCostColor(context),
+          isDark,
+        ),
+      );
     }
-    
-    return Wrap(
-      spacing: 12,
-      runSpacing: 6,
-      children: statItems,
-    );
+
+    return Wrap(spacing: 12, runSpacing: 6, children: statItems);
   }
 
   /// 单个属性项
-  Widget _buildStatItem(IconData icon, String label, String value, Color color, bool isDark) {
+  Widget _buildStatItem(
+    IconData icon,
+    String label,
+    String value,
+    Color color,
+    bool isDark,
+  ) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
-          icon, 
-          size: 14, 
+          icon,
+          size: 16,
           color: color,
-          shadows: isDark ? null : [
-            Shadow(
-              color: Colors.white,
-              blurRadius: 3,
-            ),
-            Shadow(
-              color: Colors.white.withValues(alpha: 0.8),
-              blurRadius: 6,
-            ),
-          ],
+          shadows: isDark
+              ? null
+              : [
+                  Shadow(color: Colors.white, blurRadius: 3),
+                  Shadow(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    blurRadius: 6,
+                  ),
+                ],
         ),
-        const SizedBox(width: 3),
+        const SizedBox(width: 4),
         Text(
           '$label:',
           style: TextStyle(
             color: color.withValues(alpha: 0.8),
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            shadows: isDark ? null : [
-              Shadow(
-                color: Colors.white,
-                blurRadius: 3,
-              ),
-              Shadow(
-                color: Colors.white.withValues(alpha: 0.8),
-                blurRadius: 6,
-              ),
-            ],
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            shadows: isDark
+                ? null
+                : [
+                    Shadow(color: Colors.white, blurRadius: 3),
+                    Shadow(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      blurRadius: 6,
+                    ),
+                  ],
           ),
         ),
-        const SizedBox(width: 2),
+        const SizedBox(width: 3),
         Text(
           value,
           style: TextStyle(
             color: color,
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: FontWeight.w600,
-            shadows: isDark ? null : [
-              Shadow(
-                color: Colors.white,
-                blurRadius: 3,
-              ),
-              Shadow(
-                color: Colors.white.withValues(alpha: 0.8),
-                blurRadius: 6,
-              ),
-            ],
+            shadows: isDark
+                ? null
+                : [
+                    Shadow(color: Colors.white, blurRadius: 3),
+                    Shadow(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      blurRadius: 6,
+                    ),
+                  ],
           ),
         ),
       ],
@@ -1286,10 +1326,14 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   /// 僵尸技能区域
   Widget _buildZombieSkillsSection(CharacterModel character) {
     final skills = character.zombieSkills ?? [];
-    
+
     // 分组：被动、主动
-    final passive = skills.where((s) => s.type == ZombieSkillType.passive).toList();
-    final active = skills.where((s) => s.type == ZombieSkillType.active).toList();
+    final passive = skills
+        .where((s) => s.type == ZombieSkillType.passive)
+        .toList();
+    final active = skills
+        .where((s) => s.type == ZombieSkillType.active)
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1308,7 +1352,10 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           ],
           // 主动技能
           if (active.isNotEmpty) ...[
-            _buildSpellCardGroupHeader('主动技能', CharacterGalleryTheme.getVermillion(context)),
+            _buildSpellCardGroupHeader(
+              '主动技能',
+              CharacterGalleryTheme.getVermillion(context),
+            ),
             const SizedBox(height: 8),
             ...active.map((skill) => _buildZombieSkillCard(skill)),
           ],
@@ -1323,10 +1370,26 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final vermillion = CharacterGalleryTheme.getVermillion(context);
-    
-    final (Color borderColor, Color bgColor, String symbol) = isPassive
-        ? (const Color(0xFF4A7C59), const Color(0xFF4A7C59).withValues(alpha: isDark ? 0.15 : 0.08), '✦')
-        : (vermillion, vermillion.withValues(alpha: isDark ? 0.12 : 0.06), '✧');
+
+    // 被动用绿色和被动背景，主动用朱红和大符卡背景
+    final (
+      Color borderColor,
+      Color bgColor,
+      String symbol,
+      String bgAsset,
+    ) = isPassive
+        ? (
+            const Color(0xFF4A7C59),
+            const Color(0xFF4A7C59).withValues(alpha: isDark ? 0.15 : 0.08),
+            '✦',
+            'assets/images/character_gallery/spell_card_bg_passive.png',
+          )
+        : (
+            vermillion,
+            vermillion.withValues(alpha: isDark ? 0.12 : 0.06),
+            '✧',
+            'assets/images/character_gallery/spell_card_bg_ultimate.png',
+          );
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -1336,67 +1399,129 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         border: Border.all(color: borderColor, width: 1.5),
         borderRadius: BorderRadius.circular(6),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(5),
+        child: Stack(
           children: [
-            // 标题行
-            Row(
-              children: [
-                Text(
-                  symbol,
-                  style: TextStyle(color: borderColor, fontSize: 14),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    skill.name,
-                    style: TextStyle(
-                      color: inkColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
+            // 背景图层
+            Positioned.fill(
+              child: Image.asset(
+                bgAsset,
+                fit: BoxFit.cover,
+                opacity: AlwaysStoppedAnimation(isDark ? 0.3 : 0.6),
+              ),
+            ),
+            // 内容层
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 标题行
+                  Row(
+                    children: [
+                      Text(
+                        symbol,
+                        style: TextStyle(
+                          color: borderColor,
+                          fontSize: 14,
+                          shadows: isDark
+                              ? null
+                              : [
+                                  Shadow(color: Colors.white, blurRadius: 3),
+                                  Shadow(
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    blurRadius: 6,
+                                  ),
+                                ],
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          skill.name,
+                          style: TextStyle(
+                            color: inkColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            shadows: isDark
+                                ? null
+                                : [
+                                    Shadow(color: Colors.white, blurRadius: 4),
+                                    Shadow(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.9,
+                                      ),
+                                      blurRadius: 8,
+                                    ),
+                                    Shadow(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.7,
+                                      ),
+                                      blurRadius: 12,
+                                    ),
+                                  ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // 分隔线
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Container(
+                      height: 1,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            borderColor.withValues(alpha: 0),
+                            borderColor.withValues(alpha: 0.4),
+                            borderColor.withValues(alpha: 0.4),
+                            borderColor.withValues(alpha: 0),
+                          ],
+                          stops: const [0, 0.2, 0.8, 1],
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            
-            // 分隔线
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Container(
-                height: 1,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      borderColor.withValues(alpha: 0),
-                      borderColor.withValues(alpha: 0.4),
-                      borderColor.withValues(alpha: 0.4),
-                      borderColor.withValues(alpha: 0),
-                    ],
-                    stops: const [0, 0.2, 0.8, 1],
+
+                  // 描述
+                  Text(
+                    skill.description,
+                    style: TextStyle(
+                      color: inkColor,
+                      fontSize: 13,
+                      height: 1.4,
+                      fontWeight: FontWeight.w500,
+                      shadows: isDark
+                          ? null
+                          : [
+                              Shadow(color: Colors.white, blurRadius: 4),
+                              Shadow(
+                                color: Colors.white.withValues(alpha: 0.9),
+                                blurRadius: 8,
+                              ),
+                              Shadow(
+                                color: Colors.white.withValues(alpha: 0.7),
+                                blurRadius: 12,
+                              ),
+                            ],
+                    ),
                   ),
-                ),
+
+                  // 属性行
+                  if (skill.cooldown != null ||
+                      skill.damage != null ||
+                      skill.range != null ||
+                      skill.special != null) ...[
+                    const SizedBox(height: 10),
+                    _buildZombieSkillStats(skill, borderColor),
+                  ],
+                ],
               ),
             ),
-            
-            // 描述
-            Text(
-              skill.description,
-              style: TextStyle(
-                color: inkColor.withValues(alpha: 0.75),
-                fontSize: 13,
-                height: 1.4,
-              ),
-            ),
-            
-            // 属性行
-            if (skill.cooldown != null || skill.damage != null || skill.range != null) ...[
-              const SizedBox(height: 10),
-              _buildZombieSkillStats(skill, borderColor),
-            ],
           ],
         ),
       ),
@@ -1408,45 +1533,51 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final statItems = <Widget>[];
-    
+
     if (skill.cooldown != null) {
-      statItems.add(_buildStatItem(
-        Icons.timer_outlined,
-        '冷却',
-        '${skill.cooldown}s',
-        const Color(0xFF26A69A), // 青色
-        isDark,
-      ));
+      statItems.add(
+        _buildStatItem(
+          Icons.timer_outlined,
+          '冷却',
+          '${skill.cooldown}s',
+          CharacterGalleryTheme.getCooldownColor(context),
+          isDark,
+        ),
+      );
     }
-    
+
     if (skill.damage != null) {
-      statItems.add(_buildStatItem(
-        Icons.flash_on,
-        '伤害',
-        skill.damage!,
-        const Color(0xFFE57373), // 浅红色
-        isDark,
-      ));
+      statItems.add(
+        _buildStatItem(
+          Icons.flash_on,
+          '伤害',
+          skill.damage!,
+          CharacterGalleryTheme.getDamageColor(context),
+          isDark,
+        ),
+      );
     }
-    
+
     if (skill.range != null) {
-      statItems.add(_buildStatItem(
-        Icons.radar,
-        '范围',
-        skill.range!,
-        scrollBrown,
-        isDark,
-      ));
+      statItems.add(
+        _buildStatItem(Icons.radar, '范围', skill.range!, scrollBrown, isDark),
+      );
     }
-    
-    return Wrap(
-      spacing: 12,
-      runSpacing: 6,
-      children: statItems,
-    );
+
+    if (skill.special != null) {
+      statItems.add(
+        _buildStatItem(
+          Icons.auto_awesome,
+          '特殊',
+          skill.special!,
+          CharacterGalleryTheme.getSpecialColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    return Wrap(spacing: 12, runSpacing: 6, children: statItems);
   }
-
-
 
   Widget _buildPreviewSection(CharacterGalleryState state) {
     final previewUrl = state.currentPreviewImage;
@@ -1454,9 +1585,13 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     return Column(
       children: [
         PreviewImageCard(
-          key: ValueKey('preview_${state.selectedSubModelId}_${state.previewPosition}'),
+          key: ValueKey(
+            'preview_${state.selectedSubModelId}_${state.previewPosition}',
+          ),
           imageUrl: previewUrl,
-          onTap: previewUrl != null ? () => _showImageViewer(previewUrl, state) : null,
+          onTap: previewUrl != null
+              ? () => _showImageViewer(previewUrl, state)
+              : null,
         ),
         const SizedBox(height: 12),
         Row(
@@ -1466,33 +1601,33 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               position: 0,
               label: '正',
               isSelected: state.previewPosition == 0,
-              onTap: () => context
-                  .read<CharacterGalleryBloc>()
-                  .add(ChangePreviewPosition(0)),
+              onTap: () => context.read<CharacterGalleryBloc>().add(
+                ChangePreviewPosition(0),
+              ),
             ),
             PreviewPositionButton(
               position: 1,
               label: '左',
               isSelected: state.previewPosition == 1,
-              onTap: () => context
-                  .read<CharacterGalleryBloc>()
-                  .add(ChangePreviewPosition(1)),
+              onTap: () => context.read<CharacterGalleryBloc>().add(
+                ChangePreviewPosition(1),
+              ),
             ),
             PreviewPositionButton(
               position: 2,
               label: '右',
               isSelected: state.previewPosition == 2,
-              onTap: () => context
-                  .read<CharacterGalleryBloc>()
-                  .add(ChangePreviewPosition(2)),
+              onTap: () => context.read<CharacterGalleryBloc>().add(
+                ChangePreviewPosition(2),
+              ),
             ),
             PreviewPositionButton(
               position: 3,
               label: '背',
               isSelected: state.previewPosition == 3,
-              onTap: () => context
-                  .read<CharacterGalleryBloc>()
-                  .add(ChangePreviewPosition(3)),
+              onTap: () => context.read<CharacterGalleryBloc>().add(
+                ChangePreviewPosition(3),
+              ),
             ),
           ],
         ),
@@ -1512,7 +1647,9 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       if (preview.back.isNotEmpty) allImages.add(preview.back);
     }
 
-    final initialIndex = allImages.indexOf(imageUrl).clamp(0, allImages.length - 1);
+    final initialIndex = allImages
+        .indexOf(imageUrl)
+        .clamp(0, allImages.length - 1);
 
     showDialog(
       context: context,
@@ -1525,13 +1662,16 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     );
   }
 
-  Widget _buildNameSection(CharacterModel character, CharacterGalleryState state) {
+  Widget _buildNameSection(
+    CharacterModel character,
+    CharacterGalleryState state,
+  ) {
     final currentSubModel = state.currentSubModel;
     // 如果是默认皮肤，显示角色名；否则显示子模型名
-    final displayName = (currentSubModel?.isDefault ?? true) 
-        ? character.name 
+    final displayName = (currentSubModel?.isDefault ?? true)
+        ? character.name
         : (currentSubModel?.name ?? character.name);
-    
+
     // 获取当前子模型的来源信息
     final acquisition = currentSubModel?.acquisition ?? character.acquisition;
 
@@ -1540,7 +1680,10 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       children: [
         Text(
           '◆',
-          style: TextStyle(color: CharacterGalleryTheme.getVermillion(context), fontSize: 18),
+          style: TextStyle(
+            color: CharacterGalleryTheme.getVermillion(context),
+            fontSize: 18,
+          ),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -1580,12 +1723,16 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
 
   /// 来源途径徽章（显示在角色名右侧）- 日式印章风格
   /// 僵尸角色不显示获取来源
-  Widget _buildAcquisitionBadge(AcquisitionInfo? acquisition, CharacterModel character, CharacterSubModel? currentSubModel) {
+  Widget _buildAcquisitionBadge(
+    AcquisitionInfo? acquisition,
+    CharacterModel character,
+    CharacterSubModel? currentSubModel,
+  ) {
     // 僵尸角色不显示获取来源
     if (character.category == CharacterCategory.zombie) {
       return const SizedBox.shrink();
     }
-    
+
     if (acquisition == null || acquisition.type == AcquisitionType.unknown) {
       return const SizedBox.shrink();
     }
@@ -1604,16 +1751,14 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         _SubModelScrollableList(
           subModels: subModels,
           selectedSubModelId: state.selectedSubModelId,
-          onSelect: (id) => context
-              .read<CharacterGalleryBloc>()
-              .add(SelectSubModel(id)),
+          onSelect: (id) =>
+              context.read<CharacterGalleryBloc>().add(SelectSubModel(id)),
         ),
       ],
     );
   }
 
-
-  /// 符卡梯队列表视图
+  /// 符卡评级列表视图
   Widget _buildSpellCardTierList(CharacterGalleryState state) {
     if (state.spellCardTierLoadState == LoadState.loading) {
       return Center(
@@ -1633,27 +1778,60 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       _updateListScrollIndicators();
     });
 
+    final washiColor = CharacterGalleryTheme.getWashiColor(context);
+
+    // 计算固定标题的高度（最多只有一个展开的评级）
+    final pinnedHeaderHeight = state.expandedTiers.isNotEmpty ? 40.0 : 0.0;
+
     return Stack(
       children: [
-        ListView.builder(
+        CustomScrollView(
           controller: _listScrollController,
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          itemCount: state.spellCardTierGroups.length,
-          itemBuilder: (context, index) {
-            final tierGroup = state.spellCardTierGroups[index];
-            return _buildTierGroupSection(
-              tierGroup, 
-              state.selectedSpellCardId,
-              isExpanded: state.expandedTiers.contains(tierGroup.tier),
-            );
-          },
+          slivers: [
+            const SliverPadding(padding: EdgeInsets.only(top: 8)),
+            for (final tierGroup in state.spellCardTierGroups) ...[
+              // 评级标题（粘性头部）
+              SliverPersistentHeader(
+                pinned: state.expandedTiers.contains(tierGroup.tier),
+                delegate: _TierHeaderDelegate(
+                  tierGroup: tierGroup,
+                  isExpanded: state.expandedTiers.contains(tierGroup.tier),
+                  tierColor: _getTierColor(tierGroup.tier),
+                  washiColor: washiColor,
+                  onTap: () {
+                    context.read<CharacterGalleryBloc>().add(
+                      ToggleTierExpanded(tierGroup.tier),
+                    );
+                  },
+                ),
+              ),
+              // 符卡列表（仅在展开时显示）
+              if (state.expandedTiers.contains(tierGroup.tier))
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => _buildSpellCardTierItem(
+                        tierGroup.spellCards[index],
+                        isSelected:
+                            state.selectedSpellCardId ==
+                            tierGroup.spellCards[index].id,
+                      ),
+                      childCount: tierGroup.spellCards.length,
+                    ),
+                  ),
+                ),
+            ],
+            const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
+          ],
         ),
+        // 上方滚动指示条（显示在固定标题下方）
         if (_listCanScrollUp)
-          const Positioned(
-            top: 0,
+          Positioned(
+            top: pinnedHeaderHeight,
             left: 0,
             right: 0,
-            child: ScrollIndicator(isTop: true),
+            child: const ScrollIndicator(isTop: true),
           ),
         if (_listCanScrollDown)
           const Positioned(
@@ -1666,105 +1844,25 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     );
   }
 
-  /// 梯队分组区域
-  Widget _buildTierGroupSection(SpellCardTierGroup tierGroup, int? selectedSpellCardId, {required bool isExpanded}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 梯队标题（可点击展开/折叠）
-        MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            onTap: () {
-              context.read<CharacterGalleryBloc>().add(ToggleTierExpanded(tierGroup.tier));
-            },
-            child: Container(
-              margin: EdgeInsets.only(top: 8, bottom: isExpanded ? 12 : 4),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: _getTierColor(tierGroup.tier).withValues(alpha: 0.1),
-                border: Border(
-                  left: BorderSide(
-                    color: _getTierColor(tierGroup.tier),
-                    width: 3,
-                  ),
-                ),
-              ),
-              child: Row(
-                children: [
-                  // 展开/折叠图标
-                  AnimatedRotation(
-                    turns: isExpanded ? 0.25 : 0,
-                    duration: const Duration(milliseconds: 200),
-                    child: Icon(
-                      Icons.chevron_right,
-                      size: 18,
-                      color: _getTierColor(tierGroup.tier),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    tierGroup.tierLabel,
-                    style: TextStyle(
-                      color: _getTierColor(tierGroup.tier),
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: _getTierColor(tierGroup.tier).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${tierGroup.count}',
-                      style: TextStyle(
-                        color: _getTierColor(tierGroup.tier),
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  // 折叠提示
-                  if (!isExpanded)
-                    Text(
-                      '点击展开',
-                      style: TextStyle(
-                        color: _getTierColor(tierGroup.tier).withValues(alpha: 0.6),
-                        fontSize: 11,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        // 符卡列表（仅在展开时显示）
-        if (isExpanded)
-          ...tierGroup.spellCards.map((spellCard) => _buildSpellCardTierItem(
-            spellCard, 
-            isSelected: selectedSpellCardId == spellCard.id,
-          )),
-        if (isExpanded) const SizedBox(height: 8),
-      ],
-    );
-  }
-
-  /// 符卡梯队列表项
-  Widget _buildSpellCardTierItem(SpellCardTierItem spellCard, {bool isSelected = false}) {
+  /// 符卡评级列表项
+  Widget _buildSpellCardTierItem(
+    SpellCardTierItem spellCard, {
+    bool isSelected = false,
+  }) {
     final type = spellCard.type;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final vermillion = CharacterGalleryTheme.getVermillion(context);
     final gold = CharacterGalleryTheme.getGold(context);
-    
+
     // 类型对应的颜色、符号和背景图
-    final (Color borderColor, Color bgColor, String symbol, String bgAsset) = switch (type) {
+    final (
+      Color borderColor,
+      Color bgColor,
+      String symbol,
+      String bgAsset,
+    ) = switch (type) {
       SpellCardType.passive => (
         const Color(0xFF4A7C59),
         const Color(0xFF4A7C59).withValues(alpha: isDark ? 0.15 : 0.08),
@@ -1801,11 +1899,11 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           margin: const EdgeInsets.only(bottom: 10),
           constraints: const BoxConstraints(minHeight: 80),
           decoration: BoxDecoration(
-            color: isSelected 
-                ? borderColor.withValues(alpha: 0.12)
-                : bgColor,
+            color: isSelected ? borderColor.withValues(alpha: 0.12) : bgColor,
             border: Border.all(
-              color: isSelected ? borderColor : borderColor.withValues(alpha: 0.8),
+              color: isSelected
+                  ? borderColor
+                  : borderColor.withValues(alpha: 0.8),
               width: isSelected ? 2 : 1.5,
             ),
             borderRadius: BorderRadius.circular(6),
@@ -1819,7 +1917,11 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                   child: Image.asset(
                     bgAsset,
                     fit: BoxFit.cover,
-                    opacity: AlwaysStoppedAnimation(isDark ? (isSelected ? 0.4 : 0.3) : (isSelected ? 0.7 : 0.5)),
+                    opacity: AlwaysStoppedAnimation(
+                      isDark
+                          ? (isSelected ? 0.4 : 0.3)
+                          : (isSelected ? 0.7 : 0.5),
+                    ),
                   ),
                 ),
                 // 内容层
@@ -1829,24 +1931,28 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // 标题行：符号 + 名称 + 梯队 + 箭头
+                      // 标题行：符号 + 名称 + 评级 + 箭头
                       Row(
                         children: [
                           Text(
                             symbol,
                             style: TextStyle(
-                              color: borderColor, 
+                              color: borderColor,
                               fontSize: 14,
-                              shadows: isDark ? null : [
-                                Shadow(
-                                  color: Colors.white,
-                                  blurRadius: 3,
-                                ),
-                                Shadow(
-                                  color: Colors.white.withValues(alpha: 0.8),
-                                  blurRadius: 6,
-                                ),
-                              ],
+                              shadows: isDark
+                                  ? null
+                                  : [
+                                      Shadow(
+                                        color: Colors.white,
+                                        blurRadius: 3,
+                                      ),
+                                      Shadow(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.8,
+                                        ),
+                                        blurRadius: 6,
+                                      ),
+                                    ],
                             ),
                           ),
                           const SizedBox(width: 6),
@@ -1857,20 +1963,26 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                                 color: inkColor,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
-                                shadows: isDark ? null : [
-                                  Shadow(
-                                    color: Colors.white,
-                                    blurRadius: 4,
-                                  ),
-                                  Shadow(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    blurRadius: 8,
-                                  ),
-                                  Shadow(
-                                    color: Colors.white.withValues(alpha: 0.7),
-                                    blurRadius: 12,
-                                  ),
-                                ],
+                                shadows: isDark
+                                    ? null
+                                    : [
+                                        Shadow(
+                                          color: Colors.white,
+                                          blurRadius: 4,
+                                        ),
+                                        Shadow(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.9,
+                                          ),
+                                          blurRadius: 8,
+                                        ),
+                                        Shadow(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.7,
+                                          ),
+                                          blurRadius: 12,
+                                        ),
+                                      ],
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -1880,23 +1992,24 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                           Icon(
                             Icons.arrow_forward_ios,
                             size: 14,
-                            color: isSelected 
+                            color: isSelected
                                 ? borderColor
                                 : scrollBrown.withValues(alpha: 0.6),
-                            shadows: isDark ? null : [
-                              Shadow(
-                                color: Colors.white,
-                                blurRadius: 3,
-                              ),
-                              Shadow(
-                                color: Colors.white.withValues(alpha: 0.8),
-                                blurRadius: 6,
-                              ),
-                            ],
+                            shadows: isDark
+                                ? null
+                                : [
+                                    Shadow(color: Colors.white, blurRadius: 3),
+                                    Shadow(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.8,
+                                      ),
+                                      blurRadius: 6,
+                                    ),
+                                  ],
                           ),
                         ],
                       ),
-                  
+
                       // 分隔线
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1915,13 +2028,17 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                           ),
                         ),
                       ),
-                  
+
                       // 描述
-                      if (spellCard.description != null && spellCard.description!.isNotEmpty)
+                      if (spellCard.description != null &&
+                          spellCard.description!.isNotEmpty)
                         Builder(
                           builder: (context) {
-                            final isDark = Theme.of(context).brightness == Brightness.dark;
-                            final inkColor = CharacterGalleryTheme.getInkColor(context);
+                            final isDark =
+                                Theme.of(context).brightness == Brightness.dark;
+                            final inkColor = CharacterGalleryTheme.getInkColor(
+                              context,
+                            );
                             return Text(
                               spellCard.description!,
                               style: TextStyle(
@@ -1929,29 +2046,37 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                                 fontSize: 13,
                                 height: 1.4,
                                 fontWeight: FontWeight.w500,
-                                shadows: isDark ? null : [
-                                  Shadow(
-                                    color: Colors.white,
-                                    blurRadius: 4,
-                                  ),
-                                  Shadow(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    blurRadius: 8,
-                                  ),
-                                  Shadow(
-                                    color: Colors.white.withValues(alpha: 0.7),
-                                    blurRadius: 12,
-                                  ),
-                                ],
+                                shadows: isDark
+                                    ? null
+                                    : [
+                                        Shadow(
+                                          color: Colors.white,
+                                          blurRadius: 4,
+                                        ),
+                                        Shadow(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.9,
+                                          ),
+                                          blurRadius: 8,
+                                        ),
+                                        Shadow(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.7,
+                                          ),
+                                          blurRadius: 12,
+                                        ),
+                                      ],
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             );
                           },
                         ),
-                  
+
                       // 属性行
-                      if (spellCard.cooldown != null || spellCard.damage != null || spellCard.cost != null) ...[
+                      if (spellCard.cooldown != null ||
+                          spellCard.damage != null ||
+                          spellCard.cost != null) ...[
                         const SizedBox(height: 8),
                         _buildTierItemStats(spellCard, borderColor),
                       ],
@@ -1966,51 +2091,54 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     );
   }
 
-  /// 梯队列表项属性行
+  /// 评级列表项属性行
   Widget _buildTierItemStats(SpellCardTierItem spellCard, Color accentColor) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final gold = CharacterGalleryTheme.getGold(context);
     final statItems = <Widget>[];
-    
+
     if (spellCard.cooldown != null) {
-      statItems.add(_buildStatItem(
-        Icons.timer_outlined,
-        '冷却',
-        '${spellCard.cooldown}s',
-        const Color(0xFF26A69A), // 青色
-        isDark,
-      ));
+      statItems.add(
+        _buildStatItem(
+          Icons.timer_outlined,
+          '冷却',
+          '${spellCard.cooldown}s',
+          CharacterGalleryTheme.getCooldownColor(context),
+          isDark,
+        ),
+      );
     }
-    
+
     if (spellCard.damage != null) {
-      statItems.add(_buildStatItem(
-        Icons.flash_on,
-        '伤害',
-        spellCard.damage!,
-        const Color(0xFFE57373), // 浅红色
-        isDark,
-      ));
+      statItems.add(
+        _buildStatItem(
+          Icons.flash_on,
+          '伤害',
+          spellCard.damage!,
+          CharacterGalleryTheme.getDamageColor(context),
+          isDark,
+        ),
+      );
     }
-    
+
     if (spellCard.cost != null) {
       final isUltimate = spellCard.type == SpellCardType.ultimate;
-      statItems.add(_buildStatItem(
-        Icons.local_fire_department,
-        isUltimate ? 'B点' : 'P点',
-        '${spellCard.cost}',
-        isUltimate ? gold : const Color(0xFF64B5F6), // 金色或蓝色
-        isDark,
-      ));
+      statItems.add(
+        _buildStatItem(
+          Icons.local_fire_department,
+          isUltimate ? 'B点' : 'P点',
+          '${spellCard.cost}',
+          isUltimate
+              ? CharacterGalleryTheme.getBCostColor(context)
+              : CharacterGalleryTheme.getPCostColor(context),
+          isDark,
+        ),
+      );
     }
-    
-    return Wrap(
-      spacing: 12,
-      runSpacing: 6,
-      children: statItems,
-    );
+
+    return Wrap(spacing: 12, runSpacing: 6, children: statItems);
   }
 
-  /// 获取梯队颜色
+  /// 获取评级颜色
   Color _getTierColor(String tier) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     return switch (tier) {
@@ -2020,13 +2148,12 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       'T3' => const Color(0xFF44BB44), // 绿色 - 中等
       'T4' => const Color(0xFF4488FF), // 蓝色 - 一般
       'T5' => const Color(0xFF8888AA), // 灰蓝 - 较弱
-      'roadside' => const Color(0xFF666666), // 灰色 - 路边
       'unranked' => scrollBrown, // 棕色 - 未评级
       _ => scrollBrown,
     };
   }
 
-  /// 获取符卡梯队颜色（枚举版本）
+  /// 获取符卡评级颜色（枚举版本）
   Color _getSpellCardTierColor(SpellCardTier tier) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     return switch (tier) {
@@ -2036,7 +2163,6 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       SpellCardTier.t3 => const Color(0xFF44BB44),
       SpellCardTier.t4 => const Color(0xFF4488FF),
       SpellCardTier.t5 => const Color(0xFF8888AA),
-      SpellCardTier.roadside => const Color(0xFF666666),
       SpellCardTier.unranked => scrollBrown,
     };
   }
@@ -2061,7 +2187,6 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       ),
     );
   }
-
 
   Widget _buildEmptyState() {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
@@ -2100,8 +2225,9 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           ),
           const SizedBox(height: 16),
           GestureDetector(
-            onTap: () =>
-                context.read<CharacterGalleryBloc>().add(const LoadCharacters()),
+            onTap: () => context.read<CharacterGalleryBloc>().add(
+              const LoadCharacters(),
+            ),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: BoxDecoration(
@@ -2110,7 +2236,10 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               ),
               child: const Text(
                 '重试',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -2132,28 +2261,16 @@ class _AcquisitionSealBadge extends StatelessWidget {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final vermillion = CharacterGalleryTheme.getVermillion(context);
     final gold = CharacterGalleryTheme.getGold(context);
-    
+
     final (label, subLabel, color) = switch (acquisition.type) {
-      AcquisitionType.gold => (
-          '金',
-          '${acquisition.cost ?? 0}',
-          gold,
-        ),
-      AcquisitionType.points => (
-          '点',
-          '${acquisition.cost ?? 0}',
-          vermillion,
-        ),
+      AcquisitionType.gold => ('金', '${acquisition.cost ?? 0}', gold),
+      AcquisitionType.points => ('点', '${acquisition.cost ?? 0}', vermillion),
       AcquisitionType.custom => (
-          '特',
-          acquisition.customSource ?? '活动',
-          const Color(0xFF4A7C59),
-        ),
-      _ => (
-          '？',
-          '未知',
-          scrollBrown,
-        ),
+        '特',
+        acquisition.customSource ?? '活动',
+        const Color(0xFF4A7C59),
+      ),
+      _ => ('？', '未知', scrollBrown),
     };
 
     // 自定义来源使用横向布局
@@ -2162,10 +2279,7 @@ class _AcquisitionSealBadge extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.08),
-          border: Border.all(
-            color: color.withValues(alpha: 0.4),
-            width: 1.5,
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.4), width: 1.5),
           borderRadius: BorderRadius.circular(4),
         ),
         child: Row(
@@ -2265,7 +2379,8 @@ class _SubModelScrollableList extends StatefulWidget {
   });
 
   @override
-  State<_SubModelScrollableList> createState() => _SubModelScrollableListState();
+  State<_SubModelScrollableList> createState() =>
+      _SubModelScrollableListState();
 }
 
 class _SubModelScrollableListState extends State<_SubModelScrollableList> {
@@ -2342,7 +2457,8 @@ class _SubModelScrollableListState extends State<_SubModelScrollableList> {
               separatorBuilder: (_, __) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
                 final subModel = widget.subModels[index];
-                final isSelected = widget.selectedSubModelId == subModel.id ||
+                final isSelected =
+                    widget.selectedSubModelId == subModel.id ||
                     (widget.selectedSubModelId == null && subModel.isDefault);
                 return SubModelCard(
                   subModel: subModel,
@@ -2391,7 +2507,7 @@ class _SubModelScrollableListState extends State<_SubModelScrollableList> {
         final washiColor = CharacterGalleryTheme.getWashiColor(context);
         final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
         final inkColor = CharacterGalleryTheme.getInkColor(context);
-        
+
         return AnimatedOpacity(
           opacity: _isHovered ? 1.0 : 0.0,
           duration: const Duration(milliseconds: 200),
@@ -2412,9 +2528,14 @@ class _SubModelScrollableListState extends State<_SubModelScrollableList> {
                 ),
               ),
               child: Align(
-                alignment: isLeft ? Alignment.centerLeft : Alignment.centerRight,
+                alignment: isLeft
+                    ? Alignment.centerLeft
+                    : Alignment.centerRight,
                 child: Padding(
-                  padding: EdgeInsets.only(left: isLeft ? 4 : 0, right: isLeft ? 0 : 4),
+                  padding: EdgeInsets.only(
+                    left: isLeft ? 4 : 0,
+                    right: isLeft ? 0 : 4,
+                  ),
                   child: MouseRegion(
                     cursor: SystemMouseCursors.click,
                     child: GestureDetector(
@@ -2436,11 +2557,7 @@ class _SubModelScrollableListState extends State<_SubModelScrollableList> {
                             ),
                           ],
                         ),
-                        child: Icon(
-                          icon,
-                          size: 20,
-                          color: scrollBrown,
-                        ),
+                        child: Icon(icon, size: 20, color: scrollBrown),
                       ),
                     ),
                   ),
@@ -2451,5 +2568,147 @@ class _SubModelScrollableListState extends State<_SubModelScrollableList> {
         );
       },
     );
+  }
+}
+
+/// 评级标题粘性头部代理
+class _TierHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final SpellCardTierGroup tierGroup;
+  final bool isExpanded;
+  final Color tierColor;
+  final Color washiColor;
+  final VoidCallback onTap;
+
+  _TierHeaderDelegate({
+    required this.tierGroup,
+    required this.isExpanded,
+    required this.tierColor,
+    required this.washiColor,
+    required this.onTap,
+  });
+
+  @override
+  double get minExtent => 40;
+
+  @override
+  double get maxExtent => 40;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    // 当头部被固定时（shrinkOffset > 0 或 overlapsContent），显示阴影
+    final isPinned = shrinkOffset > 0 || overlapsContent;
+
+    return SizedBox(
+      height: maxExtent,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isPinned ? washiColor : tierColor.withValues(alpha: 0.1),
+                border: Border(left: BorderSide(color: tierColor, width: 3)),
+                boxShadow: isPinned
+                    ? [
+                        BoxShadow(
+                          color: tierColor.withValues(alpha: 0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Row(
+                children: [
+                  // 展开/折叠图标
+                  AnimatedRotation(
+                    turns: isExpanded ? 0.25 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: tierColor,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    tierGroup.tierLabel,
+                    style: TextStyle(
+                      color: tierColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: tierColor.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${tierGroup.count}',
+                      style: TextStyle(
+                        color: tierColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  // 折叠提示或固定提示
+                  if (!isExpanded)
+                    Text(
+                      '点击展开',
+                      style: TextStyle(
+                        color: tierColor.withValues(alpha: 0.6),
+                        fontSize: 11,
+                      ),
+                    )
+                  else if (isPinned)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.push_pin,
+                          size: 12,
+                          color: tierColor.withValues(alpha: 0.6),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '点击收起',
+                          style: TextStyle(
+                            color: tierColor.withValues(alpha: 0.6),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _TierHeaderDelegate oldDelegate) {
+    return tierGroup != oldDelegate.tierGroup ||
+        isExpanded != oldDelegate.isExpanded ||
+        tierColor != oldDelegate.tierColor ||
+        washiColor != oldDelegate.washiColor;
   }
 }

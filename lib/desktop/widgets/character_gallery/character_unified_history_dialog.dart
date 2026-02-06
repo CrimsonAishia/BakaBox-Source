@@ -31,7 +31,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
   int _currentPage = 1;
   int _total = 0;
   static const int _pageSize = 15;
-  
+
   EditTargetType? _filterType;
 
   @override
@@ -75,21 +75,23 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
 
   List<UnifiedEditHistoryItem> get _filteredItems {
     if (_filterType == null) return _historyItems;
-    return _historyItems.where((item) => item.targetType == _filterType).toList();
+    return _historyItems
+        .where((item) => item.targetType == _filterType)
+        .toList();
   }
 
   // 将历史记录按申请分组（同一个申请的多个修改合并）
   List<List<UnifiedEditHistoryItem>> get _groupedItems {
     final filtered = _filteredItems;
     final Map<String, List<UnifiedEditHistoryItem>> grouped = {};
-    
+
     for (final item in filtered) {
       // 使用 editorId + editedAt + version 作为分组键（同一个申请）
       // 注意：editReason 可能为空，所以不用它作为分组键
       final key = '${item.editorId}_${item.editedAt}_${item.version}';
       grouped.putIfAbsent(key, () => []).add(item);
     }
-    
+
     return grouped.values.toList();
   }
 
@@ -134,6 +136,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
       'custom_source' => '自定义来源',
       'name' => '名称',
       'type' => '类型',
+      'tier' => '评级',
       _ => field,
     };
   }
@@ -143,7 +146,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
     final washiColor = CharacterGalleryTheme.getWashiColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -152,10 +155,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
         decoration: BoxDecoration(
           color: washiColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: scrollBrown,
-            width: 2,
-          ),
+          border: Border.all(color: scrollBrown, width: 2),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.25),
@@ -186,10 +186,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            scrollBrown.withValues(alpha: 0.08),
-            washiColor,
-          ],
+          colors: [scrollBrown.withValues(alpha: 0.08), washiColor],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -213,7 +210,10 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
               builder: (context) {
                 final vermillion = CharacterGalleryTheme.getVermillion(context);
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: vermillion.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(4),
@@ -224,11 +224,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.history_rounded,
-                        size: 14,
-                        color: vermillion,
-                      ),
+                      Icon(Icons.history_rounded, size: 14, color: vermillion),
                       const SizedBox(width: 4),
                       Text(
                         '$_total 条',
@@ -246,10 +242,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
           const SizedBox(width: 8),
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: Icon(
-              Icons.close_rounded,
-              color: scrollBrown,
-            ),
+            icon: Icon(Icons.close_rounded, color: scrollBrown),
             tooltip: '关闭',
             splashRadius: 18,
           ),
@@ -270,29 +263,49 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
       decoration: BoxDecoration(
         color: cardBg.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: scrollBrown.withValues(alpha: 0.15),
-        ),
+        border: Border.all(color: scrollBrown.withValues(alpha: 0.15)),
       ),
       child: Row(
         children: [
           _buildFilterChip(context, '全部', null, Icons.list_alt_rounded),
-          _buildFilterChip(context, '基本信息', EditTargetType.subModel, Icons.person_outline_rounded),
+          _buildFilterChip(
+            context,
+            '基本信息',
+            EditTargetType.subModel,
+            Icons.person_outline_rounded,
+          ),
           if (isTouhou)
-            _buildFilterChip(context, '符卡', EditTargetType.spellCard, Icons.auto_awesome),
+            _buildFilterChip(
+              context,
+              '符卡',
+              EditTargetType.spellCard,
+              Icons.auto_awesome,
+            ),
           if (isZombie)
-            _buildFilterChip(context, '技能', EditTargetType.zombieSkill, Icons.flash_on_rounded),
+            _buildFilterChip(
+              context,
+              '技能',
+              EditTargetType.zombieSkill,
+              Icons.flash_on_rounded,
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterChip(BuildContext context, String label, EditTargetType? type, IconData icon) {
+  Widget _buildFilterChip(
+    BuildContext context,
+    String label,
+    EditTargetType? type,
+    IconData icon,
+  ) {
     final isSelected = _filterType == type;
     final vermillion = CharacterGalleryTheme.getVermillion(context);
-    final color = type != null ? _getTargetTypeColor(context, type) : vermillion;
+    final color = type != null
+        ? _getTargetTypeColor(context, type)
+        : vermillion;
     final inkColor = CharacterGalleryTheme.getInkColor(context);
-    
+
     return Expanded(
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
@@ -302,10 +315,14 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? color.withValues(alpha: 0.12) : Colors.transparent,
+              color: isSelected
+                  ? color.withValues(alpha: 0.12)
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
-                color: isSelected ? color.withValues(alpha: 0.5) : Colors.transparent,
+                color: isSelected
+                    ? color.withValues(alpha: 0.5)
+                    : Colors.transparent,
               ),
             ),
             child: Row(
@@ -322,7 +339,9 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
                   style: TextStyle(
                     color: isSelected ? color : inkColor.withValues(alpha: 0.5),
                     fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
                 ),
               ],
@@ -337,7 +356,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final vermillion = CharacterGalleryTheme.getVermillion(context);
-    
+
     if (_isLoading) {
       return Center(
         child: Column(
@@ -393,7 +412,14 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
             TextButton.icon(
               onPressed: _loadHistory,
               icon: Icon(Icons.refresh_rounded, size: 16, color: vermillion),
-              label: Text('重试', style: TextStyle(color: vermillion, fontWeight: FontWeight.w600, fontSize: 13)),
+              label: Text(
+                '重试',
+                style: TextStyle(
+                  color: vermillion,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
             ),
           ],
         ),
@@ -430,11 +456,16 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: groupedItems.length,
-      itemBuilder: (context, index) => _buildHistoryCard(context, groupedItems[index], index),
+      itemBuilder: (context, index) =>
+          _buildHistoryCard(context, groupedItems[index], index),
     );
   }
 
-  Widget _buildHistoryCard(BuildContext context, List<UnifiedEditHistoryItem> items, int index) {
+  Widget _buildHistoryCard(
+    BuildContext context,
+    List<UnifiedEditHistoryItem> items,
+    int index,
+  ) {
     // 使用第一个项目作为代表获取公共信息
     final firstItem = items.first;
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
@@ -446,9 +477,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
       decoration: BoxDecoration(
         color: cardBg.withValues(alpha: 0.65),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: scrollBrown.withValues(alpha: 0.12),
-        ),
+        border: Border.all(color: scrollBrown.withValues(alpha: 0.12)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -458,7 +487,9 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
             decoration: BoxDecoration(
               color: scrollBrown.withValues(alpha: 0.04),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(9)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(9),
+              ),
             ),
             child: Row(
               children: [
@@ -510,7 +541,10 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
   }
 
   // 扁平化的修改项
-  Widget _buildFlatChangeItem(BuildContext context, UnifiedEditHistoryItem item) {
+  Widget _buildFlatChangeItem(
+    BuildContext context,
+    UnifiedEditHistoryItem item,
+  ) {
     final typeColor = _getTargetTypeColor(context, item.targetType);
     final typeIcon = _getTargetTypeIcon(item.targetType);
     final isCreate = item.fieldChanged == 'create';
@@ -537,12 +571,14 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
               ),
             ),
             // 符卡类型标签
-            if (item.targetType == EditTargetType.spellCard && item.spellCardType != null) ...[
+            if (item.targetType == EditTargetType.spellCard &&
+                item.spellCardType != null) ...[
               const SizedBox(width: 6),
               _buildSubTypeBadge(context, item.spellCardType!),
             ],
             // 僵尸技能类型标签
-            if (item.targetType == EditTargetType.zombieSkill && item.zombieSkillType != null) ...[
+            if (item.targetType == EditTargetType.zombieSkill &&
+                item.zombieSkillType != null) ...[
               const SizedBox(width: 6),
               _buildSubTypeBadge(context, item.zombieSkillType!),
             ],
@@ -592,7 +628,9 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
           ],
         ),
         // 变更内容
-        if (!isCreate && !isDelete && (item.oldValue != null || item.newValue != null)) ...[
+        if (!isCreate &&
+            !isDelete &&
+            (item.oldValue != null || item.newValue != null)) ...[
           const SizedBox(height: 8),
           _buildCompactChangeDetail(context, item),
         ],
@@ -603,7 +641,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
   /// 子类型标签（符卡类型或技能类型）
   Widget _buildSubTypeBadge(BuildContext context, String subType) {
     final (String label, Color color) = _getSubTypeInfo(context, subType);
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
       decoration: BoxDecoration(
@@ -626,7 +664,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
   (String, Color) _getSubTypeInfo(BuildContext context, String subType) {
     final gold = CharacterGalleryTheme.getGold(context);
     final vermillion = CharacterGalleryTheme.getVermillion(context);
-    
+
     return switch (subType) {
       'ultimate' => ('大符卡', gold),
       'passive' => ('被动', const Color(0xFF4A7C59)),
@@ -636,22 +674,42 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
     };
   }
 
+  // 格式化显示值
+  String _formatValueDisplay(String field, String? value) {
+    if (value == null || value.isEmpty) return '(空)';
+
+    if (field == 'tier') {
+      return switch (value.toLowerCase()) {
+        'unranked' => '未评级',
+        't0' => 'T0 - 最强',
+        't1' => 'T1 - 强力',
+        't2' => 'T2 - 优秀',
+        't3' => 'T3 - 中等',
+        't4' => 'T4 - 一般',
+        't5' => 'T5 - 较弱',
+        _ => value,
+      };
+    }
+    return value;
+  }
+
   // 紧凑的变更详情
-  Widget _buildCompactChangeDetail(BuildContext context, UnifiedEditHistoryItem item) {
+  Widget _buildCompactChangeDetail(
+    BuildContext context,
+    UnifiedEditHistoryItem item,
+  ) {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final vermillion = CharacterGalleryTheme.getVermillion(context);
-    final oldValue = (item.oldValue == null || item.oldValue!.isEmpty) ? '(空)' : item.oldValue!;
-    final newValue = (item.newValue == null || item.newValue!.isEmpty) ? '(空)' : item.newValue!;
+    final oldValue = _formatValueDisplay(item.fieldChanged, item.oldValue);
+    final newValue = _formatValueDisplay(item.fieldChanged, item.newValue);
 
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: scrollBrown.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: scrollBrown.withValues(alpha: 0.08),
-        ),
+        border: Border.all(color: scrollBrown.withValues(alpha: 0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -728,10 +786,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
               Expanded(
                 child: Text(
                   newValue,
-                  style: TextStyle(
-                    color: inkColor,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: inkColor, fontSize: 12),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -764,15 +819,13 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
   Widget _buildPagination(BuildContext context) {
     final totalPages = (_total / _pageSize).ceil();
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(
-            color: scrollBrown.withValues(alpha: 0.1),
-          ),
+          top: BorderSide(color: scrollBrown.withValues(alpha: 0.1)),
         ),
       ),
       child: Row(
@@ -789,22 +842,19 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
           ),
           const SizedBox(width: 12),
           // 页码指示器
-          ...List.generate(
-            totalPages > 5 ? 5 : totalPages,
-            (index) {
-              int pageNum;
-              if (totalPages <= 5) {
-                pageNum = index + 1;
-              } else if (_currentPage <= 3) {
-                pageNum = index + 1;
-              } else if (_currentPage >= totalPages - 2) {
-                pageNum = totalPages - 4 + index;
-              } else {
-                pageNum = _currentPage - 2 + index;
-              }
-              return _buildPageDot(context, pageNum);
-            },
-          ),
+          ...List.generate(totalPages > 5 ? 5 : totalPages, (index) {
+            int pageNum;
+            if (totalPages <= 5) {
+              pageNum = index + 1;
+            } else if (_currentPage <= 3) {
+              pageNum = index + 1;
+            } else if (_currentPage >= totalPages - 2) {
+              pageNum = totalPages - 4 + index;
+            } else {
+              pageNum = _currentPage - 2 + index;
+            }
+            return _buildPageDot(context, pageNum);
+          }),
           const SizedBox(width: 12),
           _buildPageArrow(
             context: context,
@@ -827,7 +877,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
     required VoidCallback onTap,
   }) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: GestureDetector(
@@ -844,9 +894,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
           child: Icon(
             icon,
             size: 20,
-            color: enabled
-                ? scrollBrown
-                : scrollBrown.withValues(alpha: 0.25),
+            color: enabled ? scrollBrown : scrollBrown.withValues(alpha: 0.25),
           ),
         ),
       ),
@@ -856,7 +904,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
   Widget _buildPageDot(BuildContext context, int pageNum) {
     final isSelected = pageNum == _currentPage;
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
@@ -884,14 +932,12 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
 
   Widget _buildFooter(BuildContext context) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(
-            color: scrollBrown.withValues(alpha: 0.1),
-          ),
+          top: BorderSide(color: scrollBrown.withValues(alpha: 0.1)),
         ),
       ),
       child: Row(
@@ -902,7 +948,10 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
             child: GestureDetector(
               onTap: () => Navigator.of(context).pop(),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 9,
+                ),
                 decoration: BoxDecoration(
                   color: scrollBrown,
                   borderRadius: BorderRadius.circular(6),
