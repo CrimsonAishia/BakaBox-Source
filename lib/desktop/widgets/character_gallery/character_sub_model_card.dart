@@ -33,8 +33,8 @@ class _SubModelCardState extends State<SubModelCard> {
     final borderColor = widget.isSelected
         ? CharacterGalleryTheme.gold
         : _isHovered
-            ? scrollBrown
-            : scrollBrown.withValues(alpha: 0.4);
+        ? scrollBrown
+        : scrollBrown.withValues(alpha: 0.4);
     final borderWidth = widget.isSelected ? 2.5 : (_isHovered ? 1.5 : 1.0);
     final elevation = widget.isSelected ? 4.0 : (_isHovered ? 2.0 : 0.0);
 
@@ -51,15 +51,17 @@ class _SubModelCardState extends State<SubModelCard> {
             color: widget.isSelected
                 ? CharacterGalleryTheme.getGold(context).withValues(alpha: 0.08)
                 : _isHovered
-                    ? washiColor
-                    : cardBg,
+                ? washiColor
+                : cardBg,
             border: Border.all(color: borderColor, width: borderWidth),
             borderRadius: BorderRadius.circular(8),
             boxShadow: elevation > 0
                 ? [
                     BoxShadow(
                       color: widget.isSelected
-                          ? CharacterGalleryTheme.getGold(context).withValues(alpha: 0.3)
+                          ? CharacterGalleryTheme.getGold(
+                              context,
+                            ).withValues(alpha: 0.3)
                           : Colors.black.withValues(alpha: 0.1),
                       blurRadius: elevation * 2,
                       offset: Offset(0, elevation / 2),
@@ -74,8 +76,9 @@ class _SubModelCardState extends State<SubModelCard> {
                 child: Stack(
                   children: [
                     ClipRRect(
-                      borderRadius:
-                          const BorderRadius.vertical(top: Radius.circular(7)),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(7),
+                      ),
                       child: DiskCachedImage(
                         imageUrl: widget.subModel.thumbnailUrl,
                         fit: BoxFit.cover,
@@ -94,8 +97,11 @@ class _SubModelCardState extends State<SubModelCard> {
                             color: CharacterGalleryTheme.getGold(context),
                             shape: BoxShape.circle,
                           ),
-                          child:
-                              const Icon(Icons.check, size: 12, color: Colors.white),
+                          child: const Icon(
+                            Icons.check,
+                            size: 12,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     // 默认标签
@@ -104,8 +110,10 @@ class _SubModelCardState extends State<SubModelCard> {
                         top: 4,
                         left: 4,
                         child: Container(
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: scrollBrown.withValues(alpha: 0.8),
                             borderRadius: BorderRadius.circular(3),
@@ -129,10 +137,13 @@ class _SubModelCardState extends State<SubModelCard> {
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                 decoration: BoxDecoration(
                   color: widget.isSelected
-                      ? CharacterGalleryTheme.getGold(context).withValues(alpha: 0.1)
+                      ? CharacterGalleryTheme.getGold(
+                          context,
+                        ).withValues(alpha: 0.1)
                       : Colors.transparent,
-                  borderRadius:
-                      const BorderRadius.vertical(bottom: Radius.circular(7)),
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(7),
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -143,15 +154,18 @@ class _SubModelCardState extends State<SubModelCard> {
                             ? CharacterGalleryTheme.getGold(context)
                             : inkColor,
                         fontSize: 11,
-                        fontWeight:
-                            widget.isSelected ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight: widget.isSelected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 2),
-                    _SubModelAcquisitionTag(acquisition: widget.subModel.acquisition),
+                    _SubModelAcquisitionTag(
+                      acquisition: widget.subModel.acquisition,
+                    ),
                   ],
                 ),
               ),
@@ -172,36 +186,35 @@ class _SubModelAcquisitionTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
-    
-    final (icon, text, color) =
-        acquisition == null || acquisition!.type == AcquisitionType.unknown
-            ? (
-                '❓',
-                '未知',
-                inkColor.withValues(alpha: 0.5)
-              )
-            : switch (acquisition!.type) {
-                AcquisitionType.gold => (
-                    '',
-                    '${acquisition!.cost ?? 0} 金',
-                    CharacterGalleryTheme.getGold(context)
-                  ),
-                AcquisitionType.points => (
-                    '',
-                    '${acquisition!.cost ?? 0} 点',
-                    CharacterGalleryTheme.getVermillion(context)
-                  ),
-                AcquisitionType.custom => (
-                    '🎁',
-                    acquisition!.customSource ?? '特殊',
-                    CharacterGalleryTheme.sakuraPink
-                  ),
-                AcquisitionType.unknown => (
-                    '❓',
-                    '未知',
-                    inkColor.withValues(alpha: 0.5)
-                  ),
-              };
+
+    final (
+      icon,
+      text,
+      color,
+    ) = acquisition == null || acquisition!.type == AcquisitionType.unknown
+        ? ('❓', '未知', inkColor.withValues(alpha: 0.5))
+        : switch (acquisition!.type) {
+            AcquisitionType.gold => (
+              '',
+              '${acquisition!.cost ?? 0} 金',
+              CharacterGalleryTheme.getGold(context),
+            ),
+            AcquisitionType.points => (
+              '',
+              '${acquisition!.cost ?? 0} 点',
+              CharacterGalleryTheme.getVermillion(context),
+            ),
+            AcquisitionType.custom => (
+              '🎁',
+              acquisition!.customSource ?? '特殊',
+              CharacterGalleryTheme.sakuraPink,
+            ),
+            AcquisitionType.unknown => (
+              '❓',
+              '未知',
+              inkColor.withValues(alpha: 0.5),
+            ),
+          };
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
@@ -211,7 +224,11 @@ class _SubModelAcquisitionTag extends StatelessWidget {
         Flexible(
           child: Text(
             text,
-            style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              color: color,
+              fontSize: 9,
+              fontWeight: FontWeight.w500,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

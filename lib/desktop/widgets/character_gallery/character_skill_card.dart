@@ -13,9 +13,10 @@ class SkillCard extends StatelessWidget {
   final String? damage;
   final int? cost;
   final String? range;
+  final String? special; // 特殊效果（僵尸技能）
   final bool isSpellCard;
   final bool isSubModelSpecific;
-  final SpellCardTier? tier; // 符卡梯队
+  final SpellCardTier? tier; // 符卡评级
   final VoidCallback? onEdit;
   final VoidCallback? onHistory;
 
@@ -29,6 +30,7 @@ class SkillCard extends StatelessWidget {
     this.damage,
     this.cost,
     this.range,
+    this.special,
     required this.isSpellCard,
     this.isSubModelSpecific = false,
     this.tier,
@@ -63,7 +65,6 @@ class SkillCard extends StatelessWidget {
       SpellCardTier.t3 => const Color(0xFF32CD32),
       SpellCardTier.t4 => const Color(0xFF4169E1),
       SpellCardTier.t5 => const Color(0xFF9370DB),
-      SpellCardTier.roadside => const Color(0xFF808080),
       SpellCardTier.unranked => const Color(0xFFAAAAAA),
     };
   }
@@ -73,7 +74,6 @@ class SkillCard extends StatelessWidget {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final cardBg = CharacterGalleryTheme.getOverlayColor(context, alpha: 0.5);
-    final gold = CharacterGalleryTheme.getGold(context);
     final typeColor = _getTypeColor(context);
 
     return Container(
@@ -108,7 +108,7 @@ class SkillCard extends StatelessWidget {
                   ),
                 ),
               ),
-              // 梯队标签（仅符卡显示）
+              // 评级标签（仅符卡显示）
               if (isSpellCard && tier != null && tier != SpellCardTier.unranked) ...[
                 const SizedBox(width: 6),
                 Container(
@@ -168,7 +168,7 @@ class SkillCard extends StatelessWidget {
             ),
           ),
           // 数值信息
-          if (cooldown != null || damage != null || cost != null || range != null) ...[
+          if (cooldown != null || damage != null || cost != null || range != null || special != null) ...[
             const SizedBox(height: 8),
             Wrap(
               spacing: 12,
@@ -179,14 +179,14 @@ class SkillCard extends StatelessWidget {
                     icon: Icons.timer_outlined,
                     label: '冷却',
                     value: '${cooldown}s',
-                    color: const Color(0xFF26A69A), // 青色
+                    color: CharacterGalleryTheme.getCooldownColor(context),
                   ),
                 if (damage != null)
                   _StatItem(
                     icon: Icons.flash_on,
                     label: '伤害',
                     value: damage!,
-                    color: const Color(0xFFE57373), // 浅红色
+                    color: CharacterGalleryTheme.getDamageColor(context),
                   ),
                 // 符卡显示消耗
                 if (isSpellCard && cost != null)
@@ -194,7 +194,7 @@ class SkillCard extends StatelessWidget {
                     icon: Icons.local_fire_department,
                     label: type == 'ultimate' ? 'B点' : 'P点',
                     value: '$cost',
-                    color: type == 'ultimate' ? gold : const Color(0xFF64B5F6), // 金色或蓝色
+                    color: type == 'ultimate' ? CharacterGalleryTheme.getBCostColor(context) : CharacterGalleryTheme.getPCostColor(context),
                   ),
                 // 僵尸技能显示范围
                 if (!isSpellCard && range != null)
@@ -202,7 +202,15 @@ class SkillCard extends StatelessWidget {
                     icon: Icons.radar,
                     label: '范围',
                     value: range!,
-                    color: scrollBrown,
+                    color: CharacterGalleryTheme.getRangeColor(context),
+                  ),
+                // 僵尸技能显示特殊效果
+                if (!isSpellCard && special != null)
+                  _StatItem(
+                    icon: Icons.auto_awesome,
+                    label: '特殊',
+                    value: special!,
+                    color: CharacterGalleryTheme.getSpecialColor(context),
                   ),
               ],
             ),
@@ -271,22 +279,25 @@ class _StatItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: 3),
-        Text(
-          '$label:',
-          style: TextStyle(
-            color: color.withValues(alpha: 0.8),
-            fontSize: 11,
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 4),
+        SizedBox(
+          width: 36, // 固定宽度确保 label 对齐
+          child: Text(
+            '$label:',
+            style: TextStyle(
+              color: color.withValues(alpha: 0.8),
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
-        const SizedBox(width: 2),
         Text(
           value,
           style: TextStyle(
             color: color,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],

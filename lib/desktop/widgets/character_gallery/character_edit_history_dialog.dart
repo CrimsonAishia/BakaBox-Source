@@ -95,6 +95,7 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
       'type' => '类型',
       'icon_url' => '图标',
       'sub_model_id' => '子模型',
+      'tier' => '评级',
       _ => field,
     };
   }
@@ -103,25 +104,18 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
   Widget build(BuildContext context) {
     final washiColor = CharacterGalleryTheme.getWashiColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return AlertDialog(
       backgroundColor: washiColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: scrollBrown.withValues(alpha: 0.6),
-          width: 2,
-        ),
+        side: BorderSide(color: scrollBrown.withValues(alpha: 0.6), width: 2),
       ),
       titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       actionsPadding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
       title: _buildTitle(context),
-      content: SizedBox(
-        width: 520,
-        height: 420,
-        child: _buildContent(context),
-      ),
+      content: SizedBox(width: 520, height: 420, child: _buildContent(context)),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
@@ -129,17 +123,12 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
-              side: BorderSide(
-                color: scrollBrown.withValues(alpha: 0.3),
-              ),
+              side: BorderSide(color: scrollBrown.withValues(alpha: 0.3)),
             ),
           ),
           child: Text(
             '关闭',
-            style: TextStyle(
-              color: scrollBrown,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(color: scrollBrown, fontWeight: FontWeight.w600),
           ),
         ),
       ],
@@ -149,7 +138,7 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
   Widget _buildTitle(BuildContext context) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
-    
+
     return Row(
       children: [
         Container(
@@ -164,15 +153,9 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: scrollBrown.withValues(alpha: 0.2),
-            ),
+            border: Border.all(color: scrollBrown.withValues(alpha: 0.2)),
           ),
-          child: Icon(
-            Icons.history_rounded,
-            size: 22,
-            color: scrollBrown,
-          ),
+          child: Icon(Icons.history_rounded, size: 22, color: scrollBrown),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -192,9 +175,14 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
-                      color: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.1),
+                      color: CharacterGalleryTheme.getVermillion(
+                        context,
+                      ).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -227,10 +215,14 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: CharacterGalleryTheme.getGold(context).withValues(alpha: 0.1),
+              color: CharacterGalleryTheme.getGold(
+                context,
+              ).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: CharacterGalleryTheme.getGold(context).withValues(alpha: 0.3),
+                color: CharacterGalleryTheme.getGold(
+                  context,
+                ).withValues(alpha: 0.3),
               ),
             ),
             child: Text(
@@ -283,13 +275,17 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.1),
+                color: CharacterGalleryTheme.getVermillion(
+                  context,
+                ).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.error_outline_rounded,
                 size: 40,
-                color: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.6),
+                color: CharacterGalleryTheme.getVermillion(
+                  context,
+                ).withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 16),
@@ -316,11 +312,16 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
                 ),
               ),
               style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                   side: BorderSide(
-                    color: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.3),
+                    color: CharacterGalleryTheme.getVermillion(
+                      context,
+                    ).withValues(alpha: 0.3),
                   ),
                 ),
               ),
@@ -383,9 +384,7 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
             padding: const EdgeInsets.only(top: 12),
             decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(
-                  color: scrollBrown.withValues(alpha: 0.15),
-                ),
+                top: BorderSide(color: scrollBrown.withValues(alpha: 0.15)),
               ),
             ),
             child: Row(
@@ -402,7 +401,10 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
                 ),
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 16),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: scrollBrown.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(16),
@@ -439,7 +441,7 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
     required VoidCallback onTap,
   }) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -456,16 +458,18 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
           child: Icon(
             icon,
             size: 22,
-            color: enabled
-                ? scrollBrown
-                : scrollBrown.withValues(alpha: 0.3),
+            color: enabled ? scrollBrown : scrollBrown.withValues(alpha: 0.3),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTimelineItem(BuildContext context, ContentEditHistoryItem item, bool isLast) {
+  Widget _buildTimelineItem(
+    BuildContext context,
+    ContentEditHistoryItem item,
+    bool isLast,
+  ) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final cardBg = CharacterGalleryTheme.getCardBackground(context);
@@ -487,7 +491,9 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.3),
+                        color: CharacterGalleryTheme.getVermillion(
+                          context,
+                        ).withValues(alpha: 0.3),
                         blurRadius: 6,
                         spreadRadius: 1,
                       ),
@@ -515,7 +521,9 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.4),
+                            CharacterGalleryTheme.getVermillion(
+                              context,
+                            ).withValues(alpha: 0.4),
                             scrollBrown.withValues(alpha: 0.2),
                           ],
                         ),
@@ -534,9 +542,7 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
               decoration: BoxDecoration(
                 color: cardBg.withValues(alpha: 0.7),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: scrollBrown.withValues(alpha: 0.15),
-                ),
+                border: Border.all(color: scrollBrown.withValues(alpha: 0.15)),
                 boxShadow: [
                   BoxShadow(
                     color: inkColor.withValues(alpha: 0.04),
@@ -552,17 +558,26 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              CharacterGalleryTheme.getGold(context).withValues(alpha: 0.2),
-                              CharacterGalleryTheme.getGold(context).withValues(alpha: 0.1),
+                              CharacterGalleryTheme.getGold(
+                                context,
+                              ).withValues(alpha: 0.2),
+                              CharacterGalleryTheme.getGold(
+                                context,
+                              ).withValues(alpha: 0.1),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                            color: CharacterGalleryTheme.getGold(context).withValues(alpha: 0.4),
+                            color: CharacterGalleryTheme.getGold(
+                              context,
+                            ).withValues(alpha: 0.4),
                           ),
                         ),
                         child: Text(
@@ -576,9 +591,14 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
                       ),
                       const SizedBox(width: 10),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
-                          color: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.08),
+                          color: CharacterGalleryTheme.getVermillion(
+                            context,
+                          ).withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -637,7 +657,8 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
                   // 变更内容
                   _buildChangeContent(context, item),
                   // 编辑原因
-                  if (item.editReason != null && item.editReason!.isNotEmpty) ...[
+                  if (item.editReason != null &&
+                      item.editReason!.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     Container(
                       padding: const EdgeInsets.all(10),
@@ -686,20 +707,39 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
     );
   }
 
-  Widget _buildChangeContent(BuildContext context, ContentEditHistoryItem item) {
+  String _formatValueDisplay(String field, String? value) {
+    if (value == null || value.isEmpty) return '(空)';
+
+    if (field == 'tier') {
+      return switch (value.toLowerCase()) {
+        'unranked' => '未评级',
+        't0' => 'T0 - 最强',
+        't1' => 'T1 - 强力',
+        't2' => 'T2 - 优秀',
+        't3' => 'T3 - 中等',
+        't4' => 'T4 - 一般',
+        't5' => 'T5 - 较弱',
+        _ => value,
+      };
+    }
+    return value;
+  }
+
+  Widget _buildChangeContent(
+    BuildContext context,
+    ContentEditHistoryItem item,
+  ) {
     final washiColor = CharacterGalleryTheme.getWashiColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final inputBg = CharacterGalleryTheme.getInputBackground(context);
-    
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: washiColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: scrollBrown.withValues(alpha: 0.1),
-        ),
+        border: Border.all(color: scrollBrown.withValues(alpha: 0.1)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -738,9 +778,7 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    (item.oldValue == null || item.oldValue!.isEmpty)
-                        ? '(空)'
-                        : item.oldValue!,
+                    _formatValueDisplay(item.fieldChanged, item.oldValue),
                     style: TextStyle(
                       color: inkColor.withValues(alpha: 0.5),
                       fontSize: 12,
@@ -760,7 +798,9 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
             child: Icon(
               Icons.arrow_forward_rounded,
               size: 18,
-              color: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.5),
+              color: CharacterGalleryTheme.getVermillion(
+                context,
+              ).withValues(alpha: 0.5),
             ),
           ),
           // 新值
@@ -782,7 +822,9 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
                     Text(
                       '新值',
                       style: TextStyle(
-                        color: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.7),
+                        color: CharacterGalleryTheme.getVermillion(
+                          context,
+                        ).withValues(alpha: 0.7),
                         fontSize: 10,
                         fontWeight: FontWeight.w500,
                       ),
@@ -793,16 +835,18 @@ class _EditHistoryDialogState extends State<EditHistoryDialog> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.05),
+                    color: CharacterGalleryTheme.getVermillion(
+                      context,
+                    ).withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.15),
+                      color: CharacterGalleryTheme.getVermillion(
+                        context,
+                      ).withValues(alpha: 0.15),
                     ),
                   ),
                   child: Text(
-                    (item.newValue == null || item.newValue!.isEmpty)
-                        ? '(空)'
-                        : item.newValue!,
+                    _formatValueDisplay(item.fieldChanged, item.newValue),
                     style: TextStyle(
                       color: inkColor,
                       fontSize: 12,

@@ -52,7 +52,7 @@ enum SpellCardType {
   passive,
 }
 
-/// 符卡梯队
+/// 符卡评级
 enum SpellCardTier {
   @JsonValue('T0')
   t0,
@@ -66,13 +66,11 @@ enum SpellCardTier {
   t4,
   @JsonValue('T5')
   t5,
-  @JsonValue('roadside')
-  roadside,
   @JsonValue('unranked')
   unranked,
 }
 
-/// 获取梯队显示标签
+/// 获取评级显示标签
 extension SpellCardTierExtension on SpellCardTier {
   String get label => switch (this) {
     SpellCardTier.t0 => 'T0 - 最强',
@@ -81,7 +79,6 @@ extension SpellCardTierExtension on SpellCardTier {
     SpellCardTier.t3 => 'T3 - 中等',
     SpellCardTier.t4 => 'T4 - 一般',
     SpellCardTier.t5 => 'T5 - 较弱',
-    SpellCardTier.roadside => '路边一条',
     SpellCardTier.unranked => '未评级',
   };
 
@@ -92,7 +89,6 @@ extension SpellCardTierExtension on SpellCardTier {
     SpellCardTier.t3 => 'T3',
     SpellCardTier.t4 => 'T4',
     SpellCardTier.t5 => 'T5',
-    SpellCardTier.roadside => '路边',
     SpellCardTier.unranked => '未评',
   };
 }
@@ -158,7 +154,7 @@ class SpellCard extends Equatable {
   final String name;
   final SpellCardType type;
   @JsonKey(unknownEnumValue: SpellCardTier.unranked)
-  final SpellCardTier? tier; // 符卡梯队
+  final SpellCardTier? tier; // 符卡评级
   final String description;
   final String? iconUrl;
   final String? videoUrl; // 演示视频URL（WebM格式）
@@ -690,7 +686,7 @@ class SpellCardEditItem extends Equatable {
   final int? cooldown;
   final List<String>? tips;
   final int? videoFileId; // 演示视频文件ID
-  final String? tier; // 梯队 T0/T1/T2/T3/T4/T5/roadside/unranked
+  final String? tier; // 评级 T0/T1/T2/T3/T4/T5/unranked
 
   const SpellCardEditItem({
     required this.id,
@@ -716,7 +712,7 @@ class SpellCardEditItem extends Equatable {
 class SpellCardCreateItem extends Equatable {
   final String name;
   final String type; // normal/ultimate/passive
-  final String? tier; // 梯队 T0/T1/T2/T3/T4/T5/roadside/unranked
+  final String? tier; // 评级 T0/T1/T2/T3/T4/T5/unranked
   final String? description;
   final String? iconUrl;
   final int? videoFileId;
@@ -1144,9 +1140,9 @@ class EditRequestParsedData extends Equatable {
 }
 
 
-// ============ 符卡梯队列表 API 相关模型 ============
+// ============ 符卡评级列表 API 相关模型 ============
 
-/// 符卡梯队列表项（包含角色信息）
+/// 符卡评级列表项（包含角色信息）
 @JsonSerializable()
 class SpellCardTierItem extends Equatable {
   final int id;
@@ -1189,7 +1185,7 @@ class SpellCardTierItem extends Equatable {
   ];
 }
 
-/// 符卡梯队分组
+/// 符卡评级分组
 @JsonSerializable()
 class SpellCardTierGroup extends Equatable {
   final String tier;
@@ -1212,7 +1208,7 @@ class SpellCardTierGroup extends Equatable {
   List<Object?> get props => [tier, tierLabel, spellCards, count];
 }
 
-/// 符卡梯队列表响应
+/// 符卡评级列表响应
 @JsonSerializable()
 class SpellCardTierListResponse extends Equatable {
   final List<SpellCardTierGroup> tiers;
