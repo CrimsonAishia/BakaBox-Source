@@ -1363,8 +1363,8 @@ class SpellCardTierItem extends Equatable {
   final SpellCardTier tier;
   final String? description;
   final String? iconUrl;
-  final int? cost;
-  final int? cooldown;
+  final double? cost;
+  final double? cooldown;
   final String? damage;
 
   const SpellCardTierItem({

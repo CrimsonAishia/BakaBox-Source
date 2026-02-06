@@ -14,6 +14,18 @@ import '../widgets/character_gallery/character_image_viewer.dart';
 import '../widgets/character_gallery/character_unified_edit_dialog.dart';
 import '../widgets/character_gallery/character_unified_history_dialog.dart';
 
+/// 格式化数值：整数不显示小数点，小数保留原样
+String _formatNumber(num value) {
+  if (value is int) {
+    return value.toString();
+  }
+  final d = value as double;
+  if (d == d.truncateToDouble()) {
+    return d.toInt().toString();
+  }
+  return d.toString();
+}
+
 /// 幻想乡卷轴风格 - 角色图鉴页面
 class CharacterGalleryDesktop extends StatefulWidget {
   const CharacterGalleryDesktop({super.key});
@@ -276,7 +288,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         controller: _searchController,
         style: TextStyle(color: inkColor, fontSize: 13),
         decoration: InputDecoration(
-          hintText: '搜索角色...',
+          hintText: '搜索...',
           hintStyle: TextStyle(
             color: inkColor.withValues(alpha: 0.4),
             fontSize: 13,
@@ -1221,7 +1233,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         _buildStatItem(
           Icons.timer_outlined,
           '冷却',
-          '${card.cooldown}s',
+          '${_formatNumber(card.cooldown!)}s',
           CharacterGalleryTheme.getCooldownColor(context),
           isDark,
         ),
@@ -1246,7 +1258,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         _buildStatItem(
           Icons.local_fire_department,
           isUltimate ? 'B点' : 'P点',
-          '${card.cost}',
+          _formatNumber(card.cost!),
           isUltimate
               ? CharacterGalleryTheme.getBCostColor(context)
               : CharacterGalleryTheme.getPCostColor(context),
@@ -1539,7 +1551,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         _buildStatItem(
           Icons.timer_outlined,
           '冷却',
-          '${skill.cooldown}s',
+          '${_formatNumber(skill.cooldown!)}s',
           CharacterGalleryTheme.getCooldownColor(context),
           isDark,
         ),
@@ -2101,7 +2113,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         _buildStatItem(
           Icons.timer_outlined,
           '冷却',
-          '${spellCard.cooldown}s',
+          '${_formatNumber(spellCard.cooldown!)}s',
           CharacterGalleryTheme.getCooldownColor(context),
           isDark,
         ),
@@ -2126,7 +2138,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         _buildStatItem(
           Icons.local_fire_department,
           isUltimate ? 'B点' : 'P点',
-          '${spellCard.cost}',
+          _formatNumber(spellCard.cost!),
           isUltimate
               ? CharacterGalleryTheme.getBCostColor(context)
               : CharacterGalleryTheme.getPCostColor(context),

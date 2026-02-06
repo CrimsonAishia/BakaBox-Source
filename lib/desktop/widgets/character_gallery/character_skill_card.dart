@@ -185,7 +185,7 @@ class SkillCard extends StatelessWidget {
                   _StatItem(
                     icon: Icons.timer_outlined,
                     label: '冷却',
-                    value: '${cooldown}s',
+                    value: '${_formatNumber(cooldown!)}s',
                     color: CharacterGalleryTheme.getCooldownColor(context),
                   ),
                 if (damage != null)
@@ -200,7 +200,7 @@ class SkillCard extends StatelessWidget {
                   _StatItem(
                     icon: Icons.local_fire_department,
                     label: type == 'ultimate' ? 'B点' : 'P点',
-                    value: '$cost',
+                    value: _formatNumber(cost!),
                     color: type == 'ultimate'
                         ? CharacterGalleryTheme.getBCostColor(context)
                         : CharacterGalleryTheme.getPCostColor(context),
@@ -265,6 +265,18 @@ class EmptySkillHint extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 格式化数值：整数不显示小数点，小数保留原样
+String _formatNumber(num value) {
+  if (value is int) {
+    return value.toString();
+  }
+  final d = value as double;
+  if (d == d.truncateToDouble()) {
+    return d.toInt().toString();
+  }
+  return d.toString();
 }
 
 /// 数值统计项（图标+文字+数值）
