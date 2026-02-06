@@ -2342,9 +2342,9 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
 
   /// 符卡属性行（东方风格，带阴影）
   Widget _buildSpellCardStatsRow({
-    int? cooldown,
+    double? cooldown,
     String? damage,
-    int? cost,
+    double? cost,
     required String type,
     required Color accentColor,
   }) {
@@ -2360,7 +2360,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
         _buildStatItemWithShadow(
           Icons.timer_outlined,
           '冷却',
-          '${cooldown}s',
+          '${cooldown % 1 == 0 ? cooldown.toInt() : cooldown}s',
           CharacterGalleryTheme.getCooldownColor(context),
           overlayColor,
         ),
@@ -2385,7 +2385,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
         _buildStatItemWithShadow(
           Icons.local_fire_department,
           isUltimate ? 'B点' : 'P点',
-          '$cost',
+          '${cost % 1 == 0 ? cost.toInt() : cost}',
           isUltimate
               ? CharacterGalleryTheme.getBCostColor(context)
               : CharacterGalleryTheme.getPCostColor(context),
@@ -2460,7 +2460,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
 
   /// 僵尸技能属性行（东方风格，带阴影）
   Widget _buildZombieSkillStatsRow({
-    int? cooldown,
+    double? cooldown,
     String? damage,
     String? range,
     String? special,
@@ -2479,7 +2479,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
         _buildStatItemWithShadow(
           Icons.timer_outlined,
           '冷却',
-          '${cooldown}s',
+          '${cooldown % 1 == 0 ? cooldown.toInt() : cooldown}s',
           CharacterGalleryTheme.getCooldownColor(context),
           overlayColor,
         ),
@@ -2650,10 +2650,10 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
         descText != card.description ||
         damageText != (card.damage ?? '') ||
         (cooldownText.isNotEmpty
-            ? int.tryParse(cooldownText) != card.cooldown
+            ? double.tryParse(cooldownText) != card.cooldown
             : card.cooldown != null) ||
         (costText.isNotEmpty
-            ? int.tryParse(costText) != card.cost
+            ? double.tryParse(costText) != card.cost
             : card.cost != null) ||
         _tempTier != card.tier;
 
@@ -2662,8 +2662,8 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
         _spellCardEdits[card.id] = SpellCardEditData(
           description: descText,
           damage: damageText.isNotEmpty ? damageText : null,
-          cooldown: int.tryParse(cooldownText),
-          cost: int.tryParse(costText),
+          cooldown: double.tryParse(cooldownText),
+          cost: double.tryParse(costText),
           tier: _tempTier,
         );
       } else {
@@ -2822,7 +2822,9 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
   void _saveZombieSkillInlineEdit(ZombieSkill skill) {
     final newDescription =
         _zombieTempDescriptionController?.text ?? skill.description;
-    final newCooldown = int.tryParse(_zombieTempCooldownController?.text ?? '');
+    final newCooldown = double.tryParse(
+      _zombieTempCooldownController?.text ?? '',
+    );
     final newDamage = _zombieTempDamageController?.text;
     final newRange = _zombieTempRangeController?.text;
     final newSpecial = _zombieTempSpecialController?.text;

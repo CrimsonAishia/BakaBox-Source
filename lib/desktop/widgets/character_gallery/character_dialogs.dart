@@ -715,8 +715,8 @@ class _EditSpellCardDialogState extends State<EditSpellCardDialog> {
             damage: _damageController.text.isNotEmpty
                 ? _damageController.text
                 : null,
-            cooldown: int.tryParse(_cooldownController.text),
-            cost: int.tryParse(_costController.text),
+            cooldown: double.tryParse(_cooldownController.text),
+            cost: double.tryParse(_costController.text),
           ),
         ],
       ),
@@ -901,7 +901,7 @@ class _EditZombieSkillDialogState extends State<EditZombieSkillDialog> {
             range: _rangeController.text.isNotEmpty
                 ? _rangeController.text
                 : null,
-            cooldown: int.tryParse(_cooldownController.text),
+            cooldown: double.tryParse(_cooldownController.text),
             special: _specialController.text.isNotEmpty
                 ? _specialController.text
                 : null,
@@ -1353,8 +1353,8 @@ class _AddSpellCardDialogState extends State<AddSpellCardDialog> {
             damage: _damageController.text.isNotEmpty
                 ? _damageController.text
                 : null,
-            cooldown: int.tryParse(_cooldownController.text),
-            cost: int.tryParse(_costController.text),
+            cooldown: double.tryParse(_cooldownController.text),
+            cost: double.tryParse(_costController.text),
           ),
         ],
       ),
@@ -1585,7 +1585,7 @@ class _AddZombieSkillDialogState extends State<AddZombieSkillDialog> {
             damage: _damageController.text.isNotEmpty
                 ? _damageController.text
                 : null,
-            cooldown: int.tryParse(_cooldownController.text),
+            cooldown: double.tryParse(_cooldownController.text),
             range: _rangeController.text.isNotEmpty
                 ? _rangeController.text
                 : null,
