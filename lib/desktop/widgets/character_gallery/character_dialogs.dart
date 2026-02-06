@@ -469,7 +469,7 @@ class _EditSubModelAcquisitionDialogState
                   onSelect: (type) => setState(() => _selectedType = type),
                 ),
                 AcquisitionTypeChip(
-                  label: '🎁 自定义',
+                  label: '自定义',
                   type: AcquisitionType.custom,
                   selectedType: _selectedType,
                   onSelect: (type) => setState(() => _selectedType = type),
@@ -477,7 +477,7 @@ class _EditSubModelAcquisitionDialogState
                 // 只有未维护时才显示"未知"选项
                 if (!isMaintained)
                   AcquisitionTypeChip(
-                    label: '❓ 未知',
+                    label: '未知',
                     type: AcquisitionType.unknown,
                     selectedType: _selectedType,
                     onSelect: (type) => setState(() => _selectedType = type),

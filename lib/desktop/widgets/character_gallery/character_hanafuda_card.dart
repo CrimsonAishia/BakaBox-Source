@@ -173,7 +173,7 @@ class AcquisitionTag extends StatelessWidget {
       text,
       color,
     ) = acquisition == null || acquisition!.type == AcquisitionType.unknown
-        ? ('❓', '获取途径未知', inkColor.withValues(alpha: 0.5))
+        ? ('', '获取途径未知', inkColor.withValues(alpha: 0.5))
         : switch (acquisition!.type) {
             AcquisitionType.gold => (
               '',
@@ -186,12 +186,12 @@ class AcquisitionTag extends StatelessWidget {
               CharacterGalleryTheme.getVermillion(context),
             ),
             AcquisitionType.custom => (
-              '🎁',
+              '',
               acquisition!.customSource ?? '特殊',
               CharacterGalleryTheme.sakuraPink,
             ),
             AcquisitionType.unknown => (
-              '❓',
+              '',
               '获取途径未知',
               inkColor.withValues(alpha: 0.5),
             ),

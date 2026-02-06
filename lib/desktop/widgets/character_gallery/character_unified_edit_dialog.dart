@@ -518,14 +518,14 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                 vermillion,
               ),
               _buildAcquisitionTypeChip(
-                '🎁 自定义',
+                '自定义',
                 AcquisitionType.custom,
                 const Color(0xFF4A7C59),
               ),
               // 只有未维护时才显示"未知"选项
               if (!isMaintained)
                 _buildAcquisitionTypeChip(
-                  '❓ 未知',
+                  '未知',
                   AcquisitionType.unknown,
                   scrollBrown,
                 ),
