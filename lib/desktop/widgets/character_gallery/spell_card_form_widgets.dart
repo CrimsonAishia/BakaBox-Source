@@ -135,7 +135,7 @@ class SpellCardTextField extends StatelessWidget {
 }
 
 
-/// 数值输入框（仅允许数字）
+/// 数值输入框（允许整数和小数）
 class SpellCardNumberField extends StatelessWidget {
   final String label;
   final TextEditingController controller;
@@ -183,8 +183,11 @@ class SpellCardNumberField extends StatelessWidget {
         const SizedBox(height: 6),
         TextField(
           controller: controller,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+            _SingleDecimalPointFormatter(),
+          ],
           style: TextStyle(color: inkColor, fontSize: 14),
           decoration: InputDecoration(
             hintText: hint,
@@ -210,6 +213,22 @@ class SpellCardNumberField extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+/// 确保只有一个小数点的格式化器
+class _SingleDecimalPointFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+    // 如果有多个小数点，拒绝输入
+    if ('.'.allMatches(text).length > 1) {
+      return oldValue;
+    }
+    return newValue;
   }
 }
 
@@ -664,7 +683,7 @@ class SpellCardDialogFooter extends StatelessWidget {
   }
 }
 
-/// 符卡消耗输入框（带类型区分颜色）
+/// 符卡消耗输入框（带类型区分颜色，允许整数和小数）
 class SpellCardCostField extends StatelessWidget {
   final TextEditingController controller;
   final bool isUltimate;
@@ -705,8 +724,11 @@ class SpellCardCostField extends StatelessWidget {
         const SizedBox(height: 6),
         TextField(
           controller: controller,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+            _SingleDecimalPointFormatter(),
+          ],
           style: TextStyle(color: inkColor, fontSize: 14),
           decoration: InputDecoration(
             hintText: isUltimate ? '100' : '50',
