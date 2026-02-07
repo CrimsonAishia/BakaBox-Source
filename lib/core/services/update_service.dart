@@ -339,13 +339,12 @@ class UpdateService {
     } catch (e) {
       LogService.e('启动安装程序失败', e);
       
-      // 备用方案：通过 cmd 启动
+      // 备用方案：通过 start 命令启动（/b 表示不打开新窗口）
       try {
         await Process.start(
           'cmd',
-          ['/c', 'start', '', exePath, '/S'],
+          ['/c', 'start', '/b', '', exePath, '/S'],
           mode: ProcessStartMode.detached,
-          runInShell: true,
         );
         exit(0);
       } catch (e2) {
