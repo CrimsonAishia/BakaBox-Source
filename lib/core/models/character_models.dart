@@ -1327,12 +1327,14 @@ class EditRequestParsedData extends Equatable {
   final AcquisitionEditData? acquisition;
   final SpellCardsEditData? spellCards;
   final ZombieSkillsEditData? zombieSkills;
+  final PreviewImagesEditData? previewImages;
 
   const EditRequestParsedData({
     this.description,
     this.acquisition,
     this.spellCards,
     this.zombieSkills,
+    this.previewImages,
   });
 
   factory EditRequestParsedData.fromJson(Map<String, dynamic> json) =>
@@ -1345,6 +1347,7 @@ class EditRequestParsedData extends Equatable {
     acquisition,
     spellCards,
     zombieSkills,
+    previewImages,
   ];
 }
 

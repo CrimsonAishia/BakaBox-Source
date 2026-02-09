@@ -135,6 +135,17 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
       );
     }
 
+    // 预填充预览图编辑数据
+    final pendingPreviewImages = parsedData?.previewImages;
+    if (pendingPreviewImages != null && pendingPreviewImages.hasAnyChange) {
+      _thumbnailFileId = pendingPreviewImages.thumbnailFileId;
+      _previewFrontId = pendingPreviewImages.previewFrontId;
+      _previewLeftId = pendingPreviewImages.previewLeftId;
+      _previewRightId = pendingPreviewImages.previewRightId;
+      _previewBackId = pendingPreviewImages.previewBackId;
+      _previewImagesChanged = true; // 标记为已修改
+    }
+
     // 预填充符卡编辑数据
     _initSpellCardEditsFromPendingRequest(parsedData?.spellCards);
 
@@ -519,6 +530,9 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
     final preview = widget.subModel.preview ?? widget.character.preview;
     final thumbnailUrl = widget.subModel.thumbnailUrl;
 
+    // 获取待审核申请中的预览图 fileId（用于预填充）
+    final pendingPreviewImages = widget.pendingRequestDetail?.parsedEditData?.previewImages;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -558,6 +572,12 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
             leftUrl: preview?.left,
             rightUrl: preview?.right,
             backUrl: preview?.back,
+            // 传入待审核申请中的 fileId（用于预填充显示）
+            thumbnailFileId: pendingPreviewImages?.thumbnailFileId,
+            frontFileId: pendingPreviewImages?.previewFrontId,
+            leftFileId: pendingPreviewImages?.previewLeftId,
+            rightFileId: pendingPreviewImages?.previewRightId,
+            backFileId: pendingPreviewImages?.previewBackId,
             onChanged: (fileIds) {
               setState(() {
                 _thumbnailFileId = fileIds['thumbnailFileId'];
@@ -694,6 +714,13 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
 
+    // 判断是否已维护：如果原始数据不为null且不是unknown，则认为已维护
+    final originalAcquisition =
+        widget.subModel.acquisition ?? widget.character.acquisition;
+    final isMaintained =
+        originalAcquisition != null &&
+        originalAcquisition.type != AcquisitionType.unknown;
+
     // 预设选项的颜色
     const presetColors = {
       '随机母体': Color(0xFFB44D4D), // 红色 - 母体
@@ -719,15 +746,21 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                   preset,
                   preset,
                   presetColors[preset] ?? scrollBrown,
+                  isMaintained: isMaintained,
                 ),
               ),
               // 自定义选项
-              _buildZombieOriginChip('自定义', null, customColor),
+              _buildZombieOriginChip('自定义', null, customColor, isMaintained: isMaintained),
+              // 只有未维护时才显示"未知"选项
+              if (!isMaintained)
+                _buildZombieOriginChip('未知', 'unknown', scrollBrown, isMaintained: isMaintained),
             ],
           ),
 
-          // 自定义输入框（仅在选择"自定义"时显示）
-          if (_currentZombieOriginPreset == null && !_isZombieOriginPreset) ...[
+          // 自定义输入框（仅在选择"自定义"时显示，且不是未知状态）
+          if (_acquisitionType == AcquisitionType.custom && 
+              _currentZombieOriginPreset == null && 
+              !_isZombieOriginPreset) ...[
             const SizedBox(height: 20),
             _buildSectionTitle('自定义来源', Icons.edit_outlined),
             const SizedBox(height: 8),
@@ -754,10 +787,27 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
   /// 构建僵尸来源选择芯片
   /// [label] 显示的文本
   /// [value] 存储的值，null 表示自定义选项
-  Widget _buildZombieOriginChip(String label, String? value, Color color) {
-    final isSelected = value == null
-        ? _currentZombieOriginPreset == null && !_isZombieOriginPreset
-        : _acquisitionCustomController.text == value;
+  /// 构建僵尸来源选择芯片
+  /// [label] 显示的文本
+  /// [value] 存储的值，null 表示自定义选项，'unknown' 表示未知选项
+  /// [isMaintained] 是否已维护
+  Widget _buildZombieOriginChip(String label, String? value, Color color, {required bool isMaintained}) {
+    // 判断是否选中
+    bool isSelected;
+    if (value == 'unknown') {
+      // "未知"选项：当 _acquisitionType 是 unknown 时选中
+      isSelected = _acquisitionType == AcquisitionType.unknown;
+    } else if (value == null) {
+      // "自定义"选项：当 _acquisitionType 是 custom 且不是预设值时选中
+      isSelected = _acquisitionType == AcquisitionType.custom && 
+                   _currentZombieOriginPreset == null && 
+                   !_isZombieOriginPreset;
+    } else {
+      // 预设选项：当 _acquisitionType 是 custom 且 customSource 等于该值时选中
+      isSelected = _acquisitionType == AcquisitionType.custom && 
+                   _acquisitionCustomController.text == value;
+    }
+    
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inputBg = CharacterGalleryTheme.getInputBackground(context);
@@ -765,15 +815,21 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
     return GestureDetector(
       onTap: () {
         setState(() {
-          _acquisitionType = AcquisitionType.custom;
-          if (value == null) {
-            // 选择自定义时，如果当前是预设值则清空
-            if (_isZombieOriginPreset) {
-              _acquisitionCustomController.text = '';
-            }
+          if (value == 'unknown') {
+            // 选择"未知"时，设置为 unknown 类型
+            _acquisitionType = AcquisitionType.unknown;
+            _acquisitionCustomController.text = '';
           } else {
-            // 选择预设值时，直接设置为该值
-            _acquisitionCustomController.text = value;
+            _acquisitionType = AcquisitionType.custom;
+            if (value == null) {
+              // 选择自定义时，如果当前是预设值则清空
+              if (_isZombieOriginPreset) {
+                _acquisitionCustomController.text = '';
+              }
+            } else {
+              // 选择预设值时，直接设置为该值
+              _acquisitionCustomController.text = value;
+            }
           }
           _checkAcquisitionChanged();
         });

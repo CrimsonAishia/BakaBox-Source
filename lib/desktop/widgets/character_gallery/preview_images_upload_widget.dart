@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../core/services/file_upload_service.dart';
+import '../../../core/services/image_url_service.dart';
 import '../../../core/utils/log_service.dart';
 import 'character_gallery_theme.dart';
 import 'image_crop_dialog.dart';
@@ -442,6 +443,12 @@ class PreviewImagesUploadWidget extends StatefulWidget {
   final String? leftUrl;
   final String? rightUrl;
   final String? backUrl;
+  // 支持通过 fileId 加载预览图（用于待审核申请的预填充）
+  final int? thumbnailFileId;
+  final int? frontFileId;
+  final int? leftFileId;
+  final int? rightFileId;
+  final int? backFileId;
   final ValueChanged<Map<String, int?>>? onChanged;
   final bool enabled;
 
@@ -452,6 +459,11 @@ class PreviewImagesUploadWidget extends StatefulWidget {
     this.leftUrl,
     this.rightUrl,
     this.backUrl,
+    this.thumbnailFileId,
+    this.frontFileId,
+    this.leftFileId,
+    this.rightFileId,
+    this.backFileId,
     this.onChanged,
     this.enabled = true,
   });
@@ -469,8 +481,61 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
   int? _rightFileId;
   int? _backFileId;
 
+  // 从 fileId 加载的 URL（用于待审核申请预填充）
+  String? _thumbnailUrlFromFileId;
+  String? _frontUrlFromFileId;
+  String? _leftUrlFromFileId;
+  String? _rightUrlFromFileId;
+  String? _backUrlFromFileId;
+
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    // 如果有 fileId，预先加载 URL
+    _loadUrlsFromFileIds();
+    // 初始化 fileId（用于预填充场景）
+    _thumbnailFileId = widget.thumbnailFileId;
+    _frontFileId = widget.frontFileId;
+    _leftFileId = widget.leftFileId;
+    _rightFileId = widget.rightFileId;
+    _backFileId = widget.backFileId;
+  }
+
+  Future<void> _loadUrlsFromFileIds() async {
+    if (widget.thumbnailFileId != null) {
+      try {
+        final url = await ImageUrlService.instance.getSignedUrlById(widget.thumbnailFileId!);
+        if (mounted) setState(() => _thumbnailUrlFromFileId = url);
+      } catch (_) {}
+    }
+    if (widget.frontFileId != null) {
+      try {
+        final url = await ImageUrlService.instance.getSignedUrlById(widget.frontFileId!);
+        if (mounted) setState(() => _frontUrlFromFileId = url);
+      } catch (_) {}
+    }
+    if (widget.leftFileId != null) {
+      try {
+        final url = await ImageUrlService.instance.getSignedUrlById(widget.leftFileId!);
+        if (mounted) setState(() => _leftUrlFromFileId = url);
+      } catch (_) {}
+    }
+    if (widget.rightFileId != null) {
+      try {
+        final url = await ImageUrlService.instance.getSignedUrlById(widget.rightFileId!);
+        if (mounted) setState(() => _rightUrlFromFileId = url);
+      } catch (_) {}
+    }
+    if (widget.backFileId != null) {
+      try {
+        final url = await ImageUrlService.instance.getSignedUrlById(widget.backFileId!);
+        if (mounted) setState(() => _backUrlFromFileId = url);
+      } catch (_) {}
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -491,6 +556,8 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
 
   Widget _buildThumbnailSection(BuildContext context, Color inkColor) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+    // 优先使用从 fileId 加载的 URL，其次使用传入的 URL
+    final thumbnailUrl = _thumbnailUrlFromFileId ?? widget.thumbnailUrl;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -522,7 +589,7 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
           width: 120,
           height: 120,
           child: _ThumbnailUploadItem(
-            currentImageUrl: widget.thumbnailUrl,
+            currentImageUrl: thumbnailUrl,
             enabled: widget.enabled,
             onUploadComplete: (result) {
               if (result.isSuccess) {
@@ -538,6 +605,11 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
 
   Widget _buildPreviewsSection(BuildContext context, Color inkColor) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+    // 优先使用从 fileId 加载的 URL，其次使用传入的 URL
+    final frontUrl = _frontUrlFromFileId ?? widget.frontUrl;
+    final leftUrl = _leftUrlFromFileId ?? widget.leftUrl;
+    final rightUrl = _rightUrlFromFileId ?? widget.rightUrl;
+    final backUrl = _backUrlFromFileId ?? widget.backUrl;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -571,7 +643,7 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
             PreviewImageUploadItem(
               label: '正面',
               icon: Icons.person_outline,
-              currentImageUrl: widget.frontUrl,
+              currentImageUrl: frontUrl,
               enabled: widget.enabled,
               onUploadComplete: (result) {
                 if (result.isSuccess) {
@@ -584,7 +656,7 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
             PreviewImageUploadItem(
               label: '左侧',
               icon: Icons.arrow_back,
-              currentImageUrl: widget.leftUrl,
+              currentImageUrl: leftUrl,
               enabled: widget.enabled,
               onUploadComplete: (result) {
                 if (result.isSuccess) {
@@ -597,7 +669,7 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
             PreviewImageUploadItem(
               label: '右侧',
               icon: Icons.arrow_forward,
-              currentImageUrl: widget.rightUrl,
+              currentImageUrl: rightUrl,
               enabled: widget.enabled,
               onUploadComplete: (result) {
                 if (result.isSuccess) {
@@ -610,7 +682,7 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
             PreviewImageUploadItem(
               label: '背面',
               icon: Icons.person_outline,
-              currentImageUrl: widget.backUrl,
+              currentImageUrl: backUrl,
               enabled: widget.enabled,
               onUploadComplete: (result) {
                 if (result.isSuccess) {

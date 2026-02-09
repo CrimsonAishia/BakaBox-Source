@@ -20,28 +20,34 @@ class PreviewImageCard extends StatefulWidget {
 class _PreviewImageCardState extends State<PreviewImageCard> {
   bool _isHovered = false;
 
+  /// 是否有有效的图片URL
+  bool get _hasValidImage => widget.imageUrl != null && widget.imageUrl!.isNotEmpty;
+
+  /// 是否可点击（有有效图片且有点击回调）
+  bool get _isClickable => _hasValidImage && widget.onTap != null;
+
   @override
   Widget build(BuildContext context) {
     final washiColor = CharacterGalleryTheme.getWashiColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
 
     return MouseRegion(
-      cursor: widget.onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      cursor: _isClickable ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
-        onTap: widget.onTap,
+        onTap: _isClickable ? widget.onTap : null,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             border: Border.all(
-              color: _isHovered
+              color: _isHovered && _isClickable
                   ? CharacterGalleryTheme.getGold(context)
                   : CharacterGalleryTheme.getGold(context).withValues(alpha: 0.5),
               width: 3,
             ),
             borderRadius: BorderRadius.circular(8),
-            boxShadow: _isHovered
+            boxShadow: _isHovered && _isClickable
                 ? [
                     BoxShadow(
                       color: CharacterGalleryTheme.getGold(context).withValues(alpha: 0.3),
@@ -57,7 +63,7 @@ class _PreviewImageCardState extends State<PreviewImageCard> {
                 aspectRatio: 16 / 10,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(5),
-                  child: widget.imageUrl != null
+                  child: _hasValidImage
                       ? DiskCachedImage(
                           imageUrl: widget.imageUrl!,
                           fit: BoxFit.cover,
@@ -74,8 +80,8 @@ class _PreviewImageCardState extends State<PreviewImageCard> {
                       : _buildPlaceholder(washiColor, scrollBrown),
                 ),
               ),
-              // Hover 时显示放大图标
-              if (_isHovered && widget.imageUrl != null)
+              // Hover 时显示放大图标（仅在可点击时）
+              if (_isHovered && _isClickable)
                 Positioned.fill(
                   child: Container(
                     decoration: BoxDecoration(
