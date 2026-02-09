@@ -1601,7 +1601,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
             'preview_${state.selectedSubModelId}_${state.previewPosition}',
           ),
           imageUrl: previewUrl,
-          onTap: previewUrl != null
+          onTap: (previewUrl != null && previewUrl.isNotEmpty)
               ? () => _showImageViewer(previewUrl, state)
               : null,
         ),
@@ -1648,6 +1648,9 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   }
 
   void _showImageViewer(String imageUrl, CharacterGalleryState state) {
+    // 如果传入的 imageUrl 为空，直接返回
+    if (imageUrl.isEmpty) return;
+
     final character = state.selectedCharacter;
     final preview = state.currentSubModel?.preview ?? character?.preview;
     final allImages = <String>[];
@@ -1659,16 +1662,19 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       if (preview.back.isNotEmpty) allImages.add(preview.back);
     }
 
-    final initialIndex = allImages
-        .indexOf(imageUrl)
-        .clamp(0, allImages.length - 1);
+    // 如果没有任何有效图片，直接返回
+    if (allImages.isEmpty) return;
+
+    final initialIndex = allImages.indexOf(imageUrl);
+    // 如果当前图片不在列表中，默认显示第一张
+    final safeIndex = initialIndex >= 0 ? initialIndex : 0;
 
     showDialog(
       context: context,
       barrierColor: Colors.black87,
       builder: (context) => CharacterImageViewerDialog(
-        images: allImages.isEmpty ? [imageUrl] : allImages,
-        initialIndex: initialIndex,
+        images: allImages,
+        initialIndex: safeIndex,
         characterName: character?.name ?? '',
       ),
     );

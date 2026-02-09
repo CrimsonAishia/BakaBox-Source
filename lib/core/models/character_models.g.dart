@@ -912,6 +912,11 @@ EditRequestParsedData _$EditRequestParsedDataFromJson(
       : ZombieSkillsEditData.fromJson(
           json['zombieSkills'] as Map<String, dynamic>,
         ),
+  previewImages: json['previewImages'] == null
+      ? null
+      : PreviewImagesEditData.fromJson(
+          json['previewImages'] as Map<String, dynamic>,
+        ),
 );
 
 Map<String, dynamic> _$EditRequestParsedDataToJson(
@@ -921,6 +926,7 @@ Map<String, dynamic> _$EditRequestParsedDataToJson(
   'acquisition': instance.acquisition,
   'spellCards': instance.spellCards,
   'zombieSkills': instance.zombieSkills,
+  'previewImages': instance.previewImages,
 };
 
 SpellCardTierItem _$SpellCardTierItemFromJson(Map<String, dynamic> json) =>
