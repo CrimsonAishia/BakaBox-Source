@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dart_ping/dart_ping.dart';
 import '../../core/core.dart';
-import '../widgets/page_layout.dart';
 import '../widgets/server/server_card.dart';
 import '../widgets/server/server_card_skeleton.dart';
 import '../widgets/category_card.dart';
@@ -347,8 +346,6 @@ class _ServersDesktopState extends State<ServersDesktop> {
 
   @override
   void dispose() {
-    // 强制隐藏所有浮动面板，防止页面切换后面板残留
-    ServerCardFloatingPanelHelper.hideAllPanels();
     _serverBloc?.add(ServerStopPeriodicRefresh());
     _stopCategoryCountsRefreshTimer();
     _serversScrollController.removeListener(_updateServersScrollIndicators);
@@ -419,36 +416,13 @@ class _ServersDesktopState extends State<ServersDesktop> {
         backgroundColor: Theme.of(context).brightness == Brightness.dark
             ? const Color(0xFF0F172A)
             : const Color(0xFFF3F4F6),
-        body: PageLayout(
-          title: '服务器列表',
-          subtitle: '选择一个服务器开始游戏',
-          headerActions: _buildHeaderActions(),
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          padding: const EdgeInsets.fromLTRB(15, 60, 15, 0),
           child: _buildMainContent(),
         ),
       ),
-    );
-  }
-
-  /// 头部操作区域（刷新进度）
-  Widget _buildHeaderActions() {
-    return BlocBuilder<ServerBloc, ServerState>(
-      builder: (context, state) {
-        if (state.selectedCategory == null) {
-          return const SizedBox.shrink();
-        }
-
-        final categoryName = state.selectedCategory?.modelName ?? '';
-        final isRefreshing = state.isCategoryLoading(categoryName) || state.isLoadingServers;
-
-        // 使用分类名作为 key，切换分类时重建组件，重置倒计时
-        return CompactRefreshProgress(
-          key: ValueKey('refresh_$categoryName'),
-          refreshInterval: _kRefreshInterval,
-          isRefreshing: isRefreshing,
-          onRefresh: () => _handleRefresh(state),
-          onForceRefresh: () => _handleForceRefresh(),
-        );
-      },
     );
   }
 
@@ -500,12 +474,14 @@ class _ServersDesktopState extends State<ServersDesktop> {
     );
   }
 
-  /// 服务器列表头部（包含添加按钮）
+  /// 服务器列表头部（包含添加按钮和倒计时）
   Widget _buildServersHeader() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return BlocBuilder<ServerBloc, ServerState>(
       builder: (context, state) {
         final canAddServer = state.selectedCategory?.isCustom == true;
+        final categoryName = state.selectedCategory?.modelName ?? '';
+        final isRefreshing = state.isCategoryLoading(categoryName) || state.isLoadingServers;
 
         return Padding(
           padding: const EdgeInsets.all(15),
@@ -616,6 +592,17 @@ class _ServersDesktopState extends State<ServersDesktop> {
                   ),
                 ),
               ),
+              // 倒计时刷新组件
+              if (state.selectedCategory != null) ...[
+                const SizedBox(width: 12),
+                CompactRefreshProgress(
+                  key: ValueKey('refresh_$categoryName'),
+                  refreshInterval: _kRefreshInterval,
+                  isRefreshing: isRefreshing,
+                  onRefresh: () => _handleRefresh(state),
+                  onForceRefresh: () => _handleForceRefresh(),
+                ),
+              ],
             ],
           ),
         );
@@ -824,7 +811,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
   ) {
     final showSkeleton = server.isLoading && server.serverData == null;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.only(bottom: 13),
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: showSkeleton
@@ -880,7 +867,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
                 key: ValueKey('card_${server.serverItem.address}'),
                 server: server,
                 categoryName: state.selectedCategory?.modelName,
-                disableHoverPanel: true, // 排序模式下禁用浮动面板避免Overlay冲突
+                disableHoverEffect: true, // 排序模式下禁用悬浮效果
                 onTap: () => _showServerDetails(server),
                 onDelete: () {
                   final categoryName = state.selectedCategory?.modelName;
