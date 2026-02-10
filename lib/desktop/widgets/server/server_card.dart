@@ -20,66 +20,13 @@ import '../queue/queue_window.dart';
 import '../../../core/widgets/map_contribution_dialog.dart';
 import '../edit_server_dialog.dart';
 
-/// 全局浮动面板管理器 - 确保同时只显示一个面板
-class _FloatingPanelManager {
-  static _ServerCardState? _currentCard;
-  static OverlayEntry? _currentEntry;
-
-  /// 显示新面板前，隐藏之前的面板
-  static void showPanel(_ServerCardState card) {
-    if (_currentCard != null && _currentCard != card) {
-      _currentCard?._hideFloatingPanelImmediate();
-    }
-    _currentCard = card;
-  }
-
-  /// 注册当前显示的 OverlayEntry
-  static void registerEntry(OverlayEntry entry) {
-    _currentEntry = entry;
-  }
-
-  /// 清除当前面板引用
-  static void clearPanel(_ServerCardState card) {
-    if (_currentCard == card) {
-      _currentCard = null;
-      _currentEntry = null;
-    }
-  }
-
-  /// 强制隐藏所有面板（页面切换时调用）
-  static void hideAllPanels() {
-    // 先尝试通过 card 隐藏
-    _currentCard?._hideFloatingPanelImmediate();
-    _currentCard = null;
-    
-    // 兜底：直接移除 entry
-    final entry = _currentEntry;
-    _currentEntry = null;
-    if (entry != null && entry.mounted) {
-      try {
-        entry.remove();
-      } catch (_) {
-        // 忽略移除时的错误
-      }
-    }
-  }
-}
-
-/// 服务器卡片浮动面板工具类 - 提供公开的清理方法
-class ServerCardFloatingPanelHelper {
-  /// 强制隐藏所有浮动面板（页面切换时调用）
-  static void hideAllPanels() {
-    _FloatingPanelManager.hideAllPanels();
-  }
-}
-
 /// 服务器卡片
 class ServerCard extends StatefulWidget {
   final ExtendedServerItem server;
   final String? categoryName; // 分类名称
   final VoidCallback? onTap;
   final VoidCallback? onDelete; // 删除回调（仅自定义服务器）
-  final bool disableHoverPanel; // 是否禁用悬浮面板（排序模式时用）
+  final bool disableHoverEffect; // 是否禁用悬浮效果（排序模式时用）
 
   const ServerCard({
     super.key,
@@ -87,7 +34,7 @@ class ServerCard extends StatefulWidget {
     this.categoryName,
     this.onTap,
     this.onDelete,
-    this.disableHoverPanel = false,
+    this.disableHoverEffect = false,
   });
 
   @override
@@ -99,11 +46,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   AnimationController? _rgbController;
   bool _isConnecting = false;
   bool _isHovered = false;
-
-  // 浮动面板相关
-  OverlayEntry? _floatingPanelEntry;
-  final LayerLink _layerLink = LayerLink();
-  bool _isPanelHovered = false; // 追踪面板hover状态
 
   // 监听 StatusWindowService 状态
   final StatusWindowService _statusService = StatusWindowService();
@@ -144,13 +86,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   @override
   void didUpdateWidget(covariant ServerCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-
-    // 检查排序模式变化，如果切换到禁用状态，立即隐藏面板
-    if (!oldWidget.disableHoverPanel && widget.disableHoverPanel) {
-      if (_floatingPanelEntry != null) {
-        _hideFloatingPanel();
-      }
-    }
 
     // 只在热身状态真正改变时更新
     final oldWarmingUp = oldWidget.server.serverItem.isCustom
@@ -262,9 +197,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _FloatingPanelManager.clearPanel(this);
-    _safeRemoveOverlay();
-    _hidePanelTimer?.cancel();
     _stateSubscription?.cancel();
     _monitorSubscription?.cancel();
     _warmupRefreshTimer?.cancel();
@@ -272,162 +204,15 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  /// 显示浮动功能面板
-  void _showFloatingPanel() {
-    // 如果已有 entry，先安全移除
-    if (_floatingPanelEntry != null) {
-      if (!_floatingPanelEntry!.mounted) {
-        _floatingPanelEntry = null;
-      } else {
-        return;
-      }
-    }
-    if (!mounted) return;
-
-    final overlay = Overlay.maybeOf(context);
-    if (overlay == null) {
-      // Overlay 不可用，清理全局管理器状态
-      _FloatingPanelManager.clearPanel(this);
-      return;
-    }
-
-    // 通知全局管理器，隐藏其他面板
-    _FloatingPanelManager.showPanel(this);
-
-    // 捕获当前 context，避免使用过期的 context
-    final currentContext = context;
-
-    _floatingPanelEntry = OverlayEntry(
-      builder: (overlayContext) => _FloatingActionPanel(
-        link: _layerLink,
-        server: widget.server,
-        isMonitoring: _isMonitoring,
-        onMapEdit: () {
-          _hideFloatingPanel();
-          if (mounted) {
-            _showContributionDialog(currentContext);
-          }
-        },
-        onMapMonitor: () {
-          _hideFloatingPanel();
-          _toggleMapMonitor();
-        },
-        onRefreshCache: () {
-          _hideFloatingPanel();
-          _refreshMapCache();
-        },
-        onDelete: widget.server.serverItem.isCustom
-            ? () {
-                _hideFloatingPanel();
-                if (mounted) {
-                  _showDeleteConfirmDialog(currentContext);
-                }
-              }
-            : null,
-        onEditIp: widget.server.serverItem.isCustom
-            ? () {
-                _hideFloatingPanel();
-                if (mounted) {
-                  _showEditIpDialog(currentContext);
-                }
-              }
-            : null,
-        onHoverChanged: (isHovered) {
-          if (!mounted) return;
-          _isPanelHovered = isHovered;
-          if (!isHovered) {
-            _tryHidePanel();
-          }
-        },
-      ),
-    );
-    
-    try {
-      overlay.insert(_floatingPanelEntry!);
-      // 注册到全局管理器，确保页面切换时能被清理
-      _FloatingPanelManager.registerEntry(_floatingPanelEntry!);
-    } catch (e) {
-      // 插入失败，清理状态
-      _floatingPanelEntry = null;
-      _FloatingPanelManager.clearPanel(this);
-    }
-  }
-
-  /// 安全移除 overlay entry
-  void _safeRemoveOverlay() {
-    final entry = _floatingPanelEntry;
-    _floatingPanelEntry = null;
-    _isPanelHovered = false; // 重置面板hover状态
-    if (entry != null && entry.mounted) {
-      try {
-        entry.remove();
-      } catch (_) {
-        // 忽略移除时的错误
-      }
-    }
-  }
-
-  /// 隐藏浮动功能面板
-  void _hideFloatingPanel() {
-    _FloatingPanelManager.clearPanel(this);
-    _safeRemoveOverlay();
-  }
-
-  /// 立即隐藏面板（被全局管理器调用）
-  void _hideFloatingPanelImmediate() {
-    _hidePanelTimer?.cancel();
-    _hidePanelTimer = null;
-    _isHovered = false;
-    _isPanelHovered = false;
-    _safeRemoveOverlay();
-  }
-
-  /// 尝试隐藏面板（只有当卡片和面板都没有hover时才隐藏）
-  Timer? _hidePanelTimer;
-
-  void _tryHidePanel() {
-    // 取消之前的定时器
-    _hidePanelTimer?.cancel();
-
-    _hidePanelTimer = Timer(const Duration(milliseconds: 100), () {
-      if (!mounted) {
-        _hidePanelTimer = null;
-        return;
-      }
-      
-      // 双重检查：确保卡片和面板都没有hover
-      if (!_isHovered && !_isPanelHovered) {
-        _hideFloatingPanel();
-      }
-      _hidePanelTimer = null;
-    });
-  }
-
   /// 处理卡片hover状态变化
   void _onCardHoverChanged(bool isHovered) {
     if (!mounted) return;
     
-    // 使用 setState 确保状态更新
+    // 如果禁用了悬浮效果（排序模式），不响应 hover
+    if (widget.disableHoverEffect) return;
+
     if (_isHovered != isHovered) {
       setState(() => _isHovered = isHovered);
-    }
-    
-    // 如果禁用了悬浮面板（排序模式），不显示面板
-    if (widget.disableHoverPanel) {
-      // 确保排序模式下隐藏任何已显示的面板
-      if (_floatingPanelEntry != null) {
-        _hideFloatingPanel();
-      }
-      return;
-    }
-
-    if (isHovered) {
-      // 取消任何待执行的隐藏操作
-      _hidePanelTimer?.cancel();
-      _hidePanelTimer = null;
-      _showFloatingPanel();
-    } else {
-      _tryHidePanel();
     }
   }
 
@@ -447,108 +232,66 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return CompositedTransformTarget(
-      link: _layerLink,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => _onCardHoverChanged(true),
-        onExit: (_) => _onCardHoverChanged(false),
-        child: _rgbController != null
-            ? AnimatedBuilder(
-                animation: _rgbController!,
-                builder: (context, child) =>
-                    _buildCardContent(_getRgbColor(_rgbController!.value)),
-              )
-            : _buildCardContent(const Color(0xFF0080FF)),
-      ),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => _onCardHoverChanged(true),
+      onExit: (_) => _onCardHoverChanged(false),
+      child: _rgbController != null
+          ? AnimatedBuilder(
+              animation: _rgbController!,
+              builder: (context, child) =>
+                  _buildCardContent(_getRgbColor(_rgbController!.value)),
+            )
+          : _buildCardContent(const Color(0xFF0080FF)),
     );
   }
 
   /// 构建卡片内容
   Widget _buildCardContent(Color rgbColor) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOutCubic,
+    return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        border: _isHovered
-            ? Border.all(
-                color: _isWarmingUp
-                    ? rgbColor.withValues(alpha: 0.8)
-                    : const Color(0xFF0080FF).withValues(alpha: 0.6),
-                width: 2,
-              )
-            : null,
+        border: Border.all(
+          color: _isHovered
+              ? (_isWarmingUp
+                  ? rgbColor.withValues(alpha: 0.8)
+                  : const Color(0xFF0080FF).withValues(alpha: 0.6))
+              : Colors.transparent,
+          width: 2,
+        ),
         boxShadow: [
           if (_isWarmingUp) ...[
             BoxShadow(
               color: rgbColor,
-              blurRadius: _isHovered ? 20 : 8,
-              spreadRadius: _isHovered ? 4 : 0,
+              blurRadius: 8,
             ),
-            if (_isHovered)
-              BoxShadow(
-                color: rgbColor.withValues(alpha: 0.5),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
           ] else ...[
             BoxShadow(
-              color: _isHovered
-                  ? const Color(0xFF0080FF).withValues(alpha: 0.3)
-                  : Colors.black.withValues(alpha: 0.1),
-              blurRadius: _isHovered ? 16 : 4,
-              spreadRadius: _isHovered ? 1 : 0,
-              offset: Offset(0, _isHovered ? 4 : 2),
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
             ),
-            if (_isHovered)
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
           ],
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6), // 内部圆角略小，配合边框
         child: SizedBox(
-          height: 165, // 固定高度
+          height: 136, // 140 - 2*2 边框
           child: Stack(
             children: [
               // 地图背景
               Positioned.fill(child: _buildMapBackground()),
               // 渐变遮罩
               Positioned.fill(child: _buildGradientOverlay()),
-              // Hover 高亮遮罩
-              if (_isHovered)
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: _isWarmingUp
-                            ? [
-                                rgbColor.withValues(alpha: 0.1),
-                                Colors.transparent,
-                                rgbColor.withValues(alpha: 0.08),
-                              ]
-                            : [
-                                const Color(0xFF0080FF).withValues(alpha: 0.08),
-                                Colors.transparent,
-                                const Color(0xFF0080FF).withValues(alpha: 0.05),
-                              ],
-                      ),
-                    ),
-                  ),
-                ),
               // 热身边框
               if (_isWarmingUp) _buildWarmupBorder(rgbColor),
               // 刷新加载指示器
               _buildRefreshIndicator(),
               // 内容
               _buildContent(),
+              // Hover 时的毛玻璃操作层
+              _buildHoverActionOverlay(),
             ],
           ),
         ),
@@ -675,22 +418,32 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
   /// 内容区域 - 左右布局
   Widget _buildContent() {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 左侧信息
-          Expanded(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: _buildLeftContent(),
+    // hover 时使用紧凑间距 + 上浮，非 hover 时使用宽松间距填满卡片
+    return AnimatedSlide(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOutCubic,
+      offset: _isHovered ? const Offset(0, -0.08) : Offset.zero,
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        padding: _isHovered
+            ? const EdgeInsets.all(16)
+            : const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 左侧信息
+            Expanded(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: _buildLeftContent(),
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          // 右侧玩家数量和运行时间
-          _buildRightContent(),
-        ],
+            const SizedBox(width: 10),
+            // 右侧玩家数量和运行时间
+            _buildRightContent(),
+          ],
+        ),
       ),
     );
   }
@@ -706,13 +459,16 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     final mapLabel = widget.server.mapInfo?.mapLabel;
     // 确保中文名不为空字符串
     final chineseName = (mapLabel?.isNotEmpty == true) ? mapLabel : null;
-    // 显示格式：有中文名时 "英文名 (中文名)"，否则只显示英文名
+    // 显示格式：有中文名时 "中文名 (英文名)"，否则只显示英文名
     final displayMapName = chineseName != null
-        ? '$mapName ($chineseName)'
+        ? '$chineseName ($mapName)'
         : mapName;
 
     // 只使用系统 ping 的结果
     final ping = widget.server.pingInfo?.ping;
+
+    // hover 时紧凑间距，非 hover 时宽松间距
+    final verticalSpacing = _isHovered ? 4.0 : 12.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -723,7 +479,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
           hostName,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             shadows: [
               Shadow(color: Colors.black, blurRadius: 3, offset: Offset(0, 1)),
@@ -735,7 +491,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        const SizedBox(height: 5),
+        SizedBox(height: verticalSpacing),
         // 地图名称（使用中文翻译，过长时滚动）
         Row(
           children: [
@@ -773,7 +529,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
             ),
           ],
         ),
-        const SizedBox(height: 5),
+        SizedBox(height: verticalSpacing),
         // 地址和延迟
         Row(
           children: [
@@ -781,7 +537,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
               address,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 14,
+                fontSize: 15,
                 fontFamily: 'monospace',
                 shadows: [
                   Shadow(
@@ -807,9 +563,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
             ],
           ],
         ),
-        const SizedBox(height: 10),
-        // 按钮组
-        _buildButtonGroup(),
       ],
     );
   }
@@ -866,13 +619,16 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildButtonGroup() {
+  /// Hover 时的操作工具栏
+  Widget _buildHoverActionOverlay() {
+    if (!_isHovered) return const SizedBox.shrink();
+
     final data = widget.server.serverData;
     final isDisabled = data == null || widget.server.isLoading;
     final address =
         widget.server.serverItem.address ??
         widget.server.serverItem.serverAddress;
-    final isCustomServer = widget.server.serverItem.isCustom; // 判断是否为自定义服务器
+    final isCustomServer = widget.server.serverItem.isCustom;
 
     // 检查全局操作状态
     final globalState = _statusService.state;
@@ -899,45 +655,206 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       connectDisabled = true;
     } else if (isOtherServerBusy) {
       connectText = '连接';
-      connectDisabled = true; // 其他服务器正在操作时禁用
+      connectDisabled = true;
     } else {
       connectText = '连接';
       connectDisabled = isDisabled;
     }
 
-    return Wrap(
-      spacing: 10,
-      runSpacing: 8,
-      children: [
-        _buildBtn(
-          text: connectText,
-          bgColor: Colors.white,
-          textColor: const Color(0xFF0080FF),
-          onPressed: connectDisabled ? null : _handleConnect,
-        ),
-        _buildBtn(
-          text: '挤服',
-          bgColor: const Color(0xFFFF6E6E),
-          textColor: Colors.white,
-          onPressed: isDisabled || isGlobalBusy
-              ? null
-              : () => _showQueueWindow(context),
-        ),
-        _buildBtn(
-          text: '玩家',
-          bgColor: const Color(0xFF10B981),
-          textColor: Colors.white,
-          onPressed: isDisabled ? null : widget.onTap,
-        ),
-        // 只有非自定义服务器才显示历史按钮
-        if (!isCustomServer)
-          _buildBtn(
-            text: '历史',
-            bgColor: const Color(0xFFF59E0B),
-            textColor: Colors.white,
-            onPressed: () => _showHistoryDialog(context),
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 1.0, end: 0.0),
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        builder: (context, value, child) {
+          return Transform.translate(
+            offset: Offset(0, value * 50),
+            child: Opacity(
+              opacity: 1 - value,
+              child: child,
+            ),
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.only(left: 14, right: 14, top: 12, bottom: 8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withValues(alpha: 0.0),
+                Colors.black.withValues(alpha: 0.7),
+                Colors.black.withValues(alpha: 0.9),
+              ],
+              stops: const [0.0, 0.4, 1.0],
+            ),
           ),
-      ],
+          child: Row(
+            children: [
+              // 主操作按钮组
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  _buildActionBtn(
+                    text: connectText,
+                    icon: Icons.play_arrow_rounded,
+                    bgColor: const Color(0xFF0080FF),
+                    onPressed: connectDisabled ? null : _handleConnect,
+                  ),
+                  _buildActionBtn(
+                    text: '挤服',
+                    icon: MdiIcons.accountGroup,
+                    bgColor: const Color(0xFFFF6E6E),
+                    onPressed: isDisabled || isGlobalBusy
+                        ? null
+                        : () => _showQueueWindow(context),
+                  ),
+                ],
+              ),
+              // 分隔线
+              Container(
+                width: 1,
+                height: 24,
+                margin: const EdgeInsets.symmetric(horizontal: 10),
+                color: Colors.white.withValues(alpha: 0.2),
+              ),
+              // 次要操作按钮组
+              Expanded(
+                child: Wrap(
+                  spacing: 6,
+                  children: [
+                    _buildSecondaryBtn(
+                      icon: Icons.people_outline_rounded,
+                      tooltip: '玩家列表',
+                      color: const Color(0xFF10B981),
+                      onPressed: isDisabled ? null : widget.onTap,
+                    ),
+                    if (!isCustomServer)
+                      _buildSecondaryBtn(
+                        icon: Icons.history_rounded,
+                        tooltip: '历史记录',
+                        color: const Color(0xFFF59E0B),
+                        onPressed: () => _showHistoryDialog(context),
+                      ),
+                    if (isCustomServer)
+                      _buildSecondaryBtn(
+                        icon: MdiIcons.pencilOutline,
+                        tooltip: '编辑IP',
+                        color: const Color(0xFF0EA5E9),
+                        onPressed: () => _showEditIpDialog(context),
+                      )
+                    else
+                      _buildSecondaryBtn(
+                        icon: MdiIcons.imageEditOutline,
+                        tooltip: '编辑地图',
+                        color: const Color(0xFF8B5CF6),
+                        onPressed: isDisabled
+                            ? null
+                            : () => _showContributionDialog(context),
+                      ),
+                    _buildSecondaryBtn(
+                      icon: MdiIcons.refresh,
+                      tooltip: '刷新缓存',
+                      color: const Color(0xFFF59E0B),
+                      onPressed: isDisabled ? null : _refreshMapCache,
+                    ),
+                    _buildSecondaryBtn(
+                      icon: _isMonitoring
+                          ? MdiIcons.bellRing
+                          : MdiIcons.bellOutline,
+                      tooltip: '换图监控',
+                      color: const Color(0xFF3B82F6),
+                      isActive: _isMonitoring,
+                      onPressed: isDisabled ? null : _toggleMapMonitor,
+                    ),
+                    if (isCustomServer && widget.onDelete != null)
+                      _buildSecondaryBtn(
+                        icon: Icons.delete_outline_rounded,
+                        tooltip: '删除',
+                        color: const Color(0xFFEF4444),
+                        onPressed: () => _showDeleteConfirmDialog(context),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 主操作按钮
+  Widget _buildActionBtn({
+    required String text,
+    required IconData icon,
+    required Color bgColor,
+    VoidCallback? onPressed,
+  }) {
+    final disabled = onPressed == null;
+
+    return Material(
+      color: disabled
+          ? Colors.white.withValues(alpha: 0.1)
+          : bgColor,
+      borderRadius: BorderRadius.circular(4),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 13,
+                color: disabled
+                    ? Colors.white.withValues(alpha: 0.4)
+                    : Colors.white,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                text,
+                style: TextStyle(
+                  color: disabled
+                      ? Colors.white.withValues(alpha: 0.4)
+                      : Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 次要操作按钮（图标按钮）
+  Widget _buildSecondaryBtn({
+    required IconData icon,
+    required String tooltip,
+    Color? color,
+    bool isActive = false,
+    VoidCallback? onPressed,
+  }) {
+    final disabled = onPressed == null;
+    final btnColor = color ?? Colors.white;
+
+    return Tooltip(
+      message: tooltip,
+      child: _HoverIconButton(
+        icon: icon,
+        color: btnColor,
+        isActive: isActive,
+        disabled: disabled,
+        onPressed: onPressed,
+      ),
     );
   }
 
@@ -1043,35 +960,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildBtn({
-    required String text,
-    required Color bgColor,
-    required Color textColor,
-    VoidCallback? onPressed,
-  }) {
-    final disabled = onPressed == null;
-
-    return Material(
-      color: disabled ? const Color(0xFFCCCCCC) : bgColor,
-      borderRadius: BorderRadius.circular(4),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(4),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-          child: Text(
-            text,
-            style: TextStyle(
-              color: disabled ? const Color(0xFF666666) : textColor,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   /// 是否处于离线/维护状态
   bool get _isOffline =>
       widget.server.hasError && widget.server.serverData == null;
@@ -1094,17 +982,23 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       return _buildStartingStatus();
     }
 
+    final showRuntime = data?.map != null &&
+        !widget.server.isLoading &&
+        !widget.server.serverItem.isCustom;
+
+    // hover 时紧凑间距，非 hover 时稍宽松间距
+    final verticalSpacing = _isHovered ? 6.0 : 6.0;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         // 玩家数量
         _buildPlayerCount(players, maxPlayers),
-        const SizedBox(height: 8),
         // 地图运行时间（自定义服务器不显示）
-        if (data?.map != null &&
-            !widget.server.isLoading &&
-            !widget.server.serverItem.isCustom)
+        if (showRuntime) ...[
+          SizedBox(height: verticalSpacing),
           _buildRuntimeInfo(),
+        ],
       ],
     );
   }
@@ -1187,7 +1081,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: bgColor.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(6),
@@ -1195,12 +1089,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 4,
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
@@ -1227,7 +1116,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
               '/',
               style: TextStyle(
                 color: const Color(0xFF9CA3AF),
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.w300,
                 height: 1,
               ),
@@ -1297,88 +1186,67 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       borderColor = Colors.white.withValues(alpha: 0.3);
     }
 
-    return Column(
-      children: [
-        // 运行时间
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          constraints: const BoxConstraints(minWidth: 80),
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: borderColor, width: _isWarmingUp ? 2 : 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+    final weeklyOccurrences = widget.server.mapRuntime?.weeklyOccurrences;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: borderColor, width: _isWarmingUp ? 2 : 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          child: Row(
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 运行时间
+          Row(
             mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(MdiIcons.clockOutline, size: 16, color: iconColor),
-              const SizedBox(width: 6),
+              Icon(MdiIcons.clockOutline, size: 12, color: iconColor),
+              const SizedBox(width: 4),
               Text(
                 displayText,
                 style: TextStyle(
                   color: textColor,
                   fontSize: 11,
-                  fontWeight: _isWarmingUp ? FontWeight.w700 : FontWeight.w600,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
-        ),
-        // 周出现次数
-        if (widget.server.mapRuntime?.weeklyOccurrences != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: _isWarmingUp
-                    ? const Color(0xFFFFF9E6).withValues(alpha: 0.95)
-                    : Colors.white.withValues(alpha: 0.95),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: _isWarmingUp
-                      ? const Color(0xFFFF9800).withValues(alpha: 0.2)
-                      : Colors.white.withValues(alpha: 0.3),
+          // 周出现次数
+          if (weeklyOccurrences != null) ...[
+            const SizedBox(height: 2),
+            RichText(
+              text: TextSpan(
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF6B7280),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                children: [
+                  const TextSpan(text: '一周内出现'),
+                  TextSpan(
+                    text: ' $weeklyOccurrences ',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF3B82F6),
+                    ),
                   ),
+                  const TextSpan(text: '次'),
                 ],
               ),
-              child: RichText(
-                text: TextSpan(
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF6B7280),
-                  ),
-                  children: [
-                    const TextSpan(text: '一周出现'),
-                    TextSpan(
-                      text: '${widget.server.mapRuntime!.weeklyOccurrences}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF3B82F6),
-                      ),
-                    ),
-                    const TextSpan(text: '次'),
-                  ],
-                ),
-              ),
             ),
-          ),
-      ],
+          ],
+        ],
+      ),
     );
   }
 
@@ -1649,486 +1517,71 @@ class _CopyIconButtonState extends State<_CopyIconButton> {
   }
 }
 
-/// 浮动功能面板 - 卡片右侧展开（重新设计版本）
-class _FloatingActionPanel extends StatefulWidget {
-  final LayerLink link;
-  final ExtendedServerItem server;
-  final bool isMonitoring;
-  final VoidCallback? onMapEdit;
-  final VoidCallback? onMapMonitor;
-  final VoidCallback? onRefreshCache;
-  final VoidCallback? onDelete;
-  final VoidCallback? onEditIp; // 编辑IP回调
-  final ValueChanged<bool>? onHoverChanged;
-
-  const _FloatingActionPanel({
-    required this.link,
-    required this.server,
-    required this.isMonitoring,
-    this.onMapEdit,
-    this.onMapMonitor,
-    this.onRefreshCache,
-    this.onDelete,
-    this.onEditIp,
-    this.onHoverChanged,
-  });
-
-  @override
-  State<_FloatingActionPanel> createState() => _FloatingActionPanelState();
-}
-
-class _FloatingActionPanelState extends State<_FloatingActionPanel>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animController;
-  late Animation<double> _slideAnimation;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 250),
-    );
-    _slideAnimation = Tween<double>(begin: -12, end: 0).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOutBack),
-    );
-    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
-    );
-    _animController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animController.dispose();
-    super.dispose();
-  }
-
-  /// 构建按钮列表
-  List<_FloatingButtonConfig> _buildButtonConfigs(
-    bool isDisabled,
-    bool isRefreshing,
-  ) {
-    final isCustomServer = widget.server.serverItem.isCustom;
-
-    return [
-      // 编辑IP按钮（仅自定义服务器显示）
-      if (isCustomServer && widget.onEditIp != null)
-        _FloatingButtonConfig(
-          icon: MdiIcons.pencilOutline,
-          label: '编辑IP',
-          color: const Color(0xFF0EA5E9),
-          onTap: widget.onEditIp,
-        ),
-      // 编辑地图按钮（非自定义服务器显示）
-      if (!isCustomServer)
-        _FloatingButtonConfig(
-          icon: MdiIcons.imageEditOutline,
-          label: '编辑地图',
-          color: const Color(0xFF8B5CF6),
-          isDisabled: isDisabled,
-          onTap: isDisabled ? null : widget.onMapEdit,
-        ),
-      _FloatingButtonConfig(
-        icon: MdiIcons.refresh,
-        label: '刷新缓存',
-        color: const Color(0xFFF59E0B),
-        isDisabled: isDisabled || isRefreshing,
-        tooltip: '获取最新地图信息',
-        onTap: (isDisabled || isRefreshing) ? null : widget.onRefreshCache,
-      ),
-      _FloatingButtonConfig(
-        icon: widget.isMonitoring ? MdiIcons.bellRing : MdiIcons.bellOutline,
-        label: '换图监控',
-        color: widget.isMonitoring
-            ? const Color(0xFF10B981)
-            : const Color(0xFF3B82F6),
-        isActive: widget.isMonitoring,
-        isDisabled: isDisabled,
-        onTap: isDisabled ? null : widget.onMapMonitor,
-      ),
-      if (widget.onDelete != null)
-        _FloatingButtonConfig(
-          icon: Icons.delete_outline_rounded,
-          label: '删除',
-          color: const Color(0xFFEF4444),
-          onTap: widget.onDelete,
-        ),
-    ];
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final data = widget.server.serverData;
-    final isDisabled = data == null || widget.server.isLoading;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // 获取刷新状态
-    final address =
-        widget.server.serverItem.address ??
-        widget.server.serverItem.serverAddress;
-
-    return BlocBuilder<ServerBloc, ServerState>(
-      builder: (context, state) {
-        final isRefreshing =
-            address != null && (state.isMapRefreshing(address));
-
-        // 构建按钮配置列表
-        final buttons = _buildButtonConfigs(isDisabled, isRefreshing);
-
-        // 每列最多2个按钮，计算需要的列数
-        const maxPerColumn = 2;
-        const columnWidth = 54.0;
-        const columnGap = 4.0;
-        final columnCount = (buttons.length / maxPerColumn).ceil();
-        final panelWidth =
-            columnCount * columnWidth + (columnCount - 1) * columnGap + 12;
-
-        // 将按钮分配到各列
-        final columns = <List<_FloatingButtonConfig>>[];
-        for (var i = 0; i < buttons.length; i += maxPerColumn) {
-          columns.add(
-            buttons.sublist(i, (i + maxPerColumn).clamp(0, buttons.length)),
-          );
-        }
-
-        // 深色/浅色主题颜色
-        final borderColor = isDark
-            ? const Color(0xFF475569)
-            : const Color(0xFF94A3B8);
-        final bgGradientColors = isDark
-            ? [const Color(0xF01E293B), const Color(0xE80F172A)]
-            : [const Color(0xF0FFFFFF), const Color(0xE8F8FAFC)];
-        final shadowColor = isDark
-            ? const Color(0xFF000000)
-            : const Color(0xFF0F172A);
-
-        return Positioned(
-          width: panelWidth + 8,
-          height: 165, // 与卡片高度一致
-          child: CompositedTransformFollower(
-            link: widget.link,
-            targetAnchor: Alignment.centerRight,
-            followerAnchor: Alignment.centerLeft,
-            offset: const Offset(6, 0),
-            child: MouseRegion(
-              onEnter: (_) => widget.onHoverChanged?.call(true),
-              onExit: (_) => widget.onHoverChanged?.call(false),
-              child: AnimatedBuilder(
-                animation: _animController,
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(_slideAnimation.value, 0),
-                    child: Transform.scale(
-                      scale: _scaleAnimation.value,
-                      alignment: Alignment.centerLeft,
-                      child: Opacity(
-                        opacity: _animController.value,
-                        child: child,
-                      ),
-                    ),
-                  );
-                },
-                child: CustomPaint(
-                  painter: _DashedBorderPainter(
-                    color: borderColor,
-                    strokeWidth: 1.5,
-                    dashWidth: 6,
-                    dashSpace: 4,
-                    radius: 12,
-                  ),
-                  child: Container(
-                    width: panelWidth,
-                    height: 165, // 与卡片高度一致
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: bgGradientColors,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: shadowColor.withValues(
-                            alpha: isDark ? 0.3 : 0.12,
-                          ),
-                          blurRadius: 16,
-                          offset: const Offset(4, 4),
-                          spreadRadius: 0,
-                        ),
-                        BoxShadow(
-                          color: shadowColor.withValues(
-                            alpha: isDark ? 0.2 : 0.06,
-                          ),
-                          blurRadius: 6,
-                          offset: const Offset(2, 2),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              for (var i = 0; i < columns.length; i++) ...[
-                                if (i > 0) const SizedBox(width: columnGap),
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    for (final config in columns[i])
-                                      _FloatingActionButton(
-                                        icon: config.icon,
-                                        label: config.label,
-                                        color: config.color,
-                                        isActive: config.isActive,
-                                        isDisabled: config.isDisabled,
-                                        tooltip: config.tooltip,
-                                        onTap: config.onTap,
-                                      ),
-                                  ],
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// 浮动按钮配置
-class _FloatingButtonConfig {
+/// 带 Hover 效果的图标按钮
+class _HoverIconButton extends StatefulWidget {
   final IconData icon;
-  final String label;
   final Color color;
   final bool isActive;
-  final bool isDisabled;
-  final String? tooltip;
-  final VoidCallback? onTap;
+  final bool disabled;
+  final VoidCallback? onPressed;
 
-  const _FloatingButtonConfig({
+  const _HoverIconButton({
     required this.icon,
-    required this.label,
     required this.color,
-    this.isActive = false,
-    this.isDisabled = false,
-    this.tooltip,
-    this.onTap,
-  });
-}
-
-/// 浮动面板中的操作按钮（重新设计版本）
-class _FloatingActionButton extends StatefulWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final bool isActive;
-  final bool isDisabled;
-  final String? tooltip;
-  final VoidCallback? onTap;
-
-  const _FloatingActionButton({
-    required this.icon,
-    required this.label,
-    required this.color,
-    this.isActive = false,
-    this.isDisabled = false,
-    this.tooltip,
-    this.onTap,
+    required this.isActive,
+    required this.disabled,
+    this.onPressed,
   });
 
   @override
-  State<_FloatingActionButton> createState() => _FloatingActionButtonState();
+  State<_HoverIconButton> createState() => _HoverIconButtonState();
 }
 
-class _FloatingActionButtonState extends State<_FloatingActionButton> {
+class _HoverIconButtonState extends State<_HoverIconButton> {
   bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
-    final isDisabled = widget.isDisabled || widget.onTap == null;
-    final isHighlighted = widget.isActive || (_isHovered && !isDisabled);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // 深色/浅色主题颜色
-    final disabledBgColor = isDark
-        ? const Color(0xFF334155)
-        : const Color(0xFFE2E8F0);
-    final normalBgColor = isDark
-        ? const Color(0xFF1E293B)
-        : const Color(0xFFF1F5F9);
-    final borderColor = isDark
-        ? const Color(0xFF475569)
-        : const Color(0xFFE2E8F0);
-    final disabledIconColor = isDark
-        ? const Color(0xFF64748B)
-        : const Color(0xFFCBD5E1);
-    final normalIconColor = isDark
-        ? const Color(0xFF94A3B8)
-        : const Color(0xFF64748B);
-    final disabledTextColor = isDark
-        ? const Color(0xFF64748B)
-        : const Color(0xFFCBD5E1);
-    final normalTextColor = isDark
-        ? const Color(0xFFCBD5E1)
-        : const Color(0xFF475569);
-
-    final button = MouseRegion(
-      cursor: isDisabled
-          ? SystemMouseCursors.forbidden
-          : SystemMouseCursors.click,
-      onEnter: (_) {
-        if (!isDisabled) setState(() => _isHovered = true);
-      },
-      onExit: (_) {
-        if (_isHovered) setState(() => _isHovered = false);
-      },
+    final isHovered = _isHovered && !widget.disabled;
+    
+    return MouseRegion(
+      cursor: widget.disabled ? SystemMouseCursors.basic : SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
-        onTap: isDisabled ? null : widget.onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        onTap: widget.onPressed,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 32,
+          height: 32,
+          alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isHighlighted && !isDisabled
-                ? widget.color.withValues(alpha: isDark ? 0.15 : 0.08)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
+            color: widget.isActive
+                ? widget.color.withValues(alpha: 0.35)
+                : isHovered
+                    ? widget.color.withValues(alpha: 0.25)
+                    : Colors.white.withValues(alpha: widget.disabled ? 0.05 : 0.15),
+            borderRadius: BorderRadius.circular(4),
+            border: widget.isActive
+                ? Border.all(color: widget.color, width: 1.5)
+                : isHovered
+                    ? Border.all(color: widget.color.withValues(alpha: 0.6), width: 1)
+                    : null,
+            boxShadow: widget.isActive
+                ? [BoxShadow(color: widget.color.withValues(alpha: 0.5), blurRadius: 6)]
+                : null,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 图标容器
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  // 激活状态使用实色背景
-                  color: widget.isActive && !isDisabled
-                      ? widget.color
-                      : isDisabled
-                      ? disabledBgColor
-                      : _isHovered
-                      ? widget.color.withValues(alpha: isDark ? 0.25 : 0.15)
-                      : normalBgColor,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: widget.isActive && !isDisabled
-                        ? widget.color
-                        : isHighlighted && !isDisabled
-                        ? widget.color.withValues(alpha: isDark ? 0.6 : 0.4)
-                        : borderColor,
-                    width: 1,
-                  ),
-                ),
-                child: Icon(
-                  widget.icon,
-                  size: 20,
-                  color: isDisabled
-                      ? disabledIconColor
-                      : widget.isActive
-                      ? Colors.white
-                      : _isHovered
-                      ? widget.color
-                      : normalIconColor,
-                ),
-              ),
-              const SizedBox(height: 4),
-              // 标签文字
-              Text(
-                widget.label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  decoration: TextDecoration.none,
-                  color: isDisabled
-                      ? disabledTextColor
-                      : isHighlighted
-                      ? widget.color
-                      : normalTextColor,
-                  letterSpacing: 0.2,
-                ),
-              ),
-            ],
+          child: Icon(
+            widget.icon,
+            size: 18,
+            color: widget.disabled
+                ? Colors.white.withValues(alpha: 0.3)
+                : widget.isActive || isHovered
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.85),
           ),
         ),
       ),
     );
-
-    // 移除 tooltip 包裹，避免布局变化
-    return button;
-  }
-}
-
-/// 虚线边框绘制器
-class _DashedBorderPainter extends CustomPainter {
-  final Color color;
-  final double strokeWidth;
-  final double dashWidth;
-  final double dashSpace;
-  final double radius;
-
-  _DashedBorderPainter({
-    required this.color,
-    required this.strokeWidth,
-    required this.dashWidth,
-    required this.dashSpace,
-    required this.radius,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke;
-
-    final path = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(0, 0, size.width, size.height),
-          Radius.circular(radius),
-        ),
-      );
-
-    final dashPath = _createDashedPath(path);
-    canvas.drawPath(dashPath, paint);
-  }
-
-  Path _createDashedPath(Path source) {
-    final dashPath = Path();
-    for (final metric in source.computeMetrics()) {
-      double distance = 0;
-      while (distance < metric.length) {
-        final len = dashWidth.clamp(0, metric.length - distance);
-        dashPath.addPath(
-          metric.extractPath(distance, distance + len),
-          Offset.zero,
-        );
-        distance += dashWidth + dashSpace;
-      }
-    }
-    return dashPath;
-  }
-
-  @override
-  bool shouldRepaint(covariant _DashedBorderPainter oldDelegate) {
-    return color != oldDelegate.color ||
-        strokeWidth != oldDelegate.strokeWidth ||
-        dashWidth != oldDelegate.dashWidth ||
-        dashSpace != oldDelegate.dashSpace ||
-        radius != oldDelegate.radius;
   }
 }
