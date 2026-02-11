@@ -354,9 +354,9 @@ class NotificationWindowService {
     int? warmupRemainingSeconds,
   }) async {
     final id = 'warmup_$serverAddress';
-    // 只有有中文名时才显示括号
+    // 显示格式：有中文名时 "中文名 (英文名)"，否则只显示英文名
     final mapDisplay = (mapNameCn != null && mapNameCn.isNotEmpty)
-        ? '$mapName ($mapNameCn)'
+        ? '$mapNameCn ($mapName)'
         : mapName ?? '';
     final title = warmupRemainingSeconds != null && warmupRemainingSeconds > 0
         ? '热身 $warmupRemainingSeconds秒'
@@ -394,8 +394,9 @@ class NotificationWindowService {
   }) async {
     final id =
         'mapchange_${serverAddress}_${DateTime.now().millisecondsSinceEpoch}';
+    // 显示格式：有中文名时 "中文名 (英文名)"，否则只显示英文名
     final displayName = newMapCn != null && newMapCn.isNotEmpty
-        ? '$newMap ($newMapCn)'
+        ? '$newMapCn ($newMap)'
         : newMap;
     await show(NotificationData(
       id: id,
