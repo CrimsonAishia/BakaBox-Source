@@ -164,6 +164,82 @@ class GameLauncherService {
     return false;
   }
 
+  /// 检测 Steam 是否认为游戏正在运行
+  /// 
+  /// 通过读取注册表 HKEY_CURRENT_USER\Software\Valve\Steam\RunningAppID 判断
+  /// 
+  /// 返回值：
+  /// - 正在运行的游戏 AppID（如 730 表示 CS2/CSGO）
+  /// - 0 表示没有游戏在运行
+  /// - null 表示检测失败
+  Future<int?> getSteamRunningAppId() async {
+    if (!PlatformUtils.isWindows) {
+      return null;
+    }
+
+    try {
+      final result = await Process.run(
+        'reg',
+        ['query', 'HKCU\\Software\\Valve\\Steam', '/v', 'RunningAppID'],
+        runInShell: true,
+      );
+
+      if (result.exitCode == 0) {
+        final output = result.stdout.toString();
+        // 格式: "    RunningAppID    REG_DWORD    0x2da" (0x2da = 730)
+        final regex = RegExp(r'RunningAppID\s+REG_DWORD\s+(0x[0-9a-fA-F]+|\d+)');
+        final match = regex.firstMatch(output);
+        if (match != null) {
+          final valueStr = match.group(1)!;
+          int appId;
+          if (valueStr.startsWith('0x')) {
+            appId = int.parse(valueStr.substring(2), radix: 16);
+          } else {
+            appId = int.parse(valueStr);
+          }
+          LogService.d('Steam RunningAppID: $appId');
+          return appId;
+        }
+      }
+      return 0; // 未找到或值为0
+    } catch (e) {
+      LogService.e('检测 Steam RunningAppID 失败', e);
+      return null;
+    }
+  }
+
+  /// 检测 Steam 状态是否卡住（Steam 认为游戏在运行但进程不存在）
+  /// 
+  /// 返回值：
+  /// - true: Steam 状态卡住，需要用户手动处理
+  /// - false: 状态正常
+  Future<bool> isSteamStatusStuck() async {
+    if (!PlatformUtils.isWindows) {
+      return false;
+    }
+
+    try {
+      // 检测 Steam 认为正在运行的游戏
+      final runningAppId = await getSteamRunningAppId();
+      
+      // 如果 Steam 认为 CS2/CSGO (AppID 730) 在运行
+      if (runningAppId == 730) {
+        // 检测实际进程是否存在
+        final processRunning = await isCS2Running();
+        
+        if (!processRunning) {
+          LogService.w('检测到 Steam 状态卡住：Steam 认为游戏在运行 (AppID=$runningAppId)，但进程不存在');
+          return true;
+        }
+      }
+      
+      return false;
+    } catch (e) {
+      LogService.e('检测 Steam 状态失败', e);
+      return false;
+    }
+  }
+
   /// 检测当前运行的游戏类型
   /// 
   /// 返回值：
