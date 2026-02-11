@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 
+/// 添加自定义服务器对话框返回结果
+class AddServerResult {
+  final String address;
+  final String? nickname;
+  
+  AddServerResult({required this.address, this.nickname});
+}
+
 /// 添加自定义服务器对话框
 class AddServerDialog extends StatefulWidget {
   final String categoryName;
@@ -15,28 +23,28 @@ class AddServerDialog extends StatefulWidget {
 
 class _AddServerDialogState extends State<AddServerDialog> {
   final TextEditingController _addressController = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
+  final TextEditingController _nicknameController = TextEditingController();
+  final FocusNode _addressFocusNode = FocusNode();
   final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
-    // 监听焦点变化，失去焦点时自动格式化
-    _focusNode.addListener(_onFocusChange);
+    _addressFocusNode.addListener(_onFocusChange);
   }
 
   @override
   void dispose() {
-    _focusNode.removeListener(_onFocusChange);
-    _focusNode.dispose();
+    _addressFocusNode.removeListener(_onFocusChange);
+    _addressFocusNode.dispose();
     _addressController.dispose();
+    _nicknameController.dispose();
     super.dispose();
   }
 
   /// 焦点变化时处理
   void _onFocusChange() {
-    if (!_focusNode.hasFocus) {
-      // 失去焦点时格式化
+    if (!_addressFocusNode.hasFocus) {
       _formatAddress();
     }
   }
@@ -48,7 +56,7 @@ class _AddServerDialogState extends State<AddServerDialog> {
     
     String formatted = text.trim();
     
-    // 1. 移除常见的命令前缀（不区分大小写）
+    // 移除常见的命令前缀
     final commandPrefixes = [
       RegExp(r'^connect\s+', caseSensitive: false),
       RegExp(r'^join\s+', caseSensitive: false),
@@ -102,94 +110,71 @@ class _AddServerDialogState extends State<AddServerDialog> {
       title: Text('添加服务器到 "${widget.categoryName}"', style: TextStyle(color: textColor)),
       content: Form(
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '输入服务器地址（IP:端口 或 域名:端口），例如：192.168.1.100:27015 或 cs1.zombieden.cn:27016',
-              style: TextStyle(fontSize: 14, color: secondaryTextColor),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _addressController,
-              focusNode: _focusNode,
-              autofocus: true,
-              style: TextStyle(color: textColor),
-              decoration: InputDecoration(
-                labelText: '服务器地址',
-                labelStyle: TextStyle(color: secondaryTextColor),
-                hintText: '例如：192.168.1.100:27015 或 cs1.zombieden.cn:27016',
-                hintStyle: TextStyle(color: secondaryTextColor.withValues(alpha: 0.6)),
-                filled: true,
-                fillColor: inputBgColor,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: borderColor),
+        child: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 服务器地址输入
+              TextFormField(
+                controller: _addressController,
+                focusNode: _addressFocusNode,
+                autofocus: true,
+                style: TextStyle(color: textColor),
+                decoration: InputDecoration(
+                  labelText: '服务器地址 *',
+                  labelStyle: TextStyle(color: secondaryTextColor),
+                  hintText: '例如：192.168.1.100:27015',
+                  hintStyle: TextStyle(color: secondaryTextColor.withValues(alpha: 0.6)),
+                  filled: true,
+                  fillColor: inputBgColor,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF0080FF)),
+                  ),
+                  prefixIcon: Icon(Icons.dns_outlined, color: secondaryTextColor),
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: borderColor),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFF0080FF)),
-                ),
-                prefixIcon: Icon(Icons.dns_outlined, color: secondaryTextColor),
+                validator: _validateAddress,
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return '请输入服务器地址';
-                }
-                
-                final address = value.trim();
-                
-                // 验证格式：地址:端口
-                final parts = address.split(':');
-                if (parts.length != 2) {
-                  return '格式错误，应为 地址:端口';
-                }
-                
-                final host = parts[0];
-                
-                // 验证主机地址（IP 或域名）
-                if (host.isEmpty) {
-                  return '主机地址不能为空';
-                }
-                
-                // 检查是否为 IP 地址
-                final ipParts = host.split('.');
-                final isIpAddress = ipParts.length == 4 && 
-                    ipParts.every((part) {
-                      final num = int.tryParse(part);
-                      return num != null && num >= 0 && num <= 255;
-                    });
-                
-                // 如果不是 IP 地址，验证域名格式
-                if (!isIpAddress) {
-                  // 域名基本验证：只允许字母、数字、点、连字符
-                  final domainPattern = RegExp(r'^[a-zA-Z0-9]([a-zA-Z0-9\-\.]*[a-zA-Z0-9])?$');
-                  if (!domainPattern.hasMatch(host)) {
-                    return '主机地址格式错误（支持 IP 或域名）';
-                  }
-                  
-                  // 域名不能以点或连字符开头/结尾
-                  if (host.startsWith('.') || host.startsWith('-') || 
-                      host.endsWith('.') || host.endsWith('-')) {
-                    return '域名格式错误';
-                  }
-                }
-                
-                // 验证端口
-                final port = int.tryParse(parts[1]);
-                if (port == null || port < 1 || port > 65535) {
-                  return '端口号必须在 1-65535 之间';
-                }
-                
-                return null;
-              },
-            ),
-          ],
+              const SizedBox(height: 16),
+              // 备注名输入
+              TextFormField(
+                controller: _nicknameController,
+                style: TextStyle(color: textColor),
+                decoration: InputDecoration(
+                  labelText: '备注名（可选）',
+                  labelStyle: TextStyle(color: secondaryTextColor),
+                  hintText: '给服务器起个名字，方便识别',
+                  hintStyle: TextStyle(color: secondaryTextColor.withValues(alpha: 0.6)),
+                  filled: true,
+                  fillColor: inputBgColor,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF0080FF)),
+                  ),
+                  prefixIcon: Icon(Icons.label_outline, color: secondaryTextColor),
+                ),
+                maxLength: 30,
+              ),
+            ],
+          ),
         ),
       ),
       actions: [
@@ -209,12 +194,68 @@ class _AddServerDialogState extends State<AddServerDialog> {
     );
   }
 
+  String? _validateAddress(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return '请输入服务器地址';
+    }
+    
+    final address = value.trim();
+                
+    // 验证格式：地址:端口
+    final parts = address.split(':');
+    if (parts.length != 2) {
+      return '格式错误，应为 地址:端口';
+    }
+    
+    final host = parts[0];
+                
+    // 验证主机地址（IP 或域名）
+    if (host.isEmpty) {
+      return '主机地址不能为空';
+    }
+    
+    // 检查是否为 IP 地址
+    final ipParts = host.split('.');
+    final isIpAddress = ipParts.length == 4 && 
+        ipParts.every((part) {
+          final num = int.tryParse(part);
+          return num != null && num >= 0 && num <= 255;
+        });
+    
+    // 如果不是 IP 地址，验证域名格式
+    if (!isIpAddress) {
+      // 域名基本验证：只允许字母、数字、点、连字符
+      final domainPattern = RegExp(r'^[a-zA-Z0-9]([a-zA-Z0-9\-\.]*[a-zA-Z0-9])?$');
+      if (!domainPattern.hasMatch(host)) {
+        return '主机地址格式错误（支持 IP 或域名）';
+      }
+                  
+      // 域名不能以点或连字符开头/结尾
+      if (host.startsWith('.') || host.startsWith('-') || 
+          host.endsWith('.') || host.endsWith('-')) {
+        return '域名格式错误';
+      }
+    }
+    
+    // 验证端口
+    final port = int.tryParse(parts[1]);
+    if (port == null || port < 1 || port > 65535) {
+      return '端口号必须在 1-65535 之间';
+    }
+    
+    return null;
+  }
+
   void _handleSubmit() {
     // 提交前先格式化一次（防止用户直接点击添加按钮）
     _formatAddress();
     
     if (_formKey.currentState?.validate() ?? false) {
-      Navigator.of(context).pop(_addressController.text.trim());
+      final nickname = _nicknameController.text.trim();
+      Navigator.of(context).pop(AddServerResult(
+        address: _addressController.text.trim(),
+        nickname: nickname.isEmpty ? null : nickname,
+      ));
     }
   }
 }

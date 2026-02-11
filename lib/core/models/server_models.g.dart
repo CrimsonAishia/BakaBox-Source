@@ -29,6 +29,7 @@ ServerItem _$ServerItemFromJson(Map<String, dynamic> json) => ServerItem(
   serverAddress: json['serverAddress'] as String?,
   serverData: json['serverData'] as Map<String, dynamic>?,
   isCustom: json['isCustom'] as bool? ?? false,
+  nickname: json['nickname'] as String?,
 );
 
 Map<String, dynamic> _$ServerItemToJson(ServerItem instance) =>
@@ -37,6 +38,7 @@ Map<String, dynamic> _$ServerItemToJson(ServerItem instance) =>
       'serverAddress': instance.serverAddress,
       'serverData': instance.serverData,
       'isCustom': instance.isCustom,
+      'nickname': instance.nickname,
     };
 
 ServerInfo _$ServerInfoFromJson(Map<String, dynamic> json) => ServerInfo(

@@ -1367,16 +1367,17 @@ class _ServersDesktopState extends State<ServersDesktop> {
 
     if (categoryName == null) return;
 
-    showDialog<String>(
+    showDialog<AddServerResult>(
       context: context,
       builder: (context) => AddServerDialog(categoryName: categoryName),
-    ).then((serverAddress) {
+    ).then((result) {
       if (!mounted) return;
-      if (serverAddress != null && serverAddress.isNotEmpty) {
+      if (result != null && result.address.isNotEmpty) {
         context.read<ServerBloc>().add(
           ServerAddServer(
             categoryName: categoryName,
-            serverAddress: serverAddress,
+            serverAddress: result.address,
+            nickname: result.nickname,
           ),
         );
       }
