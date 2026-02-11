@@ -107,6 +107,8 @@ class _QueueFloatingCardState extends State<QueueFloatingCard>
         child: QueueWindow(
           serverAddress: state.serverAddress!,
           isCustomServer: false,
+          initialServerInfo: state.serverInfo,
+          initialMapInfo: state.mapInfo,
           onClose: () => Navigator.of(context).pop(),
         ),
       ),

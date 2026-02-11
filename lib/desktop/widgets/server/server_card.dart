@@ -1462,6 +1462,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         child: QueueWindow(
           serverAddress: address,
           isCustomServer: widget.server.serverItem.isCustom,
+          initialServerInfo: widget.server.serverData,
+          initialMapInfo: widget.server.mapInfo,
           onClose: () => Navigator.of(context).pop(),
         ),
       ),

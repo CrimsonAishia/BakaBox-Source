@@ -6,6 +6,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../../core/bloc/queue/queue_bloc.dart';
 import '../../../core/bloc/queue/queue_event.dart';
 import '../../../core/bloc/queue/queue_state.dart';
+import '../../../core/models/server_models.dart';
 import '../../../core/services/status_window_service.dart';
 import '../../../core/utils/map_utils.dart';
 import '../../../core/utils/player_count_utils.dart';
@@ -19,12 +20,18 @@ class QueueWindow extends StatefulWidget {
   final String serverAddress;
   final bool isCustomServer; // 是否为自定义服务器
   final VoidCallback? onClose;
+  /// 初始服务器信息（可选，用于立即显示已有数据）
+  final ServerInfo? initialServerInfo;
+  /// 初始地图信息（可选）
+  final MapData? initialMapInfo;
 
   const QueueWindow({
     super.key,
     required this.serverAddress,
     this.isCustomServer = false,
     this.onClose,
+    this.initialServerInfo,
+    this.initialMapInfo,
   });
 
   @override
@@ -37,7 +44,12 @@ class _QueueWindowState extends State<QueueWindow> {
   @override
   void initState() {
     super.initState();
-    _queueBloc = QueueBloc()..add(QueueInitialize(widget.serverAddress, isCustomServer: widget.isCustomServer));
+    _queueBloc = QueueBloc()..add(QueueInitialize(
+      widget.serverAddress,
+      isCustomServer: widget.isCustomServer,
+      initialServerInfo: widget.initialServerInfo,
+      initialMapInfo: widget.initialMapInfo,
+    ));
   }
 
   @override
