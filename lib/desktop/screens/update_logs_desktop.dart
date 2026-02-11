@@ -20,6 +20,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
   final ScrollController _scrollController = ScrollController();
   final FocusNode _searchFocusNode = FocusNode();
   Timer? _debounceTimer;
+  bool _isSearching = false; // 本地搜索状态，用于防抖期间显示 loading
 
   @override
   void initState() {
@@ -33,7 +34,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
   void _checkAndFetchData() {
     final bloc = context.read<UpdateLogBloc>();
     // 每次进入页面都刷新数据
-    if (!bloc.state.isLoading && bloc.state.logs.isEmpty) {
+    if (!bloc.state.isLoading) {
       bloc.add(const UpdateLogFetch());
     }
   }
@@ -59,14 +60,18 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
 
   void _performSearch(String query) {
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+    // 立即显示搜索中状态
+    setState(() => _isSearching = true);
+    _debounceTimer = Timer(const Duration(milliseconds: 800), () {
       context.read<UpdateLogBloc>().add(UpdateLogFetch(query));
+      if (mounted) setState(() => _isSearching = false);
     });
   }
 
   void _clearSearch() {
+    _debounceTimer?.cancel();
     _searchController.clear();
-    setState(() {});
+    setState(() => _isSearching = false);
     context.read<UpdateLogBloc>().add(const UpdateLogFetch());
   }
 
@@ -185,49 +190,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
           color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
         ),
       ),
-      child: Column(
-        children: [
-          _buildSearchResultTip(),
-          Expanded(child: _buildLogsContent()),
-        ],
-      ),
-    );
-  }
-
-  /// 搜索结果提示
-  Widget _buildSearchResultTip() {
-    return BlocBuilder<UpdateLogBloc, UpdateLogState>(
-      builder: (context, state) {
-        if (_searchController.text.isEmpty || state.isLoading) {
-          return const SizedBox.shrink();
-        }
-        return Container(
-          margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          decoration: BoxDecoration(
-            color: const Color(0xFF3B82F6).withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            children: [
-              Text(
-                '搜索结果: "${_searchController.text}"',
-                style: const TextStyle(color: Color(0xFF1E40AF), fontSize: 14),
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: _clearSearch,
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  minimumSize: Size.zero,
-                ),
-                child: const Text('清除搜索', style: TextStyle(color: Color(0xFF0080FF))),
-              ),
-            ],
-          ),
-        );
-      },
+      child: _buildLogsContent(),
     );
   }
 
@@ -235,7 +198,8 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
   Widget _buildLogsContent() {
     return BlocBuilder<UpdateLogBloc, UpdateLogState>(
       builder: (context, state) {
-        if (state.isLoading && state.logs.isEmpty) {
+        // 搜索中或加载中显示 loading
+        if (_isSearching || state.isLoading) {
           return _buildLoadingSkeleton();
         }
         if (state.error != null && state.logs.isEmpty) {
@@ -251,22 +215,27 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
 
   /// 加载骨架屏
   Widget _buildLoadingSkeleton() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final shimmerColor = isDark ? const Color(0xFF334155) : Colors.grey.shade200;
+    final borderColor = isDark ? const Color(0xFF334155) : Colors.grey.shade200;
+    
     return ListView.builder(
       padding: const EdgeInsets.all(20),
       itemCount: 4,
-      itemBuilder: (context, index) => _buildSkeletonItem(),
+      itemBuilder: (context, index) => _buildSkeletonItem(cardColor, shimmerColor, borderColor),
     );
   }
 
   /// 骨架屏项
-  Widget _buildSkeletonItem() {
+  Widget _buildSkeletonItem(Color cardColor, Color shimmerColor, Color borderColor) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,7 +246,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
                 width: 40,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
+                  color: shimmerColor,
                   borderRadius: BorderRadius.circular(6),
                 ),
               ),
@@ -286,7 +255,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
                 width: 140,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
+                  color: shimmerColor,
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
@@ -295,7 +264,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
                 width: 60,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
+                  color: shimmerColor,
                   borderRadius: BorderRadius.circular(6),
                 ),
               ),
@@ -306,7 +275,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
             width: double.infinity,
             height: 14,
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: shimmerColor,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -315,7 +284,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
             width: double.infinity,
             height: 14,
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: shimmerColor,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -324,7 +293,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
             width: 200,
             height: 14,
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: shimmerColor,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -390,18 +359,39 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
     return Scrollbar(
       controller: _scrollController,
       thumbVisibility: true,
-      child: ListView.builder(
-        controller: _scrollController,
-        padding: const EdgeInsets.all(20),
-        itemCount: state.logs.length + 1,
-        itemBuilder: (context, index) {
-          if (index >= state.logs.length) {
-            return _buildBottomIndicator(state);
-          }
-          final log = state.logs[index];
-          final isLatest = index == 0 && _searchController.text.isEmpty;
-          return _buildLogItem(log, index, isLatest);
-        },
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        child: ListView.builder(
+          key: ValueKey('${state.keyword}_${state.logs.length}'),
+          controller: _scrollController,
+          padding: const EdgeInsets.all(20),
+          itemCount: state.logs.length + 1,
+          itemBuilder: (context, index) {
+            if (index >= state.logs.length) {
+              return _buildBottomIndicator(state);
+            }
+            final log = state.logs[index];
+            final isLatest = index == 0 && _searchController.text.isEmpty;
+            return TweenAnimationBuilder<double>(
+              key: ValueKey(log.updateTime),
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: Duration(milliseconds: 200 + (index * 50).clamp(0, 300)),
+              curve: Curves.easeOut,
+              builder: (context, value, child) {
+                return Opacity(
+                  opacity: value,
+                  child: Transform.translate(
+                    offset: Offset(0, 20 * (1 - value)),
+                    child: child,
+                  ),
+                );
+              },
+              child: _buildLogItem(log, index, isLatest),
+            );
+          },
+        ),
       ),
     );
   }
@@ -533,7 +523,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
 
 
 
-  /// 日志内容 - 渲染 HTML
+  /// 日志内容 - 渲染 HTML，支持搜索关键字高亮
   Widget _buildLogContent(SteamWorkChangeLog log) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final htmlContent = log.rawHtml.isNotEmpty ? log.rawHtml : log.content;
@@ -546,8 +536,15 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
         ),
       );
     }
+    
+    // 如果有搜索关键字，对内容进行高亮处理
+    final keyword = _searchController.text.trim();
+    final processedHtml = keyword.isNotEmpty 
+        ? _highlightKeyword(htmlContent, keyword)
+        : htmlContent;
+    
     return Html(
-      data: htmlContent,
+      data: processedHtml,
       style: {
         'body': Style(
           margin: Margins.zero,
@@ -625,8 +622,59 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
           color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF6B7280),
           fontStyle: FontStyle.italic,
         ),
+        // 搜索高亮样式
+        'mark': Style(
+          backgroundColor: const Color(0xFFFEF08A),
+          color: const Color(0xFF92400E),
+          padding: HtmlPaddings.symmetric(horizontal: 2),
+        ),
       },
     );
+  }
+  
+  /// 高亮搜索关键字
+  /// 只处理 HTML 标签外的文本内容，避免破坏 HTML 结构
+  String _highlightKeyword(String html, String keyword) {
+    if (keyword.isEmpty) return html;
+    
+    // 转义正则特殊字符
+    final escapedKeyword = RegExp.escape(keyword);
+    
+    // 使用正则匹配，但排除 HTML 标签内的内容
+    // 匹配策略：找到所有不在 < > 之间的文本，对其中的关键字进行高亮
+    final result = StringBuffer();
+    var lastEnd = 0;
+    
+    // 匹配 HTML 标签
+    final tagRegex = RegExp(r'<[^>]*>');
+    final matches = tagRegex.allMatches(html);
+    
+    for (final match in matches) {
+      // 处理标签之前的文本
+      if (match.start > lastEnd) {
+        final textBefore = html.substring(lastEnd, match.start);
+        result.write(_highlightText(textBefore, escapedKeyword));
+      }
+      // 保留标签原样
+      result.write(match.group(0));
+      lastEnd = match.end;
+    }
+    
+    // 处理最后一个标签之后的文本
+    if (lastEnd < html.length) {
+      final textAfter = html.substring(lastEnd);
+      result.write(_highlightText(textAfter, escapedKeyword));
+    }
+    
+    return result.toString();
+  }
+  
+  /// 对纯文本进行关键字高亮
+  String _highlightText(String text, String escapedKeyword) {
+    final regex = RegExp(escapedKeyword, caseSensitive: false);
+    return text.replaceAllMapped(regex, (match) {
+      return '<mark>${match.group(0)}</mark>';
+    });
   }
 
   /// 底部指示器

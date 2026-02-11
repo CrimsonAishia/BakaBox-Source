@@ -3,47 +3,44 @@ import '../../models/update_log_models.dart';
 
 class UpdateLogState extends Equatable {
   final List<SteamWorkChangeLog> logs;
-  final bool isLoading;
-  final bool isLoadingMore;
+  final bool isLoading;      // 首次加载或搜索中
+  final bool isLoadingMore;  // 加载更多中
   final bool hasMore;
-  final String? error;
   final int totalCount;
-  final String currentKeyword;
+  final String keyword;      // 当前搜索关键字
+  final String? error;
 
   const UpdateLogState({
     this.logs = const [],
     this.isLoading = false,
     this.isLoadingMore = false,
     this.hasMore = true,
-    this.error,
     this.totalCount = 0,
-    this.currentKeyword = '',
+    this.keyword = '',
+    this.error,
   });
-
-  bool get isEmpty => logs.isEmpty && !isLoading;
-  bool get canLoadMore => hasMore && !isLoading && !isLoadingMore;
 
   UpdateLogState copyWith({
     List<SteamWorkChangeLog>? logs,
     bool? isLoading,
     bool? isLoadingMore,
     bool? hasMore,
+    int? totalCount,
+    String? keyword,
     String? error,
     bool clearError = false,
-    int? totalCount,
-    String? currentKeyword,
   }) {
     return UpdateLogState(
       logs: logs ?? this.logs,
       isLoading: isLoading ?? this.isLoading,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       hasMore: hasMore ?? this.hasMore,
-      error: clearError ? null : (error ?? this.error),
       totalCount: totalCount ?? this.totalCount,
-      currentKeyword: currentKeyword ?? this.currentKeyword,
+      keyword: keyword ?? this.keyword,
+      error: clearError ? null : (error ?? this.error),
     );
   }
 
   @override
-  List<Object?> get props => [logs, isLoading, isLoadingMore, hasMore, error, totalCount, currentKeyword];
+  List<Object?> get props => [logs, isLoading, isLoadingMore, hasMore, totalCount, keyword, error];
 }

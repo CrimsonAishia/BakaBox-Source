@@ -57,7 +57,7 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
 
   void _onSearchChanged(String value) {
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 800), () => context.read<UpdateLogBloc>().add(UpdateLogSearch(value)));
+    _debounceTimer = Timer(const Duration(milliseconds: 800), () => context.read<UpdateLogBloc>().add(UpdateLogFetch(value)));
   }
 
   @override
@@ -86,7 +86,7 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
             );
           }
           return RefreshIndicator(
-            onRefresh: () async => context.read<UpdateLogBloc>().add(UpdateLogRefresh()),
+            onRefresh: () async => context.read<UpdateLogBloc>().add(UpdateLogFetch(_searchController.text)),
             child: CustomScrollView(
               controller: _scrollController,
               slivers: [
