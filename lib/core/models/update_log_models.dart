@@ -46,6 +46,7 @@ class SteamWorkChangeLog {
 @JsonSerializable()
 class SteamWorkChangeLogResponse {
   final int total;
+  @JsonKey(defaultValue: [])
   final List<SteamWorkChangeLog> items;
 
   SteamWorkChangeLogResponse({required this.total, required this.items});

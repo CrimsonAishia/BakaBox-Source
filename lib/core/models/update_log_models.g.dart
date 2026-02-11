@@ -57,9 +57,11 @@ SteamWorkChangeLogResponse _$SteamWorkChangeLogResponseFromJson(
   Map<String, dynamic> json,
 ) => SteamWorkChangeLogResponse(
   total: (json['total'] as num).toInt(),
-  items: (json['items'] as List<dynamic>)
-      .map((e) => SteamWorkChangeLog.fromJson(e as Map<String, dynamic>))
-      .toList(),
+  items:
+      (json['items'] as List<dynamic>?)
+          ?.map((e) => SteamWorkChangeLog.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      [],
 );
 
 Map<String, dynamic> _$SteamWorkChangeLogResponseToJson(
