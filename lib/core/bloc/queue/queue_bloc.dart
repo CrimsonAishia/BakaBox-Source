@@ -60,16 +60,32 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
     // 从当前服务状态初始化
     final currentState = _statusService.state;
     
+    // 使用传入的初始数据（如果有），否则后续异步获取
+    final initialServerInfo = event.initialServerInfo;
+    final initialMapInfo = event.initialMapInfo;
+    
+    // 调整目标人数不超过允许的最大值
+    var config = savedConfig;
+    if (initialServerInfo != null) {
+      final maxTarget = (initialServerInfo.maxPlayers ?? 64) - 1;
+      if (maxTarget > 0 && config.targetPlayers > maxTarget) {
+        config = config.copyWith(targetPlayers: maxTarget);
+      }
+    }
+    
     emit(state.copyWith(
       isInitialized: true,
       serverAddress: event.serverAddress,
       isCustomServer: event.isCustomServer,
       isGameRunning: currentState.isGameRunning,
-      config: savedConfig,
+      config: config,
+      serverInfo: initialServerInfo,
+      mapInfo: initialMapInfo,
     ));
     
-    // 主动获取服务器信息
-    await _fetchServerInfo(event.serverAddress, emit);
+    // 异步刷新服务器信息（获取最新数据）
+    // 使用 add 事件而不是直接调用，避免 emit 失效问题
+    add(QueueRefreshServerInfo());
     
     // 启动定时更新（非挤服状态下每5秒更新一次）
     _startRegularUpdate(event.serverAddress);

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../models/server_models.dart';
 import '../../services/status_window_service.dart';
 
 /// 挤服事件基类
@@ -14,11 +15,20 @@ abstract class QueueEvent extends Equatable {
 class QueueInitialize extends QueueEvent {
   final String serverAddress;
   final bool isCustomServer;
+  /// 初始服务器信息（可选，用于立即显示已有数据）
+  final ServerInfo? initialServerInfo;
+  /// 初始地图信息（可选）
+  final MapData? initialMapInfo;
 
-  const QueueInitialize(this.serverAddress, {this.isCustomServer = false});
+  const QueueInitialize(
+    this.serverAddress, {
+    this.isCustomServer = false,
+    this.initialServerInfo,
+    this.initialMapInfo,
+  });
 
   @override
-  List<Object?> get props => [serverAddress, isCustomServer];
+  List<Object?> get props => [serverAddress, isCustomServer, initialServerInfo, initialMapInfo];
 }
 
 /// 开始挤服
