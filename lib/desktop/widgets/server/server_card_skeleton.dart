@@ -31,9 +31,10 @@ class _ServerCardSkeletonState extends State<ServerCardSkeleton>
   Widget build(BuildContext context) {
     // 与真实卡片完全一致的布局结构
     return Container(
-      height: 165, // 固定高度与真实卡片一致
+      height: 140, // 固定高度与真实卡片一致
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.transparent, width: 2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
@@ -43,7 +44,7 @@ class _ServerCardSkeletonState extends State<ServerCardSkeleton>
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         child: Stack(
           children: [
             // 深色背景
@@ -64,9 +65,9 @@ class _ServerCardSkeletonState extends State<ServerCardSkeleton>
                 color: Colors.black.withValues(alpha: 0.5),
               ),
             ),
-            // 骨架内容 - 与真实卡片 _buildContent() 完全一致的 padding
+            // 骨架内容 - 与真实卡片一致的 padding
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -78,39 +79,26 @@ class _ServerCardSkeletonState extends State<ServerCardSkeleton>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // 服务器名称 - 18px font
-                          _buildShimmer(widthPercent: 0.75, height: 22),
-                          const SizedBox(height: 5), // 与真实卡片一致
+                          // 服务器名称 - 20px font
+                          _buildShimmer(widthPercent: 0.7, height: 24),
+                          const SizedBox(height: 11),
                           // 地图名称行 - 16px font
                           Row(
                             children: [
-                              _buildShimmer(width: 40, height: 20), // "地图："
+                              _buildShimmer(width: 44, height: 20), // "地图："
                               const SizedBox(width: 4),
                               Expanded(
-                                child: _buildShimmer(widthPercent: 0.6, height: 20),
+                                child: _buildShimmer(widthPercent: 0.55, height: 20),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 5), // 与真实卡片一致
-                          // 地址和延迟行 - 14px font
+                          const SizedBox(height: 11),
+                          // 地址和延迟行 - 15px font
                           Row(
                             children: [
-                              _buildShimmer(width: 150, height: 18),
+                              _buildShimmer(width: 160, height: 18),
                               const SizedBox(width: 8),
                               _buildShimmer(width: 50, height: 18, radius: 4),
-                            ],
-                          ),
-                          const SizedBox(height: 10), // 与真实卡片一致
-                          // 按钮组 - padding 6px上下 + 14px字体
-                          Row(
-                            children: [
-                              _buildShimmer(width: 60, height: 26, radius: 4),
-                              const SizedBox(width: 10),
-                              _buildShimmer(width: 50, height: 26, radius: 4),
-                              const SizedBox(width: 10),
-                              _buildShimmer(width: 50, height: 26, radius: 4),
-                              const SizedBox(width: 10),
-                              _buildShimmer(width: 50, height: 26, radius: 4),
                             ],
                           ),
                         ],
@@ -122,14 +110,11 @@ class _ServerCardSkeletonState extends State<ServerCardSkeleton>
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // 玩家数量框 - padding 10px上下
-                      _buildShimmer(width: 85, height: 50, radius: 6),
-                      const SizedBox(height: 8), // 从12改为8，与真实卡片一致
-                      // 运行时间框 - padding 6px上下
-                      _buildShimmer(width: 80, height: 28, radius: 6),
+                      // 玩家数量框
+                      _buildShimmer(width: 75, height: 44, radius: 6),
                       const SizedBox(height: 6),
-                      // 周出现次数框
-                      _buildShimmer(width: 90, height: 28, radius: 6),
+                      // 运行时间框
+                      _buildShimmer(width: 80, height: 38, radius: 6),
                     ],
                   ),
                 ],
