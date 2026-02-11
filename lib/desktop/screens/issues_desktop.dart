@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import '../../core/core.dart';
+import '../../core/services/app_info_service.dart';
 import '../../core/services/quill_delta_codec.dart';
 import '../widgets/page_layout.dart';
 
@@ -1229,7 +1230,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
   }
 
   DeviceInfo _collectDeviceInfo() {
-    return DeviceInfo(appVersion: AppConstants.appVersion, platform: Platform.operatingSystem, osVersion: Platform.operatingSystemVersion, deviceModel: 'Desktop');
+    return DeviceInfo(appVersion: AppInfoService.instance.version, platform: Platform.operatingSystem, osVersion: Platform.operatingSystemVersion, deviceModel: 'Desktop');
   }
 
   Future<void> _submit() async {

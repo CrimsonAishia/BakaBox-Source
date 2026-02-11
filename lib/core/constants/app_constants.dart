@@ -1,7 +1,7 @@
 class AppConstants {
   // App Info
   static const String appName = 'BakaBox';
-  static const String appVersion = '1.0.0';
+  // 注意：版本号请使用 AppInfoService.instance.version 获取
   static const String appDescription = 'CS2 启动器';
   static const String appAuthor = 'Aishia';
   static const String appCopyright = '© 2026 Aishia. All rights reserved.';

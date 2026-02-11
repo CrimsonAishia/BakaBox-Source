@@ -4,16 +4,45 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
 import '../core/core.dart';
+import '../core/services/app_info_service.dart';
 import 'router/mobile_router.dart';
 import 'theme/mobile_theme.dart';
 import 'screens/mobile_home_screen.dart';
 
 /// 移动端应用入口
-class MobileApp extends StatelessWidget {
+class MobileApp extends StatefulWidget {
   const MobileApp({super.key});
 
   @override
+  State<MobileApp> createState() => _MobileAppState();
+}
+
+class _MobileAppState extends State<MobileApp> {
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initServices();
+  }
+
+  Future<void> _initServices() async {
+    await AppInfoService.instance.init();
+    if (mounted) {
+      setState(() => _initialized = true);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (!_initialized) {
+      return const MaterialApp(
+        home: Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => ServerBloc()),
