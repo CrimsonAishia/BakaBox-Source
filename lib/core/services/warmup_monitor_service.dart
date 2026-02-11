@@ -15,11 +15,18 @@ import 'source_server_service.dart';
 
 /// 热身监控服务（单例）
 ///
-/// 基于 GSI (Game State Integration) 监控热身状态：
+/// 当前使用 API 轮询方式监控热身状态（GSI 暂时禁用）
+/// 
+/// API 轮询模式：
+/// 1. 通过 ConsoleLogService 监听用户连接的服务器
+/// 2. 定时查询服务器地图运行时间
+/// 3. 根据地图热身时长判断是否处于热身阶段
+/// 4. 如果检测到热身，显示通知
+///
+/// GSI 模式（暂时禁用）：
 /// 1. 监听 GSI 数据流获取游戏状态
 /// 2. 通过 map.phase 判断是否处于热身阶段
 /// 3. 通过 phaseCountdowns.phaseEndsIn 获取热身剩余时间
-/// 4. 如果检测到热身，显示通知
 class WarmupMonitorService {
   static final WarmupMonitorService _instance =
       WarmupMonitorService._internal();
@@ -31,12 +38,14 @@ class WarmupMonitorService {
       NotificationWindowService();
   final ServerApi _serverApi = ServerApi();
   final GameStatusService _gameStatusService = GameStatusService();
+  // ignore: unused_field - GSI 暂时禁用，保留以便后续恢复
   final GsiService _gsiService = GsiService();
   final SchedulerService _scheduler = SchedulerService();
 
-  // GSI 相关
+  // GSI 相关（暂时禁用，保留以便后续恢复）
+  // ignore: unused_field
   StreamSubscription<GsiGameState?>? _gsiSubscription;
-  bool _useGsi = false; // 是否使用 GSI 数据源
+  bool _useGsi = false; // 是否使用 GSI 数据源（当前固定为 false）
   String? _gsiMapName; // GSI 获取的地图名
 
   // API 轮询相关
@@ -63,9 +72,10 @@ class WarmupMonitorService {
 
   /// 初始化服务
   Future<void> initialize() async {
-    // 监听 GSI 数据流（GSI 收到有效数据时会自动切换）
-    _gsiSubscription?.cancel();
-    _gsiSubscription = _gsiService.stateStream.listen(_onGsiStateChanged);
+    // GSI 监控暂时禁用，仅使用 API 轮询
+    // TODO: GSI 模式暂时不可用，后续可能恢复
+    // _gsiSubscription?.cancel();
+    // _gsiSubscription = _gsiService.stateStream.listen(_onGsiStateChanged);
 
     _consoleStateSubscription?.cancel();
     _consoleStateSubscription =
@@ -82,56 +92,22 @@ class WarmupMonitorService {
     // 从 ConsoleLogService 获取当前状态（它已经分析过历史日志了）
     _restoreStateFromConsoleLog();
     
-    // 默认启动 API 轮询，GSI 收到数据后会自动切换
+    // 强制使用 API 轮询（GSI 暂时禁用）
     _useGsi = false;
     _startMonitorLoop(isWarmup: false);
     
-    LogService.d('[WarmupMonitor] 服务已初始化，默认使用 API 轮询');
+    LogService.d('[WarmupMonitor] 服务已初始化，使用 API 轮询（GSI 已禁用）');
   }
 
-  /// GSI 数据变化处理
+  /// GSI 数据变化处理（暂时禁用）
+  // ignore: unused_element - GSI 暂时禁用，保留以便后续恢复
   void _onGsiStateChanged(GsiGameState? state) {
-    // 检查是否在主菜单（activity == 'menu'）
-    if (state != null && state.isInMenu) {
-      LogService.d('[WarmupMonitor] GSI: 玩家在主菜单');
-      // 玩家在主菜单，清理热身状态
-      if (_isWarmingUp && _currentServerAddress != null) {
-        _notificationService.dismissWarmupNotification(_currentServerAddress!);
-        _isWarmingUp = false;
-        LogService.d('[WarmupMonitor] GSI: 玩家回到主菜单，关闭热身通知');
-      }
-      // 主菜单时保持 GSI 监听，但不处理热身逻辑
-      // 注意：不切换到 API 轮询，因为 GSI 仍然在工作
-      return;
-    }
-    
-    if (state == null || state.map == null) {
-      // GSI 无有效数据，保持/切换到 API 轮询
-      if (_useGsi) {
-        _useGsi = false;
-        LogService.d('[WarmupMonitor] GSI 数据丢失，切换到 API 轮询');
-        
-        // 如果当前正在热身但没有 mapRuntime 数据，需要立即获取
-        if (_isWarmingUp && _currentMapRuntime == null && _currentMapName != null) {
-          _fetchMapRuntimeForFallback();
-        }
-        
-        _startMonitorLoop(isWarmup: _isWarmingUp);
-      }
-      return;
-    }
-
-    // GSI 收到有效游戏数据，立即切换到 GSI（GSI 数据为准）
-    if (!_useGsi) {
-      _useGsi = true;
-      _scheduler.cancel(_taskId);
-      LogService.d('[WarmupMonitor] GSI 收到有效数据，切换到 GSI 模式');
-    }
-
-    _processGsiState(state);
+    // GSI 监控已禁用，直接返回
+    return;
   }
 
   /// GSI 切换到 API 时，获取 mapRuntime 以便继续监控
+  // ignore: unused_element - GSI 暂时禁用，保留以便后续恢复
   Future<void> _fetchMapRuntimeForFallback() async {
     if (_currentMapName == null) return;
     
@@ -144,84 +120,19 @@ class WarmupMonitorService {
       LogService.d('[WarmupMonitor] 回退时获取 mapRuntime: ${_currentMapRuntime?.currentRuntime}');
     } catch (e) {
       LogService.e('[WarmupMonitor] 回退时获取 mapRuntime 失败', e);
-      // 获取失败时，重置 mapName 让下次轮询重新触发地图变化分支
       _currentMapName = null;
     }
   }
 
-  /// 处理 GSI 状态数据
+  /// 处理 GSI 状态数据（暂时禁用）
+  // ignore: unused_element - GSI 暂时禁用，保留以便后续恢复
   void _processGsiState(GsiGameState state) {
-    // 如果用户不在服务器中，忽略 GSI 数据
-    if (_connectedServerAddress == null || _connectedServerAddress!.isEmpty) {
-      return;
-    }
-    
-    final mapInfo = state.map;
-    if (mapInfo == null) return;
-
-    final mapName = mapInfo.name;
-    final mapPhase = mapInfo.phase;
-
-    // 跳过服务器重启时的加载地图
-    if (mapName == 'graphics_settings') return;
-
-    // 判断是否处于热身阶段
-    // GSI map.phase 可能的值: warmup, live, intermission, gameover 等
-    final isWarmupPhase = mapPhase == 'warmup';
-
-    _gsiMapName = mapName;
-
-    // 地图变化时获取地图信息（用于通知显示）
-    if (mapName != null && mapName != _currentMapName) {
-      final wasWarmingUp = _isWarmingUp;
-      _currentMapName = mapName;
-      _currentMapInfo = null;
-      _currentMapRuntime = null;
-      _currentMapRuntimeFetchedAt = null;
-      _isWarmingUp = false; // 换图时重置热身状态
-      _fetchMapInfoAsync(mapName);
-      // 地图变化时也获取服务器名称
-      _fetchServerNameAsync();
-      
-      // 如果之前在热身，关闭旧通知
-      if (wasWarmingUp && _currentServerAddress != null) {
-        _notificationService.dismissWarmupNotification(_currentServerAddress!);
-      }
-    }
-
-    // 热身状态变化处理
-    if (isWarmupPhase) {
-      // 检查地图是否支持热身监控
-      final warmupDuration = MapRuntimeUtils.getWarmupDuration(mapName);
-      if (warmupDuration == null) {
-        // 不支持热身的地图，关闭之前的热身通知
-        if (_isWarmingUp && _currentServerAddress != null) {
-          _notificationService.dismissWarmupNotification(_currentServerAddress!);
-          _isWarmingUp = false;
-          LogService.d('[WarmupMonitor/GSI] 地图 $mapName 不支持热身监控，关闭通知');
-        }
-        return;
-      }
-      
-      if (!_isWarmingUp) {
-        _isWarmingUp = true;
-        LogService.d('[WarmupMonitor/GSI] 检测到热身: $mapName');
-        // 获取 API 时间并显示通知（只需一次，通知窗口自己倒计时）
-        _fetchMapRuntimeAndShowNotification();
-      }
-    } else if (_isWarmingUp) {
-      // 热身结束
-      _isWarmingUp = false;
-      _currentMapRuntime = null;
-      _currentMapRuntimeFetchedAt = null;
-      if (_currentServerAddress != null) {
-        _notificationService.dismissWarmupNotification(_currentServerAddress!);
-      }
-      LogService.d('[WarmupMonitor/GSI] 热身结束');
-    }
+    // GSI 监控已禁用，直接返回
+    return;
   }
 
-  /// GSI 模式下获取 API 时间并显示通知
+  /// GSI 模式下获取 API 时间并显示通知（暂时禁用）
+  // ignore: unused_element - GSI 暂时禁用，保留以便后续恢复
   Future<void> _fetchMapRuntimeAndShowNotification() async {
     if (_currentMapName == null) return;
     
@@ -315,7 +226,8 @@ class WarmupMonitorService {
     }
   }
 
-  /// 异步获取地图信息
+  /// 异步获取地图信息（GSI 模式使用，暂时禁用）
+  // ignore: unused_element - GSI 暂时禁用，保留以便后续恢复
   Future<void> _fetchMapInfoAsync(String mapName) async {
     try {
       _currentMapInfo = await _serverApi.getMapInfo(mapName);
@@ -660,16 +572,17 @@ class WarmupMonitorService {
   }
 
   /// 获取当前数据源
-  String get dataSource => _useGsi ? 'GSI' : 'API';
+  String get dataSource => 'API'; // GSI 已禁用，固定返回 API
 
-  /// GSI 是否可用
-  bool get isGsiAvailable => _useGsi;
+  /// GSI 是否可用（暂时禁用）
+  bool get isGsiAvailable => false;
 
   void dispose() {
     _scheduler.cancel(_taskId);
     _consoleStateSubscription?.cancel();
     _gameStatusSubscription?.cancel();
-    _gsiSubscription?.cancel();
+    // GSI 订阅已禁用
+    // _gsiSubscription?.cancel();
     if (_isWarmingUp && _currentServerAddress != null) {
       _notificationService.dismissWarmupNotification(_currentServerAddress!);
     }
