@@ -47,6 +47,7 @@ class _Messages {
   static const launchSuccess = '游戏启动成功';
   static const launchFailed = '启动失败';
   static const launchTimeout = '游戏加载超时';
+  static const launchSteamStuck = 'Steam 状态异常，请在 Steam 中停止游戏或重启 Steam';
   
   // 连接服务器
   static const connecting = '正在连接服务器...';
@@ -311,6 +312,17 @@ class StatusWindowService {
         isGameRunning: true,
       ));
       return true;
+    }
+    
+    // 检测 Steam 状态是否卡住（Steam 认为游戏在运行但进程不存在）
+    final steamStuck = await _gameLauncher.isSteamStatusStuck();
+    if (steamStuck) {
+      _updateState(_state.copyWith(
+        type: OperationType.none,
+        status: OperationStatus.failed,
+        message: _Messages.launchSteamStuck,
+      ));
+      return false;
     }
     
     // 先创建窗口，再启动游戏
