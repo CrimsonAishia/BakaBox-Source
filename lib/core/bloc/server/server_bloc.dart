@@ -720,6 +720,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       final updatedCategory = await CustomServerService.addServerToCategory(
         event.categoryName,
         event.serverAddress,
+        nickname: event.nickname,
       );
       
       // 更新分类列表
@@ -1006,6 +1007,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         event.categoryName,
         event.oldServerAddress,
         event.newServerAddress,
+        nickname: event.nickname,
       );
       
       // 更新分类列表
@@ -1025,11 +1027,12 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           );
           
           if (serverIndex != -1) {
-            // 创建新的 ServerItem
+            // 创建新的 ServerItem，保留备注名
             final newServerItem = ServerItem(
               address: event.newServerAddress,
               serverAddress: event.newServerAddress,
               isCustom: true,
+              nickname: event.nickname,
             );
             
             // 创建新的 ExtendedServerItem，标记为加载中以触发数据获取
@@ -1045,7 +1048,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
               serverCategories: updatedCategories,
               selectedCategory: updatedCategory,
               servers: servers,
-              successMessage: '服务器地址已更新',
+              successMessage: '服务器已更新',
             ));
             
             // 异步获取被编辑服务器的数据（不阻塞 UI）
@@ -1054,13 +1057,13 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
             emit(state.copyWith(
               serverCategories: updatedCategories,
               selectedCategory: updatedCategory,
-              successMessage: '服务器地址已更新',
+              successMessage: '服务器已更新',
             ));
           }
         } else {
           emit(state.copyWith(
             serverCategories: updatedCategories,
-            successMessage: '服务器地址已更新',
+            successMessage: '服务器已更新',
           ));
         }
         

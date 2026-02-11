@@ -74,8 +74,9 @@ class CustomServerService {
   /// 添加服务器到指定分类
   static Future<ServerCategory> addServerToCategory(
     String categoryName,
-    String serverAddress,
-  ) async {
+    String serverAddress, {
+    String? nickname,
+  }) async {
     final categories = await loadCustomCategories();
     
     final categoryIndex = categories.indexWhere((c) => c.modelName == categoryName);
@@ -95,6 +96,7 @@ class CustomServerService {
       address: serverAddress,
       serverAddress: serverAddress,
       isCustom: true,
+      nickname: nickname,
     );
     
     final updatedCategory = category.copyWith(
@@ -104,7 +106,7 @@ class CustomServerService {
     categories[categoryIndex] = updatedCategory;
     await saveCustomCategories(categories);
     
-    LogService.i('添加服务器 $serverAddress 到分类 $categoryName');
+    LogService.i('添加服务器 $serverAddress 到分类 $categoryName${nickname != null ? " (备注: $nickname)" : ""}');
     return updatedCategory;
   }
   
@@ -137,8 +139,9 @@ class CustomServerService {
   static Future<ServerCategory> editServerInCategory(
     String categoryName,
     String oldServerAddress,
-    String newServerAddress,
-  ) async {
+    String newServerAddress, {
+    String? nickname,
+  }) async {
     final categories = await loadCustomCategories();
     
     final categoryIndex = categories.indexWhere((c) => c.modelName == categoryName);
@@ -148,13 +151,14 @@ class CustomServerService {
     
     final category = categories[categoryIndex];
     
-    // 检查新地址是否已存在
-    if (category.serverList.any((s) => 
-        (s.address ?? s.serverAddress) == newServerAddress)) {
+    // 如果地址变了，检查新地址是否已存在
+    if (oldServerAddress != newServerAddress && 
+        category.serverList.any((s) => 
+            (s.address ?? s.serverAddress) == newServerAddress)) {
       throw Exception('服务器地址已存在');
     }
     
-    // 查找并更新服务器地址
+    // 查找并更新服务器
     final serverIndex = category.serverList.indexWhere((s) =>
         (s.address ?? s.serverAddress) == oldServerAddress);
     if (serverIndex == -1) {
@@ -166,13 +170,14 @@ class CustomServerService {
       address: newServerAddress,
       serverAddress: newServerAddress,
       isCustom: true,
+      nickname: nickname,
     );
     
     final updatedCategory = category.copyWith(serverList: updatedServerList);
     categories[categoryIndex] = updatedCategory;
     await saveCustomCategories(categories);
     
-    LogService.i('编辑服务器地址: $oldServerAddress -> $newServerAddress (分类: $categoryName)');
+    LogService.i('编辑服务器: $oldServerAddress -> $newServerAddress${nickname != null ? " (备注: $nickname)" : ""} (分类: $categoryName)');
     return updatedCategory;
   }
   

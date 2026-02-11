@@ -40,28 +40,40 @@ class ServerItem {
   final String? serverAddress;
   final Map<String, dynamic>? serverData;
   @JsonKey(defaultValue: false) final bool isCustom; // 标记是否为用户自定义服务器
+  final String? nickname; // 自定义服务器备注名
 
   ServerItem({
     this.address, 
     this.serverAddress, 
     this.serverData,
     this.isCustom = false,
+    this.nickname,
   });
 
   factory ServerItem.fromJson(Map<String, dynamic> json) => _$ServerItemFromJson(json);
   Map<String, dynamic> toJson() => _$ServerItemToJson(this);
+  
+  /// 获取显示名称：优先备注名，其次服务器名，最后地址
+  String getDisplayName(String? hostName) {
+    if (nickname != null && nickname!.isNotEmpty) return nickname!;
+    if (hostName != null && hostName.isNotEmpty) return hostName;
+    return address ?? serverAddress ?? '未知服务器';
+  }
   
   ServerItem copyWith({
     String? address,
     String? serverAddress,
     Map<String, dynamic>? serverData,
     bool? isCustom,
+    String? nickname,
+    bool clearNickname = false,
   }) {
     return ServerItem(
       address: address ?? this.address,
       serverAddress: serverAddress ?? this.serverAddress,
       serverData: serverData ?? this.serverData,
       isCustom: isCustom ?? this.isCustom,
+      nickname: clearNickname ? null : (nickname ?? this.nickname),
     );
   }
 }

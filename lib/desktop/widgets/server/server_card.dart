@@ -451,8 +451,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   Widget _buildLeftContent() {
     final data = widget.server.serverData;
     final address = widget.server.serverItem.address ?? '未知地址';
-    final hostName =
-        data?.hostName ?? widget.server.serverItem.address ?? '未知服务器';
+    // 使用 getDisplayName 方法：优先备注名，其次服务器名，最后地址
+    final hostName = widget.server.serverItem.getDisplayName(data?.hostName);
     final mapName = data?.map ?? '未知地图';
 
     // 获取地图显示名称
@@ -743,7 +743,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                     if (isCustomServer)
                       _buildSecondaryBtn(
                         icon: MdiIcons.pencilOutline,
-                        tooltip: '编辑IP',
+                        tooltip: '编辑服务器',
                         color: const Color(0xFF0EA5E9),
                         onPressed: () => _showEditIpDialog(context),
                       )
@@ -864,12 +864,17 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         widget.server.serverItem.address ??
         widget.server.serverItem.serverAddress ??
         '未知地址';
+    final nickname = widget.server.serverItem.nickname;
+    // 如果有备注名，显示 "备注名 (地址)"，否则只显示地址
+    final displayName = nickname != null && nickname.isNotEmpty
+        ? '$nickname ($address)'
+        : address;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('确认删除'),
-        content: Text('确定要删除服务器 "$address" 吗？'),
+        content: Text('确定要删除服务器 "$displayName" 吗？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -898,6 +903,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         widget.server.serverItem.serverAddress ??
         '';
     final categoryName = widget.categoryName ?? '';
+    final currentNickname = widget.server.serverItem.nickname;
 
     if (address.isEmpty || categoryName.isEmpty) return;
 
@@ -905,14 +911,16 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       context: context,
       builder: (dialogContext) => EditServerDialog(
         currentAddress: address,
+        currentNickname: currentNickname,
         categoryName: categoryName,
-        onConfirm: (newAddress) {
+        onConfirm: (newAddress, nickname) {
           if (mounted) {
             context.read<ServerBloc>().add(
               ServerEditServer(
                 categoryName: categoryName,
                 oldServerAddress: address,
                 newServerAddress: newAddress,
+                nickname: nickname,
               ),
             );
           }
@@ -928,7 +936,10 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         widget.server.serverItem.serverAddress;
     if (address == null) return;
 
-    final serverName = widget.server.serverData?.hostName ?? address;
+    // 使用 getDisplayName：优先备注名，其次服务器名，最后地址
+    final serverName = widget.server.serverItem.getDisplayName(
+      widget.server.serverData?.hostName,
+    );
     final currentMap = widget.server.serverData?.map;
 
     final isNowMonitoring = await _mapMonitorService.toggleMonitor(
@@ -1266,7 +1277,10 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     if (!mounted) return;
     setState(() => _isConnecting = true);
 
-    final serverName = widget.server.serverData?.hostName ?? address;
+    // 使用 getDisplayName：优先备注名，其次服务器名，最后地址
+    final serverName = widget.server.serverItem.getDisplayName(
+      widget.server.serverData?.hostName,
+    );
     final mapName = widget.server.serverData?.map;
     final mapInfo = widget.server.mapInfo;
     final gameType = widget.server.serverData?.gameType;

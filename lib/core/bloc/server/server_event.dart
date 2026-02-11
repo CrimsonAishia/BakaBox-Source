@@ -96,9 +96,10 @@ class ServerAddCategory extends ServerEvent {
 class ServerAddServer extends ServerEvent {
   final String categoryName;
   final String serverAddress;
-  const ServerAddServer({required this.categoryName, required this.serverAddress});
+  final String? nickname; // 备注名
+  const ServerAddServer({required this.categoryName, required this.serverAddress, this.nickname});
   @override
-  List<Object?> get props => [categoryName, serverAddress];
+  List<Object?> get props => [categoryName, serverAddress, nickname];
 }
 
 /// 删除自定义分类
@@ -143,13 +144,15 @@ class ServerEditServer extends ServerEvent {
   final String categoryName;
   final String oldServerAddress;
   final String newServerAddress;
+  final String? nickname; // 备注名
   const ServerEditServer({
     required this.categoryName,
     required this.oldServerAddress,
     required this.newServerAddress,
+    this.nickname,
   });
   @override
-  List<Object?> get props => [categoryName, oldServerAddress, newServerAddress];
+  List<Object?> get props => [categoryName, oldServerAddress, newServerAddress, nickname];
 }
 
 /// 更新被编辑服务器的数据（内部事件）
