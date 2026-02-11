@@ -101,13 +101,8 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
   
   /// 处理关闭按钮点击
   void _handleClose(BuildContext context, QueueBlocState state) {
-    // 如果未在挤服或连接中，暂停
-    if (!state.isQueueActive && !state.isConnecting) {
-      // 不需要暂停，直接关闭
-    } else if (!state.isConnecting && state.connectionState == QueueConnectionState.idle) {
-      context.read<QueueBloc>().add(const QueuePause());
-    }
-    // 页面关闭，但服务继续运行
+    // 关闭对话框时不暂停挤服，让挤服在后台继续运行
+    // 用户可以通过悬浮卡片查看状态或停止挤服
     context.read<QueueBloc>().add(const QueueDispose());
     widget.onClose?.call();
   }
@@ -131,6 +126,9 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
             // 如果 needManualLaunch 为 true，不处理其他状态变化（避免重复提示）
             if (current.needManualLaunch) return false;
             
+            // 挤服开始时自动关闭对话框
+            if (!previous.isQueueActive && current.isQueueActive) return true;
+            
             // 其他状态变化
             if (previous.error != current.error && current.error != null) return true;
             if (previous.connectionState != current.connectionState) return true;
@@ -146,6 +144,18 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
                   serverAddress: state.serverAddress ?? widget.serverAddress,
                 ),
               );
+              return;
+            }
+            
+            // 挤服开始时自动关闭对话框，让悬浮卡片显示
+            if (state.isQueueActive) {
+              // 延迟一点关闭，让用户看到挤服已开始
+              Future.delayed(const Duration(milliseconds: 300), () {
+                if (context.mounted) {
+                  context.read<QueueBloc>().add(const QueueDispose());
+                  widget.onClose?.call();
+                }
+              });
               return;
             }
             

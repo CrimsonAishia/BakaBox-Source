@@ -7,6 +7,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../core/core.dart';
 import '../widgets/desktop_window_controls.dart';
 import '../widgets/desktop_navigation.dart';
+import '../widgets/queue/queue_floating_card.dart';
 
 import 'welcome_screen.dart';
 import 'servers_desktop.dart';
@@ -164,6 +165,13 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
               const Positioned(
                 top: 0, left: 0, right: 120, height: 56,
                 child: DragToMoveArea(child: SizedBox.expand()),
+              ),
+            // 挤服悬浮卡片
+            if (isDesktop)
+              const Positioned(
+                bottom: 16,
+                right: 16,
+                child: QueueFloatingCard(),
               ),
           ],
         ),
