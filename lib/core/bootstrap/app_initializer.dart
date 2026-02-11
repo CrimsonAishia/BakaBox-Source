@@ -1,5 +1,6 @@
 import 'package:window_manager/window_manager.dart';
 import '../services/analytics_service.dart';
+import '../services/app_info_service.dart';
 import '../services/update_service.dart';
 import '../utils/app_directory_service.dart';
 import '../utils/log_service.dart';
@@ -25,6 +26,8 @@ class AppInitializer {
     if (!skipStorage) {
       await StorageUtils.init();
     }
+    // 初始化应用信息服务（版本号等）
+    await AppInfoService.instance.init();
     // 初始化 windowManager
     await windowManager.ensureInitialized();
   }

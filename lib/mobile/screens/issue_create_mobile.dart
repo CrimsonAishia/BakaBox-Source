@@ -6,6 +6,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'dart:io';
 import '../../core/core.dart';
+import '../../core/services/app_info_service.dart';
 import '../../core/services/quill_delta_codec.dart';
 
 /// 创建 Issue 移动端页面
@@ -158,7 +159,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
 
   DeviceInfo _collectDeviceInfo() {
     return DeviceInfo(
-      appVersion: AppConstants.appVersion,
+      appVersion: AppInfoService.instance.version,
       platform: Platform.operatingSystem,
       osVersion: Platform.operatingSystemVersion,
       deviceModel: 'Mobile',
