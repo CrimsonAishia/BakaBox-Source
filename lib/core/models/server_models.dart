@@ -144,8 +144,9 @@ class PlayerInfo {
 class TeamScores {
   @JsonKey(name: 'ct_score') final int? ctScore;
   @JsonKey(name: 't_score') final int? tScore;
+  @JsonKey(name: 'data_quality') final String? dataQuality;
 
-  TeamScores({this.ctScore, this.tScore});
+  TeamScores({this.ctScore, this.tScore, this.dataQuality});
 
   factory TeamScores.fromJson(Map<String, dynamic> json) => _$TeamScoresFromJson(json);
   Map<String, dynamic> toJson() => _$TeamScoresToJson(this);
@@ -241,6 +242,7 @@ class ExtendedServerItem {
   final bool mapRuntimeFetching;
   final int consecutiveFailures; // 连续失败次数
   final bool isOffline; // 是否离线（连续失败3次）
+  final TeamScores? teamScores; // 新增：比分数据
 
   ExtendedServerItem({
     required this.serverItem, this.serverData, this.mapInfo, this.updatedAt,
@@ -248,6 +250,7 @@ class ExtendedServerItem {
     this.pingInfo, this.mapRuntime, this.mapRuntimeLastFetched,
     this.mapRuntimeError = false, this.mapRuntimeFetching = false,
     this.consecutiveFailures = 0, this.isOffline = false,
+    this.teamScores,
   });
 
   ExtendedServerItem copyWith({
@@ -256,6 +259,7 @@ class ExtendedServerItem {
     MapRuntimeData? mapRuntime, int? mapRuntimeLastFetched, bool? mapRuntimeError, bool? mapRuntimeFetching,
     bool clearServerData = false, bool clearMapRuntime = false, bool clearMapInfo = false,
     int? consecutiveFailures, bool? isOffline,
+    TeamScores? teamScores, bool clearTeamScores = false,
   }) {
     return ExtendedServerItem(
       serverItem: serverItem ?? this.serverItem,
@@ -272,6 +276,7 @@ class ExtendedServerItem {
       mapRuntimeFetching: mapRuntimeFetching ?? this.mapRuntimeFetching,
       consecutiveFailures: consecutiveFailures ?? this.consecutiveFailures,
       isOffline: isOffline ?? this.isOffline,
+      teamScores: clearTeamScores ? null : (teamScores ?? this.teamScores),
     );
   }
 }
