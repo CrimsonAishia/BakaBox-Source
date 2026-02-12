@@ -15,6 +15,7 @@ library;
 // API
 export 'api/api_client.dart';
 export 'api/announcement_api.dart';
+export 'api/score_api.dart';
 export 'api/server_api.dart';
 export 'api/server_stats_api.dart';
 export 'api/update_api.dart';
@@ -29,6 +30,7 @@ export 'exceptions/app_exception.dart';
 // Models
 export 'models/announcement_models.dart';
 export 'models/server_models.dart';
+export 'models/server_score.dart';
 export 'models/server_stats_models.dart';
 export 'models/update_models.dart';
 export 'models/update_log_models.dart';
@@ -56,6 +58,7 @@ export 'services/custom_server_service.dart';
 export 'services/draft_service.dart';
 export 'services/image_url_service.dart';
 export 'services/scheduler_service.dart';
+export 'services/score_upload_service.dart';
 
 // Utils
 export 'utils/announcement_utils.dart';

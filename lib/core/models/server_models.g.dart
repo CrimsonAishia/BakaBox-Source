@@ -126,10 +126,15 @@ Map<String, dynamic> _$PlayerInfoToJson(PlayerInfo instance) =>
 TeamScores _$TeamScoresFromJson(Map<String, dynamic> json) => TeamScores(
   ctScore: (json['ct_score'] as num?)?.toInt(),
   tScore: (json['t_score'] as num?)?.toInt(),
+  dataQuality: json['data_quality'] as String?,
 );
 
 Map<String, dynamic> _$TeamScoresToJson(TeamScores instance) =>
-    <String, dynamic>{'ct_score': instance.ctScore, 't_score': instance.tScore};
+    <String, dynamic>{
+      'ct_score': instance.ctScore,
+      't_score': instance.tScore,
+      'data_quality': instance.dataQuality,
+    };
 
 ServerDetailInfo _$ServerDetailInfoFromJson(Map<String, dynamic> json) =>
     ServerDetailInfo(

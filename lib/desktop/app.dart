@@ -182,6 +182,9 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
       
       // 初始化更新日志监控服务
       UpdateLogMonitorService().initialize();
+      
+      // 初始化比分上传服务（依赖 GsiService 和 ConsoleLogService）
+      await ScoreUploadService().initialize();
     } catch (e) {
       LogService.e('[DesktopAppHome] 初始化服务时出错', e);
     }

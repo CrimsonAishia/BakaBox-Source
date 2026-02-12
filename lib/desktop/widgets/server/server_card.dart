@@ -1056,6 +1056,78 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   /// 是否处于服务器启动状态（graphics_settings 地图）
   bool get _isStarting => widget.server.serverData?.map == 'graphics_settings';
 
+  /// 检测是否为僵尸地图
+  /// 
+  /// 僵尸地图前缀：ze_（zombie escape）、zm_（zombie mod）
+  bool _isZombieMap(String? mapName) {
+    if (mapName == null || mapName.isEmpty) return false;
+    final lowerName = mapName.toLowerCase();
+    return lowerName.startsWith('ze_') || lowerName.startsWith('zm_');
+  }
+
+  /// 构建比分显示组件
+  /// 
+  /// 普通模式：CT(蓝) X : Y T(黄)
+  /// 僵尸模式：人类(绿) X : Y 僵尸(红)
+  /// 数据过期（unknown）：全部灰色显示
+  Widget _buildScoreDisplay(int ctScore, int tScore, String? mapName, {String? dataQuality}) {
+    final isZombie = _isZombieMap(mapName);
+    final isUnknown = dataQuality == 'unknown';
+    
+    // 颜色定义（unknown 时全部灰色）
+    final Color leftColor;
+    final Color rightColor;
+    final Color iconColor;
+    
+    if (isUnknown) {
+      leftColor = const Color(0xFF9CA3AF);  // 灰色
+      rightColor = const Color(0xFF9CA3AF); // 灰色
+      iconColor = const Color(0xFF9CA3AF);  // 灰色
+    } else if (isZombie) {
+      leftColor = const Color(0xFF22C55E);  // 人类 - 绿色
+      rightColor = const Color(0xFFEF4444); // 僵尸 - 红色
+      iconColor = const Color(0xFF6B7280);  // 深灰色
+    } else {
+      leftColor = const Color(0xFF3B82F6);  // CT - 蓝色
+      rightColor = const Color(0xFFEAB308); // T - 黄色
+      iconColor = const Color(0xFF6B7280);  // 深灰色
+    }
+    
+    // 标签
+    final leftLabel = isZombie ? '人类' : 'CT';
+    final rightLabel = isZombie ? '僵尸' : 'T';
+    
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '$leftLabel $ctScore',
+          style: TextStyle(
+            color: leftColor,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Icon(
+            MdiIcons.swordCross,
+            size: 12,
+            color: iconColor,
+          ),
+        ),
+        Text(
+          '$tScore $rightLabel',
+          style: TextStyle(
+            color: rightColor,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildRightContent() {
     final data = widget.server.serverData;
     final players = data?.players ?? 0;
@@ -1310,8 +1382,19 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
               ),
             ],
           ),
-          // 周出现次数
-          if (weeklyOccurrences != null) ...[
+          // 比分显示（非热身且有有效比分数据时，0:0不显示）或周出现次数
+          if (!_isWarmingUp &&
+              widget.server.teamScores?.ctScore != null &&
+              widget.server.teamScores?.tScore != null &&
+              (widget.server.teamScores!.ctScore! > 0 || widget.server.teamScores!.tScore! > 0)) ...[
+            const SizedBox(height: 2),
+            _buildScoreDisplay(
+              widget.server.teamScores!.ctScore!,
+              widget.server.teamScores!.tScore!,
+              mapName,
+              dataQuality: widget.server.teamScores!.dataQuality,
+            ),
+          ] else if (weeklyOccurrences != null) ...[
             const SizedBox(height: 2),
             RichText(
               text: TextSpan(

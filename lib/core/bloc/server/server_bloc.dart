@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../models/server_models.dart';
 import '../../api/server_api.dart';
+import '../../api/score_api.dart';
 import '../../services/source_server_service.dart';
 import '../../services/game_launcher_service.dart';
 import '../../services/map_change_monitor_service.dart';
@@ -207,6 +208,11 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     // 等待所有服务器加载完成
     await Future.wait(futures);
     
+    // 批量查询服务器比分数据（静默失败，不影响主流程）
+    if (!emit.isDone && requestId == _currentRequestId) {
+      await _fetchBatchScores(requestId, emit);
+    }
+    
     if (!emit.isDone && requestId == _currentRequestId) {
       _updateCurrentCategoryOnlineCount(emit);
       emit(state.copyWith(
@@ -216,6 +222,58 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     }
     
     _clearRecentlyUpdatedAfterDelay(requestId);
+  }
+  
+  /// 批量获取服务器比分数据
+  /// 
+  /// 静默失败，不影响主流程
+  Future<void> _fetchBatchScores(int requestId, Emitter<ServerState> emit) async {
+    try {
+      // 收集所有服务器地址
+      final addresses = <String>[];
+      for (final server in state.servers) {
+        final address = server.serverItem.address ?? server.serverItem.serverAddress;
+        if (address != null && address.isNotEmpty) {
+          addresses.add(address);
+        }
+      }
+      
+      if (addresses.isEmpty) return;
+      
+      // 调用 ScoreApi 批量查询比分
+      final scoreApi = ScoreApi();
+      final scores = await scoreApi.batchGetScores(addresses);
+      
+      if (scores.isEmpty || emit.isDone || requestId != _currentRequestId) return;
+      
+      // 将比分数据合并到 ExtendedServerItem
+      final updatedServers = state.servers.map((server) {
+        final address = server.serverItem.address ?? server.serverItem.serverAddress;
+        if (address == null) return server;
+        
+        final score = scores[address];
+        if (score == null || score.ctScore == null || score.tScore == null) {
+          return server;
+        }
+        
+        // 创建 TeamScores 并更新服务器（包含 dataQuality）
+        final teamScores = TeamScores(
+          ctScore: score.ctScore,
+          tScore: score.tScore,
+          dataQuality: score.dataQuality,
+        );
+        
+        return server.copyWith(teamScores: teamScores);
+      }).toList();
+      
+      if (!emit.isDone && requestId == _currentRequestId) {
+        emit(state.copyWith(servers: updatedServers));
+        LogService.d('批量比分查询完成: ${scores.length} 个服务器有比分数据');
+      }
+    } catch (e) {
+      // 静默失败，不影响主流程
+      LogService.w('批量比分查询失败: $e');
+    }
   }
   
   /// 获取单个服务器信息（异步独立执行）
