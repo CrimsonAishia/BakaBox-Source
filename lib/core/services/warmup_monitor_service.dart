@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import '../api/server_api.dart';
 import '../models/gsi_models.dart';
@@ -11,6 +10,7 @@ import 'game_status_service.dart';
 import 'gsi_service.dart';
 import 'notification_window_service.dart';
 import 'scheduler_service.dart';
+import 'server_address_mapping_service.dart';
 import 'source_server_service.dart';
 
 /// 热身监控服务（单例）
@@ -41,6 +41,8 @@ class WarmupMonitorService {
   // ignore: unused_field - GSI 暂时禁用，保留以便后续恢复
   final GsiService _gsiService = GsiService();
   final SchedulerService _scheduler = SchedulerService();
+  final ServerAddressMappingService _addressMapping =
+      ServerAddressMappingService();
 
   // GSI 相关（暂时禁用，保留以便后续恢复）
   // ignore: unused_field
@@ -63,9 +65,6 @@ class WarmupMonitorService {
   StreamSubscription<GameStatusEvent>? _gameStatusSubscription;
   GameState _lastGameState = GameState.unknown;
   String? _connectedServerAddress;
-
-  // IP 到域名地址的映射缓存
-  final Map<String, String> _ipToDomainCache = {};
   
   static const int normalIntervalSeconds = 2;
   static const int warmupIntervalSeconds = 1;
@@ -87,7 +86,7 @@ class WarmupMonitorService {
         _gameStatusService.statusStream.listen(_onGameStatusChanged);
 
     // 先加载服务器列表，建立 IP 到域名的映射（API 轮询需要）
-    await _loadServerAddressMapping();
+    await _addressMapping.load();
 
     // 从 ConsoleLogService 获取当前状态（它已经分析过历史日志了）
     _restoreStateFromConsoleLog();
@@ -242,7 +241,8 @@ class WarmupMonitorService {
     if (state.state == GameState.inGame && state.serverAddress.isNotEmpty) {
       _connectedServerAddress = state.serverAddress;
       _currentServerAddress = state.serverAddress;
-      _currentServerDomainAddress = _getDomainAddress(state.serverAddress);
+      _currentServerDomainAddress =
+          _addressMapping.getDomainAddress(state.serverAddress);
       // 不恢复 mapName，让 API 轮询重新获取并检测热身
       // 因为恢复 mapName 但没有 mapRuntime 会导致无法检测热身
       LogService.d('[WarmupMonitor] 历史: 用户当前在服务器: ${state.serverAddress}');
@@ -289,44 +289,6 @@ class WarmupMonitorService {
     }
   }
 
-  /// 加载服务器地址映射（IP -> 域名）
-  Future<void> _loadServerAddressMapping() async {
-    try {
-      final categories = await _serverApi.getServerList();
-      for (final category in categories) {
-        for (final server in category.serverList) {
-          final domainAddress = server.address;
-          if (domainAddress != null && domainAddress.isNotEmpty) {
-            final parts = domainAddress.split(':');
-            if (parts.length == 2) {
-              final host = parts[0];
-              final port = parts[1];
-              try {
-                final addresses = await InternetAddress.lookup(host);
-                if (addresses.isNotEmpty) {
-                  final ip = addresses.first.address;
-                  final ipAddress = '$ip:$port';
-                  _ipToDomainCache[ipAddress] = domainAddress;
-                }
-              } catch (e) {
-                // 如果是 IP 地址，直接使用
-                _ipToDomainCache[domainAddress] = domainAddress;
-              }
-            }
-          }
-        }
-      }
-      LogService.d(
-          '[WarmupMonitor] 地址映射加载完成，共 ${_ipToDomainCache.length} 个');
-    } catch (e) {
-      LogService.e('[WarmupMonitor] 加载服务器地址映射失败', e);
-    }
-  }
-
-  String _getDomainAddress(String ipAddress) {
-    return _ipToDomainCache[ipAddress] ?? ipAddress;
-  }
-
   void _onConsoleStateChanged(ConsoleLogState state) {
     final newGameState = state.state;
 
@@ -345,7 +307,8 @@ class WarmupMonitorService {
                   .dismissWarmupNotification(_currentServerAddress!);
             }
             _currentServerAddress = serverAddress;
-            _currentServerDomainAddress = _getDomainAddress(serverAddress);
+            _currentServerDomainAddress =
+                _addressMapping.getDomainAddress(serverAddress);
             _currentMapName = null;
             _currentMapRuntime = null;
             _currentMapRuntimeFetchedAt = null;
@@ -422,7 +385,8 @@ class WarmupMonitorService {
             .dismissWarmupNotification(_currentServerAddress!);
       }
       _currentServerAddress = serverAddress;
-      _currentServerDomainAddress = _getDomainAddress(serverAddress);
+      _currentServerDomainAddress =
+          _addressMapping.getDomainAddress(serverAddress);
       _currentMapName = null;
       _currentMapRuntime = null;
       _currentMapRuntimeFetchedAt = null;
