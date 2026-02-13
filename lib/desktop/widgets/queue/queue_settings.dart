@@ -151,9 +151,10 @@ class QueueSettings extends StatelessWidget {
     final theme = Theme.of(context);
     
     // 根据捐助者状态决定最大值
+    // 自定义服务器不受捐助者限制，默认就是 maxPlayers - 1
     int effectiveMaxPlayers;
-    if (isDonator) {
-      // 捐助者：可以拉到 maxPlayers - 1（因为满人时无法进入）
+    if (isCustomServer || isDonator) {
+      // 自定义服务器或捐助者：可以拉到 maxPlayers - 1（因为满人时无法进入）
       effectiveMaxPlayers = (maxPlayers > 1 ? maxPlayers : 64) - 1;
     } else {
       // 非捐助者：最多只能拉到59人，但不超过 maxPlayers - 1
