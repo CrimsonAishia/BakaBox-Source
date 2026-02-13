@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../api/notification_api.dart';
 import '../../models/notification_models.dart';
+import '../../services/auth_service.dart';
 import '../../services/scheduler_service.dart';
 import '../../utils/log_service.dart';
 import 'notification_event.dart';
@@ -41,6 +42,11 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         name: '消息未读数量自动刷新',
         interval: Intervals.fiveMinutes,
         callback: () async {
+          // 检查用户是否已登录，未登录时跳过请求
+          if (!AuthService.instance.isLoggedIn) {
+            LogService.d('消息未读数量自动刷新跳过：用户未登录');
+            return;
+          }
           LogService.d('消息未读数量自动刷新触发');
           add(const NotificationFetchUnreadCount());
         },
@@ -298,6 +304,12 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     NotificationFetchUnreadCount event,
     Emitter<NotificationState> emit,
   ) async {
+    // 检查用户是否已登录，未登录时跳过请求
+    if (!AuthService.instance.isLoggedIn) {
+      LogService.d('获取未读消息数量跳过：用户未登录');
+      return;
+    }
+    
     try {
       final count = await _notificationApi.getUnreadCount();
       emit(state.copyWith(unreadCount: count));
