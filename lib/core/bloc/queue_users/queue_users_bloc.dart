@@ -7,11 +7,22 @@ import '../../utils/log_service.dart';
 import 'queue_users_event.dart';
 import 'queue_users_state.dart';
 
-/// 挤服用户状态管理
+/// 挤服用户状态管理（单例）
 ///
 /// 管理用户列表、连接状态和动画触发
 /// 订阅 QueueUsersService 事件流，将服务事件转换为 Bloc 事件
+/// 
+/// 独立于窗口生命周期，窗口关闭后状态保持
 class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
+  // 单例模式
+  static QueueUsersBloc? _instance;
+  
+  /// 获取单例实例
+  static QueueUsersBloc get instance {
+    _instance ??= QueueUsersBloc._internal(service: QueueUsersServiceImpl.instance);
+    return _instance!;
+  }
+  
   final QueueUsersService _service;
   StreamSubscription<QueueUsersServiceEvent>? _serviceSubscription;
   
@@ -21,7 +32,7 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
   /// 最后一次成功发送的 join 信息（用于重连时自动重发）
   QueueUsersJoin? _lastJoin;
 
-  QueueUsersBloc({required QueueUsersService service})
+  QueueUsersBloc._internal({required QueueUsersService service})
       : _service = service,
         super(QueueUsersState.initial()) {
     // 注册事件处理器
@@ -42,6 +53,12 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
 
     // 订阅服务事件流
     _subscribeToService();
+  }
+  
+  /// 兼容旧的构造方式（不推荐使用，仅用于测试）
+  @Deprecated('Use QueueUsersBloc.instance instead')
+  factory QueueUsersBloc({required QueueUsersService service}) {
+    return instance;
   }
 
   /// 订阅 QueueUsersService 事件流

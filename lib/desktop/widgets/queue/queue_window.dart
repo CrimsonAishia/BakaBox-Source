@@ -12,7 +12,6 @@ import '../../../core/bloc/queue_users/queue_users_bloc.dart';
 import '../../../core/bloc/queue_users/queue_users_event.dart';
 import '../../../core/bloc/queue_users/queue_users_state.dart';
 import '../../../core/models/server_models.dart';
-import '../../../core/services/queue_users_service.dart';
 import '../../../core/services/status_window_service.dart';
 import '../../../core/utils/map_utils.dart';
 import '../../../core/utils/player_count_utils.dart';
@@ -48,8 +47,6 @@ class QueueWindow extends StatefulWidget {
 
 class _QueueWindowState extends State<QueueWindow> {
   late final QueueBloc _queueBloc;
-  late final QueueUsersBloc _usersBloc;
-  late final QueueUsersService _usersService;
   final StatusWindowService _statusService = StatusWindowService();
 
   @override
@@ -65,17 +62,15 @@ class _QueueWindowState extends State<QueueWindow> {
       initialMapInfo: widget.initialMapInfo,
     ));
     
-    // 初始化 QueueUsersBloc
-    _usersService = QueueUsersServiceImpl();
-    _usersBloc = QueueUsersBloc(service: _usersService);
-    
-    // 如果挤服正在进行，立即连接 WebSocket 并发送 join
+    // 如果挤服正在进行且 WebSocket 未连接，立即连接并发送 join
     final currentState = _statusService.state;
+    final usersBloc = QueueUsersBloc.instance;
     if (currentState.type == OperationType.queueing && 
-        currentState.status == OperationStatus.running) {
-      _usersBloc.add(QueueUsersConnect(serverAddress: widget.serverAddress));
+        currentState.status == OperationStatus.running &&
+        !usersBloc.state.isConnected) {
+      usersBloc.add(QueueUsersConnect(serverAddress: widget.serverAddress));
       // 连接成功后会自动发送 join（通过 _pendingJoin 机制）
-      _usersBloc.add(const QueueUsersJoin(
+      usersBloc.add(const QueueUsersJoin(
         odId: '',
         visitorId: '',
         nickname: null,
@@ -90,11 +85,10 @@ class _QueueWindowState extends State<QueueWindow> {
     // 标记挤服窗口已关闭
     _statusService.setQueueWindowOpen(false);
     
-    // 发送离开消息并断开连接
-    _usersBloc.add(const QueueUsersDisconnect());
-    _usersBloc.close();
-    (_usersService as QueueUsersServiceImpl).dispose();
-    // 确保 Bloc 被正确关闭，释放 Timer 和 StreamSubscription
+    // 窗口关闭时不断开 WebSocket 连接，让挤服在后台继续运行
+    // 单例 Bloc 和 Service 保持运行，不关闭
+    
+    // 确保 QueueBloc 被正确关闭，释放 Timer 和 StreamSubscription
     _queueBloc.close();
     super.dispose();
   }
@@ -104,7 +98,7 @@ class _QueueWindowState extends State<QueueWindow> {
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: _queueBloc),
-        BlocProvider.value(value: _usersBloc),
+        BlocProvider.value(value: QueueUsersBloc.instance),
       ],
       child: _QueueWindowContent(
         serverAddress: widget.serverAddress,
@@ -209,8 +203,9 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
             if (state.connectionState == QueueConnectionState.connected &&
                 _lastToastConnectionState != QueueConnectionState.connected) {
               _lastToastConnectionState = QueueConnectionState.connected;
-              // 发送挤服成功消息
+              // 发送挤服成功消息并断开 WebSocket
               context.read<QueueUsersBloc>().add(const QueueUsersSuccess());
+              context.read<QueueUsersBloc>().add(const QueueUsersDisconnect());
               ToastUtils.showSuccess(context, '进去啦！');
               // 延迟关闭窗口，让用户看到成功提示
               Future.delayed(const Duration(milliseconds: 500), () {
@@ -561,7 +556,9 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
         height: 44,
         child: ElevatedButton.icon(
           onPressed: () {
+            // 发送离开消息并断开 WebSocket 连接
             context.read<QueueUsersBloc>().add(const QueueUsersLeave());
+            context.read<QueueUsersBloc>().add(const QueueUsersDisconnect());
             context.read<QueueBloc>().add(const QueuePause());
           },
           icon: Icon(MdiIcons.pause, size: 18),
