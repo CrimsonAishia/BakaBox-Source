@@ -145,8 +145,8 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
     if (!mounted || _webViewController == null || _isDisposed) return;
 
     try {
-      // 等待页面加载完成
-      await Future.delayed(const Duration(milliseconds: 1500));
+      // 等待页面加载完成（增加等待时间）
+      await Future.delayed(const Duration(milliseconds: 2500));
       
       if (_isDisposed || !mounted) return;
 
@@ -157,25 +157,34 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
           const url = window.location.href;
           
           // 检查退出链接（更精确的检测，避免误判）
-          const hasLogout = html.includes('action=logout') || 
+          const hasLogout = html.includes('action=logout') ||
                            html.includes('logging&action=logout') ||
                            (html.includes('退出') && html.includes('登录'));
           
           // 检查绑定账号元素（更精确的检测）
-          const hasBindAccount = html.includes('id="layer_reginfo_t"') && 
+          const hasBindAccount = html.includes('id="layer_reginfo_t"') &&
                                 html.includes('绑定已有账号');
           
           // 检查是否是 member.php?mod=connect 页面（绑定页面的特征）
-          const isMemberConnectPage = url.includes('member.php') && 
+          const isMemberConnectPage = url.includes('member.php') &&
                                       url.includes('mod=connect');
           
-          // 检查页面是否加载完整（避免误判）
-          const isPageLoaded = html.length > 500 && 
-                              (html.includes('</html>') || html.includes('</body>') || html.includes('</HTML>'));
+          // 检查是否显示"绑定成功"提示（此时页面还会跳转）
+          const hasBindSuccess = html.includes('您的账号与QQ账号绑定成功') ||
+                                html.includes('绑定成功');
           
-          return JSON.stringify({ 
-            hasLogout: hasLogout, 
+          // 检查页面是否加载完整（放宽条件，支持更多 HTML 变体）
+          const htmlLower = html.toLowerCase();
+          const isPageLoaded = html.length > 200 &&
+                              (htmlLower.includes('</html>') ||
+                               htmlLower.includes('</body>') ||
+                               htmlLower.includes('discuz_uid') ||
+                               html.includes('action=logout'));
+          
+          return JSON.stringify({
+            hasLogout: hasLogout,
             hasBindAccount: hasBindAccount,
+            hasBindSuccess: hasBindSuccess,
             isMemberConnectPage: isMemberConnectPage,
             isPageLoaded: isPageLoaded,
             url: url,
@@ -191,22 +200,67 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
         
         // 解析结果
         final hasBindAccount = resultStr.contains('"hasBindAccount":true');
+        final hasBindSuccess = resultStr.contains('"hasBindSuccess":true');
         final isMemberConnectPage = resultStr.contains('"isMemberConnectPage":true');
         final hasLogout = resultStr.contains('"hasLogout":true');
         final isPageLoaded = resultStr.contains('"isPageLoaded":true');
         
-        // 检查页面是否加载完整
-        if (!isPageLoaded) {
-          LogService.w('[QQLogin] 页面未完全加载，等待重试');
-          if (mounted && !_isDisposed) {
-            setState(() {
-              _isExtracting = false;
-              _loginDetected = false;
-              _hasLeftInitialPage = false;
-            });
-            ToastUtils.showError(context, '页面加载异常，请重试');
-          }
+        // 检查是否显示"绑定成功"提示，此时页面还会跳转，需要等待
+        if (hasBindSuccess) {
+          LogService.d('[QQLogin] 检测到绑定成功提示，等待页面跳转...');
+          await Future.delayed(const Duration(milliseconds: 3000));
+          
+          if (_isDisposed || !mounted) return;
+          
+          // 跳转后重新检测
+          _checkLoginStatus();
           return;
+        }
+        
+        // 检查页面是否加载完整（如果未加载完整，再等待一次）
+        if (!isPageLoaded) {
+          LogService.w('[QQLogin] 页面未完全加载，等待重试...');
+          await Future.delayed(const Duration(milliseconds: 2000));
+          
+          if (_isDisposed || !mounted) return;
+          
+          // 重新检测
+          final retryResult = await _webViewController!.executeScript(checkScript);
+          if (retryResult != null) {
+            final retryStr = retryResult.toString();
+            LogService.d('[QQLogin] 重试检测结果: $retryStr');
+            
+            // 重试时也检查绑定成功
+            if (retryStr.contains('"hasBindSuccess":true')) {
+              LogService.d('[QQLogin] 重试时检测到绑定成功提示，等待页面跳转...');
+              await Future.delayed(const Duration(milliseconds: 3000));
+              
+              if (_isDisposed || !mounted) return;
+              
+              _checkLoginStatus();
+              return;
+            }
+            
+            final retryLoaded = retryStr.contains('"isPageLoaded":true');
+            if (!retryLoaded) {
+              // 仍然未加载完整，但如果有 logout 链接说明已登录
+              if (retryStr.contains('"hasLogout":true')) {
+                LogService.d('[QQLogin] 页面未完全加载但检测到登录状态，继续提取 Cookie');
+                await _extractCookiesAndLogin();
+                return;
+              }
+              
+              if (mounted && !_isDisposed) {
+                setState(() {
+                  _isExtracting = false;
+                  _loginDetected = false;
+                  _hasLeftInitialPage = false;
+                });
+                ToastUtils.showError(context, '页面加载异常，请重试');
+              }
+              return;
+            }
+          }
         }
         
         // 优先检查是否是绑定页面（最明确的特征）
