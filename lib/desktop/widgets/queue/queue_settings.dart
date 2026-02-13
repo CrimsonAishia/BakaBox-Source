@@ -15,6 +15,7 @@ class QueueSettings extends StatelessWidget {
   final String? gameType; // 游戏类型，用于判断是否为 CSGO
   final String? mapName; // 地图名称，用于判断是否显示捐助者选项
   final bool isCustomServer; // 是否为自定义服务器
+  final int queueingUserCount; // 当前挤服人数
   final ValueChanged<int>? onTargetPlayersChanged;
   final ValueChanged<int>? onThreadCountChanged;
   final ValueChanged<bool>? onAutoRetryChanged;
@@ -32,6 +33,7 @@ class QueueSettings extends StatelessWidget {
     this.gameType,
     this.mapName,
     this.isCustomServer = false,
+    this.queueingUserCount = 0,
     this.onTargetPlayersChanged,
     this.onThreadCountChanged,
     this.onAutoRetryChanged,
@@ -82,6 +84,35 @@ class QueueSettings extends StatelessWidget {
                   color: theme.colorScheme.onSurface,
                 ),
               ),
+              const Spacer(),
+              // 当前挤服人数
+              if (queueingUserCount > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        MdiIcons.accountGroup,
+                        size: 14,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '当前 $queueingUserCount 人正在挤服',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 16),

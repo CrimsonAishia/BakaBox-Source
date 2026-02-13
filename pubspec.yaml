@@ -100,6 +100,7 @@ flutter:
     - assets/images/
     - assets/images/tutorials/
     - assets/images/character_gallery/
+    - assets/images/queue/
     - assets/icons/
     - assets/audio/
 
