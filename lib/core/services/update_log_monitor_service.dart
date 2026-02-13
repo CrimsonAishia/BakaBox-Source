@@ -29,6 +29,9 @@ class UpdateLogMonitorService {
 
   /// 是否已初始化
   bool _initialized = false;
+  
+  /// 通知开关
+  bool _enabled = true;
 
   /// 依赖服务
   final UpdateLogApi _updateLogApi = UpdateLogApi();
@@ -114,6 +117,14 @@ class UpdateLogMonitorService {
 
   /// 发送更新通知
   Future<void> _sendUpdateNotification(dynamic latestLog, String latestUpdateTime) async {
+    // 如果通知已禁用，不发送
+    if (!_enabled) {
+      LogService.d('[UpdateLogMonitor] 通知已禁用，跳过发送');
+      // 仍然更新记录的时间，避免下次启用时重复通知
+      await StorageUtils.setString(_lastCheckTimeKey, latestUpdateTime);
+      return;
+    }
+    
     try {
       // 格式化时间（去掉秒）
       final displayTime = _formatUpdateTime(latestUpdateTime);
@@ -180,5 +191,14 @@ class UpdateLogMonitorService {
   void dispose() {
     _stopMonitorLoop();
     _initialized = false;
+  }
+  
+  /// 通知是否启用
+  bool get isEnabled => _enabled;
+  
+  /// 设置通知开关
+  void setEnabled(bool enabled) {
+    _enabled = enabled;
+    LogService.d('[UpdateLogMonitor] 通知已${enabled ? '启用' : '禁用'}');
   }
 }

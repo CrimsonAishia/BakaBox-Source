@@ -18,6 +18,7 @@ import '../../services/notification_window_service.dart';
 import '../../services/announcement_read_service.dart';
 import '../../services/custom_server_service.dart';
 import '../../services/warmup_monitor_service.dart';
+import '../../services/update_log_monitor_service.dart';
 import 'settings_event.dart';
 import 'settings_state.dart';
 
@@ -29,6 +30,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   static const String _keyNotificationPosition = 'notification_position';
   static const String _keyFloatingWindowPosition = 'floating_window_position';
   static const String _keyWarmupNotificationEnabled = 'warmup_notification_enabled';
+  static const String _keyUpdateLogNotificationEnabled = 'update_log_notification_enabled';
 
   final AudioService _audioService = AudioService();
   final GamePathService _gamePathService = GamePathService();
@@ -66,6 +68,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<SettingsSetFloatingWindowPosition>(_onSetFloatingWindowPosition);
     // 热身通知开关事件
     on<SettingsSetWarmupNotificationEnabled>(_onSetWarmupNotificationEnabled);
+    // 更新日志通知开关事件
+    on<SettingsSetUpdateLogNotificationEnabled>(_onSetUpdateLogNotificationEnabled);
   }
 
   Future<void> _onInit(SettingsInit event, Emitter<SettingsState> emit) async {
@@ -99,6 +103,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       final notificationPositionIndex = StorageUtils.getInt(_keyNotificationPosition) ?? NotificationPositionType.topRight.index;
       final floatingWindowPositionIndex = StorageUtils.getInt(_keyFloatingWindowPosition) ?? NotificationPositionType.bottomRight.index;
       final warmupNotificationEnabled = StorageUtils.getBool(_keyWarmupNotificationEnabled, defaultValue: true);
+      final updateLogNotificationEnabled = StorageUtils.getBool(_keyUpdateLogNotificationEnabled, defaultValue: true);
       final notificationPosition = NotificationPositionType.values[notificationPositionIndex];
       final floatingWindowPosition = NotificationPositionType.values[floatingWindowPositionIndex];
       
@@ -107,6 +112,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         NotificationWindowService().setNotificationPosition(notificationPosition);
         // 同步热身通知开关到 WarmupMonitorService
         WarmupMonitorService().setEnabled(warmupNotificationEnabled);
+        // 同步更新日志通知开关到 UpdateLogMonitorService
+        UpdateLogMonitorService().setEnabled(updateLogNotificationEnabled);
       }
       
       emit(state.copyWith(
@@ -114,6 +121,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         notificationPosition: notificationPosition,
         floatingWindowPosition: floatingWindowPosition,
         warmupNotificationEnabled: warmupNotificationEnabled,
+        updateLogNotificationEnabled: updateLogNotificationEnabled,
       ));
     } catch (e) {
       LogService.e('加载偏好设置失败', e);
@@ -871,6 +879,22 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       LogService.d('热身通知已${event.enabled ? '启用' : '禁用'}');
     } catch (e) {
       LogService.e('设置热身通知开关失败', e);
+    }
+  }
+
+  // ==================== 更新日志通知开关事件处理 ====================
+
+  Future<void> _onSetUpdateLogNotificationEnabled(SettingsSetUpdateLogNotificationEnabled event, Emitter<SettingsState> emit) async {
+    try {
+      await StorageUtils.setBool(_keyUpdateLogNotificationEnabled, event.enabled);
+      emit(state.copyWith(updateLogNotificationEnabled: event.enabled));
+      
+      // 同步到 UpdateLogMonitorService
+      UpdateLogMonitorService().setEnabled(event.enabled);
+      
+      LogService.d('更新日志通知已${event.enabled ? '启用' : '禁用'}');
+    } catch (e) {
+      LogService.e('设置更新日志通知开关失败', e);
     }
   }
 }

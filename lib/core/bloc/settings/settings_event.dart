@@ -131,3 +131,11 @@ class SettingsSetWarmupNotificationEnabled extends SettingsEvent {
   @override
   List<Object?> get props => [enabled];
 }
+
+// 更新日志通知开关事件
+class SettingsSetUpdateLogNotificationEnabled extends SettingsEvent {
+  final bool enabled;
+  const SettingsSetUpdateLogNotificationEnabled(this.enabled);
+  @override
+  List<Object?> get props => [enabled];
+}

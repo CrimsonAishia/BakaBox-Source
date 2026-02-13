@@ -96,6 +96,8 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        _buildUpdateLogNotificationToggle(),
+        const SizedBox(width: 16),
         _buildSearchBox(),
         const SizedBox(width: 16),
         _buildTotalCount(),
@@ -152,6 +154,92 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
           _performSearch(value);
         },
       ),
+    );
+  }
+
+  /// 更新日志通知开关
+  Widget _buildUpdateLogNotificationToggle() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return BlocBuilder<SettingsBloc, SettingsState>(
+      buildWhen: (previous, current) =>
+          previous.updateLogNotificationEnabled != current.updateLogNotificationEnabled,
+      builder: (context, settingsState) {
+        final isEnabled = settingsState.updateLogNotificationEnabled;
+        final updateLogColor = const Color(0xFF3B82F6); // 蓝色主题
+        
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: isEnabled
+                ? updateLogColor.withValues(alpha: 0.12)
+                : (isDark
+                    ? Colors.white.withValues(alpha: 0.04)
+                    : Colors.black.withValues(alpha: 0.03)),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isEnabled
+                  ? updateLogColor.withValues(alpha: 0.3)
+                  : (isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : Colors.black.withValues(alpha: 0.06)),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  isEnabled
+                      ? Icons.notifications_active_rounded
+                      : Icons.notifications_off_outlined,
+                  key: ValueKey(isEnabled),
+                  size: 15,
+                  color: isEnabled
+                      ? updateLogColor
+                      : (isDark ? Colors.white38 : Colors.black38),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '更新通知',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: isEnabled
+                      ? updateLogColor
+                      : (isDark ? Colors.white54 : Colors.black45),
+                ),
+              ),
+              const SizedBox(width: 4),
+              SizedBox(
+                height: 22,
+                width: 36,
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: Switch(
+                    value: isEnabled,
+                    onChanged: (value) {
+                      context.read<SettingsBloc>().add(
+                        SettingsSetUpdateLogNotificationEnabled(value),
+                      );
+                    },
+                    activeThumbColor: Colors.white,
+                    activeTrackColor: updateLogColor,
+                    inactiveThumbColor: isDark ? Colors.white54 : Colors.grey.shade400,
+                    inactiveTrackColor: isDark 
+                        ? Colors.white.withValues(alpha: 0.15) 
+                        : Colors.black.withValues(alpha: 0.12),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
