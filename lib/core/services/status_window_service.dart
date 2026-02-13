@@ -213,6 +213,7 @@ class StatusWindowService {
   bool _isThreadsRunning = false;        // 防止重复启动线程
   bool _isTriggeredConnection = false;   // 防止重复触发连接
   bool _isFetching = false;              // 防止并发请求
+  bool _isQueueWindowOpen = false;       // 挤服窗口是否打开
   final Set<int> _activeThreadIds = {};
   String? _lastMapName;
   int _consecutiveFailures = 0;
@@ -230,6 +231,18 @@ class StatusWindowService {
   
   /// 是否有活跃窗口
   bool get isShowing => _windowId != null;
+  
+  /// 挤服窗口是否打开
+  bool get isQueueWindowOpen => _isQueueWindowOpen;
+  
+  /// 设置挤服窗口打开状态
+  void setQueueWindowOpen(bool isOpen) {
+    if (_isQueueWindowOpen != isOpen) {
+      _isQueueWindowOpen = isOpen;
+      // 通知监听者状态变化
+      _stateController.add(_state);
+    }
+  }
   
   /// 当前操作类型
   OperationType get currentType => _state.type;

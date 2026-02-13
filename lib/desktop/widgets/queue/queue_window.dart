@@ -1,18 +1,27 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
+import '../../../core/api/env_config.dart';
+import '../../../core/bloc/auth/auth_bloc.dart';
 import '../../../core/bloc/queue/queue_bloc.dart';
 import '../../../core/bloc/queue/queue_event.dart';
 import '../../../core/bloc/queue/queue_state.dart';
+import '../../../core/bloc/queue_users/queue_users_bloc.dart';
+import '../../../core/bloc/queue_users/queue_users_event.dart';
+import '../../../core/bloc/queue_users/queue_users_state.dart';
 import '../../../core/models/server_models.dart';
+import '../../../core/services/queue_users_service.dart';
 import '../../../core/services/status_window_service.dart';
 import '../../../core/utils/map_utils.dart';
 import '../../../core/utils/player_count_utils.dart';
+import '../../../core/utils/storage_utils.dart';
 import '../../../core/utils/toast_utils.dart';
 import '../../../core/widgets/map_background.dart';
 import '../../../core/widgets/csgo_manual_launch_dialog.dart';
+import 'queue_arena.dart';
 import 'queue_settings.dart';
 
 /// 挤服窗口
@@ -40,20 +49,52 @@ class QueueWindow extends StatefulWidget {
 
 class _QueueWindowState extends State<QueueWindow> {
   late final QueueBloc _queueBloc;
+  late final QueueUsersBloc _usersBloc;
+  late final QueueUsersService _usersService;
+  final StatusWindowService _statusService = StatusWindowService();
 
   @override
   void initState() {
     super.initState();
+    // 标记挤服窗口已打开
+    _statusService.setQueueWindowOpen(true);
+    
     _queueBloc = QueueBloc()..add(QueueInitialize(
       widget.serverAddress,
       isCustomServer: widget.isCustomServer,
       initialServerInfo: widget.initialServerInfo,
       initialMapInfo: widget.initialMapInfo,
     ));
+    
+    // 初始化 QueueUsersBloc
+    _usersService = QueueUsersServiceImpl();
+    _usersBloc = QueueUsersBloc(service: _usersService);
+    
+    // 如果挤服正在进行，立即连接 WebSocket 并发送 join
+    final currentState = _statusService.state;
+    if (currentState.type == OperationType.queueing && 
+        currentState.status == OperationStatus.running) {
+      _usersBloc.add(QueueUsersConnect(serverAddress: widget.serverAddress));
+      // 连接成功后会自动发送 join（通过 _pendingJoin 机制）
+      _usersBloc.add(const QueueUsersJoin(
+        odId: '',
+        visitorId: '',
+        nickname: null,
+        avatarUrl: null,
+        isAnonymous: true,
+      ));
+    }
   }
 
   @override
   void dispose() {
+    // 标记挤服窗口已关闭
+    _statusService.setQueueWindowOpen(false);
+    
+    // 发送离开消息并断开连接
+    _usersBloc.add(const QueueUsersDisconnect());
+    _usersBloc.close();
+    (_usersService as QueueUsersServiceImpl).dispose();
     // 确保 Bloc 被正确关闭，释放 Timer 和 StreamSubscription
     _queueBloc.close();
     super.dispose();
@@ -61,8 +102,11 @@ class _QueueWindowState extends State<QueueWindow> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _queueBloc,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: _queueBloc),
+        BlocProvider.value(value: _usersBloc),
+      ],
       child: _QueueWindowContent(
         serverAddress: widget.serverAddress,
         onClose: widget.onClose,
@@ -138,9 +182,6 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
             // 如果 needManualLaunch 为 true，不处理其他状态变化（避免重复提示）
             if (current.needManualLaunch) return false;
             
-            // 挤服开始时自动关闭对话框
-            if (!previous.isQueueActive && current.isQueueActive) return true;
-            
             // 其他状态变化
             if (previous.error != current.error && current.error != null) return true;
             if (previous.connectionState != current.connectionState) return true;
@@ -159,18 +200,6 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
               return;
             }
             
-            // 挤服开始时自动关闭对话框，让悬浮卡片显示
-            if (state.isQueueActive) {
-              // 延迟一点关闭，让用户看到挤服已开始
-              Future.delayed(const Duration(milliseconds: 300), () {
-                if (context.mounted) {
-                  context.read<QueueBloc>().add(const QueueDispose());
-                  widget.onClose?.call();
-                }
-              });
-              return;
-            }
-            
             // 错误提示
             if (state.error != null) {
               ToastUtils.showError(context, state.error!);
@@ -181,7 +210,16 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
             if (state.connectionState == QueueConnectionState.connected &&
                 _lastToastConnectionState != QueueConnectionState.connected) {
               _lastToastConnectionState = QueueConnectionState.connected;
+              // 发送挤服成功消息
+              context.read<QueueUsersBloc>().add(const QueueUsersSuccess());
               ToastUtils.showSuccess(context, '进去啦！');
+              // 延迟关闭窗口，让用户看到成功提示
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (context.mounted) {
+                  context.read<QueueBloc>().add(const QueueDispose());
+                  widget.onClose?.call();
+                }
+              });
               return;
             }
             
@@ -381,37 +419,100 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 设置面板（始终显示）
-          QueueSettings(
-            key: const ValueKey('settings'),
-            targetPlayers: state.config.targetPlayers,
-            threadCount: state.config.threadCount,
-            enableAutoRetry: state.config.enableAutoRetry,
-            isDonator: state.config.isDonator,
-            disabled: state.isQueueActive || state.isConnecting,
-            isGameRunning: state.isGameRunning,
-            maxPlayers: state.serverInfo?.maxPlayers ?? 64,
-            gameType: state.serverInfo?.gameType,
-            mapName: state.serverInfo?.map,
-            isCustomServer: state.isCustomServer,
-            onTargetPlayersChanged: (value) {
-              context.read<QueueBloc>().add(QueueSetTargetPlayers(value));
-            },
-            onThreadCountChanged: (value) {
-              context.read<QueueBloc>().add(QueueSetThreadCount(value));
-            },
-            onAutoRetryChanged: (value) {
-              context.read<QueueBloc>().add(QueueSetAutoRetry(value));
-            },
-            onDonatorChanged: (value) {
-              context.read<QueueBloc>().add(QueueSetDonator(value));
-            },
-          ),
+          // 挤服中显示动画面板，否则显示设置面板
+          if (state.isQueueActive)
+            _buildArenaPanel(context, state)
+          else
+            BlocBuilder<QueueUsersBloc, QueueUsersState>(
+              builder: (context, usersState) {
+                return QueueSettings(
+                  key: const ValueKey('settings'),
+                  targetPlayers: state.config.targetPlayers,
+                  threadCount: state.config.threadCount,
+                  enableAutoRetry: state.config.enableAutoRetry,
+                  isDonator: state.config.isDonator,
+                  disabled: state.isQueueActive || state.isConnecting,
+                  isGameRunning: state.isGameRunning,
+                  maxPlayers: state.serverInfo?.maxPlayers ?? 64,
+                  gameType: state.serverInfo?.gameType,
+                  mapName: state.serverInfo?.map,
+                  isCustomServer: state.isCustomServer,
+                  queueingUserCount: usersState.queueingCount,
+                  onTargetPlayersChanged: (value) {
+                    context.read<QueueBloc>().add(QueueSetTargetPlayers(value));
+                  },
+                  onThreadCountChanged: (value) {
+                    context.read<QueueBloc>().add(QueueSetThreadCount(value));
+                  },
+                  onAutoRetryChanged: (value) {
+                    context.read<QueueBloc>().add(QueueSetAutoRetry(value));
+                  },
+                  onDonatorChanged: (value) {
+                    context.read<QueueBloc>().add(QueueSetDonator(value));
+                  },
+                );
+              },
+            ),
           const SizedBox(height: 16),
           // 操作按钮
           _buildActionButtons(context, state),
         ],
       ),
+    );
+  }
+
+  /// 构建动画面板
+  Widget _buildArenaPanel(BuildContext context, QueueBlocState state) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    return BlocBuilder<QueueUsersBloc, QueueUsersState>(
+      builder: (context, usersState) {
+        // 判断服务器是否可加入
+        final players = state.serverInfo?.players ?? 0;
+        final maxPlayers = state.serverInfo?.maxPlayers ?? 0;
+        final canJoin = maxPlayers > 0 && players < maxPlayers;
+        final hasUserJoined = usersState.successUserId != null;
+        
+        return Container(
+          height: 260,
+          decoration: BoxDecoration(
+            color: isDark 
+                ? const Color(0xFF1E293B).withValues(alpha: 0.5)
+                : const Color(0xFFF1F5F9).withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDark 
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.05),
+            ),
+          ),
+          child: QueueArena(
+            users: usersState.users,
+            centerWidget: _QueueServerIcon(
+              canJoin: canJoin,
+              hasUserJoined: hasUserJoined,
+            ),
+            joinedUserId: usersState.joinedUserId,
+            leftUserId: usersState.leftUserId,
+            successUserId: usersState.successUserId,
+            onAnimationTriggered: () {
+              context.read<QueueUsersBloc>().clearAnimationTriggers();
+            },
+            onUserSuccessAnimationComplete: (user) {
+              if (user.isSelf) {
+                // 自己成功进入，关闭窗口
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  if (context.mounted) {
+                    context.read<QueueBloc>().add(const QueueDispose());
+                    widget.onClose?.call();
+                  }
+                });
+              }
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -465,7 +566,10 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
       return SizedBox(
         height: 44,
         child: ElevatedButton.icon(
-          onPressed: () => context.read<QueueBloc>().add(const QueuePause()),
+          onPressed: () {
+            context.read<QueueUsersBloc>().add(const QueueUsersLeave());
+            context.read<QueueBloc>().add(const QueuePause());
+          },
           icon: Icon(MdiIcons.pause, size: 18),
           label: const Text('暂停', style: TextStyle(fontSize: 14)),
           style: ElevatedButton.styleFrom(
@@ -514,7 +618,29 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
     return SizedBox(
       height: 44,
       child: ElevatedButton.icon(
-        onPressed: state.isCheckingGame ? null : () => context.read<QueueBloc>().add(const QueueStart()),
+        onPressed: state.isCheckingGame ? null : () {
+          // 获取当前用户信息
+          final authState = context.read<AuthBloc>().state;
+          final isAuthenticated = authState.isAuthenticated;
+          final userInfo = authState.userInfo;
+          
+          // 先连接 WebSocket（如果还没连接）
+          final usersBloc = context.read<QueueUsersBloc>();
+          if (!usersBloc.state.isConnected) {
+            usersBloc.add(QueueUsersConnect(serverAddress: widget.serverAddress));
+          }
+          
+          // 构建 QueueUsersJoin 事件，包含当前用户信息
+          // 后端不返回当前用户，需要在客户端把自己加入列表
+          usersBloc.add(QueueUsersJoin(
+            odId: isAuthenticated ? (userInfo?.uid ?? '') : '',
+            visitorId: isAuthenticated ? '' : _getOrCreateVisitorId(),
+            nickname: isAuthenticated ? userInfo?.username : null,
+            avatarUrl: isAuthenticated ? userInfo?.avatar : null,
+            isAnonymous: !isAuthenticated,
+          ));
+          context.read<QueueBloc>().add(const QueueStart());
+        },
         icon: state.isCheckingGame
             ? const SizedBox(
                 width: 16, height: 16,
@@ -529,6 +655,21 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
         ),
       ),
     );
+  }
+  
+  /// 获取或创建访客ID
+  /// 匿名用户使用此ID标识，存储在本地以保持一致性
+  String _getOrCreateVisitorId() {
+    const key = 'queue_visitor_id';
+    var visitorId = StorageUtils.getString(key);
+    if (visitorId == null || visitorId.isEmpty) {
+      // 生成一个简单的唯一ID（时间戳 + 随机数）
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final random = Random().nextInt(999999);
+      visitorId = 'visitor_${timestamp}_$random';
+      StorageUtils.setString(key, visitorId);
+    }
+    return visitorId;
   }
 
   Widget _buildLaunchGameButton(BuildContext context, QueueBlocState state) {
@@ -587,6 +728,124 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       ),
+    );
+  }
+}
+
+/// 挤服中心服务器图标组件
+/// 
+/// 根据服务器状态显示不同颜色的光晕：
+/// - 红色：服务器满员，无法加入
+/// - 绿色：服务器有空位，可以加入（或有用户成功加入时）
+class _QueueServerIcon extends StatefulWidget {
+  /// 是否可以加入（服务器有空位）
+  final bool canJoin;
+  
+  /// 是否有用户刚成功加入
+  final bool hasUserJoined;
+
+  const _QueueServerIcon({
+    required this.canJoin,
+    this.hasUserJoined = false,
+  });
+
+  @override
+  State<_QueueServerIcon> createState() => _QueueServerIconState();
+}
+
+class _QueueServerIconState extends State<_QueueServerIcon>
+    with TickerProviderStateMixin {
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+  
+  // 颜色过渡动画
+  late AnimationController _colorController;
+  late Animation<Color?> _colorAnimation;
+  
+  static const _greenColor = Color(0xFF22C55E);
+  static const _redColor = Color(0xFFEF4444);
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    
+    _pulseAnimation = Tween<double>(begin: 0.6, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+    
+    // 颜色过渡动画控制器
+    _colorController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    
+    final initialColor = (widget.canJoin || widget.hasUserJoined) ? _greenColor : _redColor;
+    _colorAnimation = ColorTween(begin: initialColor, end: initialColor)
+        .animate(CurvedAnimation(parent: _colorController, curve: Curves.easeInOut));
+  }
+  
+  @override
+  void didUpdateWidget(_QueueServerIcon oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    final oldCanJoin = oldWidget.canJoin || oldWidget.hasUserJoined;
+    final newCanJoin = widget.canJoin || widget.hasUserJoined;
+    
+    if (oldCanJoin != newCanJoin) {
+      final fromColor = oldCanJoin ? _greenColor : _redColor;
+      final toColor = newCanJoin ? _greenColor : _redColor;
+      
+      _colorAnimation = ColorTween(begin: fromColor, end: toColor)
+          .animate(CurvedAnimation(parent: _colorController, curve: Curves.easeInOut));
+      _colorController.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    _colorController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: Listenable.merge([_pulseAnimation, _colorAnimation]),
+      builder: (context, child) {
+        final glowColor = _colorAnimation.value ?? _greenColor;
+        
+        return Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              // 外层光晕
+              BoxShadow(
+                color: glowColor.withValues(alpha: 0.3 * _pulseAnimation.value),
+                blurRadius: 30 * _pulseAnimation.value,
+                spreadRadius: 10 * _pulseAnimation.value,
+              ),
+              // 内层光晕
+              BoxShadow(
+                color: glowColor.withValues(alpha: 0.5 * _pulseAnimation.value),
+                blurRadius: 15 * _pulseAnimation.value,
+                spreadRadius: 3 * _pulseAnimation.value,
+              ),
+            ],
+          ),
+          child: Image.asset(
+            'assets/images/queue/server.png',
+            width: 80,
+            height: 80,
+          ),
+        );
+      },
     );
   }
 }

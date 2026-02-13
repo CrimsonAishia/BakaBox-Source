@@ -83,9 +83,10 @@ class _QueueFloatingCardState extends State<QueueFloatingCard>
   }
 
   bool _shouldShowCard(OperationState state) {
-    // 只在挤服中时显示
+    // 只在挤服中且挤服窗口未打开时显示
     return state.type == OperationType.queueing &&
-        state.status == OperationStatus.running;
+        state.status == OperationStatus.running &&
+        !_statusService.isQueueWindowOpen;
   }
 
   @override
