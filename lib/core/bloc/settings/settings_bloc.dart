@@ -17,6 +17,7 @@ import '../../services/audio_service.dart';
 import '../../services/notification_window_service.dart';
 import '../../services/announcement_read_service.dart';
 import '../../services/custom_server_service.dart';
+import '../../services/warmup_monitor_service.dart';
 import 'settings_event.dart';
 import 'settings_state.dart';
 
@@ -27,6 +28,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   static const String _keyLaunchOptions = 'launch_options';
   static const String _keyNotificationPosition = 'notification_position';
   static const String _keyFloatingWindowPosition = 'floating_window_position';
+  static const String _keyWarmupNotificationEnabled = 'warmup_notification_enabled';
 
   final AudioService _audioService = AudioService();
   final GamePathService _gamePathService = GamePathService();
@@ -62,6 +64,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     // 窗口位置设置事件
     on<SettingsSetNotificationPosition>(_onSetNotificationPosition);
     on<SettingsSetFloatingWindowPosition>(_onSetFloatingWindowPosition);
+    // 热身通知开关事件
+    on<SettingsSetWarmupNotificationEnabled>(_onSetWarmupNotificationEnabled);
   }
 
   Future<void> _onInit(SettingsInit event, Emitter<SettingsState> emit) async {
@@ -94,18 +98,22 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       final themeModeIndex = StorageUtils.getInt('theme_mode') ?? 0;
       final notificationPositionIndex = StorageUtils.getInt(_keyNotificationPosition) ?? NotificationPositionType.topRight.index;
       final floatingWindowPositionIndex = StorageUtils.getInt(_keyFloatingWindowPosition) ?? NotificationPositionType.bottomRight.index;
+      final warmupNotificationEnabled = StorageUtils.getBool(_keyWarmupNotificationEnabled, defaultValue: true);
       final notificationPosition = NotificationPositionType.values[notificationPositionIndex];
       final floatingWindowPosition = NotificationPositionType.values[floatingWindowPositionIndex];
       
       // 同步通知位置到 NotificationWindowService
       if (PlatformUtils.isDesktopPlatform) {
         NotificationWindowService().setNotificationPosition(notificationPosition);
+        // 同步热身通知开关到 WarmupMonitorService
+        WarmupMonitorService().setEnabled(warmupNotificationEnabled);
       }
       
       emit(state.copyWith(
         themeMode: ThemeMode.values[themeModeIndex],
         notificationPosition: notificationPosition,
         floatingWindowPosition: floatingWindowPosition,
+        warmupNotificationEnabled: warmupNotificationEnabled,
       ));
     } catch (e) {
       LogService.e('加载偏好设置失败', e);
@@ -847,6 +855,22 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       LogService.d('浮窗位置已设置: ${event.position.displayName}');
     } catch (e) {
       LogService.e('设置浮窗位置失败', e);
+    }
+  }
+
+  // ==================== 热身通知开关事件处理 ====================
+
+  Future<void> _onSetWarmupNotificationEnabled(SettingsSetWarmupNotificationEnabled event, Emitter<SettingsState> emit) async {
+    try {
+      await StorageUtils.setBool(_keyWarmupNotificationEnabled, event.enabled);
+      emit(state.copyWith(warmupNotificationEnabled: event.enabled));
+      
+      // 同步到 WarmupMonitorService
+      WarmupMonitorService().setEnabled(event.enabled);
+      
+      LogService.d('热身通知已${event.enabled ? '启用' : '禁用'}');
+    } catch (e) {
+      LogService.e('设置热身通知开关失败', e);
     }
   }
 }

@@ -60,6 +60,9 @@ class WarmupMonitorService {
   int? _currentMapRuntimeFetchedAt;
   MapData? _currentMapInfo;
   bool _isWarmingUp = false;
+  
+  // 热身通知开关
+  bool _enabled = true;
 
   StreamSubscription<ConsoleLogState>? _consoleStateSubscription;
   StreamSubscription<GameStatusEvent>? _gameStatusSubscription;
@@ -499,6 +502,9 @@ class WarmupMonitorService {
 
   void _showApiWarmupNotification() {
     if (_currentServerAddress == null || _currentMapRuntime == null) return;
+    
+    // 如果热身通知已禁用，不显示
+    if (!_enabled) return;
 
     final apiRuntime = _currentMapRuntime!.currentRuntime;
     final warmupDuration =
@@ -540,6 +546,20 @@ class WarmupMonitorService {
 
   /// GSI 是否可用（暂时禁用）
   bool get isGsiAvailable => false;
+  
+  /// 热身通知是否启用
+  bool get isEnabled => _enabled;
+  
+  /// 设置热身通知开关
+  void setEnabled(bool enabled) {
+    _enabled = enabled;
+    LogService.d('[WarmupMonitor] 热身通知已${enabled ? '启用' : '禁用'}');
+    
+    // 如果禁用且当前正在热身，关闭通知
+    if (!enabled && _isWarmingUp && _currentServerAddress != null) {
+      _notificationService.dismissWarmupNotification(_currentServerAddress!);
+    }
+  }
 
   void dispose() {
     _scheduler.cancel(_taskId);

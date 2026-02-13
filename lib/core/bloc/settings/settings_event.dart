@@ -123,3 +123,11 @@ class SettingsSetFloatingWindowPosition extends SettingsEvent {
   @override
   List<Object?> get props => [position];
 }
+
+// 热身通知开关事件
+class SettingsSetWarmupNotificationEnabled extends SettingsEvent {
+  final bool enabled;
+  const SettingsSetWarmupNotificationEnabled(this.enabled);
+  @override
+  List<Object?> get props => [enabled];
+}

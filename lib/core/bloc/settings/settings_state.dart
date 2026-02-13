@@ -132,6 +132,9 @@ class SettingsState extends Equatable {
   
   // 是否需要重启应用（清理应用数据后需要重启）
   final bool needsRestart;
+  
+  // 热身通知开关
+  final bool warmupNotificationEnabled;
 
   const SettingsState({
     this.appVersion = '',
@@ -153,6 +156,7 @@ class SettingsState extends Equatable {
     this.notificationPosition = NotificationPositionType.topRight,
     this.floatingWindowPosition = NotificationPositionType.bottomRight,
     this.needsRestart = false,
+    this.warmupNotificationEnabled = true,
   });
   
   /// 获取总缓存大小（字节）
@@ -210,6 +214,7 @@ class SettingsState extends Equatable {
     NotificationPositionType? notificationPosition,
     NotificationPositionType? floatingWindowPosition,
     bool? needsRestart,
+    bool? warmupNotificationEnabled,
   }) {
     return SettingsState(
       appVersion: appVersion ?? this.appVersion,
@@ -231,6 +236,7 @@ class SettingsState extends Equatable {
       notificationPosition: notificationPosition ?? this.notificationPosition,
       floatingWindowPosition: floatingWindowPosition ?? this.floatingWindowPosition,
       needsRestart: needsRestart ?? this.needsRestart,
+      warmupNotificationEnabled: warmupNotificationEnabled ?? this.warmupNotificationEnabled,
     );
   }
 
@@ -255,5 +261,6 @@ class SettingsState extends Equatable {
     notificationPosition,
     floatingWindowPosition,
     needsRestart,
+    warmupNotificationEnabled,
   ];
 }
