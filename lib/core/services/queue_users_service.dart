@@ -92,8 +92,18 @@ abstract class QueueUsersService {
   bool get isConnected;
 }
 
-/// QueueUsersService 的默认实现
+/// QueueUsersService 的默认实现（单例）
+/// 
+/// 独立于窗口生命周期，窗口关闭后 WebSocket 连接保持
 class QueueUsersServiceImpl implements QueueUsersService {
+  // 单例模式
+  static final QueueUsersServiceImpl _instance = QueueUsersServiceImpl._internal();
+  factory QueueUsersServiceImpl() => _instance;
+  QueueUsersServiceImpl._internal();
+  
+  /// 获取单例实例
+  static QueueUsersServiceImpl get instance => _instance;
+  
   WebSocket? _webSocket;
   StreamSubscription? _socketSubscription;
   Timer? _heartbeatTimer;
