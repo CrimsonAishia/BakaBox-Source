@@ -738,8 +738,8 @@ class StatusWindowService {
       message: _Messages.queuePaused,
     ));
     
-    _updateWindow(state: 'paused', message: _Messages.queuePaused, autoDismissSeconds: 3);
-    _scheduleClose(seconds: 3);
+    _updateWindow(state: 'paused', message: _Messages.queuePaused, autoDismissSeconds: 1);
+    _scheduleClose(seconds: 1);
     
     LogService.d('[StatusWindowService] 挤服已暂停');
   }
