@@ -17,6 +17,9 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
   
   /// 待发送的 join 信息（连接成功后自动发送）
   QueueUsersJoin? _pendingJoin;
+  
+  /// 最后一次成功发送的 join 信息（用于重连时自动重发）
+  QueueUsersJoin? _lastJoin;
 
   QueueUsersBloc({required QueueUsersService service})
       : _service = service,
@@ -89,6 +92,10 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
   ) async {
     LogService.d('[QueueUsersBloc] 断开连接');
 
+    // 清除 join 信息，避免重连时错误地发送 join
+    _lastJoin = null;
+    _pendingJoin = null;
+
     await _service.disconnect();
 
     emit(state.copyWith(
@@ -107,6 +114,9 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
     QueueUsersJoin event,
     Emitter<QueueUsersState> emit,
   ) {
+    // 保存 join 信息，用于重连时自动重发
+    _lastJoin = event;
+    
     // 如果还没连接，保存 join 信息，等连接成功后再发送
     if (!state.isConnected) {
       LogService.d('[QueueUsersBloc] 未连接，保存 join 信息等待连接');
@@ -127,6 +137,9 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
   ) {
     LogService.d('[QueueUsersBloc] 发送 leave');
     _service.sendLeave();
+    // 清除 lastJoin，停止挤服后不再自动重发
+    _lastJoin = null;
+    _pendingJoin = null;
     // 服务器会通过 sync 消息返回更新后的用户列表
   }
 
@@ -137,6 +150,9 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
   ) {
     LogService.d('[QueueUsersBloc] 发送 success');
     _service.sendSuccess();
+    // 挤服成功后清除 lastJoin，不再自动重发
+    _lastJoin = null;
+    _pendingJoin = null;
   }
 
   // ============================================================================
@@ -263,6 +279,10 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
       LogService.d('[QueueUsersBloc] 连接成功，发送待处理的 join');
       add(_pendingJoin!);
       _pendingJoin = null;
+    } else if (event.isConnected && _lastJoin != null) {
+      // 重连成功后，使用上次的 join 信息重新加入
+      LogService.d('[QueueUsersBloc] 重连成功，使用上次的 join 信息重新加入');
+      _service.sendJoin();
     }
   }
 
