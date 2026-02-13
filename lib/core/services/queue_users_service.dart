@@ -5,6 +5,7 @@ import 'dart:io';
 import '../api/env_config.dart';
 import '../models/queue_user.dart';
 import '../utils/log_service.dart';
+import 'token_service.dart';
 
 /// 服务事件类型基类
 sealed class QueueUsersServiceEvent {}
@@ -163,7 +164,14 @@ class QueueUsersServiceImpl implements QueueUsersService {
       final wsUrl = _buildWebSocketUrl(_currentServerAddress!);
       LogService.d('[QueueUsersService] 正在连接: $wsUrl');
 
-      _webSocket = await WebSocket.connect(wsUrl).timeout(
+      // 获取认证 headers
+      final authHeaders = TokenService.instance.getAuthHeaders();
+      LogService.d('[QueueUsersService] 认证状态: ${authHeaders.isNotEmpty ? '已登录' : '未登录'}');
+
+      _webSocket = await WebSocket.connect(
+        wsUrl,
+        headers: authHeaders,
+      ).timeout(
         const Duration(seconds: 10),
         onTimeout: () {
           throw TimeoutException('WebSocket 连接超时');

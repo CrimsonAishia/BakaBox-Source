@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
-import '../../../core/api/env_config.dart';
 import '../../../core/bloc/auth/auth_bloc.dart';
 import '../../../core/bloc/queue/queue_bloc.dart';
 import '../../../core/bloc/queue/queue_event.dart';
@@ -423,34 +422,29 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
           if (state.isQueueActive)
             _buildArenaPanel(context, state)
           else
-            BlocBuilder<QueueUsersBloc, QueueUsersState>(
-              builder: (context, usersState) {
-                return QueueSettings(
-                  key: const ValueKey('settings'),
-                  targetPlayers: state.config.targetPlayers,
-                  threadCount: state.config.threadCount,
-                  enableAutoRetry: state.config.enableAutoRetry,
-                  isDonator: state.config.isDonator,
-                  disabled: state.isQueueActive || state.isConnecting,
-                  isGameRunning: state.isGameRunning,
-                  maxPlayers: state.serverInfo?.maxPlayers ?? 64,
-                  gameType: state.serverInfo?.gameType,
-                  mapName: state.serverInfo?.map,
-                  isCustomServer: state.isCustomServer,
-                  queueingUserCount: usersState.queueingCount,
-                  onTargetPlayersChanged: (value) {
-                    context.read<QueueBloc>().add(QueueSetTargetPlayers(value));
-                  },
-                  onThreadCountChanged: (value) {
-                    context.read<QueueBloc>().add(QueueSetThreadCount(value));
-                  },
-                  onAutoRetryChanged: (value) {
-                    context.read<QueueBloc>().add(QueueSetAutoRetry(value));
-                  },
-                  onDonatorChanged: (value) {
-                    context.read<QueueBloc>().add(QueueSetDonator(value));
-                  },
-                );
+            QueueSettings(
+              key: const ValueKey('settings'),
+              targetPlayers: state.config.targetPlayers,
+              threadCount: state.config.threadCount,
+              enableAutoRetry: state.config.enableAutoRetry,
+              isDonator: state.config.isDonator,
+              disabled: state.isQueueActive || state.isConnecting,
+              isGameRunning: state.isGameRunning,
+              maxPlayers: state.serverInfo?.maxPlayers ?? 64,
+              gameType: state.serverInfo?.gameType,
+              mapName: state.serverInfo?.map,
+              isCustomServer: state.isCustomServer,
+              onTargetPlayersChanged: (value) {
+                context.read<QueueBloc>().add(QueueSetTargetPlayers(value));
+              },
+              onThreadCountChanged: (value) {
+                context.read<QueueBloc>().add(QueueSetThreadCount(value));
+              },
+              onAutoRetryChanged: (value) {
+                context.read<QueueBloc>().add(QueueSetAutoRetry(value));
+              },
+              onDonatorChanged: (value) {
+                context.read<QueueBloc>().add(QueueSetDonator(value));
               },
             ),
           const SizedBox(height: 16),
