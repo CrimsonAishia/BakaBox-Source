@@ -438,6 +438,91 @@ class _ServersDesktopState extends State<ServersDesktop> {
     context.read<ServerBloc>().add(ServerForceRefresh());
   }
 
+  /// 热身通知开关按钮
+  Widget _buildWarmupNotificationToggle(bool isDark) {
+    return BlocBuilder<SettingsBloc, SettingsState>(
+      buildWhen: (previous, current) =>
+          previous.warmupNotificationEnabled != current.warmupNotificationEnabled,
+      builder: (context, settingsState) {
+        final isEnabled = settingsState.warmupNotificationEnabled;
+        final warmupColor = const Color(0xFFFF9800);
+        
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: isEnabled
+                ? warmupColor.withValues(alpha: 0.12)
+                : (isDark
+                    ? Colors.white.withValues(alpha: 0.04)
+                    : Colors.black.withValues(alpha: 0.03)),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isEnabled
+                  ? warmupColor.withValues(alpha: 0.3)
+                  : (isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : Colors.black.withValues(alpha: 0.06)),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  isEnabled
+                      ? Icons.notifications_active_rounded
+                      : Icons.notifications_off_outlined,
+                  key: ValueKey(isEnabled),
+                  size: 15,
+                  color: isEnabled
+                      ? warmupColor
+                      : (isDark ? Colors.white38 : Colors.black38),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '热身通知',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: isEnabled
+                      ? warmupColor
+                      : (isDark ? Colors.white54 : Colors.black45),
+                ),
+              ),
+              const SizedBox(width: 4),
+              SizedBox(
+                height: 22,
+                width: 36,
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: Switch(
+                    value: isEnabled,
+                    onChanged: (value) {
+                      context.read<SettingsBloc>().add(
+                        SettingsSetWarmupNotificationEnabled(value),
+                      );
+                    },
+                    activeThumbColor: Colors.white,
+                    activeTrackColor: warmupColor,
+                    inactiveThumbColor: isDark ? Colors.white54 : Colors.grey.shade400,
+                    inactiveTrackColor: isDark 
+                        ? Colors.white.withValues(alpha: 0.15) 
+                        : Colors.black.withValues(alpha: 0.12),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   /// 主内容区域（左右布局）
   Widget _buildMainContent() {
     return Row(
@@ -595,6 +680,11 @@ class _ServersDesktopState extends State<ServersDesktop> {
               // 倒计时刷新组件
               if (state.selectedCategory != null) ...[
                 const SizedBox(width: 12),
+                // 热身通知开关（仅非自定义分类显示）
+                if (!canAddServer) ...[
+                  _buildWarmupNotificationToggle(isDark),
+                  const SizedBox(width: 8),
+                ],
                 CompactRefreshProgress(
                   key: ValueKey('refresh_$categoryName'),
                   refreshInterval: _kRefreshInterval,
