@@ -77,7 +77,7 @@ abstract class QueueUsersService {
   Future<void> disconnect();
 
   /// 发送开始挤服消息
-  void sendJoin();
+  void sendJoin({String? nickname});
 
   /// 发送停止挤服消息
   void sendLeave();
@@ -442,8 +442,22 @@ class QueueUsersServiceImpl implements QueueUsersService {
   }
 
   @override
-  void sendJoin() {
-    _sendAction('join');
+  void sendJoin({String? nickname}) {
+    if (!_isConnected || _webSocket == null) {
+      LogService.w('[QueueUsersService] 未连接，无法发送 join');
+      return;
+    }
+
+    try {
+      final data = <String, dynamic>{'action': 'join'};
+      if (nickname != null && nickname.isNotEmpty) {
+        data['nickname'] = nickname;
+      }
+      _webSocket!.add(jsonEncode(data));
+      LogService.d('[QueueUsersService] 发送 join, nickname: $nickname');
+    } catch (e) {
+      LogService.e('[QueueUsersService] 发送 join 失败', e);
+    }
   }
 
   @override
