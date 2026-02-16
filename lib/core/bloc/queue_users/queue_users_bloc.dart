@@ -141,8 +141,8 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
       return;
     }
     
-    LogService.d('[QueueUsersBloc] 发送 join');
-    _service.sendJoin();
+    LogService.d('[QueueUsersBloc] 发送 join, nickname: ${event.nickname}');
+    _service.sendJoin(nickname: event.nickname);
     // 服务器会通过 sync 消息返回更新后的用户列表（包括自己）
   }
 
@@ -299,7 +299,7 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
     } else if (event.isConnected && _lastJoin != null) {
       // 重连成功后，使用上次的 join 信息重新加入
       LogService.d('[QueueUsersBloc] 重连成功，使用上次的 join 信息重新加入');
-      _service.sendJoin();
+      _service.sendJoin(nickname: _lastJoin!.nickname);
     }
   }
 

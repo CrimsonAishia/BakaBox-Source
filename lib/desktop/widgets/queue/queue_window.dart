@@ -609,29 +609,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
     return SizedBox(
       height: 44,
       child: ElevatedButton.icon(
-        onPressed: state.isCheckingGame ? null : () {
-          // 获取当前用户信息
-          final authState = context.read<AuthBloc>().state;
-          final isAuthenticated = authState.isAuthenticated;
-          final userInfo = authState.userInfo;
-          
-          // 先连接 WebSocket（如果还没连接）
-          final usersBloc = context.read<QueueUsersBloc>();
-          if (!usersBloc.state.isConnected) {
-            usersBloc.add(QueueUsersConnect(serverAddress: widget.serverAddress));
-          }
-          
-          // 构建 QueueUsersJoin 事件，包含当前用户信息
-          // 后端不返回当前用户，需要在客户端把自己加入列表
-          usersBloc.add(QueueUsersJoin(
-            odId: isAuthenticated ? (userInfo?.uid ?? '') : '',
-            visitorId: isAuthenticated ? '' : _getOrCreateVisitorId(),
-            nickname: isAuthenticated ? userInfo?.username : null,
-            avatarUrl: isAuthenticated ? userInfo?.avatar : null,
-            isAnonymous: !isAuthenticated,
-          ));
-          context.read<QueueBloc>().add(const QueueStart());
-        },
+        onPressed: state.isCheckingGame ? null : () => _startQueue(context),
         icon: state.isCheckingGame
             ? const SizedBox(
                 width: 16, height: 16,
@@ -646,6 +624,43 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
         ),
       ),
     );
+  }
+  
+  /// 开始挤服
+  /// 
+  /// 获取用户昵称优先级：Steam 客户端 > GSI > 登录用户名 > null（匿名）
+  Future<void> _startQueue(BuildContext context) async {
+    // 获取当前用户信息（在 await 之前获取，避免 BuildContext 跨异步使用）
+    final authState = context.read<AuthBloc>().state;
+    final isAuthenticated = authState.isAuthenticated;
+    final userInfo = authState.userInfo;
+    final usersBloc = context.read<QueueUsersBloc>();
+    final queueBloc = context.read<QueueBloc>();
+    
+    // 获取 Steam 用户名（优先级：Steam 配置 > GSI）
+    final steamUsername = await _steamUserService.getCurrentUsername();
+    
+    // 最终昵称优先级：Steam 用户名 > 登录用户名 > null
+    final nickname = steamUsername ?? 
+        (isAuthenticated ? userInfo?.username : null);
+    
+    if (!mounted) return;
+    
+    // 先连接 WebSocket（如果还没连接）
+    if (!usersBloc.state.isConnected) {
+      usersBloc.add(QueueUsersConnect(serverAddress: widget.serverAddress));
+    }
+    
+    // 构建 QueueUsersJoin 事件，包含当前用户信息
+    // 后端不返回当前用户，需要在客户端把自己加入列表
+    usersBloc.add(QueueUsersJoin(
+      odId: isAuthenticated ? (userInfo?.uid ?? '') : '',
+      visitorId: isAuthenticated ? '' : _getOrCreateVisitorId(),
+      nickname: nickname,
+      avatarUrl: isAuthenticated ? userInfo?.avatar : null,
+      isAnonymous: !isAuthenticated,
+    ));
+    queueBloc.add(const QueueStart());
   }
   
   /// 获取或创建访客ID
