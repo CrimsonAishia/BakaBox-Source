@@ -13,6 +13,7 @@ import '../../../core/bloc/queue_users/queue_users_event.dart';
 import '../../../core/bloc/queue_users/queue_users_state.dart';
 import '../../../core/models/server_models.dart';
 import '../../../core/services/status_window_service.dart';
+import '../../../core/services/steam_user_service.dart';
 import '../../../core/utils/map_utils.dart';
 import '../../../core/utils/player_count_utils.dart';
 import '../../../core/utils/storage_utils.dart';
@@ -62,21 +63,15 @@ class _QueueWindowState extends State<QueueWindow> {
       initialMapInfo: widget.initialMapInfo,
     ));
     
-    // 如果挤服正在进行且 WebSocket 未连接，立即连接并发送 join
+    // 如果挤服正在进行且 WebSocket 未连接，立即重新连接
+    // 注意：不发送新的 QueueUsersJoin，让 QueueUsersBloc 的 _lastJoin 机制处理重连后的 join
     final currentState = _statusService.state;
     final usersBloc = QueueUsersBloc.instance;
     if (currentState.type == OperationType.queueing && 
         currentState.status == OperationStatus.running &&
         !usersBloc.state.isConnected) {
       usersBloc.add(QueueUsersConnect(serverAddress: widget.serverAddress));
-      // 连接成功后会自动发送 join（通过 _pendingJoin 机制）
-      usersBloc.add(const QueueUsersJoin(
-        odId: '',
-        visitorId: '',
-        nickname: null,
-        avatarUrl: null,
-        isAnonymous: true,
-      ));
+      // 连接成功后会通过 _lastJoin 机制自动重发 join（保留原有用户信息）
     }
   }
 
@@ -127,6 +122,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
   
   // 监听全局操作状态
   final StatusWindowService _statusService = StatusWindowService();
+  final SteamUserService _steamUserService = SteamUserService();
   StreamSubscription<OperationState>? _stateSubscription;
 
   @override
@@ -203,9 +199,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
             if (state.connectionState == QueueConnectionState.connected &&
                 _lastToastConnectionState != QueueConnectionState.connected) {
               _lastToastConnectionState = QueueConnectionState.connected;
-              // 发送挤服成功消息并断开 WebSocket
-              context.read<QueueUsersBloc>().add(const QueueUsersSuccess());
-              context.read<QueueUsersBloc>().add(const QueueUsersDisconnect());
+              // WebSocket 断开由 StatusWindowService 统一处理
               ToastUtils.showSuccess(context, '进去啦！');
               // 延迟关闭窗口，让用户看到成功提示
               Future.delayed(const Duration(milliseconds: 500), () {
@@ -556,9 +550,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
         height: 44,
         child: ElevatedButton.icon(
           onPressed: () {
-            // 发送离开消息并断开 WebSocket 连接
-            context.read<QueueUsersBloc>().add(const QueueUsersLeave());
-            context.read<QueueUsersBloc>().add(const QueueUsersDisconnect());
+            // pauseQueue 内部会断开 WebSocket 连接
             context.read<QueueBloc>().add(const QueuePause());
           },
           icon: Icon(MdiIcons.pause, size: 18),

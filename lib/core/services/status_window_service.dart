@@ -3,6 +3,8 @@ import 'dart:io';
 import 'dart:math';
 
 import '../api/server_api.dart';
+import '../bloc/queue_users/queue_users_bloc.dart';
+import '../bloc/queue_users/queue_users_event.dart';
 import '../models/server_models.dart';
 import '../utils/log_service.dart';
 import 'audio_service.dart';
@@ -732,6 +734,11 @@ class StatusWindowService {
     _backoffMultiplier = 1.0;
     _lastSuccessTime = null;
     
+    // 断开 WebSocket 连接
+    final usersBloc = QueueUsersBloc.instance;
+    usersBloc.add(const QueueUsersLeave());
+    usersBloc.add(const QueueUsersDisconnect());
+    
     _updateState(_state.copyWith(
       type: OperationType.none,  // 重置操作类型
       status: OperationStatus.paused,
@@ -803,6 +810,11 @@ class StatusWindowService {
     _activeThreadIds.clear();
     _consoleLogService.cancelConnectionMonitor();
     
+    // 断开 WebSocket 连接
+    final usersBloc = QueueUsersBloc.instance;
+    usersBloc.add(const QueueUsersLeave());
+    usersBloc.add(const QueueUsersDisconnect());
+    
     _updateState(_state.copyWith(
       type: OperationType.none,  // 重置操作类型
       status: OperationStatus.paused,
@@ -823,6 +835,11 @@ class StatusWindowService {
     _consecutiveFailures = 0;
     _backoffMultiplier = 1.0;
     _lastSuccessTime = null;
+    
+    // 断开 WebSocket 连接
+    final usersBloc = QueueUsersBloc.instance;
+    usersBloc.add(const QueueUsersLeave());
+    usersBloc.add(const QueueUsersDisconnect());
     
     _updateState(OperationState(
       isGameRunning: _gameStatusService.isGameRunning,
@@ -877,6 +894,11 @@ class StatusWindowService {
       _isTriggeredConnection = false;
       _isFetching = false;
       _activeThreadIds.clear();
+      
+      // 断开 WebSocket 连接
+      final usersBloc = QueueUsersBloc.instance;
+      usersBloc.add(const QueueUsersLeave());
+      usersBloc.add(const QueueUsersDisconnect());
       
       // 取消日志监控
       _consoleLogService.cancelConnectionMonitor();
@@ -1103,6 +1125,11 @@ class StatusWindowService {
           
           switch (connectionResult.state) {
             case GameState.inGame:
+              // 发送挤服成功消息并断开 WebSocket
+              final usersBloc = QueueUsersBloc.instance;
+              usersBloc.add(const QueueUsersSuccess());
+              usersBloc.add(const QueueUsersDisconnect());
+              
               _updateState(_state.copyWith(
                 type: OperationType.none,  // 重置操作类型
                 status: OperationStatus.success,
@@ -1126,7 +1153,11 @@ class StatusWindowService {
               break;
           }
         } else {
-          // 不可监控
+          // 不可监控，发送成功消息并断开 WebSocket
+          final usersBloc = QueueUsersBloc.instance;
+          usersBloc.add(const QueueUsersSuccess());
+          usersBloc.add(const QueueUsersDisconnect());
+          
           _updateState(_state.copyWith(
             type: OperationType.none,  // 重置操作类型
             status: OperationStatus.success,
@@ -1205,6 +1236,11 @@ class StatusWindowService {
       } else {
         windowState = 'failed';
       }
+      
+      // 断开 WebSocket 连接
+      final usersBloc = QueueUsersBloc.instance;
+      usersBloc.add(const QueueUsersLeave());
+      usersBloc.add(const QueueUsersDisconnect());
       
       LogService.i('[StatusWindowService] 自动重试未启用，关闭窗口');
       _updateState(_state.copyWith(
@@ -1468,6 +1504,12 @@ class StatusWindowService {
   Future<void> dispose() async {
     _isQueueRunning = false;
     _activeThreadIds.clear();
+    
+    // 断开 WebSocket 连接
+    final usersBloc = QueueUsersBloc.instance;
+    usersBloc.add(const QueueUsersLeave());
+    usersBloc.add(const QueueUsersDisconnect());
+    
     _gameStatusSubscription?.cancel();
     _cancelCloseTimer();
     await closeWindow();
