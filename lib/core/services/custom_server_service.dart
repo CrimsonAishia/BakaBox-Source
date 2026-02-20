@@ -71,6 +71,36 @@ class CustomServerService {
     LogService.i('删除自定义分类: $categoryName');
   }
   
+  /// 重命名自定义分类
+  static Future<ServerCategory> renameCustomCategory(
+    String oldName,
+    String newName,
+  ) async {
+    final categories = await loadCustomCategories();
+    
+    final categoryIndex = categories.indexWhere((c) => c.modelName == oldName);
+    if (categoryIndex == -1) {
+      throw Exception('分类 "$oldName" 不存在');
+    }
+    
+    // 检查新名称是否已存在
+    if (oldName != newName && categories.any((c) => c.modelName == newName)) {
+      throw Exception('分类 "$newName" 已存在');
+    }
+    
+    final category = categories[categoryIndex];
+    final updatedCategory = category.copyWith(
+      modelName: newName,
+      category: newName,
+    );
+    
+    categories[categoryIndex] = updatedCategory;
+    await saveCustomCategories(categories);
+    
+    LogService.i('重命名自定义分类: $oldName -> $newName');
+    return updatedCategory;
+  }
+  
   /// 添加服务器到指定分类
   static Future<ServerCategory> addServerToCategory(
     String categoryName,

@@ -10,6 +10,7 @@ import '../widgets/category_card.dart';
 import '../widgets/refresh_progress.dart';
 import '../widgets/server/server_detail_dialog.dart';
 import '../widgets/add_category_dialog.dart';
+import '../widgets/edit_category_dialog.dart';
 import '../widgets/add_server_dialog.dart';
 
 /// 自动刷新间隔（秒）
@@ -313,6 +314,28 @@ class _ServersDesktopState extends State<ServersDesktop> {
       PaintingBinding.instance.imageCache.clear();
     }
     context.read<ServerBloc>().add(ServerSelectCategory(category));
+  }
+
+  /// 显示编辑分类对话框
+  void _showEditCategoryDialog(ServerCategory category) async {
+    final categoryName = category.modelName;
+    if (categoryName == null) return;
+    
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (context) => EditCategoryDialog(
+        currentName: categoryName,
+      ),
+    );
+    
+    if (newName != null && mounted) {
+      context.read<ServerBloc>().add(
+        ServerRenameCategory(
+          oldName: categoryName,
+          newName: newName,
+        ),
+      );
+    }
   }
 
   /// 启动分类人数刷新定时器
@@ -1367,6 +1390,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
                     onlineCount: onlineCount,
                     isLoadingOnlineCount: isLoadingOnlineCount,
                     onTap: () => _onCategoryTap(category),
+                    onEdit: category.isCustom
+                        ? () => _showEditCategoryDialog(category)
+                        : null,
                     onDelete: category.isCustom
                         ? () {
                             context.read<ServerBloc>().add(

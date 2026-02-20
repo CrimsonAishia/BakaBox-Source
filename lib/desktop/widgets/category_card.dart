@@ -13,6 +13,7 @@ class CategoryCard extends StatelessWidget {
   final bool isLoadingOnlineCount;
   final VoidCallback? onTap;
   final VoidCallback? onDelete; // 删除回调（仅自定义分类）
+  final VoidCallback? onEdit; // 编辑回调（仅自定义分类）
 
   const CategoryCard({
     super.key,
@@ -22,6 +23,7 @@ class CategoryCard extends StatelessWidget {
     this.isLoadingOnlineCount = false,
     this.onTap,
     this.onDelete,
+    this.onEdit,
   });
 
   @override
@@ -75,13 +77,37 @@ class CategoryCard extends StatelessWidget {
                 Expanded(child: _buildCategoryInfo(isDark)),
                 // 在线人数（自定义分类不显示）
                 if (!category.isCustom) _buildOnlineCount(),
+                // 编辑按钮（仅自定义分类）
+                if (category.isCustom && onEdit != null) ...[
+                  const SizedBox(width: 8),
+                  _buildEditButton(context, isDark),
+                ],
                 // 删除按钮（仅自定义分类）
                 if (category.isCustom && onDelete != null) ...[
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 4),
                   _buildDeleteButton(context, isDark),
                 ],
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建编辑按钮
+  Widget _buildEditButton(BuildContext context, bool isDark) {
+    return Tooltip(
+      message: '编辑分类',
+      child: InkWell(
+        onTap: () => onEdit?.call(),
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          padding: const EdgeInsets.all(4),
+          child: Icon(
+            Icons.edit_outlined,
+            size: 18,
+            color: isDark ? Colors.white54 : const Color(0xFF6B7280),
           ),
         ),
       ),
