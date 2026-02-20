@@ -1676,6 +1676,17 @@ class _MarqueeTextState extends State<_MarqueeText> {
 
   @override
   Widget build(BuildContext context) {
+    // 离屏渲染（如 screenshot captureFromLongWidget）时没有 View ancestor，
+    // SingleChildScrollView 内部会调用 View.of(context) 导致断言失败，
+    // 此时降级为普通 Text
+    if (View.maybeOf(context) == null) {
+      return Text(
+        widget.text,
+        style: widget.style,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
     return SingleChildScrollView(
       controller: _scrollController,
       scrollDirection: Axis.horizontal,

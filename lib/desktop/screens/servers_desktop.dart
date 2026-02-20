@@ -9,6 +9,7 @@ import '../widgets/server/server_card_skeleton.dart';
 import '../widgets/category_card.dart';
 import '../widgets/refresh_progress.dart';
 import '../widgets/server/server_detail_dialog.dart';
+import '../widgets/server/immersive_mode_overlay.dart';
 import '../widgets/add_category_dialog.dart';
 import '../widgets/edit_category_dialog.dart';
 import '../widgets/add_server_dialog.dart';
@@ -50,6 +51,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
 
   // 卡片管理模式（排序模式）
   bool _isReorderMode = false;
+
+  // 沉浸模式标志（用于暂停正常模式的机制）
+  bool _isInImmersiveMode = false;
 
   @override
   void initState() {
@@ -93,6 +97,8 @@ class _ServersDesktopState extends State<ServersDesktop> {
 
   /// 延迟获取所有服务器的 ping（防抖 + 并行获取）
   void _scheduleDelayedPingFetch() {
+    // 沉浸模式下不触发 ping 获取
+    if (_isInImmersiveMode) return;
     // 防止重复触发
     if (_isPingFetching) return;
     
@@ -451,6 +457,8 @@ class _ServersDesktopState extends State<ServersDesktop> {
 
   /// 处理自动刷新
   void _handleRefresh(ServerState state) {
+    // 沉浸模式下不触发自动刷新
+    if (_isInImmersiveMode) return;
     if (state.selectedCategory != null) {
       context.read<ServerBloc>().add(ServerRefreshServers());
     }
@@ -708,6 +716,43 @@ class _ServersDesktopState extends State<ServersDesktop> {
                   _buildWarmupNotificationToggle(isDark),
                   const SizedBox(width: 8),
                 ],
+                // 沉浸式模式按钮
+                Tooltip(
+                  message: '沉浸模式',
+                  child: InkWell(
+                    onTap: () async {
+                      // 进入沉浸模式前暂停正常模式的刷新机制
+                      _isInImmersiveMode = true;
+                      _serverBloc?.add(ServerStopPeriodicRefresh());
+                      _stopCategoryCountsRefreshTimer();
+                      await ImmersiveModeOverlay.show(context);
+                      // 退出沉浸模式后恢复正常模式的刷新机制
+                      if (mounted) {
+                        _isInImmersiveMode = false;
+                        _serverBloc?.add(ServerStartPeriodicRefresh());
+                        _startCategoryCountsRefreshTimer();
+                        // 立即刷新一次，防止数据过旧
+                        _serverBloc?.add(ServerRefreshServers());
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : Colors.black.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(
+                        Icons.grid_view_rounded,
+                        size: 20,
+                        color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 CompactRefreshProgress(
                   key: ValueKey('refresh_$categoryName'),
                   refreshInterval: _kRefreshInterval,
