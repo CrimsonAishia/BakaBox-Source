@@ -73,6 +73,12 @@ dependencies:
   # Network Ping (替代 Process.run，内存占用更低)
   dart_ping: ^9.0.1
   
+  # Clipboard (支持图片复制)
+  super_clipboard: ^0.8.0
+  
+  # Screenshot (支持长截图)
+  screenshot: ^3.0.0
+  
   # WebView (for QQ login) - using local fork with getCookies support
   webview_windows:
     git:
