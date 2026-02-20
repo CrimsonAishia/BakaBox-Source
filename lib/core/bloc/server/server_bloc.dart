@@ -51,6 +51,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     on<ServerAddCategory>(_onAddCategory);
     on<ServerAddServer>(_onAddServer);
     on<ServerDeleteCategory>(_onDeleteCategory);
+    on<ServerRenameCategory>(_onRenameCategory);
     on<ServerDeleteServer>(_onDeleteServer);
     on<ServerResetCountdown>(_onResetCountdown);
     on<ServerRefreshMapCache>(_onRefreshMapCache);
@@ -862,6 +863,50 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     } catch (e) {
       LogService.e('删除自定义分类失败: $e', e);
       emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '删除分类失败')));
+    }
+  }
+
+  Future<void> _onRenameCategory(ServerRenameCategory event, Emitter<ServerState> emit) async {
+    try {
+      final updatedCategory = await CustomServerService.renameCustomCategory(
+        event.oldName,
+        event.newName,
+      );
+      
+      // 更新分类列表
+      final updatedCategories = state.serverCategories.map((c) {
+        if (c.modelName == event.oldName) {
+          return updatedCategory;
+        }
+        return c;
+      }).toList();
+      
+      // 更新在线人数记录的 key
+      final updatedOnlineCounts = Map<String, int>.from(state.categoryOnlineCounts);
+      if (updatedOnlineCounts.containsKey(event.oldName)) {
+        final count = updatedOnlineCounts.remove(event.oldName);
+        if (count != null) {
+          updatedOnlineCounts[event.newName] = count;
+        }
+      }
+      
+      // 如果重命名的是当前选中的分类，更新选中状态
+      ServerCategory? newSelectedCategory = state.selectedCategory;
+      if (state.selectedCategory?.modelName == event.oldName) {
+        newSelectedCategory = updatedCategory;
+      }
+      
+      emit(state.copyWith(
+        serverCategories: updatedCategories,
+        categoryOnlineCounts: updatedOnlineCounts,
+        selectedCategory: newSelectedCategory,
+        successMessage: '分类已重命名为 "${event.newName}"',
+      ));
+      
+      LogService.i('重命名自定义分类成功: ${event.oldName} -> ${event.newName}');
+    } catch (e) {
+      LogService.e('重命名自定义分类失败: $e', e);
+      emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '重命名分类失败')));
     }
   }
 

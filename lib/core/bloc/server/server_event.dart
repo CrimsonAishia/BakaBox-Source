@@ -110,6 +110,15 @@ class ServerDeleteCategory extends ServerEvent {
   List<Object?> get props => [categoryName];
 }
 
+/// 重命名自定义分类
+class ServerRenameCategory extends ServerEvent {
+  final String oldName;
+  final String newName;
+  const ServerRenameCategory({required this.oldName, required this.newName});
+  @override
+  List<Object?> get props => [oldName, newName];
+}
+
 /// 删除自定义服务器
 class ServerDeleteServer extends ServerEvent {
   final String categoryName;
