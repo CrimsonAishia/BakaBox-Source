@@ -69,6 +69,12 @@ dependencies:
   
   # Audio
   audioplayers: ^6.1.0
+
+  # TTS (Offline Text-to-Speech)
+  sherpa_onnx: ^1.10.0
+  
+  # Archive extraction (for TTS model tar.bz2)
+  archive: ^4.0.2
   
   # Network Ping (替代 Process.run，内存占用更低)
   dart_ping: ^9.0.1

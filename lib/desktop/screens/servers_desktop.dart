@@ -13,6 +13,7 @@ import '../widgets/server/immersive_mode_overlay.dart';
 import '../widgets/add_category_dialog.dart';
 import '../widgets/edit_category_dialog.dart';
 import '../widgets/add_server_dialog.dart';
+import '../widgets/map_subscription/map_subscription_dialog.dart';
 
 /// 自动刷新间隔（秒）
 const int _kRefreshInterval = 15;
@@ -101,7 +102,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
     if (_isInImmersiveMode) return;
     // 防止重复触发
     if (_isPingFetching) return;
-    
+
     final requestId = ++_lastPingRequestId;
 
     // 延迟 300ms 后获取 ping（等待服务器数据加载）
@@ -121,7 +122,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
     final serversNeedingPing = currentServers
         .where((s) => s.serverData != null && s.pingInfo == null)
         .toList();
-    
+
     if (serversNeedingPing.isNotEmpty) {
       _fetchAllServerPings(serversNeedingPing, requestId);
     } else if (currentServers.any((s) => s.serverData == null && s.isLoading)) {
@@ -134,27 +135,34 @@ class _ServersDesktopState extends State<ServersDesktop> {
   }
 
   /// 并行获取所有服务器的 ping
-  Future<void> _fetchAllServerPings(List<ExtendedServerItem> servers, int requestId) async {
+  Future<void> _fetchAllServerPings(
+    List<ExtendedServerItem> servers,
+    int requestId,
+  ) async {
     final bloc = _serverBloc;
     if (bloc == null || servers.isEmpty || _isPingFetching) return;
 
     _isPingFetching = true;
-    
+
     try {
       // 并行获取所有服务器的 ping，限制并发数为 5
       const maxConcurrent = 5;
       final chunks = <List<ExtendedServerItem>>[];
-      
+
       for (var i = 0; i < servers.length; i += maxConcurrent) {
-        chunks.add(servers.sublist(
-          i, 
-          i + maxConcurrent > servers.length ? servers.length : i + maxConcurrent
-        ));
+        chunks.add(
+          servers.sublist(
+            i,
+            i + maxConcurrent > servers.length
+                ? servers.length
+                : i + maxConcurrent,
+          ),
+        );
       }
-      
+
       for (final chunk in chunks) {
         if (!mounted || requestId != _lastPingRequestId) break;
-        
+
         // 并行获取这一批服务器的 ping
         await Future.wait(
           chunk.map((server) => _fetchServerPing(server, bloc)),
@@ -171,7 +179,8 @@ class _ServersDesktopState extends State<ServersDesktop> {
     ExtendedServerItem server,
     ServerBloc bloc,
   ) async {
-    final address = server.serverItem.address ?? server.serverItem.serverAddress;
+    final address =
+        server.serverItem.address ?? server.serverItem.serverAddress;
     if (address == null || address.isEmpty) return;
 
     final ip = address.split(':')[0];
@@ -258,7 +267,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
             }
           }
           bloc.add(ServerStartPeriodicRefresh());
-          
+
           // 兜底：延迟检查是否有服务器缺少 ping（确保在所有初始化完成后）
           Future.delayed(const Duration(milliseconds: 500), () {
             if (mounted) _checkAndFetchMissingPings();
@@ -272,11 +281,11 @@ class _ServersDesktopState extends State<ServersDesktop> {
   void _checkAndFetchMissingPings() {
     final bloc = _serverBloc;
     if (bloc == null) return;
-    
+
     final serversNeedingPing = bloc.state.servers
         .where((s) => s.serverData != null && s.pingInfo == null)
         .toList();
-    
+
     if (serversNeedingPing.isNotEmpty) {
       _scheduleDelayedPingFetch();
     }
@@ -326,20 +335,15 @@ class _ServersDesktopState extends State<ServersDesktop> {
   void _showEditCategoryDialog(ServerCategory category) async {
     final categoryName = category.modelName;
     if (categoryName == null) return;
-    
+
     final newName = await showDialog<String>(
       context: context,
-      builder: (context) => EditCategoryDialog(
-        currentName: categoryName,
-      ),
+      builder: (context) => EditCategoryDialog(currentName: categoryName),
     );
-    
+
     if (newName != null && mounted) {
       context.read<ServerBloc>().add(
-        ServerRenameCategory(
-          oldName: categoryName,
-          newName: newName,
-        ),
+        ServerRenameCategory(oldName: categoryName, newName: newName),
       );
     }
   }
@@ -415,19 +419,32 @@ class _ServersDesktopState extends State<ServersDesktop> {
         BlocListener<ServerBloc, ServerState>(
           listenWhen: (previous, current) {
             // 情况1：加载完成（首次加载或切换分类）
-            final loadingFinished = previous.isLoadingServers && !current.isLoadingServers;
+            final loadingFinished =
+                previous.isLoadingServers && !current.isLoadingServers;
             // 情况2：服务器列表变化
-            final serversChanged = previous.servers.length != current.servers.length;
+            final serversChanged =
+                previous.servers.length != current.servers.length;
             // 情况3：有新的服务器数据加载完成（比较前后状态）
-            final previousServersWithData = previous.servers.where((s) => s.serverData != null).length;
-            final currentServersWithData = current.servers.where((s) => s.serverData != null).length;
-            final newServerDataLoaded = currentServersWithData > previousServersWithData;
+            final previousServersWithData = previous.servers
+                .where((s) => s.serverData != null)
+                .length;
+            final currentServersWithData = current.servers
+                .where((s) => s.serverData != null)
+                .length;
+            final newServerDataLoaded =
+                currentServersWithData > previousServersWithData;
             // 情况4：定期刷新完成（lastRefreshTime 变化且有缺少 ping 的服务器）
-            final refreshCompleted = previous.lastRefreshTime != current.lastRefreshTime &&
-                current.servers.any((s) => s.serverData != null && s.pingInfo == null);
-            
-            return current.servers.isNotEmpty && 
-                   (loadingFinished || serversChanged || newServerDataLoaded || refreshCompleted);
+            final refreshCompleted =
+                previous.lastRefreshTime != current.lastRefreshTime &&
+                current.servers.any(
+                  (s) => s.serverData != null && s.pingInfo == null,
+                );
+
+            return current.servers.isNotEmpty &&
+                (loadingFinished ||
+                    serversChanged ||
+                    newServerDataLoaded ||
+                    refreshCompleted);
           },
           listener: (context, state) => _scheduleDelayedPingFetch(),
         ),
@@ -473,11 +490,12 @@ class _ServersDesktopState extends State<ServersDesktop> {
   Widget _buildWarmupNotificationToggle(bool isDark) {
     return BlocBuilder<SettingsBloc, SettingsState>(
       buildWhen: (previous, current) =>
-          previous.warmupNotificationEnabled != current.warmupNotificationEnabled,
+          previous.warmupNotificationEnabled !=
+          current.warmupNotificationEnabled,
       builder: (context, settingsState) {
         final isEnabled = settingsState.warmupNotificationEnabled;
         final warmupColor = const Color(0xFFFF9800);
-        
+
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -485,15 +503,15 @@ class _ServersDesktopState extends State<ServersDesktop> {
             color: isEnabled
                 ? warmupColor.withValues(alpha: 0.12)
                 : (isDark
-                    ? Colors.white.withValues(alpha: 0.04)
-                    : Colors.black.withValues(alpha: 0.03)),
+                      ? Colors.white.withValues(alpha: 0.04)
+                      : Colors.black.withValues(alpha: 0.03)),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isEnabled
                   ? warmupColor.withValues(alpha: 0.3)
                   : (isDark
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : Colors.black.withValues(alpha: 0.06)),
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.black.withValues(alpha: 0.06)),
               width: 1,
             ),
           ),
@@ -539,9 +557,11 @@ class _ServersDesktopState extends State<ServersDesktop> {
                     },
                     activeThumbColor: Colors.white,
                     activeTrackColor: warmupColor,
-                    inactiveThumbColor: isDark ? Colors.white54 : Colors.grey.shade400,
-                    inactiveTrackColor: isDark 
-                        ? Colors.white.withValues(alpha: 0.15) 
+                    inactiveThumbColor: isDark
+                        ? Colors.white54
+                        : Colors.grey.shade400,
+                    inactiveTrackColor: isDark
+                        ? Colors.white.withValues(alpha: 0.15)
                         : Colors.black.withValues(alpha: 0.12),
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
@@ -597,7 +617,8 @@ class _ServersDesktopState extends State<ServersDesktop> {
       builder: (context, state) {
         final canAddServer = state.selectedCategory?.isCustom == true;
         final categoryName = state.selectedCategory?.modelName ?? '';
-        final isRefreshing = state.isCategoryLoading(categoryName) || state.isLoadingServers;
+        final isRefreshing =
+            state.isCategoryLoading(categoryName) || state.isLoadingServers;
 
         return Padding(
           padding: const EdgeInsets.all(15),
@@ -716,6 +737,34 @@ class _ServersDesktopState extends State<ServersDesktop> {
                   _buildWarmupNotificationToggle(isDark),
                   const SizedBox(width: 8),
                 ],
+                // 地图订阅按钮
+                Tooltip(
+                  message: '地图订阅',
+                  child: InkWell(
+                    onTap: () {
+                      // ignore: avoid_dynamic_calls
+                      MapSubscriptionDialog.show(context);
+                    },
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : Colors.black.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(
+                        Icons.star_rounded,
+                        size: 20,
+                        color: isDark
+                            ? const Color(0xFFF59E0B)
+                            : const Color(0xFFD97706),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 // 沉浸式模式按钮
                 Tooltip(
                   message: '沉浸模式',
@@ -747,7 +796,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
                       child: Icon(
                         Icons.grid_view_rounded,
                         size: 20,
-                        color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                        color: isDark
+                            ? Colors.white70
+                            : const Color(0xFF6B7280),
                       ),
                     ),
                   ),
@@ -922,9 +973,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
                     borderRadius: BorderRadius.circular(8),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF3B82F6).withValues(
-                          alpha: 0.4 * animValue,
-                        ),
+                        color: const Color(
+                          0xFF3B82F6,
+                        ).withValues(alpha: 0.4 * animValue),
                         blurRadius: 20 * animValue,
                         spreadRadius: 2 * animValue,
                       ),
@@ -945,8 +996,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
         itemBuilder: (context, index) {
           final server = servers[index];
           // 使用服务器地址作为唯一 key，确保拖拽时的稳定性
-          final serverKey = server.serverItem.address ?? 
-              server.serverItem.serverAddress ?? 
+          final serverKey =
+              server.serverItem.address ??
+              server.serverItem.serverAddress ??
               'server_$index';
           return _buildDraggableServerCardItem(
             key: ValueKey(serverKey),

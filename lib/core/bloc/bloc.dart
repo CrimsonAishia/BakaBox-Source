@@ -80,3 +80,6 @@ export 'notification/notification_state.dart';
 export 'character_gallery/character_gallery_bloc.dart';
 export 'character_gallery/character_gallery_event.dart';
 export 'character_gallery/character_gallery_state.dart';
+
+// Map Subscription
+export 'map_subscription/map_subscription_bloc.dart';
