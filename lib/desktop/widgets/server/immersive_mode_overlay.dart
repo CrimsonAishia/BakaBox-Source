@@ -4,14 +4,18 @@ import 'package:dart_ping/dart_ping.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:super_clipboard/super_clipboard.dart';
+import '../../../core/api/score_api.dart';
 import '../../../core/api/server_api.dart';
 import '../../../core/bloc/server/server_bloc.dart';
 import '../../../core/bloc/server/server_state.dart';
 import '../../../core/models/server_models.dart';
 import '../../../core/services/source_server_service.dart';
 import '../../../core/utils/log_service.dart';
+import '../../../core/utils/map_runtime_utils.dart';
+import '../../../core/utils/map_utils.dart';
 import '../../../core/utils/storage_utils.dart';
 import 'server_card.dart';
 import 'server_card_skeleton.dart';
@@ -113,6 +117,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     
     setState(() {});
     _startRefreshTimer();
+    
+    // 初始化完成后，获取所有已加载分类的比分数据
+    _fetchBatchScores();
   }
 
   /// 从存储中加载保存的分类（过滤掉不存在的分类）
@@ -200,8 +207,74 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     
     await Future.wait(futures);
     
+    // 刷新完成后，批量获取比分数据
+    if (mounted) {
+      await _fetchBatchScores();
+    }
+    
     if (mounted) {
       setState(() => _isRefreshing = false);
+    }
+  }
+
+  /// 批量获取所有选中分类服务器的比分数据
+  Future<void> _fetchBatchScores() async {
+    try {
+      // 收集所有服务器地址
+      final addresses = <String>[];
+      for (final categoryName in _selectedCategories) {
+        final servers = _categoryServersMap[categoryName];
+        if (servers == null) continue;
+        
+        for (final server in servers) {
+          final address = server.serverItem.address ?? server.serverItem.serverAddress;
+          if (address != null && address.isNotEmpty) {
+            addresses.add(address);
+          }
+        }
+      }
+      
+      if (addresses.isEmpty) return;
+      
+      // 调用 ScoreApi 批量查询比分
+      final scoreApi = ScoreApi();
+      final scores = await scoreApi.batchGetScores(addresses);
+      
+      if (scores.isEmpty || !mounted) return;
+      
+      // 将比分数据合并到对应的服务器
+      for (final categoryName in _selectedCategories) {
+        final servers = _categoryServersMap[categoryName];
+        if (servers == null) continue;
+        
+        for (int i = 0; i < servers.length; i++) {
+          final server = servers[i];
+          final address = server.serverItem.address ?? server.serverItem.serverAddress;
+          if (address == null) continue;
+          
+          final score = scores[address];
+          if (score == null || score.ctScore == null || score.tScore == null) {
+            continue;
+          }
+          
+          // 创建 TeamScores 并更新服务器
+          final teamScores = TeamScores(
+            ctScore: score.ctScore,
+            tScore: score.tScore,
+            dataQuality: score.dataQuality,
+          );
+          
+          servers[i] = server.copyWith(teamScores: teamScores);
+        }
+      }
+      
+      if (mounted) {
+        setState(() {});
+        LogService.d('[沉浸模式] 批量比分查询完成: ${scores.length} 个服务器有比分数据');
+      }
+    } catch (e) {
+      // 静默失败，不影响主流程
+      LogService.w('[沉浸模式] 批量比分查询失败: $e');
     }
   }
 
@@ -275,6 +348,11 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       }
       
       await Future.wait(futures);
+      
+      // 加载完成后，获取该分类的比分数据
+      if (mounted) {
+        await _fetchCategoryScores(categoryName);
+      }
     } catch (e) {
       LogService.e('加载分类 $categoryName 服务器失败: $e', e);
     } finally {
@@ -283,6 +361,59 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
           _loadingCategories.remove(categoryName);
         });
       }
+    }
+  }
+
+  /// 获取单个分类服务器的比分数据
+  Future<void> _fetchCategoryScores(String categoryName) async {
+    try {
+      final servers = _categoryServersMap[categoryName];
+      if (servers == null || servers.isEmpty) return;
+      
+      // 收集该分类的服务器地址
+      final addresses = <String>[];
+      for (final server in servers) {
+        final address = server.serverItem.address ?? server.serverItem.serverAddress;
+        if (address != null && address.isNotEmpty) {
+          addresses.add(address);
+        }
+      }
+      
+      if (addresses.isEmpty) return;
+      
+      // 调用 ScoreApi 批量查询比分
+      final scoreApi = ScoreApi();
+      final scores = await scoreApi.batchGetScores(addresses);
+      
+      if (scores.isEmpty || !mounted) return;
+      
+      // 将比分数据合并到对应的服务器
+      for (int i = 0; i < servers.length; i++) {
+        final server = servers[i];
+        final address = server.serverItem.address ?? server.serverItem.serverAddress;
+        if (address == null) continue;
+        
+        final score = scores[address];
+        if (score == null || score.ctScore == null || score.tScore == null) {
+          continue;
+        }
+        
+        // 创建 TeamScores 并更新服务器
+        final teamScores = TeamScores(
+          ctScore: score.ctScore,
+          tScore: score.tScore,
+          dataQuality: score.dataQuality,
+        );
+        
+        servers[i] = server.copyWith(teamScores: teamScores);
+      }
+      
+      if (mounted) {
+        setState(() {});
+        LogService.d('[沉浸模式] 分类 $categoryName 比分查询完成: ${scores.length} 个结果');
+      }
+    } catch (e) {
+      LogService.w('[沉浸模式] 分类 $categoryName 比分查询失败: $e');
     }
   }
 
@@ -616,17 +747,20 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       // captureFromLongWidget 的测量阶段使用 _MeasurementView（普通 RenderBox），
       // 没有 View ancestor，导致 SingleChildScrollView 等 widget 调用 View.of() 失败
       final pngBytes = await _screenshotController.captureFromWidget(
-        InheritedTheme.captureAll(
-          context,
-          BlocProvider.value(
-            value: serverBloc,
-            child: Material(
-              color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF3F4F6),
-              child: _buildFullContentForScreenshot(isDark, categoryServers),
+        MediaQuery(
+          data: MediaQuery.of(context),
+          child: InheritedTheme.captureAll(
+            context,
+            BlocProvider.value(
+              value: serverBloc,
+              child: Material(
+                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF3F4F6),
+                child: _buildFullContentForScreenshot(isDark, categoryServers),
+              ),
             ),
           ),
         ),
-        delay: const Duration(milliseconds: 100),
+        delay: const Duration(milliseconds: 300),
         pixelRatio: 2.0,
         context: context,
         targetSize: Size(screenWidth, clampedHeight),
@@ -671,7 +805,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     }
   }
   
-  /// 构建用于截图的完整内容（不使用 ListView，直接展开所有内容）
+  /// 构建用于截图的完整内容（不使用 ListView，直接展开所有内容，不显示 header）
   Widget _buildFullContentForScreenshot(bool isDark, List<_CategoryServers> categoryServers) {
     return Container(
       width: MediaQuery.of(context).size.width,
@@ -680,49 +814,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 标题
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF3B82F6).withValues(alpha: 0.15),
-                      const Color(0xFF8B5CF6).withValues(alpha: 0.1),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.grid_view_rounded,
-                  color: Color(0xFF3B82F6),
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Text(
-                '沉浸模式',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF1F2937),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                '共 ${categoryServers.fold<int>(0, (sum, c) => sum + c.servers.length)} 个服务器',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark ? Colors.white54 : const Color(0xFF6B7280),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          // 所有分类的服务器
+          // 所有分类的服务器（不显示 header）
           ...categoryServers.map((item) => _buildCategorySectionForScreenshot(isDark, item)),
         ],
       ),
@@ -731,6 +823,12 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   
   /// 构建用于截图的分类区块
   Widget _buildCategorySectionForScreenshot(bool isDark, _CategoryServers item) {
+    // 计算该分类的在线人数
+    int categoryPlayers = 0;
+    for (final server in item.servers) {
+      categoryPlayers += server.serverData?.players ?? 0;
+    }
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -766,7 +864,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  '${item.servers.length}',
+                  '${item.servers.length} 服务器 · $categoryPlayers 人',
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark ? Colors.white54 : const Color(0xFF6B7280),
@@ -776,24 +874,460 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             ],
           ),
         ),
-        // 服务器网格 - 使用原始 ServerCard
+        // 服务器网格 - 使用静态卡片避免动画导致的 layer 问题
         Wrap(
           spacing: 16,
           runSpacing: 16,
           children: item.servers.map((server) {
             return SizedBox(
               width: (MediaQuery.of(context).size.width - 48 - 16) / 2,
-              child: ServerCard(
-                server: server,
-                disableHoverEffect: true,
-                onTap: () {},
-              ),
+              child: _buildStaticServerCard(isDark, server),
             );
           }).toList(),
         ),
         const SizedBox(height: 24),
       ],
     );
+  }
+
+  /// 构建静态服务器卡片（用于截图，不包含动画，完整复刻 ServerCard 样式）
+  Widget _buildStaticServerCard(bool isDark, ExtendedServerItem server) {
+    final data = server.serverData;
+    final address = server.serverItem.address ?? '未知地址';
+    final hostName = server.serverItem.getDisplayName(data?.hostName);
+    final mapName = data?.map ?? '未知地图';
+    final mapLabel = server.mapInfo?.mapLabel;
+    final chineseName = (mapLabel?.isNotEmpty == true) ? mapLabel : null;
+    final displayMapName = chineseName != null ? '$chineseName ($mapName)' : mapName;
+    final players = data?.players ?? 0;
+    final maxPlayers = data?.maxPlayers ?? 0;
+    
+    // 运行时间相关
+    final mapRuntime = server.mapRuntime;
+    final fetchedAt = server.mapRuntimeLastFetched;
+    final hasRuntimeError = server.mapRuntimeError;
+    final isCustomServer = server.serverItem.isCustom;
+    
+    // 比分相关
+    final teamScores = server.teamScores;
+    final hasValidScore = teamScores?.ctScore != null && 
+        teamScores?.tScore != null &&
+        (teamScores!.ctScore! > 0 || teamScores.tScore! > 0);
+    
+    // 获取地图背景图 URL（使用 MapUtils 统一处理，与原卡片一致）
+    final mapBgUrl = MapUtils.getMapImageUrl(mapName, mapUrl: server.mapInfo?.mapUrl);
+    
+    // 是否显示运行时间（与原卡片逻辑一致）
+    final showRuntime = data?.map != null && !isCustomServer;
+    
+    return Container(
+      height: 136,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Stack(
+          children: [
+            // 地图背景（使用 MapUtils 获取的 URL，可能是网络图片或本地资源）
+            Positioned.fill(
+              child: mapBgUrl.startsWith('assets/')
+                  ? Image.asset(
+                      mapBgUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _buildFallbackGradient(),
+                    )
+                  : Image.network(
+                      mapBgUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Image.asset(
+                        MapUtils.defaultMapBackground,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _buildFallbackGradient(),
+                      ),
+                    ),
+            ),
+            // 渐变遮罩（与原卡片一致：从上到下）
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.1),
+                      Colors.black.withValues(alpha: 0.2),
+                      Colors.black.withValues(alpha: 0.6),
+                    ],
+                    stops: const [0.0, 0.3, 1.0],
+                  ),
+                ),
+              ),
+            ),
+            // 内容
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 左侧信息
+                  Expanded(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 400),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // 服务器名称（与原卡片完全一致的样式）
+                          Text(
+                            hostName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              shadows: [
+                                Shadow(color: Colors.black, blurRadius: 3, offset: Offset(0, 1)),
+                                Shadow(color: Colors.black, blurRadius: 8),
+                                Shadow(color: Colors.black, offset: Offset(1, 1)),
+                                Shadow(color: Colors.black, offset: Offset(-1, -1)),
+                              ],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 12),
+                          // 地图名称
+                          Row(
+                            children: [
+                              const Text(
+                                '地图：',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  shadows: [
+                                    Shadow(color: Colors.black, blurRadius: 2, offset: Offset(0, 1)),
+                                    Shadow(color: Colors.black, blurRadius: 6),
+                                  ],
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  displayMapName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    shadows: [
+                                      Shadow(color: Colors.black, blurRadius: 2, offset: Offset(0, 1)),
+                                      Shadow(color: Colors.black, blurRadius: 6),
+                                    ],
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          // 地址（截图不显示 ping）
+                          Text(
+                            address,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontFamily: 'monospace',
+                              shadows: [
+                                Shadow(color: Colors.black, blurRadius: 2, offset: Offset(0, 1)),
+                                Shadow(color: Colors.black, blurRadius: 6),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // 右侧玩家数量和运行时间
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildStaticPlayerCount(players, maxPlayers),
+                      if (showRuntime) ...[
+                        const SizedBox(height: 6),
+                        _buildStaticRuntimeInfo(
+                          mapRuntime: mapRuntime,
+                          fetchedAt: fetchedAt,
+                          hasError: hasRuntimeError,
+                          mapName: mapName,
+                          teamScores: teamScores,
+                          hasValidScore: hasValidScore,
+                          weeklyOccurrences: mapRuntime?.weeklyOccurrences,
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建静态玩家数量显示
+  Widget _buildStaticPlayerCount(int players, int maxPlayers) {
+    Color primaryColor;
+    Color bgColor;
+
+    if (players >= maxPlayers && maxPlayers > 0) {
+      primaryColor = const Color(0xFFF44336);
+      bgColor = const Color(0xFFFEEAEA);
+    } else if (players >= maxPlayers * 0.8 && maxPlayers > 0) {
+      primaryColor = const Color(0xFFFF9800);
+      bgColor = const Color(0xFFFFF9E6);
+    } else {
+      primaryColor = const Color(0xFF0080FF);
+      bgColor = Colors.white;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: bgColor.withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Text(
+            '$players',
+            style: TextStyle(
+              color: primaryColor,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              height: 1,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: Text(
+              '/',
+              style: TextStyle(
+                color: primaryColor.withValues(alpha: 0.5),
+                fontSize: 18,
+                fontWeight: FontWeight.w300,
+                height: 1,
+              ),
+            ),
+          ),
+          Text(
+            '$maxPlayers',
+            style: TextStyle(
+              color: primaryColor.withValues(alpha: 0.7),
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              height: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建兜底渐变背景（与 MapBackground 一致）
+  Widget _buildFallbackGradient() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1E293B), Color(0xFF334155)],
+        ),
+      ),
+    );
+  }
+
+  /// 构建静态运行时间信息（用于截图）
+  Widget _buildStaticRuntimeInfo({
+    required MapRuntimeData? mapRuntime,
+    required int? fetchedAt,
+    required bool hasError,
+    required String mapName,
+    required TeamScores? teamScores,
+    required bool hasValidScore,
+    required int? weeklyOccurrences,
+  }) {
+    // 使用 MapRuntimeUtils 计算运行时间显示
+    final displayText = MapRuntimeUtils.getRuntimeDisplay(
+      mapRuntime: mapRuntime,
+      fetchedAt: fetchedAt,
+      isLoading: mapRuntime == null && !hasError,
+      hasError: hasError,
+    );
+
+    Color iconColor = const Color(0xFF6B7280);
+    Color textColor = const Color(0xFF6B7280);
+    Color bgColor = Colors.white.withValues(alpha: 0.95);
+    Color borderColor = Colors.white.withValues(alpha: 0.3);
+
+    if (hasError) {
+      iconColor = const Color(0xFFF0A020);
+      textColor = const Color(0xFFF0A020);
+      bgColor = const Color(0xFFF0A020).withValues(alpha: 0.15);
+      borderColor = const Color(0xFFF0A020).withValues(alpha: 0.3);
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 运行时间
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(MdiIcons.clockOutline, size: 12, color: iconColor),
+              const SizedBox(width: 4),
+              Text(
+                displayText,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          // 比分显示或周出现次数
+          if (hasValidScore) ...[
+            const SizedBox(height: 2),
+            _buildStaticScoreDisplay(
+              teamScores!.ctScore!,
+              teamScores.tScore!,
+              mapName,
+              dataQuality: teamScores.dataQuality,
+            ),
+          ] else if (weeklyOccurrences != null) ...[
+            const SizedBox(height: 2),
+            RichText(
+              text: TextSpan(
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF6B7280),
+                ),
+                children: [
+                  const TextSpan(text: '一周内出现'),
+                  TextSpan(
+                    text: ' $weeklyOccurrences ',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF3B82F6),
+                    ),
+                  ),
+                  const TextSpan(text: '次'),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// 构建静态比分显示（用于截图）
+  Widget _buildStaticScoreDisplay(int ctScore, int tScore, String mapName, {String? dataQuality}) {
+    final isZombie = _isZombieMap(mapName);
+    final isUnknown = dataQuality == 'unknown';
+    
+    final Color leftColor;
+    final Color rightColor;
+    final Color iconColor;
+    
+    if (isUnknown) {
+      leftColor = const Color(0xFF9CA3AF);
+      rightColor = const Color(0xFF9CA3AF);
+      iconColor = const Color(0xFF9CA3AF);
+    } else if (isZombie) {
+      leftColor = const Color(0xFF22C55E);
+      rightColor = const Color(0xFFEF4444);
+      iconColor = const Color(0xFF6B7280);
+    } else {
+      leftColor = const Color(0xFF3B82F6);
+      rightColor = const Color(0xFFEAB308);
+      iconColor = const Color(0xFF6B7280);
+    }
+    
+    final leftLabel = isZombie ? '人类' : 'CT';
+    final rightLabel = isZombie ? '僵尸' : 'T';
+    
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '$leftLabel $ctScore',
+          style: TextStyle(
+            color: leftColor,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Icon(
+            MdiIcons.swordCross,
+            size: 12,
+            color: iconColor,
+          ),
+        ),
+        Text(
+          '$tScore $rightLabel',
+          style: TextStyle(
+            color: rightColor,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 检测是否为僵尸地图
+  bool _isZombieMap(String? mapName) {
+    if (mapName == null || mapName.isEmpty) return false;
+    final lowerName = mapName.toLowerCase();
+    return lowerName.startsWith('ze_') || lowerName.startsWith('zm_');
   }
 
   /// 获取所有选中分类的服务器
@@ -938,6 +1472,14 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       builder: (context, state) {
         final categories = state.serverCategories.where((c) => c.modelName != null).toList();
         final totalServers = _categoryServersMap.values.fold<int>(0, (s, v) => s + v.length);
+        
+        // 计算总在线人数
+        int totalPlayers = 0;
+        for (final servers in _categoryServersMap.values) {
+          for (final server in servers) {
+            totalPlayers += server.serverData?.players ?? 0;
+          }
+        }
 
         return Container(
           height: 60,
@@ -981,7 +1523,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
               ),
               const SizedBox(width: 10),
               Text(
-                '${_selectedCategories.length} 个分类 · $totalServers 台服务器',
+                '${_selectedCategories.length} 个分类 · $totalServers 台服务器 · $totalPlayers 人在线',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -1431,7 +1973,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
 
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       itemCount: categoryServers.length,
       itemBuilder: (context, index) {
         final item = categoryServers[index];
@@ -1441,43 +1983,49 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   }
 
   Widget _buildCategorySection(bool isDark, _CategoryServers item) {
+    // 计算该分类的在线人数
+    int categoryPlayers = 0;
+    for (final server in item.servers) {
+      categoryPlayers += server.serverData?.players ?? 0;
+    }
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 分类标题
         Padding(
-          padding: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.only(bottom: 10),
           child: Row(
             children: [
               if (item.category.isCustom) ...[
                 const Icon(
                   Icons.folder_outlined,
-                  size: 18,
+                  size: 16,
                   color: Color(0xFF10B981),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
               ],
               Text(
                 item.category.modelName ?? '未知分类',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: isDark ? Colors.white : const Color(0xFF1F2937),
                 ),
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: isDark
                       ? Colors.white.withValues(alpha: 0.1)
                       : Colors.black.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  '${item.servers.length}',
+                  '${item.servers.length} 服务器 · $categoryPlayers 人',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     color: isDark ? Colors.white54 : const Color(0xFF6B7280),
                   ),
                 ),
@@ -1485,8 +2033,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
               if (item.isLoading) ...[
                 const SizedBox(width: 8),
                 const SizedBox(
-                  width: 14,
-                  height: 14,
+                  width: 12,
+                  height: 12,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor: AlwaysStoppedAnimation(Color(0xFF3B82F6)),
@@ -1501,18 +2049,18 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
           _buildCategoryLoadingRow()
         else
           _buildServerGrid(isDark, item.servers),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
       ],
     );
   }
 
   Widget _buildCategoryLoadingRow() {
     return const Padding(
-      padding: EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
           Expanded(child: ServerCardSkeleton()),
-          SizedBox(width: 16),
+          SizedBox(width: 12),
           Expanded(child: ServerCardSkeleton()),
         ],
       ),
@@ -1527,12 +2075,12 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       
       rows.add(
         Padding(
-          padding: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.only(bottom: 12),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(child: _buildServerCard(first)),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: second != null
                     ? _buildServerCard(second)
