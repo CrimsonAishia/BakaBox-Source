@@ -54,9 +54,13 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
     return MultiBlocProvider(
       providers: [
         // 全局 Bloc - 所有页面共享
-        BlocProvider(create: (_) => AuthBloc()..add(const AuthCheckRequested())),
+        BlocProvider(
+          create: (_) => AuthBloc()..add(const AuthCheckRequested()),
+        ),
         BlocProvider(create: (_) => ServerBloc()),
-        BlocProvider(create: (_) => ServerStatsBloc()..add(const ServerStatsFetch())),
+        BlocProvider(
+          create: (_) => ServerStatsBloc()..add(const ServerStatsFetch()),
+        ),
         BlocProvider(create: (_) => UpdateLogBloc()),
         BlocProvider(create: (_) => UpdateBloc()),
         BlocProvider(create: (_) => SettingsBloc()..add(SettingsInit())),
@@ -64,13 +68,19 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
         BlocProvider(create: (_) => DailyTaskBloc()),
         BlocProvider(create: (_) => CharacterGalleryBloc()),
         BlocProvider(
-            create: (_) => FeatureStatusBloc()
-              ..add(FeatureStatusLoad())
-              ..add(FeatureStatusStartPeriodicRefresh())),
+          create: (_) => FeatureStatusBloc()
+            ..add(FeatureStatusLoad())
+            ..add(FeatureStatusStartPeriodicRefresh()),
+        ),
         BlocProvider(
-            create: (_) => NotificationBloc()
-              ..add(const NotificationFetchUnreadCount())
-              ..add(const NotificationStartAutoRefresh())),
+          create: (_) => NotificationBloc()
+            ..add(const NotificationFetchUnreadCount())
+            ..add(const NotificationStartAutoRefresh()),
+        ),
+        BlocProvider(
+          create: (_) =>
+              MapSubscriptionBloc()..add(const MapSubscriptionLoad()),
+        ),
       ],
       child: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {
@@ -83,10 +93,7 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
               GlobalCupertinoLocalizations.delegate,
               FlutterQuillLocalizations.delegate,
             ],
-            supportedLocales: const [
-              Locale('zh', 'CN'),
-              Locale('en', 'US'),
-            ],
+            supportedLocales: const [Locale('zh', 'CN'), Locale('en', 'US')],
             builder: (context, child) {
               final isDark = Theme.of(context).brightness == Brightness.dark;
               return Stack(
@@ -95,7 +102,9 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(24),
                     child: Container(
-                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFE9EEF8),
+                      color: isDark
+                          ? const Color(0xFF0F172A)
+                          : const Color(0xFFE9EEF8),
                       child: child,
                     ),
                   ),
@@ -105,7 +114,10 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
                       child: Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: const Color(0xFF0080FF), width: 2),
+                          border: Border.all(
+                            color: const Color(0xFF0080FF),
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),
@@ -150,7 +162,7 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
     try {
       final policyService = PolicyService();
       final needsReAgreement = await policyService.needsReAgreement();
-      
+
       if (needsReAgreement && mounted) {
         // 显示协议更新对话框（不可关闭，必须同意）
         await PolicyUpdateDialog.show(context);
@@ -164,25 +176,25 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
     try {
       // 首帧渲染完成，上报启动统计
       AnalyticsService.instance.reportStartupIfNeeded();
-      
+
       // 启动 GSI 服务（独立服务，不依赖其他服务）
       final gsiService = GsiService();
       await gsiService.initialize();
       await gsiService.start();
-      
+
       // 启动游戏状态监控（桌面端专属，需要先完成初始检测）
       await GameStatusService().startMonitoring();
-      
+
       // 启动控制台日志监控（依赖 GameStatusService 的状态流）
       await ConsoleLogService().startMonitoring();
-      
+
       // 以下服务依赖 ConsoleLogService，需要在其启动完成后初始化
       MapChangeMonitorService().initialize();
       WarmupMonitorService().initialize();
-      
+
       // 初始化更新日志监控服务
       UpdateLogMonitorService().initialize();
-      
+
       // 初始化比分上传服务（依赖 GsiService 和 ConsoleLogService）
       await ScoreUploadService().initialize();
     } catch (e) {
@@ -190,16 +202,17 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
     }
   }
 
-
   void _listenForUpdate() {
     final updateBloc = context.read<UpdateBloc>();
-    
+
     // 检查启动屏幕是否已经检测到更新
-    if (updateBloc.state.hasUpdate && updateBloc.state.updateInfo != null && !_hasShownAutoUpdateDialog) {
+    if (updateBloc.state.hasUpdate &&
+        updateBloc.state.updateInfo != null &&
+        !_hasShownAutoUpdateDialog) {
       _hasShownAutoUpdateDialog = true;
       UpdateDialog.show(context, updateBloc.state.updateInfo!);
     }
-    
+
     // 监听后续更新状态变化（如手动检查更新）
     // 使用 BlocListener 替代 stream.listen 避免内存泄漏
   }
@@ -211,24 +224,27 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
         // 监听两种情况：
         // 1. 状态从非 available 变为 available（有更新）
         // 2. 状态从 checking 变为 idle（无更新）
-        final hasNewUpdate = prev.status != UpdateStatus.available && 
-                             curr.status == UpdateStatus.available && 
-                             curr.updateInfo != null;
-        
-        final checkCompleteNoUpdate = prev.status == UpdateStatus.checking &&
-                                      curr.status == UpdateStatus.idle &&
-                                      curr.updateInfo != null &&
-                                      !curr.updateInfo!.hasUpdate;
-        
+        final hasNewUpdate =
+            prev.status != UpdateStatus.available &&
+            curr.status == UpdateStatus.available &&
+            curr.updateInfo != null;
+
+        final checkCompleteNoUpdate =
+            prev.status == UpdateStatus.checking &&
+            curr.status == UpdateStatus.idle &&
+            curr.updateInfo != null &&
+            !curr.updateInfo!.hasUpdate;
+
         return hasNewUpdate || checkCompleteNoUpdate;
       },
       listener: (context, state) {
-        if (state.status == UpdateStatus.available && state.updateInfo != null) {
+        if (state.status == UpdateStatus.available &&
+            state.updateInfo != null) {
           // 有更新：弹出更新对话框
           UpdateDialog.show(context, state.updateInfo!);
-        } else if (state.status == UpdateStatus.idle && 
-                   state.updateInfo != null && 
-                   !state.updateInfo!.hasUpdate) {
+        } else if (state.status == UpdateStatus.idle &&
+            state.updateInfo != null &&
+            !state.updateInfo!.hasUpdate) {
           // 无更新：显示提示
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

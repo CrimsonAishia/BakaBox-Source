@@ -1,5 +1,5 @@
 /// Core module - 共享业务逻辑层
-/// 
+///
 /// 包含所有平台共享的：
 /// - API 客户端和接口
 /// - 数据模型
@@ -38,6 +38,7 @@ export 'models/user_info.dart';
 export 'models/issue_models.dart';
 export 'models/feature_status_models.dart';
 export 'models/character_models.dart';
+export 'models/map_subscription_models.dart';
 
 // Bloc
 export 'bloc/bloc.dart';
@@ -59,6 +60,8 @@ export 'services/draft_service.dart';
 export 'services/image_url_service.dart';
 export 'services/scheduler_service.dart';
 export 'services/score_upload_service.dart';
+export 'services/tts_service.dart';
+export 'services/map_subscription_service.dart';
 
 // Utils
 export 'utils/announcement_utils.dart';

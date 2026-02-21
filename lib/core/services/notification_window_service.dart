@@ -14,6 +14,7 @@ enum NotificationType {
   mapChange, // 换图通知
   updateLog, // 更新日志通知
   info, // 普通信息
+  mapSubscription, // 地图订阅通知
 }
 
 /// 通知数据
@@ -45,18 +46,18 @@ class NotificationData {
   });
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'type': type.index,
-        'title': title,
-        'message': message,
-        'serverAddress': serverAddress,
-        'serverName': serverName,
-        'mapName': mapName,
-        'mapNameCn': mapNameCn,
-        'mapBackground': mapBackground,
-        'autoDismissSeconds': autoDismissSeconds,
-        'extraData': extraData,
-      };
+    'id': id,
+    'type': type.index,
+    'title': title,
+    'message': message,
+    'serverAddress': serverAddress,
+    'serverName': serverName,
+    'mapName': mapName,
+    'mapNameCn': mapNameCn,
+    'mapBackground': mapBackground,
+    'autoDismissSeconds': autoDismissSeconds,
+    'extraData': extraData,
+  };
 
   static NotificationData fromMap(Map<String, dynamic> map) {
     // extraData 需要特殊处理，确保类型正确
@@ -65,7 +66,7 @@ class NotificationData {
     if (rawExtraData != null && rawExtraData is Map) {
       extraData = Map<String, dynamic>.from(rawExtraData);
     }
-    
+
     return NotificationData(
       id: map['id'] as String? ?? '',
       type: NotificationType.values[map['type'] as int? ?? 0],
@@ -82,14 +83,20 @@ class NotificationData {
   }
 
   /// 单个通知窗口的参数 JSON
-  String toArguments(int position, String mainWindowId, {double? yOffset, NotificationPositionType? notificationPosition}) => jsonEncode({
-        'windowType': 'single_notification',
-        'position': position,
-        'yOffset': yOffset,
-        'mainWindowId': mainWindowId,
-        'notificationPosition': notificationPosition?.index ?? NotificationPositionType.topRight.index,
-        ...toMap(),
-      });
+  String toArguments(
+    int position,
+    String mainWindowId, {
+    double? yOffset,
+    NotificationPositionType? notificationPosition,
+  }) => jsonEncode({
+    'windowType': 'single_notification',
+    'position': position,
+    'yOffset': yOffset,
+    'mainWindowId': mainWindowId,
+    'notificationPosition':
+        notificationPosition?.index ?? NotificationPositionType.topRight.index,
+    ...toMap(),
+  });
 
   /// 检查是否是单个通知窗口
   static bool isSingleNotificationWindow(String arguments) {
@@ -103,14 +110,24 @@ class NotificationData {
   }
 
   /// 从窗口参数解析通知数据、位置、Y偏移量、主窗口ID和通知位置
-  static (NotificationData, int, double?, String, NotificationPositionType) fromArguments(String arguments) {
+  static (NotificationData, int, double?, String, NotificationPositionType)
+  fromArguments(String arguments) {
     final map = jsonDecode(arguments) as Map<String, dynamic>;
     final position = map['position'] as int? ?? 0;
     final yOffset = map['yOffset'] as double?;
     final mainWindowId = map['mainWindowId'] as String? ?? '';
-    final notificationPositionIndex = map['notificationPosition'] as int? ?? NotificationPositionType.topRight.index;
-    final notificationPosition = NotificationPositionType.values[notificationPositionIndex];
-    return (fromMap(map), position, yOffset, mainWindowId, notificationPosition);
+    final notificationPositionIndex =
+        map['notificationPosition'] as int? ??
+        NotificationPositionType.topRight.index;
+    final notificationPosition =
+        NotificationPositionType.values[notificationPositionIndex];
+    return (
+      fromMap(map),
+      position,
+      yOffset,
+      mainWindowId,
+      notificationPosition,
+    );
   }
 }
 
@@ -149,7 +166,8 @@ class NotificationWindowService {
   final List<NotificationData> _pendingQueue = [];
 
   /// 当前通知位置设置
-  NotificationPositionType _notificationPosition = NotificationPositionType.topRight;
+  NotificationPositionType _notificationPosition =
+      NotificationPositionType.topRight;
 
   /// 窗口配置
   static const double windowWidth = 300.0;
@@ -164,13 +182,13 @@ class NotificationWindowService {
   double _calculateYOffset(int targetPosition, {bool isWarmup = false}) {
     // 热身通知固定从 topPadding 开始
     if (isWarmup) return topPadding;
-    
+
     // 其他通知从热身区域下方开始（topPadding + 热身卡片高度 + 间距）
     double offset = topPadding + normalCardHeight + cardSpacing;
-    
+
     final sortedWindows = _activeWindows.values.toList()
       ..sort((a, b) => a.position.compareTo(b.position));
-    
+
     for (final info in sortedWindows) {
       // 跳过 position 0（热身区域）
       if (info.position == 0) continue;
@@ -196,7 +214,9 @@ class NotificationWindowService {
   /// 设置通知位置
   void setNotificationPosition(NotificationPositionType position) {
     _notificationPosition = position;
-    LogService.d('[NotificationWindow] Notification position set: ${position.displayName}');
+    LogService.d(
+      '[NotificationWindow] Notification position set: ${position.displayName}',
+    );
   }
 
   /// 获取当前通知位置
@@ -205,11 +225,18 @@ class NotificationWindowService {
   /// 从设置中加载通知位置
   Future<void> loadNotificationPosition() async {
     try {
-      final positionIndex = StorageUtils.getInt('notification_position') ?? NotificationPositionType.topRight.index;
+      final positionIndex =
+          StorageUtils.getInt('notification_position') ??
+          NotificationPositionType.topRight.index;
       _notificationPosition = NotificationPositionType.values[positionIndex];
-      LogService.d('[NotificationWindow] Loaded notification position: ${_notificationPosition.displayName}');
+      LogService.d(
+        '[NotificationWindow] Loaded notification position: ${_notificationPosition.displayName}',
+      );
     } catch (e) {
-      LogService.e('[NotificationWindow] Failed to load notification position', e);
+      LogService.e(
+        '[NotificationWindow] Failed to load notification position',
+        e,
+      );
     }
   }
 
@@ -252,19 +279,26 @@ class NotificationWindowService {
 
     // 检查是否已在创建队列中
     if (_createQueue.any((n) => n.id == notification.id)) {
-      LogService.d('[NotificationWindow] Notification ${notification.id} already in create queue');
+      LogService.d(
+        '[NotificationWindow] Notification ${notification.id} already in create queue',
+      );
       return;
     }
 
     // 检查是否已在等待队列中
     if (_pendingQueue.any((n) => n.id == notification.id)) {
-      LogService.d('[NotificationWindow] Notification ${notification.id} already in pending queue');
+      LogService.d(
+        '[NotificationWindow] Notification ${notification.id} already in pending queue',
+      );
       return;
     }
 
     // 如果屏幕已满（包括正在创建的），加入等待队列
-    if (_activeWindows.length + _createQueue.length >= maxVisibleNotifications) {
-      LogService.d('[NotificationWindow] Screen full, adding ${notification.id} to pending queue');
+    if (_activeWindows.length + _createQueue.length >=
+        maxVisibleNotifications) {
+      LogService.d(
+        '[NotificationWindow] Screen full, adding ${notification.id} to pending queue',
+      );
       _pendingQueue.add(notification);
       return;
     }
@@ -291,7 +325,9 @@ class NotificationWindowService {
 
       // 再次检查数量限制，如果满了就放入等待队列
       if (_activeWindows.length >= maxVisibleNotifications) {
-        LogService.d('[NotificationWindow] Screen full during processing, moving ${notification.id} to pending queue');
+        LogService.d(
+          '[NotificationWindow] Screen full during processing, moving ${notification.id} to pending queue',
+        );
         _pendingQueue.add(notification);
         continue;
       }
@@ -314,8 +350,8 @@ class NotificationWindowService {
         WindowConfiguration(
           hiddenAtLaunch: true,
           arguments: notification.toArguments(
-            position, 
-            _mainWindowId, 
+            position,
+            _mainWindowId,
             yOffset: yOffset,
             notificationPosition: _notificationPosition,
           ),
@@ -338,7 +374,10 @@ class NotificationWindowService {
     if (info == null) return;
 
     try {
-      await info.controller.invokeMethod('updateNotification', notification.toMap());
+      await info.controller.invokeMethod(
+        'updateNotification',
+        notification.toMap(),
+      );
     } catch (e) {
       LogService.d('[NotificationWindow] Update notification error: $e');
     }
@@ -361,18 +400,20 @@ class NotificationWindowService {
     final title = warmupRemainingSeconds != null && warmupRemainingSeconds > 0
         ? '热身 $warmupRemainingSeconds秒'
         : '热身中';
-    await show(NotificationData(
-      id: id,
-      type: NotificationType.warmup,
-      title: title,
-      message: mapDisplay,
-      serverAddress: serverAddress,
-      serverName: serverName,
-      mapName: mapName,
-      mapNameCn: mapNameCn,
-      mapBackground: mapBackground,
-      autoDismissSeconds: warmupRemainingSeconds,
-    ));
+    await show(
+      NotificationData(
+        id: id,
+        type: NotificationType.warmup,
+        title: title,
+        message: mapDisplay,
+        serverAddress: serverAddress,
+        serverName: serverName,
+        mapName: mapName,
+        mapNameCn: mapNameCn,
+        mapBackground: mapBackground,
+        autoDismissSeconds: warmupRemainingSeconds,
+      ),
+    );
   }
 
   /// 移除热身通知
@@ -398,23 +439,25 @@ class NotificationWindowService {
     final displayName = newMapCn != null && newMapCn.isNotEmpty
         ? '$newMapCn ($newMap)'
         : newMap;
-    await show(NotificationData(
-      id: id,
-      type: NotificationType.mapChange,
-      title: '换图通知',
-      message: displayName,
-      serverAddress: serverAddress,
-      serverName: serverName,
-      mapName: newMap,
-      mapNameCn: newMapCn,
-      mapBackground: mapBackground,
-      autoDismissSeconds: 15,
-      extraData: {
-        if (categoryName != null) 'categoryName': categoryName,
-        if (currentPlayers != null) 'currentPlayers': currentPlayers,
-        if (maxPlayers != null) 'maxPlayers': maxPlayers,
-      },
-    ));
+    await show(
+      NotificationData(
+        id: id,
+        type: NotificationType.mapChange,
+        title: '换图通知',
+        message: displayName,
+        serverAddress: serverAddress,
+        serverName: serverName,
+        mapName: newMap,
+        mapNameCn: newMapCn,
+        mapBackground: mapBackground,
+        autoDismissSeconds: 15,
+        extraData: {
+          if (categoryName != null) 'categoryName': categoryName,
+          if (currentPlayers != null) 'currentPlayers': currentPlayers,
+          if (maxPlayers != null) 'maxPlayers': maxPlayers,
+        },
+      ),
+    );
   }
 
   /// 显示更新日志通知
@@ -423,7 +466,7 @@ class NotificationWindowService {
     required String content,
   }) async {
     final id = 'updatelog_${DateTime.now().millisecondsSinceEpoch}';
-    
+
     // 根据内容长度计算阅读时间
     // 去除 HTML 标签后计算字符数，按每秒阅读 5 个字符计算
     final plainText = content.replaceAll(RegExp(r'<[^>]*>'), '');
@@ -431,15 +474,17 @@ class NotificationWindowService {
     final readingSeconds = (charCount / 5).ceil();
     // 最短 10 秒，最长 120 秒
     final autoDismissSeconds = readingSeconds.clamp(10, 120);
-    
-    await show(NotificationData(
-      id: id,
-      type: NotificationType.updateLog,
-      title: '更新日志',
-      message: content,
-      serverName: updateTime,
-      autoDismissSeconds: autoDismissSeconds,
-    ));
+
+    await show(
+      NotificationData(
+        id: id,
+        type: NotificationType.updateLog,
+        title: '更新日志',
+        message: content,
+        serverName: updateTime,
+        autoDismissSeconds: autoDismissSeconds,
+      ),
+    );
   }
 
   /// 关闭通知
@@ -465,7 +510,9 @@ class NotificationWindowService {
   void onNotificationWindowClosed(String notificationId) {
     final removed = _activeWindows.remove(notificationId);
     if (removed != null) {
-      LogService.d('[NotificationWindow] Window closed via IPC: $notificationId, remaining: ${_activeWindows.length}');
+      LogService.d(
+        '[NotificationWindow] Window closed via IPC: $notificationId, remaining: ${_activeWindows.length}',
+      );
       // 从等待队列中取出下一个通知显示（会自动填补空位）
       Future.microtask(() => _showNextFromPendingQueue());
     }
@@ -474,19 +521,22 @@ class NotificationWindowService {
   /// 检查热身通知是否已关闭（供 WarmupMonitorService 使用）
   bool isWarmupNotificationActive(String serverAddress) {
     final id = 'warmup_$serverAddress';
-    return _activeWindows.containsKey(id) || 
-           _createQueue.any((n) => n.id == id) ||
-           _pendingQueue.any((n) => n.id == id);
+    return _activeWindows.containsKey(id) ||
+        _createQueue.any((n) => n.id == id) ||
+        _pendingQueue.any((n) => n.id == id);
   }
 
   /// 从等待队列中取出下一个通知显示
   void _showNextFromPendingQueue() {
     if (_pendingQueue.isEmpty) return;
-    if (_activeWindows.length + _createQueue.length >= maxVisibleNotifications) return;
+    if (_activeWindows.length + _createQueue.length >= maxVisibleNotifications)
+      return;
 
     final next = _pendingQueue.removeAt(0);
-    LogService.d('[NotificationWindow] Showing next from pending queue: ${next.id}');
-    
+    LogService.d(
+      '[NotificationWindow] Showing next from pending queue: ${next.id}',
+    );
+
     // 加入创建队列（_getNextPosition 会自动找到空位）
     _createQueue.add(next);
     _processCreateQueue();
@@ -495,7 +545,9 @@ class NotificationWindowService {
   /// @deprecated 此方法在子窗口进程中调用无效
   void markWindowClosed(String notificationId) {
     // 子窗口应该通过 IPC 通知主窗口，此方法保留兼容性
-    LogService.d('[NotificationWindow] markWindowClosed (deprecated): $notificationId');
+    LogService.d(
+      '[NotificationWindow] markWindowClosed (deprecated): $notificationId',
+    );
   }
 
   /// 关闭所有通知
@@ -503,7 +555,7 @@ class NotificationWindowService {
     // 清空所有队列
     _createQueue.clear();
     _pendingQueue.clear();
-    
+
     final ids = _activeWindows.keys.toList();
     for (final id in ids) {
       final info = _activeWindows.remove(id);
