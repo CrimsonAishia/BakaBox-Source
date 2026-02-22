@@ -9,6 +9,9 @@ class CharacterGalleryBloc
     extends Bloc<CharacterGalleryEvent, CharacterGalleryState> {
   final CharacterApi _api = CharacterApi();
   static const int _pageSize = 20;
+  
+  // 用于取消过期的详情加载请求
+  int _currentDetailRequestId = 0;
 
   CharacterGalleryBloc() : super(const CharacterGalleryState()) {
     on<LoadCharacters>(_onLoadCharacters);
@@ -141,10 +144,15 @@ class CharacterGalleryBloc
     LoadCharacterDetail event,
     Emitter<CharacterGalleryState> emit,
   ) async {
+    // 递增请求 ID，用于取消过期请求
+    final requestId = ++_currentDetailRequestId;
+    
     emit(
       state.copyWith(
         detailLoadState: LoadState.loading,
+        loadingCharacterId: event.characterId, // 立即设置正在加载的角色ID，用于卡片选中状态
         previewPosition: 0,
+        clearSelectedCharacter: true, // 清除旧角色数据，避免闪烁
         clearSelectedSubModel: true,
         spellCards: [],
         spellCardsLoadState: LoadState.initial,
@@ -157,6 +165,11 @@ class CharacterGalleryBloc
         _api.getCharacterDetail(event.characterId),
         Future.delayed(const Duration(milliseconds: 800)),
       ]);
+
+      // 检查请求是否已过期（用户点击了其他角色）
+      if (requestId != _currentDetailRequestId) {
+        return; // 忽略过期的请求结果
+      }
 
       final character = results[0] as CharacterModel?;
 

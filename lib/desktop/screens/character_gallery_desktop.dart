@@ -414,7 +414,9 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 }
 
                 final character = state.characters[index];
-                final isSelected = state.selectedCharacter?.id == character.id;
+                // 卡片选中状态：已加载完成的角色 或 正在加载中的角色
+                final isSelected = state.selectedCharacter?.id == character.id ||
+                    state.loadingCharacterId == character.id;
                 return HanafudaCard(
                   character: character,
                   isSelected: isSelected,
@@ -447,12 +449,15 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   Widget _buildDetailPanel() {
     return BlocBuilder<CharacterGalleryBloc, CharacterGalleryState>(
       builder: (context, state) {
+        // 优先判断 loading 状态，确保切换角色时显示骨架屏
         if (state.detailLoadState == LoadState.loading) {
           return const DetailPanelSkeleton();
         }
+        // 没有选中角色时显示提示
         if (state.selectedCharacter == null) {
           return _buildSelectHint();
         }
+        // 正常显示角色详情
         return Stack(
           children: [
             KeyedSubtree(
@@ -2425,11 +2430,25 @@ class _SubModelScrollableListState extends State<_SubModelScrollableList> {
   bool _canScrollRight = false;
   bool _isHovered = false;
 
+  // 每个子模型卡片的宽度（包含间距）
+  static const double _itemWidth = 100.0; // 卡片宽度
+  static const double _itemSpacing = 12.0; // 间距
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_updateScrollState);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollState());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateScrollState();
+      _scrollToSelectedItem();
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _SubModelScrollableList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 当选中的子模型变化时，不滚动（保持当前位置）
+    // 只在初始化时滚动到选中项
   }
 
   @override
@@ -2437,6 +2456,30 @@ class _SubModelScrollableListState extends State<_SubModelScrollableList> {
     _scrollController.removeListener(_updateScrollState);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// 滚动到选中的子模型位置
+  void _scrollToSelectedItem() {
+    if (!_scrollController.hasClients) return;
+    
+    final selectedIndex = widget.subModels.indexWhere(
+      (s) => s.id == widget.selectedSubModelId || 
+             (widget.selectedSubModelId == null && s.isDefault),
+    );
+    
+    if (selectedIndex <= 0) return; // 第一个不需要滚动
+    
+    // 计算目标偏移量，让选中项尽量居中显示
+    final itemOffset = selectedIndex * (_itemWidth + _itemSpacing);
+    final viewportWidth = _scrollController.position.viewportDimension;
+    final targetOffset = (itemOffset - (viewportWidth - _itemWidth) / 2)
+        .clamp(0.0, _scrollController.position.maxScrollExtent);
+    
+    _scrollController.animateTo(
+      targetOffset,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   void _updateScrollState() {
