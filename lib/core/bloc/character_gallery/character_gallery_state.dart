@@ -27,9 +27,10 @@ class CharacterGalleryState extends Equatable {
   
   // 详情状态
   final LoadState detailLoadState;
+  final int? loadingCharacterId; // 正在加载的角色ID（用于卡片选中状态）
   final CharacterModel? selectedCharacter;
   final int? selectedSubModelId;
-  final int previewPosition; // 0=front, 1=left, 2=right, 3=back
+  final int previewPosition; // 0=front, 1=left, 2=right, 3=back, 4=hand, 5=leg
   
   // 符卡列表（根据子模型单独请求）
   final LoadState spellCardsLoadState;
@@ -76,6 +77,7 @@ class CharacterGalleryState extends Equatable {
     this.spellCardTierTotalCount = 0,
     this.spellCardTierFilter,
     this.detailLoadState = LoadState.initial,
+    this.loadingCharacterId,
     this.selectedCharacter,
     this.selectedSubModelId,
     this.previewPosition = 0,
@@ -113,6 +115,8 @@ class CharacterGalleryState extends Equatable {
     SpellCardType? spellCardTierFilter,
     bool clearSpellCardTierFilter = false,
     LoadState? detailLoadState,
+    int? loadingCharacterId,
+    bool clearLoadingCharacterId = false,
     CharacterModel? selectedCharacter,
     bool clearSelectedCharacter = false,
     int? selectedSubModelId,
@@ -152,6 +156,7 @@ class CharacterGalleryState extends Equatable {
       spellCardTierTotalCount: spellCardTierTotalCount ?? this.spellCardTierTotalCount,
       spellCardTierFilter: clearSpellCardTierFilter ? null : (spellCardTierFilter ?? this.spellCardTierFilter),
       detailLoadState: detailLoadState ?? this.detailLoadState,
+      loadingCharacterId: clearLoadingCharacterId ? null : (loadingCharacterId ?? this.loadingCharacterId),
       selectedCharacter: clearSelectedCharacter ? null : (selectedCharacter ?? this.selectedCharacter),
       selectedSubModelId: clearSelectedSubModel ? null : (selectedSubModelId ?? this.selectedSubModelId),
       previewPosition: previewPosition ?? this.previewPosition,
@@ -205,7 +210,7 @@ class CharacterGalleryState extends Equatable {
     listLoadState, characters, totalCount, currentPage, hasMore,
     selectedCategory, keyword, orderBy, showSpellCardTierView,
     spellCardTierLoadState, spellCardTierGroups, spellCardTierTotalCount,
-    spellCardTierFilter, detailLoadState, selectedCharacter,
+    spellCardTierFilter, detailLoadState, loadingCharacterId, selectedCharacter,
     selectedSubModelId, previewPosition, spellCardsLoadState, spellCards,
     submitEditState, submitEditError, myEditRequestsLoadState,
     myEditRequests, myEditRequestsTotal, hasPendingRequest, pendingRequestId,
