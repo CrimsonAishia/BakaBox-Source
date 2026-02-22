@@ -222,6 +222,7 @@ class ScoreUploadService {
 
     final map = state.map;
     final round = state.round;
+    final mapPhase = map?.phase;
 
     // 检查地图变化，重置比分记录
     if (map?.name != null && map!.name != _lastMapName) {
@@ -258,7 +259,26 @@ class ScoreUploadService {
       // 更新记录
       _lastCtScore = ctScore;
       _lastTScore = tScore;
-    } 
+    }
+    // 地图结束时也触发上传（gameover 阶段比分可能变化）
+    else if (_shouldUploadOnGameOver(
+      mapPhase: mapPhase,
+      ctScore: ctScore,
+      tScore: tScore,
+    )) {
+      LogService.d('[ScoreUpload] 地图结束，触发最终比分上传');
+      _uploadScore(
+        ctScore: ctScore,
+        tScore: tScore,
+        round: roundNumber,
+        mapName: mapName,
+        steamId: steamId,
+      );
+
+      // 更新记录
+      _lastCtScore = ctScore;
+      _lastTScore = tScore;
+    }
     // 检查是否需要发送心跳（距离上次上传超过 5 分钟）
     else if (_shouldSendHeartbeat(ctScore: ctScore, tScore: tScore, mapName: mapName)) {
       LogService.d('[ScoreUpload] 触发心跳上传');
@@ -308,6 +328,48 @@ class ScoreUploadService {
     
     final elapsed = DateTime.now().difference(_lastUploadTime!);
     return elapsed >= _heartbeatInterval;
+  }
+
+  /// 判断地图结束时是否应该上传比分
+  ///
+  /// 上传条件（全部满足）：
+  /// 1. 地图阶段为 "gameover"
+  /// 2. 比分发生变化（与上次记录不同）
+  /// 3. 距离上次上传 >= 3 秒（防抖）
+  /// 4. 服务器地址不为空
+  bool _shouldUploadOnGameOver({
+    required String? mapPhase,
+    required int ctScore,
+    required int tScore,
+  }) {
+    // 条件 1: 地图阶段必须是 "gameover"
+    if (mapPhase != 'gameover') {
+      return false;
+    }
+
+    // 条件 2: 比分必须发生变化
+    final scoreChanged = ctScore != _lastCtScore || tScore != _lastTScore;
+    if (!scoreChanged) {
+      return false;
+    }
+
+    // 条件 3: 防抖检查（3 秒）
+    if (_lastUploadTime != null) {
+      final elapsed = DateTime.now().difference(_lastUploadTime!);
+      if (elapsed.inSeconds < 3) {
+        LogService.d('[ScoreUpload] 跳过 gameover 上传: 防抖中（${elapsed.inSeconds}s < 3s）');
+        return false;
+      }
+    }
+
+    // 条件 4: 服务器地址不能为空
+    if (_currentServerDomainAddress == null ||
+        _currentServerDomainAddress!.isEmpty) {
+      LogService.d('[ScoreUpload] 跳过 gameover 上传: 服务器地址为空');
+      return false;
+    }
+
+    return true;
   }
 
   /// 判断是否应该上传比分
