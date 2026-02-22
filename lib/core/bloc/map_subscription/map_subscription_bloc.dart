@@ -31,7 +31,6 @@ class MapSubscriptionBloc
     on<MapSubscriptionAdd>(_onAdd);
     on<MapSubscriptionRemove>(_onRemove);
     on<MapSubscriptionUpdateScope>(_onUpdateScope);
-    on<MapSubscriptionToggleTts>(_onToggleTts);
     on<MapSubscriptionToggleGlobal>(_onToggleGlobal);
     on<MapSubscriptionToggleNotification>(_onToggleNotification);
     on<MapSubscriptionToggleGlobalTts>(_onToggleGlobalTts);
@@ -46,6 +45,7 @@ class MapSubscriptionBloc
     on<MapSubscriptionImportTtsModel>(_onImportTtsModel);
     on<MapSubscriptionTestTts>(_onTestTts);
     on<MapSubscriptionSetCooldown>(_onSetCooldown);
+    on<_MapSubscriptionTtsPhaseUpdate>(_onTtsPhaseUpdate);
 
     // 监听服务状态变化
     _serviceSubscription = _service.stateStream.listen((_) {
@@ -67,6 +67,7 @@ class MapSubscriptionBloc
           isEnabled: _service.isEnabled,
           isNotificationEnabled: _service.isNotificationEnabled,
           isTtsEnabled: _service.isTtsEnabled,
+          globalCategories: _service.globalCategories,
           isTtsModelDownloaded: _ttsService.isModelDownloaded,
           ttsVolume: _ttsService.volume,
           ttsSpeed: _ttsService.speed,
@@ -145,22 +146,10 @@ class MapSubscriptionBloc
     Emitter<MapSubscriptionState> emit,
   ) async {
     try {
-      await _service.updateCategoryScope(event.mapName, event.categoryNames);
-      emit(state.copyWith(subscriptions: _service.subscriptions));
+      await _service.setGlobalCategories(event.categoryNames);
+      emit(state.copyWith(globalCategories: _service.globalCategories));
     } catch (e) {
-      LogService.e('[MapSubscriptionBloc] 更新分类范围失败', e);
-    }
-  }
-
-  Future<void> _onToggleTts(
-    MapSubscriptionToggleTts event,
-    Emitter<MapSubscriptionState> emit,
-  ) async {
-    try {
-      await _service.toggleTts(event.mapName, event.enabled);
-      emit(state.copyWith(subscriptions: _service.subscriptions));
-    } catch (e) {
-      LogService.e('[MapSubscriptionBloc] 切换 TTS 失败', e);
+      LogService.e('[MapSubscriptionBloc] 更新全局分类范围失败', e);
     }
   }
 
@@ -370,7 +359,17 @@ class MapSubscriptionBloc
     MapSubscriptionTestTts event,
     Emitter<MapSubscriptionState> emit,
   ) async {
-    await _ttsService.testSpeak();
+    emit(state.copyWith(isTtsTesting: true, ttsTestingPhase: 'generating'));
+    try {
+      await Future.microtask(() {});
+      await _ttsService.testSpeakWithCallback(
+        onPlayingStart: () {
+          add(const _MapSubscriptionTtsPhaseUpdate(phase: 'playing'));
+        },
+      );
+    } finally {
+      emit(state.copyWith(isTtsTesting: false, ttsTestingPhase: null));
+    }
   }
 
   Future<void> _onSetCooldown(
@@ -379,6 +378,13 @@ class MapSubscriptionBloc
   ) async {
     await _service.setCooldownSeconds(event.seconds);
     emit(state.copyWith(cooldownSeconds: _service.cooldownSeconds));
+  }
+
+  void _onTtsPhaseUpdate(
+    _MapSubscriptionTtsPhaseUpdate event,
+    Emitter<MapSubscriptionState> emit,
+  ) {
+    emit(state.copyWith(ttsTestingPhase: event.phase));
   }
 
   @override

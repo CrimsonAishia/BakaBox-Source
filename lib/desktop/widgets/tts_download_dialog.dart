@@ -28,7 +28,6 @@ class TtsDownloadDialog extends StatefulWidget {
 
 class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
   final TtsService _ttsService = TtsService();
-  bool _isTesting = false;
   String? _downloadingModelId;
 
   @override
@@ -66,9 +65,6 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
                   children: [
                     // 标题栏
                     _buildHeader(isDark),
-                    const SizedBox(height: 16),
-                    // 测试播放按钮
-                    _buildTestSection(isDark, state),
                     const SizedBox(height: 16),
                     // 模型列表标题
                     _buildSectionTitle(isDark, '可用模型'),
@@ -156,39 +152,6 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
     );
   }
 
-  Widget _buildTestSection(bool isDark, MapSubscriptionState state) {
-    return Row(
-      children: [
-        Text(
-          '选择模型后可测试播放效果',
-          style: TextStyle(
-            fontSize: 12,
-            color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
-          ),
-        ),
-        const Spacer(),
-        // 测试按钮
-        _HoverButton(
-          onPressed: state.isTtsModelDownloaded && !_isTesting
-              ? () async {
-                  setState(() => _isTesting = true);
-                  await _ttsService.testSpeak();
-                  if (mounted) {
-                    setState(() => _isTesting = false);
-                  }
-                }
-              : null,
-          isDark: isDark,
-          icon: _isTesting
-              ? Icons.hourglass_empty_rounded
-              : Icons.play_arrow_rounded,
-          label: _isTesting ? '播放中...' : '测试播放',
-          isLoading: _isTesting,
-        ),
-      ],
-    );
-  }
-
   Widget _buildModelCard(
     bool isDark,
     TtsModelInfo model,
@@ -197,11 +160,14 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
     final isDownloaded = _ttsService.isModelDownloadedById(model.id);
     final isSelected = isDownloaded && state.selectedTtsModelId == model.id;
     final isDomestic = model.region == TtsModelRegion.domestic;
-    final isDownloading = _downloadingModelId == model.id &&
+    final isDownloading =
+        _downloadingModelId == model.id &&
         state.ttsDownloadStatus == TtsDownloadStatus.downloading;
-    final isExtracting = _downloadingModelId == model.id &&
+    final isExtracting =
+        _downloadingModelId == model.id &&
         state.ttsDownloadStatus == TtsDownloadStatus.extracting;
-    final isFailed = _downloadingModelId == model.id &&
+    final isFailed =
+        _downloadingModelId == model.id &&
         state.ttsDownloadStatus == TtsDownloadStatus.failed;
 
     return Padding(
@@ -263,8 +229,12 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
                             ),
                             decoration: BoxDecoration(
                               color: isDomestic
-                                  ? const Color(0xFF10B981).withValues(alpha: 0.12)
-                                  : const Color(0xFF6366F1).withValues(alpha: 0.12),
+                                  ? const Color(
+                                      0xFF10B981,
+                                    ).withValues(alpha: 0.12)
+                                  : const Color(
+                                      0xFF6366F1,
+                                    ).withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -372,9 +342,7 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
         onPressed: () {
           _ttsService.cancelDownload();
           setState(() => _downloadingModelId = null);
-          context.read<MapSubscriptionBloc>().add(
-            const MapSubscriptionLoad(),
-          );
+          context.read<MapSubscriptionBloc>().add(const MapSubscriptionLoad());
         },
         isDark: isDark,
         icon: Icons.close_rounded,
@@ -389,27 +357,13 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 普通下载按钮
-          _HoverButton(
-            onPressed: state.ttsDownloadStatus == TtsDownloadStatus.downloading
-                ? null
-                : () {
-                    setState(() => _downloadingModelId = model.id);
-                    context.read<MapSubscriptionBloc>().add(
-                      MapSubscriptionDownloadTtsModel(modelId: model.id),
-                    );
-                  },
-            isDark: isDark,
-            icon: Icons.download_rounded,
-            label: '下载',
-          ),
-          // 加速下载按钮（仅当有加速地址时显示）
+          // 国内下载按钮（优先显示，仅当有加速地址时显示）
           if (hasAcceleration) ...[
-            const SizedBox(width: 6),
             Tooltip(
-              message: '使用国内镜像加速下载',
+              message: '使用国内镜像下载（推荐）',
               child: _HoverButton(
-                onPressed: state.ttsDownloadStatus == TtsDownloadStatus.downloading
+                onPressed:
+                    state.ttsDownloadStatus == TtsDownloadStatus.downloading
                     ? null
                     : () {
                         setState(() => _downloadingModelId = model.id);
@@ -421,12 +375,30 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
                         );
                       },
                 isDark: isDark,
-                icon: Icons.rocket_launch_rounded,
-                label: '加速',
+                icon: Icons.download_rounded,
+                label: '国内下载',
                 isAccent: true,
               ),
             ),
+            const SizedBox(width: 6),
           ],
+          // 国外下载按钮
+          Tooltip(
+            message: hasAcceleration ? '从 GitHub 直接下载' : '下载模型',
+            child: _HoverButton(
+              onPressed: state.ttsDownloadStatus == TtsDownloadStatus.downloading
+                  ? null
+                  : () {
+                      setState(() => _downloadingModelId = model.id);
+                      context.read<MapSubscriptionBloc>().add(
+                        MapSubscriptionDownloadTtsModel(modelId: model.id),
+                      );
+                    },
+              isDark: isDark,
+              icon: Icons.public_rounded,
+              label: hasAcceleration ? '国外下载' : '下载',
+            ),
+          ),
         ],
       );
     }
@@ -512,9 +484,7 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
     if (confirm == true && mounted) {
       await _ttsService.deleteModel(modelId: model.id);
       if (mounted) {
-        context.read<MapSubscriptionBloc>().add(
-          const MapSubscriptionLoad(),
-        );
+        context.read<MapSubscriptionBloc>().add(const MapSubscriptionLoad());
       }
     }
   }
@@ -582,26 +552,26 @@ class _HoverContainerState extends State<_HoverContainer> {
           decoration: BoxDecoration(
             color: widget.isSelected
                 ? (widget.isDark
-                    ? const Color(0xFF6366F1).withValues(alpha: 0.12)
-                    : const Color(0xFF6366F1).withValues(alpha: 0.06))
+                      ? const Color(0xFF6366F1).withValues(alpha: 0.12)
+                      : const Color(0xFF6366F1).withValues(alpha: 0.06))
                 : _isHovered
-                    ? (widget.isDark
-                        ? Colors.white.withValues(alpha: 0.08)
-                        : const Color(0xFFF3F4F6))
-                    : (widget.isDark
-                        ? Colors.white.withValues(alpha: 0.04)
-                        : const Color(0xFFF9FAFB)),
+                ? (widget.isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : const Color(0xFFF3F4F6))
+                : (widget.isDark
+                      ? Colors.white.withValues(alpha: 0.04)
+                      : const Color(0xFFF9FAFB)),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: widget.isSelected
                   ? const Color(0xFF6366F1).withValues(alpha: 0.4)
                   : _isHovered
-                      ? (widget.isDark
-                          ? Colors.white.withValues(alpha: 0.15)
-                          : const Color(0xFFD1D5DB))
-                      : (widget.isDark
-                          ? Colors.white.withValues(alpha: 0.08)
-                          : const Color(0xFFE5E7EB)),
+                  ? (widget.isDark
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : const Color(0xFFD1D5DB))
+                  : (widget.isDark
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : const Color(0xFFE5E7EB)),
               width: widget.isSelected ? 1.5 : 1,
             ),
           ),
@@ -621,6 +591,7 @@ class _HoverButton extends StatefulWidget {
   final bool isDestructive;
   final bool isOutlined;
   final bool isLoading;
+
   /// 是否使用强调色（用于加速下载等特殊按钮）
   final bool isAccent;
 
@@ -648,8 +619,8 @@ class _HoverButtonState extends State<_HoverButton> {
     final baseColor = widget.isDestructive
         ? Colors.redAccent
         : widget.isAccent
-            ? const Color(0xFF10B981) // 绿色强调色
-            : const Color(0xFF6366F1);
+        ? const Color(0xFF10B981) // 绿色强调色
+        : const Color(0xFF6366F1);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -663,13 +634,13 @@ class _HoverButtonState extends State<_HoverButton> {
           decoration: BoxDecoration(
             color: widget.isOutlined
                 ? (_isHovered && isEnabled
-                    ? (widget.isDark
-                        ? Colors.white.withValues(alpha: 0.08)
-                        : const Color(0xFFF3F4F6))
-                    : Colors.transparent)
+                      ? (widget.isDark
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : const Color(0xFFF3F4F6))
+                      : Colors.transparent)
                 : (_isHovered && isEnabled
-                    ? baseColor.withValues(alpha: 0.2)
-                    : baseColor.withValues(alpha: 0.1)),
+                      ? baseColor.withValues(alpha: 0.2)
+                      : baseColor.withValues(alpha: 0.1)),
             borderRadius: BorderRadius.circular(6),
             border: widget.isOutlined
                 ? Border.all(
@@ -688,9 +659,13 @@ class _HoverButtonState extends State<_HoverButton> {
                   size: 14,
                   color: isEnabled
                       ? (widget.isOutlined
-                          ? (widget.isDark ? Colors.white70 : const Color(0xFF4B5563))
-                          : baseColor)
-                      : (widget.isDark ? Colors.white24 : const Color(0xFFD1D5DB)),
+                            ? (widget.isDark
+                                  ? Colors.white70
+                                  : const Color(0xFF4B5563))
+                            : baseColor)
+                      : (widget.isDark
+                            ? Colors.white24
+                            : const Color(0xFFD1D5DB)),
                 ),
                 const SizedBox(width: 4),
               ],
@@ -701,9 +676,13 @@ class _HoverButtonState extends State<_HoverButton> {
                   fontWeight: FontWeight.w500,
                   color: isEnabled
                       ? (widget.isOutlined
-                          ? (widget.isDark ? Colors.white70 : const Color(0xFF4B5563))
-                          : baseColor)
-                      : (widget.isDark ? Colors.white24 : const Color(0xFFD1D5DB)),
+                            ? (widget.isDark
+                                  ? Colors.white70
+                                  : const Color(0xFF4B5563))
+                            : baseColor)
+                      : (widget.isDark
+                            ? Colors.white24
+                            : const Color(0xFFD1D5DB)),
                 ),
               ),
             ],
@@ -759,10 +738,10 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
           decoration: BoxDecoration(
             color: _isHovered && isEnabled
                 ? (widget.isDestructive
-                    ? Colors.redAccent.withValues(alpha: 0.1)
-                    : (widget.isDark
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : const Color(0xFFF3F4F6)))
+                      ? Colors.redAccent.withValues(alpha: 0.1)
+                      : (widget.isDark
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : const Color(0xFFF3F4F6)))
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(6),
           ),
@@ -778,10 +757,7 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
     );
 
     if (widget.tooltip != null) {
-      button = Tooltip(
-        message: widget.tooltip!,
-        child: button,
-      );
+      button = Tooltip(message: widget.tooltip!, child: button);
     }
 
     return button;

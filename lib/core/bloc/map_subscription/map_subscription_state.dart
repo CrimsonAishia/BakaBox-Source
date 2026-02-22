@@ -26,6 +26,9 @@ class MapSubscriptionState extends Equatable {
   /// 可用分类列表
   final List<String> availableCategories;
 
+  /// 全局分类范围（空=全部分类，包括新增的）
+  final List<String> globalCategories;
+
   /// 是否正在加载分类
   final bool isLoadingCategories;
 
@@ -47,8 +50,14 @@ class MapSubscriptionState extends Equatable {
   /// 当前选中的 TTS 模型 ID
   final String selectedTtsModelId;
 
-  /// 通知冷却时间（秒）
+  /// 通知冷却时间（秒）- 同时也是监控刷新频率
   final int cooldownSeconds;
+
+  /// TTS 测试播报中
+  final bool isTtsTesting;
+
+  /// TTS 测试阶段：generating（生成中）、playing（播报中）
+  final String? ttsTestingPhase;
 
   /// 错误信息
   final String? error;
@@ -62,6 +71,7 @@ class MapSubscriptionState extends Equatable {
     this.searchResults = const [],
     this.isSearching = false,
     this.availableCategories = const [],
+    this.globalCategories = const [],
     this.isLoadingCategories = false,
     this.isTtsModelDownloaded = false,
     this.ttsDownloadStatus = TtsDownloadStatus.idle,
@@ -69,7 +79,9 @@ class MapSubscriptionState extends Equatable {
     this.ttsVolume = 0.8,
     this.ttsSpeed = 1.0,
     this.selectedTtsModelId = 'vits-zh-aishell3',
-    this.cooldownSeconds = 60,
+    this.cooldownSeconds = 15,
+    this.isTtsTesting = false,
+    this.ttsTestingPhase,
     this.error,
   });
 
@@ -82,6 +94,7 @@ class MapSubscriptionState extends Equatable {
     List<MapSearchResult>? searchResults,
     bool? isSearching,
     List<String>? availableCategories,
+    List<String>? globalCategories,
     bool? isLoadingCategories,
     bool? isTtsModelDownloaded,
     TtsDownloadStatus? ttsDownloadStatus,
@@ -90,6 +103,8 @@ class MapSubscriptionState extends Equatable {
     double? ttsSpeed,
     String? selectedTtsModelId,
     int? cooldownSeconds,
+    bool? isTtsTesting,
+    String? ttsTestingPhase,
     String? error,
   }) {
     return MapSubscriptionState(
@@ -101,6 +116,7 @@ class MapSubscriptionState extends Equatable {
       searchResults: searchResults ?? this.searchResults,
       isSearching: isSearching ?? this.isSearching,
       availableCategories: availableCategories ?? this.availableCategories,
+      globalCategories: globalCategories ?? this.globalCategories,
       isLoadingCategories: isLoadingCategories ?? this.isLoadingCategories,
       isTtsModelDownloaded: isTtsModelDownloaded ?? this.isTtsModelDownloaded,
       ttsDownloadStatus: ttsDownloadStatus ?? this.ttsDownloadStatus,
@@ -109,6 +125,8 @@ class MapSubscriptionState extends Equatable {
       ttsSpeed: ttsSpeed ?? this.ttsSpeed,
       selectedTtsModelId: selectedTtsModelId ?? this.selectedTtsModelId,
       cooldownSeconds: cooldownSeconds ?? this.cooldownSeconds,
+      isTtsTesting: isTtsTesting ?? this.isTtsTesting,
+      ttsTestingPhase: ttsTestingPhase,
       error: error,
     );
   }
@@ -123,6 +141,7 @@ class MapSubscriptionState extends Equatable {
     searchResults,
     isSearching,
     availableCategories,
+    globalCategories,
     isLoadingCategories,
     isTtsModelDownloaded,
     ttsDownloadStatus,
@@ -131,6 +150,8 @@ class MapSubscriptionState extends Equatable {
     ttsSpeed,
     selectedTtsModelId,
     cooldownSeconds,
+    isTtsTesting,
+    ttsTestingPhase,
     error,
   ];
 }

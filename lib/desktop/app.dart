@@ -11,6 +11,7 @@ import '../core/services/policy_service.dart';
 import 'router/desktop_router.dart';
 import '../core/services/console_log_service.dart';
 import '../core/services/map_change_monitor_service.dart';
+import '../core/services/map_subscription_service.dart';
 import '../core/services/update_log_monitor_service.dart';
 import '../core/services/warmup_monitor_service.dart';
 import 'theme/desktop_theme.dart';
@@ -191,6 +192,7 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
       // 以下服务依赖 ConsoleLogService，需要在其启动完成后初始化
       MapChangeMonitorService().initialize();
       WarmupMonitorService().initialize();
+      MapSubscriptionService().initialize();
 
       // 初始化更新日志监控服务
       UpdateLogMonitorService().initialize();

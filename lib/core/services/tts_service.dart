@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:archive/archive.dart';
@@ -30,12 +29,16 @@ class TtsModelInfo {
   final String description;
   final String language;
   final String downloadUrl;
+
   /// 加速下载地址（国内镜像），为空则不支持加速
   final String? acceleratedUrl;
   final String dirName;
   final String modelFile;
-  final String lexicon;
+  final String? lexicon;
   final String tokens;
+
+  /// espeak-ng 数据目录（Piper 模型需要）
+  final String? dataDir;
   final TtsModelRegion region;
   final String estimatedSize;
 
@@ -48,8 +51,9 @@ class TtsModelInfo {
     this.acceleratedUrl,
     required this.dirName,
     required this.modelFile,
-    required this.lexicon,
+    this.lexicon,
     required this.tokens,
+    this.dataDir,
     required this.region,
     required this.estimatedSize,
   });
@@ -86,30 +90,13 @@ class TtsService {
   static const String _keyTtsSpeed = 'tts_speed';
   static const String _keyTtsSelectedModel = 'tts_selected_model';
 
-  /// 可用模型列表
+  /// 可用模型列表（确认支持中英文混合）
   static const List<TtsModelInfo> availableModels = [
-    // ====== 国内可访问 ======
-    TtsModelInfo(
-      id: 'vits-zh-aishell3',
-      name: 'AISHELL3 中文',
-      description: '中文女声语音合成，发音清晰自然',
-      language: '中文',
-      downloadUrl:
-          'https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-zh-aishell3.tar.bz2',
-      acceleratedUrl:
-          'https://ghfast.top/https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-zh-aishell3.tar.bz2',
-      dirName: 'vits-zh-aishell3',
-      modelFile: 'vits-aishell3.onnx',
-      lexicon: 'lexicon.txt',
-      tokens: 'tokens.txt',
-      region: TtsModelRegion.domestic,
-      estimatedSize: '~35MB',
-    ),
-    // ====== 国外源 ======
+    // ====== MeloTTS 系列（官方支持中英文混合） ======
     TtsModelInfo(
       id: 'vits-melo-tts-zh_en',
       name: 'MeloTTS 中英混合',
-      description: '支持中英文混读的高质量模型',
+      description: '官方支持中英文混读的高质量模型，推荐使用',
       language: '中文/英文',
       downloadUrl:
           'https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-melo-tts-zh_en.tar.bz2',
@@ -119,31 +106,15 @@ class TtsService {
       modelFile: 'model.onnx',
       lexicon: 'lexicon.txt',
       tokens: 'tokens.txt',
-      region: TtsModelRegion.international,
+      region: TtsModelRegion.domestic,
       estimatedSize: '~50MB',
-    ),
-    TtsModelInfo(
-      id: 'vits-icefall-zh-aishell3',
-      name: 'Icefall 中文',
-      description: 'Icefall 框架训练的中文模型，音质优秀',
-      language: '中文',
-      downloadUrl:
-          'https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-icefall-zh-aishell3.tar.bz2',
-      acceleratedUrl:
-          'https://ghfast.top/https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-icefall-zh-aishell3.tar.bz2',
-      dirName: 'vits-icefall-zh-aishell3',
-      modelFile: 'model.onnx',
-      lexicon: 'lexicon.txt',
-      tokens: 'tokens.txt',
-      region: TtsModelRegion.international,
-      estimatedSize: '~35MB',
     ),
   ];
 
   /// 获取当前选中的模型信息
   TtsModelInfo get selectedModelInfo {
     final selectedId =
-        StorageUtils.getString(_keyTtsSelectedModel) ?? 'vits-zh-aishell3';
+        StorageUtils.getString(_keyTtsSelectedModel) ?? 'vits-melo-tts-zh_en';
     return availableModels.firstWhere(
       (m) => m.id == selectedId,
       orElse: () => availableModels.first,
@@ -226,8 +197,13 @@ class TtsService {
       final model = selectedModelInfo;
       final modelDir = await _getModelDirectoryFor(model);
       final modelPath = p.join(modelDir.path, model.modelFile);
-      final lexiconPath = p.join(modelDir.path, model.lexicon);
+      final lexiconPath = model.lexicon != null
+          ? p.join(modelDir.path, model.lexicon!)
+          : '';
       final tokensPath = p.join(modelDir.path, model.tokens);
+      final dataDirPath = model.dataDir != null
+          ? p.join(modelDir.path, model.dataDir!)
+          : '';
 
       // 检查文件是否存在
       if (!File(modelPath).existsSync() || !File(tokensPath).existsSync()) {
@@ -241,6 +217,7 @@ class TtsService {
         model: modelPath,
         lexicon: lexiconPath,
         tokens: tokensPath,
+        dataDir: dataDirPath,
       );
 
       final modelConfig = sherpa_onnx.OfflineTtsModelConfig(
@@ -265,6 +242,57 @@ class TtsService {
     }
   }
 
+  /// 清理文本中的特殊字符，避免 TTS 截断
+  /// 同时将数字转换为中文读法
+  String _cleanTextForTts(String text) {
+    // 将 #数字 转换为 "数字服"（如 #5 → 5服 → 五服）
+    var cleaned = text.replaceAllMapped(
+      RegExp(r'[#＃](\d+)'),
+      (match) => '${match.group(1)}服',
+    );
+
+    // 移除方括号等特殊字符（包括剩余的 # 符号）
+    cleaned = cleaned
+        .replaceAll(RegExp(r'[\[\]【】\(\)（）<>《》#＃]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+
+    // 将数字转换为中文
+    cleaned = _convertNumbersToChinese(cleaned);
+
+    return cleaned;
+  }
+
+  /// 清理地图名中的数字，转换为中文读法
+  String _cleanMapNameForTts(String mapName) {
+    // 将地图名中的数字转换为中文
+    return _convertNumbersToChinese(mapName);
+  }
+
+  /// 将文本中的数字转换为中文读法
+  String _convertNumbersToChinese(String text) {
+    const digitMap = {
+      '0': '零',
+      '1': '一',
+      '2': '二',
+      '3': '三',
+      '4': '四',
+      '5': '五',
+      '6': '六',
+      '7': '七',
+      '8': '八',
+      '9': '九',
+    };
+
+    // 逐字符替换数字
+    final buffer = StringBuffer();
+    for (var i = 0; i < text.length; i++) {
+      final char = text[i];
+      buffer.write(digitMap[char] ?? char);
+    }
+    return buffer.toString();
+  }
+
   /// 播报地图订阅提醒
   ///
   /// [mapLabel] 地图中文名
@@ -280,121 +308,33 @@ class TtsService {
     if (_volume <= 0) return false;
     if (!PlatformUtils.isDesktopPlatform) return false;
 
-    // 延迟初始化引擎
-    if (!_isInitialized) {
-      final ok = await initialize();
-      if (!ok) return false;
-    }
-
     try {
       // 构建播报文本
-      final displayName = mapLabel.isNotEmpty ? mapLabel : mapName;
+      // 地图名也需要数字转换
+      final cleanedMapLabel = mapLabel.isNotEmpty 
+          ? _cleanMapNameForTts(mapLabel) 
+          : _cleanMapNameForTts(mapName);
+      // 清理服务器名中的特殊字符，避免 TTS 截断
+      final cleanServerName = serverName != null
+          ? _cleanTextForTts(serverName)
+          : null;
       String text;
-      if (categoryName != null && categoryName.isNotEmpty) {
-        text = '$categoryName换图到$displayName';
-      } else if (serverName != null && serverName.isNotEmpty) {
-        text = '${serverName}换图到$displayName';
+      if (cleanServerName != null && cleanServerName.isNotEmpty) {
+        text = '$cleanServerName更换地图至$cleanedMapLabel';
+      } else if (categoryName != null && categoryName.isNotEmpty) {
+        text = '$categoryName更换地图至$cleanedMapLabel';
       } else {
-        text = '订阅的地图$displayName有服务器正在游玩';
+        text = '订阅的地图$cleanedMapLabel有服务器正在游玩';
       }
 
       LogService.d('[TTS] 播报: $text');
 
-      // 生成音频
-      final audio = _tts!.generate(text: text, sid: _speakerId, speed: _speed);
-
-      if (audio.samples.isEmpty) {
-        LogService.e('[TTS] 生成音频为空');
-        return false;
-      }
-
-      // 使用 audioplayers 或直接写 WAV 文件播放
-      await _playAudio(audio.samples, audio.sampleRate);
-      return true;
+      // 使用异步方法在后台生成并播放
+      return await speakAsync(text: text);
     } catch (e) {
       LogService.e('[TTS] 播报失败', e);
       return false;
     }
-  }
-
-  /// 播放音频采样数据
-  Future<void> _playAudio(Float32List samples, int sampleRate) async {
-    try {
-      // 将 Float32 采样数据写入临时 WAV 文件，然后播放
-      final tempDir = await getTemporaryDirectory();
-      final wavFile = File(p.join(tempDir.path, 'tts_alert.wav'));
-
-      // 音量调整
-      final adjustedSamples = Float32List(samples.length);
-      for (int i = 0; i < samples.length; i++) {
-        adjustedSamples[i] = samples[i] * _volume;
-      }
-
-      // 写入 WAV 文件
-      final wavData = _createWavData(adjustedSamples, sampleRate);
-      await wavFile.writeAsBytes(wavData);
-
-      // 使用系统命令播放 WAV 文件（Windows）
-      if (Platform.isWindows) {
-        // 使用 PowerShell 播放音频
-        await Process.run('powershell', [
-          '-c',
-          '(New-Object Media.SoundPlayer "${wavFile.path}").PlaySync()',
-        ]);
-      }
-    } catch (e) {
-      LogService.e('[TTS] 播放音频失败', e);
-    }
-  }
-
-  /// 创建 WAV 文件数据
-  Uint8List _createWavData(Float32List samples, int sampleRate) {
-    final numChannels = 1;
-    final bitsPerSample = 16;
-    final byteRate = sampleRate * numChannels * bitsPerSample ~/ 8;
-    final blockAlign = numChannels * bitsPerSample ~/ 8;
-    final dataSize = samples.length * blockAlign;
-
-    final buffer = ByteData(44 + dataSize);
-
-    // RIFF header
-    buffer.setUint8(0, 0x52); // R
-    buffer.setUint8(1, 0x49); // I
-    buffer.setUint8(2, 0x46); // F
-    buffer.setUint8(3, 0x46); // F
-    buffer.setUint32(4, 36 + dataSize, Endian.little);
-    buffer.setUint8(8, 0x57); // W
-    buffer.setUint8(9, 0x41); // A
-    buffer.setUint8(10, 0x56); // V
-    buffer.setUint8(11, 0x45); // E
-
-    // fmt subchunk
-    buffer.setUint8(12, 0x66); // f
-    buffer.setUint8(13, 0x6D); // m
-    buffer.setUint8(14, 0x74); // t
-    buffer.setUint8(15, 0x20); // ' '
-    buffer.setUint32(16, 16, Endian.little); // subchunk size
-    buffer.setUint16(20, 1, Endian.little); // PCM format
-    buffer.setUint16(22, numChannels, Endian.little);
-    buffer.setUint32(24, sampleRate, Endian.little);
-    buffer.setUint32(28, byteRate, Endian.little);
-    buffer.setUint16(32, blockAlign, Endian.little);
-    buffer.setUint16(34, bitsPerSample, Endian.little);
-
-    // data subchunk
-    buffer.setUint8(36, 0x64); // d
-    buffer.setUint8(37, 0x61); // a
-    buffer.setUint8(38, 0x74); // t
-    buffer.setUint8(39, 0x61); // a
-    buffer.setUint32(40, dataSize, Endian.little);
-
-    // Write samples (convert Float32 to Int16)
-    for (int i = 0; i < samples.length; i++) {
-      final sample = (samples[i] * 32767.0).clamp(-32768, 32767).toInt();
-      buffer.setInt16(44 + i * 2, sample, Endian.little);
-    }
-
-    return buffer.buffer.asUint8List();
   }
 
   /// 设置音量（支持 0.0 - 3.0，即 0% - 300%）
@@ -430,13 +370,314 @@ class TtsService {
     }
   }
 
-  /// 测试 TTS 播报
+  /// 测试 TTS 播报（异步执行，不阻塞主线程）
   Future<bool> testSpeak() async {
-    return await speakMapAlert(
-      mapLabel: '炙热沙城',
+    return await testSpeakWithCallback();
+  }
+
+  /// 测试 TTS 播报（带回调，用于更新 UI 状态）
+  Future<bool> testSpeakWithCallback({
+    VoidCallback? onPlayingStart,
+  }) async {
+    return await speakMapAlertWithCallback(
+      mapLabel: '炙热沙城2',
       mapName: 'de_dust2',
-      categoryName: '休闲服',
+      serverName: '【僵尸乐园】 CS2 ZE #5',
+      onPlayingStart: onPlayingStart,
     );
+  }
+
+  /// 播报地图订阅提醒（带回调）
+  Future<bool> speakMapAlertWithCallback({
+    required String mapLabel,
+    required String mapName,
+    String? serverName,
+    String? categoryName,
+    VoidCallback? onPlayingStart,
+  }) async {
+    if (_volume <= 0) return false;
+    if (!PlatformUtils.isDesktopPlatform) return false;
+
+    try {
+      // 构建播报文本
+      final cleanedMapLabel = mapLabel.isNotEmpty 
+          ? _cleanMapNameForTts(mapLabel) 
+          : _cleanMapNameForTts(mapName);
+      final cleanServerName = serverName != null
+          ? _cleanTextForTts(serverName)
+          : null;
+      String text;
+      if (cleanServerName != null && cleanServerName.isNotEmpty) {
+        text = '$cleanServerName更换地图至$cleanedMapLabel';
+      } else if (categoryName != null && categoryName.isNotEmpty) {
+        text = '$categoryName更换地图至$cleanedMapLabel';
+      } else {
+        text = '订阅的地图$cleanedMapLabel有服务器正在游玩';
+      }
+
+      LogService.d('[TTS] 播报: $text');
+
+      return await speakAsyncWithCallback(text: text, onPlayingStart: onPlayingStart);
+    } catch (e) {
+      LogService.e('[TTS] 播报失败', e);
+      return false;
+    }
+  }
+
+  /// 异步播报（带回调，在后台 isolate 中生成音频，主线程只负责播放）
+  Future<bool> speakAsyncWithCallback({
+    required String text,
+    VoidCallback? onPlayingStart,
+  }) async {
+    if (_volume <= 0) return false;
+    if (!PlatformUtils.isDesktopPlatform) return false;
+    if (!isModelDownloaded) return false;
+
+    try {
+      final model = selectedModelInfo;
+      final modelDir = await _getModelDirectoryFor(model);
+      final modelPath = p.join(modelDir.path, model.modelFile);
+      final lexiconPath = model.lexicon != null
+          ? p.join(modelDir.path, model.lexicon!)
+          : '';
+      final tokensPath = p.join(modelDir.path, model.tokens);
+      final dataDirPath = model.dataDir != null
+          ? p.join(modelDir.path, model.dataDir!)
+          : '';
+
+      if (!File(modelPath).existsSync() || !File(tokensPath).existsSync()) {
+        LogService.e('[TTS] 模型文件不完整');
+        return false;
+      }
+
+      final tempDir = await getTemporaryDirectory();
+      final outputPath = p.join(tempDir.path, 'tts_output_${DateTime.now().millisecondsSinceEpoch}.wav');
+
+      LogService.d('[TTS] 开始在后台生成音频: $text');
+
+      // 在后台 isolate 中生成音频
+      final wavPath = await compute(_generateTtsInIsolate, {
+        'modelPath': modelPath,
+        'lexiconPath': lexiconPath,
+        'tokensPath': tokensPath,
+        'dataDirPath': dataDirPath,
+        'text': text,
+        'speakerId': _speakerId,
+        'speed': _speed,
+        'volume': _volume,
+        'outputPath': outputPath,
+      });
+
+      if (wavPath == null) {
+        LogService.e('[TTS] 后台生成音频失败');
+        return false;
+      }
+
+      // 通知开始播放
+      onPlayingStart?.call();
+
+      // 主线程播放音频
+      if (Platform.isWindows) {
+        await Process.run('powershell', [
+          '-c',
+          '(New-Object Media.SoundPlayer "$wavPath").PlaySync()',
+        ]);
+      }
+
+      // 清理临时文件
+      try {
+        await File(wavPath).delete();
+      } catch (_) {}
+
+      return true;
+    } catch (e) {
+      LogService.e('[TTS] 异步播报失败', e);
+      return false;
+    }
+  }
+
+  /// 在后台 isolate 中生成 TTS 音频并保存到文件
+  /// 返回生成的 WAV 文件路径，失败返回 null
+  static Future<String?> _generateTtsInIsolate(Map<String, dynamic> params) async {
+    try {
+      final modelPath = params['modelPath'] as String;
+      final lexiconPath = params['lexiconPath'] as String;
+      final tokensPath = params['tokensPath'] as String;
+      final dataDirPath = params['dataDirPath'] as String;
+      final text = params['text'] as String;
+      final speakerId = params['speakerId'] as int;
+      final speed = params['speed'] as double;
+      final volume = params['volume'] as double;
+      final outputPath = params['outputPath'] as String;
+
+      // 在 isolate 中初始化 TTS 引擎
+      sherpa_onnx.initBindings();
+
+      final vits = sherpa_onnx.OfflineTtsVitsModelConfig(
+        model: modelPath,
+        lexicon: lexiconPath,
+        tokens: tokensPath,
+        dataDir: dataDirPath,
+      );
+
+      final modelConfig = sherpa_onnx.OfflineTtsModelConfig(
+        vits: vits,
+        numThreads: 2,
+        debug: false,
+        provider: 'cpu',
+      );
+
+      final config = sherpa_onnx.OfflineTtsConfig(
+        model: modelConfig,
+        maxNumSenetences: 2,
+      );
+
+      final tts = sherpa_onnx.OfflineTts(config);
+
+      // 生成音频
+      final audio = tts.generate(text: text, sid: speakerId, speed: speed);
+
+      if (audio.samples.isEmpty) {
+        tts.free();
+        return null;
+      }
+
+      // 调整音量
+      final adjustedSamples = Float32List(audio.samples.length);
+      for (int i = 0; i < audio.samples.length; i++) {
+        adjustedSamples[i] = audio.samples[i] * volume;
+      }
+
+      // 创建 WAV 数据
+      final wavData = _createWavDataStatic(adjustedSamples, audio.sampleRate);
+
+      // 写入文件
+      final file = File(outputPath);
+      await file.writeAsBytes(wavData);
+
+      tts.free();
+      return outputPath;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// 静态方法：创建 WAV 文件数据（供 isolate 使用）
+  static Uint8List _createWavDataStatic(Float32List samples, int sampleRate) {
+    const numChannels = 1;
+    const bitsPerSample = 16;
+    final byteRate = sampleRate * numChannels * bitsPerSample ~/ 8;
+    const blockAlign = numChannels * bitsPerSample ~/ 8;
+    final dataSize = samples.length * blockAlign;
+
+    final buffer = ByteData(44 + dataSize);
+
+    // RIFF header
+    buffer.setUint8(0, 0x52); // R
+    buffer.setUint8(1, 0x49); // I
+    buffer.setUint8(2, 0x46); // F
+    buffer.setUint8(3, 0x46); // F
+    buffer.setUint32(4, 36 + dataSize, Endian.little);
+    buffer.setUint8(8, 0x57); // W
+    buffer.setUint8(9, 0x41); // A
+    buffer.setUint8(10, 0x56); // V
+    buffer.setUint8(11, 0x45); // E
+
+    // fmt subchunk
+    buffer.setUint8(12, 0x66); // f
+    buffer.setUint8(13, 0x6D); // m
+    buffer.setUint8(14, 0x74); // t
+    buffer.setUint8(15, 0x20); // ' '
+    buffer.setUint32(16, 16, Endian.little);
+    buffer.setUint16(20, 1, Endian.little);
+    buffer.setUint16(22, numChannels, Endian.little);
+    buffer.setUint32(24, sampleRate, Endian.little);
+    buffer.setUint32(28, byteRate, Endian.little);
+    buffer.setUint16(32, blockAlign, Endian.little);
+    buffer.setUint16(34, bitsPerSample, Endian.little);
+
+    // data subchunk
+    buffer.setUint8(36, 0x64); // d
+    buffer.setUint8(37, 0x61); // a
+    buffer.setUint8(38, 0x74); // t
+    buffer.setUint8(39, 0x61); // a
+    buffer.setUint32(40, dataSize, Endian.little);
+
+    for (int i = 0; i < samples.length; i++) {
+      final sample = (samples[i] * 32767.0).clamp(-32768, 32767).toInt();
+      buffer.setInt16(44 + i * 2, sample, Endian.little);
+    }
+
+    return buffer.buffer.asUint8List();
+  }
+
+  /// 异步播报（在后台 isolate 中生成音频，主线程只负责播放）
+  Future<bool> speakAsync({
+    required String text,
+  }) async {
+    if (_volume <= 0) return false;
+    if (!PlatformUtils.isDesktopPlatform) return false;
+    if (!isModelDownloaded) return false;
+
+    try {
+      final model = selectedModelInfo;
+      final modelDir = await _getModelDirectoryFor(model);
+      final modelPath = p.join(modelDir.path, model.modelFile);
+      final lexiconPath = model.lexicon != null
+          ? p.join(modelDir.path, model.lexicon!)
+          : '';
+      final tokensPath = p.join(modelDir.path, model.tokens);
+      final dataDirPath = model.dataDir != null
+          ? p.join(modelDir.path, model.dataDir!)
+          : '';
+
+      // 检查文件是否存在
+      if (!File(modelPath).existsSync() || !File(tokensPath).existsSync()) {
+        LogService.e('[TTS] 模型文件不完整');
+        return false;
+      }
+
+      final tempDir = await getTemporaryDirectory();
+      final outputPath = p.join(tempDir.path, 'tts_output_${DateTime.now().millisecondsSinceEpoch}.wav');
+
+      LogService.d('[TTS] 开始在后台生成音频: $text');
+
+      // 在后台 isolate 中生成音频
+      final wavPath = await compute(_generateTtsInIsolate, {
+        'modelPath': modelPath,
+        'lexiconPath': lexiconPath,
+        'tokensPath': tokensPath,
+        'dataDirPath': dataDirPath,
+        'text': text,
+        'speakerId': _speakerId,
+        'speed': _speed,
+        'volume': _volume,
+        'outputPath': outputPath,
+      });
+
+      if (wavPath == null) {
+        LogService.e('[TTS] 后台生成音频失败');
+        return false;
+      }
+
+      // 主线程播放音频
+      if (Platform.isWindows) {
+        await Process.run('powershell', [
+          '-c',
+          '(New-Object Media.SoundPlayer "$wavPath").PlaySync()',
+        ]);
+      }
+
+      // 清理临时文件
+      try {
+        await File(wavPath).delete();
+      } catch (_) {}
+
+      return true;
+    } catch (e) {
+      LogService.e('[TTS] 异步播报失败', e);
+      return false;
+    }
   }
 
   // ======== 模型下载相关 ========
@@ -449,13 +690,11 @@ class TtsService {
     return modelDir;
   }
 
-  /// 获取当前选中模型的存储目录
-  Future<Directory> _getModelDirectory() async {
-    return _getModelDirectoryFor(selectedModelInfo);
-  }
-
   /// 在后台线程解压 tar.bz2 文件
-  static Future<int> _extractTarBz2InBackground(List<int> bytes, String targetDir) async {
+  static Future<int> _extractTarBz2InBackground(
+    List<int> bytes,
+    String targetDir,
+  ) async {
     // 使用 compute 在后台 isolate 执行解压，避免阻塞主线程
     return await compute(_doExtract, {'bytes': bytes, 'targetDir': targetDir});
   }
@@ -464,13 +703,13 @@ class TtsService {
   static Future<int> _doExtract(Map<String, dynamic> params) async {
     final bytes = params['bytes'] as List<int>;
     final targetDir = params['targetDir'] as String;
-    
+
     // 先解压 bzip2
     final bz2Decoded = BZip2Decoder().decodeBytes(Uint8List.fromList(bytes));
-    
+
     // 再解压 tar
     final tarArchive = TarDecoder().decodeBytes(bz2Decoded);
-    
+
     int fileCount = 0;
     // 提取文件到目标目录
     for (final file in tarArchive.files) {
@@ -484,7 +723,7 @@ class TtsService {
         await Directory(filePath).create(recursive: true);
       }
     }
-    
+
     return fileCount;
   }
 
@@ -492,7 +731,10 @@ class TtsService {
   ///
   /// [modelId] 指定要下载的模型 ID，为空则下载当前选中的模型
   /// [useAcceleration] 是否使用加速下载地址（国内镜像）
-  Future<bool> downloadModel({String? modelId, bool useAcceleration = false}) async {
+  Future<bool> downloadModel({
+    String? modelId,
+    bool useAcceleration = false,
+  }) async {
     final model = modelId != null
         ? availableModels.firstWhere(
             (m) => m.id == modelId,
@@ -514,8 +756,10 @@ class TtsService {
       final downloadUrl = (useAcceleration && model.acceleratedUrl != null)
           ? model.acceleratedUrl!
           : model.downloadUrl;
-      
-      LogService.i('[TTS] 开始下载模型: $downloadUrl${useAcceleration ? " (加速)" : ""}');
+
+      LogService.i(
+        '[TTS] 开始下载模型: $downloadUrl${useAcceleration ? " (加速)" : ""}',
+      );
 
       // 下载文件
       final client = http.Client();
@@ -565,23 +809,28 @@ class TtsService {
         ),
       );
 
-      final modelsDir = Directory(p.join(AppDirectoryService.basePath, 'tts_models'));
+      final modelsDir = Directory(
+        p.join(AppDirectoryService.basePath, 'tts_models'),
+      );
       if (!modelsDir.existsSync()) {
         modelsDir.createSync(recursive: true);
       }
 
       // 使用 archive 包解压 tar.bz2（跨平台支持）
       LogService.d('[TTS] 开始解压 tar.bz2 文件...');
-      
+
       // 在后台线程解压以避免 UI 卡顿
-      final extractedFiles = await _extractTarBz2InBackground(bytes, modelsDir.path);
+      final extractedFiles = await _extractTarBz2InBackground(
+        bytes,
+        modelsDir.path,
+      );
       LogService.d('[TTS] 文件提取完成，共 $extractedFiles 个文件');
 
       // 验证模型文件
       final modelDir = await _getModelDirectoryFor(model);
-      
+
       LogService.d('[TTS] 验证模型目录: ${modelDir.path}');
-      
+
       // 列出目录内容帮助调试
       if (modelDir.existsSync()) {
         final files = modelDir.listSync(recursive: true);
@@ -601,8 +850,7 @@ class TtsService {
 
       // 尝试查找 .onnx 文件
       File? foundModelFile;
-      File? foundTokensFile;
-      
+
       if (modelDir.existsSync()) {
         final files = modelDir.listSync(recursive: true);
         for (final f in files) {
@@ -613,7 +861,6 @@ class TtsService {
               LogService.d('[TTS] 找到模型文件: ${f.path}');
             }
             if (name == 'tokens.txt') {
-              foundTokensFile = f;
               LogService.d('[TTS] 找到 tokens 文件: ${f.path}');
             }
           }
@@ -623,15 +870,23 @@ class TtsService {
       final modelFile = File(p.join(modelDir.path, model.modelFile));
       final tokensFile = File(p.join(modelDir.path, model.tokens));
 
-      LogService.d('[TTS] 期望模型文件: ${modelFile.path}, 存在: ${modelFile.existsSync()}');
-      LogService.d('[TTS] 期望 tokens 文件: ${tokensFile.path}, 存在: ${tokensFile.existsSync()}');
+      LogService.d(
+        '[TTS] 期望模型文件: ${modelFile.path}, 存在: ${modelFile.existsSync()}',
+      );
+      LogService.d(
+        '[TTS] 期望 tokens 文件: ${tokensFile.path}, 存在: ${tokensFile.existsSync()}',
+      );
 
       if (!modelFile.existsSync() || !tokensFile.existsSync()) {
         // 如果找到了 .onnx 文件但名字不对，输出提示
         if (foundModelFile != null && !modelFile.existsSync()) {
-          LogService.w('[TTS] 模型文件名不匹配! 期望: ${model.modelFile}, 实际: ${p.basename(foundModelFile.path)}');
+          LogService.w(
+            '[TTS] 模型文件名不匹配! 期望: ${model.modelFile}, 实际: ${p.basename(foundModelFile.path)}',
+          );
         }
-        throw Exception('模型文件解压不完整: model=${modelFile.existsSync()}, tokens=${tokensFile.existsSync()}');
+        throw Exception(
+          '模型文件解压不完整: model=${modelFile.existsSync()}, tokens=${tokensFile.existsSync()}',
+        );
       }
 
       // 标记下载完成（per-model key）
