@@ -162,6 +162,16 @@ class MapSubscriptionSetTtsSpeed extends MapSubscriptionEvent {
   List<Object?> get props => [speed];
 }
 
+/// 设置 TTS 说话人 ID
+class MapSubscriptionSetTtsSpeakerId extends MapSubscriptionEvent {
+  final int speakerId;
+
+  const MapSubscriptionSetTtsSpeakerId({required this.speakerId});
+
+  @override
+  List<Object?> get props => [speakerId];
+}
+
 /// 选择 TTS 模型
 class MapSubscriptionSelectTtsModel extends MapSubscriptionEvent {
   final String modelId;

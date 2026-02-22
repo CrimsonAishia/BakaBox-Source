@@ -22,6 +22,14 @@ enum TtsModelRegion {
   international,
 }
 
+/// TTS 模型类型
+enum TtsModelType {
+  /// VITS 模型
+  vits,
+  /// Kokoro 模型
+  kokoro,
+}
+
 /// TTS 模型信息
 class TtsModelInfo {
   final String id;
@@ -39,6 +47,16 @@ class TtsModelInfo {
 
   /// espeak-ng 数据目录（Piper 模型需要）
   final String? dataDir;
+  
+  /// Kokoro 模型专用：voices.bin 文件
+  final String? voicesFile;
+  
+  /// 模型类型
+  final TtsModelType modelType;
+  
+  /// 说话人数量（多音色模型）
+  final int speakerCount;
+  
   final TtsModelRegion region;
   final String estimatedSize;
 
@@ -54,6 +72,9 @@ class TtsModelInfo {
     this.lexicon,
     required this.tokens,
     this.dataDir,
+    this.voicesFile,
+    this.modelType = TtsModelType.vits,
+    this.speakerCount = 1,
     required this.region,
     required this.estimatedSize,
   });
@@ -90,7 +111,7 @@ class TtsService {
   static const String _keyTtsSpeed = 'tts_speed';
   static const String _keyTtsSelectedModel = 'tts_selected_model';
 
-  /// 可用模型列表（确认支持中英文混合）
+  /// 可用模型列表（仅支持中英文混合的模型）
   static const List<TtsModelInfo> availableModels = [
     // ====== MeloTTS 系列（官方支持中英文混合） ======
     TtsModelInfo(
@@ -106,8 +127,49 @@ class TtsService {
       modelFile: 'model.onnx',
       lexicon: 'lexicon.txt',
       tokens: 'tokens.txt',
+      modelType: TtsModelType.vits,
+      speakerCount: 1,
       region: TtsModelRegion.domestic,
-      estimatedSize: '~50MB',
+      estimatedSize: '~170MB',
+    ),
+    // ====== Kokoro 系列（支持中英文混合，多音色） ======
+    TtsModelInfo(
+      id: 'kokoro-multi-lang-v1_0',
+      name: 'Kokoro 中英混合 (53人)',
+      description: '53种音色，支持中英文混读，音质优秀',
+      language: '中文/英文',
+      downloadUrl:
+          'https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_0.tar.bz2',
+      acceleratedUrl:
+          'https://ghfast.top/https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_0.tar.bz2',
+      dirName: 'kokoro-multi-lang-v1_0',
+      modelFile: 'model.onnx',
+      tokens: 'tokens.txt',
+      dataDir: 'espeak-ng-data',
+      voicesFile: 'voices.bin',
+      modelType: TtsModelType.kokoro,
+      speakerCount: 53,
+      region: TtsModelRegion.domestic,
+      estimatedSize: '~350MB',
+    ),
+    TtsModelInfo(
+      id: 'kokoro-multi-lang-v1_1',
+      name: 'Kokoro 中英混合 v1.1 (103人)',
+      description: '103种音色，更多中文音色，最新版本',
+      language: '中文/英文',
+      downloadUrl:
+          'https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_1.tar.bz2',
+      acceleratedUrl:
+          'https://ghfast.top/https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_1.tar.bz2',
+      dirName: 'kokoro-multi-lang-v1_1',
+      modelFile: 'model.onnx',
+      tokens: 'tokens.txt',
+      dataDir: 'espeak-ng-data',
+      voicesFile: 'voices.bin',
+      modelType: TtsModelType.kokoro,
+      speakerCount: 103,
+      region: TtsModelRegion.domestic,
+      estimatedSize: '~380MB',
     ),
   ];
 
@@ -197,13 +259,7 @@ class TtsService {
       final model = selectedModelInfo;
       final modelDir = await _getModelDirectoryFor(model);
       final modelPath = p.join(modelDir.path, model.modelFile);
-      final lexiconPath = model.lexicon != null
-          ? p.join(modelDir.path, model.lexicon!)
-          : '';
       final tokensPath = p.join(modelDir.path, model.tokens);
-      final dataDirPath = model.dataDir != null
-          ? p.join(modelDir.path, model.dataDir!)
-          : '';
 
       // 检查文件是否存在
       if (!File(modelPath).existsSync() || !File(tokensPath).existsSync()) {
@@ -213,19 +269,61 @@ class TtsService {
 
       sherpa_onnx.initBindings();
 
-      final vits = sherpa_onnx.OfflineTtsVitsModelConfig(
-        model: modelPath,
-        lexicon: lexiconPath,
-        tokens: tokensPath,
-        dataDir: dataDirPath,
-      );
+      sherpa_onnx.OfflineTtsModelConfig modelConfig;
 
-      final modelConfig = sherpa_onnx.OfflineTtsModelConfig(
-        vits: vits,
-        numThreads: 2,
-        debug: false,
-        provider: 'cpu',
-      );
+      if (model.modelType == TtsModelType.kokoro) {
+        // Kokoro 模型配置
+        final voicesPath = model.voicesFile != null
+            ? p.join(modelDir.path, model.voicesFile!)
+            : '';
+        final dataDirPath = model.dataDir != null
+            ? p.join(modelDir.path, model.dataDir!)
+            : '';
+        // Kokoro 模型需要 lexicon 文件（中英文）
+        final lexiconZhPath = p.join(modelDir.path, 'lexicon-zh.txt');
+        final lexiconEnPath = p.join(modelDir.path, 'lexicon-us-en.txt');
+        String lexiconPath = '';
+        if (File(lexiconEnPath).existsSync() && File(lexiconZhPath).existsSync()) {
+          lexiconPath = '$lexiconEnPath,$lexiconZhPath';
+        }
+
+        final kokoro = sherpa_onnx.OfflineTtsKokoroModelConfig(
+          model: modelPath,
+          voices: voicesPath,
+          tokens: tokensPath,
+          dataDir: dataDirPath,
+          lexicon: lexiconPath,
+        );
+
+        modelConfig = sherpa_onnx.OfflineTtsModelConfig(
+          kokoro: kokoro,
+          numThreads: 2,
+          debug: false,
+          provider: 'cpu',
+        );
+      } else {
+        // VITS 模型配置
+        final lexiconPath = model.lexicon != null
+            ? p.join(modelDir.path, model.lexicon!)
+            : '';
+        final dataDirPath = model.dataDir != null
+            ? p.join(modelDir.path, model.dataDir!)
+            : '';
+
+        final vits = sherpa_onnx.OfflineTtsVitsModelConfig(
+          model: modelPath,
+          lexicon: lexiconPath,
+          tokens: tokensPath,
+          dataDir: dataDirPath,
+        );
+
+        modelConfig = sherpa_onnx.OfflineTtsModelConfig(
+          vits: vits,
+          numThreads: 2,
+          debug: false,
+          provider: 'cpu',
+        );
+      }
 
       final config = sherpa_onnx.OfflineTtsConfig(
         model: modelConfig,
@@ -234,7 +332,7 @@ class TtsService {
 
       _tts = sherpa_onnx.OfflineTts(config);
       _isInitialized = true;
-      LogService.i('[TTS] 引擎初始化成功');
+      LogService.i('[TTS] 引擎初始化成功 (${model.modelType.name})');
       return true;
     } catch (e) {
       LogService.e('[TTS] 引擎初始化失败', e);
@@ -337,9 +435,9 @@ class TtsService {
     }
   }
 
-  /// 设置音量（支持 0.0 - 3.0，即 0% - 300%）
+  /// 设置音量（支持 0.0 - 5.0，即 0% - 500%）
   Future<void> setVolume(double volume) async {
-    _volume = volume.clamp(0.0, 3.0);
+    _volume = volume.clamp(0.0, 5.0);
     try {
       await StorageUtils.setDouble(_keyTtsVolume, _volume);
       LogService.d('[TTS] 音量已设置: ${(_volume * 100).toInt()}%');
@@ -437,9 +535,6 @@ class TtsService {
       final model = selectedModelInfo;
       final modelDir = await _getModelDirectoryFor(model);
       final modelPath = p.join(modelDir.path, model.modelFile);
-      final lexiconPath = model.lexicon != null
-          ? p.join(modelDir.path, model.lexicon!)
-          : '';
       final tokensPath = p.join(modelDir.path, model.tokens);
       final dataDirPath = model.dataDir != null
           ? p.join(modelDir.path, model.dataDir!)
@@ -455,10 +550,9 @@ class TtsService {
 
       LogService.d('[TTS] 开始在后台生成音频: $text');
 
-      // 在后台 isolate 中生成音频
-      final wavPath = await compute(_generateTtsInIsolate, {
+      // 准备参数
+      final params = <String, dynamic>{
         'modelPath': modelPath,
-        'lexiconPath': lexiconPath,
         'tokensPath': tokensPath,
         'dataDirPath': dataDirPath,
         'text': text,
@@ -466,7 +560,30 @@ class TtsService {
         'speed': _speed,
         'volume': _volume,
         'outputPath': outputPath,
-      });
+        'modelType': model.modelType.name,
+      };
+
+      // 根据模型类型添加额外参数
+      if (model.modelType == TtsModelType.kokoro) {
+        params['voicesPath'] = model.voicesFile != null
+            ? p.join(modelDir.path, model.voicesFile!)
+            : '';
+        // Kokoro 模型的 lexicon 路径
+        final lexiconZhPath = p.join(modelDir.path, 'lexicon-zh.txt');
+        final lexiconEnPath = p.join(modelDir.path, 'lexicon-us-en.txt');
+        if (File(lexiconEnPath).existsSync() && File(lexiconZhPath).existsSync()) {
+          params['lexiconPath'] = '$lexiconEnPath,$lexiconZhPath';
+        } else {
+          params['lexiconPath'] = '';
+        }
+      } else {
+        params['lexiconPath'] = model.lexicon != null
+            ? p.join(modelDir.path, model.lexicon!)
+            : '';
+      }
+
+      // 在后台 isolate 中生成音频
+      final wavPath = await compute(_generateTtsInIsolate, params);
 
       if (wavPath == null) {
         LogService.e('[TTS] 后台生成音频失败');
@@ -509,23 +626,47 @@ class TtsService {
       final speed = params['speed'] as double;
       final volume = params['volume'] as double;
       final outputPath = params['outputPath'] as String;
+      final modelType = params['modelType'] as String;
 
       // 在 isolate 中初始化 TTS 引擎
       sherpa_onnx.initBindings();
 
-      final vits = sherpa_onnx.OfflineTtsVitsModelConfig(
-        model: modelPath,
-        lexicon: lexiconPath,
-        tokens: tokensPath,
-        dataDir: dataDirPath,
-      );
+      sherpa_onnx.OfflineTtsModelConfig modelConfig;
 
-      final modelConfig = sherpa_onnx.OfflineTtsModelConfig(
-        vits: vits,
-        numThreads: 2,
-        debug: false,
-        provider: 'cpu',
-      );
+      if (modelType == 'kokoro') {
+        // Kokoro 模型配置
+        final voicesPath = params['voicesPath'] as String? ?? '';
+
+        final kokoro = sherpa_onnx.OfflineTtsKokoroModelConfig(
+          model: modelPath,
+          voices: voicesPath,
+          tokens: tokensPath,
+          dataDir: dataDirPath,
+          lexicon: lexiconPath,
+        );
+
+        modelConfig = sherpa_onnx.OfflineTtsModelConfig(
+          kokoro: kokoro,
+          numThreads: 2,
+          debug: false,
+          provider: 'cpu',
+        );
+      } else {
+        // VITS 模型配置
+        final vits = sherpa_onnx.OfflineTtsVitsModelConfig(
+          model: modelPath,
+          lexicon: lexiconPath,
+          tokens: tokensPath,
+          dataDir: dataDirPath,
+        );
+
+        modelConfig = sherpa_onnx.OfflineTtsModelConfig(
+          vits: vits,
+          numThreads: 2,
+          debug: false,
+          provider: 'cpu',
+        );
+      }
 
       final config = sherpa_onnx.OfflineTtsConfig(
         model: modelConfig,
@@ -542,10 +683,18 @@ class TtsService {
         return null;
       }
 
-      // 调整音量
+      // 调整音量（使用软限幅避免削波）
       final adjustedSamples = Float32List(audio.samples.length);
       for (int i = 0; i < audio.samples.length; i++) {
-        adjustedSamples[i] = audio.samples[i] * volume;
+        double sample = audio.samples[i] * volume;
+        // 软限幅：使用 tanh 函数平滑处理超出范围的值
+        if (sample > 1.0 || sample < -1.0) {
+          // 对于超出范围的值，使用 tanh 进行软限幅
+          sample = sample > 0 
+              ? (1.0 - 0.1 / (sample + 0.1))  // 正值软限幅
+              : -(1.0 - 0.1 / (-sample + 0.1)); // 负值软限幅
+        }
+        adjustedSamples[i] = sample;
       }
 
       // 创建 WAV 数据
@@ -623,9 +772,6 @@ class TtsService {
       final model = selectedModelInfo;
       final modelDir = await _getModelDirectoryFor(model);
       final modelPath = p.join(modelDir.path, model.modelFile);
-      final lexiconPath = model.lexicon != null
-          ? p.join(modelDir.path, model.lexicon!)
-          : '';
       final tokensPath = p.join(modelDir.path, model.tokens);
       final dataDirPath = model.dataDir != null
           ? p.join(modelDir.path, model.dataDir!)
@@ -642,10 +788,9 @@ class TtsService {
 
       LogService.d('[TTS] 开始在后台生成音频: $text');
 
-      // 在后台 isolate 中生成音频
-      final wavPath = await compute(_generateTtsInIsolate, {
+      // 准备参数
+      final params = <String, dynamic>{
         'modelPath': modelPath,
-        'lexiconPath': lexiconPath,
         'tokensPath': tokensPath,
         'dataDirPath': dataDirPath,
         'text': text,
@@ -653,7 +798,30 @@ class TtsService {
         'speed': _speed,
         'volume': _volume,
         'outputPath': outputPath,
-      });
+        'modelType': model.modelType.name,
+      };
+
+      // 根据模型类型添加额外参数
+      if (model.modelType == TtsModelType.kokoro) {
+        params['voicesPath'] = model.voicesFile != null
+            ? p.join(modelDir.path, model.voicesFile!)
+            : '';
+        // Kokoro 模型的 lexicon 路径
+        final lexiconZhPath = p.join(modelDir.path, 'lexicon-zh.txt');
+        final lexiconEnPath = p.join(modelDir.path, 'lexicon-us-en.txt');
+        if (File(lexiconEnPath).existsSync() && File(lexiconZhPath).existsSync()) {
+          params['lexiconPath'] = '$lexiconEnPath,$lexiconZhPath';
+        } else {
+          params['lexiconPath'] = '';
+        }
+      } else {
+        params['lexiconPath'] = model.lexicon != null
+            ? p.join(modelDir.path, model.lexicon!)
+            : '';
+      }
+
+      // 在后台 isolate 中生成音频
+      final wavPath = await compute(_generateTtsInIsolate, params);
 
       if (wavPath == null) {
         LogService.e('[TTS] 后台生成音频失败');
