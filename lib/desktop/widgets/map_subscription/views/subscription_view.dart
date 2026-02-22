@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -8,8 +6,8 @@ import '../../../../core/models/map_subscription_models.dart';
 import '../../../../core/widgets/map_contribution_dialog.dart';
 import '../../map_subscription_card.dart';
 
-/// 订阅管理视图
-class SubscriptionView extends StatefulWidget {
+/// 订阅管理视图（已订阅列表）
+class SubscriptionView extends StatelessWidget {
   final bool isDark;
   final MapSubscriptionState state;
 
@@ -20,55 +18,18 @@ class SubscriptionView extends StatefulWidget {
   });
 
   @override
-  State<SubscriptionView> createState() => _SubscriptionViewState();
-}
-
-class _SubscriptionViewState extends State<SubscriptionView> {
-  final TextEditingController _searchController = TextEditingController();
-  Timer? _searchDebounce;
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _searchDebounce?.cancel();
-    super.dispose();
-  }
-
-  void _onSearchChanged(String query) {
-    _searchDebounce?.cancel();
-    _searchDebounce = Timer(const Duration(milliseconds: 400), () {
-      context.read<MapSubscriptionBloc>().add(
-            MapSubscriptionSearchMaps(query: query),
-          );
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final isDark = widget.isDark;
-    final state = widget.state;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 标题栏
-        _buildHeader(isDark, state),
+        _buildHeader(context, isDark, state),
         const Divider(height: 1),
-        // 搜索栏
-        _buildSearchBar(isDark),
-        // 内容区
-        Expanded(
-          child: state.searchResults.isNotEmpty ||
-                  _searchController.text.isNotEmpty
-              ? _buildSearchResults(isDark, state)
-              : _buildSubscriptionList(isDark, state),
-        ),
+        Expanded(child: _buildSubscriptionList(context, isDark, state)),
       ],
     );
   }
 
-  /// 标题栏
-  Widget _buildHeader(bool isDark, MapSubscriptionState state) {
+  Widget _buildHeader(BuildContext context, bool isDark, MapSubscriptionState state) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
       child: Row(
@@ -104,24 +65,21 @@ class _SubscriptionViewState extends State<SubscriptionView> {
             ),
           ),
           const Spacer(),
-          // 全局分类范围设置
-          _buildGlobalScopeSetting(isDark, state),
+          _buildGlobalScopeSetting(context, isDark, state),
           const SizedBox(width: 16),
-          // 冷却时间设置
-          _buildCooldownSetting(isDark, state),
+          _buildCooldownSetting(context, isDark, state),
         ],
       ),
     );
   }
 
-  /// 全局分类范围设置
-  Widget _buildGlobalScopeSetting(bool isDark, MapSubscriptionState state) {
+  Widget _buildGlobalScopeSetting(BuildContext context, bool isDark, MapSubscriptionState state) {
     final scopeText = state.globalCategories.isEmpty
         ? '全部分类'
         : '${state.globalCategories.length}个分类';
 
     return InkWell(
-      onTap: () => _showGlobalCategoryScopeDialog(state),
+      onTap: () => _showGlobalCategoryScopeDialog(context, isDark, state),
       borderRadius: BorderRadius.circular(6),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -164,8 +122,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
     );
   }
 
-  /// 冷却时间设置（改名为刷新频率）
-  Widget _buildCooldownSetting(bool isDark, MapSubscriptionState state) {
+  Widget _buildCooldownSetting(BuildContext context, bool isDark, MapSubscriptionState state) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -221,76 +178,10 @@ class _SubscriptionViewState extends State<SubscriptionView> {
     );
   }
 
-  /// 搜索栏
-  Widget _buildSearchBar(bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: TextField(
-        controller: _searchController,
-        onChanged: _onSearchChanged,
-        style: TextStyle(
-          fontSize: 14,
-          color: isDark ? Colors.white : const Color(0xFF1F2937),
-        ),
-        decoration: InputDecoration(
-          hintText: '搜索地图名称...',
-          hintStyle: TextStyle(
-            color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
-          ),
-          prefixIcon: Icon(
-            Icons.search_rounded,
-            size: 20,
-            color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
-          ),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: Icon(
-                    Icons.close_rounded,
-                    size: 18,
-                    color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _searchController.clear();
-                    });
-                    context.read<MapSubscriptionBloc>().add(
-                          const MapSubscriptionSearchMaps(query: ''),
-                        );
-                  },
-                )
-              : null,
-          filled: true,
-          fillColor: isDark
-              ? Colors.white.withValues(alpha: 0.05)
-              : const Color(0xFFF3F4F6),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(
-              color: Color(0xFF6366F1),
-              width: 1.5,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 订阅列表
-  Widget _buildSubscriptionList(bool isDark, MapSubscriptionState state) {
+  Widget _buildSubscriptionList(BuildContext context, bool isDark, MapSubscriptionState state) {
     if (state.isLoading) {
       return const Center(
-        child: CircularProgressIndicator(
-          color: Color(0xFF6366F1),
-        ),
+        child: CircularProgressIndicator(color: Color(0xFF6366F1)),
       );
     }
 
@@ -314,7 +205,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
             ),
             const SizedBox(height: 4),
             Text(
-              '搜索并添加你感兴趣的地图',
+              '点击左侧"添加"搜索并订阅地图',
               style: TextStyle(
                 fontSize: 12,
                 color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
@@ -330,17 +221,12 @@ class _SubscriptionViewState extends State<SubscriptionView> {
       itemCount: state.subscriptions.length,
       itemBuilder: (context, index) {
         final sub = state.subscriptions[index];
-        return _buildSubscriptionTile(isDark, sub, state);
+        return _buildSubscriptionTile(context, isDark, sub);
       },
     );
   }
 
-  /// 订阅项
-  Widget _buildSubscriptionTile(
-    bool isDark,
-    MapSubscription sub,
-    MapSubscriptionState state,
-  ) {
+  Widget _buildSubscriptionTile(BuildContext context, bool isDark, MapSubscription sub) {
     return MapSubscriptionCard(
       displayName: sub.mapLabel.isNotEmpty ? sub.mapLabel : sub.mapName,
       mapName: sub.mapName,
@@ -353,177 +239,12 @@ class _SubscriptionViewState extends State<SubscriptionView> {
           mapLabel: sub.mapLabel,
         );
       },
-      onDelete: () => _showDeleteConfirmDialog(sub),
+      onDelete: () => _showDeleteConfirmDialog(context, isDark, sub),
+      editBeforeDelete: true,
     );
   }
 
-  /// 搜索结果
-  Widget _buildSearchResults(bool isDark, MapSubscriptionState state) {
-    if (state.isSearching) {
-      return const Center(
-        child: CircularProgressIndicator(
-          color: Color(0xFF6366F1),
-        ),
-      );
-    }
-
-    if (state.searchResults.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.search_off_rounded,
-              size: 48,
-              color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              '未找到匹配的地图',
-              style: TextStyle(
-                fontSize: 14,
-                color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      itemCount: state.searchResults.length,
-      itemBuilder: (context, index) {
-        final result = state.searchResults[index];
-        return _buildSearchResultTile(isDark, result, state);
-      },
-    );
-  }
-
-  /// 搜索结果项
-  Widget _buildSearchResultTile(
-    bool isDark,
-    MapSearchResult result,
-    MapSubscriptionState state,
-  ) {
-    final hasBackground = result.mapBackground != null;
-    return MapSubscriptionCard(
-      displayName: result.mapLabel.isNotEmpty ? result.mapLabel : result.mapName,
-      mapName: result.mapName,
-      mapBackground: result.mapBackground,
-      isSubscribed: result.isSubscribed,
-      isCompact: true,
-      onTap: result.isSubscribed
-          ? null
-          : () => _showAddSubscriptionDialog(
-                mapName: result.mapName,
-                mapLabel: result.mapLabel,
-                mapBackground: result.mapBackground,
-              ),
-      onEdit: result.isSubscribed
-          ? () {
-              MapContributionDialog.show(
-                context,
-                mapName: result.mapName,
-                mapLabel: result.mapLabel,
-              );
-            }
-          : null,
-      trailing: result.isSubscribed
-          ? _buildSubscribedLabel(hasBackground)
-          : _buildSubscribeButton(
-              hasBackground: hasBackground,
-              onTap: () => _showAddSubscriptionDialog(
-                mapName: result.mapName,
-                mapLabel: result.mapLabel,
-                mapBackground: result.mapBackground,
-              ),
-            ),
-    );
-  }
-
-  /// 已订阅标签
-  Widget _buildSubscribedLabel(bool hasBackground) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: hasBackground
-            ? const Color(0xFF10B981).withValues(alpha: 0.85)
-            : const Color(0xFF10B981).withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.check_rounded,
-            size: 12,
-            color: hasBackground ? Colors.white : const Color(0xFF10B981),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            '已订阅',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: hasBackground ? Colors.white : const Color(0xFF10B981),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 订阅按钮
-  Widget _buildSubscribeButton({
-    required bool hasBackground,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(6),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: hasBackground
-                ? const Color(0xFF6366F1).withValues(alpha: 0.9)
-                : const Color(0xFF6366F1),
-            borderRadius: BorderRadius.circular(6),
-            boxShadow: hasBackground
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.add_rounded, size: 14, color: Colors.white),
-              SizedBox(width: 4),
-              Text(
-                '订阅',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 删除确认对话框
-  void _showDeleteConfirmDialog(MapSubscription sub) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  void _showDeleteConfirmDialog(BuildContext context, bool isDark, MapSubscription sub) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -573,19 +294,16 @@ class _SubscriptionViewState extends State<SubscriptionView> {
     );
   }
 
-  /// 全局分类范围选择对话框
-  void _showGlobalCategoryScopeDialog(MapSubscriptionState state) {
-    // 加载分类列表
+  void _showGlobalCategoryScopeDialog(BuildContext context, bool isDark, MapSubscriptionState state) {
     context.read<MapSubscriptionBloc>().add(const MapSubscriptionLoadCategories());
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final selectedCategories = <String>{...state.globalCategories};
     bool isAll = state.globalCategories.isEmpty;
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
+        builder: (dialogContext, setDialogState) => AlertDialog(
           backgroundColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: Row(
@@ -622,15 +340,12 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // 全部分类选项
                 CheckboxListTile(
                   value: isAll,
                   onChanged: (v) {
                     setDialogState(() {
                       isAll = v ?? false;
-                      if (isAll) {
-                        selectedCategories.clear();
-                      }
+                      if (isAll) selectedCategories.clear();
                     });
                   },
                   title: Text(
@@ -651,7 +366,6 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                   contentPadding: EdgeInsets.zero,
                   dense: true,
                 ),
-                // 分类列表
                 if (!isAll) ...[
                   const SizedBox(height: 8),
                   Text(
@@ -662,7 +376,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  if (widget.state.isLoadingCategories)
+                  if (state.isLoadingCategories)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Row(
@@ -673,9 +387,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                             height: 14,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: isDark
-                                  ? Colors.white38
-                                  : const Color(0xFF9CA3AF),
+                              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -683,15 +395,13 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                             '正在加载分类...',
                             style: TextStyle(
                               fontSize: 13,
-                              color: isDark
-                                  ? Colors.white38
-                                  : const Color(0xFF9CA3AF),
+                              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
                             ),
                           ),
                         ],
                       ),
                     )
-                  else if (widget.state.availableCategories.isEmpty)
+                  else if (state.availableCategories.isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Text(
@@ -709,7 +419,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                         child: Wrap(
                           spacing: 8,
                           runSpacing: 8,
-                          children: widget.state.availableCategories.map((cat) {
+                          children: state.availableCategories.map((cat) {
                             final isSelected = selectedCategories.contains(cat);
                             return FilterChip(
                               label: Text(cat),
@@ -723,16 +433,13 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                                   }
                                 });
                               },
-                              selectedColor:
-                                  const Color(0xFF6366F1).withValues(alpha: 0.2),
+                              selectedColor: const Color(0xFF6366F1).withValues(alpha: 0.2),
                               checkmarkColor: const Color(0xFF6366F1),
                               labelStyle: TextStyle(
                                 fontSize: 13,
                                 color: isSelected
                                     ? const Color(0xFF6366F1)
-                                    : (isDark
-                                        ? Colors.white70
-                                        : const Color(0xFF374151)),
+                                    : (isDark ? Colors.white70 : const Color(0xFF374151)),
                               ),
                             );
                           }).toList(),
@@ -770,123 +477,6 @@ class _SubscriptionViewState extends State<SubscriptionView> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  /// 添加订阅确认对话框
-  void _showAddSubscriptionDialog({
-    required String mapName,
-    required String mapLabel,
-    String? mapBackground,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Row(
-          children: [
-            Icon(
-              Icons.add_circle_rounded,
-              color: const Color(0xFF6366F1),
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                '确认订阅',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF1F2937),
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.05)
-                    : const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.map_rounded,
-                    size: 18,
-                    color: isDark ? Colors.white54 : const Color(0xFF6B7280),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      mapLabel.isNotEmpty ? mapLabel : mapName,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.white : const Color(0xFF1F2937),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              '监控范围由全局设置控制',
-              style: TextStyle(
-                fontSize: 12,
-                color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            style: TextButton.styleFrom(
-              foregroundColor: isDark ? Colors.white54 : const Color(0xFF6B7280),
-            ),
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              context.read<MapSubscriptionBloc>().add(
-                    MapSubscriptionAdd(
-                      mapName: mapName,
-                      mapLabel: mapLabel,
-                      mapBackground: mapBackground,
-                    ),
-                  );
-              // 刷新搜索结果
-              if (_searchController.text.isNotEmpty) {
-                context.read<MapSubscriptionBloc>().add(
-                      MapSubscriptionSearchMaps(
-                        query: _searchController.text,
-                      ),
-                    );
-              }
-              Navigator.of(ctx).pop();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6366F1),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('确认订阅'),
-          ),
-        ],
       ),
     );
   }
