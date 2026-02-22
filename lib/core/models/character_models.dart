@@ -108,12 +108,16 @@ class CharacterPreviewImages extends Equatable {
   final String left;
   final String right;
   final String back;
+  final String hand; // 手部预览图URL
+  final String leg; // 腿部预览图URL
 
   const CharacterPreviewImages({
     required this.front,
     required this.left,
     required this.right,
     required this.back,
+    this.hand = '',
+    this.leg = '',
   });
 
   factory CharacterPreviewImages.fromJson(Map<String, dynamic> json) =>
@@ -121,7 +125,7 @@ class CharacterPreviewImages extends Equatable {
   Map<String, dynamic> toJson() => _$CharacterPreviewImagesToJson(this);
 
   @override
-  List<Object?> get props => [front, left, right, back];
+  List<Object?> get props => [front, left, right, back, hand, leg];
 }
 
 /// 获取途径信息
@@ -980,6 +984,8 @@ class PreviewImagesEditData extends Equatable {
   final int? previewLeftId; // 可选 - 左侧预览图
   final int? previewRightId; // 可选 - 右侧预览图
   final int? previewBackId; // 可选 - 背面预览图
+  final int? previewHandId; // 可选 - 手部预览图
+  final int? previewLegId; // 可选 - 腿部预览图
 
   const PreviewImagesEditData({
     this.thumbnailFileId,
@@ -987,6 +993,8 @@ class PreviewImagesEditData extends Equatable {
     this.previewLeftId,
     this.previewRightId,
     this.previewBackId,
+    this.previewHandId,
+    this.previewLegId,
   });
 
   factory PreviewImagesEditData.fromJson(Map<String, dynamic> json) =>
@@ -1000,6 +1008,8 @@ class PreviewImagesEditData extends Equatable {
     previewLeftId,
     previewRightId,
     previewBackId,
+    previewHandId,
+    previewLegId,
   ];
 
   /// 是否有任何修改
@@ -1008,7 +1018,9 @@ class PreviewImagesEditData extends Equatable {
       previewFrontId != null ||
       previewLeftId != null ||
       previewRightId != null ||
-      previewBackId != null;
+      previewBackId != null ||
+      previewHandId != null ||
+      previewLegId != null;
 }
 
 /// 统一编辑子模型请求

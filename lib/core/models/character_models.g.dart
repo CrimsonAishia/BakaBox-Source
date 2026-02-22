@@ -13,6 +13,8 @@ CharacterPreviewImages _$CharacterPreviewImagesFromJson(
   left: json['left'] as String,
   right: json['right'] as String,
   back: json['back'] as String,
+  hand: json['hand'] as String? ?? '',
+  leg: json['leg'] as String? ?? '',
 );
 
 Map<String, dynamic> _$CharacterPreviewImagesToJson(
@@ -22,6 +24,8 @@ Map<String, dynamic> _$CharacterPreviewImagesToJson(
   'left': instance.left,
   'right': instance.right,
   'back': instance.back,
+  'hand': instance.hand,
+  'leg': instance.leg,
 };
 
 AcquisitionInfo _$AcquisitionInfoFromJson(Map<String, dynamic> json) =>
@@ -665,6 +669,8 @@ PreviewImagesEditData _$PreviewImagesEditDataFromJson(
   previewLeftId: (json['previewLeftId'] as num?)?.toInt(),
   previewRightId: (json['previewRightId'] as num?)?.toInt(),
   previewBackId: (json['previewBackId'] as num?)?.toInt(),
+  previewHandId: (json['previewHandId'] as num?)?.toInt(),
+  previewLegId: (json['previewLegId'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$PreviewImagesEditDataToJson(
@@ -675,6 +681,8 @@ Map<String, dynamic> _$PreviewImagesEditDataToJson(
   'previewLeftId': instance.previewLeftId,
   'previewRightId': instance.previewRightId,
   'previewBackId': instance.previewBackId,
+  'previewHandId': instance.previewHandId,
+  'previewLegId': instance.previewLegId,
 };
 
 SubModelUnifiedEditRequest _$SubModelUnifiedEditRequestFromJson(

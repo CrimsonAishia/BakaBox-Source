@@ -67,6 +67,8 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
   int? _previewLeftId;
   int? _previewRightId;
   int? _previewBackId;
+  int? _previewHandId;
+  int? _previewLegId;
   bool _previewImagesChanged = false;
   final GlobalKey<PreviewImagesUploadWidgetState> _previewImagesKey =
       GlobalKey();
@@ -143,6 +145,8 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
       _previewLeftId = pendingPreviewImages.previewLeftId;
       _previewRightId = pendingPreviewImages.previewRightId;
       _previewBackId = pendingPreviewImages.previewBackId;
+      _previewHandId = pendingPreviewImages.previewHandId;
+      _previewLegId = pendingPreviewImages.previewLegId;
       _previewImagesChanged = true; // 标记为已修改
     }
 
@@ -572,12 +576,16 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
             leftUrl: preview?.left,
             rightUrl: preview?.right,
             backUrl: preview?.back,
+            handUrl: preview?.hand,
+            legUrl: preview?.leg,
             // 传入待审核申请中的 fileId（用于预填充显示）
             thumbnailFileId: pendingPreviewImages?.thumbnailFileId,
             frontFileId: pendingPreviewImages?.previewFrontId,
             leftFileId: pendingPreviewImages?.previewLeftId,
             rightFileId: pendingPreviewImages?.previewRightId,
             backFileId: pendingPreviewImages?.previewBackId,
+            handFileId: pendingPreviewImages?.previewHandId,
+            legFileId: pendingPreviewImages?.previewLegId,
             onChanged: (fileIds) {
               setState(() {
                 _thumbnailFileId = fileIds['thumbnailFileId'];
@@ -585,12 +593,16 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                 _previewLeftId = fileIds['previewLeftId'];
                 _previewRightId = fileIds['previewRightId'];
                 _previewBackId = fileIds['previewBackId'];
+                _previewHandId = fileIds['previewHandId'];
+                _previewLegId = fileIds['previewLegId'];
                 _previewImagesChanged =
                     _thumbnailFileId != null ||
                     _previewFrontId != null ||
                     _previewLeftId != null ||
                     _previewRightId != null ||
-                    _previewBackId != null;
+                    _previewBackId != null ||
+                    _previewHandId != null ||
+                    _previewLegId != null;
               });
             },
           ),
@@ -3355,6 +3367,8 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
             previewLeftId: _previewLeftId,
             previewRightId: _previewRightId,
             previewBackId: _previewBackId,
+            previewHandId: _previewHandId,
+            previewLegId: _previewLegId,
           )
         : null;
 
