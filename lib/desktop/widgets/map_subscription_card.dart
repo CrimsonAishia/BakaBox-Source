@@ -34,6 +34,9 @@ class MapSubscriptionCard extends StatefulWidget {
   /// 点击删除按钮回调
   final VoidCallback? onDelete;
 
+  /// 编辑按钮是否在删除按钮左边（默认 false，在删除按钮右边）
+  final bool editBeforeDelete;
+
   /// 右侧自定义操作区域（完全替代默认操作区域）
   final Widget? trailing;
 
@@ -49,6 +52,7 @@ class MapSubscriptionCard extends StatefulWidget {
     this.onEdit,
     this.onScopeTap,
     this.onDelete,
+    this.editBeforeDelete = false,
     this.trailing,
   });
 
@@ -212,8 +216,68 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                             ),
                             // 右侧操作区
                             if (widget.trailing != null) widget.trailing!,
-                            // 编辑按钮（仅有背景图时显示）
-                            if (widget.onEdit != null && hasBackground) ...[
+                            // 分类范围按钮
+                            if (widget.scopeText != null &&
+                                widget.onScopeTap != null)
+                              _buildScopeButton(isDark, hasBackground),
+                            // 已订阅标签（仅当没有自定义 trailing 且没有删除/分类按钮时显示）
+                            if (widget.isSubscribed &&
+                                widget.trailing == null &&
+                                widget.onDelete == null &&
+                                widget.onScopeTap == null)
+                              _buildSubscribedBadge(isDark, hasBackground),
+                            // 编辑按钮（editBeforeDelete=true 时在删除按钮前显示，仅已订阅时）
+                            if (widget.onEdit != null && widget.editBeforeDelete && widget.isSubscribed) ...[
+                              const SizedBox(width: 4),
+                              Tooltip(
+                                message: '编辑地图信息',
+                                child: IconButton(
+                                  onPressed: widget.onEdit,
+                                  icon: Icon(
+                                    Icons.edit_rounded,
+                                    size: 16,
+                                    color: hasBackground
+                                        ? Colors.white70
+                                        : (isDark
+                                            ? Colors.white38
+                                            : const Color(0xFF9CA3AF)),
+                                  ),
+                                  iconSize: 16,
+                                  splashRadius: 14,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 28,
+                                    minHeight: 28,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            // 删除按钮
+                            if (widget.onDelete != null) ...[
+                              const SizedBox(width: 4),
+                              IconButton(
+                                onPressed: widget.onDelete,
+                                icon: Icon(
+                                  Icons.delete_outline_rounded,
+                                  size: 18,
+                                  color: hasBackground
+                                      ? Colors.white70
+                                      : (isDark
+                                          ? Colors.white38
+                                          : const Color(0xFF9CA3AF)),
+                                ),
+                                iconSize: 18,
+                                splashRadius: 14,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 28,
+                                  minHeight: 28,
+                                ),
+                              ),
+                            ],
+                            // 编辑按钮（editBeforeDelete=false 时在删除按钮后显示，仅已订阅且有背景图时）
+                            if (widget.onEdit != null && !widget.editBeforeDelete && hasBackground && widget.isSubscribed) ...[
+                              const SizedBox(width: 4),
                               Tooltip(
                                 message: '编辑地图信息',
                                 child: IconButton(
@@ -234,40 +298,6 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                                     minWidth: 28,
                                     minHeight: 28,
                                   ),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                            ],
-                            // 分类范围按钮
-                            if (widget.scopeText != null &&
-                                widget.onScopeTap != null)
-                              _buildScopeButton(isDark, hasBackground),
-                            // 已订阅标签（仅当没有自定义 trailing 且没有删除/分类按钮时显示）
-                            if (widget.isSubscribed &&
-                                widget.trailing == null &&
-                                widget.onDelete == null &&
-                                widget.onScopeTap == null)
-                              _buildSubscribedBadge(isDark, hasBackground),
-                            // 删除按钮
-                            if (widget.onDelete != null) ...[
-                              const SizedBox(width: 6),
-                              IconButton(
-                                onPressed: widget.onDelete,
-                                icon: Icon(
-                                  Icons.delete_outline_rounded,
-                                  size: 18,
-                                  color: hasBackground
-                                      ? Colors.white70
-                                      : (isDark
-                                          ? Colors.white38
-                                          : const Color(0xFF9CA3AF)),
-                                ),
-                                iconSize: 18,
-                                splashRadius: 14,
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                  minWidth: 28,
-                                  minHeight: 28,
                                 ),
                               ),
                             ],

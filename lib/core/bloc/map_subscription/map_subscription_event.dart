@@ -91,11 +91,15 @@ class MapSubscriptionToggleGlobalTts extends MapSubscriptionEvent {
 /// 搜索地图
 class MapSubscriptionSearchMaps extends MapSubscriptionEvent {
   final String query;
+  final bool loadMore;
 
-  const MapSubscriptionSearchMaps({required this.query});
+  const MapSubscriptionSearchMaps({
+    required this.query,
+    this.loadMore = false,
+  });
 
   @override
-  List<Object?> get props => [query];
+  List<Object?> get props => [query, loadMore];
 }
 
 /// 下载 TTS 模型（支持指定模型ID）

@@ -5,12 +5,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/bloc/map_subscription/map_subscription_bloc.dart';
 import 'views/subscription_view.dart';
+import 'views/add_subscription_view.dart';
 import 'views/tts_settings_view.dart';
 import 'components/nav_item.dart';
 
 /// 导航项枚举
 enum MapSubscriptionNavItem {
   subscription,
+  add,
   tts,
 }
 
@@ -123,6 +125,14 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
             isDark: isDark,
             title: '订阅管理',
             items: [
+              NavItemData(
+                icon: Icons.add_circle_outline_rounded,
+                label: '添加',
+                isSelected: _selectedNav == MapSubscriptionNavItem.add,
+                onTap: () => setState(() {
+                  _selectedNav = MapSubscriptionNavItem.add;
+                }),
+              ),
               NavItemData(
                 icon: Icons.list_alt_rounded,
                 label: '已订阅',
@@ -316,6 +326,8 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
     switch (_selectedNav) {
       case MapSubscriptionNavItem.subscription:
         return SubscriptionView(isDark: isDark, state: state);
+      case MapSubscriptionNavItem.add:
+        return AddSubscriptionView(isDark: isDark, state: state);
       case MapSubscriptionNavItem.tts:
         return TtsSettingsView(isDark: isDark, state: state);
     }

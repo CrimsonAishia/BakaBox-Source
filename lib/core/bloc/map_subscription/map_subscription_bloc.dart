@@ -195,32 +195,44 @@ class MapSubscriptionBloc
   ) async {
     final query = event.query.trim();
     if (query.isEmpty) {
-      emit(state.copyWith(searchResults: [], isSearching: false));
+      emit(state.copyWith(
+        searchResults: [],
+        isSearching: false,
+        searchTotalCount: 0,
+        searchPageIndex: 1,
+        hasMoreSearchResults: false,
+      ));
       return;
     }
+
+    // 如果是加载更多，检查是否还有更多数据
+    if (event.loadMore && !state.hasMoreSearchResults) {
+      return;
+    }
+
+    // 如果正在搜索中，不重复请求
+    if (state.isSearching) {
+      return;
+    }
+
+    final pageIndex = event.loadMore ? state.searchPageIndex + 1 : 1;
+    const pageSize = 30;
 
     emit(state.copyWith(isSearching: true));
 
     try {
-      // 从地图贡献 API 获取地图数据（使用搜索关键词）
       final response = await _mapApi.getAllMaps(
         MapListRequest(
-          pagination: const PaginationParams(pageIndex: 1, pageSize: 50),
+          pagination: PaginationParams(pageIndex: pageIndex, pageSize: pageSize),
           mapName: query,
         ),
       );
 
       final allMaps = response?.items ?? [];
+      final total = response?.total ?? 0;
 
-      // 搜索匹配
-      final queryLower = query.toLowerCase();
-      final results = allMaps
-          .where(
-            (map) =>
-                map.mapName.toLowerCase().contains(queryLower) ||
-                map.mapLabel.toLowerCase().contains(queryLower),
-          )
-          .take(20)
+      // 转换为搜索结果
+      final newResults = allMaps
           .map(
             (map) => MapSearchResult(
               mapName: map.mapName,
@@ -231,12 +243,25 @@ class MapSubscriptionBloc
           )
           .toList();
 
-      emit(state.copyWith(searchResults: results, isSearching: false));
+      // 合并结果（加载更多时追加，否则替换）
+      final results = event.loadMore
+          ? [...state.searchResults, ...newResults]
+          : newResults;
+
+      // 计算是否还有更多
+      final hasMore = results.length < total;
+
+      emit(state.copyWith(
+        searchResults: results,
+        isSearching: false,
+        searchTotalCount: total,
+        searchPageIndex: pageIndex,
+        hasMoreSearchResults: hasMore,
+      ));
     } catch (e) {
       LogService.e('[MapSubscriptionBloc] 搜索地图失败', e);
       emit(
         state.copyWith(
-          searchResults: [],
           isSearching: false,
           error: '搜索失败: $e',
         ),

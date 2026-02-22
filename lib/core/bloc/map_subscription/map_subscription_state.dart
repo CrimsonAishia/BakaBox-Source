@@ -23,6 +23,15 @@ class MapSubscriptionState extends Equatable {
   /// 是否正在搜索
   final bool isSearching;
 
+  /// 搜索结果总数
+  final int searchTotalCount;
+
+  /// 当前搜索页码
+  final int searchPageIndex;
+
+  /// 是否还有更多搜索结果
+  final bool hasMoreSearchResults;
+
   /// 可用分类列表
   final List<String> availableCategories;
 
@@ -70,6 +79,9 @@ class MapSubscriptionState extends Equatable {
     this.isLoading = false,
     this.searchResults = const [],
     this.isSearching = false,
+    this.searchTotalCount = 0,
+    this.searchPageIndex = 1,
+    this.hasMoreSearchResults = false,
     this.availableCategories = const [],
     this.globalCategories = const [],
     this.isLoadingCategories = false,
@@ -93,6 +105,9 @@ class MapSubscriptionState extends Equatable {
     bool? isLoading,
     List<MapSearchResult>? searchResults,
     bool? isSearching,
+    int? searchTotalCount,
+    int? searchPageIndex,
+    bool? hasMoreSearchResults,
     List<String>? availableCategories,
     List<String>? globalCategories,
     bool? isLoadingCategories,
@@ -115,6 +130,9 @@ class MapSubscriptionState extends Equatable {
       isLoading: isLoading ?? this.isLoading,
       searchResults: searchResults ?? this.searchResults,
       isSearching: isSearching ?? this.isSearching,
+      searchTotalCount: searchTotalCount ?? this.searchTotalCount,
+      searchPageIndex: searchPageIndex ?? this.searchPageIndex,
+      hasMoreSearchResults: hasMoreSearchResults ?? this.hasMoreSearchResults,
       availableCategories: availableCategories ?? this.availableCategories,
       globalCategories: globalCategories ?? this.globalCategories,
       isLoadingCategories: isLoadingCategories ?? this.isLoadingCategories,
@@ -140,6 +158,9 @@ class MapSubscriptionState extends Equatable {
     isLoading,
     searchResults,
     isSearching,
+    searchTotalCount,
+    searchPageIndex,
+    hasMoreSearchResults,
     availableCategories,
     globalCategories,
     isLoadingCategories,
