@@ -273,6 +273,7 @@ class ScoreUploadService {
         round: roundNumber,
         mapName: mapName,
         steamId: steamId,
+        isFinal: true,
       );
 
       // 更新记录
@@ -434,6 +435,7 @@ class ScoreUploadService {
   ///
   /// 静默处理所有错误，不抛出异常，不重试
   /// [isHeartbeat] 为 true 时表示心跳上传，用于保持数据有效性
+  /// [isFinal] 为 true 时表示地图结束时的最终比分
   Future<void> _uploadScore({
     required int ctScore,
     required int tScore,
@@ -441,6 +443,7 @@ class ScoreUploadService {
     required String mapName,
     required String steamId,
     bool isHeartbeat = false,
+    bool isFinal = false,
   }) async {
     // 验证必要参数
     if (_currentServerDomainAddress == null ||
@@ -459,9 +462,9 @@ class ScoreUploadService {
       return;
     }
 
-    final uploadType = isHeartbeat ? '心跳' : '比分';
+    final uploadType = isHeartbeat ? '心跳' : (isFinal ? '最终比分' : '比分');
     LogService.i(
-      '[ScoreUpload] 触发${uploadType}上传: $_currentServerDomainAddress, '
+      '[ScoreUpload] 触发$uploadType上传: $_currentServerDomainAddress, '
       '$ctScore:$tScore, round=$round, map=$mapName',
     );
 
@@ -477,6 +480,7 @@ class ScoreUploadService {
         tScore: tScore,
         round: round,
         mapName: mapName,
+        isFinal: isFinal,
       );
 
       if (error != null) {
