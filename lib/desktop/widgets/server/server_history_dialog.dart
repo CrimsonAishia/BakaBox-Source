@@ -668,6 +668,8 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
             maxPlayers: snapshot.maxPlayers,
             buildMapBackground: _buildMapBackground,
             buildStatChip: _buildStatChip,
+            finalCtScore: snapshot.finalCtScore,
+            finalTScore: snapshot.finalTScore,
           ),
           // 连接线
           if (index < _historyData.length - 1)
@@ -860,6 +862,8 @@ class _HistoryCard extends StatefulWidget {
   final int maxPlayers;
   final Widget Function(String?, String) buildMapBackground;
   final Widget Function(IconData, String, {Color? color}) buildStatChip;
+  final int? finalCtScore;
+  final int? finalTScore;
 
   const _HistoryCard({
     super.key,
@@ -874,7 +878,11 @@ class _HistoryCard extends StatefulWidget {
     required this.maxPlayers,
     required this.buildMapBackground,
     required this.buildStatChip,
+    this.finalCtScore,
+    this.finalTScore,
   });
+
+  bool get hasFinalScore => finalCtScore != null && finalTScore != null;
 
   @override
   State<_HistoryCard> createState() => _HistoryCardState();
@@ -1135,14 +1143,71 @@ class _HistoryCardState extends State<_HistoryCard> {
                       ],
                     ),
                   ),
-                  // 右上角静态黄点
-                  if (widget.hasTrendData)
-                    const Positioned(top: 12, right: 12, child: _StaticDot()),
+                  // 右上角：比分或趋势数据点
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: widget.hasFinalScore
+                        ? _buildScoreBadge(widget.finalCtScore!, widget.finalTScore!)
+                        : (widget.hasTrendData ? const _StaticDot() : const SizedBox.shrink()),
+                  ),
                 ],
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// 构建比分徽章
+  Widget _buildScoreBadge(int ctScore, int tScore) {
+    // 判断是否为僵尸模式地图
+    final isZombieMap = widget.mapName.startsWith('ze_') || widget.mapName.startsWith('zm_');
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // CT/人类 比分
+          Text(
+            '$ctScore',
+            style: TextStyle(
+              color: isZombieMap ? const Color(0xFF4ADE80) : const Color(0xFF93C5FD), // 人类绿色 / CT蓝色
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              ':',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          // T/僵尸 比分
+          Text(
+            '$tScore',
+            style: TextStyle(
+              color: isZombieMap ? const Color(0xFFF87171) : const Color(0xFFFCD34D), // 僵尸红色 / T黄色
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -299,6 +299,33 @@ class _ServerHistoryModalState extends State<ServerHistoryModal> with SingleTick
           const SizedBox(height: 2),
           Text(snapshot.mapName, style: const TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.w500, shadows: [Shadow(color: Colors.black, offset: Offset(1, 1), blurRadius: 3)])),
         ])),
+        // 右上角比分显示
+        if (snapshot.hasFinalScore)
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Builder(
+              builder: (context) {
+                final isZombieMap = snapshot.mapName.startsWith('ze_') || snapshot.mapName.startsWith('zm_');
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('${snapshot.finalCtScore}', style: TextStyle(color: isZombieMap ? const Color(0xFF4ADE80) : const Color(0xFF93C5FD), fontSize: 13, fontWeight: FontWeight.w700)),
+                      const Padding(padding: EdgeInsets.symmetric(horizontal: 4), child: Text(':', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600))),
+                      Text('${snapshot.finalTScore}', style: TextStyle(color: isZombieMap ? const Color(0xFFF87171) : const Color(0xFFFCD34D), fontSize: 13, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
       ]),
     );
   }

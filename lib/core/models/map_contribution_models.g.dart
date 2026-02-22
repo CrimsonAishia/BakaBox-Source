@@ -262,6 +262,8 @@ MapHistoryRecord _$MapHistoryRecordFromJson(
           ?.map((e) => MapHistoryPlayerInfo.fromJson(e as Map<String, dynamic>))
           .toList() ??
       [],
+  finalCtScore: (json['finalCtScore'] as num?)?.toInt(),
+  finalTScore: (json['finalTScore'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$MapHistoryRecordToJson(MapHistoryRecord instance) =>
@@ -272,6 +274,8 @@ Map<String, dynamic> _$MapHistoryRecordToJson(MapHistoryRecord instance) =>
       'maxPlayers': instance.maxPlayers,
       'createdAt': const ServerTimeConverter().toJson(instance.createdAt),
       'infos': instance.infos,
+      'finalCtScore': instance.finalCtScore,
+      'finalTScore': instance.finalTScore,
     };
 
 MapHistoryResponse _$MapHistoryResponseFromJson(Map<String, dynamic> json) =>

@@ -499,6 +499,8 @@ class MapHistoryRecord extends Equatable {
   final DateTime createdAt;
   @JsonKey(defaultValue: <MapHistoryPlayerInfo>[])
   final List<MapHistoryPlayerInfo> infos;
+  final int? finalCtScore;
+  final int? finalTScore;
 
   const MapHistoryRecord({
     required this.id,
@@ -507,14 +509,19 @@ class MapHistoryRecord extends Equatable {
     required this.maxPlayers,
     required this.createdAt,
     required this.infos,
+    this.finalCtScore,
+    this.finalTScore,
   });
+
+  /// 是否有终局比分
+  bool get hasFinalScore => finalCtScore != null && finalTScore != null;
 
   factory MapHistoryRecord.fromJson(Map<String, dynamic> json) =>
       _$MapHistoryRecordFromJson(json);
   Map<String, dynamic> toJson() => _$MapHistoryRecordToJson(this);
 
   @override
-  List<Object?> get props => [id, address, mapName, maxPlayers, createdAt, infos];
+  List<Object?> get props => [id, address, mapName, maxPlayers, createdAt, infos, finalCtScore, finalTScore];
 }
 
 /// 地图历史记录响应
