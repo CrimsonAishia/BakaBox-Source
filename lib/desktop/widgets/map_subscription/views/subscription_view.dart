@@ -302,180 +302,182 @@ class SubscriptionView extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) => AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: Row(
-            children: [
-              Icon(
-                Icons.category_rounded,
-                color: const Color(0xFF6366F1),
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '全局监控范围',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : const Color(0xFF1F2937),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          content: SizedBox(
-            width: 320,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (ctx) => BlocBuilder<MapSubscriptionBloc, MapSubscriptionState>(
+        builder: (blocContext, currentState) => StatefulBuilder(
+          builder: (dialogContext, setDialogState) => AlertDialog(
+            backgroundColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            title: Row(
               children: [
-                Text(
-                  '设置所有订阅地图的监控范围',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isDark ? Colors.white54 : const Color(0xFF6B7280),
-                  ),
+                Icon(
+                  Icons.category_rounded,
+                  color: const Color(0xFF6366F1),
+                  size: 20,
                 ),
-                const SizedBox(height: 16),
-                CheckboxListTile(
-                  value: isAll,
-                  onChanged: (v) {
-                    setDialogState(() {
-                      isAll = v ?? false;
-                      if (isAll) selectedCategories.clear();
-                    });
-                  },
-                  title: Text(
-                    '全部分类',
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '全局监控范围',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                       color: isDark ? Colors.white : const Color(0xFF1F2937),
                     ),
                   ),
-                  subtitle: Text(
-                    '监控所有服务器分类',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
-                    ),
-                  ),
-                  activeColor: const Color(0xFF6366F1),
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
                 ),
-                if (!isAll) ...[
-                  const SizedBox(height: 8),
+              ],
+            ),
+            content: SizedBox(
+              width: 320,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    '选择特定分类：',
+                    '设置所有订阅地图的监控范围',
                     style: TextStyle(
                       fontSize: 13,
                       color: isDark ? Colors.white54 : const Color(0xFF6B7280),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  if (state.isLoadingCategories)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '正在加载分类...',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  else if (state.availableCategories.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Text(
-                        '暂无可用分类',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
-                        ),
-                      ),
-                    )
-                  else
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 200),
-                      child: SingleChildScrollView(
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: state.availableCategories.map((cat) {
-                            final isSelected = selectedCategories.contains(cat);
-                            return FilterChip(
-                              label: Text(cat),
-                              selected: isSelected,
-                              onSelected: (v) {
-                                setDialogState(() {
-                                  if (v) {
-                                    selectedCategories.add(cat);
-                                  } else {
-                                    selectedCategories.remove(cat);
-                                  }
-                                });
-                              },
-                              selectedColor: const Color(0xFF6366F1).withValues(alpha: 0.2),
-                              checkmarkColor: const Color(0xFF6366F1),
-                              labelStyle: TextStyle(
-                                fontSize: 13,
-                                color: isSelected
-                                    ? const Color(0xFF6366F1)
-                                    : (isDark ? Colors.white70 : const Color(0xFF374151)),
-                              ),
-                            );
-                          }).toList(),
-                        ),
+                  const SizedBox(height: 16),
+                  CheckboxListTile(
+                    value: isAll,
+                    onChanged: (v) {
+                      setDialogState(() {
+                        isAll = v ?? false;
+                        if (isAll) selectedCategories.clear();
+                      });
+                    },
+                    title: Text(
+                      '全部分类',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.white : const Color(0xFF1F2937),
                       ),
                     ),
+                    subtitle: Text(
+                      '监控所有服务器分类',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                      ),
+                    ),
+                    activeColor: const Color(0xFF6366F1),
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                  ),
+                  if (!isAll) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      '选择特定分类：',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (currentState.isLoadingCategories)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '正在加载分类...',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else if (currentState.availableCategories.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text(
+                          '暂无可用分类',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                          ),
+                        ),
+                      )
+                    else
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 200),
+                        child: SingleChildScrollView(
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: currentState.availableCategories.map((cat) {
+                              final isSelected = selectedCategories.contains(cat);
+                              return FilterChip(
+                                label: Text(cat),
+                                selected: isSelected,
+                                onSelected: (v) {
+                                  setDialogState(() {
+                                    if (v) {
+                                      selectedCategories.add(cat);
+                                    } else {
+                                      selectedCategories.remove(cat);
+                                    }
+                                  });
+                                },
+                                selectedColor: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                                checkmarkColor: const Color(0xFF6366F1),
+                                labelStyle: TextStyle(
+                                  fontSize: 13,
+                                  color: isSelected
+                                      ? const Color(0xFF6366F1)
+                                      : (isDark ? Colors.white70 : const Color(0xFF374151)),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+                  ],
                 ],
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              style: TextButton.styleFrom(
-                foregroundColor: isDark ? Colors.white54 : const Color(0xFF6B7280),
               ),
-              child: const Text('取消'),
             ),
-            ElevatedButton(
-              onPressed: () {
-                final cats = isAll ? <String>[] : selectedCategories.toList();
-                context.read<MapSubscriptionBloc>().add(
-                      MapSubscriptionUpdateScope(categoryNames: cats),
-                    );
-                Navigator.of(ctx).pop();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6366F1),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                style: TextButton.styleFrom(
+                  foregroundColor: isDark ? Colors.white54 : const Color(0xFF6B7280),
                 ),
+                child: const Text('取消'),
               ),
-              child: const Text('保存'),
-            ),
-          ],
+              ElevatedButton(
+                onPressed: () {
+                  final cats = isAll ? <String>[] : selectedCategories.toList();
+                  context.read<MapSubscriptionBloc>().add(
+                        MapSubscriptionUpdateScope(categoryNames: cats),
+                      );
+                  Navigator.of(ctx).pop();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6366F1),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text('保存'),
+              ),
+            ],
+          ),
         ),
       ),
     );

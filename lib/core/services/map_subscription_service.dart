@@ -5,6 +5,7 @@ import '../api/server_api.dart';
 import '../models/map_subscription_models.dart';
 import '../utils/log_service.dart';
 import '../utils/storage_utils.dart';
+import 'custom_server_service.dart';
 import 'notification_window_service.dart';
 import 'scheduler_service.dart';
 import 'source_server_service.dart';
@@ -286,9 +287,13 @@ class MapSubscriptionService {
     );
 
     try {
-      // 获取所有分类的服务器列表
-      final categories = await _serverApi.getServerList();
-      LogService.d('[MapSubscription] 获取到 ${categories.length} 个分类');
+      // 获取 API 分类
+      final apiCategories = await _serverApi.getServerList();
+      // 获取自定义分类
+      final customCategories = await CustomServerService.loadCustomCategories();
+      // 合并所有分类
+      final categories = [...customCategories, ...apiCategories];
+      LogService.d('[MapSubscription] 获取到 ${categories.length} 个分类 (API: ${apiCategories.length}, 自定义: ${customCategories.length})');
 
       int serverCount = 0;
       int validServerCount = 0;

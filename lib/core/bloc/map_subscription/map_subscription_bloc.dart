@@ -7,6 +7,7 @@ import '../../api/map_contribution_api.dart';
 import '../../api/server_api.dart';
 import '../../models/map_contribution_models.dart';
 import '../../models/map_subscription_models.dart';
+import '../../services/custom_server_service.dart';
 import '../../services/map_subscription_service.dart';
 import '../../services/tts_service.dart';
 import '../../utils/log_service.dart';
@@ -88,15 +89,17 @@ class MapSubscriptionBloc
     MapSubscriptionLoadCategories event,
     Emitter<MapSubscriptionState> emit,
   ) async {
-    // 如果已有分类数据，不重复加载
-    if (state.availableCategories.isNotEmpty) return;
-    
     emit(state.copyWith(isLoadingCategories: true));
     try {
-      final categories = await _serverApi.getServerList();
-      // 使用 modelName 作为分类名称（category 字段可能为空）
-      final categoryNames = categories
-          .where((c) => c.modelName != null && c.modelName!.isNotEmpty && !c.isCustom)
+      // 获取 API 分类
+      final apiCategories = await _serverApi.getServerList();
+      // 获取自定义分类
+      final customCategories = await CustomServerService.loadCustomCategories();
+      
+      // 合并所有分类名称
+      final allCategories = [...customCategories, ...apiCategories];
+      final categoryNames = allCategories
+          .where((c) => c.modelName != null && c.modelName!.isNotEmpty)
           .map((c) => c.modelName!)
           .toSet()
           .toList();
