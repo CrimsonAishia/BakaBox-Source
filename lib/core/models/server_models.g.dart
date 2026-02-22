@@ -212,6 +212,8 @@ ServerSnapshot _$ServerSnapshotFromJson(Map<String, dynamic> json) =>
       infos: (json['infos'] as List<dynamic>?)
           ?.map((e) => PlayerTrendInfo.fromJson(e as Map<String, dynamic>))
           .toList(),
+      finalCtScore: (json['final_ct_score'] as num?)?.toInt(),
+      finalTScore: (json['final_t_score'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$ServerSnapshotToJson(ServerSnapshot instance) =>
@@ -230,6 +232,8 @@ Map<String, dynamic> _$ServerSnapshotToJson(ServerSnapshot instance) =>
       'is_online': instance.isOnline,
       'created_at': instance.createdAt,
       'infos': instance.infos,
+      'final_ct_score': instance.finalCtScore,
+      'final_t_score': instance.finalTScore,
     };
 
 ServerHistoryData _$ServerHistoryDataFromJson(Map<String, dynamic> json) =>

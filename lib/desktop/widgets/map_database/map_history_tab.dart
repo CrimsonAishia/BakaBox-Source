@@ -444,6 +444,9 @@ class _MapHistoryTabState extends State<MapHistoryTab> {
       hasTrendData: hasTrendData,
       getTrendData: hasTrendData ? () => record.infos : null,
       isDark: isDark,
+      finalCtScore: record.finalCtScore,
+      finalTScore: record.finalTScore,
+      mapName: widget.mapName,
     );
   }
 
@@ -528,6 +531,9 @@ class _HistoryListItem extends StatefulWidget {
   final bool hasTrendData;
   final List<MapHistoryPlayerInfo> Function()? getTrendData;
   final bool isDark;
+  final int? finalCtScore;
+  final int? finalTScore;
+  final String mapName;
 
   const _HistoryListItem({
     super.key,
@@ -542,7 +548,12 @@ class _HistoryListItem extends StatefulWidget {
     required this.hasTrendData,
     required this.getTrendData,
     required this.isDark,
+    this.finalCtScore,
+    this.finalTScore,
+    required this.mapName,
   });
+
+  bool get hasFinalScore => finalCtScore != null && finalTScore != null;
 
   @override
   State<_HistoryListItem> createState() => _HistoryListItemState();
@@ -704,6 +715,10 @@ class _HistoryListItemState extends State<_HistoryListItem> with SingleTickerPro
                           MdiIcons.accountGroup,
                           '${widget.maxPlayers}/${widget.totalSlots}',
                         ),
+                        if (widget.hasFinalScore) ...[
+                          const SizedBox(width: 16),
+                          _buildScoreBadge(widget.finalCtScore!, widget.finalTScore!),
+                        ],
                       ],
                     ),
                   ],
@@ -799,6 +814,58 @@ class _HistoryListItemState extends State<_HistoryListItem> with SingleTickerPro
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildScoreBadge(int ctScore, int tScore) {
+    // 判断是否为僵尸模式地图
+    final isZombieMap = widget.mapName.startsWith('ze_') || widget.mapName.startsWith('zm_');
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: widget.isDark
+            ? Colors.white.withValues(alpha: 0.1)
+            : Colors.black.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: widget.isDark
+              ? Colors.white.withValues(alpha: 0.15)
+              : Colors.black.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$ctScore',
+            style: TextStyle(
+              color: isZombieMap ? const Color(0xFF22C55E) : const Color(0xFF3B82F6), // 人类绿色 / CT蓝色
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 3),
+            child: Text(
+              ':',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Text(
+            '$tScore',
+            style: TextStyle(
+              color: isZombieMap ? const Color(0xFFEF4444) : const Color(0xFFF59E0B), // 僵尸红色 / T黄色
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

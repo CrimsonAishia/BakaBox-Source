@@ -215,13 +215,18 @@ class ServerSnapshot {
   @JsonKey(name: 'is_online') final bool isOnline;
   @JsonKey(name: 'created_at') final String createdAt;
   final List<PlayerTrendInfo>? infos;
+  @JsonKey(name: 'final_ct_score') final int? finalCtScore;
+  @JsonKey(name: 'final_t_score') final int? finalTScore;
 
   ServerSnapshot({
     required this.id, required this.timestamp, required this.address, required this.hostname,
     required this.mapName, required this.mapLabel, required this.currentPlayers, required this.maxPlayers,
     required this.hasPassword, required this.gameType, required this.category, required this.isOnline,
-    required this.createdAt, this.infos,
+    required this.createdAt, this.infos, this.finalCtScore, this.finalTScore,
   });
+
+  /// 是否有终局比分
+  bool get hasFinalScore => finalCtScore != null && finalTScore != null;
 
   factory ServerSnapshot.fromJson(Map<String, dynamic> json) => _$ServerSnapshotFromJson(json);
   Map<String, dynamic> toJson() => _$ServerSnapshotToJson(this);
