@@ -46,32 +46,16 @@ class MapSubscriptionRemove extends MapSubscriptionEvent {
   List<Object?> get props => [mapName];
 }
 
-/// 更新分类范围
+/// 更新全局分类范围
 class MapSubscriptionUpdateScope extends MapSubscriptionEvent {
-  final String mapName;
   final List<String> categoryNames;
 
   const MapSubscriptionUpdateScope({
-    required this.mapName,
     required this.categoryNames,
   });
 
   @override
-  List<Object?> get props => [mapName, categoryNames];
-}
-
-/// 切换单个订阅的 TTS
-class MapSubscriptionToggleTts extends MapSubscriptionEvent {
-  final String mapName;
-  final bool enabled;
-
-  const MapSubscriptionToggleTts({
-    required this.mapName,
-    required this.enabled,
-  });
-
-  @override
-  List<Object?> get props => [mapName, enabled];
+  List<Object?> get props => [categoryNames];
 }
 
 /// 切换全局开关
@@ -211,4 +195,14 @@ class MapSubscriptionSetCooldown extends MapSubscriptionEvent {
 
   @override
   List<Object?> get props => [seconds];
+}
+
+/// TTS 测试阶段更新（内部使用）
+class _MapSubscriptionTtsPhaseUpdate extends MapSubscriptionEvent {
+  final String phase;
+
+  const _MapSubscriptionTtsPhaseUpdate({required this.phase});
+
+  @override
+  List<Object?> get props => [phase];
 }

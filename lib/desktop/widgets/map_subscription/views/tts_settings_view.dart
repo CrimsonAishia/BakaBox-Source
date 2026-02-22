@@ -378,17 +378,26 @@ class TtsSettingsView extends StatelessWidget {
 
   /// 操作按钮区域
   Widget _buildActionButtons(BuildContext context) {
+    final isTesting = state.isTtsTesting;
+    final phase = state.ttsTestingPhase;
+    final label = isTesting 
+        ? (phase == 'playing' ? '播报中...' : '生成中...')
+        : '测试播报';
+    
     return Row(
       children: [
         Expanded(
           child: _buildActionButton(
             context: context,
-            icon: Icons.play_arrow_rounded,
-            label: '测试播报',
+            icon: isTesting ? Icons.hourglass_empty_rounded : Icons.play_arrow_rounded,
+            label: label,
             isPrimary: true,
-            onTap: () => context.read<MapSubscriptionBloc>().add(
-                  const MapSubscriptionTestTts(),
-                ),
+            isLoading: isTesting,
+            onTap: isTesting
+                ? () {}
+                : () => context.read<MapSubscriptionBloc>().add(
+                      const MapSubscriptionTestTts(),
+                    ),
           ),
         ),
       ],
@@ -401,18 +410,21 @@ class TtsSettingsView extends StatelessWidget {
     required IconData icon,
     required String label,
     bool isPrimary = false,
+    bool isLoading = false,
     required VoidCallback onTap,
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: isLoading ? null : onTap,
         borderRadius: BorderRadius.circular(10),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: isPrimary
-                ? const Color(0xFF6366F1)
+                ? (isLoading 
+                    ? const Color(0xFF6366F1).withValues(alpha: 0.6)
+                    : const Color(0xFF6366F1))
                 : (isDark
                     ? Colors.white.withValues(alpha: 0.08)
                     : const Color(0xFFF3F4F6)),
@@ -429,13 +441,25 @@ class TtsSettingsView extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 18,
-                color: isPrimary
-                    ? Colors.white
-                    : (isDark ? Colors.white70 : const Color(0xFF374151)),
-              ),
+              if (isLoading)
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      isPrimary ? Colors.white : const Color(0xFF6366F1),
+                    ),
+                  ),
+                )
+              else
+                Icon(
+                  icon,
+                  size: 18,
+                  color: isPrimary
+                      ? Colors.white
+                      : (isDark ? Colors.white70 : const Color(0xFF374151)),
+                ),
               const SizedBox(width: 8),
               Text(
                 label,
