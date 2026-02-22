@@ -194,6 +194,8 @@ class CharacterGalleryState extends Equatable {
       1 => preview.left,
       2 => preview.right,
       3 => preview.back,
+      4 => preview.hand,
+      5 => preview.leg,
       _ => preview.front,
     };
   }

@@ -1641,6 +1641,22 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 ChangePreviewPosition(3),
               ),
             ),
+            PreviewPositionButton(
+              position: 4,
+              label: '手',
+              isSelected: state.previewPosition == 4,
+              onTap: () => context.read<CharacterGalleryBloc>().add(
+                ChangePreviewPosition(4),
+              ),
+            ),
+            PreviewPositionButton(
+              position: 5,
+              label: '腿',
+              isSelected: state.previewPosition == 5,
+              onTap: () => context.read<CharacterGalleryBloc>().add(
+                ChangePreviewPosition(5),
+              ),
+            ),
           ],
         ),
       ],
@@ -1660,6 +1676,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       if (preview.left.isNotEmpty) allImages.add(preview.left);
       if (preview.right.isNotEmpty) allImages.add(preview.right);
       if (preview.back.isNotEmpty) allImages.add(preview.back);
+      if (preview.hand.isNotEmpty) allImages.add(preview.hand);
+      if (preview.leg.isNotEmpty) allImages.add(preview.leg);
     }
 
     // 如果没有任何有效图片，直接返回

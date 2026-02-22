@@ -144,6 +144,8 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
       'previewLeftId' => '左侧预览图',
       'previewRightId' => '右侧预览图',
       'previewBackId' => '背面预览图',
+      'previewHandId' => '手部预览图',
+      'previewLegId' => '腿部预览图',
       _ => field,
     };
   }
@@ -733,7 +735,9 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
         field == 'previewFrontId' ||
         field == 'previewLeftId' ||
         field == 'previewRightId' ||
-        field == 'previewBackId';
+        field == 'previewBackId' ||
+        field == 'previewHandId' ||
+        field == 'previewLegId';
   }
 
   // 紧凑的变更详情

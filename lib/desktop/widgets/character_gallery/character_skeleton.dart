@@ -167,10 +167,10 @@ class DetailPanelSkeleton extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        // 预览位置按钮（正、左、右、背）
+        // 预览位置按钮（正、左、右、背、手、腿）
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: ['正', '左', '右', '背'].map((label) {
+          children: ['正', '左', '右', '背', '手', '腿'].map((label) {
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Container(

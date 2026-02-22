@@ -443,12 +443,16 @@ class PreviewImagesUploadWidget extends StatefulWidget {
   final String? leftUrl;
   final String? rightUrl;
   final String? backUrl;
+  final String? handUrl;
+  final String? legUrl;
   // 支持通过 fileId 加载预览图（用于待审核申请的预填充）
   final int? thumbnailFileId;
   final int? frontFileId;
   final int? leftFileId;
   final int? rightFileId;
   final int? backFileId;
+  final int? handFileId;
+  final int? legFileId;
   final ValueChanged<Map<String, int?>>? onChanged;
   final bool enabled;
 
@@ -459,11 +463,15 @@ class PreviewImagesUploadWidget extends StatefulWidget {
     this.leftUrl,
     this.rightUrl,
     this.backUrl,
+    this.handUrl,
+    this.legUrl,
     this.thumbnailFileId,
     this.frontFileId,
     this.leftFileId,
     this.rightFileId,
     this.backFileId,
+    this.handFileId,
+    this.legFileId,
     this.onChanged,
     this.enabled = true,
   });
@@ -480,6 +488,8 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
   int? _leftFileId;
   int? _rightFileId;
   int? _backFileId;
+  int? _handFileId;
+  int? _legFileId;
 
   // 从 fileId 加载的 URL（用于待审核申请预填充）
   String? _thumbnailUrlFromFileId;
@@ -487,6 +497,8 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
   String? _leftUrlFromFileId;
   String? _rightUrlFromFileId;
   String? _backUrlFromFileId;
+  String? _handUrlFromFileId;
+  String? _legUrlFromFileId;
 
   @override
   bool get wantKeepAlive => true;
@@ -502,6 +514,8 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
     _leftFileId = widget.leftFileId;
     _rightFileId = widget.rightFileId;
     _backFileId = widget.backFileId;
+    _handFileId = widget.handFileId;
+    _legFileId = widget.legFileId;
   }
 
   Future<void> _loadUrlsFromFileIds() async {
@@ -533,6 +547,18 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
       try {
         final url = await ImageUrlService.instance.getSignedUrlById(widget.backFileId!);
         if (mounted) setState(() => _backUrlFromFileId = url);
+      } catch (_) {}
+    }
+    if (widget.handFileId != null) {
+      try {
+        final url = await ImageUrlService.instance.getSignedUrlById(widget.handFileId!);
+        if (mounted) setState(() => _handUrlFromFileId = url);
+      } catch (_) {}
+    }
+    if (widget.legFileId != null) {
+      try {
+        final url = await ImageUrlService.instance.getSignedUrlById(widget.legFileId!);
+        if (mounted) setState(() => _legUrlFromFileId = url);
       } catch (_) {}
     }
   }
@@ -610,6 +636,8 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
     final leftUrl = _leftUrlFromFileId ?? widget.leftUrl;
     final rightUrl = _rightUrlFromFileId ?? widget.rightUrl;
     final backUrl = _backUrlFromFileId ?? widget.backUrl;
+    final handUrl = _handUrlFromFileId ?? widget.handUrl;
+    final legUrl = _legUrlFromFileId ?? widget.legUrl;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -628,7 +656,7 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
             ),
             const SizedBox(width: 8),
             Text(
-              '（角色详情页中展示的四方向预览）',
+              '（角色详情页中展示的多方向预览）',
               style: TextStyle(
                 color: inkColor.withValues(alpha: 0.5),
                 fontSize: 11,
@@ -637,8 +665,9 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
           ],
         ),
         const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.start,
+        Wrap(
+          spacing: 16,
+          runSpacing: 12,
           children: [
             PreviewImageUploadItem(
               label: '正面',
@@ -652,7 +681,6 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
                 }
               },
             ),
-            const SizedBox(width: 16),
             PreviewImageUploadItem(
               label: '左侧',
               icon: Icons.arrow_back,
@@ -665,7 +693,6 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
                 }
               },
             ),
-            const SizedBox(width: 16),
             PreviewImageUploadItem(
               label: '右侧',
               icon: Icons.arrow_forward,
@@ -678,7 +705,6 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
                 }
               },
             ),
-            const SizedBox(width: 16),
             PreviewImageUploadItem(
               label: '背面',
               icon: Icons.person_outline,
@@ -687,6 +713,30 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
               onUploadComplete: (result) {
                 if (result.isSuccess) {
                   _backFileId = result.fileId;
+                  _notifyChanged();
+                }
+              },
+            ),
+            PreviewImageUploadItem(
+              label: '手部',
+              icon: Icons.pan_tool_outlined,
+              currentImageUrl: handUrl,
+              enabled: widget.enabled,
+              onUploadComplete: (result) {
+                if (result.isSuccess) {
+                  _handFileId = result.fileId;
+                  _notifyChanged();
+                }
+              },
+            ),
+            PreviewImageUploadItem(
+              label: '腿部',
+              icon: Icons.airline_seat_legroom_normal,
+              currentImageUrl: legUrl,
+              enabled: widget.enabled,
+              onUploadComplete: (result) {
+                if (result.isSuccess) {
+                  _legFileId = result.fileId;
                   _notifyChanged();
                 }
               },
@@ -704,6 +754,8 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
       'previewLeftId': _leftFileId,
       'previewRightId': _rightFileId,
       'previewBackId': _backFileId,
+      'previewHandId': _handFileId,
+      'previewLegId': _legFileId,
     });
   }
 
@@ -714,6 +766,8 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
     'previewLeftId': _leftFileId,
     'previewRightId': _rightFileId,
     'previewBackId': _backFileId,
+    'previewHandId': _handFileId,
+    'previewLegId': _legFileId,
   };
 
   /// 是否有任何上传
@@ -722,7 +776,9 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
       _frontFileId != null ||
       _leftFileId != null ||
       _rightFileId != null ||
-      _backFileId != null;
+      _backFileId != null ||
+      _handFileId != null ||
+      _legFileId != null;
 }
 
 /// 缩略图上传组件（较大尺寸）
