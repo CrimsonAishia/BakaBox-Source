@@ -56,6 +56,9 @@ class MapSubscriptionState extends Equatable {
   /// TTS 语速
   final double ttsSpeed;
 
+  /// TTS 说话人 ID（多音色模型）
+  final int ttsSpeakerId;
+
   /// 当前选中的 TTS 模型 ID
   final String selectedTtsModelId;
 
@@ -90,7 +93,8 @@ class MapSubscriptionState extends Equatable {
     this.ttsDownloadProgress = 0.0,
     this.ttsVolume = 0.8,
     this.ttsSpeed = 1.0,
-    this.selectedTtsModelId = 'vits-zh-aishell3',
+    this.ttsSpeakerId = 0,
+    this.selectedTtsModelId = 'vits-melo-tts-zh_en',
     this.cooldownSeconds = 15,
     this.isTtsTesting = false,
     this.ttsTestingPhase,
@@ -116,6 +120,7 @@ class MapSubscriptionState extends Equatable {
     double? ttsDownloadProgress,
     double? ttsVolume,
     double? ttsSpeed,
+    int? ttsSpeakerId,
     String? selectedTtsModelId,
     int? cooldownSeconds,
     bool? isTtsTesting,
@@ -141,6 +146,7 @@ class MapSubscriptionState extends Equatable {
       ttsDownloadProgress: ttsDownloadProgress ?? this.ttsDownloadProgress,
       ttsVolume: ttsVolume ?? this.ttsVolume,
       ttsSpeed: ttsSpeed ?? this.ttsSpeed,
+      ttsSpeakerId: ttsSpeakerId ?? this.ttsSpeakerId,
       selectedTtsModelId: selectedTtsModelId ?? this.selectedTtsModelId,
       cooldownSeconds: cooldownSeconds ?? this.cooldownSeconds,
       isTtsTesting: isTtsTesting ?? this.isTtsTesting,
@@ -169,6 +175,7 @@ class MapSubscriptionState extends Equatable {
     ttsDownloadProgress,
     ttsVolume,
     ttsSpeed,
+    ttsSpeakerId,
     selectedTtsModelId,
     cooldownSeconds,
     isTtsTesting,

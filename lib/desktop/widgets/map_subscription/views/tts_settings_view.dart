@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/bloc/map_subscription/map_subscription_bloc.dart';
+import '../../../../core/services/tts_service.dart';
 import '../../tts_download_dialog.dart';
 
 /// TTS 设置视图
@@ -42,6 +43,9 @@ class TtsSettingsView extends StatelessWidget {
                   const SizedBox(height: 14),
                   // 语速设置
                   _buildSpeedSlider(context),
+                  const SizedBox(height: 14),
+                  // 说话人选择（多音色模型）
+                  _buildSpeakerSelector(context),
                   const SizedBox(height: 18),
                   // 操作按钮
                   _buildActionButtons(context),
@@ -256,15 +260,15 @@ class TtsSettingsView extends StatelessWidget {
 
   /// 音量滑块
   Widget _buildVolumeSlider(BuildContext context) {
-    // 确保值在有效范围内（最大 300%）
-    final volumeValue = state.ttsVolume.clamp(0.0, 3.0);
+    // 确保值在有效范围内（最大 500%）
+    final volumeValue = state.ttsVolume.clamp(0.0, 5.0);
     return _buildSliderCard(
       context: context,
       icon: Icons.volume_up_rounded,
       title: '播报音量',
       value: volumeValue,
       min: 0.0,
-      max: 3.0,
+      max: 5.0,
       displayValue: '${(volumeValue * 100).round()}%',
       onChanged: (v) => context.read<MapSubscriptionBloc>().add(
             MapSubscriptionSetTtsVolume(volume: v),
@@ -287,6 +291,107 @@ class TtsSettingsView extends StatelessWidget {
       onChanged: (v) => context.read<MapSubscriptionBloc>().add(
             MapSubscriptionSetTtsSpeed(speed: v),
           ),
+    );
+  }
+
+  /// 说话人选择器（多音色模型）
+  Widget _buildSpeakerSelector(BuildContext context) {
+    // 获取当前选中模型的信息
+    final selectedModel = TtsService.availableModels.firstWhere(
+      (m) => m.id == state.selectedTtsModelId,
+      orElse: () => TtsService.availableModels.first,
+    );
+
+    // 如果模型只有一个说话人，不显示选择器
+    if (selectedModel.speakerCount <= 1) {
+      return const SizedBox.shrink();
+    }
+
+    final speakerId = state.ttsSpeakerId.clamp(0, selectedModel.speakerCount - 1);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : const Color(0xFFE5E7EB),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.person_rounded,
+                size: 18,
+                color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '说话人',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white : const Color(0xFF1F2937),
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '${speakerId + 1} / ${selectedModel.speakerCount}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF6366F1),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 4,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+              activeTrackColor: const Color(0xFF6366F1),
+              inactiveTrackColor: isDark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : const Color(0xFFE5E7EB),
+              thumbColor: const Color(0xFF6366F1),
+              overlayColor: const Color(0xFF6366F1).withValues(alpha: 0.1),
+            ),
+            child: Slider(
+              value: speakerId.toDouble(),
+              min: 0,
+              max: (selectedModel.speakerCount - 1).toDouble(),
+              divisions: selectedModel.speakerCount - 1,
+              onChanged: (v) => context.read<MapSubscriptionBloc>().add(
+                    MapSubscriptionSetTtsSpeakerId(speakerId: v.round()),
+                  ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '当前模型支持 ${selectedModel.speakerCount} 种音色，拖动滑块选择不同的说话人',
+            style: TextStyle(
+              fontSize: 11,
+              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -41,6 +41,7 @@ class MapSubscriptionBloc
     on<MapSubscriptionTtsProgressUpdate>(_onTtsProgressUpdate);
     on<MapSubscriptionSetTtsVolume>(_onSetTtsVolume);
     on<MapSubscriptionSetTtsSpeed>(_onSetTtsSpeed);
+    on<MapSubscriptionSetTtsSpeakerId>(_onSetTtsSpeakerId);
     on<MapSubscriptionSelectTtsModel>(_onSelectTtsModel);
     on<MapSubscriptionImportTtsModel>(_onImportTtsModel);
     on<MapSubscriptionTestTts>(_onTestTts);
@@ -71,6 +72,7 @@ class MapSubscriptionBloc
           isTtsModelDownloaded: _ttsService.isModelDownloaded,
           ttsVolume: _ttsService.volume,
           ttsSpeed: _ttsService.speed,
+          ttsSpeakerId: _ttsService.speakerId,
           selectedTtsModelId: _ttsService.selectedModelId,
           cooldownSeconds: _service.cooldownSeconds,
           isLoading: false,
@@ -352,6 +354,14 @@ class MapSubscriptionBloc
   ) async {
     await _ttsService.setSpeed(event.speed);
     emit(state.copyWith(ttsSpeed: event.speed));
+  }
+
+  Future<void> _onSetTtsSpeakerId(
+    MapSubscriptionSetTtsSpeakerId event,
+    Emitter<MapSubscriptionState> emit,
+  ) async {
+    await _ttsService.setSpeakerId(event.speakerId);
+    emit(state.copyWith(ttsSpeakerId: event.speakerId));
   }
 
   Future<void> _onSelectTtsModel(
