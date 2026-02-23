@@ -635,16 +635,28 @@ class _IssueCardState extends State<_IssueCard> {
   }
 
   Widget _buildStatusTag(IssueStatus status) {
-    final isOpen = status.isOpen;
+    final (color, bgColor) = _getStatusColors(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: isOpen ? const Color(0xFFDCFCE7) : const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(4)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 5, height: 5, decoration: BoxDecoration(color: isOpen ? const Color(0xFF16A34A) : const Color(0xFF6B7280), shape: BoxShape.circle)),
+        Container(width: 5, height: 5, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 4),
-        Text(status.label, style: TextStyle(color: isOpen ? const Color(0xFF16A34A) : const Color(0xFF6B7280), fontSize: 11, fontWeight: FontWeight.w500)),
+        Text(status.label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w500)),
       ]),
     );
+  }
+
+  (Color, Color) _getStatusColors(IssueStatus status) {
+    return switch (status) {
+      IssueStatus.open => (const Color(0xFF16A34A), const Color(0xFFDCFCE7)),       // 绿色 - 待处理
+      IssueStatus.confirmed => (const Color(0xFF2563EB), const Color(0xFFDBEAFE)),  // 蓝色 - 已确认
+      IssueStatus.inProgress => (const Color(0xFFD97706), const Color(0xFFFEF3C7)), // 橙色 - 处理中
+      IssueStatus.resolved => (const Color(0xFF0891B2), const Color(0xFFCFFAFE)),   // 青色 - 已解决
+      IssueStatus.wontfix => (const Color(0xFFDC2626), const Color(0xFFFEE2E2)),    // 红色 - 不予修复
+      IssueStatus.duplicate => (const Color(0xFF7C3AED), const Color(0xFFEDE9FE)),  // 紫色 - 重复问题
+      IssueStatus.closed => (const Color(0xFF6B7280), const Color(0xFFF3F4F6)),     // 灰色 - 已关闭
+    };
   }
 
   Widget _buildMetaItem(IconData icon, String text, bool isDark) {
@@ -854,8 +866,20 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
   }
 
   Widget _buildStatusTag(IssueStatus status) {
-    final isOpen = status.isOpen;
-    return Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: isOpen ? const Color(0xFFDCFCE7) : const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(6)), child: Text(status.label, style: TextStyle(color: isOpen ? const Color(0xFF16A34A) : const Color(0xFF6B7280), fontSize: 13, fontWeight: FontWeight.w500)));
+    final (color, bgColor) = _getStatusColors(status);
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(6)), child: Text(status.label, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w500)));
+  }
+
+  (Color, Color) _getStatusColors(IssueStatus status) {
+    return switch (status) {
+      IssueStatus.open => (const Color(0xFF16A34A), const Color(0xFFDCFCE7)),
+      IssueStatus.confirmed => (const Color(0xFF2563EB), const Color(0xFFDBEAFE)),
+      IssueStatus.inProgress => (const Color(0xFFD97706), const Color(0xFFFEF3C7)),
+      IssueStatus.resolved => (const Color(0xFF0891B2), const Color(0xFFCFFAFE)),
+      IssueStatus.wontfix => (const Color(0xFFDC2626), const Color(0xFFFEE2E2)),
+      IssueStatus.duplicate => (const Color(0xFF7C3AED), const Color(0xFFEDE9FE)),
+      IssueStatus.closed => (const Color(0xFF6B7280), const Color(0xFFF3F4F6)),
+    };
   }
 
   Widget _buildVoteButton(Issue issue, IssueDetailState state) {
