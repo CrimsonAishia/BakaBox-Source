@@ -200,7 +200,7 @@ class TtsService {
   }
 
   sherpa_onnx.OfflineTts? _tts;
-  double _volume = 0.8;
+  double _volume = 1.0; // 默认音量 100%（已归一化，100% 即正常响度）
   int _speakerId = 0;
   double _speed = 1.0;
   bool _isInitialized = false;
@@ -240,7 +240,8 @@ class TtsService {
 
   /// 加载设置（不初始化引擎，节省内存）
   Future<void> loadSettings() async {
-    _volume = StorageUtils.getDouble(_keyTtsVolume) ?? 0.8;
+    // 加载并 clamp 音量值（兼容老版本可能存储的超出范围的值）
+    _volume = (StorageUtils.getDouble(_keyTtsVolume) ?? 1.0).clamp(0.0, 2.0);
     _speakerId = StorageUtils.getInt(_keyTtsSpeakerId) ?? 0;
     _speed = StorageUtils.getDouble(_keyTtsSpeed) ?? 1.0;
     LogService.d(
@@ -435,9 +436,9 @@ class TtsService {
     }
   }
 
-  /// 设置音量（支持 0.0 - 5.0，即 0% - 500%）
+  /// 设置音量（支持 0.0 - 2.0，即 0% - 200%）
   Future<void> setVolume(double volume) async {
-    _volume = volume.clamp(0.0, 5.0);
+    _volume = volume.clamp(0.0, 2.0);
     try {
       await StorageUtils.setDouble(_keyTtsVolume, _volume);
       LogService.d('[TTS] 音量已设置: ${(_volume * 100).toInt()}%');
@@ -683,16 +684,25 @@ class TtsService {
         return null;
       }
 
-      // 调整音量（使用软限幅避免削波）
+      // 1. 先归一化：找到峰值并放大到接近满幅
+      double peak = 0.0;
+      for (int i = 0; i < audio.samples.length; i++) {
+        final abs = audio.samples[i].abs();
+        if (abs > peak) peak = abs;
+      }
+      
+      // 归一化增益（目标峰值 0.9，留余量避免削波）
+      final normalizeGain = peak > 0.001 ? (0.9 / peak) : 1.0;
+      
+      // 2. 应用归一化 + 用户音量
       final adjustedSamples = Float32List(audio.samples.length);
       for (int i = 0; i < audio.samples.length; i++) {
-        double sample = audio.samples[i] * volume;
-        // 软限幅：使用 tanh 函数平滑处理超出范围的值
+        double sample = audio.samples[i] * normalizeGain * volume;
+        // 软限幅：平滑处理超出范围的值（用户音量 > 100% 时可能触发）
         if (sample > 1.0 || sample < -1.0) {
-          // 对于超出范围的值，使用 tanh 进行软限幅
           sample = sample > 0 
-              ? (1.0 - 0.1 / (sample + 0.1))  // 正值软限幅
-              : -(1.0 - 0.1 / (-sample + 0.1)); // 负值软限幅
+              ? (1.0 - 0.1 / (sample + 0.1))
+              : -(1.0 - 0.1 / (-sample + 0.1));
         }
         adjustedSamples[i] = sample;
       }

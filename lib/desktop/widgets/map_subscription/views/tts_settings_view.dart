@@ -3,10 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/bloc/map_subscription/map_subscription_bloc.dart';
 import '../../../../core/services/tts_service.dart';
+import '../../common_scroll_indicator.dart';
 import '../../tts_download_dialog.dart';
 
 /// TTS 设置视图
-class TtsSettingsView extends StatelessWidget {
+class TtsSettingsView extends StatefulWidget {
   final bool isDark;
   final MapSubscriptionState state;
 
@@ -15,6 +16,45 @@ class TtsSettingsView extends StatelessWidget {
     required this.isDark,
     required this.state,
   });
+
+  @override
+  State<TtsSettingsView> createState() => _TtsSettingsViewState();
+}
+
+class _TtsSettingsViewState extends State<TtsSettingsView> {
+  final ScrollController _scrollController = ScrollController();
+  bool _canScrollUp = false;
+  bool _canScrollDown = false;
+
+  bool get isDark => widget.isDark;
+  MapSubscriptionState get state => widget.state;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_updateScrollIndicators);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollIndicators());
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_updateScrollIndicators);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _updateScrollIndicators() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    final canUp = position.pixels > 0;
+    final canDown = position.pixels < position.maxScrollExtent;
+    if (canUp != _canScrollUp || canDown != _canScrollDown) {
+      setState(() {
+        _canScrollUp = canUp;
+        _canScrollDown = canDown;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,32 +66,49 @@ class TtsSettingsView extends StatelessWidget {
         const Divider(height: 1),
         // 内容区
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // TTS 状态卡片
-                _buildStatusCard(context),
-                const SizedBox(height: 14),
-                // TTS 开关
-                if (state.isTtsModelDownloaded) ...[
-                  _buildTtsToggle(context),
-                  const SizedBox(height: 14),
-                  // 音量设置
-                  _buildVolumeSlider(context),
-                  const SizedBox(height: 14),
-                  // 语速设置
-                  _buildSpeedSlider(context),
-                  const SizedBox(height: 14),
-                  // 说话人选择（多音色模型）
-                  _buildSpeakerSelector(context),
-                  const SizedBox(height: 18),
-                  // 操作按钮
-                  _buildActionButtons(context),
-                ],
-              ],
-            ),
+          child: Stack(
+            children: [
+              SingleChildScrollView(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // TTS 状态卡片
+                    _buildStatusCard(context),
+                    const SizedBox(height: 14),
+                    // 音量/语速/说话人设置（模型下载后显示）
+                    if (state.isTtsModelDownloaded) ...[
+                      // 音量设置
+                      _buildVolumeSlider(context),
+                      const SizedBox(height: 14),
+                      // 语速设置
+                      _buildSpeedSlider(context),
+                      const SizedBox(height: 14),
+                      // 说话人选择（多音色模型）
+                      _buildSpeakerSelector(context),
+                      const SizedBox(height: 18),
+                      // 操作按钮
+                      _buildActionButtons(context),
+                    ],
+                  ],
+                ),
+              ),
+              if (_canScrollUp)
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: CommonScrollIndicator(isTop: true),
+                ),
+              if (_canScrollDown)
+                const Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: CommonScrollIndicator(isTop: false),
+                ),
+            ],
           ),
         ),
       ],
@@ -200,75 +257,17 @@ class TtsSettingsView extends StatelessWidget {
     );
   }
 
-  /// TTS 开关
-  Widget _buildTtsToggle(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.05)
-            : const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.08)
-              : const Color(0xFFE5E7EB),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.power_settings_new_rounded,
-            size: 20,
-            color: isDark ? Colors.white60 : const Color(0xFF6B7280),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '启用语音播报',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.white : const Color(0xFF1F2937),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '开启后，地图变更时会自动播报',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: state.isTtsEnabled,
-            onChanged: (v) => context.read<MapSubscriptionBloc>().add(
-                  MapSubscriptionToggleGlobalTts(enabled: v),
-                ),
-            activeTrackColor: const Color(0xFF6366F1),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// 音量滑块
   Widget _buildVolumeSlider(BuildContext context) {
-    // 确保值在有效范围内（最大 500%）
-    final volumeValue = state.ttsVolume.clamp(0.0, 5.0);
+    // 确保值在有效范围内（最大 200%）
+    final volumeValue = state.ttsVolume.clamp(0.0, 2.0);
     return _buildSliderCard(
       context: context,
       icon: Icons.volume_up_rounded,
       title: '播报音量',
       value: volumeValue,
       min: 0.0,
-      max: 5.0,
+      max: 2.0,
       displayValue: '${(volumeValue * 100).round()}%',
       onChanged: (v) => context.read<MapSubscriptionBloc>().add(
             MapSubscriptionSetTtsVolume(volume: v),

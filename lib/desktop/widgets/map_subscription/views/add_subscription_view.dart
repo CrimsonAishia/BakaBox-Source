@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/bloc/map_subscription/map_subscription_bloc.dart';
 import '../../../../core/widgets/map_contribution_dialog.dart';
+import '../../common_scroll_indicator.dart';
 import '../../map_subscription_card.dart';
 
 /// 添加订阅视图
@@ -26,11 +27,23 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _searchScrollController = ScrollController();
   Timer? _searchDebounce;
+  bool _canScrollUp = false;
+  bool _canScrollDown = false;
 
   @override
   void initState() {
     super.initState();
     _searchScrollController.addListener(_onSearchScroll);
+    _searchScrollController.addListener(_updateScrollIndicators);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollIndicators());
+  }
+
+  @override
+  void didUpdateWidget(AddSubscriptionView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.state.searchResults.length != widget.state.searchResults.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollIndicators());
+    }
   }
 
   @override
@@ -38,8 +51,22 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
     _searchController.dispose();
     _searchDebounce?.cancel();
     _searchScrollController.removeListener(_onSearchScroll);
+    _searchScrollController.removeListener(_updateScrollIndicators);
     _searchScrollController.dispose();
     super.dispose();
+  }
+
+  void _updateScrollIndicators() {
+    if (!_searchScrollController.hasClients) return;
+    final position = _searchScrollController.position;
+    final canUp = position.pixels > 0;
+    final canDown = position.pixels < position.maxScrollExtent;
+    if (canUp != _canScrollUp || canDown != _canScrollDown) {
+      setState(() {
+        _canScrollUp = canUp;
+        _canScrollDown = canDown;
+      });
+    }
   }
 
   void _onSearchScroll() {
@@ -260,37 +287,39 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
           ),
         ),
         Expanded(
-          child: ListView.builder(
-            controller: _searchScrollController,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            itemCount: state.searchResults.length + (state.hasMoreSearchResults ? 1 : 0),
-            itemBuilder: (context, index) {
-              if (index >= state.searchResults.length) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Center(
-                    child: state.isSearching
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Color(0xFF6366F1),
-                            ),
-                          )
-                        : TextButton(
-                            onPressed: () {
-                              context.read<MapSubscriptionBloc>().add(
-                                    MapSubscriptionSearchMaps(
-                                      query: _searchController.text,
-                                      loadMore: true,
-                                    ),
-                                  );
-                            },
-                            child: Text(
-                              '加载更多',
-                              style: TextStyle(
-                                fontSize: 13,
+          child: Stack(
+            children: [
+              ListView.builder(
+                controller: _searchScrollController,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                itemCount: state.searchResults.length + (state.hasMoreSearchResults ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index >= state.searchResults.length) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Center(
+                        child: state.isSearching
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Color(0xFF6366F1),
+                                ),
+                              )
+                            : TextButton(
+                                onPressed: () {
+                                  context.read<MapSubscriptionBloc>().add(
+                                        MapSubscriptionSearchMaps(
+                                          query: _searchController.text,
+                                          loadMore: true,
+                                        ),
+                                      );
+                                },
+                                child: Text(
+                                  '加载更多',
+                                  style: TextStyle(
+                                    fontSize: 13,
                                 color: isDark ? Colors.white54 : const Color(0xFF6B7280),
                               ),
                             ),
@@ -301,6 +330,22 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
               final result = state.searchResults[index];
               return _buildSearchResultTile(isDark, result);
             },
+          ),
+              if (_canScrollUp)
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: CommonScrollIndicator(isTop: true),
+                ),
+              if (_canScrollDown)
+                const Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: CommonScrollIndicator(isTop: false),
+                ),
+            ],
           ),
         ),
       ],
