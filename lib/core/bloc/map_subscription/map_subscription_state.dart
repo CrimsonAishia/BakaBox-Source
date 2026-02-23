@@ -91,7 +91,7 @@ class MapSubscriptionState extends Equatable {
     this.isTtsModelDownloaded = false,
     this.ttsDownloadStatus = TtsDownloadStatus.idle,
     this.ttsDownloadProgress = 0.0,
-    this.ttsVolume = 0.8,
+    this.ttsVolume = 1.0,
     this.ttsSpeed = 1.0,
     this.ttsSpeakerId = 0,
     this.selectedTtsModelId = 'vits-melo-tts-zh_en',

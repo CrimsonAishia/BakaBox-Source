@@ -4,10 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/bloc/map_subscription/map_subscription_bloc.dart';
 import '../../../../core/models/map_subscription_models.dart';
 import '../../../../core/widgets/map_contribution_dialog.dart';
+import '../../common_scroll_indicator.dart';
 import '../../map_subscription_card.dart';
 
 /// 订阅管理视图（已订阅列表）
-class SubscriptionView extends StatelessWidget {
+class SubscriptionView extends StatefulWidget {
   final bool isDark;
   final MapSubscriptionState state;
 
@@ -16,6 +17,53 @@ class SubscriptionView extends StatelessWidget {
     required this.isDark,
     required this.state,
   });
+
+  @override
+  State<SubscriptionView> createState() => _SubscriptionViewState();
+}
+
+class _SubscriptionViewState extends State<SubscriptionView> {
+  final ScrollController _scrollController = ScrollController();
+  bool _canScrollUp = false;
+  bool _canScrollDown = false;
+
+  bool get isDark => widget.isDark;
+  MapSubscriptionState get state => widget.state;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_updateScrollIndicators);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollIndicators());
+  }
+
+  @override
+  void didUpdateWidget(SubscriptionView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.state.subscriptions.length != widget.state.subscriptions.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollIndicators());
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_updateScrollIndicators);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _updateScrollIndicators() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    final canUp = position.pixels > 0;
+    final canDown = position.pixels < position.maxScrollExtent;
+    if (canUp != _canScrollUp || canDown != _canScrollDown) {
+      setState(() {
+        _canScrollUp = canUp;
+        _canScrollDown = canDown;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -216,13 +264,32 @@ class SubscriptionView extends StatelessWidget {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      itemCount: state.subscriptions.length,
-      itemBuilder: (context, index) {
-        final sub = state.subscriptions[index];
-        return _buildSubscriptionTile(context, isDark, sub);
-      },
+    return Stack(
+      children: [
+        ListView.builder(
+          controller: _scrollController,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          itemCount: state.subscriptions.length,
+          itemBuilder: (context, index) {
+            final sub = state.subscriptions[index];
+            return _buildSubscriptionTile(context, isDark, sub);
+          },
+        ),
+        if (_canScrollUp)
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: CommonScrollIndicator(isTop: true),
+          ),
+        if (_canScrollDown)
+          const Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: CommonScrollIndicator(isTop: false),
+          ),
+      ],
     );
   }
 

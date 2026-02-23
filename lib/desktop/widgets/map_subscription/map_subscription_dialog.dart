@@ -153,12 +153,16 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
               NavItemData(
                 icon: Icons.record_voice_over_rounded,
                 label: 'TTS 设置',
-                statusIcon: state.isTtsEnabled
-                    ? Icons.check_circle_rounded
-                    : Icons.cancel_rounded,
-                statusColor: state.isTtsEnabled
-                    ? const Color(0xFF10B981)
-                    : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                statusIcon: !state.isTtsModelDownloaded
+                    ? Icons.download_rounded
+                    : (state.isTtsEnabled
+                        ? Icons.check_circle_rounded
+                        : Icons.cancel_rounded),
+                statusColor: !state.isTtsModelDownloaded
+                    ? const Color(0xFFF59E0B)
+                    : (state.isTtsEnabled
+                        ? const Color(0xFF10B981)
+                        : (isDark ? Colors.white38 : const Color(0xFF9CA3AF))),
                 isSelected: _selectedNav == MapSubscriptionNavItem.tts,
                 onTap: () => setState(() {
                   _selectedNav = MapSubscriptionNavItem.tts;
@@ -267,6 +271,24 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
                   MapSubscriptionToggleNotification(enabled: v),
                 ),
           ),
+          const SizedBox(height: 8),
+          // TTS 语音播报开关
+          _buildSwitchRow(
+            isDark: isDark,
+            icon: state.isTtsEnabled
+                ? Icons.volume_up_rounded
+                : Icons.volume_off_rounded,
+            label: '语音',
+            tooltip: state.isTtsModelDownloaded 
+                ? '开启后地图变更时会语音播报'
+                : '需要先下载 TTS 模型',
+            value: state.isTtsEnabled,
+            activeColor: const Color(0xFFF59E0B),
+            enabled: state.isTtsModelDownloaded,
+            onChanged: (v) => context.read<MapSubscriptionBloc>().add(
+                  MapSubscriptionToggleGlobalTts(enabled: v),
+                ),
+          ),
         ],
       ),
     );
@@ -281,7 +303,11 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
     required bool value,
     required Color activeColor,
     required ValueChanged<bool> onChanged,
+    bool enabled = true,
   }) {
+    final isDisabled = !enabled;
+    final disabledColor = isDark ? Colors.white24 : const Color(0xFFD1D5DB);
+    
     return Tooltip(
       message: tooltip,
       child: Row(
@@ -289,9 +315,11 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
           Icon(
             icon,
             size: 14,
-            color: value
-                ? activeColor
-                : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+            color: isDisabled
+                ? disabledColor
+                : (value
+                    ? activeColor
+                    : (isDark ? Colors.white38 : const Color(0xFF9CA3AF))),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -299,7 +327,9 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: isDark ? Colors.white70 : const Color(0xFF4B5563),
+                color: isDisabled
+                    ? disabledColor
+                    : (isDark ? Colors.white70 : const Color(0xFF4B5563)),
               ),
             ),
           ),
@@ -310,7 +340,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
               fit: BoxFit.contain,
               child: Switch(
                 value: value,
-                onChanged: onChanged,
+                onChanged: isDisabled ? null : onChanged,
                 activeTrackColor: activeColor,
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
