@@ -69,6 +69,7 @@ class CategoryCard extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // 分类图标
                 _buildCategoryIcon(categoryColor),
@@ -185,15 +186,16 @@ class CategoryCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 分类名称
+        // 分类名称（允许最多两行）
         Text(
           category.modelName ?? '未知分类',
           style: TextStyle(
             fontWeight: FontWeight.w600,
             color: isDark ? Colors.white : const Color(0xFF111827),
             fontSize: 15,
+            height: 1.2,
           ),
-          maxLines: 1,
+          maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 2),
