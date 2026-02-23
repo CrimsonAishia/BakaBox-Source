@@ -51,6 +51,9 @@ class ScoreUploadService {
   /// 上次上传时间（用于防抖和心跳）
   DateTime? _lastUploadTime;
 
+  /// 是否已发送过 gameover 上传（避免重复发送 isFinal）
+  bool _gameoverUploaded = false;
+
   /// 心跳间隔（5分钟）
   static const Duration _heartbeatInterval = Duration(minutes: 5);
 
@@ -140,6 +143,7 @@ class ScoreUploadService {
     _lastCtScore = null;
     _lastTScore = null;
     _lastUploadTime = null;
+    _gameoverUploaded = false;
     _isInitialized = false;
 
     LogService.i('[ScoreUpload] 比分上传服务资源已释放');
@@ -183,6 +187,7 @@ class ScoreUploadService {
         _lastCtScore = null;
         _lastTScore = null;
         _lastUploadTime = null;
+        _gameoverUploaded = false;
         LogService.d('[ScoreUpload] 切换服务器，重置比分状态');
       }
 
@@ -202,6 +207,7 @@ class ScoreUploadService {
       _lastCtScore = null;
       _lastTScore = null;
       _lastUploadTime = null;
+      _gameoverUploaded = false;
     }
   }
 
@@ -230,6 +236,8 @@ class ScoreUploadService {
       _lastMapName = map.name;
       _lastCtScore = null;
       _lastTScore = null;
+      _lastUploadTime = null; // 重置上传时间，避免新地图第一次上传被防抖
+      _gameoverUploaded = false; // 重置 gameover 标记
     }
 
     // 获取当前比分
@@ -279,6 +287,7 @@ class ScoreUploadService {
       // 更新记录
       _lastCtScore = ctScore;
       _lastTScore = tScore;
+      _gameoverUploaded = true; // 标记已发送 gameover 上传
     }
     // 检查是否需要发送心跳（距离上次上传超过 5 分钟）
     else if (_shouldSendHeartbeat(ctScore: ctScore, tScore: tScore, mapName: mapName)) {
@@ -335,9 +344,11 @@ class ScoreUploadService {
   ///
   /// 上传条件（全部满足）：
   /// 1. 地图阶段为 "gameover"
-  /// 2. 比分发生变化（与上次记录不同）
-  /// 3. 距离上次上传 >= 3 秒（防抖）
-  /// 4. 服务器地址不为空
+  /// 2. 尚未发送过 gameover 上传（避免重复）
+  /// 3. 服务器地址不为空
+  ///
+  /// 注意：gameover 是终局状态，需要确保 isFinal 标记被发送到后端
+  /// 使用 _gameoverUploaded 标记避免重复上传，而不是依赖防抖
   bool _shouldUploadOnGameOver({
     required String? mapPhase,
     required int ctScore,
@@ -348,22 +359,12 @@ class ScoreUploadService {
       return false;
     }
 
-    // 条件 2: 比分必须发生变化
-    final scoreChanged = ctScore != _lastCtScore || tScore != _lastTScore;
-    if (!scoreChanged) {
+    // 条件 2: 尚未发送过 gameover 上传
+    if (_gameoverUploaded) {
       return false;
     }
 
-    // 条件 3: 防抖检查（3 秒）
-    if (_lastUploadTime != null) {
-      final elapsed = DateTime.now().difference(_lastUploadTime!);
-      if (elapsed.inSeconds < 3) {
-        LogService.d('[ScoreUpload] 跳过 gameover 上传: 防抖中（${elapsed.inSeconds}s < 3s）');
-        return false;
-      }
-    }
-
-    // 条件 4: 服务器地址不能为空
+    // 条件 3: 服务器地址不能为空
     if (_currentServerDomainAddress == null ||
         _currentServerDomainAddress!.isEmpty) {
       LogService.d('[ScoreUpload] 跳过 gameover 上传: 服务器地址为空');
