@@ -435,7 +435,7 @@ class MapSubscriptionService {
           mapName: subscription.mapName,
           mapNameCn: subscription.mapLabel,
           mapBackground: subscription.mapBackground,
-          autoDismissSeconds: 20,
+          autoDismissSeconds: 60,
           extraData: {
             'categoryName': categoryName,
             'currentPlayers': numPlayers,

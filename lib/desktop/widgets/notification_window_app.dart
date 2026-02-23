@@ -446,11 +446,12 @@ class _NotificationCardState extends State<_NotificationCard> {
     final notification = widget.notification;
     final isWarmup = notification.type == NotificationType.warmup;
     final isMapChange = notification.type == NotificationType.mapChange;
+    final isMapSubscription = notification.type == NotificationType.mapSubscription;
     final isUpdateLog = notification.type == NotificationType.updateLog;
 
     final borderColor = isWarmup
         ? const Color(0xFFFF9800)
-        : isMapChange
+        : isMapChange || isMapSubscription
             ? const Color(0xFF4CAF50)
             : isUpdateLog
                 ? const Color(0xFFF59E0B)
@@ -527,8 +528,8 @@ class _NotificationCardState extends State<_NotificationCard> {
                               // 标题行
                               Row(
                                 children: [
-                                  // 换图通知不显示标题，直接显示分类名+服务器名
-                                  if (!isMapChange)
+                                  // 换图通知和地图订阅不显示标题，直接显示分类名+服务器名
+                                  if (!isMapChange && !isMapSubscription)
                                     Text(
                                       // 热身通知显示动态倒计时
                                       isWarmup && widget.countdownSeconds > 0
@@ -547,7 +548,7 @@ class _NotificationCardState extends State<_NotificationCard> {
                                         ],
                                       ),
                                     ),
-                                  if (!isMapChange && notification.serverName != null)
+                                  if (!isMapChange && !isMapSubscription && notification.serverName != null)
                                     const SizedBox(width: 6),
                                   if (notification.serverName != null)
                                     Expanded(
@@ -566,7 +567,7 @@ class _NotificationCardState extends State<_NotificationCard> {
                                 child: isUpdateLog
                                     ? _buildUpdateLogContent(notification)
                                     : _buildMessageWidget(
-                                        notification, isWarmup, isMapChange),
+                                        notification, isWarmup, isMapChange || isMapSubscription),
                               ),
                             ],
                           ),
@@ -617,7 +618,7 @@ class _NotificationCardState extends State<_NotificationCard> {
   }
 
   Widget _buildMessageWidget(
-      NotificationData notification, bool isWarmup, bool isMapChange) {
+      NotificationData notification, bool isWarmup, bool showPlayers) {
     final textStyle = TextStyle(
       color: isWarmup ? const Color(0xFFFFE082) : Colors.white,
       fontSize: 15,
@@ -632,11 +633,11 @@ class _NotificationCardState extends State<_NotificationCard> {
       ],
     );
 
-    // 获取人数信息（仅换图通知显示）
+    // 获取人数信息
     final currentPlayers = notification.extraData?['currentPlayers'] as int?;
     final maxPlayers = notification.extraData?['maxPlayers'] as int?;
     final hasPlayers =
-        isMapChange && currentPlayers != null && maxPlayers != null;
+        showPlayers && currentPlayers != null && maxPlayers != null;
 
     // 根据人数比例计算颜色（与服务器卡片保持一致）
     Color primaryColor = const Color(0xFF0080FF); // 默认蓝色
