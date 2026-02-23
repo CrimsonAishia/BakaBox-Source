@@ -15,8 +15,9 @@ import '../../../core/models/server_models.dart';
 import '../../../core/services/source_server_service.dart';
 import '../../../core/utils/log_service.dart';
 import '../../../core/utils/map_runtime_utils.dart';
-import '../../../core/utils/map_utils.dart';
 import '../../../core/utils/storage_utils.dart';
+import '../../../core/widgets/map_background.dart';
+import '../common_scroll_indicator.dart';
 import 'server_card.dart';
 import 'server_card_skeleton.dart';
 import 'server_detail_dialog.dart';
@@ -78,13 +79,31 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   bool _showScreenshotPreview = false;
   bool _isTakingScreenshot = false;
 
+  // 滚动指示器状态
+  bool _canScrollUp = false;
+  bool _canScrollDown = false;
+
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_updateScrollIndicators);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
       _initializeData();
     });
+  }
+
+  void _updateScrollIndicators() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    final canUp = position.pixels > 0;
+    final canDown = position.pixels < position.maxScrollExtent;
+    if (canUp != _canScrollUp || canDown != _canScrollDown) {
+      setState(() {
+        _canScrollUp = canUp;
+        _canScrollDown = canDown;
+      });
+    }
   }
 
   void _initializeData() {
@@ -167,6 +186,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _scrollController.removeListener(_updateScrollIndicators);
     _scrollController.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -914,9 +934,6 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         teamScores?.tScore != null &&
         (teamScores!.ctScore! > 0 || teamScores.tScore! > 0);
     
-    // 获取地图背景图 URL（使用 MapUtils 统一处理，与原卡片一致）
-    final mapBgUrl = MapUtils.getMapImageUrl(mapName, mapUrl: server.mapInfo?.mapUrl);
-    
     // 是否显示运行时间（与原卡片逻辑一致）
     final showRuntime = data?.map != null && !isCustomServer;
     
@@ -936,23 +953,12 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         borderRadius: BorderRadius.circular(8),
         child: Stack(
           children: [
-            // 地图背景（使用 MapUtils 获取的 URL，可能是网络图片或本地资源）
+            // 地图背景（复用 MapBackground 组件，确保与正常卡片一致）
             Positioned.fill(
-              child: mapBgUrl.startsWith('assets/')
-                  ? Image.asset(
-                      mapBgUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _buildFallbackGradient(),
-                    )
-                  : Image.network(
-                      mapBgUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Image.asset(
-                        MapUtils.defaultMapBackground,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildFallbackGradient(),
-                      ),
-                    ),
+              child: MapBackground(
+                mapName: mapName,
+                imageUrl: server.mapInfo?.mapUrl,
+              ),
             ),
             // 渐变遮罩（与原卡片一致：从上到下）
             Positioned.fill(
@@ -1147,21 +1153,6 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  /// 构建兜底渐变背景（与 MapBackground 一致）
-  Widget _buildFallbackGradient() {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1E293B), Color(0xFF334155)],
-        ),
       ),
     );
   }
@@ -1971,14 +1962,45 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       return _buildLoadingList(isDark);
     }
 
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      itemCount: categoryServers.length,
-      itemBuilder: (context, index) {
-        final item = categoryServers[index];
-        return _buildCategorySection(isDark, item);
-      },
+    // 延迟检查滚动状态
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateScrollIndicators();
+    });
+
+    return Stack(
+      children: [
+        ListView.builder(
+          controller: _scrollController,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          itemCount: categoryServers.length,
+          itemBuilder: (context, index) {
+            final item = categoryServers[index];
+            return _buildCategorySection(isDark, item);
+          },
+        ),
+        // 顶部滚动指示器
+        if (_canScrollUp)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: CommonScrollIndicator(
+              isTop: true,
+              color: isDark ? Colors.white : const Color(0xFF6B7280),
+            ),
+          ),
+        // 底部滚动指示器
+        if (_canScrollDown)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: CommonScrollIndicator(
+              isTop: false,
+              color: isDark ? Colors.white : const Color(0xFF6B7280),
+            ),
+          ),
+      ],
     );
   }
 
