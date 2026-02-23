@@ -132,8 +132,8 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
                   currentIndex: _currentIndex,
                   onIndexChanged: _onIndexChanged,
                   items: _navigationItems,
-                  onFeedbackTap: () => _onIndexChanged(6),
-                  isFeedbackSelected: _currentIndex == 6,
+                  onFeedbackTap: () => _onIndexChanged(7),
+                  isFeedbackSelected: _currentIndex == 7,
                 ),
                 Expanded(
                   child: AnimatedBuilder(

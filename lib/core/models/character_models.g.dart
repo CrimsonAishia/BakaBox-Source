@@ -1006,3 +1006,134 @@ Map<String, dynamic> _$SpellCardTierListResponseToJson(
   'tiers': instance.tiers,
   'totalCount': instance.totalCount,
 };
+
+WeaponModelPreview _$WeaponModelPreviewFromJson(Map<String, dynamic> json) =>
+    WeaponModelPreview(
+      front: json['front'] as String?,
+      left: json['left'] as String?,
+      right: json['right'] as String?,
+      back: json['back'] as String?,
+      hand: json['hand'] as String?,
+    );
+
+Map<String, dynamic> _$WeaponModelPreviewToJson(WeaponModelPreview instance) =>
+    <String, dynamic>{
+      'front': instance.front,
+      'left': instance.left,
+      'right': instance.right,
+      'back': instance.back,
+      'hand': instance.hand,
+    };
+
+KnifeModel _$KnifeModelFromJson(Map<String, dynamic> json) => KnifeModel(
+  id: (json['id'] as num).toInt(),
+  characterId: (json['characterId'] as num?)?.toInt(),
+  characterName: json['characterName'] as String?,
+  name: json['name'] as String,
+  description: json['description'] as String?,
+  thumbnailUrl: json['thumbnailUrl'] as String?,
+  preview: json['preview'] == null
+      ? null
+      : WeaponModelPreview.fromJson(json['preview'] as Map<String, dynamic>),
+  glbModelUrl: json['glbModelUrl'] as String?,
+  acquisition: json['acquisition'] == null
+      ? null
+      : AcquisitionInfo.fromJson(json['acquisition'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$KnifeModelToJson(KnifeModel instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'characterId': instance.characterId,
+      'characterName': instance.characterName,
+      'name': instance.name,
+      'description': instance.description,
+      'thumbnailUrl': instance.thumbnailUrl,
+      'preview': instance.preview,
+      'glbModelUrl': instance.glbModelUrl,
+      'acquisition': instance.acquisition,
+    };
+
+GunModel _$GunModelFromJson(Map<String, dynamic> json) => GunModel(
+  id: (json['id'] as num).toInt(),
+  characterId: (json['characterId'] as num?)?.toInt(),
+  characterName: json['characterName'] as String?,
+  name: json['name'] as String,
+  description: json['description'] as String?,
+  thumbnailUrl: json['thumbnailUrl'] as String?,
+  preview: json['preview'] == null
+      ? null
+      : WeaponModelPreview.fromJson(json['preview'] as Map<String, dynamic>),
+  glbModelUrl: json['glbModelUrl'] as String?,
+  acquisition: json['acquisition'] == null
+      ? null
+      : AcquisitionInfo.fromJson(json['acquisition'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$GunModelToJson(GunModel instance) => <String, dynamic>{
+  'id': instance.id,
+  'characterId': instance.characterId,
+  'characterName': instance.characterName,
+  'name': instance.name,
+  'description': instance.description,
+  'thumbnailUrl': instance.thumbnailUrl,
+  'preview': instance.preview,
+  'glbModelUrl': instance.glbModelUrl,
+  'acquisition': instance.acquisition,
+};
+
+KnifeModelListResponse _$KnifeModelListResponseFromJson(
+  Map<String, dynamic> json,
+) => KnifeModelListResponse(
+  items: (json['items'] as List<dynamic>)
+      .map((e) => KnifeModel.fromJson(e as Map<String, dynamic>))
+      .toList(),
+);
+
+Map<String, dynamic> _$KnifeModelListResponseToJson(
+  KnifeModelListResponse instance,
+) => <String, dynamic>{'items': instance.items};
+
+GunModelListResponse _$GunModelListResponseFromJson(
+  Map<String, dynamic> json,
+) => GunModelListResponse(
+  items: (json['items'] as List<dynamic>)
+      .map((e) => GunModel.fromJson(e as Map<String, dynamic>))
+      .toList(),
+);
+
+Map<String, dynamic> _$GunModelListResponseToJson(
+  GunModelListResponse instance,
+) => <String, dynamic>{'items': instance.items};
+
+AllKnifeModelsResponse _$AllKnifeModelsResponseFromJson(
+  Map<String, dynamic> json,
+) => AllKnifeModelsResponse(
+  items: (json['items'] as List<dynamic>)
+      .map((e) => KnifeModel.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  totalCount: (json['totalCount'] as num).toInt(),
+);
+
+Map<String, dynamic> _$AllKnifeModelsResponseToJson(
+  AllKnifeModelsResponse instance,
+) => <String, dynamic>{
+  'items': instance.items,
+  'totalCount': instance.totalCount,
+};
+
+AllGunModelsResponse _$AllGunModelsResponseFromJson(
+  Map<String, dynamic> json,
+) => AllGunModelsResponse(
+  items: (json['items'] as List<dynamic>)
+      .map((e) => GunModel.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  totalCount: (json['totalCount'] as num).toInt(),
+);
+
+Map<String, dynamic> _$AllGunModelsResponseToJson(
+  AllGunModelsResponse instance,
+) => <String, dynamic>{
+  'items': instance.items,
+  'totalCount': instance.totalCount,
+};

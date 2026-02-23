@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../core/core.dart';
+import '../../core/widgets/disk_cached_image.dart';
 import '../widgets/character_gallery/character_gallery_theme.dart';
 import '../widgets/character_gallery/character_common_widgets.dart';
 import '../widgets/character_gallery/character_painters.dart';
 import '../widgets/character_gallery/character_hanafuda_card.dart';
 import '../widgets/character_gallery/character_sub_model_card.dart';
+import '../widgets/character_gallery/weapon_model_hanafuda_card.dart';
 import '../widgets/character_gallery/character_preview_card.dart';
 import '../widgets/character_gallery/character_skill_card.dart';
 import '../widgets/character_gallery/character_skeleton.dart';
@@ -205,7 +208,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     return BlocBuilder<CharacterGalleryBloc, CharacterGalleryState>(
       buildWhen: (prev, curr) =>
           prev.selectedCategory != curr.selectedCategory ||
-          prev.showSpellCardTierView != curr.showSpellCardTierView,
+          prev.showSpellCardTierView != curr.showSpellCardTierView ||
+          prev.showWeaponModelView != curr.showWeaponModelView,
       builder: (context, state) {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -215,7 +219,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 label: '東方',
                 isSelected:
                     state.selectedCategory == CharacterCategory.touhou &&
-                    !state.showSpellCardTierView,
+                    !state.showSpellCardTierView &&
+                    !state.showWeaponModelView,
                 onTap: () => context.read<CharacterGalleryBloc>().add(
                   ChangeCategory(CharacterCategory.touhou),
                 ),
@@ -225,7 +230,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 label: '僵尸',
                 isSelected:
                     state.selectedCategory == CharacterCategory.zombie &&
-                    !state.showSpellCardTierView,
+                    !state.showSpellCardTierView &&
+                    !state.showWeaponModelView,
                 onTap: () => context.read<CharacterGalleryBloc>().add(
                   ChangeCategory(CharacterCategory.zombie),
                 ),
@@ -235,7 +241,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 label: '普通',
                 isSelected:
                     state.selectedCategory == CharacterCategory.normal &&
-                    !state.showSpellCardTierView,
+                    !state.showSpellCardTierView &&
+                    !state.showWeaponModelView,
                 onTap: () => context.read<CharacterGalleryBloc>().add(
                   ChangeCategory(CharacterCategory.normal),
                 ),
@@ -261,6 +268,15 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 isSelected: state.showSpellCardTierView,
                 onTap: () => context.read<CharacterGalleryBloc>().add(
                   const LoadSpellCardTierList(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // 刀枪图鉴按钮
+              CategoryButton(
+                label: '刀枪',
+                isSelected: state.showWeaponModelView,
+                onTap: () => context.read<CharacterGalleryBloc>().add(
+                  const LoadAllWeaponModels(),
                 ),
               ),
               const Spacer(),
@@ -363,6 +379,11 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           return _buildSpellCardTierList(state);
         }
 
+        // 如果是刀枪图鉴视图，显示刀枪列表
+        if (state.showWeaponModelView) {
+          return _buildWeaponModelList(state);
+        }
+
         if (state.listLoadState == LoadState.loading &&
             state.characters.isEmpty) {
           return Center(
@@ -449,6 +470,37 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   Widget _buildDetailPanel() {
     return BlocBuilder<CharacterGalleryBloc, CharacterGalleryState>(
       builder: (context, state) {
+        // 如果是刀枪图鉴视图
+        if (state.showWeaponModelView) {
+          // 优先判断 loading 状态
+          if (state.detailLoadState == LoadState.loading) {
+            return const DetailPanelSkeleton();
+          }
+          // 如果有选中的角色（从刀枪模跳转过来），显示角色详情
+          if (state.selectedCharacter != null) {
+            return Stack(
+              children: [
+                KeyedSubtree(
+                  key: ValueKey(
+                    '${state.selectedCharacter!.id}_${state.selectedSubModelId}',
+                  ),
+                  child: _buildCharacterDetail(state),
+                ),
+                Positioned(
+                  right: 16,
+                  bottom: 16,
+                  child: BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, authState) =>
+                        _buildEditFab(state, authState.isAuthenticated),
+                  ),
+                ),
+              ],
+            );
+          }
+          // 否则显示刀枪模详情
+          return _buildWeaponModelDetailPanel(state);
+        }
+        
         // 优先判断 loading 状态，确保切换角色时显示骨架屏
         if (state.detailLoadState == LoadState.loading) {
           return const DetailPanelSkeleton();
@@ -478,6 +530,289 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           ],
         );
       },
+    );
+  }
+
+  /// 刀枪模详情面板（和角色详情一样的布局）
+  Widget _buildWeaponModelDetailPanel(CharacterGalleryState state) {
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+    
+    // 没有选中刀枪模时显示提示
+    if (state.selectedWeaponModelId == null) {
+      return _buildWeaponModelSelectHint(state);
+    }
+    
+    // 加载中显示骨架屏
+    if (state.weaponDetailLoadState == LoadState.loading) {
+      return const WeaponModelDetailSkeleton();
+    }
+    
+    // 获取选中的刀枪模
+    final knife = state.selectedKnifeModel;
+    final gun = state.selectedGunModel;
+    
+    if (knife == null && gun == null) {
+      return _buildWeaponModelSelectHint(state);
+    }
+    
+    final name = knife?.name ?? gun?.name ?? '';
+    final characterId = knife?.characterId ?? gun?.characterId;
+    final characterName = knife?.characterName ?? gun?.characterName;
+    final description = knife?.description ?? gun?.description;
+    final acquisition = knife?.acquisition ?? gun?.acquisition;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateDetailScrollIndicators();
+    });
+
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          controller: _detailScrollController,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 预览图区域（和角色详情一样）
+              _buildWeaponPreviewSection(state),
+              const SizedBox(height: 20),
+              // 名称区域
+              _buildWeaponNameSection(name, acquisition),
+              const SizedBox(height: 16),
+              // 专属角色区域（参照人物详情中专属刀模/枪模的布局）
+              if (characterId != null && characterName != null && characterName.isNotEmpty)
+                _buildExclusiveCharacterSection(
+                  characterId, 
+                  characterName, 
+                  state.weaponCharacterThumbnailUrl,
+                  state.weaponCharacterAcquisition,
+                  state.weaponCharacterLoadState,
+                ),
+              // 描述
+              if (description != null && description.isNotEmpty) ...[
+                SectionDivider(title: '描述'),
+                const SizedBox(height: 12),
+                Text(
+                  description,
+                  style: TextStyle(
+                    color: inkColor.withValues(alpha: 0.8),
+                    fontSize: 14,
+                    height: 1.8,
+                  ),
+                ),
+              ],
+              // 底部留白
+              const SizedBox(height: 60),
+            ],
+          ),
+        ),
+        if (_detailCanScrollUp)
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: ScrollIndicator(isTop: true),
+          ),
+        if (_detailCanScrollDown)
+          const Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: ScrollIndicator(isTop: false),
+          ),
+      ],
+    );
+  }
+
+  /// 刀枪模预览区域（和角色详情一样的布局）
+  Widget _buildWeaponPreviewSection(CharacterGalleryState state) {
+    final previewUrl = state.currentWeaponPreviewImage;
+    final knife = state.selectedKnifeModel;
+    final gun = state.selectedGunModel;
+    final preview = knife?.preview ?? gun?.preview;
+    final name = knife?.name ?? gun?.name ?? '';
+
+    return Column(
+      children: [
+        PreviewImageCard(
+          key: ValueKey(
+            'weapon_preview_${state.selectedWeaponModelId}_${state.weaponPreviewPosition}',
+          ),
+          imageUrl: previewUrl,
+          onTap: (previewUrl != null && previewUrl.isNotEmpty)
+              ? () => _showWeaponImageViewer(previewUrl, preview, name)
+              : null,
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            PreviewPositionButton(
+              position: 0,
+              label: '正',
+              isSelected: state.weaponPreviewPosition == 0,
+              onTap: () => context.read<CharacterGalleryBloc>().add(
+                const ChangeWeaponPreviewPosition(0),
+              ),
+            ),
+            PreviewPositionButton(
+              position: 1,
+              label: '左',
+              isSelected: state.weaponPreviewPosition == 1,
+              onTap: () => context.read<CharacterGalleryBloc>().add(
+                const ChangeWeaponPreviewPosition(1),
+              ),
+            ),
+            PreviewPositionButton(
+              position: 2,
+              label: '右',
+              isSelected: state.weaponPreviewPosition == 2,
+              onTap: () => context.read<CharacterGalleryBloc>().add(
+                const ChangeWeaponPreviewPosition(2),
+              ),
+            ),
+            PreviewPositionButton(
+              position: 3,
+              label: '背',
+              isSelected: state.weaponPreviewPosition == 3,
+              onTap: () => context.read<CharacterGalleryBloc>().add(
+                const ChangeWeaponPreviewPosition(3),
+              ),
+            ),
+            PreviewPositionButton(
+              position: 4,
+              label: '手',
+              isSelected: state.weaponPreviewPosition == 4,
+              onTap: () => context.read<CharacterGalleryBloc>().add(
+                const ChangeWeaponPreviewPosition(4),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// 刀枪模图片查看器
+  void _showWeaponImageViewer(String imageUrl, WeaponModelPreview? preview, String name) {
+    if (imageUrl.isEmpty) return;
+
+    final allImages = <String>[];
+    if (preview != null) {
+      allImages.addAll(preview.validUrls);
+    }
+
+    if (allImages.isEmpty) return;
+
+    final initialIndex = allImages.indexOf(imageUrl);
+    final safeIndex = initialIndex >= 0 ? initialIndex : 0;
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (context) => CharacterImageViewerDialog(
+        images: allImages,
+        initialIndex: safeIndex,
+        characterName: name,
+      ),
+    );
+  }
+
+  /// 刀枪模名称区域
+  Widget _buildWeaponNameSection(String name, AcquisitionInfo? acquisition) {
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '◆',
+          style: TextStyle(
+            color: CharacterGalleryTheme.getVermillion(context),
+            fontSize: 18,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            name,
+            style: TextStyle(
+              color: inkColor,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 2,
+            ),
+          ),
+        ),
+        // 来源途径徽章
+        if (acquisition != null && acquisition.type != AcquisitionType.unknown)
+          _AcquisitionSealBadge(acquisition: acquisition),
+      ],
+    );
+  }
+
+  /// 专属角色区域（参照人物详情中专属刀模/枪模的布局）
+  Widget _buildExclusiveCharacterSection(
+    int characterId, 
+    String characterName, 
+    String? characterThumbnailUrl,
+    AcquisitionInfo? characterAcquisition,
+    LoadState loadState,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionDivider(title: '专属角色'),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 120,
+          child: _ExclusiveCharacterCard(
+            characterId: characterId,
+            characterName: characterName,
+            characterThumbnailUrl: characterThumbnailUrl,
+            characterAcquisition: characterAcquisition,
+            isLoading: loadState == LoadState.loading,
+            onTap: () => _navigateToCharacterFromWeapon(characterId),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  /// 从刀枪模详情跳转到角色详情（保持刀枪图鉴视图，只切换详情面板）
+  void _navigateToCharacterFromWeapon(int characterId) {
+    // 加载角色详情，但保持刀枪图鉴视图
+    context.read<CharacterGalleryBloc>().add(
+      LoadCharacterDetailInWeaponView(characterId),
+    );
+  }
+
+  /// 刀枪模选择提示
+  Widget _buildWeaponModelSelectHint(CharacterGalleryState state) {
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+    final isKnife = state.weaponModelTab == 0;
+    
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isKnife ? MdiIcons.knife : MdiIcons.pistol,
+            size: 64,
+            color: scrollBrown.withValues(alpha: 0.3),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            '请从左侧选择${isKnife ? '刀模' : '枪模'}',
+            style: TextStyle(
+              color: inkColor.withValues(alpha: 0.6),
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -920,6 +1255,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 _buildSpellCardsSection(state),
               if (character.category == CharacterCategory.zombie)
                 _buildZombieSkillsSection(character),
+              // 刀模/枪模区域
+              _buildWeaponModelsSection(state),
               // 底部留白，避免被浮动按钮遮挡
               const SizedBox(height: 60),
             ],
@@ -1594,6 +1931,297 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     }
 
     return Wrap(spacing: 12, runSpacing: 6, children: statItems);
+  }
+
+  /// 刀枪图鉴列表视图（左侧列表区域）
+  Widget _buildWeaponModelList(CharacterGalleryState state) {
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+
+    return Column(
+      children: [
+        // 标签页切换
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              _buildWeaponTabButton(
+                label: '刀模',
+                icon: MdiIcons.knife,
+                isSelected: state.weaponModelTab == 0,
+                onTap: () => context.read<CharacterGalleryBloc>().add(
+                  const ChangeWeaponModelTab(0),
+                ),
+              ),
+              const SizedBox(width: 8),
+              _buildWeaponTabButton(
+                label: '枪模',
+                icon: MdiIcons.pistol,
+                isSelected: state.weaponModelTab == 1,
+                onTap: () => context.read<CharacterGalleryBloc>().add(
+                  const ChangeWeaponModelTab(1),
+                ),
+              ),
+              const Spacer(),
+              // 统计信息
+              Text(
+                '共 ${state.weaponModelTab == 0 ? state.allKnifeTotalCount : state.allGunTotalCount} 个',
+                style: TextStyle(
+                  color: inkColor.withValues(alpha: 0.6),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Container(height: 1, color: scrollBrown.withValues(alpha: 0.2)),
+        // 列表内容
+        Expanded(
+          child: _buildWeaponModelListContent(state),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWeaponTabButton({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+    final vermillion = CharacterGalleryTheme.getVermillion(context);
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? vermillion : scrollBrown.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 14,
+                color: isSelected ? Colors.white : inkColor.withValues(alpha: 0.7),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : inkColor.withValues(alpha: 0.7),
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeaponModelListContent(CharacterGalleryState state) {
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+    final vermillion = CharacterGalleryTheme.getVermillion(context);
+
+    if (state.allWeaponModelsLoadState == LoadState.loading) {
+      return Center(
+        child: CircularProgressIndicator(color: vermillion),
+      );
+    }
+
+    if (state.allWeaponModelsLoadState == LoadState.failure) {
+      return _buildErrorState(state.error ?? '加载失败');
+    }
+
+    final items = state.weaponModelTab == 0
+        ? state.allKnifeModels
+        : state.allGunModels;
+
+    if (items.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              state.weaponModelTab == 0 ? MdiIcons.knife : MdiIcons.pistol,
+              size: 48,
+              color: scrollBrown.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '暂无${state.weaponModelTab == 0 ? '刀模' : '枪模'}数据',
+              style: TextStyle(
+                color: inkColor.withValues(alpha: 0.6),
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 使用和角色列表一样的 GridView 布局
+    return GridView.builder(
+      controller: _listScrollController,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.72,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+      ),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        if (state.weaponModelTab == 0) {
+          final knife = items[index] as KnifeModel;
+          final isSelected = state.selectedWeaponModelId == knife.id && state.selectedWeaponIsKnife;
+          return WeaponModelHanafudaCard.fromKnifeModel(
+            model: knife,
+            isSelected: isSelected,
+            onTap: () => context.read<CharacterGalleryBloc>().add(
+              SelectWeaponModel(id: knife.id, isKnife: true),
+            ),
+          );
+        } else {
+          final gun = items[index] as GunModel;
+          final isSelected = state.selectedWeaponModelId == gun.id && !state.selectedWeaponIsKnife;
+          return WeaponModelHanafudaCard.fromGunModel(
+            model: gun,
+            isSelected: isSelected,
+            onTap: () => context.read<CharacterGalleryBloc>().add(
+              SelectWeaponModel(id: gun.id, isKnife: false),
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  /// 刀模/枪模区域
+  Widget _buildWeaponModelsSection(CharacterGalleryState state) {
+    final knifeModels = state.knifeModels;
+    final gunModels = state.gunModels;
+    final isLoading = state.weaponModelsLoadState == LoadState.loading;
+
+    // 如果没有刀模和枪模，不显示此区域
+    if (!isLoading && knifeModels.isEmpty && gunModels.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionDivider(title: '专属装备'),
+        const SizedBox(height: 12),
+        if (isLoading)
+          _buildWeaponModelsLoading()
+        else ...[
+          // 刀模区域
+          if (knifeModels.isNotEmpty) ...[
+            _WeaponSectionTitle(
+              title: '专属刀模',
+              icon: MdiIcons.knife,
+              count: knifeModels.length,
+            ),
+            const SizedBox(height: 10),
+            _buildWeaponModelsWrap(knifeModels, true),
+            const SizedBox(height: 16),
+          ],
+          // 枪模区域
+          if (gunModels.isNotEmpty) ...[
+            _WeaponSectionTitle(
+              title: '专属枪模',
+              icon: MdiIcons.pistol,
+              count: gunModels.length,
+            ),
+            const SizedBox(height: 10),
+            _buildWeaponModelsWrap(gunModels, false),
+          ],
+        ],
+      ],
+    );
+  }
+
+  /// 刀模/枪模加载中骨架屏
+  Widget _buildWeaponModelsLoading() {
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: Center(
+        child: CircularProgressIndicator(
+          color: scrollBrown,
+          strokeWidth: 2,
+        ),
+      ),
+    );
+  }
+
+  /// 刀模/枪模 Wrap 布局
+  Widget _buildWeaponModelsWrap(List<dynamic> models, bool isKnife) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: models.map((model) {
+        if (isKnife) {
+          final knife = model as KnifeModel;
+          return SizedBox(
+            height: 120,
+            child: SubModelCard.fromKnifeModel(
+              model: knife,
+              onTap: () => _showWeaponModelImages(knife.name, knife.thumbnailUrl, knife.preview),
+            ),
+          );
+        } else {
+          final gun = model as GunModel;
+          return SizedBox(
+            height: 120,
+            child: SubModelCard.fromGunModel(
+              model: gun,
+              onTap: () => _showWeaponModelImages(gun.name, gun.thumbnailUrl, gun.preview),
+            ),
+          );
+        }
+      }).toList(),
+    );
+  }
+
+  /// 显示刀模/枪模图片查看器
+  void _showWeaponModelImages(String name, String? thumbnailUrl, WeaponModelPreview? preview) {
+    final images = <String>[];
+    
+    // 添加缩略图
+    if (thumbnailUrl != null && thumbnailUrl.isNotEmpty) {
+      images.add(thumbnailUrl);
+    }
+    
+    // 添加多角度预览图
+    if (preview != null) {
+      if (preview.front != null && preview.front!.isNotEmpty) images.add(preview.front!);
+      if (preview.left != null && preview.left!.isNotEmpty) images.add(preview.left!);
+      if (preview.right != null && preview.right!.isNotEmpty) images.add(preview.right!);
+      if (preview.back != null && preview.back!.isNotEmpty) images.add(preview.back!);
+      if (preview.hand != null && preview.hand!.isNotEmpty) images.add(preview.hand!);
+    }
+    
+    if (images.isEmpty) return;
+    
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (context) => CharacterImageViewerDialog(
+        images: images,
+        characterName: name,
+      ),
+    );
   }
 
   Widget _buildPreviewSection(CharacterGalleryState state) {
@@ -2539,7 +3167,7 @@ class _SubModelScrollableListState extends State<_SubModelScrollableList> {
                 final isSelected =
                     widget.selectedSubModelId == subModel.id ||
                     (widget.selectedSubModelId == null && subModel.isDefault);
-                return SubModelCard(
+                return SubModelCard.fromSubModel(
                   subModel: subModel,
                   isSelected: isSelected,
                   onTap: () => widget.onSelect(subModel.id),
@@ -2789,5 +3417,246 @@ class _TierHeaderDelegate extends SliverPersistentHeaderDelegate {
         isExpanded != oldDelegate.isExpanded ||
         tierColor != oldDelegate.tierColor ||
         washiColor != oldDelegate.washiColor;
+  }
+}
+
+/// 刀模/枪模区域标题
+class _WeaponSectionTitle extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final int count;
+
+  const _WeaponSectionTitle({
+    required this.title,
+    required this.icon,
+    required this.count,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: scrollBrown),
+        const SizedBox(width: 6),
+        Text(
+          title,
+          style: TextStyle(
+            color: inkColor,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: scrollBrown.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            '$count',
+            style: TextStyle(
+              color: scrollBrown,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 专属角色卡片（用于刀枪模详情页面，参照 SubModelCard 的样式）
+class _ExclusiveCharacterCard extends StatefulWidget {
+  final int characterId;
+  final String characterName;
+  final String? characterThumbnailUrl;
+  final AcquisitionInfo? characterAcquisition;
+  final bool isLoading;
+  final VoidCallback onTap;
+
+  const _ExclusiveCharacterCard({
+    required this.characterId,
+    required this.characterName,
+    this.characterThumbnailUrl,
+    this.characterAcquisition,
+    this.isLoading = false,
+    required this.onTap,
+  });
+
+  @override
+  State<_ExclusiveCharacterCard> createState() => _ExclusiveCharacterCardState();
+}
+
+class _ExclusiveCharacterCardState extends State<_ExclusiveCharacterCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final washiColor = CharacterGalleryTheme.getWashiColor(context);
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+    final cardBg = CharacterGalleryTheme.getOverlayColor(context, alpha: 0.5);
+
+    final borderColor = _isHovered ? scrollBrown : scrollBrown.withValues(alpha: 0.4);
+    final borderWidth = _isHovered ? 1.5 : 1.0;
+    final elevation = _isHovered ? 2.0 : 0.0;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 90,
+          decoration: BoxDecoration(
+            color: _isHovered ? washiColor : cardBg,
+            border: Border.all(color: borderColor, width: borderWidth),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: elevation > 0
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: elevation * 2,
+                      offset: Offset(0, elevation / 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Column(
+            children: [
+              // 缩略图
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(7),
+                  ),
+                  child: widget.isLoading
+                      ? Container(
+                          color: scrollBrown.withValues(alpha: 0.1),
+                          child: Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: CharacterGalleryTheme.getVermillion(context),
+                              ),
+                            ),
+                          ),
+                        )
+                      : widget.characterThumbnailUrl != null && widget.characterThumbnailUrl!.isNotEmpty
+                          ? DiskCachedImage(
+                              imageUrl: widget.characterThumbnailUrl!,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                            )
+                          : Container(
+                              color: scrollBrown.withValues(alpha: 0.1),
+                              child: Center(
+                                child: Icon(
+                                  Icons.person_rounded,
+                                  color: _isHovered 
+                                      ? CharacterGalleryTheme.getVermillion(context)
+                                      : scrollBrown.withValues(alpha: 0.4),
+                                  size: 32,
+                                ),
+                              ),
+                            ),
+                ),
+              ),
+              // 名称和获取途径
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                decoration: const BoxDecoration(
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(7),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      widget.characterName,
+                      style: TextStyle(
+                        color: inkColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.normal,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 2),
+                    widget.isLoading
+                        ? Text(
+                            '加载中...',
+                            style: TextStyle(
+                              color: inkColor.withValues(alpha: 0.5),
+                              fontSize: 9,
+                            ),
+                          )
+                        : _CharacterAcquisitionTag(
+                            acquisition: widget.characterAcquisition,
+                          ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 角色获取途径标签（紧凑版，和 SubModelCard 一样）
+class _CharacterAcquisitionTag extends StatelessWidget {
+  final AcquisitionInfo? acquisition;
+
+  const _CharacterAcquisitionTag({this.acquisition});
+
+  @override
+  Widget build(BuildContext context) {
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+
+    final (text, color) = acquisition == null || acquisition!.type == AcquisitionType.unknown
+        ? ('未知', inkColor.withValues(alpha: 0.5))
+        : switch (acquisition!.type) {
+            AcquisitionType.gold => (
+              '${acquisition!.cost ?? 0} 金',
+              CharacterGalleryTheme.getGold(context),
+            ),
+            AcquisitionType.points => (
+              '${acquisition!.cost ?? 0} 点',
+              CharacterGalleryTheme.getVermillion(context),
+            ),
+            AcquisitionType.custom => (
+              acquisition!.customSource ?? '特殊',
+              CharacterGalleryTheme.getCustomSourceColor(context),
+            ),
+            AcquisitionType.unknown => (
+              '未知',
+              inkColor.withValues(alpha: 0.5),
+            ),
+          };
+    return Text(
+      text,
+      style: TextStyle(
+        color: color,
+        fontSize: 9,
+        fontWeight: FontWeight.w500,
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      textAlign: TextAlign.center,
+    );
   }
 }

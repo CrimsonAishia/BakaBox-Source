@@ -19,6 +19,20 @@ class CharacterGalleryState extends Equatable {
   // 是否显示符卡评级视图
   final bool showSpellCardTierView;
   
+  // 是否显示刀枪图鉴视图
+  final bool showWeaponModelView;
+  
+  // 刀枪图鉴当前标签页 (0=刀模, 1=枪模)
+  final int weaponModelTab;
+  
+  // 全部刀模/枪模列表状态
+  final LoadState allWeaponModelsLoadState;
+  final List<KnifeModel> allKnifeModels;
+  final List<GunModel> allGunModels;
+  final int allKnifeTotalCount;
+  final int allGunTotalCount;
+  final String? weaponModelKeyword;
+  
   // 符卡评级列表状态
   final LoadState spellCardTierLoadState;
   final List<SpellCardTierGroup> spellCardTierGroups;
@@ -59,6 +73,22 @@ class CharacterGalleryState extends Equatable {
   // 符卡评级展开状态（key: tier字符串, value: 是否展开）
   final Set<String> expandedTiers;
   
+  // 刀模/枪模状态
+  final LoadState weaponModelsLoadState;
+  final List<KnifeModel> knifeModels;
+  final List<GunModel> gunModels;
+  
+  // 选中的刀枪模（用于详情显示）
+  final int? selectedWeaponModelId;
+  final bool selectedWeaponIsKnife; // true=刀模, false=枪模
+  final int weaponPreviewPosition; // 0=front, 1=left, 2=right, 3=back, 4=hand
+  final LoadState weaponDetailLoadState; // 刀枪模详情加载状态
+  
+  // 刀枪模专属角色信息（通过 API 获取）
+  final LoadState weaponCharacterLoadState;
+  final String? weaponCharacterThumbnailUrl;
+  final AcquisitionInfo? weaponCharacterAcquisition;
+  
   // 错误信息
   final String? error;
 
@@ -72,6 +102,14 @@ class CharacterGalleryState extends Equatable {
     this.keyword,
     this.orderBy = 'id ASC',
     this.showSpellCardTierView = false,
+    this.showWeaponModelView = false,
+    this.weaponModelTab = 0,
+    this.allWeaponModelsLoadState = LoadState.initial,
+    this.allKnifeModels = const [],
+    this.allGunModels = const [],
+    this.allKnifeTotalCount = 0,
+    this.allGunTotalCount = 0,
+    this.weaponModelKeyword,
     this.spellCardTierLoadState = LoadState.initial,
     this.spellCardTierGroups = const [],
     this.spellCardTierTotalCount = 0,
@@ -94,6 +132,16 @@ class CharacterGalleryState extends Equatable {
     this.deleteRequestError,
     this.selectedSpellCardId,
     this.expandedTiers = const {},
+    this.weaponModelsLoadState = LoadState.initial,
+    this.knifeModels = const [],
+    this.gunModels = const [],
+    this.selectedWeaponModelId,
+    this.selectedWeaponIsKnife = true,
+    this.weaponPreviewPosition = 0,
+    this.weaponDetailLoadState = LoadState.initial,
+    this.weaponCharacterLoadState = LoadState.initial,
+    this.weaponCharacterThumbnailUrl,
+    this.weaponCharacterAcquisition,
     this.error,
   });
 
@@ -109,6 +157,15 @@ class CharacterGalleryState extends Equatable {
     bool clearKeyword = false,
     String? orderBy,
     bool? showSpellCardTierView,
+    bool? showWeaponModelView,
+    int? weaponModelTab,
+    LoadState? allWeaponModelsLoadState,
+    List<KnifeModel>? allKnifeModels,
+    List<GunModel>? allGunModels,
+    int? allKnifeTotalCount,
+    int? allGunTotalCount,
+    String? weaponModelKeyword,
+    bool clearWeaponModelKeyword = false,
     LoadState? spellCardTierLoadState,
     List<SpellCardTierGroup>? spellCardTierGroups,
     int? spellCardTierTotalCount,
@@ -139,6 +196,18 @@ class CharacterGalleryState extends Equatable {
     int? selectedSpellCardId,
     bool clearSelectedSpellCardId = false,
     Set<String>? expandedTiers,
+    LoadState? weaponModelsLoadState,
+    List<KnifeModel>? knifeModels,
+    List<GunModel>? gunModels,
+    int? selectedWeaponModelId,
+    bool clearSelectedWeaponModel = false,
+    bool? selectedWeaponIsKnife,
+    int? weaponPreviewPosition,
+    LoadState? weaponDetailLoadState,
+    LoadState? weaponCharacterLoadState,
+    String? weaponCharacterThumbnailUrl,
+    AcquisitionInfo? weaponCharacterAcquisition,
+    bool clearWeaponCharacter = false,
     String? error,
   }) {
     return CharacterGalleryState(
@@ -151,6 +220,14 @@ class CharacterGalleryState extends Equatable {
       keyword: clearKeyword ? null : (keyword ?? this.keyword),
       orderBy: orderBy ?? this.orderBy,
       showSpellCardTierView: showSpellCardTierView ?? this.showSpellCardTierView,
+      showWeaponModelView: showWeaponModelView ?? this.showWeaponModelView,
+      weaponModelTab: weaponModelTab ?? this.weaponModelTab,
+      allWeaponModelsLoadState: allWeaponModelsLoadState ?? this.allWeaponModelsLoadState,
+      allKnifeModels: allKnifeModels ?? this.allKnifeModels,
+      allGunModels: allGunModels ?? this.allGunModels,
+      allKnifeTotalCount: allKnifeTotalCount ?? this.allKnifeTotalCount,
+      allGunTotalCount: allGunTotalCount ?? this.allGunTotalCount,
+      weaponModelKeyword: clearWeaponModelKeyword ? null : (weaponModelKeyword ?? this.weaponModelKeyword),
       spellCardTierLoadState: spellCardTierLoadState ?? this.spellCardTierLoadState,
       spellCardTierGroups: spellCardTierGroups ?? this.spellCardTierGroups,
       spellCardTierTotalCount: spellCardTierTotalCount ?? this.spellCardTierTotalCount,
@@ -173,6 +250,16 @@ class CharacterGalleryState extends Equatable {
       deleteRequestError: clearDeleteRequestError ? null : (deleteRequestError ?? this.deleteRequestError),
       selectedSpellCardId: clearSelectedSpellCardId ? null : (selectedSpellCardId ?? this.selectedSpellCardId),
       expandedTiers: expandedTiers ?? this.expandedTiers,
+      weaponModelsLoadState: weaponModelsLoadState ?? this.weaponModelsLoadState,
+      knifeModels: knifeModels ?? this.knifeModels,
+      gunModels: gunModels ?? this.gunModels,
+      selectedWeaponModelId: clearSelectedWeaponModel ? null : (selectedWeaponModelId ?? this.selectedWeaponModelId),
+      selectedWeaponIsKnife: selectedWeaponIsKnife ?? this.selectedWeaponIsKnife,
+      weaponPreviewPosition: clearSelectedWeaponModel ? 0 : (weaponPreviewPosition ?? this.weaponPreviewPosition),
+      weaponDetailLoadState: clearSelectedWeaponModel ? LoadState.initial : (weaponDetailLoadState ?? this.weaponDetailLoadState),
+      weaponCharacterLoadState: clearWeaponCharacter ? LoadState.initial : (weaponCharacterLoadState ?? this.weaponCharacterLoadState),
+      weaponCharacterThumbnailUrl: clearWeaponCharacter ? null : (weaponCharacterThumbnailUrl ?? this.weaponCharacterThumbnailUrl),
+      weaponCharacterAcquisition: clearWeaponCharacter ? null : (weaponCharacterAcquisition ?? this.weaponCharacterAcquisition),
       error: error,
     );
   }
@@ -205,15 +292,53 @@ class CharacterGalleryState extends Equatable {
     };
   }
 
+  /// 获取当前选中的刀模
+  KnifeModel? get selectedKnifeModel {
+    if (selectedWeaponModelId == null || !selectedWeaponIsKnife) return null;
+    return allKnifeModels.cast<KnifeModel?>().firstWhere(
+      (k) => k?.id == selectedWeaponModelId,
+      orElse: () => null,
+    );
+  }
+
+  /// 获取当前选中的枪模
+  GunModel? get selectedGunModel {
+    if (selectedWeaponModelId == null || selectedWeaponIsKnife) return null;
+    return allGunModels.cast<GunModel?>().firstWhere(
+      (g) => g?.id == selectedWeaponModelId,
+      orElse: () => null,
+    );
+  }
+
+  /// 获取当前刀枪模的预览图
+  String? get currentWeaponPreviewImage {
+    final preview = selectedKnifeModel?.preview ?? selectedGunModel?.preview;
+    if (preview == null) return null;
+    return switch (weaponPreviewPosition) {
+      0 => preview.front,
+      1 => preview.left,
+      2 => preview.right,
+      3 => preview.back,
+      4 => preview.hand,
+      _ => preview.front,
+    };
+  }
+
   @override
   List<Object?> get props => [
     listLoadState, characters, totalCount, currentPage, hasMore,
     selectedCategory, keyword, orderBy, showSpellCardTierView,
-    spellCardTierLoadState, spellCardTierGroups, spellCardTierTotalCount,
-    spellCardTierFilter, detailLoadState, loadingCharacterId, selectedCharacter,
-    selectedSubModelId, previewPosition, spellCardsLoadState, spellCards,
-    submitEditState, submitEditError, myEditRequestsLoadState,
-    myEditRequests, myEditRequestsTotal, hasPendingRequest, pendingRequestId,
-    deleteRequestState, deleteRequestError, selectedSpellCardId, expandedTiers, error,
+    showWeaponModelView, weaponModelTab, allWeaponModelsLoadState,
+    allKnifeModels, allGunModels, allKnifeTotalCount, allGunTotalCount,
+    weaponModelKeyword, spellCardTierLoadState, spellCardTierGroups,
+    spellCardTierTotalCount, spellCardTierFilter, detailLoadState,
+    loadingCharacterId, selectedCharacter, selectedSubModelId, previewPosition,
+    spellCardsLoadState, spellCards, submitEditState, submitEditError,
+    myEditRequestsLoadState, myEditRequests, myEditRequestsTotal,
+    hasPendingRequest, pendingRequestId, deleteRequestState, deleteRequestError,
+    selectedSpellCardId, expandedTiers, weaponModelsLoadState, knifeModels,
+    gunModels, selectedWeaponModelId, selectedWeaponIsKnife, weaponPreviewPosition,
+    weaponDetailLoadState, weaponCharacterLoadState, weaponCharacterThumbnailUrl, weaponCharacterAcquisition,
+    error,
   ];
 }
