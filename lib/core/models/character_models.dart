@@ -1459,3 +1459,191 @@ class SpellCardTierListResponse extends Equatable {
   @override
   List<Object?> get props => [tiers, totalCount];
 }
+
+
+// ============ 刀模/枪模 API 相关模型 ============
+
+/// 武器模型预览图集
+@JsonSerializable()
+class WeaponModelPreview extends Equatable {
+  final String? front;
+  final String? left;
+  final String? right;
+  final String? back;
+  final String? hand;
+
+  const WeaponModelPreview({
+    this.front,
+    this.left,
+    this.right,
+    this.back,
+    this.hand,
+  });
+
+  factory WeaponModelPreview.fromJson(Map<String, dynamic> json) =>
+      _$WeaponModelPreviewFromJson(json);
+  Map<String, dynamic> toJson() => _$WeaponModelPreviewToJson(this);
+
+  /// 获取所有有效的预览图URL列表
+  List<String> get validUrls => [
+    if (front != null && front!.isNotEmpty) front!,
+    if (left != null && left!.isNotEmpty) left!,
+    if (right != null && right!.isNotEmpty) right!,
+    if (back != null && back!.isNotEmpty) back!,
+    if (hand != null && hand!.isNotEmpty) hand!,
+  ];
+
+  /// 是否有任何预览图
+  bool get hasAnyPreview => validUrls.isNotEmpty;
+
+  @override
+  List<Object?> get props => [front, left, right, back, hand];
+}
+
+/// 刀模
+@JsonSerializable()
+class KnifeModel extends Equatable {
+  final int id;
+  final int? characterId; // 角色专属刀模才有此字段
+  final String? characterName; // 角色名称（列表API返回）
+  final String name;
+  final String? description;
+  final String? thumbnailUrl;
+  final WeaponModelPreview? preview; // 多角度预览图
+  final String? glbModelUrl;
+  final AcquisitionInfo? acquisition;
+
+  const KnifeModel({
+    required this.id,
+    this.characterId,
+    this.characterName,
+    required this.name,
+    this.description,
+    this.thumbnailUrl,
+    this.preview,
+    this.glbModelUrl,
+    this.acquisition,
+  });
+
+  factory KnifeModel.fromJson(Map<String, dynamic> json) =>
+      _$KnifeModelFromJson(json);
+  Map<String, dynamic> toJson() => _$KnifeModelToJson(this);
+
+  @override
+  List<Object?> get props => [
+    id,
+    characterId,
+    characterName,
+    name,
+    description,
+    thumbnailUrl,
+    preview,
+    glbModelUrl,
+    acquisition,
+  ];
+}
+
+/// 枪模
+@JsonSerializable()
+class GunModel extends Equatable {
+  final int id;
+  final int? characterId; // 角色专属枪模才有此字段
+  final String? characterName; // 角色名称（列表API返回）
+  final String name;
+  final String? description;
+  final String? thumbnailUrl;
+  final WeaponModelPreview? preview; // 多角度预览图
+  final String? glbModelUrl;
+  final AcquisitionInfo? acquisition;
+
+  const GunModel({
+    required this.id,
+    this.characterId,
+    this.characterName,
+    required this.name,
+    this.description,
+    this.thumbnailUrl,
+    this.preview,
+    this.glbModelUrl,
+    this.acquisition,
+  });
+
+  factory GunModel.fromJson(Map<String, dynamic> json) =>
+      _$GunModelFromJson(json);
+  Map<String, dynamic> toJson() => _$GunModelToJson(this);
+
+  @override
+  List<Object?> get props => [
+    id,
+    characterId,
+    characterName,
+    name,
+    description,
+    thumbnailUrl,
+    preview,
+    glbModelUrl,
+    acquisition,
+  ];
+}
+
+/// 刀模列表响应（角色专属/通用）
+@JsonSerializable()
+class KnifeModelListResponse extends Equatable {
+  final List<KnifeModel> items;
+
+  const KnifeModelListResponse({required this.items});
+
+  factory KnifeModelListResponse.fromJson(Map<String, dynamic> json) =>
+      _$KnifeModelListResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$KnifeModelListResponseToJson(this);
+
+  @override
+  List<Object?> get props => [items];
+}
+
+/// 枪模列表响应（角色专属/通用）
+@JsonSerializable()
+class GunModelListResponse extends Equatable {
+  final List<GunModel> items;
+
+  const GunModelListResponse({required this.items});
+
+  factory GunModelListResponse.fromJson(Map<String, dynamic> json) =>
+      _$GunModelListResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$GunModelListResponseToJson(this);
+
+  @override
+  List<Object?> get props => [items];
+}
+
+/// 所有刀模列表响应（带总数）
+@JsonSerializable()
+class AllKnifeModelsResponse extends Equatable {
+  final List<KnifeModel> items;
+  final int totalCount;
+
+  const AllKnifeModelsResponse({required this.items, required this.totalCount});
+
+  factory AllKnifeModelsResponse.fromJson(Map<String, dynamic> json) =>
+      _$AllKnifeModelsResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$AllKnifeModelsResponseToJson(this);
+
+  @override
+  List<Object?> get props => [items, totalCount];
+}
+
+/// 所有枪模列表响应（带总数）
+@JsonSerializable()
+class AllGunModelsResponse extends Equatable {
+  final List<GunModel> items;
+  final int totalCount;
+
+  const AllGunModelsResponse({required this.items, required this.totalCount});
+
+  factory AllGunModelsResponse.fromJson(Map<String, dynamic> json) =>
+      _$AllGunModelsResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$AllGunModelsResponseToJson(this);
+
+  @override
+  List<Object?> get props => [items, totalCount];
+}

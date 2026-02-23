@@ -4,17 +4,76 @@ import '../../../core/widgets/disk_cached_image.dart';
 import 'character_gallery_theme.dart';
 
 /// 子模型卡片组件（带 hover 效果）
+/// 支持 CharacterSubModel、KnifeModel、GunModel 等
 class SubModelCard extends StatefulWidget {
-  final CharacterSubModel subModel;
+  final String name;
+  final String thumbnailUrl;
+  final AcquisitionInfo? acquisition;
   final bool isSelected;
+  final bool isDefault;
   final VoidCallback onTap;
 
   const SubModelCard({
     super.key,
-    required this.subModel,
-    required this.isSelected,
+    required this.name,
+    required this.thumbnailUrl,
+    this.acquisition,
+    this.isSelected = false,
+    this.isDefault = false,
     required this.onTap,
   });
+
+  /// 从 CharacterSubModel 创建
+  factory SubModelCard.fromSubModel({
+    Key? key,
+    required CharacterSubModel subModel,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return SubModelCard(
+      key: key,
+      name: subModel.name,
+      thumbnailUrl: subModel.thumbnailUrl,
+      acquisition: subModel.acquisition,
+      isSelected: isSelected,
+      isDefault: subModel.isDefault,
+      onTap: onTap,
+    );
+  }
+
+  /// 从 KnifeModel 创建
+  factory SubModelCard.fromKnifeModel({
+    Key? key,
+    required KnifeModel model,
+    required VoidCallback onTap,
+  }) {
+    return SubModelCard(
+      key: key,
+      name: model.name,
+      thumbnailUrl: model.thumbnailUrl ?? '',
+      acquisition: model.acquisition,
+      isSelected: false,
+      isDefault: false,
+      onTap: onTap,
+    );
+  }
+
+  /// 从 GunModel 创建
+  factory SubModelCard.fromGunModel({
+    Key? key,
+    required GunModel model,
+    required VoidCallback onTap,
+  }) {
+    return SubModelCard(
+      key: key,
+      name: model.name,
+      thumbnailUrl: model.thumbnailUrl ?? '',
+      acquisition: model.acquisition,
+      isSelected: false,
+      isDefault: false,
+      onTap: onTap,
+    );
+  }
 
   @override
   State<SubModelCard> createState() => _SubModelCardState();
@@ -79,12 +138,23 @@ class _SubModelCardState extends State<SubModelCard> {
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(7),
                       ),
-                      child: DiskCachedImage(
-                        imageUrl: widget.subModel.thumbnailUrl,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: double.infinity,
-                      ),
+                      child: widget.thumbnailUrl.isNotEmpty
+                          ? DiskCachedImage(
+                              imageUrl: widget.thumbnailUrl,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                            )
+                          : Container(
+                              color: scrollBrown.withValues(alpha: 0.1),
+                              child: Center(
+                                child: Icon(
+                                  Icons.image_outlined,
+                                  color: scrollBrown.withValues(alpha: 0.3),
+                                  size: 24,
+                                ),
+                              ),
+                            ),
                     ),
                     // 选中指示器
                     if (widget.isSelected)
@@ -105,7 +175,7 @@ class _SubModelCardState extends State<SubModelCard> {
                         ),
                       ),
                     // 默认标签
-                    if (widget.subModel.isDefault)
+                    if (widget.isDefault)
                       Positioned(
                         top: 4,
                         left: 4,
@@ -148,7 +218,7 @@ class _SubModelCardState extends State<SubModelCard> {
                 child: Column(
                   children: [
                     Text(
-                      widget.subModel.name,
+                      widget.name,
                       style: TextStyle(
                         color: widget.isSelected
                             ? CharacterGalleryTheme.getGold(context)
@@ -164,7 +234,7 @@ class _SubModelCardState extends State<SubModelCard> {
                     ),
                     const SizedBox(height: 2),
                     _SubModelAcquisitionTag(
-                      acquisition: widget.subModel.acquisition,
+                      acquisition: widget.acquisition,
                     ),
                   ],
                 ),

@@ -474,3 +474,214 @@ class SpellCardsLoadingSkeleton extends StatelessWidget {
     );
   }
 }
+
+
+/// 刀枪模详情面板骨架屏
+class WeaponModelDetailSkeleton extends StatelessWidget {
+  const WeaponModelDetailSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+    final cardBg = CharacterGalleryTheme.getOverlayColor(context, alpha: 0.5);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 预览图区域
+          _buildPreviewSectionSkeleton(context, scrollBrown),
+          const SizedBox(height: 20),
+          // 名称区域
+          _buildNameSectionSkeleton(context, scrollBrown),
+          const SizedBox(height: 16),
+          // 专属角色区域
+          _buildExclusiveCharacterSkeleton(context, scrollBrown, cardBg),
+          const SizedBox(height: 16),
+          // 描述分隔线
+          _buildSectionDividerSkeleton(scrollBrown, '描述'),
+          const SizedBox(height: 12),
+          // 描述文字
+          ...List.generate(
+            2,
+            (i) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: SkeletonBox(
+                width: i == 1 ? 150 : double.infinity,
+                height: 14,
+                borderRadius: 2,
+                baseColor: scrollBrown.withValues(alpha: 0.06),
+                highlightColor: scrollBrown.withValues(alpha: 0.12),
+              ),
+            ),
+          ),
+          const SizedBox(height: 60),
+        ],
+      ),
+    );
+  }
+
+  /// 预览图区域骨架
+  Widget _buildPreviewSectionSkeleton(BuildContext context, Color scrollBrown) {
+    return Column(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: CharacterGalleryTheme.getGold(context).withValues(alpha: 0.3),
+              width: 3,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: AspectRatio(
+            aspectRatio: 16 / 10,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(5),
+              child: SkeletonBox(
+                width: double.infinity,
+                height: double.infinity,
+                borderRadius: 0,
+                baseColor: scrollBrown.withValues(alpha: 0.08),
+                highlightColor: scrollBrown.withValues(alpha: 0.15),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        // 预览位置按钮（正、左、右、背、手）
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: ['正', '左', '右', '背', '手'].map((label) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: scrollBrown.withValues(alpha: 0.2)),
+                ),
+                child: SkeletonBox(
+                  width: 36,
+                  height: 36,
+                  borderRadius: 4,
+                  baseColor: scrollBrown.withValues(alpha: 0.06),
+                  highlightColor: scrollBrown.withValues(alpha: 0.12),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  /// 名称区域骨架
+  Widget _buildNameSectionSkeleton(BuildContext context, Color scrollBrown) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SkeletonBox(
+          width: 18,
+          height: 18,
+          borderRadius: 2,
+          baseColor: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.2),
+          highlightColor: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.35),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: SkeletonBox(
+            width: 100,
+            height: 22,
+            baseColor: scrollBrown.withValues(alpha: 0.12),
+            highlightColor: scrollBrown.withValues(alpha: 0.2),
+          ),
+        ),
+        SkeletonBox(
+          width: 60,
+          height: 24,
+          borderRadius: 4,
+          baseColor: CharacterGalleryTheme.getGold(context).withValues(alpha: 0.15),
+          highlightColor: CharacterGalleryTheme.getGold(context).withValues(alpha: 0.25),
+        ),
+      ],
+    );
+  }
+
+  /// 专属角色区域骨架
+  Widget _buildExclusiveCharacterSkeleton(BuildContext context, Color scrollBrown, Color cardBg) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionDividerSkeleton(scrollBrown, '专属角色'),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: cardBg,
+            border: Border.all(color: scrollBrown.withValues(alpha: 0.3)),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Row(
+            children: [
+              SkeletonBox(
+                width: 48,
+                height: 48,
+                borderRadius: 4,
+                baseColor: scrollBrown.withValues(alpha: 0.1),
+                highlightColor: scrollBrown.withValues(alpha: 0.18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkeletonBox(
+                      width: 80,
+                      height: 16,
+                      borderRadius: 2,
+                      baseColor: scrollBrown.withValues(alpha: 0.1),
+                      highlightColor: scrollBrown.withValues(alpha: 0.18),
+                    ),
+                    const SizedBox(height: 6),
+                    SkeletonBox(
+                      width: 50,
+                      height: 18,
+                      borderRadius: 4,
+                      baseColor: CharacterGalleryTheme.getGold(context).withValues(alpha: 0.12),
+                      highlightColor: CharacterGalleryTheme.getGold(context).withValues(alpha: 0.2),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 分隔线骨架
+  Widget _buildSectionDividerSkeleton(Color scrollBrown, String title) {
+    final titleWidth = title.length * 14.0;
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Row(
+        children: [
+          Container(width: 30, height: 2, color: scrollBrown.withValues(alpha: 0.15)),
+          const SizedBox(width: 8),
+          SkeletonBox(
+            width: titleWidth,
+            height: 16,
+            borderRadius: 2,
+            baseColor: scrollBrown.withValues(alpha: 0.12),
+            highlightColor: scrollBrown.withValues(alpha: 0.2),
+          ),
+          const SizedBox(width: 8),
+          Expanded(child: Container(height: 2, color: scrollBrown.withValues(alpha: 0.08))),
+        ],
+      ),
+    );
+  }
+}

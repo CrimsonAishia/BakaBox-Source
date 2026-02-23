@@ -254,3 +254,80 @@ class ToggleTierExpanded extends CharacterGalleryEvent {
   @override
   List<Object?> get props => [tier];
 }
+
+
+/// 加载角色专属刀模/枪模
+class LoadCharacterWeaponModels extends CharacterGalleryEvent {
+  final int characterId;
+
+  const LoadCharacterWeaponModels(this.characterId);
+
+  @override
+  List<Object?> get props => [characterId];
+}
+
+/// 加载全部刀模/枪模列表（刀枪图鉴视图）
+class LoadAllWeaponModels extends CharacterGalleryEvent {
+  final String? keyword;
+  final int? tabIndex; // 0=刀模, 1=枪模
+
+  const LoadAllWeaponModels({this.keyword, this.tabIndex});
+
+  @override
+  List<Object?> get props => [keyword, tabIndex];
+}
+
+/// 切换刀枪图鉴标签页
+class ChangeWeaponModelTab extends CharacterGalleryEvent {
+  final int tabIndex;
+
+  const ChangeWeaponModelTab(this.tabIndex);
+
+  @override
+  List<Object?> get props => [tabIndex];
+}
+
+/// 选中刀枪模（显示详情）
+class SelectWeaponModel extends CharacterGalleryEvent {
+  final int id;
+  final bool isKnife;
+
+  const SelectWeaponModel({required this.id, required this.isKnife});
+
+  @override
+  List<Object?> get props => [id, isKnife];
+}
+
+/// 清除选中的刀枪模
+class ClearSelectedWeaponModel extends CharacterGalleryEvent {}
+
+/// 切换刀枪模预览位置
+class ChangeWeaponPreviewPosition extends CharacterGalleryEvent {
+  final int position;
+
+  const ChangeWeaponPreviewPosition(this.position);
+
+  @override
+  List<Object?> get props => [position];
+}
+
+/// 从角色详情跳转到刀枪图鉴并选中指定刀枪模
+class NavigateToWeaponModel extends CharacterGalleryEvent {
+  final int id;
+  final bool isKnife;
+
+  const NavigateToWeaponModel({required this.id, required this.isKnife});
+
+  @override
+  List<Object?> get props => [id, isKnife];
+}
+
+/// 在刀枪图鉴视图中加载角色详情（保持左侧列表不变，只切换右侧详情面板）
+class LoadCharacterDetailInWeaponView extends CharacterGalleryEvent {
+  final int characterId;
+
+  const LoadCharacterDetailInWeaponView(this.characterId);
+
+  @override
+  List<Object?> get props => [characterId];
+}
