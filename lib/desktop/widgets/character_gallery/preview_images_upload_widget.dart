@@ -1,9 +1,12 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:super_clipboard/super_clipboard.dart';
 import '../../../core/services/file_upload_service.dart';
 import '../../../core/services/image_url_service.dart';
 import '../../../core/utils/log_service.dart';
+import '../../../core/utils/toast_utils.dart';
 import 'character_gallery_theme.dart';
 import 'image_crop_dialog.dart';
 
@@ -141,19 +144,30 @@ class _PreviewImageUploadItemState extends State<PreviewImageUploadItem>
           child: Stack(
             children: [
               _buildContent(context, isUploaded, displayUrl),
-              // Hover 遮罩
+              // Hover 遮罩 - 显示两个按钮
               if (_isHovered &&
                   widget.enabled &&
                   _status == PreviewImageUploadStatus.idle)
                 Positioned.fill(
                   child: Container(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    child: Center(
-                      child: Icon(
-                        isUploaded ? Icons.refresh : Icons.add_photo_alternate,
-                        color: Colors.white,
-                        size: 24,
-                      ),
+                    color: Colors.black.withValues(alpha: 0.6),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // 选择文件按钮
+                        _buildHoverButton(
+                          icon: isUploaded ? Icons.refresh : Icons.folder_open,
+                          label: isUploaded ? '更换' : '选择',
+                          onTap: _selectAndUploadImage,
+                        ),
+                        const SizedBox(height: 6),
+                        // 剪贴板按钮
+                        _buildHoverButton(
+                          icon: Icons.content_paste,
+                          label: '粘贴',
+                          onTap: _pasteFromClipboard,
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -161,6 +175,18 @@ class _PreviewImageUploadItemState extends State<PreviewImageUploadItem>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildHoverButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return _HoverButton(
+      icon: icon,
+      label: label,
+      onTap: onTap,
     );
   }
 
@@ -352,75 +378,7 @@ class _PreviewImageUploadItemState extends State<PreviewImageUploadItem>
         return;
       }
 
-      // 检查文件大小（限制 10MB）
-      final fileSize = await File(filePath).length();
-      if (fileSize > 10 * 1024 * 1024) {
-        if (mounted) {
-          setState(() => _status = PreviewImageUploadStatus.idle);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('图片文件不能超过 10MB')),
-          );
-        }
-        return;
-      }
-
-      // 弹出裁剪窗口
-      if (!mounted) return;
-      final croppedData = await ImageCropDialog.show(
-        context,
-        imageFile: File(filePath),
-        aspectRatio: 1.0, // 正方形
-        title: '调整${widget.label}',
-      );
-
-      if (croppedData == null) {
-        // 用户取消了裁剪
-        setState(() => _status = PreviewImageUploadStatus.idle);
-        return;
-      }
-
-      // 开始上传裁剪后的图片
-      setState(() {
-        _status = PreviewImageUploadStatus.uploading;
-        _progress = 0.0;
-      });
-
-      // 保存裁剪后的图片到临时文件
-      final tempDir = await Directory.systemTemp.createTemp('crop_');
-      final tempFile = File(
-        '${tempDir.path}/cropped_${DateTime.now().millisecondsSinceEpoch}.png',
-      );
-      await tempFile.writeAsBytes(croppedData);
-
-      // 使用图床上传
-      final uploadResult = await _uploadService.uploadToImageBed(
-        tempFile,
-        categoryName: 'character_preview',
-      );
-
-      // 删除临时文件
-      try {
-        await tempFile.delete();
-        await tempDir.delete();
-      } catch (_) {
-        // 忽略删除临时文件的错误
-      }
-
-      setState(() {
-        _status = PreviewImageUploadStatus.completed;
-        _uploadedFileId = uploadResult.fileId;
-        _uploadedUrl = uploadResult.url;
-        _progress = 1.0;
-      });
-
-      widget.onUploadComplete?.call(
-        PreviewImageUploadResult(
-          fileId: uploadResult.fileId,
-          url: uploadResult.url,
-        ),
-      );
-
-      LogService.i('预览图上传成功: ${widget.label}, fileId=${uploadResult.fileId}');
+      await _cropAndUploadImage(File(filePath));
     } catch (e) {
       LogService.e('预览图上传失败: ${widget.label}', e);
       setState(() {
@@ -430,6 +388,166 @@ class _PreviewImageUploadItemState extends State<PreviewImageUploadItem>
         PreviewImageUploadResult(error: e.toString()),
       );
     }
+  }
+
+  /// 从剪贴板导入图片
+  Future<void> _pasteFromClipboard() async {
+    setState(() {
+      _status = PreviewImageUploadStatus.selecting;
+    });
+
+    try {
+      final clipboard = SystemClipboard.instance;
+      if (clipboard == null) {
+        if (mounted) {
+          setState(() => _status = PreviewImageUploadStatus.idle);
+          ToastUtils.showError(context, '剪贴板不可用');
+        }
+        return;
+      }
+
+      final reader = await clipboard.read();
+      
+      // 尝试读取 PNG 格式
+      if (!reader.canProvide(Formats.png)) {
+        if (mounted) {
+          setState(() => _status = PreviewImageUploadStatus.idle);
+          ToastUtils.showError(context, '剪贴板中没有图片');
+        }
+        return;
+      }
+
+      // 使用 getFile 读取二进制数据
+      reader.getFile(Formats.png, (file) async {
+        try {
+          final stream = file.getStream();
+          final chunks = <int>[];
+          await for (final chunk in stream) {
+            chunks.addAll(chunk);
+          }
+          final imageData = Uint8List.fromList(chunks);
+
+          // 保存到临时文件
+          final tempDir = await Directory.systemTemp.createTemp('clipboard_');
+          final tempFile = File(
+            '${tempDir.path}/clipboard_${DateTime.now().millisecondsSinceEpoch}.png',
+          );
+          await tempFile.writeAsBytes(imageData);
+
+          if (mounted) {
+            await _cropAndUploadImage(tempFile, deleteTempFile: true, tempDir: tempDir);
+          }
+        } catch (e) {
+          LogService.e('从剪贴板导入图片失败: ${widget.label}', e);
+          if (mounted) {
+            setState(() {
+              _status = PreviewImageUploadStatus.error;
+            });
+            widget.onUploadComplete?.call(
+              PreviewImageUploadResult(error: e.toString()),
+            );
+          }
+        }
+      });
+    } catch (e) {
+      LogService.e('从剪贴板导入图片失败: ${widget.label}', e);
+      setState(() {
+        _status = PreviewImageUploadStatus.error;
+      });
+      widget.onUploadComplete?.call(
+        PreviewImageUploadResult(error: e.toString()),
+      );
+    }
+  }
+
+  /// 裁剪并上传图片（预览图使用自由比例）
+  Future<void> _cropAndUploadImage(
+    File file, {
+    bool deleteTempFile = false,
+    Directory? tempDir,
+  }) async {
+    // 检查文件大小（限制 10MB）
+    final fileSize = await file.length();
+    if (fileSize > 10 * 1024 * 1024) {
+      if (mounted) {
+        setState(() => _status = PreviewImageUploadStatus.idle);
+        ToastUtils.showError(context, '图片文件不能超过 10MB');
+      }
+      // 清理临时文件
+      if (deleteTempFile) {
+        try {
+          await file.delete();
+          await tempDir?.delete();
+        } catch (_) {}
+      }
+      return;
+    }
+
+    // 弹出裁剪窗口（自由比例，不限制）
+    if (!mounted) return;
+    final croppedData = await ImageCropDialog.show(
+      context,
+      imageFile: file,
+      aspectRatio: null, // 自由比例
+      title: '调整${widget.label}',
+    );
+
+    // 清理原始临时文件
+    if (deleteTempFile) {
+      try {
+        await file.delete();
+        await tempDir?.delete();
+      } catch (_) {}
+    }
+
+    if (croppedData == null) {
+      // 用户取消了裁剪
+      setState(() => _status = PreviewImageUploadStatus.idle);
+      return;
+    }
+
+    // 开始上传裁剪后的图片
+    setState(() {
+      _status = PreviewImageUploadStatus.uploading;
+      _progress = 0.0;
+    });
+
+    // 保存裁剪后的图片到临时文件
+    final cropTempDir = await Directory.systemTemp.createTemp('crop_');
+    final cropTempFile = File(
+      '${cropTempDir.path}/cropped_${DateTime.now().millisecondsSinceEpoch}.png',
+    );
+    await cropTempFile.writeAsBytes(croppedData);
+
+    // 使用图床上传
+    final uploadResult = await _uploadService.uploadToImageBed(
+      cropTempFile,
+      categoryName: 'character_preview',
+    );
+
+    // 删除临时文件
+    try {
+      await cropTempFile.delete();
+      await cropTempDir.delete();
+    } catch (_) {
+      // 忽略删除临时文件的错误
+    }
+
+    setState(() {
+      _status = PreviewImageUploadStatus.completed;
+      _uploadedFileId = uploadResult.fileId;
+      _uploadedUrl = uploadResult.url;
+      _progress = 1.0;
+    });
+
+    widget.onUploadComplete?.call(
+      PreviewImageUploadResult(
+        fileId: uploadResult.fileId,
+        url: uploadResult.url,
+      ),
+    );
+
+    LogService.i('预览图上传成功: ${widget.label}, fileId=${uploadResult.fileId}');
   }
 
   /// 获取上传的文件ID（供外部使用）
@@ -861,35 +979,30 @@ class _ThumbnailUploadItemState extends State<_ThumbnailUploadItem>
           child: Stack(
             children: [
               _buildContent(context, isUploaded, displayUrl),
-              // Hover 遮罩
+              // Hover 遮罩 - 显示两个按钮
               if (_isHovered &&
                   widget.enabled &&
                   _status == PreviewImageUploadStatus.idle)
                 Positioned.fill(
                   child: Container(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            isUploaded
-                                ? Icons.refresh
-                                : Icons.add_photo_alternate,
-                            color: Colors.white,
-                            size: 32,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            isUploaded ? '点击更换' : '点击上传',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
+                    color: Colors.black.withValues(alpha: 0.5),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // 选择文件按钮
+                        _buildHoverButton(
+                          icon: isUploaded ? Icons.refresh : Icons.folder_open,
+                          label: isUploaded ? '更换图片' : '选择图片',
+                          onTap: _selectAndUploadImage,
+                        ),
+                        const SizedBox(height: 8),
+                        // 剪贴板按钮
+                        _buildHoverButton(
+                          icon: Icons.content_paste,
+                          label: '从剪贴板粘贴',
+                          onTap: _pasteFromClipboard,
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -897,6 +1010,19 @@ class _ThumbnailUploadItemState extends State<_ThumbnailUploadItem>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildHoverButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return _HoverButton(
+      icon: icon,
+      label: label,
+      onTap: onTap,
+      large: true,
     );
   }
 
@@ -1096,74 +1222,7 @@ class _ThumbnailUploadItemState extends State<_ThumbnailUploadItem>
         return;
       }
 
-      // 检查文件大小（限制 10MB）
-      final fileSize = await File(filePath).length();
-      if (fileSize > 10 * 1024 * 1024) {
-        if (mounted) {
-          setState(() => _status = PreviewImageUploadStatus.idle);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('图片文件不能超过 10MB')),
-          );
-        }
-        return;
-      }
-
-      // 弹出裁剪窗口
-      if (!mounted) return;
-      final croppedData = await ImageCropDialog.show(
-        context,
-        imageFile: File(filePath),
-        aspectRatio: 1.0, // 正方形
-        title: '调整缩略图',
-      );
-
-      if (croppedData == null) {
-        // 用户取消了裁剪
-        setState(() => _status = PreviewImageUploadStatus.idle);
-        return;
-      }
-
-      // 开始上传裁剪后的图片
-      setState(() {
-        _status = PreviewImageUploadStatus.uploading;
-        _progress = 0.0;
-      });
-
-      // 保存裁剪后的图片到临时文件
-      final tempDir = await Directory.systemTemp.createTemp('crop_');
-      final tempFile = File(
-        '${tempDir.path}/cropped_thumb_${DateTime.now().millisecondsSinceEpoch}.png',
-      );
-      await tempFile.writeAsBytes(croppedData);
-
-      // 使用图床上传
-      final uploadResult = await _uploadService.uploadToImageBed(
-        tempFile,
-        categoryName: 'character_thumbnail',
-      );
-
-      // 删除临时文件
-      try {
-        await tempFile.delete();
-        await tempDir.delete();
-      } catch (_) {
-        // 忽略删除临时文件的错误
-      }
-
-      setState(() {
-        _status = PreviewImageUploadStatus.completed;
-        _uploadedUrl = uploadResult.url;
-        _progress = 1.0;
-      });
-
-      widget.onUploadComplete?.call(
-        PreviewImageUploadResult(
-          fileId: uploadResult.fileId,
-          url: uploadResult.url,
-        ),
-      );
-
-      LogService.i('缩略图上传成功: fileId=${uploadResult.fileId}');
+      await _cropAndUploadImage(File(filePath));
     } catch (e) {
       LogService.e('缩略图上传失败', e);
       setState(() {
@@ -1173,5 +1232,228 @@ class _ThumbnailUploadItemState extends State<_ThumbnailUploadItem>
         PreviewImageUploadResult(error: e.toString()),
       );
     }
+  }
+
+  /// 从剪贴板导入图片
+  Future<void> _pasteFromClipboard() async {
+    setState(() {
+      _status = PreviewImageUploadStatus.selecting;
+    });
+
+    try {
+      final clipboard = SystemClipboard.instance;
+      if (clipboard == null) {
+        if (mounted) {
+          setState(() => _status = PreviewImageUploadStatus.idle);
+          ToastUtils.showError(context, '剪贴板不可用');
+        }
+        return;
+      }
+
+      final reader = await clipboard.read();
+      
+      // 尝试读取 PNG 格式
+      if (!reader.canProvide(Formats.png)) {
+        if (mounted) {
+          setState(() => _status = PreviewImageUploadStatus.idle);
+          ToastUtils.showError(context, '剪贴板中没有图片');
+        }
+        return;
+      }
+
+      // 使用 getFile 读取二进制数据
+      reader.getFile(Formats.png, (file) async {
+        try {
+          final stream = file.getStream();
+          final chunks = <int>[];
+          await for (final chunk in stream) {
+            chunks.addAll(chunk);
+          }
+          final imageData = Uint8List.fromList(chunks);
+
+          // 保存到临时文件
+          final tempDir = await Directory.systemTemp.createTemp('clipboard_');
+          final tempFile = File(
+            '${tempDir.path}/clipboard_${DateTime.now().millisecondsSinceEpoch}.png',
+          );
+          await tempFile.writeAsBytes(imageData);
+
+          if (mounted) {
+            await _cropAndUploadImage(tempFile, deleteTempFile: true, tempDir: tempDir);
+          }
+        } catch (e) {
+          LogService.e('从剪贴板导入缩略图失败', e);
+          if (mounted) {
+            setState(() {
+              _status = PreviewImageUploadStatus.error;
+            });
+            widget.onUploadComplete?.call(
+              PreviewImageUploadResult(error: e.toString()),
+            );
+          }
+        }
+      });
+    } catch (e) {
+      LogService.e('从剪贴板导入缩略图失败', e);
+      setState(() {
+        _status = PreviewImageUploadStatus.error;
+      });
+      widget.onUploadComplete?.call(
+        PreviewImageUploadResult(error: e.toString()),
+      );
+    }
+  }
+
+  /// 裁剪并上传图片（缩略图强制正方形）
+  Future<void> _cropAndUploadImage(
+    File file, {
+    bool deleteTempFile = false,
+    Directory? tempDir,
+  }) async {
+    // 检查文件大小（限制 10MB）
+    final fileSize = await file.length();
+    if (fileSize > 10 * 1024 * 1024) {
+      if (mounted) {
+        setState(() => _status = PreviewImageUploadStatus.idle);
+        ToastUtils.showError(context, '图片文件不能超过 10MB');
+      }
+      // 清理临时文件
+      if (deleteTempFile) {
+        try {
+          await file.delete();
+          await tempDir?.delete();
+        } catch (_) {}
+      }
+      return;
+    }
+
+    // 弹出裁剪窗口（强制正方形）
+    if (!mounted) return;
+    final croppedData = await ImageCropDialog.show(
+      context,
+      imageFile: file,
+      aspectRatio: 1.0, // 正方形
+      title: '调整缩略图',
+    );
+
+    // 清理原始临时文件
+    if (deleteTempFile) {
+      try {
+        await file.delete();
+        await tempDir?.delete();
+      } catch (_) {}
+    }
+
+    if (croppedData == null) {
+      // 用户取消了裁剪
+      setState(() => _status = PreviewImageUploadStatus.idle);
+      return;
+    }
+
+    // 开始上传裁剪后的图片
+    setState(() {
+      _status = PreviewImageUploadStatus.uploading;
+      _progress = 0.0;
+    });
+
+    // 保存裁剪后的图片到临时文件
+    final cropTempDir = await Directory.systemTemp.createTemp('crop_');
+    final cropTempFile = File(
+      '${cropTempDir.path}/cropped_thumb_${DateTime.now().millisecondsSinceEpoch}.png',
+    );
+    await cropTempFile.writeAsBytes(croppedData);
+
+    // 使用图床上传
+    final uploadResult = await _uploadService.uploadToImageBed(
+      cropTempFile,
+      categoryName: 'character_thumbnail',
+    );
+
+    // 删除临时文件
+    try {
+      await cropTempFile.delete();
+      await cropTempDir.delete();
+    } catch (_) {
+      // 忽略删除临时文件的错误
+    }
+
+    setState(() {
+      _status = PreviewImageUploadStatus.completed;
+      _uploadedUrl = uploadResult.url;
+      _progress = 1.0;
+    });
+
+    widget.onUploadComplete?.call(
+      PreviewImageUploadResult(
+        fileId: uploadResult.fileId,
+        url: uploadResult.url,
+      ),
+    );
+
+    LogService.i('缩略图上传成功: fileId=${uploadResult.fileId}');
+  }
+}
+
+/// 带 hover 效果的按钮
+class _HoverButton extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool large;
+
+  const _HoverButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.large = false,
+  });
+
+  @override
+  State<_HoverButton> createState() => _HoverButtonState();
+}
+
+class _HoverButtonState extends State<_HoverButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final iconSize = widget.large ? 14.0 : 14.0;
+    final fontSize = widget.large ? 11.0 : 11.0;
+    final hPadding = widget.large ? 10.0 : 8.0;
+    final vPadding = widget.large ? 5.0 : 4.0;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
+          decoration: BoxDecoration(
+            color: _isHovered
+                ? Colors.white.withValues(alpha: 0.35)
+                : Colors.white.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(widget.icon, color: Colors.white, size: iconSize),
+              const SizedBox(width: 4),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

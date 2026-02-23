@@ -6,10 +6,11 @@ import 'package:crop_your_image/crop_your_image.dart';
 import 'character_gallery_theme.dart';
 
 /// 图片调整弹窗
-/// 用于在上传前对图片进行正方形裁剪
+/// 用于在上传前对图片进行裁剪（支持固定比例或自由比例）
 class ImageCropDialog extends StatefulWidget {
   final File imageFile;
-  final double aspectRatio;
+  /// 裁剪比例，null 表示自由比例
+  final double? aspectRatio;
   final String title;
 
   /// 最大分辨率（宽或高的最大像素），默认 1024
@@ -18,16 +19,17 @@ class ImageCropDialog extends StatefulWidget {
   const ImageCropDialog({
     super.key,
     required this.imageFile,
-    this.aspectRatio = 1.0,
+    this.aspectRatio,
     this.title = '调整图片',
     this.maxResolution = 1024,
   });
 
   /// 显示调整弹窗，返回处理后的图片数据
+  /// [aspectRatio] 为 null 时表示自由比例
   static Future<Uint8List?> show(
     BuildContext context, {
     required File imageFile,
-    double aspectRatio = 1.0,
+    double? aspectRatio,
     String title = '调整图片',
     int maxResolution = 1024,
   }) async {
@@ -291,6 +293,7 @@ class _ImageCropDialogState extends State<ImageCropDialog> {
     }
 
     final cropBgColor = Colors.grey.shade900;
+    final hasFixedRatio = widget.aspectRatio != null;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 12, 20, 12),
@@ -306,10 +309,15 @@ class _ImageCropDialogState extends State<ImageCropDialog> {
             controller: _cropController,
             onCropped: _onCropped,
             aspectRatio: widget.aspectRatio,
-            initialRectBuilder: InitialRectBuilder.withSizeAndRatio(
-              size: 1.0, // 默认最大裁剪区域
-              aspectRatio: widget.aspectRatio,
-            ),
+            initialRectBuilder: hasFixedRatio
+                ? InitialRectBuilder.withSizeAndRatio(
+                    size: 1.0, // 默认最大裁剪区域
+                    aspectRatio: widget.aspectRatio!,
+                  )
+                : InitialRectBuilder.withBuilder((viewportRect, imageRect) {
+                    // 自由比例时，默认使用整个图片区域
+                    return imageRect;
+                  }),
             baseColor: cropBgColor,
             maskColor: Colors.black.withValues(alpha: 0.6),
             radius: 0,
@@ -381,6 +389,11 @@ class _ImageCropDialogState extends State<ImageCropDialog> {
   }
 
   Widget _buildFooter(Color scrollBrown, Color vermillion, Color inkColor) {
+    final hasFixedRatio = widget.aspectRatio != null;
+    final hintText = hasFixedRatio
+        ? '拖动选框调整区域，图片将以正方形保存'
+        : '拖动选框调整裁剪区域';
+
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
       child: Row(
@@ -393,7 +406,7 @@ class _ImageCropDialogState extends State<ImageCropDialog> {
           ),
           const SizedBox(width: 6),
           Text(
-            '拖动选框调整区域，图片将以正方形保存',
+            hintText,
             style: TextStyle(
               color: inkColor.withValues(alpha: 0.45),
               fontSize: 12,
