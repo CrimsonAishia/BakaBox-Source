@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../core/models/character_models.dart';
 import '../../../core/widgets/disk_cached_image.dart';
 import 'character_gallery_theme.dart';
@@ -213,7 +214,7 @@ class _WeaponModelHanafudaCardState extends State<WeaponModelHanafudaCard> {
     return Container(
       color: washiColor,
       child: Icon(
-        widget.isKnife ? Icons.content_cut : Icons.sports_esports,
+        widget.isKnife ? MdiIcons.knife : MdiIcons.pistol,
         size: 40,
         color: scrollBrown.withValues(alpha: 0.3),
       ),
