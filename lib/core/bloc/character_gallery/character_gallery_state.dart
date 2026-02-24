@@ -83,6 +83,8 @@ class CharacterGalleryState extends Equatable {
   final bool selectedWeaponIsKnife; // true=刀模, false=枪模
   final int weaponPreviewPosition; // 0=front, 1=left, 2=right, 3=back, 4=hand
   final LoadState weaponDetailLoadState; // 刀枪模详情加载状态
+  final KnifeModel? selectedKnifeModelDetail; // 刀模详情（通过 API 获取）
+  final GunModel? selectedGunModelDetail; // 枪模详情（通过 API 获取）
   
   // 刀枪模专属角色信息（通过 API 获取）
   final LoadState weaponCharacterLoadState;
@@ -139,6 +141,8 @@ class CharacterGalleryState extends Equatable {
     this.selectedWeaponIsKnife = true,
     this.weaponPreviewPosition = 0,
     this.weaponDetailLoadState = LoadState.initial,
+    this.selectedKnifeModelDetail,
+    this.selectedGunModelDetail,
     this.weaponCharacterLoadState = LoadState.initial,
     this.weaponCharacterThumbnailUrl,
     this.weaponCharacterAcquisition,
@@ -204,6 +208,8 @@ class CharacterGalleryState extends Equatable {
     bool? selectedWeaponIsKnife,
     int? weaponPreviewPosition,
     LoadState? weaponDetailLoadState,
+    KnifeModel? selectedKnifeModelDetail,
+    GunModel? selectedGunModelDetail,
     LoadState? weaponCharacterLoadState,
     String? weaponCharacterThumbnailUrl,
     AcquisitionInfo? weaponCharacterAcquisition,
@@ -257,6 +263,8 @@ class CharacterGalleryState extends Equatable {
       selectedWeaponIsKnife: selectedWeaponIsKnife ?? this.selectedWeaponIsKnife,
       weaponPreviewPosition: clearSelectedWeaponModel ? 0 : (weaponPreviewPosition ?? this.weaponPreviewPosition),
       weaponDetailLoadState: clearSelectedWeaponModel ? LoadState.initial : (weaponDetailLoadState ?? this.weaponDetailLoadState),
+      selectedKnifeModelDetail: clearSelectedWeaponModel ? null : (selectedKnifeModelDetail ?? this.selectedKnifeModelDetail),
+      selectedGunModelDetail: clearSelectedWeaponModel ? null : (selectedGunModelDetail ?? this.selectedGunModelDetail),
       weaponCharacterLoadState: clearWeaponCharacter ? LoadState.initial : (weaponCharacterLoadState ?? this.weaponCharacterLoadState),
       weaponCharacterThumbnailUrl: clearWeaponCharacter ? null : (weaponCharacterThumbnailUrl ?? this.weaponCharacterThumbnailUrl),
       weaponCharacterAcquisition: clearWeaponCharacter ? null : (weaponCharacterAcquisition ?? this.weaponCharacterAcquisition),
@@ -292,18 +300,24 @@ class CharacterGalleryState extends Equatable {
     };
   }
 
-  /// 获取当前选中的刀模
+  /// 获取当前选中的刀模（优先使用详情数据）
   KnifeModel? get selectedKnifeModel {
     if (selectedWeaponModelId == null || !selectedWeaponIsKnife) return null;
+    // 优先使用详情 API 返回的数据
+    if (selectedKnifeModelDetail != null) return selectedKnifeModelDetail;
+    // 回退到列表数据
     return allKnifeModels.cast<KnifeModel?>().firstWhere(
       (k) => k?.id == selectedWeaponModelId,
       orElse: () => null,
     );
   }
 
-  /// 获取当前选中的枪模
+  /// 获取当前选中的枪模（优先使用详情数据）
   GunModel? get selectedGunModel {
     if (selectedWeaponModelId == null || selectedWeaponIsKnife) return null;
+    // 优先使用详情 API 返回的数据
+    if (selectedGunModelDetail != null) return selectedGunModelDetail;
+    // 回退到列表数据
     return allGunModels.cast<GunModel?>().firstWhere(
       (g) => g?.id == selectedWeaponModelId,
       orElse: () => null,
@@ -338,7 +352,8 @@ class CharacterGalleryState extends Equatable {
     hasPendingRequest, pendingRequestId, deleteRequestState, deleteRequestError,
     selectedSpellCardId, expandedTiers, weaponModelsLoadState, knifeModels,
     gunModels, selectedWeaponModelId, selectedWeaponIsKnife, weaponPreviewPosition,
-    weaponDetailLoadState, weaponCharacterLoadState, weaponCharacterThumbnailUrl, weaponCharacterAcquisition,
+    weaponDetailLoadState, selectedKnifeModelDetail, selectedGunModelDetail,
+    weaponCharacterLoadState, weaponCharacterThumbnailUrl, weaponCharacterAcquisition,
     error,
   ];
 }
