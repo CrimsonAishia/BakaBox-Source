@@ -1038,16 +1038,87 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     CharacterModel character,
     CharacterSubModel subModel,
     List<SpellCard> spellCards,
-  ) {
+  ) async {
+    final washiColor = CharacterGalleryTheme.getWashiColor(context);
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+
+    // 显示加载中
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => UnifiedEditDialog(
-        character: character,
-        subModel: subModel,
-        spellCards: spellCards,
+      builder: (context) => Center(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: washiColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                color: CharacterGalleryTheme.getVermillion(context),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '加载数据...',
+                style: TextStyle(color: inkColor, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
       ),
     );
+
+    try {
+      final api = CharacterApi();
+      
+      // 确定有效的 subModelId
+      final effectiveSubModelId = subModel.id > 0 
+          ? subModel.id 
+          : character.subModels?.firstOrNull?.id;
+      
+      // 并行获取最新的角色详情、子模型详情和符卡数据
+      final futures = await Future.wait([
+        api.getCharacterDetail(character.id),
+        effectiveSubModelId != null ? api.getSubModelDetail(character.id, effectiveSubModelId) : Future.value(null),
+        character.category == CharacterCategory.touhou && effectiveSubModelId != null
+            ? api.getSpellCards(character.id, subModelId: effectiveSubModelId)
+            : Future.value(null),
+      ]);
+
+      if (!mounted) return;
+      Navigator.pop(context); // 关闭加载对话框
+
+      final latestCharacter = futures[0] as CharacterModel?;
+      final latestSubModel = futures[1] as CharacterSubModel?;
+      final latestSpellCards = futures[2] as Map<SpellCardType, List<SpellCard>>?;
+
+      if (latestCharacter == null) {
+        ToastUtils.showError(context, '获取角色数据失败');
+        return;
+      }
+
+      // 使用最新数据，如果子模型获取失败则使用传入的数据
+      final finalSubModel = latestSubModel ?? subModel;
+      final List<SpellCard> finalSpellCards = latestSpellCards != null
+          ? <SpellCard>[...latestSpellCards[SpellCardType.normal] ?? [], ...latestSpellCards[SpellCardType.ultimate] ?? [], ...latestSpellCards[SpellCardType.passive] ?? []]
+          : spellCards;
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => UnifiedEditDialog(
+          character: latestCharacter,
+          subModel: finalSubModel,
+          spellCards: finalSpellCards,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // 关闭加载对话框
+      ToastUtils.showError(context, '获取数据失败: $e');
+    }
   }
 
   /// 为没有子模型的角色创建一个虚拟的默认子模型
