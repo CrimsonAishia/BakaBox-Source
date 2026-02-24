@@ -33,6 +33,7 @@ class _EditViewState extends State<EditView> {
   late TextEditingController _nameCtrl;
   late TextEditingController _descCtrl;
   late TextEditingController _scriptCtrl;
+  late TextEditingController _editReasonCtrl;
   int? _categoryId;
   late bool _needsKey;
   
@@ -48,6 +49,7 @@ class _EditViewState extends State<EditView> {
     _nameCtrl = TextEditingController(text: widget.config.name);
     _descCtrl = TextEditingController(text: widget.config.description);
     _scriptCtrl = TextEditingController(text: widget.config.config);
+    _editReasonCtrl = TextEditingController();
     _categoryId = widget.config.categoryId;
     _needsKey = widget.config.needsKeybind;
     
@@ -60,6 +62,7 @@ class _EditViewState extends State<EditView> {
     _nameCtrl.addListener(() => setState(() {}));
     _descCtrl.addListener(() => setState(() {}));
     _scriptCtrl.addListener(() => setState(() {}));
+    _editReasonCtrl.addListener(() => setState(() {}));
   }
 
   @override
@@ -67,6 +70,7 @@ class _EditViewState extends State<EditView> {
     _nameCtrl.dispose();
     _descCtrl.dispose();
     _scriptCtrl.dispose();
+    _editReasonCtrl.dispose();
     super.dispose();
   }
   
@@ -138,6 +142,11 @@ class _EditViewState extends State<EditView> {
                       if (_needsKey && placeholders.isNotEmpty) ...[
                         const SizedBox(height: 10),
                         _buildPlaceholderTags(placeholders),
+                      ],
+                      // 已通过的配置编辑时需要填写理由
+                      if (widget.config.isApproved) ...[
+                        const SizedBox(height: 20),
+                        _buildEditReasonInput(),
                       ],
                     ],
                   ),
@@ -414,6 +423,7 @@ class _EditViewState extends State<EditView> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasChanges = _hasChanges;
     final hasPlaceholders = KeyPlaceholderParser.hasPlaceholders(_scriptCtrl.text);
+    final needsEditReason = widget.config.isApproved && _editReasonCtrl.text.trim().isEmpty;
     const double fixedHeight = 44.0;
     
     String? hint;
@@ -426,6 +436,10 @@ class _EditViewState extends State<EditView> {
       hintIcon = MdiIcons.checkCircleOutline;
     } else if (_needsKey && !hasPlaceholders) {
       hint = '请在脚本中插入按键绑定';
+      hintColor = const Color(0xFFf59e0b);
+      hintIcon = MdiIcons.informationOutline;
+    } else if (needsEditReason) {
+      hint = '请填写修改理由';
       hintColor = const Color(0xFFf59e0b);
       hintIcon = MdiIcons.informationOutline;
     }
@@ -599,6 +613,11 @@ class _EditViewState extends State<EditView> {
 
   void _submit() {
     if (_formKey.currentState?.validate() == true && _categoryId != null) {
+      // 已通过的配置需要填写编辑理由
+      if (widget.config.isApproved && _editReasonCtrl.text.trim().isEmpty) {
+        return;
+      }
+      
       context.read<KeyBindingBloc>().add(KeyBindingUpdateConfig(
         id: widget.config.id,
         request: KeyConfigCreateRequest(
@@ -609,7 +628,75 @@ class _EditViewState extends State<EditView> {
           config: _scriptCtrl.text,
           needsKeybind: _needsKey,
         ),
+        editReason: widget.config.isApproved ? _editReasonCtrl.text.trim() : null,
       ));
     }
+  }
+
+  Widget _buildEditReasonInput() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF59E0B).withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            children: [
+              Icon(MdiIcons.alertCircleOutline, size: 16, color: const Color(0xFFF59E0B)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '此配置已通过审核，修改后将重新进入审核流程',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white70 : Colors.grey[700],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          '修改理由（必填）',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: isDark ? Colors.white54 : Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: _editReasonCtrl,
+          maxLines: 2,
+          style: TextStyle(fontSize: 13, color: isDark ? Colors.white : const Color(0xFF1a1a2e)),
+          decoration: InputDecoration(
+            hintText: '请说明修改原因，例如：修复按键冲突、优化脚本逻辑...',
+            hintStyle: TextStyle(fontSize: 13, color: isDark ? Colors.white38 : Colors.grey[400]),
+            filled: true,
+            fillColor: isDark ? const Color(0xFF334155) : Colors.grey[50],
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: isDark ? const Color(0xFF475569) : Colors.grey[200]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: isDark ? const Color(0xFF475569) : Colors.grey[200]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFF59E0B)),
+            ),
+          ),
+          validator: (v) => widget.config.isApproved && v?.trim().isEmpty == true ? '已通过的配置修改时必须填写理由' : null,
+        ),
+      ],
+    );
   }
 }

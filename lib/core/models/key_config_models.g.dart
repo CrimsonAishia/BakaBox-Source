@@ -36,6 +36,9 @@ KeyConfig _$KeyConfigFromJson(Map<String, dynamic> json) => KeyConfig(
   auditAt: const NullableServerTimeConverter().fromJson(
     json['auditAt'] as String?,
   ),
+  useCount: (json['useCount'] as num?)?.toInt() ?? 0,
+  commentCount: (json['commentCount'] as num?)?.toInt() ?? 0,
+  editReason: json['editReason'] as String?,
 );
 
 Map<String, dynamic> _$KeyConfigToJson(KeyConfig instance) => <String, dynamic>{
@@ -64,6 +67,9 @@ Map<String, dynamic> _$KeyConfigToJson(KeyConfig instance) => <String, dynamic>{
   'auditStatus': _$KeyConfigAuditStatusEnumMap[instance.auditStatus]!,
   'auditRemark': instance.auditRemark,
   'auditAt': const NullableServerTimeConverter().toJson(instance.auditAt),
+  'useCount': instance.useCount,
+  'commentCount': instance.commentCount,
+  'editReason': instance.editReason,
 };
 
 const _$KeyConfigAuditStatusEnumMap = {
@@ -145,3 +151,80 @@ Map<String, dynamic> _$KeyConfigVoteResponseToJson(
   'hasVoted': instance.hasVoted,
   'voteType': instance.voteType,
 };
+
+KeyConfigComment _$KeyConfigCommentFromJson(
+  Map<String, dynamic> json,
+) => KeyConfigComment(
+  id: (json['id'] as num).toInt(),
+  configId: (json['configId'] as num).toInt(),
+  authorId: (json['authorId'] as num).toInt(),
+  authorName: json['authorName'] as String,
+  authorAvatar: json['authorAvatar'] as String?,
+  isAdmin: json['isAdmin'] as bool? ?? false,
+  content: json['content'] as String,
+  images:
+      (json['images'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      [],
+  replyToId: (json['replyToId'] as num?)?.toInt(),
+  replyCount: (json['replyCount'] as num?)?.toInt() ?? 0,
+  createdAt: const ServerTimeConverter().fromJson(json['createdAt'] as String),
+  updatedAt: const NullableServerTimeConverter().fromJson(
+    json['updatedAt'] as String?,
+  ),
+);
+
+Map<String, dynamic> _$KeyConfigCommentToJson(
+  KeyConfigComment instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'configId': instance.configId,
+  'authorId': instance.authorId,
+  'authorName': instance.authorName,
+  'authorAvatar': instance.authorAvatar,
+  'isAdmin': instance.isAdmin,
+  'content': instance.content,
+  'images': instance.images,
+  'replyToId': instance.replyToId,
+  'replyCount': instance.replyCount,
+  'createdAt': const ServerTimeConverter().toJson(instance.createdAt),
+  'updatedAt': const NullableServerTimeConverter().toJson(instance.updatedAt),
+};
+
+KeyConfigCommentListResponse _$KeyConfigCommentListResponseFromJson(
+  Map<String, dynamic> json,
+) => KeyConfigCommentListResponse(
+  total: (json['total'] as num).toInt(),
+  items:
+      (json['items'] as List<dynamic>?)
+          ?.map((e) => KeyConfigComment.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      [],
+);
+
+Map<String, dynamic> _$KeyConfigCommentListResponseToJson(
+  KeyConfigCommentListResponse instance,
+) => <String, dynamic>{'total': instance.total, 'items': instance.items};
+
+KeyConfigCreateCommentResponse _$KeyConfigCreateCommentResponseFromJson(
+  Map<String, dynamic> json,
+) => KeyConfigCreateCommentResponse(
+  id: (json['id'] as num).toInt(),
+  content: json['content'] as String,
+  createdAt: const ServerTimeConverter().fromJson(json['createdAt'] as String),
+);
+
+Map<String, dynamic> _$KeyConfigCreateCommentResponseToJson(
+  KeyConfigCreateCommentResponse instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'content': instance.content,
+  'createdAt': const ServerTimeConverter().toJson(instance.createdAt),
+};
+
+KeyConfigUseResponse _$KeyConfigUseResponseFromJson(
+  Map<String, dynamic> json,
+) => KeyConfigUseResponse(useCount: (json['useCount'] as num).toInt());
+
+Map<String, dynamic> _$KeyConfigUseResponseToJson(
+  KeyConfigUseResponse instance,
+) => <String, dynamic>{'useCount': instance.useCount};

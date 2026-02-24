@@ -92,18 +92,20 @@ class KeyBindingPublishConfig extends KeyBindingEvent {
 /// 删除配置
 class KeyBindingDeleteConfig extends KeyBindingEvent {
   final int id;
-  const KeyBindingDeleteConfig(this.id);
+  final String? editReason;
+  const KeyBindingDeleteConfig(this.id, {this.editReason});
   @override
-  List<Object?> get props => [id];
+  List<Object?> get props => [id, editReason];
 }
 
 /// 更新配置
 class KeyBindingUpdateConfig extends KeyBindingEvent {
   final int id;
   final KeyConfigCreateRequest request;
-  const KeyBindingUpdateConfig({required this.id, required this.request});
+  final String? editReason;
+  const KeyBindingUpdateConfig({required this.id, required this.request, this.editReason});
   @override
-  List<Object?> get props => [id, request];
+  List<Object?> get props => [id, request, editReason];
 }
 
 /// 设置分类筛选
@@ -155,3 +157,31 @@ class KeyBindingVote extends KeyBindingEvent {
   @override
   List<Object?> get props => [configId, voteType];
 }
+
+/// 加载评论列表
+class KeyBindingLoadComments extends KeyBindingEvent {
+  final int configId;
+  final int page;
+  const KeyBindingLoadComments({required this.configId, this.page = 1});
+  @override
+  List<Object?> get props => [configId, page];
+}
+
+/// 发表评论
+class KeyBindingAddComment extends KeyBindingEvent {
+  final int configId;
+  final String content;
+  final List<String>? images;
+  final int? replyToId;
+  const KeyBindingAddComment({
+    required this.configId,
+    required this.content,
+    this.images,
+    this.replyToId,
+  });
+  @override
+  List<Object?> get props => [configId, content, images, replyToId];
+}
+
+/// 清除评论列表
+class KeyBindingClearComments extends KeyBindingEvent {}

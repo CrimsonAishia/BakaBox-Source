@@ -45,6 +45,9 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     on<KeyBindingClearMessages>(_onClearMessages);
     on<KeyBindingLoadMyConfigs>(_onLoadMyConfigs);
     on<KeyBindingVote>(_onVote);
+    on<KeyBindingLoadComments>(_onLoadComments);
+    on<KeyBindingAddComment>(_onAddComment);
+    on<KeyBindingClearComments>(_onClearComments);
   }
 
   /// 加载配置列表
@@ -121,6 +124,8 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       selectedConfig: event.config,
       keyBindings: keyBindings,
       clearError: true,
+      clearComments: true,  // 清除旧的评论列表
+      commentTotal: 0,
     ));
     
     LogService.d('[KeyBindingBloc] 选择配置: ${event.config.name}，占位符数量: ${placeholders.length}');
@@ -250,6 +255,9 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
         appliedConfigs: appliedConfigs,
         successMessage: '配置 "${event.config.name}" 已成功应用，重启游戏生效',
       ));
+      
+      // 记录应用次数（异步执行，不阻塞主流程）
+      _api.useConfig(event.config.id);
       
       LogService.d('[KeyBindingBloc] 配置应用成功: ${event.config.name}');
     } catch (e) {
@@ -504,9 +512,9 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     emit(state.copyWith(isLoading: true, clearError: true, clearSuccessMessage: true));
     
     try {
-      LogService.d('[KeyBindingBloc] 开始删除配置: id=${event.id}');
+      LogService.d('[KeyBindingBloc] 开始删除配置: id=${event.id}, editReason=${event.editReason}');
       
-      await _api.deleteConfig(event.id);
+      await _api.deleteConfig(event.id, editReason: event.editReason);
       
       // 如果删除的是当前选中的配置，清除选中状态
       final shouldClearSelection = state.selectedConfig?.id == event.id;
@@ -540,9 +548,9 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     emit(state.copyWith(isSaving: true, clearError: true, clearSuccessMessage: true));
     
     try {
-      LogService.d('[KeyBindingBloc] 开始更新配置: id=${event.id}, name=${event.request.name}');
+      LogService.d('[KeyBindingBloc] 开始更新配置: id=${event.id}, name=${event.request.name}, editReason=${event.editReason}');
       
-      final config = await _api.updateConfig(event.id, event.request);
+      final config = await _api.updateConfig(event.id, event.request, editReason: event.editReason);
       
       if (config != null) {
         emit(state.copyWith(
@@ -553,6 +561,8 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
         
         // 刷新配置列表
         add(const KeyBindingLoadConfigs(showSuccessMessage: false));
+        // 刷新用户配置列表
+        add(const KeyBindingLoadMyConfigs(showSuccessMessage: false));
         
         LogService.d('[KeyBindingBloc] 更新配置成功: id=${event.id}');
       } else {
@@ -772,5 +782,92 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
         emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '投票失败')));
       }
     }
+  }
+
+  /// 加载评论列表
+  Future<void> _onLoadComments(
+    KeyBindingLoadComments event,
+    Emitter<KeyBindingState> emit,
+  ) async {
+    emit(state.copyWith(isLoadingComments: true, clearError: true));
+    
+    try {
+      LogService.d('[KeyBindingBloc] 开始加载评论列表: configId=${event.configId}, page=${event.page}');
+      
+      final response = await _api.getComments(event.configId, page: event.page);
+      
+      emit(state.copyWith(
+        comments: response.items,
+        commentTotal: response.total,
+        isLoadingComments: false,
+      ));
+      
+      LogService.d('[KeyBindingBloc] 加载评论列表成功，共 ${response.items.length} 条');
+    } catch (e) {
+      LogService.e('[KeyBindingBloc] 加载评论列表失败', e);
+      emit(state.copyWith(
+        isLoadingComments: false,
+        error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载评论列表失败'),
+      ));
+    }
+  }
+
+  /// 发表评论
+  Future<void> _onAddComment(
+    KeyBindingAddComment event,
+    Emitter<KeyBindingState> emit,
+  ) async {
+    emit(state.copyWith(isSubmittingComment: true, clearError: true, clearSuccessMessage: true));
+    
+    try {
+      LogService.d('[KeyBindingBloc] 开始发表评论: configId=${event.configId}');
+      
+      final response = await _api.addComment(
+        event.configId,
+        event.content,
+        images: event.images,
+        replyToId: event.replyToId,
+      );
+      
+      if (response != null) {
+        // 更新选中配置的评论数（如果是当前选中的配置）
+        KeyConfig? updatedConfig;
+        if (state.selectedConfig?.id == event.configId) {
+          updatedConfig = state.selectedConfig!.copyWith(
+            commentCount: state.selectedConfig!.commentCount + 1,
+          );
+        }
+        
+        emit(state.copyWith(
+          isSubmittingComment: false,
+          successMessage: '评论发表成功',
+          selectedConfig: updatedConfig,
+        ));
+        
+        // 重新加载评论列表
+        add(KeyBindingLoadComments(configId: event.configId));
+        
+        LogService.d('[KeyBindingBloc] 发表评论成功');
+      } else {
+        emit(state.copyWith(
+          isSubmittingComment: false,
+          error: '发表评论失败',
+        ));
+      }
+    } catch (e) {
+      LogService.e('[KeyBindingBloc] 发表评论失败', e);
+      emit(state.copyWith(
+        isSubmittingComment: false,
+        error: ErrorUtils.getErrorMessage(e, defaultMessage: '发表评论失败'),
+      ));
+    }
+  }
+
+  /// 清除评论列表
+  void _onClearComments(
+    KeyBindingClearComments event,
+    Emitter<KeyBindingState> emit,
+  ) {
+    emit(state.copyWith(clearComments: true, commentTotal: 0));
   }
 }
