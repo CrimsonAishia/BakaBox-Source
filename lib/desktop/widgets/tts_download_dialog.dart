@@ -520,12 +520,13 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
       
       if (!mounted) return;
       
-      // 执行删除
-      await _ttsService.deleteModel(modelId: model.id);
+      // 通过 Bloc 事件执行删除（会自动处理 TTS 开关状态）
+      context.read<MapSubscriptionBloc>().add(
+        MapSubscriptionDeleteTtsModel(modelId: model.id),
+      );
       
       if (mounted) {
         setState(() => _deletingModelId = null);
-        context.read<MapSubscriptionBloc>().add(const MapSubscriptionLoad());
         
         // 显示删除成功提示
         ToastUtils.showSuccess(context, '已删除 ${model.name}');
