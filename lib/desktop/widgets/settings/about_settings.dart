@@ -20,6 +20,7 @@ class AboutSettings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -32,13 +33,21 @@ class AboutSettings extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
-            color: const Color(0xFFF0F9FF),
+            color: isDark ? const Color(0xFF1E3A5F) : const Color(0xFFF0F9FF),
             borderRadius: BorderRadius.circular(8),
-            border: const Border(left: BorderSide(color: Color(0xFF0EA5E9), width: 4)),
+            border: Border(
+              left: BorderSide(
+                color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0EA5E9),
+                width: 4,
+              ),
+            ),
           ),
-          child: const Text(
+          child: Text(
             '💡 应用启动时会自动检查更新。如果有新版本，将在后台下载并提示您安装。更新过程中请不要关闭应用程序。',
-            style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+            style: TextStyle(
+              fontSize: 13,
+              color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+            ),
           ),
         ),
       ],
@@ -46,6 +55,7 @@ class AboutSettings extends StatelessWidget {
   }
 
   Widget _buildUpdateInfoGrid(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return BlocBuilder<UpdateBloc, UpdateState>(
       builder: (context, updateState) {
         return Column(
@@ -55,7 +65,11 @@ class AboutSettings extends StatelessWidget {
               iconColor: const Color(0xFF0080FF),
               label: '当前版本',
               value: Text('v${settingsState.appVersion}',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : const Color(0xFF374151),
+                ),
               ),
               action: SettingsPrimaryButton(
                 onPressed: updateState.isChecking ? null : () => _checkForUpdates(context),
@@ -68,9 +82,13 @@ class AboutSettings extends StatelessWidget {
               icon: MdiIcons.accountOutline,
               iconColor: const Color(0xFF10B981),
               label: '开发者',
-              value: const Text(
+              value: Text(
                 AppConstants.appAuthor,
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : const Color(0xFF374151),
+                ),
               ),
               action: const SizedBox.shrink(),
             ),
@@ -78,9 +96,13 @@ class AboutSettings extends StatelessWidget {
               icon: MdiIcons.copyright,
               iconColor: const Color(0xFF8B5CF6),
               label: '版权信息',
-              value: const Text(
+              value: Text(
                 AppConstants.appCopyright,
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF6B7280)),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                ),
               ),
               action: const SizedBox.shrink(),
             ),
