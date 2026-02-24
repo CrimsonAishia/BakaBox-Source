@@ -321,9 +321,17 @@ class MapSubscriptionBloc
     Emitter<MapSubscriptionState> emit,
   ) async {
     await _ttsService.deleteModel(modelId: event.modelId);
+    
+    // 如果删除后没有任何已下载的模型，自动关闭 TTS 开关
+    final hasAnyModel = _ttsService.isModelDownloaded;
+    if (!hasAnyModel && state.isTtsEnabled) {
+      await _service.setTtsEnabled(false);
+    }
+    
     emit(
       state.copyWith(
-        isTtsModelDownloaded: _ttsService.isModelDownloaded,
+        isTtsModelDownloaded: hasAnyModel,
+        isTtsEnabled: hasAnyModel ? state.isTtsEnabled : false,
         ttsDownloadStatus: TtsDownloadStatus.idle,
         ttsDownloadProgress: 0.0,
       ),
