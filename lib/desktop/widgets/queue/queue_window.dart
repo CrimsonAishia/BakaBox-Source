@@ -20,8 +20,20 @@ import '../../../core/utils/storage_utils.dart';
 import '../../../core/utils/toast_utils.dart';
 import '../../../core/widgets/map_background.dart';
 import '../../../core/widgets/csgo_manual_launch_dialog.dart';
+import 'queue_activity_log.dart';
 import 'queue_arena.dart';
 import 'queue_settings.dart';
+
+/// 缓存的用户信息
+class _CachedUserInfo {
+  final String userName;
+  final bool isSelf;
+  
+  const _CachedUserInfo({
+    required this.userName,
+    required this.isSelf,
+  });
+}
 
 /// 挤服窗口
 class QueueWindow extends StatefulWidget {
@@ -124,6 +136,14 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
   final StatusWindowService _statusService = StatusWindowService();
   final SteamUserService _steamUserService = SteamUserService();
   StreamSubscription<OperationState>? _stateSubscription;
+  
+  // 活动日志列表（限制最大条数防止内存溢出）
+  final List<QueueActivityItem> _activities = [];
+  static const int _maxActivities = 100;
+  
+  // 用户信息缓存（用于在用户离开/成功时获取昵称）
+  final Map<String, _CachedUserInfo> _userInfoCache = {};
+  static const int _maxCacheSize = 50;
 
   @override
   void initState() {
@@ -140,8 +160,46 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
   @override
   void dispose() {
     _stateSubscription?.cancel();
-    // 页面关闭不影响服务继续运行
+    _activities.clear();
+    _userInfoCache.clear();
     super.dispose();
+  }
+  
+  /// 添加活动日志（带数量限制）
+  void _addActivity(QueueActivityItem activity) {
+    setState(() {
+      _activities.add(activity);
+      // 超过最大条数时移除最早的记录
+      if (_activities.length > _maxActivities) {
+        _activities.removeRange(0, _activities.length - _maxActivities);
+      }
+    });
+  }
+  
+  /// 更新用户信息缓存
+  void _updateUserInfoCache(List<dynamic> users) {
+    for (final user in users) {
+      final uniqueId = user.uniqueId as String;
+      final nickname = user.nickname as String?;
+      final isAnonymous = user.isAnonymous as bool;
+      final isSelf = user.isSelf as bool;
+      _userInfoCache[uniqueId] = _CachedUserInfo(
+        userName: nickname ?? (isAnonymous ? '匿名用户' : '用户'),
+        isSelf: isSelf,
+      );
+    }
+    // 缓存过大时清理最早的条目
+    if (_userInfoCache.length > _maxCacheSize) {
+      final keysToRemove = _userInfoCache.keys.take(_userInfoCache.length - _maxCacheSize).toList();
+      for (final key in keysToRemove) {
+        _userInfoCache.remove(key);
+      }
+    }
+  }
+  
+  /// 获取缓存的用户信息
+  _CachedUserInfo _getCachedUserInfo(String uniqueId) {
+    return _userInfoCache[uniqueId] ?? const _CachedUserInfo(userName: '用户', isSelf: false);
   }
   
   /// 处理关闭按钮点击
@@ -158,7 +216,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         width: 420,
-        constraints: const BoxConstraints(maxHeight: 580),
+        constraints: const BoxConstraints(maxHeight: 680),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
@@ -449,7 +507,64 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     
-    return BlocBuilder<QueueUsersBloc, QueueUsersState>(
+    return BlocConsumer<QueueUsersBloc, QueueUsersState>(
+      listenWhen: (previous, current) {
+        // 监听用户加入、离开、成功事件
+        return current.joinedUserId != null ||
+            current.leftUserId != null ||
+            current.successUserId != null;
+      },
+      listener: (context, usersState) {
+        // 先更新缓存（确保在处理事件前缓存是最新的）
+        _updateUserInfoCache(usersState.users);
+        
+        // 用户加入
+        if (usersState.joinedUserId != null) {
+          final joinedId = usersState.joinedUserId!;
+          try {
+            final user = usersState.users.firstWhere(
+              (u) => u.uniqueId == joinedId,
+            );
+            _addActivity(QueueActivityItem.fromUser(user, QueueActivityType.join));
+          } catch (_) {
+            // 用户不在列表中，使用缓存
+            final cachedInfo = _getCachedUserInfo(joinedId);
+            _addActivity(QueueActivityItem(
+              id: '${joinedId}_join_${DateTime.now().millisecondsSinceEpoch}',
+              type: QueueActivityType.join,
+              userName: cachedInfo.userName,
+              isSelf: cachedInfo.isSelf,
+              timestamp: DateTime.now(),
+            ));
+          }
+        }
+        
+        // 用户离开 - 从缓存中获取用户信息
+        if (usersState.leftUserId != null) {
+          final leftId = usersState.leftUserId!;
+          final cachedInfo = _getCachedUserInfo(leftId);
+          _addActivity(QueueActivityItem(
+            id: '${leftId}_leave_${DateTime.now().millisecondsSinceEpoch}',
+            type: QueueActivityType.leave,
+            userName: cachedInfo.userName,
+            isSelf: cachedInfo.isSelf,
+            timestamp: DateTime.now(),
+          ));
+        }
+        
+        // 用户成功进入服务器 - 从缓存中获取用户信息
+        if (usersState.successUserId != null) {
+          final successId = usersState.successUserId!;
+          final cachedInfo = _getCachedUserInfo(successId);
+          _addActivity(QueueActivityItem(
+            id: '${successId}_success_${DateTime.now().millisecondsSinceEpoch}',
+            type: QueueActivityType.success,
+            userName: cachedInfo.userName,
+            isSelf: cachedInfo.isSelf,
+            timestamp: DateTime.now(),
+          ));
+        }
+      },
       builder: (context, usersState) {
         // 判断服务器是否可加入
         final players = state.serverInfo?.players ?? 0;
@@ -457,43 +572,51 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
         final canJoin = maxPlayers > 0 && players < maxPlayers;
         final hasUserJoined = usersState.successUserId != null;
         
-        return Container(
-          height: 260,
-          decoration: BoxDecoration(
-            color: isDark 
-                ? const Color(0xFF1E293B).withValues(alpha: 0.5)
-                : const Color(0xFFF1F5F9).withValues(alpha: 0.8),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isDark 
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : Colors.black.withValues(alpha: 0.05),
-            ),
-          ),
-          child: QueueArena(
-            users: usersState.users,
-            centerWidget: _QueueServerIcon(
-              canJoin: canJoin,
-              hasUserJoined: hasUserJoined,
-            ),
-            joinedUserId: usersState.joinedUserId,
-            leftUserId: usersState.leftUserId,
-            successUserId: usersState.successUserId,
-            onAnimationTriggered: () {
-              context.read<QueueUsersBloc>().clearAnimationTriggers();
-            },
-            onUserSuccessAnimationComplete: (user) {
-              if (user.isSelf) {
-                // 自己成功进入，关闭窗口
-                Future.delayed(const Duration(milliseconds: 300), () {
-                  if (context.mounted) {
-                    context.read<QueueBloc>().add(const QueueDispose());
-                    widget.onClose?.call();
+        return Column(
+          children: [
+            // 竞技场面板
+            Container(
+              height: 200,
+              decoration: BoxDecoration(
+                color: isDark 
+                    ? const Color(0xFF1E293B).withValues(alpha: 0.5)
+                    : const Color(0xFFF1F5F9).withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark 
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.05),
+                ),
+              ),
+              child: QueueArena(
+                users: usersState.users,
+                centerWidget: _QueueServerIcon(
+                  canJoin: canJoin,
+                  hasUserJoined: hasUserJoined,
+                ),
+                joinedUserId: usersState.joinedUserId,
+                leftUserId: usersState.leftUserId,
+                successUserId: usersState.successUserId,
+                onAnimationTriggered: () {
+                  context.read<QueueUsersBloc>().clearAnimationTriggers();
+                },
+                onUserSuccessAnimationComplete: (user) {
+                  if (user.isSelf) {
+                    // 自己成功进入，关闭窗口
+                    Future.delayed(const Duration(milliseconds: 300), () {
+                      if (context.mounted) {
+                        context.read<QueueBloc>().add(const QueueDispose());
+                        widget.onClose?.call();
+                      }
+                    });
                   }
-                });
-              }
-            },
-          ),
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+            // 活动日志
+            QueueActivityLog(activities: _activities),
+          ],
         );
       },
     );
