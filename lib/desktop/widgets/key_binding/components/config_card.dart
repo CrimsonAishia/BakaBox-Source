@@ -170,6 +170,11 @@ class _ConfigCardState extends State<ConfigCard> {
                           ),
                         ),
                         _buildVoteCount(widget.config.upCount, widget.config.downCount),
+                        // 显示应用次数和评论数
+                        if (widget.config.isApproved && (widget.config.useCount > 0 || widget.config.commentCount > 0)) ...[
+                          const SizedBox(width: 8),
+                          _buildStatsCount(widget.config.useCount, widget.config.commentCount),
+                        ],
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -211,6 +216,27 @@ class _ConfigCardState extends State<ConfigCard> {
           '$downCount',
           style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: Color(0xFFef4444)),
         ),
+      ],
+    );
+  }
+
+  Widget _buildStatsCount(int useCount, int commentCount) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = isDark ? Colors.white38 : const Color(0xFF9CA3AF);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (useCount > 0) ...[
+          Icon(MdiIcons.downloadOutline, size: 12, color: color),
+          const SizedBox(width: 2),
+          Text('$useCount', style: TextStyle(fontSize: 10, color: color)),
+        ],
+        if (useCount > 0 && commentCount > 0) const SizedBox(width: 6),
+        if (commentCount > 0) ...[
+          Icon(MdiIcons.commentOutline, size: 12, color: color),
+          const SizedBox(width: 2),
+          Text('$commentCount', style: TextStyle(fontSize: 10, color: color)),
+        ],
       ],
     );
   }

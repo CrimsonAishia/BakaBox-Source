@@ -59,6 +59,18 @@ class KeyBindingState extends Equatable {
   
   /// 成功消息（用于显示操作成功提示）
   final String? successMessage;
+  
+  /// 评论列表
+  final List<KeyConfigComment> comments;
+  
+  /// 评论总数
+  final int commentTotal;
+  
+  /// 是否正在加载评论
+  final bool isLoadingComments;
+  
+  /// 是否正在提交评论
+  final bool isSubmittingComment;
 
   const KeyBindingState({
     this.configs = const [],
@@ -80,6 +92,10 @@ class KeyBindingState extends Equatable {
     this.hasGamePath = false,
     this.autoexecFileExists = false,
     this.successMessage,
+    this.comments = const [],
+    this.commentTotal = 0,
+    this.isLoadingComments = false,
+    this.isSubmittingComment = false,
   });
 
   /// 获取配置列表（已应用的置顶）
@@ -144,6 +160,11 @@ class KeyBindingState extends Equatable {
     bool? autoexecFileExists,
     String? successMessage,
     bool clearSuccessMessage = false,
+    List<KeyConfigComment>? comments,
+    bool clearComments = false,
+    int? commentTotal,
+    bool? isLoadingComments,
+    bool? isSubmittingComment,
   }) {
     return KeyBindingState(
       configs: configs ?? this.configs,
@@ -165,6 +186,10 @@ class KeyBindingState extends Equatable {
       hasGamePath: hasGamePath ?? this.hasGamePath,
       autoexecFileExists: autoexecFileExists ?? this.autoexecFileExists,
       successMessage: clearSuccessMessage ? null : (successMessage ?? this.successMessage),
+      comments: clearComments ? const [] : (comments ?? this.comments),
+      commentTotal: commentTotal ?? this.commentTotal,
+      isLoadingComments: isLoadingComments ?? this.isLoadingComments,
+      isSubmittingComment: isSubmittingComment ?? this.isSubmittingComment,
     );
   }
 
@@ -189,5 +214,9 @@ class KeyBindingState extends Equatable {
     hasGamePath,
     autoexecFileExists,
     successMessage,
+    comments,
+    commentTotal,
+    isLoadingComments,
+    isSubmittingComment,
   ];
 }

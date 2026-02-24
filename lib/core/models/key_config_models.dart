@@ -81,6 +81,13 @@ class KeyConfig extends Equatable {
   final String auditRemark;
   @NullableServerTimeConverter()
   final DateTime? auditAt;
+  
+  // 新增字段：应用次数、评论数、编辑理由
+  @JsonKey(defaultValue: 0)
+  final int useCount;
+  @JsonKey(defaultValue: 0)
+  final int commentCount;
+  final String? editReason;
 
   const KeyConfig({
     required this.id,
@@ -108,6 +115,9 @@ class KeyConfig extends Equatable {
     this.auditStatus = KeyConfigAuditStatus.approved,
     this.auditRemark = '',
     this.auditAt,
+    this.useCount = 0,
+    this.commentCount = 0,
+    this.editReason,
   });
 
   /// 获取投票类型枚举
@@ -156,6 +166,9 @@ class KeyConfig extends Equatable {
     KeyConfigAuditStatus? auditStatus,
     String? auditRemark,
     Object? auditAt = _sentinel,
+    int? useCount,
+    int? commentCount,
+    Object? editReason = _sentinel,
   }) {
     return KeyConfig(
       id: id ?? this.id,
@@ -183,6 +196,9 @@ class KeyConfig extends Equatable {
       auditStatus: auditStatus ?? this.auditStatus,
       auditRemark: auditRemark ?? this.auditRemark,
       auditAt: auditAt == _sentinel ? this.auditAt : auditAt as DateTime?,
+      useCount: useCount ?? this.useCount,
+      commentCount: commentCount ?? this.commentCount,
+      editReason: editReason == _sentinel ? this.editReason : editReason as String?,
     );
   }
 
@@ -213,6 +229,9 @@ class KeyConfig extends Equatable {
         auditStatus,
         auditRemark,
         auditAt,
+        useCount,
+        commentCount,
+        editReason,
       ];
 }
 
@@ -359,4 +378,118 @@ class KeyConfigVoteResponse extends Equatable {
 
   @override
   List<Object?> get props => [success, upCount, downCount, voteCount, hasVoted, voteType];
+}
+
+
+/// 按键配置评论模型
+@JsonSerializable()
+class KeyConfigComment extends Equatable {
+  final int id;
+  final int configId;
+  final int authorId;
+  final String authorName;
+  final String? authorAvatar;
+  final bool isAdmin;
+  final String content;
+  @JsonKey(defaultValue: [])
+  final List<String> images;
+  final int? replyToId;
+  @JsonKey(defaultValue: 0)
+  final int replyCount;
+  @ServerTimeConverter()
+  final DateTime createdAt;
+  @NullableServerTimeConverter()
+  final DateTime? updatedAt;
+
+  const KeyConfigComment({
+    required this.id,
+    required this.configId,
+    required this.authorId,
+    required this.authorName,
+    this.authorAvatar,
+    this.isAdmin = false,
+    required this.content,
+    this.images = const [],
+    this.replyToId,
+    this.replyCount = 0,
+    required this.createdAt,
+    this.updatedAt,
+  });
+
+  factory KeyConfigComment.fromJson(Map<String, dynamic> json) =>
+      _$KeyConfigCommentFromJson(json);
+  Map<String, dynamic> toJson() => _$KeyConfigCommentToJson(this);
+
+  @override
+  List<Object?> get props => [
+        id,
+        configId,
+        authorId,
+        authorName,
+        authorAvatar,
+        isAdmin,
+        content,
+        images,
+        replyToId,
+        replyCount,
+        createdAt,
+        updatedAt,
+      ];
+}
+
+/// 评论列表响应
+@JsonSerializable()
+class KeyConfigCommentListResponse extends Equatable {
+  final int total;
+  @JsonKey(defaultValue: [])
+  final List<KeyConfigComment> items;
+
+  const KeyConfigCommentListResponse({
+    required this.total,
+    this.items = const [],
+  });
+
+  factory KeyConfigCommentListResponse.fromJson(Map<String, dynamic> json) =>
+      _$KeyConfigCommentListResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$KeyConfigCommentListResponseToJson(this);
+
+  @override
+  List<Object?> get props => [total, items];
+}
+
+/// 创建评论响应
+@JsonSerializable()
+class KeyConfigCreateCommentResponse extends Equatable {
+  final int id;
+  final String content;
+  @ServerTimeConverter()
+  final DateTime createdAt;
+
+  const KeyConfigCreateCommentResponse({
+    required this.id,
+    required this.content,
+    required this.createdAt,
+  });
+
+  factory KeyConfigCreateCommentResponse.fromJson(Map<String, dynamic> json) =>
+      _$KeyConfigCreateCommentResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$KeyConfigCreateCommentResponseToJson(this);
+
+  @override
+  List<Object?> get props => [id, content, createdAt];
+}
+
+/// 应用配置响应
+@JsonSerializable()
+class KeyConfigUseResponse extends Equatable {
+  final int useCount;
+
+  const KeyConfigUseResponse({required this.useCount});
+
+  factory KeyConfigUseResponse.fromJson(Map<String, dynamic> json) =>
+      _$KeyConfigUseResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$KeyConfigUseResponseToJson(this);
+
+  @override
+  List<Object?> get props => [useCount];
 }
