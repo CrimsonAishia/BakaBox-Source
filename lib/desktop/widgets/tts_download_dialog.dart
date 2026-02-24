@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/bloc/map_subscription/map_subscription_bloc.dart';
 import '../../core/services/tts_service.dart';
+import '../../core/utils/toast_utils.dart';
 
 /// TTS 模型管理弹窗
 ///
@@ -29,6 +30,7 @@ class TtsDownloadDialog extends StatefulWidget {
 class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
   final TtsService _ttsService = TtsService();
   String? _downloadingModelId;
+  String? _deletingModelId; // 正在删除的模型ID，用于动画
 
   @override
   Widget build(BuildContext context) {
@@ -169,159 +171,170 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
     final isFailed =
         _downloadingModelId == model.id &&
         state.ttsDownloadStatus == TtsDownloadStatus.failed;
+    final isDeleting = _deletingModelId == model.id;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: _HoverContainer(
-        isDark: isDark,
-        isSelected: isSelected,
-        onTap: isDownloaded
-            ? () {
-                context.read<MapSubscriptionBloc>().add(
-                  MapSubscriptionSelectTtsModel(modelId: model.id),
-                );
-              }
-            : null,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return AnimatedOpacity(
+      opacity: isDeleting ? 0.0 : 1.0,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+      child: AnimatedScale(
+        scale: isDeleting ? 0.95 : 1.0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: _HoverContainer(
+            isDark: isDark,
+            isSelected: isSelected,
+            onTap: isDownloaded
+                ? () {
+                    context.read<MapSubscriptionBloc>().add(
+                      MapSubscriptionSelectTtsModel(modelId: model.id),
+                    );
+                  }
+                : null,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 选中标记
-                if (isSelected)
-                  Container(
-                    width: 20,
-                    height: 20,
-                    margin: const EdgeInsets.only(right: 10),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF6366F1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check,
-                      size: 12,
-                      color: Colors.white,
-                    ),
-                  ),
-                // 模型信息
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                Row(
+                  children: [
+                    // 选中标记
+                    if (isSelected)
+                      Container(
+                        width: 20,
+                        height: 20,
+                        margin: const EdgeInsets.only(right: 10),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF6366F1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.check,
+                          size: 12,
+                          color: Colors.white,
+                        ),
+                      ),
+                    // 模型信息
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            model.name,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: isDark
-                                  ? Colors.white
-                                  : const Color(0xFF1F2937),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          // 区域标签
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isDomestic
-                                  ? const Color(
-                                      0xFF10B981,
-                                    ).withValues(alpha: 0.12)
-                                  : const Color(
-                                      0xFF6366F1,
-                                    ).withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              isDomestic ? '国内' : '国外',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                                color: isDomestic
-                                    ? const Color(0xFF10B981)
-                                    : const Color(0xFF6366F1),
+                          Row(
+                            children: [
+                              Text(
+                                model.name,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF1F2937),
+                                ),
                               ),
+                              const SizedBox(width: 6),
+                              // 区域标签
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isDomestic
+                                      ? const Color(
+                                          0xFF10B981,
+                                        ).withValues(alpha: 0.12)
+                                      : const Color(
+                                          0xFF6366F1,
+                                        ).withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  isDomestic ? '国内' : '国外',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                    color: isDomestic
+                                        ? const Color(0xFF10B981)
+                                        : const Color(0xFF6366F1),
+                                  ),
+                                ),
+                              ),
+                              // 已下载标记
+                              if (isDownloaded) ...[
+                                const SizedBox(width: 6),
+                                const Icon(
+                                  Icons.check_circle_rounded,
+                                  size: 14,
+                                  color: Color(0xFF10B981),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${model.description} · ${model.language} · ${model.estimatedSize}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark
+                                  ? Colors.white38
+                                  : const Color(0xFF9CA3AF),
                             ),
                           ),
-                          // 已下载标记
-                          if (isDownloaded) ...[
-                            const SizedBox(width: 6),
-                            const Icon(
-                              Icons.check_circle_rounded,
-                              size: 14,
-                              color: Color(0xFF10B981),
-                            ),
-                          ],
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${model.description} · ${model.language} · ${model.estimatedSize}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark
-                              ? Colors.white38
-                              : const Color(0xFF9CA3AF),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // 操作按钮
-                _buildModelActions(
-                  isDark,
-                  model,
-                  state,
-                  isDownloaded,
-                  isSelected,
-                  isDownloading,
-                  isExtracting,
-                ),
-              ],
-            ),
-            // 下载进度条（在模型卡片内）
-            if (isDownloading || isExtracting) ...[
-              const SizedBox(height: 10),
-              _buildInlineProgress(isDark, state, isExtracting),
-            ],
-            // 错误提示
-            if (isFailed && state.error != null) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.error_outline_rounded,
-                      size: 14,
-                      color: Colors.redAccent,
                     ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        state.error!,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.redAccent,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                    // 操作按钮
+                    _buildModelActions(
+                      isDark,
+                      model,
+                      state,
+                      isDownloaded,
+                      isSelected,
+                      isDownloading,
+                      isExtracting,
                     ),
                   ],
                 ),
-              ),
-            ],
-          ],
+                // 下载进度条（在模型卡片内）
+                if (isDownloading || isExtracting) ...[
+                  const SizedBox(height: 10),
+                  _buildInlineProgress(isDark, state, isExtracting),
+                ],
+                // 错误提示
+                if (isFailed && state.error != null) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          size: 14,
+                          color: Colors.redAccent,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            state.error!,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.redAccent,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -463,15 +476,32 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
   }
 
   Future<void> _confirmDelete(TtsModelInfo model) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('删除模型'),
-        content: Text('确定要删除 ${model.name} 吗？'),
+        backgroundColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+        title: Text(
+          '删除模型',
+          style: TextStyle(
+            color: isDark ? Colors.white : const Color(0xFF1F2937),
+          ),
+        ),
+        content: Text(
+          '确定要删除 ${model.name} 吗？',
+          style: TextStyle(
+            color: isDark ? Colors.white70 : const Color(0xFF4B5563),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('取消'),
+            child: Text(
+              '取消',
+              style: TextStyle(
+                color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+              ),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
@@ -482,9 +512,23 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
       ),
     );
     if (confirm == true && mounted) {
+      // 设置删除中状态，触发淡出动画
+      setState(() => _deletingModelId = model.id);
+      
+      // 等待动画完成
+      await Future.delayed(const Duration(milliseconds: 250));
+      
+      if (!mounted) return;
+      
+      // 执行删除
       await _ttsService.deleteModel(modelId: model.id);
+      
       if (mounted) {
+        setState(() => _deletingModelId = null);
         context.read<MapSubscriptionBloc>().add(const MapSubscriptionLoad());
+        
+        // 显示删除成功提示
+        ToastUtils.showSuccess(context, '已删除 ${model.name}');
       }
     }
   }
@@ -590,7 +634,6 @@ class _HoverButton extends StatefulWidget {
   final String label;
   final bool isDestructive;
   final bool isOutlined;
-  final bool isLoading;
 
   /// 是否使用强调色（用于加速下载等特殊按钮）
   final bool isAccent;
@@ -602,7 +645,6 @@ class _HoverButton extends StatefulWidget {
     this.icon,
     this.isDestructive = false,
     this.isOutlined = false,
-    this.isLoading = false,
     this.isAccent = false,
   });
 
@@ -615,7 +657,7 @@ class _HoverButtonState extends State<_HoverButton> {
 
   @override
   Widget build(BuildContext context) {
-    final isEnabled = widget.onPressed != null && !widget.isLoading;
+    final isEnabled = widget.onPressed != null;
     final baseColor = widget.isDestructive
         ? Colors.redAccent
         : widget.isAccent
