@@ -92,11 +92,15 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       );
 
       if (response != null) {
+        // 服务端 totalPages 可能不正确，根据 total 和 pageSize 计算
+        final calculatedTotalPages = (response.total / _pageSize).ceil();
+        final totalPages = calculatedTotalPages > 0 ? calculatedTotalPages : 1;
+        
         emit(
           state.copyWith(
             notifications: response.items,
             currentPage: response.page,
-            totalPages: response.totalPages,
+            totalPages: totalPages,
             total: response.total,
             isLoading: false,
           ),
@@ -134,16 +138,20 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       );
 
       if (response != null) {
+        // 服务端 totalPages 可能不正确，根据 total 和 pageSize 计算
+        final calculatedTotalPages = (response.total / _pageSize).ceil();
+        final totalPages = calculatedTotalPages > 0 ? calculatedTotalPages : 1;
+        
         emit(
           state.copyWith(
             notifications: response.items,
             currentPage: response.page,
-            totalPages: response.totalPages,
+            totalPages: totalPages,
             total: response.total,
             isLoading: false,
           ),
         );
-        LogService.d('成功刷新消息列表，共 ${response.items.length} 条');
+        LogService.d('成功刷新消息列表，共 ${response.items.length} 条, totalPages: $totalPages');
 
         // 获取准确的未读数量
         add(const NotificationFetchUnreadCount());
@@ -177,12 +185,21 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       );
 
       if (response != null) {
-        final updatedList = [...state.notifications, ...response.items];
+        // 服务端 totalPages 可能不正确，根据 total 和 pageSize 计算
+        final calculatedTotalPages = (response.total / _pageSize).ceil();
+        final totalPages = calculatedTotalPages > 0 ? calculatedTotalPages : 1;
+        
+        // 去重：根据 id 过滤已存在的消息
+        final existingIds = state.notifications.map((n) => n.id).toSet();
+        final newItems = response.items.where((n) => !existingIds.contains(n.id)).toList();
+        final updatedList = [...state.notifications, ...newItems];
+        
         emit(
           state.copyWith(
             notifications: updatedList,
-            currentPage: response.page,
-            totalPages: response.totalPages,
+            // 使用请求的页码，而不是响应的页码（服务端可能不返回正确的 page）
+            currentPage: nextPage,
+            totalPages: totalPages,
             total: response.total,
             isLoadingMore: false,
           ),

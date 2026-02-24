@@ -43,7 +43,7 @@ NotificationListResponse _$NotificationListResponseFromJson(
   total: (json['total'] as num?)?.toInt() ?? 0,
   page: (json['page'] as num?)?.toInt() ?? 1,
   pageSize: (json['pageSize'] as num?)?.toInt() ?? 20,
-  totalPages: (json['totalPages'] as num?)?.toInt() ?? 0,
+  totalPages: (json['totalPages'] as num?)?.toInt() ?? 1,
 );
 
 Map<String, dynamic> _$NotificationListResponseToJson(

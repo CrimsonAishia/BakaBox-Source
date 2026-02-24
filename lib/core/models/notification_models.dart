@@ -101,7 +101,7 @@ class NotificationListResponse extends Equatable {
   final int page;
   @JsonKey(defaultValue: 20)
   final int pageSize;
-  @JsonKey(defaultValue: 0)
+  @JsonKey(defaultValue: 1)
   final int totalPages;
 
   const NotificationListResponse({

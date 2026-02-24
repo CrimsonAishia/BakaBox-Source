@@ -30,7 +30,6 @@ class _NotificationPanelState extends State<NotificationPanel>
 
   // 筛选状态
   bool _announcementShowUnreadOnly = false;
-  bool _notificationShowUnreadOnly = false;
 
   @override
   void initState() {
@@ -51,8 +50,14 @@ class _NotificationPanelState extends State<NotificationPanel>
   }
 
   void _onScroll() {
-    if (_notificationScrollController.position.pixels >=
-        _notificationScrollController.position.maxScrollExtent - 100) {
+    if (!_notificationScrollController.hasClients) return;
+    
+    final position = _notificationScrollController.position;
+    final maxScroll = position.maxScrollExtent;
+    final currentScroll = position.pixels;
+    
+    // 当滚动到距离底部 200px 时触发加载更多
+    if (maxScroll - currentScroll <= 200) {
       final bloc = context.read<NotificationBloc>();
       if (!bloc.state.isLoadingMore && bloc.state.hasMore) {
         bloc.add(const NotificationLoadMore());
@@ -516,14 +521,9 @@ class _NotificationPanelState extends State<NotificationPanel>
                 return _buildErrorState(state.error!, isDark);
               }
 
-              // 根据筛选条件过滤
-              final filteredNotifications = _notificationShowUnreadOnly
-                  ? state.notifications.where((item) => !item.isRead).toList()
-                  : state.notifications;
-
-              if (filteredNotifications.isEmpty) {
+              if (state.notifications.isEmpty) {
                 return _buildEmptyState(
-                  _notificationShowUnreadOnly ? '暂无未读消息' : '暂无消息',
+                  state.filterIsRead == false ? '暂无未读消息' : '暂无消息',
                   Icons.notifications_off_outlined,
                   isDark,
                 );
@@ -533,14 +533,14 @@ class _NotificationPanelState extends State<NotificationPanel>
                 controller: _notificationScrollController,
                 padding: const EdgeInsets.only(bottom: 12),
                 itemCount:
-                    filteredNotifications.length +
+                    state.notifications.length +
                     (state.isLoadingMore ? 1 : 0),
                 itemBuilder: (context, index) {
-                  if (index == filteredNotifications.length) {
+                  if (index == state.notifications.length) {
                     return _buildLoadingMore();
                   }
 
-                  final notification = filteredNotifications[index];
+                  final notification = state.notifications[index];
                   return _NotificationItemWidget(
                     index: index + 1,
                     notification: notification,
@@ -582,11 +582,9 @@ class _NotificationPanelState extends State<NotificationPanel>
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              // 筛选切换
-              _buildFilterChips(
-                showUnreadOnly: _notificationShowUnreadOnly,
-                onChanged: (value) =>
-                    setState(() => _notificationShowUnreadOnly = value),
+              // 筛选切换 - 使用服务端筛选
+              _buildNotificationFilterChips(
+                filterIsRead: state.filterIsRead,
                 isDark: isDark,
               ),
               const Spacer(),
@@ -615,6 +613,47 @@ class _NotificationPanelState extends State<NotificationPanel>
           ),
         );
       },
+    );
+  }
+
+  /// 消息筛选切换组件 - 服务端筛选
+  Widget _buildNotificationFilterChips({
+    required bool? filterIsRead,
+    required bool isDark,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildFilterChip(
+            label: '全部',
+            isSelected: filterIsRead == null,
+            onTap: () {
+              context.read<NotificationBloc>().add(
+                const NotificationFetch(isRead: null),
+              );
+            },
+            isDark: isDark,
+          ),
+          _buildFilterChip(
+            label: '未读',
+            isSelected: filterIsRead == false,
+            onTap: () {
+              context.read<NotificationBloc>().add(
+                const NotificationFetch(isRead: false),
+              );
+            },
+            isDark: isDark,
+          ),
+        ],
+      ),
     );
   }
 
