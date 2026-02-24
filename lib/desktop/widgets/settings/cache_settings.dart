@@ -21,6 +21,8 @@ class CacheSettings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     // 监听需要重启的状态
     if (settingsState.needsRestart) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -40,13 +42,21 @@ class CacheSettings extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
-            color: const Color(0xFFEFF6FF),
+            color: isDark ? const Color(0xFF1E3A5F) : const Color(0xFFEFF6FF),
             borderRadius: BorderRadius.circular(8),
-            border: const Border(left: BorderSide(color: Color(0xFF3B82F6), width: 4)),
+            border: Border(
+              left: BorderSide(
+                color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF3B82F6),
+                width: 4,
+              ),
+            ),
           ),
-          child: const Text(
+          child: Text(
             '💡 统计包括缓存数据库、应用数据、临时文件和日志文件。定期清理可以释放磁盘空间。所有数据现在保存在用户目录下，不会因为应用更新而丢失。您可以选择性清理不同类型的内容。',
-            style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+            style: TextStyle(
+              fontSize: 13,
+              color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+            ),
           ),
         ),
       ],
