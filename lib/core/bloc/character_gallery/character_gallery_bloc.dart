@@ -1033,55 +1033,73 @@ class CharacterGalleryBloc
       clearSelectedCharacter: true, // 清除角色详情，以便显示刀枪模详情
     ));
 
-    // 获取选中的刀枪模
-    final characterId = event.isKnife
-        ? state.allKnifeModels.cast<KnifeModel?>().firstWhere(
-              (k) => k?.id == event.id,
-              orElse: () => null,
-            )?.characterId
-        : state.allGunModels.cast<GunModel?>().firstWhere(
-              (g) => g?.id == event.id,
-              orElse: () => null,
-            )?.characterId;
+    try {
+      // 调用详情 API 获取完整数据
+      KnifeModel? knifeDetail;
+      GunModel? gunDetail;
+      int? characterId;
 
-    // 如果有专属角色，获取角色信息
-    if (characterId != null) {
-      emit(state.copyWith(weaponCharacterLoadState: LoadState.loading));
-      try {
-        final results = await Future.wait([
-          _api.getCharacterDetail(characterId),
-          Future.delayed(const Duration(milliseconds: 600)), // 最小加载时间
-        ]);
-        final character = results[0] as CharacterModel?;
-        if (character != null) {
-          // 获取默认子模型的缩略图
-          final defaultSubModel = character.subModels?.firstWhere(
-            (s) => s.isDefault,
-            orElse: () => character.subModels!.first,
-          );
-          emit(state.copyWith(
-            weaponDetailLoadState: LoadState.success,
-            weaponCharacterLoadState: LoadState.success,
-            weaponCharacterThumbnailUrl: defaultSubModel?.thumbnailUrl ?? character.thumbnailUrl,
-            weaponCharacterAcquisition: character.acquisition,
-          ));
-        } else {
+      final results = await Future.wait([
+        event.isKnife
+            ? _api.getKnifeModelDetail(event.id)
+            : _api.getGunModelDetail(event.id),
+        Future.delayed(const Duration(milliseconds: 400)), // 最小加载时间
+      ]);
+
+      if (event.isKnife) {
+        knifeDetail = results[0] as KnifeModel?;
+        characterId = knifeDetail?.characterId;
+      } else {
+        gunDetail = results[0] as GunModel?;
+        characterId = gunDetail?.characterId;
+      }
+
+      // 更新详情数据
+      emit(state.copyWith(
+        selectedKnifeModelDetail: knifeDetail,
+        selectedGunModelDetail: gunDetail,
+      ));
+
+      // 如果有专属角色，获取角色信息
+      if (characterId != null) {
+        emit(state.copyWith(weaponCharacterLoadState: LoadState.loading));
+        try {
+          final character = await _api.getCharacterDetail(characterId);
+          if (character != null) {
+            // 获取默认子模型的缩略图
+            final defaultSubModel = character.subModels?.firstWhere(
+              (s) => s.isDefault,
+              orElse: () => character.subModels!.first,
+            );
+            emit(state.copyWith(
+              weaponDetailLoadState: LoadState.success,
+              weaponCharacterLoadState: LoadState.success,
+              weaponCharacterThumbnailUrl: defaultSubModel?.thumbnailUrl ?? character.thumbnailUrl,
+              weaponCharacterAcquisition: character.acquisition,
+            ));
+          } else {
+            emit(state.copyWith(
+              weaponDetailLoadState: LoadState.success,
+              weaponCharacterLoadState: LoadState.failure,
+            ));
+          }
+        } catch (e) {
+          LogService.e('获取刀枪模专属角色信息失败: $e', e);
           emit(state.copyWith(
             weaponDetailLoadState: LoadState.success,
             weaponCharacterLoadState: LoadState.failure,
           ));
         }
-      } catch (e) {
-        LogService.e('获取刀枪模专属角色信息失败: $e', e);
-        emit(state.copyWith(
-          weaponDetailLoadState: LoadState.success,
-          weaponCharacterLoadState: LoadState.failure,
-        ));
+      } else {
+        // 没有专属角色
+        emit(state.copyWith(weaponDetailLoadState: LoadState.success));
       }
-    } else {
-      // 没有专属角色，延迟一下再设置成功状态
-      await Future.delayed(const Duration(milliseconds: 400));
-      emit(state.copyWith(weaponDetailLoadState: LoadState.success));
+    } catch (e) {
+      LogService.e('获取刀枪模详情失败: $e', e);
+      emit(state.copyWith(
+        weaponDetailLoadState: LoadState.failure,
+        error: '获取详情失败',
+      ));
     }
   }
 
