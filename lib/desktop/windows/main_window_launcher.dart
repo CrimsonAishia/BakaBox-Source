@@ -88,8 +88,10 @@ class MainWindowLauncher {
 
   /// 初始化窗口
   static Future<void> _initWindow() async {
+    const windowSize = Size(1150, 768);
     const windowOptions = WindowOptions(
-      size: Size(1150, 768),
+      size: windowSize,
+      minimumSize: windowSize, // 设置最小尺寸，防止分辨率变化时窗口被缩小
       center: true,
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
