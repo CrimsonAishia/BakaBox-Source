@@ -32,6 +32,10 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   // 缓存大小限制
   static const int _maxCacheSize = 50; // 最多缓存 50 个服务器的数据
 
+  // 比分查询频率限制（60秒）
+  DateTime? _lastScoreFetchTime;
+  static const Duration _scoreFetchInterval = Duration(seconds: 60);
+
   ServerBloc() : super(const ServerState()) {
     on<ServerFetchList>(_onFetchList);
     on<ServerSelectCategory>(_onSelectCategory);
@@ -105,6 +109,11 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     // 只有在相同分类且服务器数量一致且非强制刷新时才跳过
     if (isSameCategory && serverCountMatch && state.servers.isNotEmpty && !event.forceRefresh) {
       return;
+    }
+    
+    // 切换分类时重置比分查询时间，确保新分类能立即获取比分
+    if (!isSameCategory) {
+      _lastScoreFetchTime = null;
     }
     
     final requestId = ++_currentRequestId;
@@ -228,7 +237,15 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   /// 批量获取服务器比分数据
   /// 
   /// 静默失败，不影响主流程
+  /// 60 秒内不重复查询（比分变化频率低于服务器信息）
   Future<void> _fetchBatchScores(int requestId, Emitter<ServerState> emit) async {
+    // 频率限制：距上次查询不到 60 秒则跳过
+    if (_lastScoreFetchTime != null &&
+        DateTime.now().difference(_lastScoreFetchTime!) < _scoreFetchInterval) {
+      LogService.d('批量比分查询跳过: 距上次查询不到 ${_scoreFetchInterval.inSeconds} 秒');
+      return;
+    }
+
     try {
       // 收集所有服务器地址
       final addresses = <String>[];
@@ -269,6 +286,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       
       if (!emit.isDone && requestId == _currentRequestId) {
         emit(state.copyWith(servers: updatedServers));
+        _lastScoreFetchTime = DateTime.now();
         LogService.d('批量比分查询完成: ${scores.length} 个服务器有比分数据');
       }
     } catch (e) {

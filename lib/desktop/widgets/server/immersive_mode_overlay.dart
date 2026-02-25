@@ -74,6 +74,10 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   int _countdown = _kImmersiveRefreshInterval;
   bool _isRefreshing = false;
   
+  // 比分查询频率限制（60秒）
+  DateTime? _lastScoreFetchTime;
+  static const Duration _scoreFetchInterval = Duration(seconds: 60);
+  
   // 截图预览相关
   Uint8List? _screenshotPreview;
   bool _showScreenshotPreview = false;
@@ -239,6 +243,13 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
 
   /// 批量获取所有选中分类服务器的比分数据
   Future<void> _fetchBatchScores() async {
+    // 频率限制：距上次查询不到 60 秒则跳过
+    if (_lastScoreFetchTime != null &&
+        DateTime.now().difference(_lastScoreFetchTime!) < _scoreFetchInterval) {
+      LogService.d('[沉浸模式] 批量比分查询跳过: 距上次查询不到 ${_scoreFetchInterval.inSeconds} 秒');
+      return;
+    }
+
     try {
       // 收集所有服务器地址
       final addresses = <String>[];
@@ -289,6 +300,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       }
       
       if (mounted) {
+        _lastScoreFetchTime = DateTime.now();
         setState(() {});
         LogService.d('[沉浸模式] 批量比分查询完成: ${scores.length} 个服务器有比分数据');
       }
