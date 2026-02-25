@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 
 import '../bloc/settings/settings_state.dart';
+import '../utils/fullscreen_detector.dart';
 import '../utils/log_service.dart';
 import '../utils/storage_utils.dart';
 
@@ -340,6 +341,12 @@ class NotificationWindowService {
 
   /// 创建单个窗口
   Future<void> _createWindow(NotificationData notification) async {
+    // 检测是否有全屏应用运行（仅 Windows）
+    if (Platform.isWindows && !FullscreenDetector.instance.canCreateWindow()) {
+      LogService.w('[NotificationWindow] Fullscreen app detected, skipping window creation');
+      return;
+    }
+
     final isWarmup = notification.type == NotificationType.warmup;
     final position = _getNextPosition(isWarmup: isWarmup);
     final yOffset = _calculateYOffset(position, isWarmup: isWarmup);
