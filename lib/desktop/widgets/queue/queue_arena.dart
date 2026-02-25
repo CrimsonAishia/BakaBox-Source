@@ -135,7 +135,7 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
   static const int _maxDisplayUsers = 20;
 
   /// 中心区域半径比例（避开中心服务器图标）
-  static const double _centerExclusionRatio = 0.30;
+  static const double _centerExclusionRatio = 0.38;
 
   /// 头像大小浮动范围
   static const double _sizeVariation = 0.2; // ±20%
