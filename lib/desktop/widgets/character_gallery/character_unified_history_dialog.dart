@@ -146,6 +146,9 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
       'previewBackId' => '背面预览图',
       'previewHandId' => '手部预览图',
       'previewLegId' => '腿部预览图',
+      'previewType' => '预览媒体类型',
+      'previewFileId' => '预览图片',
+      'previewVideoUrl' => '预览视频链接',
       _ => field,
     };
   }
@@ -721,6 +724,16 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
       };
     }
 
+    if (field == 'previewType') {
+      return switch (value.toLowerCase()) {
+        'none' => '无',
+        'image' => '图片',
+        'video' => '视频',
+        'video_url' => '视频外链',
+        _ => value,
+      };
+    }
+
     // 预览图字段显示为"图片 ID: xxx"
     if (_isImageField(field)) {
       return '已更新';
@@ -737,7 +750,8 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
         field == 'previewRightId' ||
         field == 'previewBackId' ||
         field == 'previewHandId' ||
-        field == 'previewLegId';
+        field == 'previewLegId' ||
+        field == 'previewFileId';
   }
 
   // 紧凑的变更详情

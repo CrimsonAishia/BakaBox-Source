@@ -16,6 +16,7 @@ import '../widgets/character_gallery/character_skeleton.dart';
 import '../widgets/character_gallery/character_image_viewer.dart';
 import '../widgets/character_gallery/character_unified_edit_dialog.dart';
 import '../widgets/character_gallery/character_unified_history_dialog.dart';
+import '../widgets/character_gallery/skill_preview_indicator.dart';
 
 /// 格式化数值：整数不显示小数点，小数保留原样
 String _formatNumber(num value) {
@@ -1474,163 +1475,169 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
 
     // 卡片高度：背景图比例 4:1，宽度约 320px，所以最小高度约 80px
     // 但需要容纳内容，所以用 constraints 而非固定高度
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      constraints: const BoxConstraints(minHeight: 80),
-      decoration: BoxDecoration(
-        color: bgColor,
-        border: Border.all(color: borderColor, width: 1.5),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(5),
-        child: Stack(
-          children: [
-            // 背景图层（夜间模式降低透明度）
-            Positioned.fill(
-              child: Image.asset(
-                bgAsset,
-                fit: BoxFit.cover,
-                opacity: AlwaysStoppedAnimation(isDark ? 0.3 : 0.6),
+    return SkillPreviewIndicator(
+      previewType: card.previewType,
+      previewImageUrl: card.previewImageUrl,
+      previewVideoUrl: card.previewVideoUrl,
+      skillName: card.name,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        constraints: const BoxConstraints(minHeight: 80),
+        decoration: BoxDecoration(
+          color: bgColor,
+          border: Border.all(color: borderColor, width: 1.5),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(5),
+          child: Stack(
+            children: [
+              // 背景图层（夜间模式降低透明度）
+              Positioned.fill(
+                child: Image.asset(
+                  bgAsset,
+                  fit: BoxFit.cover,
+                  opacity: AlwaysStoppedAnimation(isDark ? 0.3 : 0.6),
+                ),
               ),
-            ),
 
-            // 内容层
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 标题行：符号 + 名称 + 评级
-                  Row(
-                    children: [
-                      Text(
-                        symbol,
-                        style: TextStyle(
-                          color: borderColor,
-                          fontSize: 14,
-                          shadows: isDark
-                              ? null
-                              : [
-                                  Shadow(color: Colors.white, blurRadius: 3),
-                                  Shadow(
-                                    color: Colors.white.withValues(alpha: 0.8),
-                                    blurRadius: 6,
-                                  ),
-                                ],
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          card.name,
+              // 内容层
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 标题行：符号 + 名称 + 评级
+                    Row(
+                      children: [
+                        Text(
+                          symbol,
                           style: TextStyle(
-                            color: inkColor,
-                            fontWeight: FontWeight.bold,
+                            color: borderColor,
                             fontSize: 14,
                             shadows: isDark
                                 ? null
                                 : [
-                                    Shadow(color: Colors.white, blurRadius: 4),
+                                    Shadow(color: Colors.white, blurRadius: 3),
                                     Shadow(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.9,
-                                      ),
-                                      blurRadius: 8,
-                                    ),
-                                    Shadow(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.7,
-                                      ),
-                                      blurRadius: 12,
+                                      color: Colors.white.withValues(alpha: 0.8),
+                                      blurRadius: 6,
                                     ),
                                   ],
                           ),
                         ),
-                      ),
-                      // 评级标签
-                      if (card.tier != null &&
-                          card.tier != SpellCardTier.unranked)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: (isDark ? Colors.black : Colors.white)
-                                .withValues(alpha: 0.85),
-                            border: Border.all(
-                              color: _getSpellCardTierColor(card.tier!),
-                            ),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
+                        const SizedBox(width: 6),
+                        Expanded(
                           child: Text(
-                            card.tier!.shortLabel,
+                            card.name,
                             style: TextStyle(
-                              color: _getSpellCardTierColor(card.tier!),
-                              fontSize: 10,
+                              color: inkColor,
                               fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              shadows: isDark
+                                  ? null
+                                  : [
+                                      Shadow(color: Colors.white, blurRadius: 4),
+                                      Shadow(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        blurRadius: 8,
+                                      ),
+                                      Shadow(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.7,
+                                        ),
+                                        blurRadius: 12,
+                                      ),
+                                    ],
                             ),
                           ),
                         ),
-                    ],
-                  ),
+                        // 评级标签
+                        if (card.tier != null &&
+                            card.tier != SpellCardTier.unranked)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: (isDark ? Colors.black : Colors.white)
+                                  .withValues(alpha: 0.85),
+                              border: Border.all(
+                                color: _getSpellCardTierColor(card.tier!),
+                              ),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              card.tier!.shortLabel,
+                              style: TextStyle(
+                                color: _getSpellCardTierColor(card.tier!),
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
 
-                  // 分隔线
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Container(
-                      height: 1,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            borderColor.withValues(alpha: 0),
-                            borderColor.withValues(alpha: 0.5),
-                            borderColor.withValues(alpha: 0.5),
-                            borderColor.withValues(alpha: 0),
-                          ],
-                          stops: const [0, 0.2, 0.8, 1],
+                    // 分隔线
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Container(
+                        height: 1,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              borderColor.withValues(alpha: 0),
+                              borderColor.withValues(alpha: 0.5),
+                              borderColor.withValues(alpha: 0.5),
+                              borderColor.withValues(alpha: 0),
+                            ],
+                            stops: const [0, 0.2, 0.8, 1],
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                  // 描述
-                  Text(
-                    card.description,
-                    style: TextStyle(
-                      color: inkColor,
-                      fontSize: 13,
-                      height: 1.4,
-                      fontWeight: FontWeight.w500,
-                      shadows: isDark
-                          ? null
-                          : [
-                              Shadow(color: Colors.white, blurRadius: 4),
-                              Shadow(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                blurRadius: 8,
-                              ),
-                              Shadow(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                blurRadius: 12,
-                              ),
-                            ],
+                    // 描述
+                    Text(
+                      card.description,
+                      style: TextStyle(
+                        color: inkColor,
+                        fontSize: 13,
+                        height: 1.4,
+                        fontWeight: FontWeight.w500,
+                        shadows: isDark
+                            ? null
+                            : [
+                                Shadow(color: Colors.white, blurRadius: 4),
+                                Shadow(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  blurRadius: 8,
+                                ),
+                                Shadow(
+                                  color: Colors.white.withValues(alpha: 0.7),
+                                  blurRadius: 12,
+                                ),
+                              ],
+                      ),
                     ),
-                  ),
 
-                  // 属性行（如果有）
-                  if (card.cooldown != null ||
-                      card.damage != null ||
-                      card.cost != null) ...[
-                    const SizedBox(height: 10),
-                    _buildSpellCardStats(card, borderColor),
+                    // 属性行（如果有）
+                    if (card.cooldown != null ||
+                        card.damage != null ||
+                        card.cost != null) ...[
+                      const SizedBox(height: 10),
+                      _buildSpellCardStats(card, borderColor),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1816,138 +1823,144 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
             'assets/images/character_gallery/spell_card_bg_ultimate.png',
           );
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      constraints: const BoxConstraints(minHeight: 80),
-      decoration: BoxDecoration(
-        color: bgColor,
-        border: Border.all(color: borderColor, width: 1.5),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(5),
-        child: Stack(
-          children: [
-            // 背景图层
-            Positioned.fill(
-              child: Image.asset(
-                bgAsset,
-                fit: BoxFit.cover,
-                opacity: AlwaysStoppedAnimation(isDark ? 0.3 : 0.6),
+    return SkillPreviewIndicator(
+      previewType: skill.previewType,
+      previewImageUrl: skill.previewImageUrl,
+      previewVideoUrl: skill.previewVideoUrl,
+      skillName: skill.name,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        constraints: const BoxConstraints(minHeight: 80),
+        decoration: BoxDecoration(
+          color: bgColor,
+          border: Border.all(color: borderColor, width: 1.5),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(5),
+          child: Stack(
+            children: [
+              // 背景图层
+              Positioned.fill(
+                child: Image.asset(
+                  bgAsset,
+                  fit: BoxFit.cover,
+                  opacity: AlwaysStoppedAnimation(isDark ? 0.3 : 0.6),
+                ),
               ),
-            ),
-            // 内容层
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 标题行
-                  Row(
-                    children: [
-                      Text(
-                        symbol,
-                        style: TextStyle(
-                          color: borderColor,
-                          fontSize: 14,
-                          shadows: isDark
-                              ? null
-                              : [
-                                  Shadow(color: Colors.white, blurRadius: 3),
-                                  Shadow(
-                                    color: Colors.white.withValues(alpha: 0.8),
-                                    blurRadius: 6,
-                                  ),
-                                ],
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          skill.name,
+              // 内容层
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 标题行
+                    Row(
+                      children: [
+                        Text(
+                          symbol,
                           style: TextStyle(
-                            color: inkColor,
-                            fontWeight: FontWeight.bold,
+                            color: borderColor,
                             fontSize: 14,
                             shadows: isDark
                                 ? null
                                 : [
-                                    Shadow(color: Colors.white, blurRadius: 4),
+                                    Shadow(color: Colors.white, blurRadius: 3),
                                     Shadow(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.9,
-                                      ),
-                                      blurRadius: 8,
-                                    ),
-                                    Shadow(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.7,
-                                      ),
-                                      blurRadius: 12,
+                                      color: Colors.white.withValues(alpha: 0.8),
+                                      blurRadius: 6,
                                     ),
                                   ],
                           ),
                         ),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            skill.name,
+                            style: TextStyle(
+                              color: inkColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              shadows: isDark
+                                  ? null
+                                  : [
+                                      Shadow(color: Colors.white, blurRadius: 4),
+                                      Shadow(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        blurRadius: 8,
+                                      ),
+                                      Shadow(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.7,
+                                        ),
+                                        blurRadius: 12,
+                                      ),
+                                    ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
 
-                  // 分隔线
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Container(
-                      height: 1,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            borderColor.withValues(alpha: 0),
-                            borderColor.withValues(alpha: 0.4),
-                            borderColor.withValues(alpha: 0.4),
-                            borderColor.withValues(alpha: 0),
-                          ],
-                          stops: const [0, 0.2, 0.8, 1],
+                    // 分隔线
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Container(
+                        height: 1,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              borderColor.withValues(alpha: 0),
+                              borderColor.withValues(alpha: 0.4),
+                              borderColor.withValues(alpha: 0.4),
+                              borderColor.withValues(alpha: 0),
+                            ],
+                            stops: const [0, 0.2, 0.8, 1],
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                  // 描述
-                  Text(
-                    skill.description,
-                    style: TextStyle(
-                      color: inkColor,
-                      fontSize: 13,
-                      height: 1.4,
-                      fontWeight: FontWeight.w500,
-                      shadows: isDark
-                          ? null
-                          : [
-                              Shadow(color: Colors.white, blurRadius: 4),
-                              Shadow(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                blurRadius: 8,
-                              ),
-                              Shadow(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                blurRadius: 12,
-                              ),
-                            ],
+                    // 描述
+                    Text(
+                      skill.description,
+                      style: TextStyle(
+                        color: inkColor,
+                        fontSize: 13,
+                        height: 1.4,
+                        fontWeight: FontWeight.w500,
+                        shadows: isDark
+                            ? null
+                            : [
+                                Shadow(color: Colors.white, blurRadius: 4),
+                                Shadow(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  blurRadius: 8,
+                                ),
+                                Shadow(
+                                  color: Colors.white.withValues(alpha: 0.7),
+                                  blurRadius: 12,
+                                ),
+                              ],
+                      ),
                     ),
-                  ),
 
-                  // 属性行
-                  if (skill.cooldown != null ||
-                      skill.damage != null ||
-                      skill.range != null ||
-                      skill.special != null) ...[
-                    const SizedBox(height: 10),
-                    _buildZombieSkillStats(skill, borderColor),
+                    // 属性行
+                    if (skill.cooldown != null ||
+                        skill.damage != null ||
+                        skill.range != null ||
+                        skill.special != null) ...[
+                      const SizedBox(height: 10),
+                      _buildZombieSkillStats(skill, borderColor),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

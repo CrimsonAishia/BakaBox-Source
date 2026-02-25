@@ -7,6 +7,9 @@ class SpellCardEditData {
   final double? cooldown;
   final double? cost;
   final SpellCardTier? tier;
+  final String? previewType; // none/image/video_url
+  final int? previewFileId; // image时的文件ID
+  final String? previewVideoUrl; // video_url时的外链地址
 
   SpellCardEditData({
     this.description,
@@ -14,6 +17,9 @@ class SpellCardEditData {
     this.cooldown,
     this.cost,
     this.tier,
+    this.previewType,
+    this.previewFileId,
+    this.previewVideoUrl,
   });
 }
 
@@ -26,6 +32,9 @@ class SpellCardCreateData {
   final double? cooldown;
   final double? cost;
   final SpellCardTier? tier;
+  final String? previewType; // none/image/video_url
+  final int? previewFileId;
+  final String? previewVideoUrl;
 
   SpellCardCreateData({
     required this.name,
@@ -35,6 +44,9 @@ class SpellCardCreateData {
     this.cooldown,
     this.cost,
     this.tier,
+    this.previewType,
+    this.previewFileId,
+    this.previewVideoUrl,
   });
 }
 
@@ -45,6 +57,9 @@ class ZombieSkillEditData {
   final double? cooldown;
   final String? range;
   final String? special;
+  final String? previewType; // none/image/video_url
+  final int? previewFileId;
+  final String? previewVideoUrl;
 
   ZombieSkillEditData({
     this.description,
@@ -52,6 +67,9 @@ class ZombieSkillEditData {
     this.cooldown,
     this.range,
     this.special,
+    this.previewType,
+    this.previewFileId,
+    this.previewVideoUrl,
   });
 }
 
@@ -64,6 +82,9 @@ class ZombieSkillCreateData {
   final double? cooldown;
   final String? range;
   final String? special;
+  final String? previewType; // none/image/video_url
+  final int? previewFileId;
+  final String? previewVideoUrl;
 
   ZombieSkillCreateData({
     required this.name,
@@ -73,5 +94,8 @@ class ZombieSkillCreateData {
     this.cooldown,
     this.range,
     this.special,
+    this.previewType,
+    this.previewFileId,
+    this.previewVideoUrl,
   });
 }

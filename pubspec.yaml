@@ -94,6 +94,7 @@ dependencies:
   # JSON & Serialization
   json_annotation: ^4.8.1
   source_server: ^4.0.0
+  just_the_tooltip: ^0.0.12
 
 dev_dependencies:
   flutter_test:

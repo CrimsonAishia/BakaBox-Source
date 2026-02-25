@@ -146,6 +146,18 @@ class AcquisitionInfo extends Equatable {
   List<Object?> get props => [type, cost, customSource];
 }
 
+/// 预览类型
+enum PreviewType {
+  @JsonValue('none')
+  none,
+  @JsonValue('image')
+  image,
+  @JsonValue('video')
+  video,
+  @JsonValue('video_url')
+  videoUrl,
+}
+
 /// 符卡
 @JsonSerializable()
 class SpellCard extends Equatable {
@@ -157,8 +169,11 @@ class SpellCard extends Equatable {
   final SpellCardTier? tier; // 符卡评级
   final String description;
   final String? iconUrl;
-  final String? videoUrl; // 演示视频URL（WebM格式）
-  final double? cost; // 消耗资源（普通符卡消耗P点，终极符卡消耗B点）
+  @JsonKey(defaultValue: PreviewType.none, unknownEnumValue: PreviewType.none)
+  final PreviewType previewType;
+  final String? previewImageUrl;
+  final String? previewVideoUrl;
+  final double? cost;
   final double? cooldown;
   final String? damage;
   final List<String>? tips;
@@ -171,7 +186,9 @@ class SpellCard extends Equatable {
     this.tier,
     required this.description,
     this.iconUrl,
-    this.videoUrl,
+    this.previewType = PreviewType.none,
+    this.previewImageUrl,
+    this.previewVideoUrl,
     this.cost,
     this.cooldown,
     this.damage,
@@ -191,7 +208,9 @@ class SpellCard extends Equatable {
     tier,
     description,
     iconUrl,
-    videoUrl,
+    previewType,
+    previewImageUrl,
+    previewVideoUrl,
     cost,
     cooldown,
     damage,
@@ -207,7 +226,10 @@ class ZombieSkill extends Equatable {
   final ZombieSkillType type;
   final String description;
   final String? iconUrl;
-  final String? videoUrl; // 演示视频URL（WebM格式）
+  @JsonKey(defaultValue: PreviewType.none, unknownEnumValue: PreviewType.none)
+  final PreviewType previewType;
+  final String? previewImageUrl;
+  final String? previewVideoUrl;
   final double? cooldown;
   final String? damage;
   final String? range;
@@ -220,7 +242,9 @@ class ZombieSkill extends Equatable {
     required this.type,
     required this.description,
     this.iconUrl,
-    this.videoUrl,
+    this.previewType = PreviewType.none,
+    this.previewImageUrl,
+    this.previewVideoUrl,
     this.cooldown,
     this.damage,
     this.range,
@@ -239,7 +263,9 @@ class ZombieSkill extends Equatable {
     type,
     description,
     iconUrl,
-    videoUrl,
+    previewType,
+    previewImageUrl,
+    previewVideoUrl,
     cooldown,
     damage,
     range,
@@ -779,8 +805,10 @@ class SpellCardEditItem extends Equatable {
   final double? cost;
   final double? cooldown;
   final List<String>? tips;
-  final int? videoFileId; // 演示视频文件ID
-  final String? tier; // 评级 T0/T1/T2/T3/T4/T5/unranked
+  final String? tier;
+  final String? previewType;
+  final int? previewFileId;
+  final String? previewVideoUrl;
 
   const SpellCardEditItem({
     required this.id,
@@ -789,8 +817,10 @@ class SpellCardEditItem extends Equatable {
     this.cost,
     this.cooldown,
     this.tips,
-    this.videoFileId,
     this.tier,
+    this.previewType,
+    this.previewFileId,
+    this.previewVideoUrl,
   });
 
   factory SpellCardEditItem.fromJson(Map<String, dynamic> json) =>
@@ -805,8 +835,10 @@ class SpellCardEditItem extends Equatable {
     cost,
     cooldown,
     tips,
-    videoFileId,
     tier,
+    previewType,
+    previewFileId,
+    previewVideoUrl,
   ];
 }
 
@@ -818,11 +850,13 @@ class SpellCardCreateItem extends Equatable {
   final String? tier; // 评级 T0/T1/T2/T3/T4/T5/unranked
   final String? description;
   final String? iconUrl;
-  final int? videoFileId;
   final double? cost;
   final double? cooldown;
   final String? damage;
   final List<String>? tips;
+  final String? previewType;
+  final int? previewFileId;
+  final String? previewVideoUrl;
 
   const SpellCardCreateItem({
     required this.name,
@@ -830,11 +864,13 @@ class SpellCardCreateItem extends Equatable {
     this.tier,
     this.description,
     this.iconUrl,
-    this.videoFileId,
     this.cost,
     this.cooldown,
     this.damage,
     this.tips,
+    this.previewType,
+    this.previewFileId,
+    this.previewVideoUrl,
   });
 
   factory SpellCardCreateItem.fromJson(Map<String, dynamic> json) =>
@@ -848,11 +884,13 @@ class SpellCardCreateItem extends Equatable {
     tier,
     description,
     iconUrl,
-    videoFileId,
     cost,
     cooldown,
     damage,
     tips,
+    previewType,
+    previewFileId,
+    previewVideoUrl,
   ];
 }
 
@@ -883,7 +921,9 @@ class ZombieSkillEditItem extends Equatable {
   final double? cooldown;
   final String? special;
   final List<String>? tips;
-  final int? videoFileId; // 演示视频文件ID
+  final String? previewType;
+  final int? previewFileId;
+  final String? previewVideoUrl;
 
   const ZombieSkillEditItem({
     required this.id,
@@ -893,7 +933,9 @@ class ZombieSkillEditItem extends Equatable {
     this.cooldown,
     this.special,
     this.tips,
-    this.videoFileId,
+    this.previewType,
+    this.previewFileId,
+    this.previewVideoUrl,
   });
 
   factory ZombieSkillEditItem.fromJson(Map<String, dynamic> json) =>
@@ -909,7 +951,9 @@ class ZombieSkillEditItem extends Equatable {
     cooldown,
     special,
     tips,
-    videoFileId,
+    previewType,
+    previewFileId,
+    previewVideoUrl,
   ];
 }
 
@@ -920,24 +964,28 @@ class ZombieSkillCreateItem extends Equatable {
   final String type; // active/passive
   final String? description;
   final String? iconUrl;
-  final int? videoFileId;
   final double? cooldown;
   final String? damage;
   final String? range;
   final String? special;
   final List<String>? tips;
+  final String? previewType;
+  final int? previewFileId;
+  final String? previewVideoUrl;
 
   const ZombieSkillCreateItem({
     required this.name,
     required this.type,
     this.description,
     this.iconUrl,
-    this.videoFileId,
     this.cooldown,
     this.damage,
     this.range,
     this.special,
     this.tips,
+    this.previewType,
+    this.previewFileId,
+    this.previewVideoUrl,
   });
 
   factory ZombieSkillCreateItem.fromJson(Map<String, dynamic> json) =>
@@ -950,12 +998,14 @@ class ZombieSkillCreateItem extends Equatable {
     type,
     description,
     iconUrl,
-    videoFileId,
     cooldown,
     damage,
     range,
     special,
     tips,
+    previewType,
+    previewFileId,
+    previewVideoUrl,
   ];
 }
 
