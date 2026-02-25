@@ -184,8 +184,28 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
   ) {
     LogService.d('[QueueUsersBloc] 同步用户列表: ${event.users.length} 人');
     
-    // 直接使用服务器返回的用户列表
-    emit(state.copyWith(users: event.users));
+    // 检测新加入的用户（在新列表中但不在旧列表中）
+    final oldUserIds = state.users.map((u) => u.uniqueId).toSet();
+    final newUsers = event.users.where((u) => !oldUserIds.contains(u.uniqueId)).toList();
+    
+    // 如果有新用户加入，设置 joinedUserId 触发动画
+    // 注意：首次同步时所有用户都是"新"的，但不应该触发加入动画
+    // 只有在已有用户列表的情况下，新增的用户才触发动画
+    String? joinedUserId;
+    if (state.users.isNotEmpty && newUsers.length == 1) {
+      // 只有一个新用户时才触发动画（避免首次同步或批量同步时触发）
+      joinedUserId = newUsers.first.uniqueId;
+      LogService.d('[QueueUsersBloc] 检测到新用户加入: $joinedUserId');
+    }
+    
+    emit(state.copyWith(
+      users: event.users,
+      joinedUserId: joinedUserId,
+      // sync 事件时清除其他动画触发标记，避免残留
+      clearJoinedUserId: joinedUserId == null,
+      clearLeftUserId: true,
+      clearSuccessUserId: true,
+    ));
   }
 
   /// 处理用户加入事件
@@ -227,6 +247,9 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
     final userId = event.odId.isNotEmpty ? event.odId : event.visitorId;
     LogService.d('[QueueUsersBloc] 用户离开: $userId');
 
+    // 先找到要离开的用户（在移除之前保存其信息）
+    final leavingUser = state.users.where((u) => u.uniqueId == userId).firstOrNull;
+
     // 从列表中移除用户
     final updatedUsers = state.users.where(
       (u) => u.uniqueId != userId,
@@ -241,6 +264,7 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
     emit(state.copyWith(
       users: updatedUsers,
       leftUserId: userId,
+      leftUser: leavingUser,
       clearJoinedUserId: true,
       clearSuccessUserId: true,
     ));
@@ -254,6 +278,9 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
     final userId = event.odId.isNotEmpty ? event.odId : event.visitorId;
     LogService.d('[QueueUsersBloc] 用户成功: $userId');
 
+    // 先找到成功的用户（在移除之前保存其信息）
+    final successfulUser = state.users.where((u) => u.uniqueId == userId).firstOrNull;
+
     // 从用户列表中移除成功的用户
     final updatedUsers = state.users.where((u) => u.uniqueId != userId).toList();
     
@@ -261,6 +288,7 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
     emit(state.copyWith(
       users: updatedUsers,
       successUserId: userId,
+      successUser: successfulUser,
       clearJoinedUserId: true,
       clearLeftUserId: true,
     ));

@@ -148,6 +148,10 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
   @override
   void initState() {
     super.initState();
+    // 清除上次的活动日志和缓存
+    _activities.clear();
+    _userInfoCache.clear();
+    
     // 监听全局状态变化，触发 UI 更新
     _stateSubscription = _statusService.stateStream.listen((_) {
       // 双重检查 mounted 状态，确保安全
@@ -509,10 +513,10 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
     
     return BlocConsumer<QueueUsersBloc, QueueUsersState>(
       listenWhen: (previous, current) {
-        // 监听用户加入、离开、成功事件
-        return current.joinedUserId != null ||
-            current.leftUserId != null ||
-            current.successUserId != null;
+        // 监听用户加入、离开、成功事件（只在 ID 变化时触发，避免重复）
+        return (current.joinedUserId != null && previous.joinedUserId != current.joinedUserId) ||
+            (current.leftUserId != null && previous.leftUserId != current.leftUserId) ||
+            (current.successUserId != null && previous.successUserId != current.successUserId);
       },
       listener: (context, usersState) {
         // 先更新缓存（确保在处理事件前缓存是最新的）
@@ -539,33 +543,47 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
           }
         }
         
-        // 用户离开 - 从缓存中获取用户信息
+        // 用户离开 - 优先使用 state 中保存的用户信息，其次使用缓存
         if (usersState.leftUserId != null) {
           final leftId = usersState.leftUserId!;
-          final cachedInfo = _getCachedUserInfo(leftId);
-          _addActivity(QueueActivityItem(
-            id: '${leftId}_leave_${DateTime.now().millisecondsSinceEpoch}',
-            type: QueueActivityType.leave,
-            userName: cachedInfo.userName,
-            isSelf: cachedInfo.isSelf,
-            timestamp: DateTime.now(),
-          ));
+          final leftUser = usersState.leftUser;
+          if (leftUser != null) {
+            _addActivity(QueueActivityItem.fromUser(leftUser, QueueActivityType.leave));
+          } else {
+            final cachedInfo = _getCachedUserInfo(leftId);
+            _addActivity(QueueActivityItem(
+              id: '${leftId}_leave_${DateTime.now().millisecondsSinceEpoch}',
+              type: QueueActivityType.leave,
+              userName: cachedInfo.userName,
+              isSelf: cachedInfo.isSelf,
+              timestamp: DateTime.now(),
+            ));
+          }
         }
         
-        // 用户成功进入服务器 - 从缓存中获取用户信息
+        // 用户成功进入服务器 - 优先使用 state 中保存的用户信息，其次使用缓存
         if (usersState.successUserId != null) {
           final successId = usersState.successUserId!;
-          final cachedInfo = _getCachedUserInfo(successId);
-          _addActivity(QueueActivityItem(
-            id: '${successId}_success_${DateTime.now().millisecondsSinceEpoch}',
-            type: QueueActivityType.success,
-            userName: cachedInfo.userName,
-            isSelf: cachedInfo.isSelf,
-            timestamp: DateTime.now(),
-          ));
+          final successUser = usersState.successUser;
+          if (successUser != null) {
+            _addActivity(QueueActivityItem.fromUser(successUser, QueueActivityType.success));
+          } else {
+            final cachedInfo = _getCachedUserInfo(successId);
+            _addActivity(QueueActivityItem(
+              id: '${successId}_success_${DateTime.now().millisecondsSinceEpoch}',
+              type: QueueActivityType.success,
+              userName: cachedInfo.userName,
+              isSelf: cachedInfo.isSelf,
+              timestamp: DateTime.now(),
+            ));
+          }
         }
       },
       builder: (context, usersState) {
+        // 每次用户列表变化时更新缓存（包括 sync 事件）
+        // 确保在用户离开/成功前已缓存其信息
+        _updateUserInfoCache(usersState.users);
+        
         // 判断服务器是否可加入
         final players = state.serverInfo?.players ?? 0;
         final maxPlayers = state.serverInfo?.maxPlayers ?? 0;
@@ -576,7 +594,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
           children: [
             // 竞技场面板
             Container(
-              height: 200,
+              height: 240,
               decoration: BoxDecoration(
                 color: isDark 
                     ? const Color(0xFF1E293B).withValues(alpha: 0.5)

@@ -23,8 +23,14 @@ class QueueUsersState extends Equatable {
   /// 刚离开的用户ID（用于触发淡出动画）
   final String? leftUserId;
 
+  /// 刚离开的用户信息（用于活动日志显示昵称）
+  final QueueUser? leftUser;
+
   /// 刚成功的用户ID（用于触发飞入中心动画）
   final String? successUserId;
+
+  /// 刚成功的用户信息（用于活动日志显示昵称）
+  final QueueUser? successUser;
 
   const QueueUsersState({
     this.users = const [],
@@ -33,7 +39,9 @@ class QueueUsersState extends Equatable {
     this.error,
     this.joinedUserId,
     this.leftUserId,
+    this.leftUser,
     this.successUserId,
+    this.successUser,
   });
 
   /// 当前挤服人数
@@ -50,7 +58,9 @@ class QueueUsersState extends Equatable {
     String? error,
     String? joinedUserId,
     String? leftUserId,
+    QueueUser? leftUser,
     String? successUserId,
+    QueueUser? successUser,
     bool clearError = false,
     bool clearJoinedUserId = false,
     bool clearLeftUserId = false,
@@ -63,7 +73,9 @@ class QueueUsersState extends Equatable {
       error: clearError ? null : (error ?? this.error),
       joinedUserId: clearJoinedUserId ? null : (joinedUserId ?? this.joinedUserId),
       leftUserId: clearLeftUserId ? null : (leftUserId ?? this.leftUserId),
+      leftUser: clearLeftUserId ? null : (leftUser ?? this.leftUser),
       successUserId: clearSuccessUserId ? null : (successUserId ?? this.successUserId),
+      successUser: clearSuccessUserId ? null : (successUser ?? this.successUser),
     );
   }
 
@@ -75,6 +87,8 @@ class QueueUsersState extends Equatable {
         error,
         joinedUserId,
         leftUserId,
+        leftUser,
         successUserId,
+        successUser,
       ];
 }

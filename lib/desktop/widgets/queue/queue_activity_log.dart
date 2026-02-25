@@ -193,12 +193,23 @@ class _ActivityItemWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (icon, color, message) = _getActivityInfo();
+    final timeStr = _formatTime(activity.timestamp);
     
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 时间
+          Text(
+            timeStr,
+            style: TextStyle(
+              fontSize: 11,
+              fontFamily: 'monospace',
+              color: isDark ? Colors.white38 : Colors.black38,
+            ),
+          ),
+          const SizedBox(width: 6),
           Icon(icon, size: 12, color: color),
           const SizedBox(width: 6),
           Expanded(
@@ -210,7 +221,7 @@ class _ActivityItemWidget extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: activity.isSelf 
+                      color: activity.isSelf
                           ? const Color(0xFF3B82F6)
                           : (isDark ? Colors.white70 : Colors.black87),
                     ),
@@ -231,6 +242,13 @@ class _ActivityItemWidget extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatTime(DateTime time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    final second = time.second.toString().padLeft(2, '0');
+    return '$hour:$minute:$second';
   }
 
   (IconData, Color, String) _getActivityInfo() {
