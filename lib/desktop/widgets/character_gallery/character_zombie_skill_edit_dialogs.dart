@@ -4,6 +4,7 @@ import '../../../core/models/character_models.dart';
 import '../../../core/utils/toast_utils.dart';
 import 'character_gallery_theme.dart';
 import 'character_edit_data_models.dart';
+import 'preview_type_selector.dart';
 
 /// 输入字段类型
 enum ZombieFieldType {
@@ -51,6 +52,7 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
   late TextEditingController _damageController;
   late TextEditingController _rangeController;
   late TextEditingController _specialController;
+  PreviewMediaData? _previewData;
 
   @override
   void initState() {
@@ -194,6 +196,16 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
                                 ),
                               ),
                             ],
+                          ),
+                          const SizedBox(height: 16),
+                          PreviewTypeSelector(
+                            initialType: widget.existingEdit?.previewType
+                                ?? _previewTypeToString(widget.skill.previewType),
+                            initialFileId: widget.existingEdit?.previewFileId,
+                            initialVideoUrl: widget.existingEdit?.previewVideoUrl
+                                ?? widget.skill.previewVideoUrl,
+                            currentImageUrl: widget.skill.previewImageUrl,
+                            onChanged: (data) => _previewData = data,
                           ),
                         ],
                       ),
@@ -415,6 +427,9 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
                   special: _specialController.text.isNotEmpty
                       ? _specialController.text
                       : null,
+                  previewType: _previewData?.previewType,
+                  previewFileId: _previewData?.previewFileId,
+                  previewVideoUrl: _previewData?.previewVideoUrl,
                 ),
               );
               Navigator.pop(context);
@@ -452,6 +467,7 @@ class _ZombieSkillCreateSubDialogState
   late TextEditingController _rangeController;
   late TextEditingController _specialController;
   String _selectedType = 'active';
+  PreviewMediaData? _previewData;
 
   @override
   void initState() {
@@ -586,6 +602,10 @@ class _ZombieSkillCreateSubDialogState
                                 ),
                               ),
                             ],
+                          ),
+                          const SizedBox(height: 16),
+                          PreviewTypeSelector(
+                            onChanged: (data) => _previewData = data,
                           ),
                         ],
                       ),
@@ -874,6 +894,9 @@ class _ZombieSkillCreateSubDialogState
         special: _specialController.text.isNotEmpty
             ? _specialController.text
             : null,
+        previewType: _previewData?.previewType,
+        previewFileId: _previewData?.previewFileId,
+        previewVideoUrl: _previewData?.previewVideoUrl,
       ),
     );
     Navigator.pop(context);
@@ -905,6 +928,7 @@ class _NewZombieSkillEditSubDialogState
   late TextEditingController _rangeController;
   late TextEditingController _specialController;
   late String _selectedType;
+  PreviewMediaData? _previewData;
 
   @override
   void initState() {
@@ -1044,6 +1068,13 @@ class _NewZombieSkillEditSubDialogState
                                 ),
                               ),
                             ],
+                          ),
+                          const SizedBox(height: 16),
+                          PreviewTypeSelector(
+                            initialType: widget.data.previewType ?? 'none',
+                            initialFileId: widget.data.previewFileId,
+                            initialVideoUrl: widget.data.previewVideoUrl,
+                            onChanged: (data) => _previewData = data,
                           ),
                         ],
                       ),
@@ -1332,8 +1363,21 @@ class _NewZombieSkillEditSubDialogState
         special: _specialController.text.isNotEmpty
             ? _specialController.text
             : null,
+        previewType: _previewData?.previewType,
+        previewFileId: _previewData?.previewFileId,
+        previewVideoUrl: _previewData?.previewVideoUrl,
       ),
     );
     Navigator.pop(context);
   }
+}
+
+/// PreviewType 枚举转 API 字符串
+String _previewTypeToString(PreviewType type) {
+  return switch (type) {
+    PreviewType.none => 'none',
+    PreviewType.image => 'image',
+    PreviewType.video => 'video',
+    PreviewType.videoUrl => 'video_url',
+  };
 }

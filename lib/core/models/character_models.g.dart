@@ -65,7 +65,15 @@ SpellCard _$SpellCardFromJson(Map<String, dynamic> json) => SpellCard(
   ),
   description: json['description'] as String,
   iconUrl: json['iconUrl'] as String?,
-  videoUrl: json['videoUrl'] as String?,
+  previewType:
+      $enumDecodeNullable(
+        _$PreviewTypeEnumMap,
+        json['previewType'],
+        unknownValue: PreviewType.none,
+      ) ??
+      PreviewType.none,
+  previewImageUrl: json['previewImageUrl'] as String?,
+  previewVideoUrl: json['previewVideoUrl'] as String?,
   cost: (json['cost'] as num?)?.toDouble(),
   cooldown: (json['cooldown'] as num?)?.toDouble(),
   damage: json['damage'] as String?,
@@ -80,7 +88,9 @@ Map<String, dynamic> _$SpellCardToJson(SpellCard instance) => <String, dynamic>{
   'tier': _$SpellCardTierEnumMap[instance.tier],
   'description': instance.description,
   'iconUrl': instance.iconUrl,
-  'videoUrl': instance.videoUrl,
+  'previewType': _$PreviewTypeEnumMap[instance.previewType]!,
+  'previewImageUrl': instance.previewImageUrl,
+  'previewVideoUrl': instance.previewVideoUrl,
   'cost': instance.cost,
   'cooldown': instance.cooldown,
   'damage': instance.damage,
@@ -103,13 +113,28 @@ const _$SpellCardTierEnumMap = {
   SpellCardTier.unranked: 'unranked',
 };
 
+const _$PreviewTypeEnumMap = {
+  PreviewType.none: 'none',
+  PreviewType.image: 'image',
+  PreviewType.video: 'video',
+  PreviewType.videoUrl: 'video_url',
+};
+
 ZombieSkill _$ZombieSkillFromJson(Map<String, dynamic> json) => ZombieSkill(
   id: (json['id'] as num).toInt(),
   name: json['name'] as String,
   type: $enumDecode(_$ZombieSkillTypeEnumMap, json['type']),
   description: json['description'] as String,
   iconUrl: json['iconUrl'] as String?,
-  videoUrl: json['videoUrl'] as String?,
+  previewType:
+      $enumDecodeNullable(
+        _$PreviewTypeEnumMap,
+        json['previewType'],
+        unknownValue: PreviewType.none,
+      ) ??
+      PreviewType.none,
+  previewImageUrl: json['previewImageUrl'] as String?,
+  previewVideoUrl: json['previewVideoUrl'] as String?,
   cooldown: (json['cooldown'] as num?)?.toDouble(),
   damage: json['damage'] as String?,
   range: json['range'] as String?,
@@ -124,7 +149,9 @@ Map<String, dynamic> _$ZombieSkillToJson(ZombieSkill instance) =>
       'type': _$ZombieSkillTypeEnumMap[instance.type]!,
       'description': instance.description,
       'iconUrl': instance.iconUrl,
-      'videoUrl': instance.videoUrl,
+      'previewType': _$PreviewTypeEnumMap[instance.previewType]!,
+      'previewImageUrl': instance.previewImageUrl,
+      'previewVideoUrl': instance.previewVideoUrl,
       'cooldown': instance.cooldown,
       'damage': instance.damage,
       'range': instance.range,
@@ -519,8 +546,10 @@ SpellCardEditItem _$SpellCardEditItemFromJson(Map<String, dynamic> json) =>
       cost: (json['cost'] as num?)?.toDouble(),
       cooldown: (json['cooldown'] as num?)?.toDouble(),
       tips: (json['tips'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      videoFileId: (json['videoFileId'] as num?)?.toInt(),
       tier: json['tier'] as String?,
+      previewType: json['previewType'] as String?,
+      previewFileId: (json['previewFileId'] as num?)?.toInt(),
+      previewVideoUrl: json['previewVideoUrl'] as String?,
     );
 
 Map<String, dynamic> _$SpellCardEditItemToJson(SpellCardEditItem instance) =>
@@ -531,8 +560,10 @@ Map<String, dynamic> _$SpellCardEditItemToJson(SpellCardEditItem instance) =>
       'cost': instance.cost,
       'cooldown': instance.cooldown,
       'tips': instance.tips,
-      'videoFileId': instance.videoFileId,
       'tier': instance.tier,
+      'previewType': instance.previewType,
+      'previewFileId': instance.previewFileId,
+      'previewVideoUrl': instance.previewVideoUrl,
     };
 
 SpellCardCreateItem _$SpellCardCreateItemFromJson(Map<String, dynamic> json) =>
@@ -542,11 +573,13 @@ SpellCardCreateItem _$SpellCardCreateItemFromJson(Map<String, dynamic> json) =>
       tier: json['tier'] as String?,
       description: json['description'] as String?,
       iconUrl: json['iconUrl'] as String?,
-      videoFileId: (json['videoFileId'] as num?)?.toInt(),
       cost: (json['cost'] as num?)?.toDouble(),
       cooldown: (json['cooldown'] as num?)?.toDouble(),
       damage: json['damage'] as String?,
       tips: (json['tips'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      previewType: json['previewType'] as String?,
+      previewFileId: (json['previewFileId'] as num?)?.toInt(),
+      previewVideoUrl: json['previewVideoUrl'] as String?,
     );
 
 Map<String, dynamic> _$SpellCardCreateItemToJson(
@@ -557,11 +590,13 @@ Map<String, dynamic> _$SpellCardCreateItemToJson(
   'tier': instance.tier,
   'description': instance.description,
   'iconUrl': instance.iconUrl,
-  'videoFileId': instance.videoFileId,
   'cost': instance.cost,
   'cooldown': instance.cooldown,
   'damage': instance.damage,
   'tips': instance.tips,
+  'previewType': instance.previewType,
+  'previewFileId': instance.previewFileId,
+  'previewVideoUrl': instance.previewVideoUrl,
 };
 
 SpellCardsEditData _$SpellCardsEditDataFromJson(Map<String, dynamic> json) =>
@@ -593,7 +628,9 @@ ZombieSkillEditItem _$ZombieSkillEditItemFromJson(Map<String, dynamic> json) =>
       cooldown: (json['cooldown'] as num?)?.toDouble(),
       special: json['special'] as String?,
       tips: (json['tips'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      videoFileId: (json['videoFileId'] as num?)?.toInt(),
+      previewType: json['previewType'] as String?,
+      previewFileId: (json['previewFileId'] as num?)?.toInt(),
+      previewVideoUrl: json['previewVideoUrl'] as String?,
     );
 
 Map<String, dynamic> _$ZombieSkillEditItemToJson(
@@ -606,7 +643,9 @@ Map<String, dynamic> _$ZombieSkillEditItemToJson(
   'cooldown': instance.cooldown,
   'special': instance.special,
   'tips': instance.tips,
-  'videoFileId': instance.videoFileId,
+  'previewType': instance.previewType,
+  'previewFileId': instance.previewFileId,
+  'previewVideoUrl': instance.previewVideoUrl,
 };
 
 ZombieSkillCreateItem _$ZombieSkillCreateItemFromJson(
@@ -616,12 +655,14 @@ ZombieSkillCreateItem _$ZombieSkillCreateItemFromJson(
   type: json['type'] as String,
   description: json['description'] as String?,
   iconUrl: json['iconUrl'] as String?,
-  videoFileId: (json['videoFileId'] as num?)?.toInt(),
   cooldown: (json['cooldown'] as num?)?.toDouble(),
   damage: json['damage'] as String?,
   range: json['range'] as String?,
   special: json['special'] as String?,
   tips: (json['tips'] as List<dynamic>?)?.map((e) => e as String).toList(),
+  previewType: json['previewType'] as String?,
+  previewFileId: (json['previewFileId'] as num?)?.toInt(),
+  previewVideoUrl: json['previewVideoUrl'] as String?,
 );
 
 Map<String, dynamic> _$ZombieSkillCreateItemToJson(
@@ -631,12 +672,14 @@ Map<String, dynamic> _$ZombieSkillCreateItemToJson(
   'type': instance.type,
   'description': instance.description,
   'iconUrl': instance.iconUrl,
-  'videoFileId': instance.videoFileId,
   'cooldown': instance.cooldown,
   'damage': instance.damage,
   'range': instance.range,
   'special': instance.special,
   'tips': instance.tips,
+  'previewType': instance.previewType,
+  'previewFileId': instance.previewFileId,
+  'previewVideoUrl': instance.previewVideoUrl,
 };
 
 ZombieSkillsEditData _$ZombieSkillsEditDataFromJson(

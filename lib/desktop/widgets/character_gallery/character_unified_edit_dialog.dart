@@ -182,6 +182,9 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
           damage: update.damage,
           cooldown: update.cooldown,
           cost: update.cost,
+          previewType: update.previewType,
+          previewFileId: update.previewFileId,
+          previewVideoUrl: update.previewVideoUrl,
         );
       }
     }
@@ -197,6 +200,9 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
             damage: create.damage,
             cooldown: create.cooldown,
             cost: create.cost,
+            previewType: create.previewType,
+            previewFileId: create.previewFileId,
+            previewVideoUrl: create.previewVideoUrl,
           ),
         );
       }
@@ -223,6 +229,9 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
           cooldown: update.cooldown,
           range: update.range,
           special: update.special,
+          previewType: update.previewType,
+          previewFileId: update.previewFileId,
+          previewVideoUrl: update.previewVideoUrl,
         );
       }
     }
@@ -239,6 +248,9 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
             cooldown: create.cooldown,
             range: create.range,
             special: create.special,
+            previewType: create.previewType,
+            previewFileId: create.previewFileId,
+            previewVideoUrl: create.previewVideoUrl,
           ),
         );
       }
@@ -2937,22 +2949,18 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
   void _editSpellCard(SpellCard card) {
     final existingEdit = _spellCardEdits[card.id];
 
-    setState(() {
-      _editingSpellCardId = card.id;
-      _tempDescriptionController = TextEditingController(
-        text: existingEdit?.description ?? card.description,
-      );
-      _tempCooldownController = TextEditingController(
-        text: (existingEdit?.cooldown ?? card.cooldown)?.toString() ?? '',
-      );
-      _tempDamageController = TextEditingController(
-        text: existingEdit?.damage ?? card.damage ?? '',
-      );
-      _tempCostController = TextEditingController(
-        text: (existingEdit?.cost ?? card.cost)?.toString() ?? '',
-      );
-      _tempTier = existingEdit?.tier ?? card.tier;
-    });
+    showDialog(
+      context: context,
+      builder: (ctx) => SpellCardEditSubDialog(
+        card: card,
+        existingEdit: existingEdit,
+        onSave: (editData) {
+          setState(() {
+            _spellCardEdits[card.id] = editData;
+          });
+        },
+      ),
+    );
   }
 
   void _saveInlineSpellCardEdit(SpellCard card) {
@@ -3107,37 +3115,22 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
 
   // ============ 僵尸技能内联编辑方法 ============
 
-  /// 开始僵尸技能内联编辑
+  /// 开始僵尸技能编辑（弹窗模式）
   void _startZombieSkillInlineEdit(ZombieSkill skill) {
     final existingEdit = _zombieSkillEdits[skill.id];
 
-    // 释放之前的控制器
-    _zombieTempDescriptionController?.dispose();
-    _zombieTempCooldownController?.dispose();
-    _zombieTempDamageController?.dispose();
-    _zombieTempRangeController?.dispose();
-    _zombieTempSpecialController?.dispose();
-
-    // 创建新的控制器
-    _zombieTempDescriptionController = TextEditingController(
-      text: existingEdit?.description ?? skill.description,
+    showDialog(
+      context: context,
+      builder: (ctx) => ZombieSkillEditSubDialog(
+        skill: skill,
+        existingEdit: existingEdit,
+        onSave: (editData) {
+          setState(() {
+            _zombieSkillEdits[skill.id] = editData;
+          });
+        },
+      ),
     );
-    _zombieTempCooldownController = TextEditingController(
-      text: (existingEdit?.cooldown ?? skill.cooldown)?.toString() ?? '',
-    );
-    _zombieTempDamageController = TextEditingController(
-      text: existingEdit?.damage ?? skill.damage ?? '',
-    );
-    _zombieTempRangeController = TextEditingController(
-      text: existingEdit?.range ?? skill.range ?? '',
-    );
-    _zombieTempSpecialController = TextEditingController(
-      text: existingEdit?.special ?? skill.special ?? '',
-    );
-
-    setState(() {
-      _editingZombieSkillId = skill.id;
-    });
   }
 
   /// 保存僵尸技能内联编辑
@@ -3305,6 +3298,9 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                   damage: e.damage,
                   cooldown: e.cooldown,
                   cost: e.cost,
+                  previewType: e.previewType,
+                  previewFileId: e.previewFileId,
+                  previewVideoUrl: e.previewVideoUrl,
                 ),
               )
               .toList()
@@ -3319,6 +3315,9 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                   cooldown: e.value.cooldown,
                   cost: e.value.cost,
                   tier: e.value.tier?.name,
+                  previewType: e.value.previewType,
+                  previewFileId: e.value.previewFileId,
+                  previewVideoUrl: e.value.previewVideoUrl,
                 ),
               )
               .toList()
@@ -3337,6 +3336,9 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                   cooldown: e.cooldown,
                   range: e.range,
                   special: e.special,
+                  previewType: e.previewType,
+                  previewFileId: e.previewFileId,
+                  previewVideoUrl: e.previewVideoUrl,
                 ),
               )
               .toList()
@@ -3351,6 +3353,9 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                   cooldown: e.value.cooldown,
                   range: e.value.range,
                   special: e.value.special,
+                  previewType: e.value.previewType,
+                  previewFileId: e.value.previewFileId,
+                  previewVideoUrl: e.value.previewVideoUrl,
                 ),
               )
               .toList()

@@ -4,6 +4,7 @@ import '../../../core/utils/toast_utils.dart';
 import 'character_gallery_theme.dart';
 import 'character_edit_data_models.dart';
 import 'spell_card_form_widgets.dart';
+import 'preview_type_selector.dart';
 
 /// 符卡编辑子弹窗（东方风格）
 class SpellCardEditSubDialog extends StatefulWidget {
@@ -28,6 +29,7 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
   late TextEditingController _damageController;
   late TextEditingController _costController;
   late SpellCardTier? _selectedTier;
+  PreviewMediaData? _previewData;
 
   @override
   void initState() {
@@ -155,6 +157,16 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
                             controller: _costController,
                             isUltimate: isUltimate,
                           ),
+                          const SizedBox(height: 16),
+                          PreviewTypeSelector(
+                            initialType: widget.existingEdit?.previewType
+                                ?? _previewTypeToString(widget.card.previewType),
+                            initialFileId: widget.existingEdit?.previewFileId,
+                            initialVideoUrl: widget.existingEdit?.previewVideoUrl
+                                ?? widget.card.previewVideoUrl,
+                            currentImageUrl: widget.card.previewImageUrl,
+                            onChanged: (data) => _previewData = data,
+                          ),
                         ],
                       ),
                     ),
@@ -183,6 +195,9 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
         cooldown: double.tryParse(_cooldownController.text),
         cost: double.tryParse(_costController.text),
         tier: _selectedTier,
+        previewType: _previewData?.previewType,
+        previewFileId: _previewData?.previewFileId,
+        previewVideoUrl: _previewData?.previewVideoUrl,
       ),
     );
     Navigator.pop(context);
@@ -208,6 +223,7 @@ class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
   late TextEditingController _costController;
   String _selectedType = 'normal';
   SpellCardTier? _selectedTier;
+  PreviewMediaData? _previewData;
 
   @override
   void initState() {
@@ -335,6 +351,10 @@ class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
                             controller: _costController,
                             isUltimate: isUltimate,
                           ),
+                          const SizedBox(height: 16),
+                          PreviewTypeSelector(
+                            onChanged: (data) => _previewData = data,
+                          ),
                         ],
                       ),
                     ),
@@ -374,6 +394,9 @@ class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
         cooldown: double.tryParse(_cooldownController.text),
         cost: double.tryParse(_costController.text),
         tier: _selectedTier,
+        previewType: _previewData?.previewType,
+        previewFileId: _previewData?.previewFileId,
+        previewVideoUrl: _previewData?.previewVideoUrl,
       ),
     );
     Navigator.pop(context);
@@ -404,6 +427,7 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
   late TextEditingController _costController;
   late String _selectedType;
   late SpellCardTier? _selectedTier;
+  PreviewMediaData? _previewData;
 
   @override
   void initState() {
@@ -539,6 +563,13 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
                             controller: _costController,
                             isUltimate: isUltimate,
                           ),
+                          const SizedBox(height: 16),
+                          PreviewTypeSelector(
+                            initialType: widget.data.previewType ?? 'none',
+                            initialFileId: widget.data.previewFileId,
+                            initialVideoUrl: widget.data.previewVideoUrl,
+                            onChanged: (data) => _previewData = data,
+                          ),
                         ],
                       ),
                     ),
@@ -577,8 +608,21 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
         cooldown: double.tryParse(_cooldownController.text),
         cost: double.tryParse(_costController.text),
         tier: _selectedTier,
+        previewType: _previewData?.previewType,
+        previewFileId: _previewData?.previewFileId,
+        previewVideoUrl: _previewData?.previewVideoUrl,
       ),
     );
     Navigator.pop(context);
   }
+}
+
+/// PreviewType 枚举转 API 字符串
+String _previewTypeToString(PreviewType type) {
+  return switch (type) {
+    PreviewType.none => 'none',
+    PreviewType.image => 'image',
+    PreviewType.video => 'video',
+    PreviewType.videoUrl => 'video_url',
+  };
 }
