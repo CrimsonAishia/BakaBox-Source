@@ -54,6 +54,9 @@ class ScoreUploadService {
   /// 是否已发送过 gameover 上传（避免重复发送 isFinal）
   bool _gameoverUploaded = false;
 
+  /// 用户是否被封禁（收到 user_banned 后停止上传）
+  bool _userBanned = false;
+
   /// 心跳间隔（5分钟）
   static const Duration _heartbeatInterval = Duration(minutes: 5);
 
@@ -144,6 +147,7 @@ class ScoreUploadService {
     _lastTScore = null;
     _lastUploadTime = null;
     _gameoverUploaded = false;
+    _userBanned = false;
     _isInitialized = false;
 
     LogService.i('[ScoreUpload] 比分上传服务资源已释放');
@@ -230,19 +234,27 @@ class ScoreUploadService {
     final round = state.round;
     final mapPhase = map?.phase;
 
-    // 检查地图变化，重置比分记录
-    if (map?.name != null && map!.name != _lastMapName) {
-      LogService.d('[ScoreUpload] 地图变化: $_lastMapName -> ${map.name}，重置比分记录');
-      _lastMapName = map.name;
+    // 检查地图变化或比分重置，重置比分记录
+    // 场景1: 地图名称变化（A地图 → B地图）
+    // 场景2: 同名地图但比分回落（A地图5:3 → 换图 → A地图0:0）
+    final ctScore = map?.teamCt?.score ?? 0;
+    final tScore = map?.teamT?.score ?? 0;
+    final bool isMapNameChanged = map?.name != null && map!.name != _lastMapName;
+    final bool isScoreReset = _lastCtScore != null && _lastTScore != null &&
+        (ctScore + tScore) < (_lastCtScore! + _lastTScore!) &&
+        ctScore == 0 && tScore == 0;
+
+    if (isMapNameChanged || isScoreReset) {
+      final reason = isMapNameChanged ? '地图变化' : '比分重置（同图换局）';
+      LogService.d('[ScoreUpload] $reason: $_lastMapName -> ${map?.name}，重置比分记录');
+      _lastMapName = map?.name;
       _lastCtScore = null;
       _lastTScore = null;
       _lastUploadTime = null; // 重置上传时间，避免新地图第一次上传被防抖
       _gameoverUploaded = false; // 重置 gameover 标记
     }
 
-    // 获取当前比分
-    final ctScore = map?.teamCt?.score ?? 0;
-    final tScore = map?.teamT?.score ?? 0;
+    // 获取当前回合信息
     final currentPhase = round?.phase;
     final roundNumber = map?.round ?? 0;
     final mapName = map?.name ?? '';
@@ -300,6 +312,10 @@ class ScoreUploadService {
         steamId: steamId,
         isHeartbeat: true,
       );
+
+      // 更新记录，保持与正常上传一致
+      _lastCtScore = ctScore;
+      _lastTScore = tScore;
     }
   }
 
@@ -447,6 +463,11 @@ class ScoreUploadService {
     bool isFinal = false,
   }) async {
     // 验证必要参数
+    if (_userBanned) {
+      LogService.d('[ScoreUpload] 上传取消: 用户已被封禁');
+      return;
+    }
+
     if (_currentServerDomainAddress == null ||
         _currentServerDomainAddress!.isEmpty) {
       LogService.d('[ScoreUpload] 上传取消: 服务器地址为空');
@@ -485,6 +506,12 @@ class ScoreUploadService {
       );
 
       if (error != null) {
+        // 检查是否被封禁，停止后续所有上传
+        if (error == '用户已被封禁') {
+          _userBanned = true;
+          LogService.w('[ScoreUpload] 用户已被封禁，停止比分上传');
+          return;
+        }
         // 上传失败，静默忽略，不重试
         LogService.d('[ScoreUpload] 上传失败（已忽略）: $error');
       } else {
