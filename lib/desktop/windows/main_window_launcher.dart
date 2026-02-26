@@ -103,6 +103,8 @@ class MainWindowLauncher {
       await windowManager.focus();
       if (Platform.isWindows) {
         await windowManager.setAsFrameless();
+        // 防止窗口被系统自动调整大小
+        await windowManager.setResizable(false);
       }
     });
   }
