@@ -2,26 +2,35 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:webview_windows/webview_windows.dart' as windows_webview;
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_windows/webview_windows.dart' as windows_webview;
+import '../../../core/models/character_models.dart';
 
 /// 视频内嵌播放弹窗
 ///
 /// 支持：
-/// - Bilibili：先显示封面+居中播放按钮，点击后 autoplay
-/// - 视频直链（mp4/webm）：HTML5 video 标签播放
+/// - Bilibili 直链（bilibili_parsed）：使用 media_kit 播放，设置 Referer 头
+/// - Bilibili 原始链接：使用 WebView iframe 嵌入播放器
+/// - 视频直链（mp4/webm）：使用 media_kit 播放
 class VideoEmbedDialog extends StatefulWidget {
   final String videoUrl;
   final String? title;
+  final VideoUrlSource? videoUrlSource;
+  final String? videoOriginUrl; // 原始视频地址，用于获取封面
 
   const VideoEmbedDialog({
     super.key,
     required this.videoUrl,
     this.title,
+    this.videoUrlSource,
+    this.videoOriginUrl,
   });
 
   /// 判断 URL 是否支持内嵌播放
-  static bool canEmbed(String url) {
+  static bool canEmbed(String url, {VideoUrlSource? videoUrlSource}) {
+    if (videoUrlSource == VideoUrlSource.bilibiliParsed) return true;
     return _isBilibili(url) || _isDirectVideo(url);
   }
 
@@ -30,30 +39,48 @@ class VideoEmbedDialog extends StatefulWidget {
 }
 
 class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
-  windows_webview.WebviewController? _controller;
+  // media_kit 播放器（用于直链）
+  Player? _player;
+  VideoController? _videoController;
+  
+  // WebView 控制器（用于B站原始链接）
+  windows_webview.WebviewController? _webviewController;
   bool _isWebViewReady = false;
+  
   bool _isPlaying = false;
   bool _hasError = false;
+  String? _errorMessage;
 
   // B站封面信息
   String? _coverUrl;
   String? _videoTitle;
   bool _isFetchingCover = false;
+  
+  // 是否使用 WebView（非直链B站视频）
+  bool get _useWebView => 
+      widget.videoUrlSource != VideoUrlSource.bilibiliParsed && 
+      _isBilibili(widget.videoUrl);
 
   @override
   void initState() {
     super.initState();
-    if (_isBilibili(widget.videoUrl)) {
-      _fetchBilibiliCover();
+    // 先获取封面，然后自动开始播放
+    if (widget.videoUrlSource == VideoUrlSource.bilibiliParsed) {
+      // B站直链：使用原始地址获取封面，然后用 media_kit 播放
+      _fetchBilibiliCoverFromOrigin().then((_) => _startMediaKitPlayback());
+    } else if (_isBilibili(widget.videoUrl)) {
+      // B站原始链接：获取封面，然后用 WebView 嵌入播放
+      _fetchBilibiliCover().then((_) => _startWebViewPlayback());
     } else {
-      // 直链直接开始播放
-      _startPlayback();
+      // 普通直链：用 media_kit 播放
+      _startMediaKitPlayback();
     }
   }
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _player?.dispose();
+    _webviewController?.dispose();
     super.dispose();
   }
 
@@ -64,29 +91,51 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
     try {
       final bvid = _extractBvid(widget.videoUrl);
       if (bvid != null) {
-        final response = await http.get(
-          Uri.parse('https://api.bilibili.com/x/web-interface/view?bvid=$bvid'),
-        ).timeout(const Duration(seconds: 5));
-
-        if (mounted && response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          if (data['code'] == 0) {
-            setState(() {
-              _coverUrl = data['data']['pic'];
-              _videoTitle = data['data']['title'];
-            });
-          }
-        }
+        await _fetchCoverByBvid(bvid);
       }
-    } catch (_) {
-      // 获取封面失败不影响播放
-    }
+    } catch (_) {}
 
     if (mounted) setState(() => _isFetchingCover = false);
   }
 
-  /// 初始化 WebView 并开始播放
-  Future<void> _startPlayback() async {
+  /// 从原始B站地址获取封面（用于直链解析后的情况）
+  Future<void> _fetchBilibiliCoverFromOrigin() async {
+    setState(() => _isFetchingCover = true);
+
+    try {
+      // 优先使用原始地址
+      final originUrl = widget.videoOriginUrl;
+      if (originUrl != null && originUrl.isNotEmpty) {
+        final bvid = _extractBvid(originUrl);
+        if (bvid != null) {
+          await _fetchCoverByBvid(bvid);
+        }
+      }
+    } catch (_) {}
+
+    if (mounted) setState(() => _isFetchingCover = false);
+  }
+
+  /// 通过BV号获取封面
+  Future<void> _fetchCoverByBvid(String bvid) async {
+    final response = await http.get(
+      Uri.parse('https://api.bilibili.com/x/web-interface/view?bvid=$bvid'),
+    ).timeout(const Duration(seconds: 5));
+
+    if (mounted && response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['code'] == 0) {
+        setState(() {
+          _coverUrl = data['data']['pic'];
+          _videoTitle = data['data']['title'];
+        });
+      }
+    }
+  }
+
+  /// 使用 WebView 播放B站原始链接（iframe 嵌入）
+  Future<void> _startWebViewPlayback() async {
+    if (!mounted) return;
     setState(() => _isPlaying = true);
 
     try {
@@ -102,28 +151,82 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
         return;
       }
 
-      final url = widget.videoUrl;
-      if (_isBilibili(url)) {
-        await controller.loadUrl(_buildBilibiliEmbedUrl(url));
-      } else if (_isDirectVideo(url)) {
-        await controller.loadStringContent(_buildDirectVideoHtml(url));
-      }
+      // 先设置控制器，让 WebView 开始渲染
+      _webviewController = controller;
+
+      // 构建B站嵌入播放器URL
+      final embedUrl = _buildBilibiliEmbedUrl(widget.videoUrl);
+      await controller.loadUrl(embedUrl);
+
+      // 延迟一小段时间确保 WebView 开始加载
+      await Future.delayed(const Duration(milliseconds: 300));
 
       if (mounted) {
         setState(() {
-          _controller = controller;
           _isWebViewReady = true;
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _hasError = true);
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+          _errorMessage = '初始化播放器失败：$e';
+        });
+      }
+    }
+  }
+
+  /// 使用 media_kit 播放直链视频
+  Future<void> _startMediaKitPlayback() async {
+    setState(() => _isPlaying = true);
+
+    try {
+      _player = Player();
+      _videoController = VideoController(_player!);
+
+      final url = widget.videoUrl;
+      
+      // B站直链需要设置 Referer 头
+      if (widget.videoUrlSource == VideoUrlSource.bilibiliParsed) {
+        await _player!.open(
+          Media(
+            url,
+            httpHeaders: {
+              'Referer': 'https://www.bilibili.com/',
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            },
+          ),
+        );
+      } else {
+        await _player!.open(Media(url));
+      }
+
+      // 监听错误
+      _player!.stream.error.listen((error) {
+        if (mounted && error.isNotEmpty) {
+          setState(() {
+            _hasError = true;
+            _errorMessage = '播放失败：$error';
+          });
+        }
+      });
+
+      if (mounted) setState(() {});
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+          _errorMessage = '初始化播放器失败：$e';
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isBili = _isBilibili(widget.videoUrl);
+    final isBili = _isBilibili(widget.videoUrl) ||
+        widget.videoUrlSource == VideoUrlSource.bilibiliParsed;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -154,9 +257,9 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
 
   Widget _buildTitleBar(bool isDark, bool isBili) {
     final color = isBili ? const Color(0xFFFB7299) : const Color(0xFF4A90D9);
-    final displayTitle = widget.title
-        ?? _videoTitle
-        ?? (isBili ? 'Bilibili 视频预览' : '视频预览');
+    final displayTitle = widget.title ??
+        _videoTitle ??
+        (isBili ? 'Bilibili 视频预览' : '视频预览');
 
     return Container(
       height: 44,
@@ -221,9 +324,17 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
             Icon(Icons.error_outline, size: 48, color: Colors.grey[500]),
             const SizedBox(height: 12),
             Text(
-              '无法加载视频播放器',
+              _errorMessage ?? '无法加载视频',
               style: TextStyle(color: Colors.grey[500], fontSize: 14),
+              textAlign: TextAlign.center,
             ),
+            if (widget.videoUrlSource == VideoUrlSource.bilibiliParsed) ...[
+              const SizedBox(height: 8),
+              Text(
+                '直链可能已过期，请刷新页面重试',
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              ),
+            ],
             const SizedBox(height: 12),
             TextButton.icon(
               onPressed: () => _openInBrowser(widget.videoUrl),
@@ -235,35 +346,35 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
       );
     }
 
-    // 正在播放 — 显示 WebView
-    if (_isPlaying) {
-      if (!_isWebViewReady || _controller == null) {
-        return const Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(strokeWidth: 2),
-              SizedBox(height: 12),
-              Text(
-                '加载播放器中...',
-                style: TextStyle(color: Colors.grey, fontSize: 13),
-              ),
-            ],
+    // WebView 播放（B站原始链接）
+    if (_useWebView) {
+      if (_isPlaying && _isWebViewReady && _webviewController != null) {
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+          child: windows_webview.Webview(_webviewController!),
+        );
+      }
+    } else {
+      // media_kit 播放（直链）
+      if (_isPlaying && _videoController != null) {
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+          child: Video(
+            controller: _videoController!,
+            controls: AdaptiveVideoControls,
           ),
         );
       }
-
-      return ClipRRect(
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
-        child: windows_webview.Webview(_controller!),
-      );
     }
 
-    // 未播放 — 显示封面 + 播放按钮（B站）
-    return _buildCoverWithPlayButton(isDark);
+    // 加载中 — 显示封面（如果有）+ loading
+    return _buildLoadingWithCover(isDark);
   }
 
-  Widget _buildCoverWithPlayButton(bool isDark) {
+  Widget _buildLoadingWithCover(bool isDark) {
+    final isBili = _isBilibili(widget.videoUrl) ||
+        widget.videoUrlSource == VideoUrlSource.bilibiliParsed;
+
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
       child: Stack(
@@ -274,50 +385,36 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
             Image.network(
               _coverUrl!,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(color: Colors.black),
+              errorBuilder: (_, __, ___) => _buildPlaceholder(isBili),
             )
           else
-            Container(
-              color: Colors.black,
-              child: _isFetchingCover
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white30,
-                      ),
-                    )
-                  : null,
-            ),
+            _buildPlaceholder(isBili),
 
           // 半透明遮罩
-          Container(
-            color: Colors.black.withValues(alpha: 0.3),
-          ),
+          Container(color: Colors.black.withValues(alpha: 0.4)),
 
-          // 居中播放按钮
+          // 居中 loading
           Center(
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: _startPlayback,
-                child: Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      width: 2,
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.play_arrow_rounded,
-                    size: 42,
-                    color: Colors.white,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    color: isBili ? const Color(0xFFFB7299) : Colors.white70,
                   ),
                 ),
-              ),
+                const SizedBox(height: 16),
+                Text(
+                  _isFetchingCover ? '获取视频信息...' : '加载播放器...',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -333,7 +430,9 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
                   color: Colors.white,
                   fontSize: 13,
                   shadows: [
-                    Shadow(color: Colors.black.withValues(alpha: 0.8), blurRadius: 4),
+                    Shadow(
+                        color: Colors.black.withValues(alpha: 0.8),
+                        blurRadius: 4),
                   ],
                 ),
                 maxLines: 2,
@@ -341,6 +440,22 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  /// 构建占位图
+  Widget _buildPlaceholder(bool isBili) {
+    return Container(
+      color: isBili ? const Color(0xFF1A1A1A) : Colors.black,
+      child: Center(
+        child: Icon(
+          isBili ? Icons.play_circle_outline : Icons.videocam_outlined,
+          size: 64,
+          color: isBili
+              ? const Color(0xFFFB7299).withValues(alpha: 0.3)
+              : Colors.white.withValues(alpha: 0.2),
+        ),
       ),
     );
   }
@@ -365,7 +480,8 @@ bool _isDirectVideo(String url) {
   return lower.endsWith('.mp4') ||
       lower.endsWith('.webm') ||
       lower.endsWith('.ogg') ||
-      lower.endsWith('.mov');
+      lower.endsWith('.mov') ||
+      lower.endsWith('.m4s'); // B站直链格式
 }
 
 /// 从 B站 URL 提取 BV 号
@@ -392,27 +508,6 @@ String _buildBilibiliEmbedUrl(String url) {
         '?aid=$aid&autoplay=1&high_quality=1&danmaku=0';
   }
 
-  // b23.tv 短链无法解析，直接加载
+  // 无法解析，直接返回原URL
   return url;
-}
-
-/// 构建 HTML5 video 播放页面
-String _buildDirectVideoHtml(String url) {
-  return '''
-<!DOCTYPE html>
-<html>
-<head>
-<style>
-  * { margin: 0; padding: 0; }
-  body { background: #000; display: flex; align-items: center; justify-content: center; height: 100vh; }
-  video { max-width: 100%; max-height: 100%; }
-</style>
-</head>
-<body>
-<video controls autoplay>
-  <source src="$url">
-</video>
-</body>
-</html>
-''';
 }

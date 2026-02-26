@@ -20,6 +20,8 @@ import 'video_embed_dialog.dart';
 ///   previewType: card.previewType,
 ///   previewImageUrl: card.previewImageUrl,
 ///   previewVideoUrl: card.previewVideoUrl,
+///   previewVideoOrigin: card.previewVideoOrigin,
+///   videoUrlSource: card.videoUrlSource,
 ///   skillName: card.name,
 ///   child: YourCardContent(),
 /// )
@@ -28,6 +30,8 @@ class SkillPreviewIndicator extends StatefulWidget {
   final PreviewType previewType;
   final String? previewImageUrl;
   final String? previewVideoUrl;
+  final String? previewVideoOrigin; // 原始视频地址，用于获取封面
+  final VideoUrlSource? videoUrlSource; // 视频URL来源类型
   final String? skillName;
   final Widget child;
 
@@ -36,6 +40,8 @@ class SkillPreviewIndicator extends StatefulWidget {
     required this.previewType,
     this.previewImageUrl,
     this.previewVideoUrl,
+    this.previewVideoOrigin,
+    this.videoUrlSource,
     this.skillName,
     required this.child,
   });
@@ -195,12 +201,16 @@ class _SkillPreviewIndicatorState extends State<SkillPreviewIndicator>
     if (widget.previewVideoUrl == null || widget.previewVideoUrl!.isEmpty) {
       return;
     }
-    if (!VideoEmbedDialog.canEmbed(widget.previewVideoUrl!)) return;
+    if (!VideoEmbedDialog.canEmbed(widget.previewVideoUrl!, videoUrlSource: widget.videoUrlSource)) return;
     // 重置状态
     _resetTooltipState();
     showDialog(
       context: context,
-      builder: (_) => VideoEmbedDialog(videoUrl: widget.previewVideoUrl!),
+      builder: (_) => VideoEmbedDialog(
+        videoUrl: widget.previewVideoUrl!,
+        videoUrlSource: widget.videoUrlSource,
+        videoOriginUrl: widget.previewVideoOrigin,
+      ),
     );
   }
 
@@ -222,12 +232,14 @@ class _SkillPreviewIndicatorState extends State<SkillPreviewIndicator>
             widget.previewType == PreviewType.video) &&
         widget.previewVideoUrl != null &&
         widget.previewVideoUrl!.isNotEmpty) {
-      final info = _getPlatformInfo(widget.previewVideoUrl!);
+      final info = _getPlatformInfo(widget.previewVideoUrl!, widget.videoUrlSource);
       return MouseRegion(
         onEnter: (_) => _onTooltipHoverChanged(true),
         onExit: (_) => _onTooltipHoverChanged(false),
         child: _VideoTooltipContent(
           videoUrl: widget.previewVideoUrl!,
+          videoOriginUrl: widget.previewVideoOrigin,
+          videoUrlSource: widget.videoUrlSource,
           platformName: info.name,
           platformColor: info.color,
           onTap: () => _openVideo(context),
@@ -476,12 +488,16 @@ class _ImageTooltipContentState extends State<_ImageTooltipContent> {
 /// 视频预览 tooltip 内容（显示封面图 + 播放按钮）
 class _VideoTooltipContent extends StatefulWidget {
   final String videoUrl;
+  final String? videoOriginUrl; // 原始视频地址，用于获取封面
+  final VideoUrlSource? videoUrlSource;
   final String platformName;
   final Color platformColor;
   final VoidCallback onTap;
 
   const _VideoTooltipContent({
     required this.videoUrl,
+    this.videoOriginUrl,
+    this.videoUrlSource,
     required this.platformName,
     required this.platformColor,
     required this.onTap,
@@ -503,6 +519,33 @@ class _VideoTooltipContentState extends State<_VideoTooltipContent> {
   }
 
   Future<void> _fetchCover() async {
+    // B站直链解析后使用原始地址获取封面
+    if (widget.videoUrlSource == VideoUrlSource.bilibiliParsed) {
+      final originUrl = widget.videoOriginUrl;
+      if (originUrl != null && originUrl.isNotEmpty) {
+        final bvid = _extractBvid(originUrl);
+        if (bvid != null) {
+          try {
+            final response = await Future.any([
+              _fetchBilibiliCover(bvid),
+              Future.delayed(const Duration(seconds: 3), () => null),
+            ]);
+            if (mounted && response != null) {
+              setState(() {
+                _coverUrl = response;
+                _isLoadingCover = false;
+              });
+              return;
+            }
+          } catch (_) {}
+        }
+      }
+      if (mounted) {
+        setState(() => _isLoadingCover = false);
+      }
+      return;
+    }
+
     // 尝试获取 B 站视频封面
     final bvid = _extractBvid(widget.videoUrl);
     if (bvid != null) {
@@ -710,7 +753,15 @@ class _VideoPlatformInfo {
 }
 
 /// 根据 URL 识别视频平台
-_VideoPlatformInfo _getPlatformInfo(String url) {
+_VideoPlatformInfo _getPlatformInfo(String url, VideoUrlSource? videoUrlSource) {
+  // B站直链解析后的视频
+  if (videoUrlSource == VideoUrlSource.bilibiliParsed) {
+    return const _VideoPlatformInfo(
+      name: 'Bilibili 直链',
+      color: Color(0xFFFB7299),
+    );
+  }
+
   final lowerUrl = url.toLowerCase();
 
   if (lowerUrl.contains('bilibili.com') || lowerUrl.contains('b23.tv')) {

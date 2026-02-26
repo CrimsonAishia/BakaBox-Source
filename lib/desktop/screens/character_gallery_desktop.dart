@@ -1489,6 +1489,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       previewType: card.previewType,
       previewImageUrl: card.previewImageUrl,
       previewVideoUrl: card.previewVideoUrl,
+      previewVideoOrigin: card.previewVideoOrigin,
+      videoUrlSource: card.videoUrlSource,
       skillName: card.name,
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
@@ -1837,6 +1839,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       previewType: skill.previewType,
       previewImageUrl: skill.previewImageUrl,
       previewVideoUrl: skill.previewVideoUrl,
+      previewVideoOrigin: skill.previewVideoOrigin,
+      videoUrlSource: skill.videoUrlSource,
       skillName: skill.name,
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
