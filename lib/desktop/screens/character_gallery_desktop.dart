@@ -502,10 +502,20 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           return _buildWeaponModelDetailPanel(state);
         }
         
-        // 优先判断 loading 状态，确保切换角色时显示骨架屏
+        // 角色图鉴视图：优先判断 loading 状态
         if (state.detailLoadState == LoadState.loading) {
           return const DetailPanelSkeleton();
         }
+        
+        // 如果有选中的刀枪模（从角色详情的专属装备点击过来），显示刀枪模详情
+        if (state.selectedWeaponModelId != null && state.selectedCharacter == null) {
+          // 刀枪模详情加载中显示骨架屏
+          if (state.weaponDetailLoadState == LoadState.loading) {
+            return const WeaponModelDetailSkeleton();
+          }
+          return _buildWeaponModelDetailPanel(state);
+        }
+        
         // 没有选中角色时显示提示
         if (state.selectedCharacter == null) {
           return _buildSelectHint();
@@ -2261,7 +2271,9 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
             height: 120,
             child: SubModelCard.fromKnifeModel(
               model: knife,
-              onTap: () => _showWeaponModelImages(knife.name, knife.thumbnailUrl, knife.preview),
+              onTap: () => context.read<CharacterGalleryBloc>().add(
+                LoadWeaponModelDetailInCharacterView(id: knife.id, isKnife: true),
+              ),
             ),
           );
         } else {
@@ -2270,7 +2282,9 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
             height: 120,
             child: SubModelCard.fromGunModel(
               model: gun,
-              onTap: () => _showWeaponModelImages(gun.name, gun.thumbnailUrl, gun.preview),
+              onTap: () => context.read<CharacterGalleryBloc>().add(
+                LoadWeaponModelDetailInCharacterView(id: gun.id, isKnife: false),
+              ),
             ),
           );
         }

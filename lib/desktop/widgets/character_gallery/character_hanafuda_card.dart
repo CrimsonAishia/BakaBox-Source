@@ -23,6 +23,16 @@ class HanafudaCard extends StatefulWidget {
 class _HanafudaCardState extends State<HanafudaCard> {
   bool _isHovered = false;
 
+  /// 格式化浏览量（超过1000显示为 1.2k 格式）
+  String _formatViewCount(int count) {
+    if (count >= 10000) {
+      return '${(count / 10000).toStringAsFixed(1)}w';
+    } else if (count >= 1000) {
+      return '${(count / 1000).toStringAsFixed(1)}k';
+    }
+    return count.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isHighlighted = widget.isSelected || _isHovered;
@@ -96,26 +106,65 @@ class _HanafudaCardState extends State<HanafudaCard> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(3),
-                    child: DiskCachedImage(
-                      imageUrl: widget.character.thumbnailUrl,
-                      fit: BoxFit.cover,
-                      placeholder: Container(
-                        color: washiColor,
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: CharacterGalleryTheme.getVermillion(context),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        DiskCachedImage(
+                          imageUrl: widget.character.thumbnailUrl,
+                          fit: BoxFit.cover,
+                          placeholder: Container(
+                            color: washiColor,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: CharacterGalleryTheme.getVermillion(context),
+                              ),
+                            ),
+                          ),
+                          errorWidget: Container(
+                            color: washiColor,
+                            child: Icon(
+                              Icons.person,
+                              size: 40,
+                              color: scrollBrown.withValues(alpha: 0.3),
+                            ),
                           ),
                         ),
-                      ),
-                      errorWidget: Container(
-                        color: washiColor,
-                        child: Icon(
-                          Icons.person,
-                          size: 40,
-                          color: scrollBrown.withValues(alpha: 0.3),
-                        ),
-                      ),
+                        // 浏览量显示（图片右上角）
+                        if (widget.character.viewCount > 0)
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.6),
+                                borderRadius: const BorderRadius.only(
+                                  bottomLeft: Radius.circular(4),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.visibility,
+                                    size: 11,
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    _formatViewCount(widget.character.viewCount),
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.9),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ),
