@@ -85,6 +85,9 @@ dependencies:
   # Screenshot (支持长截图)
   screenshot: ^3.0.0
   
+  # Image processing (JPEG compression)
+  image: ^4.3.0
+  
   # WebView (for QQ login) - using local fork with getCookies support
   webview_windows:
     git:

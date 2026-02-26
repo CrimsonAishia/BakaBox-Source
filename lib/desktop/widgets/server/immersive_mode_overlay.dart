@@ -4,6 +4,7 @@ import 'package:dart_ping/dart_ping.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image/image.dart' as img;
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:super_clipboard/super_clipboard.dart';
@@ -798,6 +799,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         targetSize: Size(screenWidth, clampedHeight),
       );
 
+      // 将 PNG 转换为压缩的 JPEG（质量 85%，清晰且体积小）
+      final jpegBytes = await _compressToJpeg(pngBytes, quality: 85);
+      
       // 复制到剪切板
       final clipboard = SystemClipboard.instance;
       if (clipboard == null) {
@@ -806,12 +810,13 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       }
 
       final item = DataWriterItem();
-      item.add(Formats.png(pngBytes));
+      // 使用 JPEG 格式
+      item.add(Formats.jpeg(jpegBytes));
       await clipboard.write([item]);
 
-      // 显示预览
+      // 显示预览（使用压缩后的图片）
       setState(() {
-        _screenshotPreview = pngBytes;
+        _screenshotPreview = jpegBytes;
         _showScreenshotPreview = true;
       });
 
@@ -825,7 +830,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         }
       });
 
-      LogService.i('截图已复制到剪切板');
+      LogService.i('截图已复制到剪切板 (JPEG ${(jpegBytes.length / 1024).toStringAsFixed(1)}KB)');
     } catch (e) {
       LogService.e('截图失败: $e');
     } finally {
@@ -835,6 +840,20 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         });
       }
     }
+  }
+  
+  /// 将 PNG 图片压缩为 JPEG
+  Future<Uint8List> _compressToJpeg(Uint8List pngBytes, {int quality = 85}) async {
+    // 使用 image 包解码 PNG
+    final image = img.decodePng(pngBytes);
+    if (image == null) {
+      throw Exception('无法解码 PNG 图片');
+    }
+    
+    // 编码为 JPEG，quality 范围 0-100
+    final jpegBytes = img.encodeJpg(image, quality: quality);
+    
+    return Uint8List.fromList(jpegBytes);
   }
   
   /// 构建用于截图的完整内容（不使用 ListView，直接展开所有内容，不显示 header）
