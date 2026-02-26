@@ -62,22 +62,52 @@ class QueueActivityLog extends StatefulWidget {
 
 class _QueueActivityLogState extends State<QueueActivityLog> {
   final ScrollController _scrollController = ScrollController();
+  
+  // 记录上次最后一条消息的 id，用于检测新消息
+  String? _lastActivityId;
+
+  @override
+  void initState() {
+    super.initState();
+    _lastActivityId = widget.activities.lastOrNull?.id;
+  }
 
   @override
   void didUpdateWidget(QueueActivityLog oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 新消息时自动滚动到底部
-    if (widget.activities.length > oldWidget.activities.length) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollController.hasClients) {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-          );
-        }
-      });
+    
+    // 列表为空时重置
+    if (widget.activities.isEmpty) {
+      _lastActivityId = null;
+      return;
     }
+    
+    // 检测是否有新消息（通过比较最后一条消息的 id）
+    final currentLastId = widget.activities.last.id;
+    if (currentLastId != _lastActivityId) {
+      _lastActivityId = currentLastId;
+      _scrollToBottom();
+    }
+  }
+  
+  /// 滚动到底部
+  void _scrollToBottom() {
+    // 使用 addPostFrameCallback 确保 ListView 已经更新
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      
+      // 如果 ScrollController 还没有 attach（比如从空列表变为非空）
+      // 需要再等一帧
+      if (!_scrollController.hasClients) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_scrollController.hasClients) return;
+          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        });
+        return;
+      }
+      
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+    });
   }
 
   @override

@@ -763,6 +763,12 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
   /// 
   /// 获取用户昵称优先级：Steam 客户端 > GSI > 登录用户名 > null（匿名）
   Future<void> _startQueue(BuildContext context) async {
+    // 清空活动日志和用户缓存（每次开始挤服都重新开始）
+    setState(() {
+      _activities.clear();
+      _userInfoCache.clear();
+    });
+    
     // 获取当前用户信息（在 await 之前获取，避免 BuildContext 跨异步使用）
     final authState = context.read<AuthBloc>().state;
     final isAuthenticated = authState.isAuthenticated;
