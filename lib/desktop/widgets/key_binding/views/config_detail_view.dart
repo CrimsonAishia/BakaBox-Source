@@ -93,9 +93,9 @@ class DetailHeader extends StatelessWidget {
     final isOwner = backendUserInfo != null && backendUserInfo.id == config.userID;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    // 已通过的配置也可以编辑/删除，但需要填写理由
-    final canEdit = isOwner;
-    final canDelete = isOwner;
+    // 已通过的配置暂不开放编辑/删除功能
+    final canEdit = isOwner && !config.isApproved;
+    final canDelete = isOwner && !config.isApproved;
     
     return Container(
       padding: const EdgeInsets.all(16),
