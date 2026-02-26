@@ -74,6 +74,12 @@ SpellCard _$SpellCardFromJson(Map<String, dynamic> json) => SpellCard(
       PreviewType.none,
   previewImageUrl: json['previewImageUrl'] as String?,
   previewVideoUrl: json['previewVideoUrl'] as String?,
+  previewVideoOrigin: json['previewVideoOrigin'] as String?,
+  videoUrlSource: $enumDecodeNullable(
+    _$VideoUrlSourceEnumMap,
+    json['videoUrlSource'],
+    unknownValue: VideoUrlSource.original,
+  ),
   cost: (json['cost'] as num?)?.toDouble(),
   cooldown: (json['cooldown'] as num?)?.toDouble(),
   damage: json['damage'] as String?,
@@ -91,6 +97,8 @@ Map<String, dynamic> _$SpellCardToJson(SpellCard instance) => <String, dynamic>{
   'previewType': _$PreviewTypeEnumMap[instance.previewType]!,
   'previewImageUrl': instance.previewImageUrl,
   'previewVideoUrl': instance.previewVideoUrl,
+  'previewVideoOrigin': instance.previewVideoOrigin,
+  'videoUrlSource': _$VideoUrlSourceEnumMap[instance.videoUrlSource],
   'cost': instance.cost,
   'cooldown': instance.cooldown,
   'damage': instance.damage,
@@ -120,6 +128,11 @@ const _$PreviewTypeEnumMap = {
   PreviewType.videoUrl: 'video_url',
 };
 
+const _$VideoUrlSourceEnumMap = {
+  VideoUrlSource.original: 'original',
+  VideoUrlSource.bilibiliParsed: 'bilibili_parsed',
+};
+
 ZombieSkill _$ZombieSkillFromJson(Map<String, dynamic> json) => ZombieSkill(
   id: (json['id'] as num).toInt(),
   name: json['name'] as String,
@@ -135,6 +148,12 @@ ZombieSkill _$ZombieSkillFromJson(Map<String, dynamic> json) => ZombieSkill(
       PreviewType.none,
   previewImageUrl: json['previewImageUrl'] as String?,
   previewVideoUrl: json['previewVideoUrl'] as String?,
+  previewVideoOrigin: json['previewVideoOrigin'] as String?,
+  videoUrlSource: $enumDecodeNullable(
+    _$VideoUrlSourceEnumMap,
+    json['videoUrlSource'],
+    unknownValue: VideoUrlSource.original,
+  ),
   cooldown: (json['cooldown'] as num?)?.toDouble(),
   damage: json['damage'] as String?,
   range: json['range'] as String?,
@@ -152,6 +171,8 @@ Map<String, dynamic> _$ZombieSkillToJson(ZombieSkill instance) =>
       'previewType': _$PreviewTypeEnumMap[instance.previewType]!,
       'previewImageUrl': instance.previewImageUrl,
       'previewVideoUrl': instance.previewVideoUrl,
+      'previewVideoOrigin': instance.previewVideoOrigin,
+      'videoUrlSource': _$VideoUrlSourceEnumMap[instance.videoUrlSource],
       'cooldown': instance.cooldown,
       'damage': instance.damage,
       'range': instance.range,

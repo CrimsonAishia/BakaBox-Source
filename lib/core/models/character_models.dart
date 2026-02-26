@@ -158,6 +158,14 @@ enum PreviewType {
   videoUrl,
 }
 
+/// 视频URL来源类型
+enum VideoUrlSource {
+  @JsonValue('original')
+  original, // 原始外链地址，未经解析处理
+  @JsonValue('bilibili_parsed')
+  bilibiliParsed, // B站视频已成功解析为直链地址
+}
+
 /// 符卡
 @JsonSerializable()
 class SpellCard extends Equatable {
@@ -173,6 +181,9 @@ class SpellCard extends Equatable {
   final PreviewType previewType;
   final String? previewImageUrl;
   final String? previewVideoUrl;
+  final String? previewVideoOrigin; // 原始视频地址（B站直链解析前的地址，用于获取封面）
+  @JsonKey(unknownEnumValue: VideoUrlSource.original)
+  final VideoUrlSource? videoUrlSource; // 视频URL来源类型，仅当previewType为video_url时有值
   final double? cost;
   final double? cooldown;
   final String? damage;
@@ -189,6 +200,8 @@ class SpellCard extends Equatable {
     this.previewType = PreviewType.none,
     this.previewImageUrl,
     this.previewVideoUrl,
+    this.previewVideoOrigin,
+    this.videoUrlSource,
     this.cost,
     this.cooldown,
     this.damage,
@@ -211,6 +224,8 @@ class SpellCard extends Equatable {
     previewType,
     previewImageUrl,
     previewVideoUrl,
+    previewVideoOrigin,
+    videoUrlSource,
     cost,
     cooldown,
     damage,
@@ -230,6 +245,9 @@ class ZombieSkill extends Equatable {
   final PreviewType previewType;
   final String? previewImageUrl;
   final String? previewVideoUrl;
+  final String? previewVideoOrigin; // 原始视频地址（B站直链解析前的地址，用于获取封面）
+  @JsonKey(unknownEnumValue: VideoUrlSource.original)
+  final VideoUrlSource? videoUrlSource; // 视频URL来源类型，仅当previewType为video_url时有值
   final double? cooldown;
   final String? damage;
   final String? range;
@@ -245,6 +263,8 @@ class ZombieSkill extends Equatable {
     this.previewType = PreviewType.none,
     this.previewImageUrl,
     this.previewVideoUrl,
+    this.previewVideoOrigin,
+    this.videoUrlSource,
     this.cooldown,
     this.damage,
     this.range,
@@ -266,6 +286,8 @@ class ZombieSkill extends Equatable {
     previewType,
     previewImageUrl,
     previewVideoUrl,
+    previewVideoOrigin,
+    videoUrlSource,
     cooldown,
     damage,
     range,

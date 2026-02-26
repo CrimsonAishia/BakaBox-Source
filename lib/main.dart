@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:media_kit/media_kit.dart';
 
 import 'core/bootstrap/app_initializer.dart';
 import 'core/utils/platform_utils.dart';
@@ -13,6 +14,7 @@ import 'mobile/app.dart';
 /// 3. 根据平台分发到对应的启动流程
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+  MediaKit.ensureInitialized();
   AppInitializer.recordStartTime();
   
   // 限制 Flutter 内置图片缓存，减少内存占用
