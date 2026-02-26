@@ -6,6 +6,7 @@ import '../../../core/bloc/update/update_event.dart';
 import '../../../core/bloc/update/update_state.dart';
 import '../../../core/bloc/settings/settings_state.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/widgets/disk_cached_image.dart';
 import 'settings_group_title.dart';
 import 'settings_buttons.dart';
 
@@ -82,13 +83,38 @@ class AboutSettings extends StatelessWidget {
               icon: MdiIcons.accountOutline,
               iconColor: const Color(0xFF10B981),
               label: '开发者',
-              value: Text(
-                AppConstants.appAuthor,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF374151),
-                ),
+              value: Row(
+                children: [
+                  ClipOval(
+                    child: DiskCachedImage(
+                      imageUrl: 'https://bbs.zombieden.cn/uc_server/data/avatar/000/04/21/47_avatar_middle.jpg',
+                      width: 42,
+                      height: 42,
+                      fit: BoxFit.cover,
+                      placeholder: Container(
+                        width: 42,
+                        height: 42,
+                        color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB),
+                        child: const Icon(Icons.person, size: 20, color: Colors.grey),
+                      ),
+                      errorWidget: Container(
+                        width: 42,
+                        height: 42,
+                        color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB),
+                        child: const Icon(Icons.person, size: 20, color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    AppConstants.appAuthor,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : const Color(0xFF374151),
+                    ),
+                  ),
+                ],
               ),
               action: const SizedBox.shrink(),
             ),
