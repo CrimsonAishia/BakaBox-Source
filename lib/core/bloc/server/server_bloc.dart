@@ -123,7 +123,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       // 从全局缓存恢复 mapRuntime 数据
       final cachedRuntime = address != null ? _mapRuntimeCache[address] : null;
       final cachedLastFetched = address != null ? _mapRuntimeLastFetchedCache[address] : null;
-      // 从全局缓存恢复失败计数
+      // 从全局缓存恢复失败计数（仅用于记录，不直接标记离线）
       final cachedFailures = address != null ? (_failureCountCache[address] ?? 0) : 0;
       
       return ExtendedServerItem(
@@ -133,7 +133,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         mapRuntimeLastFetched: cachedLastFetched,
         mapRuntimeError: false,
         consecutiveFailures: cachedFailures,
-        isOffline: cachedFailures >= 3,
+        // 不在查询前标记离线，让 _fetchServersInfo 决定
+        // 这样可以避免缓存的失败计数导致服务器在查询前就显示离线
+        isOffline: false,
       );
     }).toList();
     
@@ -1341,7 +1343,15 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     // 3. 重置防重入标记
     _isUpdatingCategoryOnlineCounts = false;
     
-    // 4. 重置服务器列表为加载状态
+    // 4. 清除当前分类所有服务器的失败计数缓存（解决离线状态残留问题）
+    for (final server in state.servers) {
+      final address = server.serverItem.address ?? server.serverItem.serverAddress;
+      if (address != null) {
+        _failureCountCache.remove(address);
+      }
+    }
+    
+    // 5. 重置服务器列表为加载状态
     final servers = state.servers.map((server) {
       final address = server.serverItem.address ?? server.serverItem.serverAddress;
       return ExtendedServerItem(
