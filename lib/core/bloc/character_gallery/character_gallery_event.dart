@@ -331,3 +331,14 @@ class LoadCharacterDetailInWeaponView extends CharacterGalleryEvent {
   @override
   List<Object?> get props => [characterId];
 }
+
+/// 在角色图鉴视图中加载刀枪模详情（保持左侧列表不变，只切换右侧详情面板）
+class LoadWeaponModelDetailInCharacterView extends CharacterGalleryEvent {
+  final int id;
+  final bool isKnife;
+
+  const LoadWeaponModelDetailInCharacterView({required this.id, required this.isKnife});
+
+  @override
+  List<Object?> get props => [id, isKnife];
+}
