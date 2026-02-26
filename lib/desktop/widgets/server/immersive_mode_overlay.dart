@@ -14,11 +14,14 @@ import '../../../core/bloc/server/server_bloc.dart';
 import '../../../core/bloc/server/server_state.dart';
 import '../../../core/models/server_models.dart';
 import '../../../core/services/source_server_service.dart';
+import '../../../core/services/status_window_service.dart';
 import '../../../core/utils/log_service.dart';
 import '../../../core/utils/map_runtime_utils.dart';
 import '../../../core/utils/storage_utils.dart';
+import '../../../core/utils/toast_utils.dart';
 import '../../../core/widgets/map_background.dart';
 import '../common_scroll_indicator.dart';
+import '../queue/queue_window.dart';
 import 'server_card.dart';
 import 'server_card_skeleton.dart';
 import 'server_detail_dialog.dart';
@@ -88,10 +91,23 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   bool _canScrollUp = false;
   bool _canScrollDown = false;
 
+  // 简约模式（表格视图）
+  bool _isCompactMode = false;
+
+  // 监听 StatusWindowService 状态（用于简约模式操作按钮状态更新）
+  final StatusWindowService _statusService = StatusWindowService();
+  StreamSubscription<OperationState>? _statusSubscription;
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_updateScrollIndicators);
+    // 监听操作状态变化，更新简约模式的按钮状态
+    _statusSubscription = _statusService.stateStream.listen((_) {
+      if (mounted && _isCompactMode) {
+        setState(() {});
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
       _initializeData();
@@ -190,6 +206,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
 
   @override
   void dispose() {
+    _statusSubscription?.cancel();
     _refreshTimer?.cancel();
     _scrollController.removeListener(_updateScrollIndicators);
     _scrollController.dispose();
@@ -1572,6 +1589,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                 children: [
                   _buildRefreshIndicator(isDark),
                   const SizedBox(width: 10),
+                  _buildViewModeToggle(isDark),
+                  const SizedBox(width: 10),
                   _buildScreenshotButton(isDark),
                   const SizedBox(width: 14),
                   Container(
@@ -1851,6 +1870,45 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     );
   }
 
+  /// 构建视图模式切换按钮
+  Widget _buildViewModeToggle(bool isDark) {
+    return Tooltip(
+      message: _isCompactMode ? '切换到卡片视图' : '切换到简约视图',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => setState(() => _isCompactMode = !_isCompactMode),
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: _isCompactMode
+                  ? const Color(0xFF3B82F6).withValues(alpha: 0.12)
+                  : (isDark
+                      ? Colors.white.withValues(alpha: 0.06)
+                      : Colors.black.withValues(alpha: 0.04)),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: _isCompactMode
+                    ? const Color(0xFF3B82F6).withValues(alpha: 0.4)
+                    : (isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.black.withValues(alpha: 0.08)),
+              ),
+            ),
+            child: Icon(
+              _isCompactMode ? Icons.grid_view_rounded : Icons.view_list_rounded,
+              size: 20,
+              color: _isCompactMode
+                  ? const Color(0xFF3B82F6)
+                  : (isDark ? Colors.white70 : const Color(0xFF6B7280)),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildScreenshotButton(bool isDark) {
     return Tooltip(
       message: '截图并复制到剪切板',
@@ -2006,7 +2064,10 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
           itemCount: categoryServers.length,
           itemBuilder: (context, index) {
             final item = categoryServers[index];
-            return _buildCategorySection(isDark, item);
+            // 根据模式选择不同的渲染方式
+            return _isCompactMode
+                ? _buildCompactCategorySection(isDark, item)
+                : _buildCategorySection(isDark, item);
           },
         ),
         // 顶部滚动指示器
@@ -2209,6 +2270,763 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       ),
     );
   }
+
+  // ==================== 简约模式（表格视图）====================
+
+  /// 构建简约模式的分类区块
+  Widget _buildCompactCategorySection(bool isDark, _CategoryServers item) {
+    // 计算该分类的在线人数
+    int categoryPlayers = 0;
+    for (final server in item.servers) {
+      categoryPlayers += server.serverData?.players ?? 0;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 分类标题
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            children: [
+              if (item.category.isCustom) ...[
+                const Icon(
+                  Icons.folder_outlined,
+                  size: 16,
+                  color: Color(0xFF10B981),
+                ),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                item.category.modelName ?? '未知分类',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : const Color(0xFF1F2937),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${item.servers.length} 服务器 · $categoryPlayers 人',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                  ),
+                ),
+              ),
+              if (item.isLoading) ...[
+                const SizedBox(width: 8),
+                const SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation(Color(0xFF3B82F6)),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        // 表格
+        if (item.servers.isEmpty && item.isLoading)
+          _buildCompactLoadingRows(isDark, item.category.isCustom)
+        else
+          _buildCompactTable(isDark, item.servers, item.category.isCustom),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  /// 构建简约模式加载占位
+  Widget _buildCompactLoadingRows(bool isDark, bool isCustomCategory) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+        ),
+      ),
+      child: Column(
+        children: List.generate(3, (index) => _buildCompactLoadingRow(isDark, index == 2, isCustomCategory)),
+      ),
+    );
+  }
+
+  Widget _buildCompactLoadingRow(bool isDark, bool isLast, bool isCustomCategory) {
+    final placeholderColor = isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.08);
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        border: isLast
+            ? null
+            : Border(
+                bottom: BorderSide(
+                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+                ),
+              ),
+      ),
+      child: Row(
+        children: [
+          // 状态指示器占位
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: placeholderColor,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 12),
+          // 服务器名称占位
+          Expanded(
+            flex: 3,
+            child: Container(
+              height: 14,
+              decoration: BoxDecoration(
+                color: placeholderColor,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // 地图占位
+          Expanded(
+            flex: 2,
+            child: Container(
+              height: 14,
+              decoration: BoxDecoration(
+                color: placeholderColor,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // 人数占位
+          SizedBox(
+            width: 70,
+            child: Container(
+              height: 14,
+              decoration: BoxDecoration(
+                color: placeholderColor,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+          // 时间占位
+          SizedBox(
+            width: 50,
+            child: Container(
+              height: 14,
+              decoration: BoxDecoration(
+                color: placeholderColor,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+          // 延迟占位
+          SizedBox(
+            width: 55,
+            child: Container(
+              height: 14,
+              decoration: BoxDecoration(
+                color: placeholderColor,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+          // 比分占位（非自定义分类）
+          if (!isCustomCategory)
+            SizedBox(
+              width: 70,
+              child: Container(
+                height: 14,
+                decoration: BoxDecoration(
+                  color: placeholderColor,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+          // 操作按钮占位
+          const SizedBox(width: 100),
+        ],
+      ),
+    );
+  }
+
+  /// 构建简约模式表格
+  Widget _buildCompactTable(bool isDark, List<ExtendedServerItem> servers, bool isCustomCategory) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+        ),
+      ),
+      child: Column(
+        children: [
+          // 表头
+          _buildCompactTableHeader(isDark, isCustomCategory),
+          // 数据行
+          ...servers.asMap().entries.map((entry) {
+            final index = entry.key;
+            final server = entry.value;
+            final isLast = index == servers.length - 1;
+            return _buildCompactTableRow(isDark, server, isLast, isCustomCategory);
+          }),
+        ],
+      ),
+    );
+  }
+
+  /// 构建表头
+  Widget _buildCompactTableHeader(bool isDark, bool isCustomCategory) {
+    final headerColor = isDark ? Colors.white38 : const Color(0xFF9CA3AF);
+    const headerStyle = TextStyle(fontSize: 11, fontWeight: FontWeight.w600);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02),
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+          ),
+        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(7)),
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 20), // 状态指示器占位
+          Expanded(
+            flex: 3,
+            child: Text('服务器名称', style: headerStyle.copyWith(color: headerColor)),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text('地图', style: headerStyle.copyWith(color: headerColor)),
+          ),
+          SizedBox(
+            width: 70,
+            child: Text('人数', style: headerStyle.copyWith(color: headerColor), textAlign: TextAlign.center),
+          ),
+          SizedBox(
+            width: 50,
+            child: Text('时间', style: headerStyle.copyWith(color: headerColor), textAlign: TextAlign.center),
+          ),
+          SizedBox(
+            width: 55,
+            child: Text('延迟', style: headerStyle.copyWith(color: headerColor), textAlign: TextAlign.center),
+          ),
+          if (!isCustomCategory)
+            SizedBox(
+              width: 70,
+              child: Text('比分', style: headerStyle.copyWith(color: headerColor), textAlign: TextAlign.center),
+            ),
+          SizedBox(
+            width: 100,
+            child: Text('操作', style: headerStyle.copyWith(color: headerColor), textAlign: TextAlign.center),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建数据行
+  Widget _buildCompactTableRow(bool isDark, ExtendedServerItem server, bool isLast, bool isCustomCategory) {
+    final data = server.serverData;
+    final isOffline = server.isOffline;
+    final isLoading = server.isLoading && data == null;
+    final address = server.serverItem.address ?? server.serverItem.serverAddress;
+
+    // 服务器名称
+    final hostName = server.serverItem.getDisplayName(data?.hostName);
+    
+    // 地图名称 - 与卡片模式保持一致：有中文名时 "中文名 (英文名)"，否则只显示英文名
+    final mapName = data?.map ?? '-';
+    final mapLabel = server.mapInfo?.mapLabel;
+    final chineseName = (mapLabel?.isNotEmpty == true) ? mapLabel : null;
+    final displayMap = chineseName != null ? '$chineseName ($mapName)' : mapName;
+
+    // 人数
+    final players = data?.players ?? 0;
+    final maxPlayers = data?.maxPlayers ?? 0;
+    final loadRatio = maxPlayers > 0 ? players / maxPlayers : 0.0;
+
+    // 运行时间
+    final runtimeText = _getCompactRuntimeText(server);
+
+    // 状态颜色
+    Color statusColor;
+    if (isOffline) {
+      statusColor = const Color(0xFF9CA3AF);
+    } else if (loadRatio >= 1.0) {
+      statusColor = const Color(0xFFF44336);
+    } else if (loadRatio >= 0.8) {
+      statusColor = const Color(0xFFFF9800);
+    } else {
+      statusColor = const Color(0xFF22C55E);
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: isOffline ? null : () => _showServerDetails(server),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            border: isLast
+                ? null
+                : Border(
+                    bottom: BorderSide(
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+                    ),
+                  ),
+          ),
+          child: Row(
+            children: [
+              // 状态指示器
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: isLoading ? Colors.transparent : statusColor,
+                  shape: BoxShape.circle,
+                  border: isLoading
+                      ? Border.all(color: isDark ? Colors.white24 : Colors.black12, width: 1.5)
+                      : null,
+                ),
+                child: isLoading
+                    ? SizedBox(
+                        width: 8,
+                        height: 8,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 1.5,
+                          valueColor: AlwaysStoppedAnimation(
+                            isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              // 服务器名称（过长时水平滚动）
+              Expanded(
+                flex: 3,
+                child: _CompactMarqueeText(
+                  text: hostName,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: isOffline
+                        ? (isDark ? Colors.white38 : const Color(0xFF9CA3AF))
+                        : (isDark ? Colors.white : const Color(0xFF1F2937)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // 地图（过长时水平滚动）
+              Expanded(
+                flex: 2,
+                child: _CompactMarqueeText(
+                  text: displayMap,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isOffline
+                        ? (isDark ? Colors.white24 : const Color(0xFFD1D5DB))
+                        : (isDark ? Colors.white60 : const Color(0xFF6B7280)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // 人数
+              SizedBox(
+                width: 70,
+                child: _buildCompactPlayerCount(isDark, players, maxPlayers, isOffline),
+              ),
+              // 运行时间
+              SizedBox(
+                width: 50,
+                child: Text(
+                  runtimeText,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isOffline
+                        ? (isDark ? Colors.white24 : const Color(0xFFD1D5DB))
+                        : (isDark ? Colors.white54 : const Color(0xFF6B7280)),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              // 延迟
+              SizedBox(
+                width: 55,
+                child: _buildCompactPing(isDark, server),
+              ),
+              // 比分（非自定义分类才显示）
+              if (!isCustomCategory)
+                SizedBox(
+                  width: 70,
+                  child: _buildCompactScoreColumn(isDark, server),
+                ),
+              // 操作按钮
+              SizedBox(
+                width: 100,
+                child: _buildCompactActionButtons(isDark, server, address, isOffline),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建简约模式人数显示（与卡片模式颜色一致）
+  Widget _buildCompactPlayerCount(bool isDark, int players, int maxPlayers, bool isOffline) {
+    if (isOffline) {
+      return Text(
+        '-',
+        style: TextStyle(
+          fontSize: 13,
+          color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
+        ),
+        textAlign: TextAlign.center,
+      );
+    }
+
+    // 颜色逻辑与卡片模式一致
+    Color primaryColor;
+    if (players >= maxPlayers && maxPlayers > 0) {
+      primaryColor = const Color(0xFFF44336); // 满人：红色
+    } else if (players >= maxPlayers * 0.8 && maxPlayers > 0) {
+      primaryColor = const Color(0xFFFF9800); // 80%以上：橙色
+    } else {
+      primaryColor = const Color(0xFF0080FF); // 正常：蓝色
+    }
+
+    return RichText(
+      textAlign: TextAlign.center,
+      text: TextSpan(
+        children: [
+          TextSpan(
+            text: '$players',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: primaryColor,
+            ),
+          ),
+          TextSpan(
+            text: '/$maxPlayers',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 获取简约模式运行时间文本（与卡片模式单位一致）
+  String _getCompactRuntimeText(ExtendedServerItem server) {
+    if (server.isOffline) return '-';
+    if (server.serverItem.isCustom) return '-';
+    
+    final mapRuntime = server.mapRuntime;
+    
+    if (mapRuntime == null) {
+      return server.mapRuntimeError ? '?' : '...';
+    }
+    
+    // 使用 MapRuntimeUtils 计算实际运行时间并格式化（与卡片模式一致）
+    final currentRuntime = MapRuntimeUtils.calculateCurrentRuntime(
+      mapRuntime,
+      server.mapRuntimeLastFetched,
+    );
+    
+    if (currentRuntime <= 0) return '0分';
+    return MapRuntimeUtils.formatRuntime(currentRuntime);
+  }
+
+  /// 构建简约模式比分列（独立显示）
+  Widget _buildCompactScoreColumn(bool isDark, ExtendedServerItem server) {
+    if (server.isOffline) {
+      return Text(
+        '-',
+        style: TextStyle(
+          fontSize: 11,
+          color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
+        ),
+        textAlign: TextAlign.center,
+      );
+    }
+
+    // 检查是否有有效比分
+    final teamScores = server.teamScores;
+    final hasValidScore = teamScores != null &&
+        teamScores.ctScore != null &&
+        teamScores.tScore != null &&
+        (teamScores.ctScore! > 0 || teamScores.tScore! > 0);
+
+    if (!hasValidScore) {
+      return Text(
+        '-',
+        style: TextStyle(
+          fontSize: 12,
+          color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+        ),
+        textAlign: TextAlign.center,
+      );
+    }
+
+    return _buildCompactScore(isDark, server, teamScores);
+  }
+
+  /// 构建简约模式操作按钮
+  Widget _buildCompactActionButtons(bool isDark, ExtendedServerItem server, String? address, bool isOffline) {
+    if (address == null || isOffline) {
+      return const SizedBox.shrink();
+    }
+
+    final globalState = _statusService.state;
+    
+    // 检查挤服状态
+    final isQueueing = globalState.type == OperationType.queueing &&
+        globalState.status == OperationStatus.running;
+    final isCurrentServerQueueing = isQueueing && globalState.serverAddress == address;
+    final isOtherServerQueueing = isQueueing && globalState.serverAddress != address;
+    
+    // 检查连接状态
+    final isConnecting = globalState.type == OperationType.connecting &&
+        globalState.status == OperationStatus.running &&
+        globalState.serverAddress == address;
+    final isOtherServerBusy = (globalState.type == OperationType.connecting ||
+            globalState.type == OperationType.launching) &&
+        globalState.status == OperationStatus.running &&
+        globalState.serverAddress != address;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 加入按钮
+        _buildCompactIconButton(
+          icon: Icons.play_arrow_rounded,
+          tooltip: isConnecting ? '连接中...' : '加入',
+          color: const Color(0xFF3B82F6),
+          isDisabled: isConnecting || isOtherServerBusy,
+          isLoading: isConnecting,
+          onTap: () => _handleCompactConnect(server, address),
+        ),
+        const SizedBox(width: 6),
+        // 挤服按钮
+        _buildCompactIconButton(
+          icon: MdiIcons.accountGroup,
+          tooltip: isCurrentServerQueueing ? '挤服中' : '挤服',
+          color: isCurrentServerQueueing ? const Color(0xFF22C55E) : const Color(0xFFFF6E6E),
+          isDisabled: isOtherServerQueueing,
+          isActive: isCurrentServerQueueing,
+          onTap: () => _handleCompactQueue(server, address, isCurrentServerQueueing, isOtherServerQueueing),
+        ),
+      ],
+    );
+  }
+
+  /// 构建简约模式图标按钮
+  Widget _buildCompactIconButton({
+    required IconData icon,
+    required String tooltip,
+    required Color color,
+    required VoidCallback onTap,
+    bool isDisabled = false,
+    bool isLoading = false,
+    bool isActive = false,
+  }) {
+    final effectiveColor = isDisabled ? color.withValues(alpha: 0.4) : color;
+    
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isDisabled ? null : onTap,
+          borderRadius: BorderRadius.circular(4),
+          child: Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: isActive
+                  ? effectiveColor.withValues(alpha: 0.15)
+                  : effectiveColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(
+                color: isActive
+                    ? effectiveColor.withValues(alpha: 0.5)
+                    : effectiveColor.withValues(alpha: 0.3),
+              ),
+            ),
+            child: isLoading
+                ? Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation(effectiveColor),
+                    ),
+                  )
+                : Icon(icon, size: 16, color: effectiveColor),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 处理简约模式加入服务器
+  Future<void> _handleCompactConnect(ExtendedServerItem server, String address) async {
+    final serverName = server.serverItem.getDisplayName(server.serverData?.hostName);
+    final mapInfo = server.mapInfo;
+    
+    await _statusService.connectToServer(
+      serverAddress: address,
+      serverName: serverName,
+      mapName: server.serverData?.map,
+      mapNameCn: mapInfo?.mapLabel,
+      mapBackground: mapInfo?.mapUrl,
+    );
+    
+    if (mounted) {
+      final state = _statusService.state;
+      if (state.status == OperationStatus.failed && state.message != null) {
+        ToastUtils.showError(context, state.message!);
+      }
+      setState(() {});
+    }
+  }
+
+  /// 处理简约模式挤服
+  void _handleCompactQueue(ExtendedServerItem server, String address, bool isCurrentServerQueueing, bool isOtherServerQueueing) {
+    if (isOtherServerQueueing) {
+      ToastUtils.showWarning(context, '正在挤服中，无法切换服务器');
+      return;
+    }
+    
+    // 打开挤服对话框
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: QueueWindow(
+          serverAddress: address,
+          isCustomServer: server.serverItem.isCustom,
+          initialServerInfo: server.serverData,
+          initialMapInfo: server.mapInfo,
+          onClose: () => Navigator.of(dialogContext).pop(),
+        ),
+      ),
+    );
+  }
+
+  /// 构建简约模式比分显示
+  Widget _buildCompactScore(bool isDark, ExtendedServerItem server, TeamScores scores) {
+    final mapName = server.serverData?.map ?? '';
+    final isZombie = _isZombieMap(mapName);
+    final isUnknown = scores.dataQuality == 'unknown';
+
+    final Color leftColor;
+    final Color rightColor;
+
+    if (isUnknown) {
+      leftColor = const Color(0xFF9CA3AF);
+      rightColor = const Color(0xFF9CA3AF);
+    } else if (isZombie) {
+      leftColor = const Color(0xFF22C55E);
+      rightColor = const Color(0xFFEF4444);
+    } else {
+      leftColor = const Color(0xFF3B82F6);
+      rightColor = const Color(0xFFEAB308);
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '${scores.ctScore}',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: leftColor,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 3),
+          child: Text(
+            ':',
+            style: TextStyle(
+              fontSize: 12,
+              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+            ),
+          ),
+        ),
+        Text(
+          '${scores.tScore}',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: rightColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 构建简约模式延迟显示
+  Widget _buildCompactPing(bool isDark, ExtendedServerItem server) {
+    final ping = server.pingInfo?.ping ?? server.serverData?.pingLatency;
+    
+    if (ping == null) {
+      return Text(
+        '-',
+        style: TextStyle(
+          fontSize: 12,
+          color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+        ),
+        textAlign: TextAlign.center,
+      );
+    }
+
+    Color pingColor;
+    if (ping < 50) {
+      pingColor = const Color(0xFF22C55E);
+    } else if (ping < 100) {
+      pingColor = const Color(0xFFEAB308);
+    } else {
+      pingColor = const Color(0xFFF44336);
+    }
+
+    return Text(
+      '${ping}ms',
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: pingColor,
+      ),
+      textAlign: TextAlign.center,
+    );
+  }
 }
 
 /// 分类服务器数据
@@ -2222,4 +3040,123 @@ class _CategoryServers {
     required this.servers,
     this.isLoading = false,
   });
+}
+
+/// 滚动文本组件 - 文本过长时自动水平滚动
+class _CompactMarqueeText extends StatefulWidget {
+  final String text;
+  final TextStyle style;
+
+  const _CompactMarqueeText({required this.text, required this.style});
+
+  @override
+  State<_CompactMarqueeText> createState() => _CompactMarqueeTextState();
+}
+
+class _CompactMarqueeTextState extends State<_CompactMarqueeText> {
+  ScrollController? _scrollController;
+  bool _needsScroll = false;
+  bool _isScrolling = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
+  }
+
+  @override
+  void didUpdateWidget(_CompactMarqueeText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text) {
+      if (_scrollController != null && _scrollController!.hasClients) {
+        try {
+          _scrollController!.jumpTo(0);
+        } catch (_) {}
+      }
+      _isScrolling = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController?.dispose();
+    super.dispose();
+  }
+
+  void _checkOverflow() {
+    if (!mounted || _scrollController == null) return;
+    if (!_scrollController!.hasClients) return;
+
+    final maxScroll = _scrollController!.position.maxScrollExtent;
+    final needsScroll = maxScroll > 0;
+    if (needsScroll != _needsScroll) {
+      setState(() => _needsScroll = needsScroll);
+    }
+    if (_needsScroll && !_isScrolling) {
+      _startScrolling();
+    }
+  }
+
+  void _startScrolling() async {
+    if (!mounted || !_needsScroll || _scrollController == null) return;
+    _isScrolling = true;
+
+    while (mounted && _needsScroll && _isScrolling) {
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted || !_needsScroll || _scrollController == null) break;
+
+      final maxScroll = _scrollController!.position.maxScrollExtent;
+      if (maxScroll <= 0) break;
+
+      try {
+        await _scrollController!.animateTo(
+          maxScroll,
+          duration: Duration(
+            milliseconds: (maxScroll * 30).toInt().clamp(1000, 5000),
+          ),
+          curve: Curves.linear,
+        );
+      } catch (_) {
+        break;
+      }
+
+      if (!mounted) break;
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) break;
+
+      try {
+        await _scrollController!.animateTo(
+          0,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeOut,
+        );
+      } catch (_) {
+        break;
+      }
+
+      if (!mounted) break;
+      await Future.delayed(const Duration(seconds: 1));
+    }
+    _isScrolling = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (View.maybeOf(context) == null) {
+      return Text(
+        widget.text,
+        style: widget.style,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+    return SingleChildScrollView(
+      controller: _scrollController,
+      scrollDirection: Axis.horizontal,
+      physics: const NeverScrollableScrollPhysics(),
+      child: Text(widget.text, style: widget.style, maxLines: 1),
+    );
+  }
 }
