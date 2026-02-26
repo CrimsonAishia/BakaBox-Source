@@ -594,7 +594,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
           children: [
             // 竞技场面板
             Container(
-              height: 240,
+              height: 250,
               decoration: BoxDecoration(
                 color: isDark 
                     ? const Color(0xFF1E293B).withValues(alpha: 0.5)
