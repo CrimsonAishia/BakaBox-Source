@@ -10,18 +10,16 @@ import 'key_binding_event.dart';
 import 'key_binding_state.dart';
 
 /// 按键绑定 Bloc
-/// 
+///
 /// 管理按键配置的加载、应用、发布等功能
 class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
   final KeyConfigApi _api;
   final AutoexecService _autoexecService;
 
-  KeyBindingBloc({
-    KeyConfigApi? api,
-    AutoexecService? autoexecService,
-  })  : _api = api ?? KeyConfigApi(),
-        _autoexecService = autoexecService ?? AutoexecService(),
-        super(const KeyBindingState()) {
+  KeyBindingBloc({KeyConfigApi? api, AutoexecService? autoexecService})
+    : _api = api ?? KeyConfigApi(),
+      _autoexecService = autoexecService ?? AutoexecService(),
+      super(const KeyBindingState()) {
     on<KeyBindingLoadConfigs>(_onLoadConfigs);
     on<KeyBindingLoadCategories>(_onLoadCategories);
     on<KeyBindingSelectConfig>(_onSelectConfig);
@@ -56,35 +54,36 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     Emitter<KeyBindingState> emit,
   ) async {
     emit(state.copyWith(isLoading: true, clearError: true));
-    
+
     try {
       LogService.d('[KeyBindingBloc] 开始加载配置列表');
-      
+
       final response = await _api.getConfigList(
         categoryId: state.categoryFilter,
         keyword: state.searchKeyword,
         isActive: true,
       );
-      
+
       if (response != null) {
-        emit(state.copyWith(
-          configs: response.items,
-          isLoading: false,
-          successMessage: event.showSuccessMessage ? '已刷新配置列表' : null,
-        ));
+        emit(
+          state.copyWith(
+            configs: response.items,
+            isLoading: false,
+            successMessage: event.showSuccessMessage ? '已刷新配置列表' : null,
+          ),
+        );
         LogService.d('[KeyBindingBloc] 加载配置列表成功，共 ${response.items.length} 条');
       } else {
-        emit(state.copyWith(
-          isLoading: false,
-          error: '加载配置列表失败',
-        ));
+        emit(state.copyWith(isLoading: false, error: '加载配置列表失败'));
       }
     } catch (e) {
       LogService.e('[KeyBindingBloc] 加载配置列表失败', e);
-      emit(state.copyWith(
-        isLoading: false,
-        error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载配置列表失败'),
-      ));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载配置列表失败'),
+        ),
+      );
     }
   }
 
@@ -95,16 +94,15 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
   ) async {
     try {
       LogService.d('[KeyBindingBloc] 开始加载分类列表');
-      
+
       final categories = await _api.getCategories();
       emit(state.copyWith(categories: categories));
-      
+
       LogService.d('[KeyBindingBloc] 加载分类列表成功，共 ${categories.length} 个分类');
     } catch (e) {
       LogService.e('[KeyBindingBloc] 加载分类列表失败', e);
     }
   }
-
 
   /// 选择配置
   Future<void> _onSelectConfig(
@@ -114,21 +112,30 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     // 解析配置脚本中的占位符，初始化按键绑定映射
     final placeholders = KeyPlaceholderParser.parse(event.config.config);
     final keyBindings = <String, String>{};
-    
+
     // 为每个占位符创建空的绑定
     for (final placeholder in placeholders) {
       keyBindings[placeholder.label] = '';
     }
-    
-    emit(state.copyWith(
-      selectedConfig: event.config,
-      keyBindings: keyBindings,
-      clearError: true,
-      clearComments: true,  // 清除旧的评论列表
-      commentTotal: 0,
-    ));
-    
-    LogService.d('[KeyBindingBloc] 选择配置: ${event.config.name}，占位符数量: ${placeholders.length}');
+
+    emit(
+      state.copyWith(
+        selectedConfig: event.config,
+        keyBindings: keyBindings,
+        clearError: true,
+        clearComments: true, // 清除旧的评论列表
+        commentTotal: 0,
+      ),
+    );
+
+    // 已通过的配置自动加载评论列表
+    if (event.config.isApproved) {
+      add(KeyBindingLoadComments(configId: event.config.id));
+    }
+
+    LogService.d(
+      '[KeyBindingBloc] 选择配置: ${event.config.name}，占位符数量: ${placeholders.length}',
+    );
   }
 
   /// 清除选中的配置
@@ -136,10 +143,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     KeyBindingClearSelection event,
     Emitter<KeyBindingState> emit,
   ) {
-    emit(state.copyWith(
-      clearSelectedConfig: true,
-      keyBindings: const {},
-    ));
+    emit(state.copyWith(clearSelectedConfig: true, keyBindings: const {}));
   }
 
   /// 设置按键绑定
@@ -150,7 +154,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     final keyBindings = Map<String, String>.from(state.keyBindings);
     keyBindings[event.label] = event.key;
     emit(state.copyWith(keyBindings: keyBindings));
-    
+
     LogService.d('[KeyBindingBloc] 设置按键绑定: ${event.label} -> ${event.key}');
   }
 
@@ -181,52 +185,57 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     KeyBindingApplyConfig event,
     Emitter<KeyBindingState> emit,
   ) async {
-    emit(state.copyWith(isSaving: true, clearError: true, clearSuccessMessage: true));
-    
+    emit(
+      state.copyWith(
+        isSaving: true,
+        clearError: true,
+        clearSuccessMessage: true,
+      ),
+    );
+
     try {
       LogService.d('[KeyBindingBloc] 开始应用配置: ${event.config.name}');
-      
+
       // 检查游戏路径
       final hasPath = await _autoexecService.hasGamePath();
       if (!hasPath) {
-        emit(state.copyWith(
-          isSaving: false,
-          error: '请先在设置中配置游戏路径',
-        ));
+        emit(state.copyWith(isSaving: false, error: '请先在设置中配置游戏路径'));
         return;
       }
-      
+
       // 验证按键绑定（如果需要）
       if (event.config.needsKeybind) {
-        if (!KeyPlaceholderParser.validate(event.config.config, event.keyBindings)) {
+        if (!KeyPlaceholderParser.validate(
+          event.config.config,
+          event.keyBindings,
+        )) {
           final missing = KeyPlaceholderParser.getMissingBindings(
             event.config.config,
             event.keyBindings,
           );
-          emit(state.copyWith(
-            isSaving: false,
-            error: '请为以下按键选择绑定: ${missing.join(", ")}',
-          ));
+          emit(
+            state.copyWith(
+              isSaving: false,
+              error: '请为以下按键选择绑定: ${missing.join(", ")}',
+            ),
+          );
           return;
         }
       }
-      
+
       // 读取当前文件内容
       String content = await _autoexecService.readContent() ?? '';
-      
+
       // 如果文件不存在，先创建
       if (content.isEmpty) {
         final created = await _autoexecService.createFile();
         if (!created) {
-          emit(state.copyWith(
-            isSaving: false,
-            error: '创建 autoexec.cfg 文件失败',
-          ));
+          emit(state.copyWith(isSaving: false, error: '创建 autoexec.cfg 文件失败'));
           return;
         }
         content = await _autoexecService.readContent() ?? '';
       }
-      
+
       // 添加配置块
       content = _autoexecService.addConfigBlock(
         content,
@@ -235,37 +244,38 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
         event.keyBindings,
         configName: event.config.name,
       );
-      
+
       // 保存文件
       final saved = await _autoexecService.saveContent(content);
       if (!saved) {
-        emit(state.copyWith(
-          isSaving: false,
-          error: '保存 autoexec.cfg 文件失败',
-        ));
+        emit(state.copyWith(isSaving: false, error: '保存 autoexec.cfg 文件失败'));
         return;
       }
-      
+
       // 重新解析已应用的配置块
       final appliedConfigs = _autoexecService.parseConfigBlocks(content);
-      
-      emit(state.copyWith(
-        isSaving: false,
-        autoexecContent: content,
-        appliedConfigs: appliedConfigs,
-        successMessage: '配置 "${event.config.name}" 已成功应用，重启游戏生效',
-      ));
-      
+
+      emit(
+        state.copyWith(
+          isSaving: false,
+          autoexecContent: content,
+          appliedConfigs: appliedConfigs,
+          successMessage: '配置 "${event.config.name}" 已成功应用，重启游戏生效',
+        ),
+      );
+
       // 记录应用次数（异步执行，不阻塞主流程）
       _api.useConfig(event.config.id);
-      
+
       LogService.d('[KeyBindingBloc] 配置应用成功: ${event.config.name}');
     } catch (e) {
       LogService.e('[KeyBindingBloc] 应用配置失败', e);
-      emit(state.copyWith(
-        isSaving: false,
-        error: ErrorUtils.getErrorMessage(e, defaultMessage: '应用配置失败'),
-      ));
+      emit(
+        state.copyWith(
+          isSaving: false,
+          error: ErrorUtils.getErrorMessage(e, defaultMessage: '应用配置失败'),
+        ),
+      );
     }
   }
 
@@ -274,54 +284,60 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     KeyBindingRemoveAppliedConfig event,
     Emitter<KeyBindingState> emit,
   ) async {
-    emit(state.copyWith(isSaving: true, clearError: true, clearSuccessMessage: true));
-    
+    emit(
+      state.copyWith(
+        isSaving: true,
+        clearError: true,
+        clearSuccessMessage: true,
+      ),
+    );
+
     try {
       LogService.d('[KeyBindingBloc] 开始移除配置: ${event.configId}');
-      
+
       // 读取当前文件内容
       final content = await _autoexecService.readContent();
       if (content == null) {
-        emit(state.copyWith(
-          isSaving: false,
-          error: 'autoexec.cfg 文件不存在',
-        ));
+        emit(state.copyWith(isSaving: false, error: 'autoexec.cfg 文件不存在'));
         return;
       }
-      
+
       // 移除配置块
-      final newContent = _autoexecService.removeConfigBlock(content, event.configId);
-      
+      final newContent = _autoexecService.removeConfigBlock(
+        content,
+        event.configId,
+      );
+
       // 保存文件
       final saved = await _autoexecService.saveContent(newContent);
       if (!saved) {
-        emit(state.copyWith(
-          isSaving: false,
-          error: '保存 autoexec.cfg 文件失败',
-        ));
+        emit(state.copyWith(isSaving: false, error: '保存 autoexec.cfg 文件失败'));
         return;
       }
-      
+
       // 重新解析已应用的配置块
       final appliedConfigs = _autoexecService.parseConfigBlocks(newContent);
-      
-      emit(state.copyWith(
-        isSaving: false,
-        autoexecContent: newContent,
-        appliedConfigs: appliedConfigs,
-        successMessage: '配置已成功移除，重启游戏生效',
-      ));
-      
+
+      emit(
+        state.copyWith(
+          isSaving: false,
+          autoexecContent: newContent,
+          appliedConfigs: appliedConfigs,
+          successMessage: '配置已成功移除，重启游戏生效',
+        ),
+      );
+
       LogService.d('[KeyBindingBloc] 配置移除成功: ${event.configId}');
     } catch (e) {
       LogService.e('[KeyBindingBloc] 移除配置失败', e);
-      emit(state.copyWith(
-        isSaving: false,
-        error: ErrorUtils.getErrorMessage(e, defaultMessage: '移除配置失败'),
-      ));
+      emit(
+        state.copyWith(
+          isSaving: false,
+          error: ErrorUtils.getErrorMessage(e, defaultMessage: '移除配置失败'),
+        ),
+      );
     }
   }
-
 
   /// 加载 autoexec.cfg 内容
   Future<void> _onLoadAutoexecContent(
@@ -329,62 +345,74 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     Emitter<KeyBindingState> emit,
   ) async {
     emit(state.copyWith(isLoadingAutoexec: true, clearError: true));
-    
+
     try {
       LogService.d('[KeyBindingBloc] 开始加载 autoexec.cfg');
-      
+
       // 检查游戏路径是否已配置
       final hasPath = await _autoexecService.hasGamePath();
       emit(state.copyWith(hasGamePath: hasPath));
-      
+
       if (!hasPath) {
-        emit(state.copyWith(
-          isLoadingAutoexec: false,
-          autoexecFileExists: false,
-        ));
+        emit(
+          state.copyWith(isLoadingAutoexec: false, autoexecFileExists: false),
+        );
         return;
       }
-      
+
       // 检查文件是否存在
       final fileExists = await _autoexecService.fileExists();
       emit(state.copyWith(autoexecFileExists: fileExists));
-      
+
       if (!fileExists) {
-        emit(state.copyWith(
-          isLoadingAutoexec: false,
-          clearAutoexecContent: true,
-          appliedConfigs: const [],
-        ));
+        emit(
+          state.copyWith(
+            isLoadingAutoexec: false,
+            clearAutoexecContent: true,
+            appliedConfigs: const [],
+          ),
+        );
         return;
       }
-      
+
       // 读取文件内容
       final content = await _autoexecService.readContent();
-      
+
       if (content != null) {
         // 解析已应用的配置块
         final appliedConfigs = _autoexecService.parseConfigBlocks(content);
-        
-        emit(state.copyWith(
-          isLoadingAutoexec: false,
-          autoexecContent: content,
-          appliedConfigs: appliedConfigs,
-        ));
-        
-        LogService.d('[KeyBindingBloc] 加载 autoexec.cfg 成功，已应用 ${appliedConfigs.length} 个配置');
+
+        emit(
+          state.copyWith(
+            isLoadingAutoexec: false,
+            autoexecContent: content,
+            appliedConfigs: appliedConfigs,
+          ),
+        );
+
+        LogService.d(
+          '[KeyBindingBloc] 加载 autoexec.cfg 成功，已应用 ${appliedConfigs.length} 个配置',
+        );
       } else {
-        emit(state.copyWith(
-          isLoadingAutoexec: false,
-          clearAutoexecContent: true,
-          appliedConfigs: const [],
-        ));
+        emit(
+          state.copyWith(
+            isLoadingAutoexec: false,
+            clearAutoexecContent: true,
+            appliedConfigs: const [],
+          ),
+        );
       }
     } catch (e) {
       LogService.e('[KeyBindingBloc] 加载 autoexec.cfg 失败', e);
-      emit(state.copyWith(
-        isLoadingAutoexec: false,
-        error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载 autoexec.cfg 失败'),
-      ));
+      emit(
+        state.copyWith(
+          isLoadingAutoexec: false,
+          error: ErrorUtils.getErrorMessage(
+            e,
+            defaultMessage: '加载 autoexec.cfg 失败',
+          ),
+        ),
+      );
     }
   }
 
@@ -393,37 +421,49 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     KeyBindingSaveAutoexecContent event,
     Emitter<KeyBindingState> emit,
   ) async {
-    emit(state.copyWith(isSaving: true, clearError: true, clearSuccessMessage: true));
-    
+    emit(
+      state.copyWith(
+        isSaving: true,
+        clearError: true,
+        clearSuccessMessage: true,
+      ),
+    );
+
     try {
       LogService.d('[KeyBindingBloc] 开始保存 autoexec.cfg');
-      
+
       final saved = await _autoexecService.saveContent(event.content);
-      
+
       if (saved) {
         // 重新解析已应用的配置块
-        final appliedConfigs = _autoexecService.parseConfigBlocks(event.content);
-        
-        emit(state.copyWith(
-          isSaving: false,
-          autoexecContent: event.content,
-          appliedConfigs: appliedConfigs,
-          successMessage: 'autoexec.cfg 保存成功，重启游戏生效',
-        ));
-        
+        final appliedConfigs = _autoexecService.parseConfigBlocks(
+          event.content,
+        );
+
+        emit(
+          state.copyWith(
+            isSaving: false,
+            autoexecContent: event.content,
+            appliedConfigs: appliedConfigs,
+            successMessage: 'autoexec.cfg 保存成功，重启游戏生效',
+          ),
+        );
+
         LogService.d('[KeyBindingBloc] 保存 autoexec.cfg 成功');
       } else {
-        emit(state.copyWith(
-          isSaving: false,
-          error: '保存 autoexec.cfg 失败',
-        ));
+        emit(state.copyWith(isSaving: false, error: '保存 autoexec.cfg 失败'));
       }
     } catch (e) {
       LogService.e('[KeyBindingBloc] 保存 autoexec.cfg 失败', e);
-      emit(state.copyWith(
-        isSaving: false,
-        error: ErrorUtils.getErrorMessage(e, defaultMessage: '保存 autoexec.cfg 失败'),
-      ));
+      emit(
+        state.copyWith(
+          isSaving: false,
+          error: ErrorUtils.getErrorMessage(
+            e,
+            defaultMessage: '保存 autoexec.cfg 失败',
+          ),
+        ),
+      );
     }
   }
 
@@ -432,36 +472,46 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     KeyBindingCreateAutoexecFile event,
     Emitter<KeyBindingState> emit,
   ) async {
-    emit(state.copyWith(isSaving: true, clearError: true, clearSuccessMessage: true));
-    
+    emit(
+      state.copyWith(
+        isSaving: true,
+        clearError: true,
+        clearSuccessMessage: true,
+      ),
+    );
+
     try {
       LogService.d('[KeyBindingBloc] 开始创建 autoexec.cfg');
-      
+
       final created = await _autoexecService.createFile();
-      
+
       if (created) {
-        emit(state.copyWith(
-          isSaving: false,
-          autoexecFileExists: true,
-          successMessage: 'autoexec.cfg 创建成功',
-        ));
-        
+        emit(
+          state.copyWith(
+            isSaving: false,
+            autoexecFileExists: true,
+            successMessage: 'autoexec.cfg 创建成功',
+          ),
+        );
+
         // 重新加载内容
         add(KeyBindingLoadAutoexecContent());
-        
+
         LogService.d('[KeyBindingBloc] 创建 autoexec.cfg 成功');
       } else {
-        emit(state.copyWith(
-          isSaving: false,
-          error: '创建 autoexec.cfg 失败',
-        ));
+        emit(state.copyWith(isSaving: false, error: '创建 autoexec.cfg 失败'));
       }
     } catch (e) {
       LogService.e('[KeyBindingBloc] 创建 autoexec.cfg 失败', e);
-      emit(state.copyWith(
-        isSaving: false,
-        error: ErrorUtils.getErrorMessage(e, defaultMessage: '创建 autoexec.cfg 失败'),
-      ));
+      emit(
+        state.copyWith(
+          isSaving: false,
+          error: ErrorUtils.getErrorMessage(
+            e,
+            defaultMessage: '创建 autoexec.cfg 失败',
+          ),
+        ),
+      );
     }
   }
 
@@ -470,37 +520,44 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     KeyBindingPublishConfig event,
     Emitter<KeyBindingState> emit,
   ) async {
-    emit(state.copyWith(isPublishing: true, clearError: true, clearSuccessMessage: true));
-    
+    emit(
+      state.copyWith(
+        isPublishing: true,
+        clearError: true,
+        clearSuccessMessage: true,
+      ),
+    );
+
     try {
       LogService.d('[KeyBindingBloc] 开始发布配置: ${event.request.name}');
-      
+
       final config = await _api.createConfig(event.request);
-      
+
       if (config != null) {
-        emit(state.copyWith(
-          isPublishing: false,
-          successMessage: '配置 "${event.request.name}" 发布成功',
-        ));
-        
+        emit(
+          state.copyWith(
+            isPublishing: false,
+            successMessage: '配置 "${event.request.name}" 发布成功',
+          ),
+        );
+
         // 刷新配置列表（不显示成功提示，避免双重提示）
         add(const KeyBindingLoadConfigs(showSuccessMessage: false));
         // 刷新用户配置列表
         add(const KeyBindingLoadMyConfigs(showSuccessMessage: false));
-        
+
         LogService.d('[KeyBindingBloc] 发布配置成功: ${event.request.name}');
       } else {
-        emit(state.copyWith(
-          isPublishing: false,
-          error: '发布配置失败',
-        ));
+        emit(state.copyWith(isPublishing: false, error: '发布配置失败'));
       }
     } catch (e) {
       LogService.e('[KeyBindingBloc] 发布配置失败', e);
-      emit(state.copyWith(
-        isPublishing: false,
-        error: ErrorUtils.getErrorMessage(e, defaultMessage: '发布配置失败'),
-      ));
+      emit(
+        state.copyWith(
+          isPublishing: false,
+          error: ErrorUtils.getErrorMessage(e, defaultMessage: '发布配置失败'),
+        ),
+      );
     }
   }
 
@@ -509,34 +566,46 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     KeyBindingDeleteConfig event,
     Emitter<KeyBindingState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true, clearError: true, clearSuccessMessage: true));
-    
+    emit(
+      state.copyWith(
+        isLoading: true,
+        clearError: true,
+        clearSuccessMessage: true,
+      ),
+    );
+
     try {
-      LogService.d('[KeyBindingBloc] 开始删除配置: id=${event.id}, editReason=${event.editReason}');
-      
+      LogService.d(
+        '[KeyBindingBloc] 开始删除配置: id=${event.id}, editReason=${event.editReason}',
+      );
+
       await _api.deleteConfig(event.id, editReason: event.editReason);
-      
+
       // 如果删除的是当前选中的配置，清除选中状态
       final shouldClearSelection = state.selectedConfig?.id == event.id;
-      
-      emit(state.copyWith(
-        isLoading: false,
-        successMessage: '配置删除成功',
-        clearSelectedConfig: shouldClearSelection,
-      ));
-      
+
+      emit(
+        state.copyWith(
+          isLoading: false,
+          successMessage: '配置删除成功',
+          clearSelectedConfig: shouldClearSelection,
+        ),
+      );
+
       // 刷新配置列表
       add(const KeyBindingLoadConfigs(showSuccessMessage: false));
       // 刷新用户配置列表
       add(const KeyBindingLoadMyConfigs(showSuccessMessage: false));
-      
+
       LogService.d('[KeyBindingBloc] 删除配置成功: id=${event.id}');
     } catch (e) {
       LogService.e('[KeyBindingBloc] 删除配置失败', e);
-      emit(state.copyWith(
-        isLoading: false,
-        error: ErrorUtils.getErrorMessage(e, defaultMessage: '删除配置失败'),
-      ));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          error: ErrorUtils.getErrorMessage(e, defaultMessage: '删除配置失败'),
+        ),
+      );
     }
   }
 
@@ -545,38 +614,51 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     KeyBindingUpdateConfig event,
     Emitter<KeyBindingState> emit,
   ) async {
-    emit(state.copyWith(isSaving: true, clearError: true, clearSuccessMessage: true));
-    
+    emit(
+      state.copyWith(
+        isSaving: true,
+        clearError: true,
+        clearSuccessMessage: true,
+      ),
+    );
+
     try {
-      LogService.d('[KeyBindingBloc] 开始更新配置: id=${event.id}, name=${event.request.name}, editReason=${event.editReason}');
-      
-      final config = await _api.updateConfig(event.id, event.request, editReason: event.editReason);
-      
+      LogService.d(
+        '[KeyBindingBloc] 开始更新配置: id=${event.id}, name=${event.request.name}, editReason=${event.editReason}',
+      );
+
+      final config = await _api.updateConfig(
+        event.id,
+        event.request,
+        editReason: event.editReason,
+      );
+
       if (config != null) {
-        emit(state.copyWith(
-          isSaving: false,
-          successMessage: '配置 "${event.request.name}" 更新成功',
-          selectedConfig: config,
-        ));
-        
+        emit(
+          state.copyWith(
+            isSaving: false,
+            successMessage: '配置 "${event.request.name}" 更新成功',
+            selectedConfig: config,
+          ),
+        );
+
         // 刷新配置列表
         add(const KeyBindingLoadConfigs(showSuccessMessage: false));
         // 刷新用户配置列表
         add(const KeyBindingLoadMyConfigs(showSuccessMessage: false));
-        
+
         LogService.d('[KeyBindingBloc] 更新配置成功: id=${event.id}');
       } else {
-        emit(state.copyWith(
-          isSaving: false,
-          error: '更新配置失败',
-        ));
+        emit(state.copyWith(isSaving: false, error: '更新配置失败'));
       }
     } catch (e) {
       LogService.e('[KeyBindingBloc] 更新配置失败', e);
-      emit(state.copyWith(
-        isSaving: false,
-        error: ErrorUtils.getErrorMessage(e, defaultMessage: '更新配置失败'),
-      ));
+      emit(
+        state.copyWith(
+          isSaving: false,
+          error: ErrorUtils.getErrorMessage(e, defaultMessage: '更新配置失败'),
+        ),
+      );
     }
   }
 
@@ -587,13 +669,25 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
   ) async {
     // 使用事件中的 categoryId，而不是 state 中的值
     final categoryId = event.categoryId;
-    
+
     if (categoryId == null) {
-      emit(state.copyWith(clearCategoryFilter: true, isLoading: true, clearError: true));
+      emit(
+        state.copyWith(
+          clearCategoryFilter: true,
+          isLoading: true,
+          clearError: true,
+        ),
+      );
     } else {
-      emit(state.copyWith(categoryFilter: categoryId, isLoading: true, clearError: true));
+      emit(
+        state.copyWith(
+          categoryFilter: categoryId,
+          isLoading: true,
+          clearError: true,
+        ),
+      );
     }
-    
+
     // 直接加载配置，使用事件中的 categoryId
     try {
       final response = await _api.getConfigList(
@@ -601,24 +695,20 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
         keyword: state.searchKeyword,
         isActive: true,
       );
-      
+
       if (response != null) {
-        emit(state.copyWith(
-          configs: response.items,
-          isLoading: false,
-        ));
+        emit(state.copyWith(configs: response.items, isLoading: false));
       } else {
-        emit(state.copyWith(
-          isLoading: false,
-          error: '加载配置列表失败',
-        ));
+        emit(state.copyWith(isLoading: false, error: '加载配置列表失败'));
       }
     } catch (e) {
       LogService.e('[KeyBindingBloc] 加载配置列表失败', e);
-      emit(state.copyWith(
-        isLoading: false,
-        error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载配置列表失败'),
-      ));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载配置列表失败'),
+        ),
+      );
     }
   }
 
@@ -632,7 +722,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     } else {
       emit(state.copyWith(searchKeyword: event.keyword));
     }
-    
+
     // 根据当前模式加载对应的配置列表
     if (state.showMyConfigs) {
       add(const KeyBindingLoadMyConfigs());
@@ -646,11 +736,13 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     KeyBindingSetShowMyConfigs event,
     Emitter<KeyBindingState> emit,
   ) async {
-    emit(state.copyWith(
-      showMyConfigs: event.showMyConfigs,
-      clearCategoryFilter: true,
-    ));
-    
+    emit(
+      state.copyWith(
+        showMyConfigs: event.showMyConfigs,
+        clearCategoryFilter: true,
+      ),
+    );
+
     if (event.showMyConfigs) {
       // 加载用户配置
       add(const KeyBindingLoadMyConfigs());
@@ -698,33 +790,34 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     Emitter<KeyBindingState> emit,
   ) async {
     emit(state.copyWith(isLoadingMyConfigs: true, clearError: true));
-    
+
     try {
       LogService.d('[KeyBindingBloc] 开始加载用户配置列表');
-      
-      final response = await _api.getMyConfigList(
-        keyword: state.searchKeyword,
-      );
-      
+
+      final response = await _api.getMyConfigList(keyword: state.searchKeyword);
+
       if (response != null) {
-        emit(state.copyWith(
-          myConfigs: response.items,
-          isLoadingMyConfigs: false,
-          successMessage: event.showSuccessMessage ? '已刷新我的配置列表' : null,
-        ));
-        LogService.d('[KeyBindingBloc] 加载用户配置列表成功，共 ${response.items.length} 条');
+        emit(
+          state.copyWith(
+            myConfigs: response.items,
+            isLoadingMyConfigs: false,
+            successMessage: event.showSuccessMessage ? '已刷新我的配置列表' : null,
+          ),
+        );
+        LogService.d(
+          '[KeyBindingBloc] 加载用户配置列表成功，共 ${response.items.length} 条',
+        );
       } else {
-        emit(state.copyWith(
-          isLoadingMyConfigs: false,
-          error: '加载我的配置列表失败',
-        ));
+        emit(state.copyWith(isLoadingMyConfigs: false, error: '加载我的配置列表失败'));
       }
     } catch (e) {
       LogService.e('[KeyBindingBloc] 加载用户配置列表失败', e);
-      emit(state.copyWith(
-        isLoadingMyConfigs: false,
-        error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载我的配置列表失败'),
-      ));
+      emit(
+        state.copyWith(
+          isLoadingMyConfigs: false,
+          error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载我的配置列表失败'),
+        ),
+      );
     }
   }
 
@@ -734,10 +827,12 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     Emitter<KeyBindingState> emit,
   ) async {
     try {
-      LogService.d('[KeyBindingBloc] 开始投票: configId=${event.configId}, voteType=${event.voteType}');
-      
+      LogService.d(
+        '[KeyBindingBloc] 开始投票: configId=${event.configId}, voteType=${event.voteType}',
+      );
+
       final response = await _api.vote(event.configId, event.voteType);
-      
+
       if (response != null && response.success) {
         // 更新配置列表中的投票状态
         final updatedConfigs = state.configs.map((config) {
@@ -752,7 +847,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
           }
           return config;
         }).toList();
-        
+
         // 如果当前选中的配置是被投票的配置，也更新它
         KeyConfig? updatedSelectedConfig;
         if (state.selectedConfig?.id == event.configId) {
@@ -764,13 +859,17 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
             voteType: response.voteType,
           );
         }
-        
-        emit(state.copyWith(
-          configs: updatedConfigs,
-          selectedConfig: updatedSelectedConfig ?? state.selectedConfig,
-        ));
-        
-        LogService.d('[KeyBindingBloc] 投票成功: upCount=${response.upCount}, downCount=${response.downCount}');
+
+        emit(
+          state.copyWith(
+            configs: updatedConfigs,
+            selectedConfig: updatedSelectedConfig ?? state.selectedConfig,
+          ),
+        );
+
+        LogService.d(
+          '[KeyBindingBloc] 投票成功: upCount=${response.upCount}, downCount=${response.downCount}',
+        );
       }
     } catch (e) {
       LogService.e('[KeyBindingBloc] 投票失败', e);
@@ -779,7 +878,11 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       if (errorMsg.contains('40003') || errorMsg.contains('不能对自己')) {
         emit(state.copyWith(error: '不能对自己的配置投反对票'));
       } else {
-        emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '投票失败')));
+        emit(
+          state.copyWith(
+            error: ErrorUtils.getErrorMessage(e, defaultMessage: '投票失败'),
+          ),
+        );
       }
     }
   }
@@ -790,25 +893,31 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     Emitter<KeyBindingState> emit,
   ) async {
     emit(state.copyWith(isLoadingComments: true, clearError: true));
-    
+
     try {
-      LogService.d('[KeyBindingBloc] 开始加载评论列表: configId=${event.configId}, page=${event.page}');
-      
+      LogService.d(
+        '[KeyBindingBloc] 开始加载评论列表: configId=${event.configId}, page=${event.page}',
+      );
+
       final response = await _api.getComments(event.configId, page: event.page);
-      
-      emit(state.copyWith(
-        comments: response.items,
-        commentTotal: response.total,
-        isLoadingComments: false,
-      ));
-      
+
+      emit(
+        state.copyWith(
+          comments: response.items,
+          commentTotal: response.total,
+          isLoadingComments: false,
+        ),
+      );
+
       LogService.d('[KeyBindingBloc] 加载评论列表成功，共 ${response.items.length} 条');
     } catch (e) {
       LogService.e('[KeyBindingBloc] 加载评论列表失败', e);
-      emit(state.copyWith(
-        isLoadingComments: false,
-        error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载评论列表失败'),
-      ));
+      emit(
+        state.copyWith(
+          isLoadingComments: false,
+          error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载评论列表失败'),
+        ),
+      );
     }
   }
 
@@ -817,18 +926,24 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     KeyBindingAddComment event,
     Emitter<KeyBindingState> emit,
   ) async {
-    emit(state.copyWith(isSubmittingComment: true, clearError: true, clearSuccessMessage: true));
-    
+    emit(
+      state.copyWith(
+        isSubmittingComment: true,
+        clearError: true,
+        clearSuccessMessage: true,
+      ),
+    );
+
     try {
       LogService.d('[KeyBindingBloc] 开始发表评论: configId=${event.configId}');
-      
+
       final response = await _api.addComment(
         event.configId,
         event.content,
         images: event.images,
         replyToId: event.replyToId,
       );
-      
+
       if (response != null) {
         // 更新选中配置的评论数（如果是当前选中的配置）
         KeyConfig? updatedConfig;
@@ -837,29 +952,30 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
             commentCount: state.selectedConfig!.commentCount + 1,
           );
         }
-        
-        emit(state.copyWith(
-          isSubmittingComment: false,
-          successMessage: '评论发表成功',
-          selectedConfig: updatedConfig,
-        ));
-        
+
+        emit(
+          state.copyWith(
+            isSubmittingComment: false,
+            successMessage: '评论发表成功',
+            selectedConfig: updatedConfig,
+          ),
+        );
+
         // 重新加载评论列表
         add(KeyBindingLoadComments(configId: event.configId));
-        
+
         LogService.d('[KeyBindingBloc] 发表评论成功');
       } else {
-        emit(state.copyWith(
-          isSubmittingComment: false,
-          error: '发表评论失败',
-        ));
+        emit(state.copyWith(isSubmittingComment: false, error: '发表评论失败'));
       }
     } catch (e) {
       LogService.e('[KeyBindingBloc] 发表评论失败', e);
-      emit(state.copyWith(
-        isSubmittingComment: false,
-        error: ErrorUtils.getErrorMessage(e, defaultMessage: '发表评论失败'),
-      ));
+      emit(
+        state.copyWith(
+          isSubmittingComment: false,
+          error: ErrorUtils.getErrorMessage(e, defaultMessage: '发表评论失败'),
+        ),
+      );
     }
   }
 
