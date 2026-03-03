@@ -37,7 +37,10 @@ class IssueDetailBloc extends Bloc<IssueDetailEvent, IssueDetailState> {
     return ErrorUtils.getErrorMessage(e);
   }
 
-  Future<void> _onFetch(IssueDetailFetch event, Emitter<IssueDetailState> emit) async {
+  Future<void> _onFetch(
+    IssueDetailFetch event,
+    Emitter<IssueDetailState> emit,
+  ) async {
     _currentIssueId = event.issueId;
     emit(state.copyWith(isLoading: true, clearError: true));
 
@@ -55,7 +58,10 @@ class IssueDetailBloc extends Bloc<IssueDetailEvent, IssueDetailState> {
     }
   }
 
-  Future<void> _onLoadComments(IssueDetailLoadComments event, Emitter<IssueDetailState> emit) async {
+  Future<void> _onLoadComments(
+    IssueDetailLoadComments event,
+    Emitter<IssueDetailState> emit,
+  ) async {
     emit(state.copyWith(isLoadingComments: true));
     try {
       final response = await _issueApi.getComments(event.issueId);
@@ -66,7 +72,10 @@ class IssueDetailBloc extends Bloc<IssueDetailEvent, IssueDetailState> {
     }
   }
 
-  Future<void> _onToggleVote(IssueDetailToggleVote event, Emitter<IssueDetailState> emit) async {
+  Future<void> _onToggleVote(
+    IssueDetailToggleVote event,
+    Emitter<IssueDetailState> emit,
+  ) async {
     if (state.issue == null) return;
     emit(state.copyWith(isSubmitting: true, clearError: true));
 
@@ -79,7 +88,15 @@ class IssueDetailBloc extends Bloc<IssueDetailEvent, IssueDetailState> {
         response = await _issueApi.vote(issue.id);
       }
       if (response != null) {
-        emit(state.copyWith(issue: issue.copyWith(voteCount: response.voteCount, isVoted: response.isVoted), isSubmitting: false));
+        emit(
+          state.copyWith(
+            issue: issue.copyWith(
+              voteCount: response.voteCount,
+              isVoted: response.isVoted,
+            ),
+            isSubmitting: false,
+          ),
+        );
       } else {
         emit(state.copyWith(isSubmitting: false));
       }
@@ -89,12 +106,22 @@ class IssueDetailBloc extends Bloc<IssueDetailEvent, IssueDetailState> {
     }
   }
 
-  Future<void> _onAddComment(IssueDetailAddComment event, Emitter<IssueDetailState> emit) async {
+  Future<void> _onAddComment(
+    IssueDetailAddComment event,
+    Emitter<IssueDetailState> emit,
+  ) async {
     if (state.issue == null || _currentIssueId == null) return;
-    emit(state.copyWith(isSubmitting: true, clearError: true, clearSuccess: true));
+    emit(
+      state.copyWith(isSubmitting: true, clearError: true, clearSuccess: true),
+    );
 
     try {
-      final response = await _issueApi.addComment(_currentIssueId!, event.content, images: event.images);
+      final response = await _issueApi.addComment(
+        _currentIssueId!,
+        event.content,
+        images: event.images,
+        replyToId: event.replyToId,
+      );
       if (response != null) {
         // 接口返回简化数据，需要构建完整的评论对象
         final comment = IssueComment(
@@ -106,12 +133,45 @@ class IssueDetailBloc extends Bloc<IssueDetailEvent, IssueDetailState> {
           isAdmin: false,
           content: response.content,
           images: event.images ?? [],
+          replyToId: event.replyToId,
+          replyCount: 0,
           createdAt: response.createdAt,
           updatedAt: null,
         );
         final updatedComments = [...state.comments, comment];
-        final updatedIssue = state.issue!.copyWith(commentCount: state.issue!.commentCount + 1);
-        emit(state.copyWith(comments: updatedComments, issue: updatedIssue, isSubmitting: false, successMessage: '评论发表成功'));
+        // 如果是回复评论，更新被回复评论的 replyCount
+        final finalComments = event.replyToId != null && event.replyToId! > 0
+            ? updatedComments.map((c) {
+                if (c.id == event.replyToId) {
+                  return IssueComment(
+                    id: c.id,
+                    issueId: c.issueId,
+                    authorId: c.authorId,
+                    authorName: c.authorName,
+                    authorAvatar: c.authorAvatar,
+                    isAdmin: c.isAdmin,
+                    content: c.content,
+                    images: c.images,
+                    replyToId: c.replyToId,
+                    replyCount: c.replyCount + 1,
+                    createdAt: c.createdAt,
+                    updatedAt: c.updatedAt,
+                  );
+                }
+                return c;
+              }).toList()
+            : updatedComments;
+        final updatedIssue = state.issue!.copyWith(
+          commentCount: state.issue!.commentCount + 1,
+        );
+        emit(
+          state.copyWith(
+            comments: finalComments,
+            issue: updatedIssue,
+            isSubmitting: false,
+            successMessage: '评论发表成功',
+          ),
+        );
       } else {
         emit(state.copyWith(isSubmitting: false));
       }
@@ -121,14 +181,23 @@ class IssueDetailBloc extends Bloc<IssueDetailEvent, IssueDetailState> {
     }
   }
 
-  Future<void> _onClose(IssueDetailClose event, Emitter<IssueDetailState> emit) async {
+  Future<void> _onClose(
+    IssueDetailClose event,
+    Emitter<IssueDetailState> emit,
+  ) async {
     if (state.issue == null) return;
     emit(state.copyWith(isSubmitting: true, clearError: true));
 
     try {
       final success = await _issueApi.closeIssue(state.issue!.id);
       if (success) {
-        emit(state.copyWith(issue: state.issue!.copyWith(status: 'closed'), isSubmitting: false, successMessage: 'Issue 已关闭'));
+        emit(
+          state.copyWith(
+            issue: state.issue!.copyWith(status: 'closed'),
+            isSubmitting: false,
+            successMessage: 'Issue 已关闭',
+          ),
+        );
       } else {
         emit(state.copyWith(isSubmitting: false));
       }
@@ -138,14 +207,23 @@ class IssueDetailBloc extends Bloc<IssueDetailEvent, IssueDetailState> {
     }
   }
 
-  Future<void> _onReopen(IssueDetailReopen event, Emitter<IssueDetailState> emit) async {
+  Future<void> _onReopen(
+    IssueDetailReopen event,
+    Emitter<IssueDetailState> emit,
+  ) async {
     if (state.issue == null) return;
     emit(state.copyWith(isSubmitting: true, clearError: true));
 
     try {
       final success = await _issueApi.reopenIssue(state.issue!.id);
       if (success) {
-        emit(state.copyWith(issue: state.issue!.copyWith(status: 'open'), isSubmitting: false, successMessage: 'Issue 已重新开放'));
+        emit(
+          state.copyWith(
+            issue: state.issue!.copyWith(status: 'open'),
+            isSubmitting: false,
+            successMessage: 'Issue 已重新开放',
+          ),
+        );
       } else {
         emit(state.copyWith(isSubmitting: false));
       }
@@ -155,7 +233,10 @@ class IssueDetailBloc extends Bloc<IssueDetailEvent, IssueDetailState> {
     }
   }
 
-  void _onClearError(IssueDetailClearError event, Emitter<IssueDetailState> emit) {
+  void _onClearError(
+    IssueDetailClearError event,
+    Emitter<IssueDetailState> emit,
+  ) {
     emit(state.copyWith(clearError: true, clearSuccess: true));
   }
 

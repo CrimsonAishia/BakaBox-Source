@@ -33,9 +33,10 @@ class IssueDetailToggleVote extends IssueDetailEvent {
 class IssueDetailAddComment extends IssueDetailEvent {
   final String content;
   final List<String>? images;
-  const IssueDetailAddComment(this.content, {this.images});
+  final int? replyToId;
+  const IssueDetailAddComment(this.content, {this.images, this.replyToId});
   @override
-  List<Object?> get props => [content, images];
+  List<Object?> get props => [content, images, replyToId];
 }
 
 /// 关闭 Issue

@@ -104,7 +104,9 @@ IssueComment _$IssueCommentFromJson(Map<String, dynamic> json) => IssueComment(
   content: json['content'] as String,
   images:
       (json['images'] as List<dynamic>?)?.map((e) => e as String).toList() ??
-      const [],
+      [],
+  replyToId: (json['replyToId'] as num?)?.toInt(),
+  replyCount: (json['replyCount'] as num?)?.toInt() ?? 0,
   createdAt: const ServerTimeConverter().fromJson(json['createdAt'] as String),
   updatedAt: const NullableServerTimeConverter().fromJson(
     json['updatedAt'] as String?,
@@ -122,6 +124,8 @@ Map<String, dynamic> _$IssueCommentToJson(
   'isAdmin': instance.isAdmin,
   'content': instance.content,
   'images': instance.images,
+  'replyToId': instance.replyToId,
+  'replyCount': instance.replyCount,
   'createdAt': const ServerTimeConverter().toJson(instance.createdAt),
   'updatedAt': const NullableServerTimeConverter().toJson(instance.updatedAt),
 };
