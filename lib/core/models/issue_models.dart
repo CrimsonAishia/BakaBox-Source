@@ -53,7 +53,10 @@ enum IssueStatus {
     IssueStatus.closed => '已关闭',
   };
 
-  bool get isOpen => this == IssueStatus.open || this == IssueStatus.confirmed || this == IssueStatus.inProgress;
+  bool get isOpen =>
+      this == IssueStatus.open ||
+      this == IssueStatus.confirmed ||
+      this == IssueStatus.inProgress;
 }
 
 /// 设备信息
@@ -71,7 +74,8 @@ class DeviceInfo extends Equatable {
     this.deviceModel,
   });
 
-  factory DeviceInfo.fromJson(Map<String, dynamic> json) => _$DeviceInfoFromJson(json);
+  factory DeviceInfo.fromJson(Map<String, dynamic> json) =>
+      _$DeviceInfoFromJson(json);
   Map<String, dynamic> toJson() => _$DeviceInfoToJson(this);
 
   @override
@@ -117,11 +121,23 @@ class IssueListItem extends Equatable {
     orElse: () => IssueStatus.open,
   );
 
-  factory IssueListItem.fromJson(Map<String, dynamic> json) => _$IssueListItemFromJson(json);
+  factory IssueListItem.fromJson(Map<String, dynamic> json) =>
+      _$IssueListItemFromJson(json);
   Map<String, dynamic> toJson() => _$IssueListItemToJson(this);
 
   @override
-  List<Object?> get props => [id, type, title, status, authorName, authorAvatar, voteCount, commentCount, createdAt, updatedAt];
+  List<Object?> get props => [
+    id,
+    type,
+    title,
+    status,
+    authorName,
+    authorAvatar,
+    voteCount,
+    commentCount,
+    createdAt,
+    updatedAt,
+  ];
 }
 
 /// Issue 详情
@@ -217,7 +233,24 @@ class Issue extends Equatable {
   Map<String, dynamic> toJson() => _$IssueToJson(this);
 
   @override
-  List<Object?> get props => [id, authorId, authorName, authorAvatar, type, title, content, images, labels, status, voteCount, commentCount, isVoted, deviceInfo, createdAt, updatedAt];
+  List<Object?> get props => [
+    id,
+    authorId,
+    authorName,
+    authorAvatar,
+    type,
+    title,
+    content,
+    images,
+    labels,
+    status,
+    voteCount,
+    commentCount,
+    isVoted,
+    deviceInfo,
+    createdAt,
+    updatedAt,
+  ];
 }
 
 /// Issue 评论
@@ -230,7 +263,11 @@ class IssueComment extends Equatable {
   final String? authorAvatar;
   final bool isAdmin;
   final String content;
+  @JsonKey(defaultValue: [])
   final List<String> images;
+  final int? replyToId;
+  @JsonKey(defaultValue: 0)
+  final int replyCount;
   @ServerTimeConverter()
   final DateTime createdAt;
   @NullableServerTimeConverter()
@@ -245,15 +282,31 @@ class IssueComment extends Equatable {
     this.isAdmin = false,
     required this.content,
     this.images = const [],
+    this.replyToId,
+    this.replyCount = 0,
     required this.createdAt,
     this.updatedAt,
   });
 
-  factory IssueComment.fromJson(Map<String, dynamic> json) => _$IssueCommentFromJson(json);
+  factory IssueComment.fromJson(Map<String, dynamic> json) =>
+      _$IssueCommentFromJson(json);
   Map<String, dynamic> toJson() => _$IssueCommentToJson(this);
 
   @override
-  List<Object?> get props => [id, issueId, authorId, authorName, authorAvatar, isAdmin, content, images, createdAt, updatedAt];
+  List<Object?> get props => [
+    id,
+    issueId,
+    authorId,
+    authorName,
+    authorAvatar,
+    isAdmin,
+    content,
+    images,
+    replyToId,
+    replyCount,
+    createdAt,
+    updatedAt,
+  ];
 }
 
 /// Issue 列表响应
@@ -262,10 +315,7 @@ class IssueListResponse extends Equatable {
   final int total;
   final List<IssueListItem> items;
 
-  const IssueListResponse({
-    required this.total,
-    required this.items,
-  });
+  const IssueListResponse({required this.total, required this.items});
 
   factory IssueListResponse.fromJson(Map<String, dynamic> json) =>
       _$IssueListResponseFromJson(json);
@@ -281,10 +331,7 @@ class CommentListResponse extends Equatable {
   final int total;
   final List<IssueComment> items;
 
-  const CommentListResponse({
-    required this.total,
-    required this.items,
-  });
+  const CommentListResponse({required this.total, required this.items});
 
   factory CommentListResponse.fromJson(Map<String, dynamic> json) =>
       _$CommentListResponseFromJson(json);
@@ -374,7 +421,8 @@ class CreateIssueRequest extends Equatable {
     this.deviceInfo,
   });
 
-  factory CreateIssueRequest.fromJson(Map<String, dynamic> json) => _$CreateIssueRequestFromJson(json);
+  factory CreateIssueRequest.fromJson(Map<String, dynamic> json) =>
+      _$CreateIssueRequestFromJson(json);
   Map<String, dynamic> toJson() => _$CreateIssueRequestToJson(this);
 
   @override
@@ -387,12 +435,10 @@ class VoteResponse extends Equatable {
   final int voteCount;
   final bool isVoted;
 
-  const VoteResponse({
-    required this.voteCount,
-    required this.isVoted,
-  });
+  const VoteResponse({required this.voteCount, required this.isVoted});
 
-  factory VoteResponse.fromJson(Map<String, dynamic> json) => _$VoteResponseFromJson(json);
+  factory VoteResponse.fromJson(Map<String, dynamic> json) =>
+      _$VoteResponseFromJson(json);
   Map<String, dynamic> toJson() => _$VoteResponseToJson(this);
 
   @override
@@ -412,7 +458,8 @@ class CreateIssueResponse extends Equatable {
     required this.status,
   });
 
-  factory CreateIssueResponse.fromJson(Map<String, dynamic> json) => _$CreateIssueResponseFromJson(json);
+  factory CreateIssueResponse.fromJson(Map<String, dynamic> json) =>
+      _$CreateIssueResponseFromJson(json);
   Map<String, dynamic> toJson() => _$CreateIssueResponseToJson(this);
 
   @override
@@ -433,7 +480,8 @@ class CreateCommentResponse extends Equatable {
     required this.createdAt,
   });
 
-  factory CreateCommentResponse.fromJson(Map<String, dynamic> json) => _$CreateCommentResponseFromJson(json);
+  factory CreateCommentResponse.fromJson(Map<String, dynamic> json) =>
+      _$CreateCommentResponseFromJson(json);
   Map<String, dynamic> toJson() => _$CreateCommentResponseToJson(this);
 
   @override
