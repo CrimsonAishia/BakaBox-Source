@@ -2,8 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:media_kit/media_kit.dart';
-import 'package:media_kit_video/media_kit_video.dart';
+import 'package:video_player/video_player.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_windows/webview_windows.dart' as windows_webview;
 import '../../../core/models/character_models.dart';
@@ -11,9 +10,9 @@ import '../../../core/models/character_models.dart';
 /// 视频内嵌播放弹窗
 ///
 /// 支持：
-/// - Bilibili 直链（bilibili_parsed）：使用 media_kit 播放，设置 Referer 头
+/// - Bilibili 直链（bilibili_parsed）：使用 video_player 播放，设置 Referer 头
 /// - Bilibili 原始链接：使用 WebView iframe 嵌入播放器
-/// - 视频直链（mp4/webm）：使用 media_kit 播放
+/// - 视频直链（mp4/webm）：使用 video_player 播放
 class VideoEmbedDialog extends StatefulWidget {
   final String videoUrl;
   final String? title;
@@ -39,9 +38,8 @@ class VideoEmbedDialog extends StatefulWidget {
 }
 
 class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
-  // media_kit 播放器（用于直链）
-  Player? _player;
-  VideoController? _videoController;
+  // video_player 控制器（用于直链）
+  VideoPlayerController? _controller;
   
   // WebView 控制器（用于B站原始链接）
   windows_webview.WebviewController? _webviewController;
@@ -66,20 +64,20 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
     super.initState();
     // 先获取封面，然后自动开始播放
     if (widget.videoUrlSource == VideoUrlSource.bilibiliParsed) {
-      // B站直链：使用原始地址获取封面，然后用 media_kit 播放
-      _fetchBilibiliCoverFromOrigin().then((_) => _startMediaKitPlayback());
+      // B站直链：使用原始地址获取封面，然后用 video_player 播放
+      _fetchBilibiliCoverFromOrigin().then((_) => _startVideoPlayback());
     } else if (_isBilibili(widget.videoUrl)) {
       // B站原始链接：获取封面，然后用 WebView 嵌入播放
       _fetchBilibiliCover().then((_) => _startWebViewPlayback());
     } else {
-      // 普通直链：用 media_kit 播放
-      _startMediaKitPlayback();
+      // 普通直链：用 video_player 播放
+      _startVideoPlayback();
     }
   }
 
   @override
   void dispose() {
-    _player?.dispose();
+    _controller?.dispose();
     _webviewController?.dispose();
     super.dispose();
   }
@@ -176,40 +174,33 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
     }
   }
 
-  /// 使用 media_kit 播放直链视频
-  Future<void> _startMediaKitPlayback() async {
+  /// 使用 video_player 播放直链视频
+  Future<void> _startVideoPlayback() async {
     setState(() => _isPlaying = true);
 
     try {
-      _player = Player();
-      _videoController = VideoController(_player!);
-
       final url = widget.videoUrl;
       
       // B站直链需要设置 Referer 头
       if (widget.videoUrlSource == VideoUrlSource.bilibiliParsed) {
-        await _player!.open(
-          Media(
-            url,
-            httpHeaders: {
-              'Referer': 'https://www.bilibili.com/',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            },
-          ),
+        _controller = VideoPlayerController.networkUrl(
+          Uri.parse(url),
+          httpHeaders: {
+            'Referer': 'https://www.bilibili.com/',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          },
         );
       } else {
-        await _player!.open(Media(url));
+        _controller = VideoPlayerController.networkUrl(Uri.parse(url));
       }
 
+      await _controller!.initialize();
+      
       // 监听错误
-      _player!.stream.error.listen((error) {
-        if (mounted && error.isNotEmpty) {
-          setState(() {
-            _hasError = true;
-            _errorMessage = '播放失败：$error';
-          });
-        }
-      });
+      _controller!.addListener(_onVideoPlayerUpdate);
+      
+      // 开始播放
+      await _controller!.play();
 
       if (mounted) setState(() {});
     } catch (e) {
@@ -219,6 +210,17 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
           _errorMessage = '初始化播放器失败：$e';
         });
       }
+    }
+  }
+
+  void _onVideoPlayerUpdate() {
+    if (!mounted) return;
+    final value = _controller?.value;
+    if (value != null && value.hasError) {
+      setState(() {
+        _hasError = true;
+        _errorMessage = '播放失败：${value.errorDescription}';
+      });
     }
   }
 
@@ -355,20 +357,35 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
         );
       }
     } else {
-      // media_kit 播放（直链）
-      if (_isPlaying && _videoController != null) {
+      // video_player 播放（直链）
+      if (_isPlaying && _controller != null && _controller!.value.isInitialized) {
         return ClipRRect(
           borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
-          child: Video(
-            controller: _videoController!,
-            controls: AdaptiveVideoControls,
-          ),
+          child: _buildVideoPlayer(),
         );
       }
     }
 
     // 加载中 — 显示封面（如果有）+ loading
     return _buildLoadingWithCover(isDark);
+  }
+
+  /// 构建视频播放器（带简单控制）
+  Widget _buildVideoPlayer() {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // 视频画面
+        Center(
+          child: AspectRatio(
+            aspectRatio: _controller!.value.aspectRatio,
+            child: VideoPlayer(_controller!),
+          ),
+        ),
+        // 简单控制层
+        _VideoControlsOverlay(controller: _controller!),
+      ],
+    );
   }
 
   Widget _buildLoadingWithCover(bool isDark) {
@@ -465,6 +482,145 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+}
+
+/// 简单的视频控制层
+class _VideoControlsOverlay extends StatefulWidget {
+  final VideoPlayerController controller;
+
+  const _VideoControlsOverlay({required this.controller});
+
+  @override
+  State<_VideoControlsOverlay> createState() => _VideoControlsOverlayState();
+}
+
+class _VideoControlsOverlayState extends State<_VideoControlsOverlay> {
+  bool _showControls = true;
+  Timer? _hideTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onUpdate);
+    _startHideTimer();
+  }
+
+  @override
+  void dispose() {
+    _hideTimer?.cancel();
+    widget.controller.removeListener(_onUpdate);
+    super.dispose();
+  }
+
+  void _onUpdate() {
+    if (mounted) setState(() {});
+  }
+
+  void _startHideTimer() {
+    _hideTimer?.cancel();
+    _hideTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted && widget.controller.value.isPlaying) {
+        setState(() => _showControls = false);
+      }
+    });
+  }
+
+  void _onTap() {
+    setState(() => _showControls = true);
+    _startHideTimer();
+  }
+
+  String _formatDuration(Duration d) {
+    final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    if (d.inHours > 0) {
+      return '${d.inHours}:$minutes:$seconds';
+    }
+    return '$minutes:$seconds';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final value = widget.controller.value;
+
+    return GestureDetector(
+      onTap: _onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedOpacity(
+        opacity: _showControls ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 200),
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.3),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              // 播放/暂停按钮
+              Expanded(
+                child: Center(
+                  child: IconButton(
+                    iconSize: 64,
+                    icon: Icon(
+                      value.isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                    onPressed: () {
+                      if (value.isPlaying) {
+                        widget.controller.pause();
+                      } else {
+                        widget.controller.play();
+                      }
+                      _startHideTimer();
+                    },
+                  ),
+                ),
+              ),
+              // 进度条
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    Text(
+                      _formatDuration(value.position),
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          trackHeight: 3,
+                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                        ),
+                        child: Slider(
+                          value: value.duration.inMilliseconds > 0
+                              ? value.position.inMilliseconds / value.duration.inMilliseconds
+                              : 0,
+                          onChanged: (v) {
+                            final position = Duration(
+                              milliseconds: (v * value.duration.inMilliseconds).toInt(),
+                            );
+                            widget.controller.seekTo(position);
+                            _startHideTimer();
+                          },
+                          activeColor: Colors.white,
+                          inactiveColor: Colors.white.withValues(alpha: 0.3),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _formatDuration(value.duration),
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

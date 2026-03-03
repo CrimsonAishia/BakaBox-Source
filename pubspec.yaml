@@ -70,10 +70,9 @@ dependencies:
   # Audio
   audioplayers: ^6.1.0
 
-  # Video Player (for Bilibili direct links with custom headers)
-  media_kit: ^1.1.11
-  media_kit_video: ^1.2.5
-  media_kit_libs_video: ^1.0.5
+  # Video Player (lightweight, supports custom headers)
+  video_player: ^2.9.2
+  fvp: ^0.35.0
 
   # TTS (Offline Text-to-Speech)
   sherpa_onnx: ^1.10.0
