@@ -47,10 +47,7 @@ class ImmersiveModeOverlay extends StatefulWidget {
           return const ImmersiveModeOverlay();
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
+          return FadeTransition(opacity: animation, child: child);
         },
         transitionDuration: const Duration(milliseconds: 200),
       ),
@@ -65,23 +62,23 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
   final ScreenshotController _screenshotController = ScreenshotController();
-  
+
   // 选中的分类名称集合（用于多选筛选）
   Set<String> _selectedCategories = {};
-  
+
   // 本地管理的服务器数据（按分类存储）
   final Map<String, List<ExtendedServerItem>> _categoryServersMap = {};
   final Set<String> _loadingCategories = {};
-  
+
   // 刷新定时器
   Timer? _refreshTimer;
   int _countdown = _kImmersiveRefreshInterval;
   bool _isRefreshing = false;
-  
+
   // 比分查询频率限制（60秒）
   DateTime? _lastScoreFetchTime;
   static const Duration _scoreFetchInterval = Duration(seconds: 60);
-  
+
   // 截图预览相关
   Uint8List? _screenshotPreview;
   bool _showScreenshotPreview = false;
@@ -129,20 +126,22 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
 
   void _initializeData() {
     final state = context.read<ServerBloc>().state;
-    
+
     // 从存储中恢复选中的分类
     final savedCategories = _loadSavedCategories(state);
-    
+
     if (savedCategories.isNotEmpty) {
       // 使用保存的分类
       _selectedCategories = savedCategories;
-      
+
       // 复用当前分类的服务器数据（如果在选中列表中）
       if (state.selectedCategory?.modelName != null &&
           savedCategories.contains(state.selectedCategory!.modelName!)) {
-        _categoryServersMap[state.selectedCategory!.modelName!] = List.from(state.servers);
+        _categoryServersMap[state.selectedCategory!.modelName!] = List.from(
+          state.servers,
+        );
       }
-      
+
       // 加载其他选中但还没有数据的分类
       for (final categoryName in savedCategories) {
         if (!_categoryServersMap.containsKey(categoryName)) {
@@ -152,27 +151,31 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     } else if (state.selectedCategory?.modelName != null) {
       // 没有保存的分类，使用当前选中的分类
       _selectedCategories = {state.selectedCategory!.modelName!};
-      _categoryServersMap[state.selectedCategory!.modelName!] = List.from(state.servers);
+      _categoryServersMap[state.selectedCategory!.modelName!] = List.from(
+        state.servers,
+      );
     }
-    
+
     setState(() {});
     _startRefreshTimer();
-    
+
     // 初始化完成后，获取所有已加载分类的比分数据
     _fetchBatchScores();
   }
 
   /// 从存储中加载保存的分类（过滤掉不存在的分类）
   Set<String> _loadSavedCategories(ServerState state) {
-    final savedList = StorageUtils.getStringList(_kImmersiveSelectedCategoriesKey);
+    final savedList = StorageUtils.getStringList(
+      _kImmersiveSelectedCategoriesKey,
+    );
     if (savedList.isEmpty) return {};
-    
+
     // 获取所有有效的分类名称
     final validCategoryNames = state.serverCategories
         .where((c) => c.modelName != null)
         .map((c) => c.modelName!)
         .toSet();
-    
+
     // 过滤掉不存在的分类
     return savedList.where((name) => validCategoryNames.contains(name)).toSet();
   }
@@ -193,7 +196,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         timer.cancel();
         return;
       }
-      
+
       setState(() {
         _countdown--;
         if (_countdown <= 0) {
@@ -228,32 +231,32 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   /// 刷新所有选中分类的服务器（并行执行）
   Future<void> _refreshAllSelectedCategories() async {
     if (_isRefreshing || _selectedCategories.isEmpty) return;
-    
+
     setState(() => _isRefreshing = true);
-    
+
     final state = context.read<ServerBloc>().state;
-    
+
     // 并行刷新所有选中的分类
     final futures = <Future<void>>[];
-    
+
     for (final categoryName in _selectedCategories) {
       final category = state.serverCategories.firstWhere(
         (c) => c.modelName == categoryName,
         orElse: () => ServerCategory(serverList: []),
       );
-      
+
       if (category.serverList.isEmpty) continue;
-      
+
       futures.add(_refreshCategoryServers(category));
     }
-    
+
     await Future.wait(futures);
-    
+
     // 刷新完成后，批量获取比分数据
     if (mounted) {
       await _fetchBatchScores();
     }
-    
+
     if (mounted) {
       setState(() => _isRefreshing = false);
     }
@@ -264,7 +267,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     // 频率限制：距上次查询不到 60 秒则跳过
     if (_lastScoreFetchTime != null &&
         DateTime.now().difference(_lastScoreFetchTime!) < _scoreFetchInterval) {
-      LogService.d('[沉浸模式] 批量比分查询跳过: 距上次查询不到 ${_scoreFetchInterval.inSeconds} 秒');
+      LogService.d(
+        '[沉浸模式] 批量比分查询跳过: 距上次查询不到 ${_scoreFetchInterval.inSeconds} 秒',
+      );
       return;
     }
 
@@ -274,49 +279,51 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       for (final categoryName in _selectedCategories) {
         final servers = _categoryServersMap[categoryName];
         if (servers == null) continue;
-        
+
         for (final server in servers) {
-          final address = server.serverItem.address ?? server.serverItem.serverAddress;
+          final address =
+              server.serverItem.address ?? server.serverItem.serverAddress;
           if (address != null && address.isNotEmpty) {
             addresses.add(address);
           }
         }
       }
-      
+
       if (addresses.isEmpty) return;
-      
+
       // 调用 ScoreApi 批量查询比分
       final scoreApi = ScoreApi();
       final scores = await scoreApi.batchGetScores(addresses);
-      
+
       if (scores.isEmpty || !mounted) return;
-      
+
       // 将比分数据合并到对应的服务器
       for (final categoryName in _selectedCategories) {
         final servers = _categoryServersMap[categoryName];
         if (servers == null) continue;
-        
+
         for (int i = 0; i < servers.length; i++) {
           final server = servers[i];
-          final address = server.serverItem.address ?? server.serverItem.serverAddress;
+          final address =
+              server.serverItem.address ?? server.serverItem.serverAddress;
           if (address == null) continue;
-          
+
           final score = scores[address];
           if (score == null || score.ctScore == null || score.tScore == null) {
             continue;
           }
-          
+
           // 创建 TeamScores 并更新服务器
           final teamScores = TeamScores(
             ctScore: score.ctScore,
             tScore: score.tScore,
             dataQuality: score.dataQuality,
           );
-          
+
           servers[i] = server.copyWith(teamScores: teamScores);
         }
       }
-      
+
       if (mounted) {
         _lastScoreFetchTime = DateTime.now();
         setState(() {});
@@ -332,33 +339,31 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   Future<void> _refreshCategoryServers(ServerCategory category) async {
     final categoryName = category.modelName;
     if (categoryName == null) return;
-    
+
     try {
       // 获取已有的服务器列表，如果没有则创建新的
       var servers = _categoryServersMap[categoryName];
-      
+
       if (servers == null || servers.isEmpty) {
         // 首次加载，创建新列表
         servers = category.serverList.map((serverItem) {
-          return ExtendedServerItem(
-            serverItem: serverItem,
-            isLoading: true,
-          );
+          return ExtendedServerItem(serverItem: serverItem, isLoading: true);
         }).toList();
         _categoryServersMap[categoryName] = servers;
       }
-      
+
       // 并行获取所有服务器信息
       final futures = <Future<void>>[];
-      
+
       for (int i = 0; i < servers.length; i++) {
         final server = servers[i];
-        final address = server.serverItem.address ?? server.serverItem.serverAddress;
+        final address =
+            server.serverItem.address ?? server.serverItem.serverAddress;
         if (address == null) continue;
-        
+
         futures.add(_fetchServerInfo(categoryName, i, address));
       }
-      
+
       await Future.wait(futures);
     } catch (e) {
       LogService.e('刷新分类 $categoryName 服务器失败: $e', e);
@@ -369,36 +374,34 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   Future<void> _loadCategoryServers(ServerCategory category) async {
     final categoryName = category.modelName;
     if (categoryName == null) return;
-    
+
     setState(() {
       _loadingCategories.add(categoryName);
     });
-    
+
     try {
       // 初始化服务器列表
       final servers = category.serverList.map((serverItem) {
-        return ExtendedServerItem(
-          serverItem: serverItem,
-          isLoading: true,
-        );
+        return ExtendedServerItem(serverItem: serverItem, isLoading: true);
       }).toList();
-      
+
       _categoryServersMap[categoryName] = servers;
       if (mounted) setState(() {});
-      
+
       // 并行获取所有服务器信息
       final futures = <Future<void>>[];
-      
+
       for (int i = 0; i < servers.length; i++) {
         final server = servers[i];
-        final address = server.serverItem.address ?? server.serverItem.serverAddress;
+        final address =
+            server.serverItem.address ?? server.serverItem.serverAddress;
         if (address == null) continue;
-        
+
         futures.add(_fetchServerInfo(categoryName, i, address));
       }
-      
+
       await Future.wait(futures);
-      
+
       // 加载完成后，获取该分类的比分数据
       if (mounted) {
         await _fetchCategoryScores(categoryName);
@@ -419,45 +422,47 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     try {
       final servers = _categoryServersMap[categoryName];
       if (servers == null || servers.isEmpty) return;
-      
+
       // 收集该分类的服务器地址
       final addresses = <String>[];
       for (final server in servers) {
-        final address = server.serverItem.address ?? server.serverItem.serverAddress;
+        final address =
+            server.serverItem.address ?? server.serverItem.serverAddress;
         if (address != null && address.isNotEmpty) {
           addresses.add(address);
         }
       }
-      
+
       if (addresses.isEmpty) return;
-      
+
       // 调用 ScoreApi 批量查询比分
       final scoreApi = ScoreApi();
       final scores = await scoreApi.batchGetScores(addresses);
-      
+
       if (scores.isEmpty || !mounted) return;
-      
+
       // 将比分数据合并到对应的服务器
       for (int i = 0; i < servers.length; i++) {
         final server = servers[i];
-        final address = server.serverItem.address ?? server.serverItem.serverAddress;
+        final address =
+            server.serverItem.address ?? server.serverItem.serverAddress;
         if (address == null) continue;
-        
+
         final score = scores[address];
         if (score == null || score.ctScore == null || score.tScore == null) {
           continue;
         }
-        
+
         // 创建 TeamScores 并更新服务器
         final teamScores = TeamScores(
           ctScore: score.ctScore,
           tScore: score.tScore,
           dataQuality: score.dataQuality,
         );
-        
+
         servers[i] = server.copyWith(teamScores: teamScores);
       }
-      
+
       if (mounted) {
         setState(() {});
         LogService.d('[沉浸模式] 分类 $categoryName 比分查询完成: ${scores.length} 个结果');
@@ -474,28 +479,33 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     String address,
   ) async {
     final serverApi = ServerApi();
-    
+
     try {
       final parts = address.split(':');
       if (parts.length != 2) return;
-      
+
       final ip = parts[0];
       final port = int.parse(parts[1]);
-      final info = await SourceServerService.getServerInfo(ip, port, timeout: 10000);
-      
+      final info = await SourceServerService.getServerInfo(
+        ip,
+        port,
+        timeout: 5000,
+      );
+
       if (!mounted) return;
-      
+
       final servers = _categoryServersMap[categoryName];
       if (servers == null || index >= servers.length) return;
-      
+
       final existingServer = servers[index];
       final isCustomServer = existingServer.serverItem.isCustom;
-      
+
       if (info != null) {
         final newMap = info.map;
         final oldMap = existingServer.serverData?.map;
-        final mapChanged = oldMap != null && oldMap != newMap && newMap != 'graphics_settings';
-        
+        final mapChanged =
+            oldMap != null && oldMap != newMap && newMap != 'graphics_settings';
+
         final serverData = ServerInfo(
           hostName: info.name,
           map: info.map,
@@ -504,7 +514,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
           gameType: info.gameType,
           pingLatency: info.ping,
         );
-        
+
         // 更新服务器数据
         servers[index] = existingServer.copyWith(
           serverData: serverData,
@@ -516,26 +526,34 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
           mapInfo: mapChanged ? null : existingServer.mapInfo,
           mapRuntime: mapChanged ? null : existingServer.mapRuntime,
         );
-        
+
         if (mounted) setState(() {});
-        
+
         // 异步获取额外数据（不阻塞主流程）
         final isValidMap = newMap != 'graphics_settings';
         if (isValidMap) {
           // 获取地图背景图
-          final needFetchMapInfo = mapChanged ||
+          final needFetchMapInfo =
+              mapChanged ||
               existingServer.mapInfo == null ||
               (oldMap != null && oldMap != newMap);
           if (needFetchMapInfo) {
             _fetchMapInfoAsync(categoryName, index, address, newMap, serverApi);
           }
-          
+
           // 自定义服务器不获取 mapRuntime
-          if (!isCustomServer && (mapChanged || existingServer.mapRuntime == null)) {
-            _fetchMapRuntimeAsync(categoryName, index, address, newMap, serverApi);
+          if (!isCustomServer &&
+              (mapChanged || existingServer.mapRuntime == null)) {
+            _fetchMapRuntimeAsync(
+              categoryName,
+              index,
+              address,
+              newMap,
+              serverApi,
+            );
           }
         }
-        
+
         // 获取 ping（如果还没有）
         if (existingServer.pingInfo == null) {
           _fetchPingAsync(categoryName, index, address, ip);
@@ -544,7 +562,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         // 查询失败，增加失败计数
         final newFailureCount = existingServer.consecutiveFailures + 1;
         final isNowOffline = newFailureCount >= 3;
-        
+
         servers[index] = existingServer.copyWith(
           isLoading: false,
           hasError: true,
@@ -554,19 +572,19 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
           clearMapRuntime: isNowOffline,
           clearMapInfo: isNowOffline,
         );
-        
+
         if (mounted) setState(() {});
       }
     } catch (e) {
       if (!mounted) return;
-      
+
       final servers = _categoryServersMap[categoryName];
       if (servers == null || index >= servers.length) return;
-      
+
       final existingServer = servers[index];
       final newFailureCount = existingServer.consecutiveFailures + 1;
       final isNowOffline = newFailureCount >= 3;
-      
+
       servers[index] = existingServer.copyWith(
         isLoading: false,
         hasError: true,
@@ -576,7 +594,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         clearMapRuntime: isNowOffline,
         clearMapInfo: isNowOffline,
       );
-      
+
       if (mounted) setState(() {});
     }
   }
@@ -589,22 +607,26 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     String mapName,
     ServerApi serverApi,
   ) {
-    serverApi.getMapInfo(mapName).then((mapInfo) {
-      if (!mounted) return;
-      
-      final servers = _categoryServersMap[categoryName];
-      if (servers == null || index >= servers.length) return;
-      
-      // 确认地址匹配
-      final currentAddress = servers[index].serverItem.address ??
-          servers[index].serverItem.serverAddress;
-      if (currentAddress != address) return;
-      
-      servers[index] = servers[index].copyWith(mapInfo: mapInfo);
-      setState(() {});
-    }).catchError((e) {
-      LogService.w('获取地图信息失败 ($mapName): $e');
-    });
+    serverApi
+        .getMapInfo(mapName)
+        .then((mapInfo) {
+          if (!mounted) return;
+
+          final servers = _categoryServersMap[categoryName];
+          if (servers == null || index >= servers.length) return;
+
+          // 确认地址匹配
+          final currentAddress =
+              servers[index].serverItem.address ??
+              servers[index].serverItem.serverAddress;
+          if (currentAddress != address) return;
+
+          servers[index] = servers[index].copyWith(mapInfo: mapInfo);
+          setState(() {});
+        })
+        .catchError((e) {
+          LogService.w('获取地图信息失败 ($mapName): $e');
+        });
   }
 
   /// 异步获取地图运行时间
@@ -615,31 +637,35 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     String mapName,
     ServerApi serverApi,
   ) {
-    serverApi.getMapRuntime(address, mapName).then((runtime) {
-      if (!mounted) return;
-      
-      final servers = _categoryServersMap[categoryName];
-      if (servers == null || index >= servers.length) return;
-      
-      final currentAddress = servers[index].serverItem.address ??
-          servers[index].serverItem.serverAddress;
-      if (currentAddress != address) return;
-      
-      servers[index] = servers[index].copyWith(
-        mapRuntime: runtime,
-        mapRuntimeLastFetched: DateTime.now().millisecondsSinceEpoch,
-        mapRuntimeError: false,
-      );
-      setState(() {});
-    }).catchError((e) {
-      if (!mounted) return;
-      
-      final servers = _categoryServersMap[categoryName];
-      if (servers == null || index >= servers.length) return;
-      
-      servers[index] = servers[index].copyWith(mapRuntimeError: true);
-      setState(() {});
-    });
+    serverApi
+        .getMapRuntime(address, mapName)
+        .then((runtime) {
+          if (!mounted) return;
+
+          final servers = _categoryServersMap[categoryName];
+          if (servers == null || index >= servers.length) return;
+
+          final currentAddress =
+              servers[index].serverItem.address ??
+              servers[index].serverItem.serverAddress;
+          if (currentAddress != address) return;
+
+          servers[index] = servers[index].copyWith(
+            mapRuntime: runtime,
+            mapRuntimeLastFetched: DateTime.now().millisecondsSinceEpoch,
+            mapRuntimeError: false,
+          );
+          setState(() {});
+        })
+        .catchError((e) {
+          if (!mounted) return;
+
+          final servers = _categoryServersMap[categoryName];
+          if (servers == null || index >= servers.length) return;
+
+          servers[index] = servers[index].copyWith(mapRuntimeError: true);
+          setState(() {});
+        });
   }
 
   /// 异步获取 ping
@@ -660,26 +686,28 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         encoding: const Utf8Codec(allowMalformed: true),
       );
       final results = <Duration>[];
-      
+
       await for (final event in ping.stream) {
         if (!mounted) break;
         if (event.response != null && event.response!.time != null) {
           results.add(event.response!.time!);
         }
       }
-      
+
       if (results.isNotEmpty && mounted) {
         final servers = _categoryServersMap[categoryName];
         if (servers == null || index >= servers.length) return;
-        
-        final currentAddress = servers[index].serverItem.address ??
+
+        final currentAddress =
+            servers[index].serverItem.address ??
             servers[index].serverItem.serverAddress;
         if (currentAddress != address) return;
-        
+
         // 计算平均延迟
-        final avgMs = results.map((d) => d.inMilliseconds).reduce((a, b) => a + b) ~/
+        final avgMs =
+            results.map((d) => d.inMilliseconds).reduce((a, b) => a + b) ~/
             results.length;
-        
+
         final pingInfo = ServerPingInfo(
           ip: ip,
           ping: avgMs,
@@ -720,7 +748,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       (c) => c.modelName == categoryName,
       orElse: () => ServerCategory(serverList: []),
     );
-    
+
     if (category.serverList.isNotEmpty) {
       _loadCategoryServers(category);
     }
@@ -733,7 +761,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         .where((c) => c.modelName != null)
         .map((c) => c.modelName!)
         .toSet();
-    
+
     setState(() {
       if (_selectedCategories.length == allCategoryNames.length) {
         // 当前全选，变为只选第一个
@@ -763,36 +791,44 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   /// 截图并复制到剪切板
   Future<void> _takeScreenshot() async {
     if (_isTakingScreenshot) return;
-    
+
     setState(() {
       _isTakingScreenshot = true;
     });
-    
+
     try {
       final isDark = Theme.of(context).brightness == Brightness.dark;
       final categoryServers = _getSelectedCategoryServers();
-      
+
       if (categoryServers.isEmpty) {
         LogService.w('截图失败：没有服务器数据');
         return;
       }
-      
+
       // 获取当前的 ServerBloc
       final serverBloc = context.read<ServerBloc>();
-      
+
       // 计算截图内容的尺寸
       final screenWidth = MediaQuery.of(context).size.width;
       // 每行2个卡片，每个卡片高度140（136+4border），加上间距和标题
       final totalCategories = categoryServers.length;
       // 标题区域 ~42 + 24间距 + 每个分类(标题36 + 12间距 + 卡片行数*(140+16) + 24间距)
-      final cardRows = categoryServers.fold<int>(0, (sum, c) => sum + (c.servers.length / 2).ceil());
-      final estimatedHeight = 42.0 + 24 + totalCategories * (36.0 + 12 + 24) + cardRows * (140.0 + 16) + 48;
-      
+      final cardRows = categoryServers.fold<int>(
+        0,
+        (sum, c) => sum + (c.servers.length / 2).ceil(),
+      );
+      final estimatedHeight =
+          42.0 +
+          24 +
+          totalCategories * (36.0 + 12 + 24) +
+          cardRows * (140.0 + 16) +
+          48;
+
       // 限制最大高度，防止服务器过多时生成超大图片导致内存溢出
       // pixelRatio=2.0 时，8000px 逻辑高度 = 16000px 实际像素高度，已经足够
       const maxHeight = 8000.0;
       final clampedHeight = estimatedHeight.clamp(200.0, maxHeight);
-      
+
       // 使用 captureFromWidget 替代 captureFromLongWidget
       // captureFromLongWidget 的测量阶段使用 _MeasurementView（普通 RenderBox），
       // 没有 View ancestor，导致 SingleChildScrollView 等 widget 调用 View.of() 失败
@@ -804,7 +840,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             BlocProvider.value(
               value: serverBloc,
               child: Material(
-                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF3F4F6),
+                color: isDark
+                    ? const Color(0xFF0F172A)
+                    : const Color(0xFFF3F4F6),
                 child: _buildFullContentForScreenshot(isDark, categoryServers),
               ),
             ),
@@ -818,7 +856,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
 
       // 将 PNG 转换为压缩的 JPEG（质量 85%，清晰且体积小）
       final jpegBytes = await _compressToJpeg(pngBytes, quality: 85);
-      
+
       // 复制到剪切板
       final clipboard = SystemClipboard.instance;
       if (clipboard == null) {
@@ -847,7 +885,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         }
       });
 
-      LogService.i('截图已复制到剪切板 (JPEG ${(jpegBytes.length / 1024).toStringAsFixed(1)}KB)');
+      LogService.i(
+        '截图已复制到剪切板 (JPEG ${(jpegBytes.length / 1024).toStringAsFixed(1)}KB)',
+      );
     } catch (e) {
       LogService.e('截图失败: $e');
     } finally {
@@ -858,23 +898,29 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       }
     }
   }
-  
+
   /// 将 PNG 图片压缩为 JPEG
-  Future<Uint8List> _compressToJpeg(Uint8List pngBytes, {int quality = 85}) async {
+  Future<Uint8List> _compressToJpeg(
+    Uint8List pngBytes, {
+    int quality = 85,
+  }) async {
     // 使用 image 包解码 PNG
     final image = img.decodePng(pngBytes);
     if (image == null) {
       throw Exception('无法解码 PNG 图片');
     }
-    
+
     // 编码为 JPEG，quality 范围 0-100
     final jpegBytes = img.encodeJpg(image, quality: quality);
-    
+
     return Uint8List.fromList(jpegBytes);
   }
-  
+
   /// 构建用于截图的完整内容（不使用 ListView，直接展开所有内容，不显示 header）
-  Widget _buildFullContentForScreenshot(bool isDark, List<_CategoryServers> categoryServers) {
+  Widget _buildFullContentForScreenshot(
+    bool isDark,
+    List<_CategoryServers> categoryServers,
+  ) {
     return Container(
       width: MediaQuery.of(context).size.width,
       padding: const EdgeInsets.all(24),
@@ -883,20 +929,25 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         mainAxisSize: MainAxisSize.min,
         children: [
           // 所有分类的服务器（不显示 header）
-          ...categoryServers.map((item) => _buildCategorySectionForScreenshot(isDark, item)),
+          ...categoryServers.map(
+            (item) => _buildCategorySectionForScreenshot(isDark, item),
+          ),
         ],
       ),
     );
   }
-  
+
   /// 构建用于截图的分类区块
-  Widget _buildCategorySectionForScreenshot(bool isDark, _CategoryServers item) {
+  Widget _buildCategorySectionForScreenshot(
+    bool isDark,
+    _CategoryServers item,
+  ) {
     // 计算该分类的在线人数
     int categoryPlayers = 0;
     for (final server in item.servers) {
       categoryPlayers += server.serverData?.players ?? 0;
     }
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -966,25 +1017,28 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     final mapName = data?.map ?? '未知地图';
     final mapLabel = server.mapInfo?.mapLabel;
     final chineseName = (mapLabel?.isNotEmpty == true) ? mapLabel : null;
-    final displayMapName = chineseName != null ? '$chineseName ($mapName)' : mapName;
+    final displayMapName = chineseName != null
+        ? '$chineseName ($mapName)'
+        : mapName;
     final players = data?.players ?? 0;
     final maxPlayers = data?.maxPlayers ?? 0;
-    
+
     // 运行时间相关
     final mapRuntime = server.mapRuntime;
     final fetchedAt = server.mapRuntimeLastFetched;
     final hasRuntimeError = server.mapRuntimeError;
     final isCustomServer = server.serverItem.isCustom;
-    
+
     // 比分相关
     final teamScores = server.teamScores;
-    final hasValidScore = teamScores?.ctScore != null && 
+    final hasValidScore =
+        teamScores?.ctScore != null &&
         teamScores?.tScore != null &&
         (teamScores!.ctScore! > 0 || teamScores.tScore! > 0);
-    
+
     // 是否显示运行时间（与原卡片逻辑一致）
     final showRuntime = data?.map != null && !isCustomServer;
-    
+
     return Container(
       height: 136,
       decoration: BoxDecoration(
@@ -1047,10 +1101,20 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               shadows: [
-                                Shadow(color: Colors.black, blurRadius: 3, offset: Offset(0, 1)),
+                                Shadow(
+                                  color: Colors.black,
+                                  blurRadius: 3,
+                                  offset: Offset(0, 1),
+                                ),
                                 Shadow(color: Colors.black, blurRadius: 8),
-                                Shadow(color: Colors.black, offset: Offset(1, 1)),
-                                Shadow(color: Colors.black, offset: Offset(-1, -1)),
+                                Shadow(
+                                  color: Colors.black,
+                                  offset: Offset(1, 1),
+                                ),
+                                Shadow(
+                                  color: Colors.black,
+                                  offset: Offset(-1, -1),
+                                ),
                               ],
                             ),
                             maxLines: 1,
@@ -1066,7 +1130,11 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                                   color: Colors.white,
                                   fontSize: 16,
                                   shadows: [
-                                    Shadow(color: Colors.black, blurRadius: 2, offset: Offset(0, 1)),
+                                    Shadow(
+                                      color: Colors.black,
+                                      blurRadius: 2,
+                                      offset: Offset(0, 1),
+                                    ),
                                     Shadow(color: Colors.black, blurRadius: 6),
                                   ],
                                 ),
@@ -1078,8 +1146,15 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                                     color: Colors.white,
                                     fontSize: 16,
                                     shadows: [
-                                      Shadow(color: Colors.black, blurRadius: 2, offset: Offset(0, 1)),
-                                      Shadow(color: Colors.black, blurRadius: 6),
+                                      Shadow(
+                                        color: Colors.black,
+                                        blurRadius: 2,
+                                        offset: Offset(0, 1),
+                                      ),
+                                      Shadow(
+                                        color: Colors.black,
+                                        blurRadius: 6,
+                                      ),
                                     ],
                                   ),
                                   maxLines: 1,
@@ -1097,7 +1172,11 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                               fontSize: 15,
                               fontFamily: 'monospace',
                               shadows: [
-                                Shadow(color: Colors.black, blurRadius: 2, offset: Offset(0, 1)),
+                                Shadow(
+                                  color: Colors.black,
+                                  blurRadius: 2,
+                                  offset: Offset(0, 1),
+                                ),
                                 Shadow(color: Colors.black, blurRadius: 6),
                               ],
                             ),
@@ -1306,14 +1385,19 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   }
 
   /// 构建静态比分显示（用于截图）
-  Widget _buildStaticScoreDisplay(int ctScore, int tScore, String mapName, {String? dataQuality}) {
+  Widget _buildStaticScoreDisplay(
+    int ctScore,
+    int tScore,
+    String mapName, {
+    String? dataQuality,
+  }) {
     final isZombie = _isZombieMap(mapName);
     final isUnknown = dataQuality == 'unknown';
-    
+
     final Color leftColor;
     final Color rightColor;
     final Color iconColor;
-    
+
     if (isUnknown) {
       leftColor = const Color(0xFF9CA3AF);
       rightColor = const Color(0xFF9CA3AF);
@@ -1327,10 +1411,10 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       rightColor = const Color(0xFFEAB308);
       iconColor = const Color(0xFF6B7280);
     }
-    
+
     final leftLabel = isZombie ? '人类' : 'CT';
     final rightLabel = isZombie ? '僵尸' : 'T';
-    
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1344,11 +1428,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Icon(
-            MdiIcons.swordCross,
-            size: 12,
-            color: iconColor,
-          ),
+          child: Icon(MdiIcons.swordCross, size: 12, color: iconColor),
         ),
         Text(
           '$tScore $rightLabel',
@@ -1373,23 +1453,25 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   List<_CategoryServers> _getSelectedCategoryServers() {
     final state = context.read<ServerBloc>().state;
     final result = <_CategoryServers>[];
-    
+
     for (final categoryName in _selectedCategories) {
       final category = state.serverCategories.firstWhere(
         (c) => c.modelName == categoryName,
         orElse: () => ServerCategory(serverList: []),
       );
-      
+
       final servers = _categoryServersMap[categoryName] ?? [];
       if (category.modelName != null) {
-        result.add(_CategoryServers(
-          category: category,
-          servers: servers,
-          isLoading: _loadingCategories.contains(categoryName),
-        ));
+        result.add(
+          _CategoryServers(
+            category: category,
+            servers: servers,
+            isLoading: _loadingCategories.contains(categoryName),
+          ),
+        );
       }
     }
-    
+
     return result;
   }
 
@@ -1414,9 +1496,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             body: Column(
               children: [
                 _buildHeader(isDark),
-                Expanded(
-                  child: _buildServerList(isDark),
-                ),
+                Expanded(child: _buildServerList(isDark)),
               ],
             ),
           ),
@@ -1431,7 +1511,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   Widget _buildScreenshotPreview(bool isDark) {
     // 限制预览最大高度，防止溢出屏幕
     final maxPreviewHeight = MediaQuery.of(context).size.height - 80;
-    
+
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutCubic,
@@ -1463,10 +1543,15 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             children: [
               // 标题栏
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF22C55E).withValues(alpha: 0.1),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(10),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -1491,7 +1576,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
               if (_screenshotPreview != null)
                 Flexible(
                   child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(10)),
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(10),
+                    ),
                     child: Image.memory(
                       _screenshotPreview!,
                       width: 200,
@@ -1509,9 +1596,14 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   Widget _buildHeader(bool isDark) {
     return BlocBuilder<ServerBloc, ServerState>(
       builder: (context, state) {
-        final categories = state.serverCategories.where((c) => c.modelName != null).toList();
-        final totalServers = _categoryServersMap.values.fold<int>(0, (s, v) => s + v.length);
-        
+        final categories = state.serverCategories
+            .where((c) => c.modelName != null)
+            .toList();
+        final totalServers = _categoryServersMap.values.fold<int>(
+          0,
+          (s, v) => s + v.length,
+        );
+
         // 计算总在线人数
         int totalPlayers = 0;
         for (final servers in _categoryServersMap.values) {
@@ -1527,7 +1619,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             color: isDark ? const Color(0xFF1E293B) : Colors.white,
             border: Border(
               bottom: BorderSide(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+                color: isDark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFE5E7EB),
               ),
             ),
             boxShadow: [
@@ -1629,15 +1723,15 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
               color: isFiltered
                   ? const Color(0xFF3B82F6).withValues(alpha: 0.12)
                   : (isDark
-                      ? Colors.white.withValues(alpha: 0.06)
-                      : Colors.black.withValues(alpha: 0.04)),
+                        ? Colors.white.withValues(alpha: 0.06)
+                        : Colors.black.withValues(alpha: 0.04)),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: isFiltered
                     ? const Color(0xFF3B82F6).withValues(alpha: 0.4)
                     : (isDark
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : Colors.black.withValues(alpha: 0.1)),
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.black.withValues(alpha: 0.1)),
               ),
             ),
             child: Row(
@@ -1740,7 +1834,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white : const Color(0xFF1F2937),
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1F2937),
                             ),
                           ),
                           const Spacer(),
@@ -1762,7 +1858,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                             child: Icon(
                               Icons.close_rounded,
                               size: 18,
-                              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                              color: isDark
+                                  ? Colors.white38
+                                  : const Color(0xFF9CA3AF),
                             ),
                           ),
                         ],
@@ -1770,7 +1868,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                     ),
                     Divider(
                       height: 1,
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE5E7EB),
                     ),
                     // 分类列表
                     Flexible(
@@ -1792,7 +1892,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                             onTap: () => toggle(name),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 10),
+                                horizontal: 20,
+                                vertical: 10,
+                              ),
                               child: Row(
                                 children: [
                                   // 勾选框
@@ -1809,20 +1911,26 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                                         color: isSelected
                                             ? activeColor
                                             : (isDark
-                                                ? Colors.white24
-                                                : const Color(0xFFD1D5DB)),
+                                                  ? Colors.white24
+                                                  : const Color(0xFFD1D5DB)),
                                         width: 1.5,
                                       ),
                                     ),
                                     child: isSelected
-                                        ? const Icon(Icons.check_rounded,
-                                            size: 13, color: Colors.white)
+                                        ? const Icon(
+                                            Icons.check_rounded,
+                                            size: 13,
+                                            color: Colors.white,
+                                          )
                                         : null,
                                   ),
                                   const SizedBox(width: 12),
                                   if (isCustom) ...[
-                                    Icon(Icons.folder_outlined,
-                                        size: 15, color: activeColor),
+                                    Icon(
+                                      Icons.folder_outlined,
+                                      size: 15,
+                                      color: activeColor,
+                                    ),
                                     const SizedBox(width: 6),
                                   ],
                                   Expanded(
@@ -1835,11 +1943,11 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                                             : FontWeight.w400,
                                         color: isSelected
                                             ? (isDark
-                                                ? Colors.white
-                                                : const Color(0xFF1F2937))
+                                                  ? Colors.white
+                                                  : const Color(0xFF1F2937))
                                             : (isDark
-                                                ? Colors.white60
-                                                : const Color(0xFF6B7280)),
+                                                  ? Colors.white60
+                                                  : const Color(0xFF6B7280)),
                                       ),
                                     ),
                                   ),
@@ -1850,7 +1958,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                                       child: CircularProgressIndicator(
                                         strokeWidth: 1.5,
                                         valueColor: AlwaysStoppedAnimation(
-                                            activeColor),
+                                          activeColor,
+                                        ),
                                       ),
                                     ),
                                 ],
@@ -1885,19 +1994,21 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
               color: _isCompactMode
                   ? const Color(0xFF3B82F6).withValues(alpha: 0.12)
                   : (isDark
-                      ? Colors.white.withValues(alpha: 0.06)
-                      : Colors.black.withValues(alpha: 0.04)),
+                        ? Colors.white.withValues(alpha: 0.06)
+                        : Colors.black.withValues(alpha: 0.04)),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: _isCompactMode
                     ? const Color(0xFF3B82F6).withValues(alpha: 0.4)
                     : (isDark
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : Colors.black.withValues(alpha: 0.08)),
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.black.withValues(alpha: 0.08)),
               ),
             ),
             child: Icon(
-              _isCompactMode ? Icons.grid_view_rounded : Icons.view_list_rounded,
+              _isCompactMode
+                  ? Icons.grid_view_rounded
+                  : Icons.view_list_rounded,
               size: 20,
               color: _isCompactMode
                   ? const Color(0xFF3B82F6)
@@ -1985,10 +2096,14 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   }
 
   Widget _buildRefreshIndicator(bool isDark) {
-    final progress = _isRefreshing ? 0.0 : _countdown / _kImmersiveRefreshInterval;
-    
+    final progress = _isRefreshing
+        ? 0.0
+        : _countdown / _kImmersiveRefreshInterval;
+
     return MouseRegion(
-      cursor: _isRefreshing ? SystemMouseCursors.basic : SystemMouseCursors.click,
+      cursor: _isRefreshing
+          ? SystemMouseCursors.basic
+          : SystemMouseCursors.click,
       child: GestureDetector(
         onTap: _isRefreshing ? null : _manualRefresh,
         child: Tooltip(
@@ -2005,7 +2120,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                   child: CircularProgressIndicator(
                     value: 1,
                     strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation(Colors.grey.withValues(alpha: 0.2)),
+                    valueColor: AlwaysStoppedAnimation(
+                      Colors.grey.withValues(alpha: 0.2),
+                    ),
                   ),
                 ),
                 SizedBox(
@@ -2019,7 +2136,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                       : CircularProgressIndicator(
                           value: progress,
                           strokeWidth: 3,
-                          valueColor: const AlwaysStoppedAnimation(Color(0xFF18A058)),
+                          valueColor: const AlwaysStoppedAnimation(
+                            Color(0xFF18A058),
+                          ),
                         ),
                 ),
                 Text(
@@ -2046,7 +2165,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     }
 
     // 检查是否所有分类都在加载中且没有数据
-    final allLoading = categoryServers.every((c) => c.isLoading && c.servers.isEmpty);
+    final allLoading = categoryServers.every(
+      (c) => c.isLoading && c.servers.isEmpty,
+    );
     if (allLoading) {
       return _buildLoadingList(isDark);
     }
@@ -2102,7 +2223,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     for (final server in item.servers) {
       categoryPlayers += server.serverData?.players ?? 0;
     }
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2186,7 +2307,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     for (var i = 0; i < servers.length; i += 2) {
       final first = servers[i];
       final second = i + 1 < servers.length ? servers[i + 1] : null;
-      
+
       rows.add(
         Padding(
           padding: const EdgeInsets.only(bottom: 12),
@@ -2210,7 +2331,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
 
   Widget _buildServerCard(ExtendedServerItem server) {
     final showSkeleton = server.serverData == null && server.isLoading;
-    
+
     return showSkeleton
         ? const ServerCardSkeleton()
         : ServerCard(
@@ -2357,14 +2478,24 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         ),
       ),
       child: Column(
-        children: List.generate(3, (index) => _buildCompactLoadingRow(isDark, index == 2, isCustomCategory)),
+        children: List.generate(
+          3,
+          (index) =>
+              _buildCompactLoadingRow(isDark, index == 2, isCustomCategory),
+        ),
       ),
     );
   }
 
-  Widget _buildCompactLoadingRow(bool isDark, bool isLast, bool isCustomCategory) {
-    final placeholderColor = isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.08);
-    
+  Widget _buildCompactLoadingRow(
+    bool isDark,
+    bool isLast,
+    bool isCustomCategory,
+  ) {
+    final placeholderColor = isDark
+        ? Colors.white12
+        : Colors.black.withValues(alpha: 0.08);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
@@ -2372,7 +2503,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             ? null
             : Border(
                 bottom: BorderSide(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFE5E7EB),
                 ),
               ),
       ),
@@ -2465,7 +2598,11 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   }
 
   /// 构建简约模式表格
-  Widget _buildCompactTable(bool isDark, List<ExtendedServerItem> servers, bool isCustomCategory) {
+  Widget _buildCompactTable(
+    bool isDark,
+    List<ExtendedServerItem> servers,
+    bool isCustomCategory,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
@@ -2483,7 +2620,12 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             final index = entry.key;
             final server = entry.value;
             final isLast = index == servers.length - 1;
-            return _buildCompactTableRow(isDark, server, isLast, isCustomCategory);
+            return _buildCompactTableRow(
+              isDark,
+              server,
+              isLast,
+              isCustomCategory,
+            );
           }),
         ],
       ),
@@ -2498,7 +2640,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.03)
+            : Colors.black.withValues(alpha: 0.02),
         border: Border(
           bottom: BorderSide(
             color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
@@ -2511,7 +2655,10 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
           const SizedBox(width: 20), // 状态指示器占位
           Expanded(
             flex: 3,
-            child: Text('服务器名称', style: headerStyle.copyWith(color: headerColor)),
+            child: Text(
+              '服务器名称',
+              style: headerStyle.copyWith(color: headerColor),
+            ),
           ),
           Expanded(
             flex: 2,
@@ -2519,24 +2666,44 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
           ),
           SizedBox(
             width: 70,
-            child: Text('人数', style: headerStyle.copyWith(color: headerColor), textAlign: TextAlign.center),
+            child: Text(
+              '人数',
+              style: headerStyle.copyWith(color: headerColor),
+              textAlign: TextAlign.center,
+            ),
           ),
           SizedBox(
             width: 50,
-            child: Text('时间', style: headerStyle.copyWith(color: headerColor), textAlign: TextAlign.center),
+            child: Text(
+              '时间',
+              style: headerStyle.copyWith(color: headerColor),
+              textAlign: TextAlign.center,
+            ),
           ),
           SizedBox(
             width: 55,
-            child: Text('延迟', style: headerStyle.copyWith(color: headerColor), textAlign: TextAlign.center),
+            child: Text(
+              '延迟',
+              style: headerStyle.copyWith(color: headerColor),
+              textAlign: TextAlign.center,
+            ),
           ),
           if (!isCustomCategory)
             SizedBox(
               width: 70,
-              child: Text('比分', style: headerStyle.copyWith(color: headerColor), textAlign: TextAlign.center),
+              child: Text(
+                '比分',
+                style: headerStyle.copyWith(color: headerColor),
+                textAlign: TextAlign.center,
+              ),
             ),
           SizedBox(
             width: 100,
-            child: Text('操作', style: headerStyle.copyWith(color: headerColor), textAlign: TextAlign.center),
+            child: Text(
+              '操作',
+              style: headerStyle.copyWith(color: headerColor),
+              textAlign: TextAlign.center,
+            ),
           ),
         ],
       ),
@@ -2544,20 +2711,28 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   }
 
   /// 构建数据行
-  Widget _buildCompactTableRow(bool isDark, ExtendedServerItem server, bool isLast, bool isCustomCategory) {
+  Widget _buildCompactTableRow(
+    bool isDark,
+    ExtendedServerItem server,
+    bool isLast,
+    bool isCustomCategory,
+  ) {
     final data = server.serverData;
     final isOffline = server.isOffline;
     final isLoading = server.isLoading && data == null;
-    final address = server.serverItem.address ?? server.serverItem.serverAddress;
+    final address =
+        server.serverItem.address ?? server.serverItem.serverAddress;
 
     // 服务器名称
     final hostName = server.serverItem.getDisplayName(data?.hostName);
-    
+
     // 地图名称 - 与卡片模式保持一致：有中文名时 "中文名 (英文名)"，否则只显示英文名
     final mapName = data?.map ?? '-';
     final mapLabel = server.mapInfo?.mapLabel;
     final chineseName = (mapLabel?.isNotEmpty == true) ? mapLabel : null;
-    final displayMap = chineseName != null ? '$chineseName ($mapName)' : mapName;
+    final displayMap = chineseName != null
+        ? '$chineseName ($mapName)'
+        : mapName;
 
     // 人数
     final players = data?.players ?? 0;
@@ -2590,7 +2765,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                 ? null
                 : Border(
                     bottom: BorderSide(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE5E7EB),
                     ),
                   ),
           ),
@@ -2604,7 +2781,10 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                   color: isLoading ? Colors.transparent : statusColor,
                   shape: BoxShape.circle,
                   border: isLoading
-                      ? Border.all(color: isDark ? Colors.white24 : Colors.black12, width: 1.5)
+                      ? Border.all(
+                          color: isDark ? Colors.white24 : Colors.black12,
+                          width: 1.5,
+                        )
                       : null,
                 ),
                 child: isLoading
@@ -2653,7 +2833,12 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
               // 人数
               SizedBox(
                 width: 70,
-                child: _buildCompactPlayerCount(isDark, players, maxPlayers, isOffline),
+                child: _buildCompactPlayerCount(
+                  isDark,
+                  players,
+                  maxPlayers,
+                  isOffline,
+                ),
               ),
               // 运行时间
               SizedBox(
@@ -2670,10 +2855,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                 ),
               ),
               // 延迟
-              SizedBox(
-                width: 55,
-                child: _buildCompactPing(isDark, server),
-              ),
+              SizedBox(width: 55, child: _buildCompactPing(isDark, server)),
               // 比分（非自定义分类才显示）
               if (!isCustomCategory)
                 SizedBox(
@@ -2683,7 +2865,12 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
               // 操作按钮
               SizedBox(
                 width: 100,
-                child: _buildCompactActionButtons(isDark, server, address, isOffline),
+                child: _buildCompactActionButtons(
+                  isDark,
+                  server,
+                  address,
+                  isOffline,
+                ),
               ),
             ],
           ),
@@ -2693,7 +2880,12 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   }
 
   /// 构建简约模式人数显示（与卡片模式颜色一致）
-  Widget _buildCompactPlayerCount(bool isDark, int players, int maxPlayers, bool isOffline) {
+  Widget _buildCompactPlayerCount(
+    bool isDark,
+    int players,
+    int maxPlayers,
+    bool isOffline,
+  ) {
     if (isOffline) {
       return Text(
         '-',
@@ -2744,19 +2936,19 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   String _getCompactRuntimeText(ExtendedServerItem server) {
     if (server.isOffline) return '-';
     if (server.serverItem.isCustom) return '-';
-    
+
     final mapRuntime = server.mapRuntime;
-    
+
     if (mapRuntime == null) {
       return server.mapRuntimeError ? '?' : '...';
     }
-    
+
     // 使用 MapRuntimeUtils 计算实际运行时间并格式化（与卡片模式一致）
     final currentRuntime = MapRuntimeUtils.calculateCurrentRuntime(
       mapRuntime,
       server.mapRuntimeLastFetched,
     );
-    
+
     if (currentRuntime <= 0) return '0分';
     return MapRuntimeUtils.formatRuntime(currentRuntime);
   }
@@ -2776,7 +2968,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
 
     // 检查是否有有效比分
     final teamScores = server.teamScores;
-    final hasValidScore = teamScores != null &&
+    final hasValidScore =
+        teamScores != null &&
         teamScores.ctScore != null &&
         teamScores.tScore != null &&
         (teamScores.ctScore! > 0 || teamScores.tScore! > 0);
@@ -2796,24 +2989,34 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   }
 
   /// 构建简约模式操作按钮
-  Widget _buildCompactActionButtons(bool isDark, ExtendedServerItem server, String? address, bool isOffline) {
+  Widget _buildCompactActionButtons(
+    bool isDark,
+    ExtendedServerItem server,
+    String? address,
+    bool isOffline,
+  ) {
     if (address == null || isOffline) {
       return const SizedBox.shrink();
     }
 
     final globalState = _statusService.state;
-    
+
     // 检查挤服状态
-    final isQueueing = globalState.type == OperationType.queueing &&
+    final isQueueing =
+        globalState.type == OperationType.queueing &&
         globalState.status == OperationStatus.running;
-    final isCurrentServerQueueing = isQueueing && globalState.serverAddress == address;
-    final isOtherServerQueueing = isQueueing && globalState.serverAddress != address;
-    
+    final isCurrentServerQueueing =
+        isQueueing && globalState.serverAddress == address;
+    final isOtherServerQueueing =
+        isQueueing && globalState.serverAddress != address;
+
     // 检查连接状态
-    final isConnecting = globalState.type == OperationType.connecting &&
+    final isConnecting =
+        globalState.type == OperationType.connecting &&
         globalState.status == OperationStatus.running &&
         globalState.serverAddress == address;
-    final isOtherServerBusy = (globalState.type == OperationType.connecting ||
+    final isOtherServerBusy =
+        (globalState.type == OperationType.connecting ||
             globalState.type == OperationType.launching) &&
         globalState.status == OperationStatus.running &&
         globalState.serverAddress != address;
@@ -2836,10 +3039,17 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         _buildCompactIconButton(
           icon: MdiIcons.accountGroup,
           tooltip: isCurrentServerQueueing ? '挤服中' : '挤服',
-          color: isCurrentServerQueueing ? const Color(0xFF22C55E) : const Color(0xFFFF6E6E),
+          color: isCurrentServerQueueing
+              ? const Color(0xFF22C55E)
+              : const Color(0xFFFF6E6E),
           isDisabled: isOtherServerQueueing,
           isActive: isCurrentServerQueueing,
-          onTap: () => _handleCompactQueue(server, address, isCurrentServerQueueing, isOtherServerQueueing),
+          onTap: () => _handleCompactQueue(
+            server,
+            address,
+            isCurrentServerQueueing,
+            isOtherServerQueueing,
+          ),
         ),
       ],
     );
@@ -2856,7 +3066,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     bool isActive = false,
   }) {
     final effectiveColor = isDisabled ? color.withValues(alpha: 0.4) : color;
-    
+
     return Tooltip(
       message: tooltip,
       child: Material(
@@ -2894,10 +3104,15 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   }
 
   /// 处理简约模式加入服务器
-  Future<void> _handleCompactConnect(ExtendedServerItem server, String address) async {
-    final serverName = server.serverItem.getDisplayName(server.serverData?.hostName);
+  Future<void> _handleCompactConnect(
+    ExtendedServerItem server,
+    String address,
+  ) async {
+    final serverName = server.serverItem.getDisplayName(
+      server.serverData?.hostName,
+    );
     final mapInfo = server.mapInfo;
-    
+
     await _statusService.connectToServer(
       serverAddress: address,
       serverName: serverName,
@@ -2905,7 +3120,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       mapNameCn: mapInfo?.mapLabel,
       mapBackground: mapInfo?.mapUrl,
     );
-    
+
     if (mounted) {
       final state = _statusService.state;
       if (state.status == OperationStatus.failed && state.message != null) {
@@ -2916,12 +3131,17 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   }
 
   /// 处理简约模式挤服
-  void _handleCompactQueue(ExtendedServerItem server, String address, bool isCurrentServerQueueing, bool isOtherServerQueueing) {
+  void _handleCompactQueue(
+    ExtendedServerItem server,
+    String address,
+    bool isCurrentServerQueueing,
+    bool isOtherServerQueueing,
+  ) {
     if (isOtherServerQueueing) {
       ToastUtils.showWarning(context, '正在挤服中，无法切换服务器');
       return;
     }
-    
+
     // 打开挤服对话框
     showDialog(
       context: context,
@@ -2940,7 +3160,11 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   }
 
   /// 构建简约模式比分显示
-  Widget _buildCompactScore(bool isDark, ExtendedServerItem server, TeamScores scores) {
+  Widget _buildCompactScore(
+    bool isDark,
+    ExtendedServerItem server,
+    TeamScores scores,
+  ) {
     final mapName = server.serverData?.map ?? '';
     final isZombie = _isZombieMap(mapName);
     final isUnknown = scores.dataQuality == 'unknown';
@@ -2996,7 +3220,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   /// 构建简约模式延迟显示
   Widget _buildCompactPing(bool isDark, ExtendedServerItem server) {
     final ping = server.pingInfo?.ping ?? server.serverData?.pingLatency;
-    
+
     if (ping == null) {
       return Text(
         '-',

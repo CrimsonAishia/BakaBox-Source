@@ -883,7 +883,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     try {
       final ip = parts[0];
       final port = int.parse(parts[1]);
-      return await SourceServerService.getServerInfo(ip, port, timeout: 10000);
+      return await SourceServerService.getServerInfo(ip, port, timeout: 5000);
     } catch (e) {
       LogService.e('获取服务器信息失败 ($address): $e', e);
       return null;
@@ -1710,16 +1710,16 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     // 6. 重新获取服务器信息
     if (servers.isNotEmpty) {
       try {
-        await _fetchServersInfo(requestId, emit).timeout(
-          const Duration(seconds: 15),
-          onTimeout: () {
-            LogService.w('强制刷新超时（15秒）');
-          },
-        );
+        await _fetchServersInfo(requestId, emit);
       } catch (e) {
         LogService.e('强制刷新异常: $e', e);
         if (!emit.isDone) {
           emit(state.copyWith(isLoadingServers: false, error: '刷新失败，请重试'));
+        }
+      } finally {
+        // 兜底：确保 isLoadingServers 不会永远卡在 true
+        if (!emit.isDone && state.isLoadingServers) {
+          emit(state.copyWith(isLoadingServers: false));
         }
       }
     }
