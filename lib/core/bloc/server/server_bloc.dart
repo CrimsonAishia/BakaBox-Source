@@ -20,15 +20,15 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   // 全局失败计数缓存，key 为服务器地址
   final Map<String, int> _failureCountCache = {};
   int _currentRequestId = 0;
-  
+
   // 分类人数查询防重入标记
   bool _isUpdatingCategoryOnlineCounts = false;
-  
+
   // 刷新频率限制：记录每个服务器的刷新时间戳
   final Map<String, List<DateTime>> _refreshHistory = {};
   static const int _maxRefreshPerMinute = 5; // 1分钟内最多刷新5次
   static const Duration _refreshWindow = Duration(minutes: 1);
-  
+
   // 缓存大小限制
   static const int _maxCacheSize = 50; // 最多缓存 50 个服务器的数据
 
@@ -71,23 +71,28 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     emit(state.copyWith(countdownResetKey: state.countdownResetKey + 1));
   }
 
-  Future<void> _onFetchList(ServerFetchList event, Emitter<ServerState> emit) async {
+  Future<void> _onFetchList(
+    ServerFetchList event,
+    Emitter<ServerState> emit,
+  ) async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
       LogService.d('开始加载服务器列表');
       final serverApi = ServerApi();
       final apiCategories = await serverApi.getServerList();
-      
+
       // 加载自定义分类
       final customCategories = await CustomServerService.loadCustomCategories();
-      
+
       // 合并分类：自定义分类置顶
       final allCategories = [...customCategories, ...apiCategories];
-      
+
       if (allCategories.isNotEmpty) {
         emit(state.copyWith(serverCategories: allCategories, isLoading: false));
-        LogService.i('成功加载 ${customCategories.length} 个自定义分类和 ${apiCategories.length} 个 API 分类');
-        
+        LogService.i(
+          '成功加载 ${customCategories.length} 个自定义分类和 ${apiCategories.length} 个 API 分类',
+        );
+
         // 移动端不自动选择第一个分类，让用户手动选择
         // 桌面端会在 UI 层处理自动选择逻辑
         add(ServerUpdateCategoryOnlineCounts());
@@ -100,32 +105,44 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     }
   }
 
-  Future<void> _onSelectCategory(ServerSelectCategory event, Emitter<ServerState> emit) async {
+  Future<void> _onSelectCategory(
+    ServerSelectCategory event,
+    Emitter<ServerState> emit,
+  ) async {
     // 如果是相同分类且服务器数量一致，跳过刷新（除非强制刷新）
     // 添加/删除服务器后，serverList 数量会变化，此时需要刷新
-    final isSameCategory = state.selectedCategory?.modelName == event.category.modelName;
-    final serverCountMatch = state.servers.length == event.category.serverList.length;
-    
+    final isSameCategory =
+        state.selectedCategory?.modelName == event.category.modelName;
+    final serverCountMatch =
+        state.servers.length == event.category.serverList.length;
+
     // 只有在相同分类且服务器数量一致且非强制刷新时才跳过
-    if (isSameCategory && serverCountMatch && state.servers.isNotEmpty && !event.forceRefresh) {
+    if (isSameCategory &&
+        serverCountMatch &&
+        state.servers.isNotEmpty &&
+        !event.forceRefresh) {
       return;
     }
-    
+
     // 切换分类时重置比分查询时间，确保新分类能立即获取比分
     if (!isSameCategory) {
       _lastScoreFetchTime = null;
     }
-    
+
     final requestId = ++_currentRequestId;
-    
+
     final servers = event.category.serverList.map((serverItem) {
       final address = serverItem.address ?? serverItem.serverAddress;
       // 从全局缓存恢复 mapRuntime 数据
       final cachedRuntime = address != null ? _mapRuntimeCache[address] : null;
-      final cachedLastFetched = address != null ? _mapRuntimeLastFetchedCache[address] : null;
+      final cachedLastFetched = address != null
+          ? _mapRuntimeLastFetchedCache[address]
+          : null;
       // 从全局缓存恢复失败计数（仅用于记录，不直接标记离线）
-      final cachedFailures = address != null ? (_failureCountCache[address] ?? 0) : 0;
-      
+      final cachedFailures = address != null
+          ? (_failureCountCache[address] ?? 0)
+          : 0;
+
       return ExtendedServerItem(
         serverItem: serverItem,
         isLoading: true,
@@ -138,42 +155,48 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         isOffline: false,
       );
     }).toList();
-    
+
     // 如果是空分类（自定义分类没有服务器），不显示加载状态
     final isEmptyCategory = servers.isEmpty;
-    
-    emit(state.copyWith(
-      selectedCategory: event.category,
-      servers: servers,
-      isLoadingServers: !isEmptyCategory, // 空分类不显示加载状态
-    ));
-    
+
+    emit(
+      state.copyWith(
+        selectedCategory: event.category,
+        servers: servers,
+        isLoadingServers: !isEmptyCategory, // 空分类不显示加载状态
+      ),
+    );
+
     _resetCountdown(emit);
-    
+
     // 只有非空分类才获取服务器信息
     if (!isEmptyCategory) {
       await _fetchServersInfo(requestId, emit);
     }
   }
 
-  Future<void> _onRefreshServers(ServerRefreshServers event, Emitter<ServerState> emit) async {
+  Future<void> _onRefreshServers(
+    ServerRefreshServers event,
+    Emitter<ServerState> emit,
+  ) async {
     // 如果没有选中分类或没有服务器，直接返回
     if (state.selectedCategory == null || state.servers.isEmpty) {
       return;
     }
-    
+
     final categoryName = state.selectedCategory!.modelName ?? '';
     // 如果正在加载，直接返回（避免重复请求）
     if (state.isCategoryLoading(categoryName)) {
       LogService.d('分类 $categoryName 正在加载中，跳过刷新');
       return;
     }
-    
+
     final requestId = ++_currentRequestId;
-    
-    final loadingCategories = Set<String>.from(state.loadingCategories)..add(categoryName);
+
+    final loadingCategories = Set<String>.from(state.loadingCategories)
+      ..add(categoryName);
     emit(state.copyWith(loadingCategories: loadingCategories));
-    
+
     // 异步执行，10秒超时，但需要等待完成以保持 emit 有效
     try {
       await _fetchServersInfo(requestId, emit).timeout(
@@ -189,58 +212,71 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       // 注意：即使 requestId 不匹配（用户切换了分类），也要清除当前分类的 loading 状态
       // 否则会导致该分类永远处于 loading 状态，无法再次刷新
       if (!emit.isDone) {
-        final updatedLoadingCategories = Set<String>.from(state.loadingCategories)..remove(categoryName);
+        final updatedLoadingCategories = Set<String>.from(
+          state.loadingCategories,
+        )..remove(categoryName);
         emit(state.copyWith(loadingCategories: updatedLoadingCategories));
       }
     }
   }
 
-  Future<void> _fetchServersInfo(int requestId, Emitter<ServerState> emit) async {
+  Future<void> _fetchServersInfo(
+    int requestId,
+    Emitter<ServerState> emit,
+  ) async {
     if (state.servers.isEmpty) return;
-    
+
     final serverApi = ServerApi();
-    
+
     // 并行获取所有服务器信息，每个服务器独立完成后立即更新 UI
     final futures = <Future<void>>[];
-    
+
     for (int i = 0; i < state.servers.length; i++) {
       final server = state.servers[i];
-      final address = server.serverItem.address ?? server.serverItem.serverAddress;
+      final address =
+          server.serverItem.address ?? server.serverItem.serverAddress;
       if (address == null) continue;
-      
+
       // 每个服务器独立异步加载
-      futures.add(_fetchSingleServerInfo(
-        address: address,
-        requestId: requestId,
-        serverApi: serverApi,
-        emit: emit,
-      ));
+      futures.add(
+        _fetchSingleServerInfo(
+          address: address,
+          requestId: requestId,
+          serverApi: serverApi,
+          emit: emit,
+        ),
+      );
     }
-    
+
     // 等待所有服务器加载完成
     await Future.wait(futures);
-    
+
     // 批量查询服务器比分数据（静默失败，不影响主流程）
     if (!emit.isDone && requestId == _currentRequestId) {
       await _fetchBatchScores(requestId, emit);
     }
-    
+
     if (!emit.isDone && requestId == _currentRequestId) {
       _updateCurrentCategoryOnlineCount(emit);
-      emit(state.copyWith(
-        isLoadingServers: false,
-        lastRefreshTime: DateTime.now(), // 记录刷新时间
-      ));
+      emit(
+        state.copyWith(
+          isLoadingServers: false,
+          lastRefreshTime: DateTime.now(), // 记录刷新时间
+        ),
+      );
     }
-    
+
     _clearRecentlyUpdatedAfterDelay(requestId);
   }
-  
+
   /// 批量获取服务器比分数据
-  /// 
+  ///
   /// 静默失败，不影响主流程
   /// 60 秒内不重复查询（比分变化频率低于服务器信息）
-  Future<void> _fetchBatchScores(int requestId, Emitter<ServerState> emit) async {
+  Future<void> _fetchBatchScores(
+    int requestId,
+    Emitter<ServerState> emit,
+  ) async {
     // 频率限制：距上次查询不到 60 秒则跳过
     if (_lastScoreFetchTime != null &&
         DateTime.now().difference(_lastScoreFetchTime!) < _scoreFetchInterval) {
@@ -252,40 +288,43 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       // 收集所有服务器地址
       final addresses = <String>[];
       for (final server in state.servers) {
-        final address = server.serverItem.address ?? server.serverItem.serverAddress;
+        final address =
+            server.serverItem.address ?? server.serverItem.serverAddress;
         if (address != null && address.isNotEmpty) {
           addresses.add(address);
         }
       }
-      
+
       if (addresses.isEmpty) return;
-      
+
       // 调用 ScoreApi 批量查询比分
       final scoreApi = ScoreApi();
       final scores = await scoreApi.batchGetScores(addresses);
-      
-      if (scores.isEmpty || emit.isDone || requestId != _currentRequestId) return;
-      
+
+      if (scores.isEmpty || emit.isDone || requestId != _currentRequestId)
+        return;
+
       // 将比分数据合并到 ExtendedServerItem
       final updatedServers = state.servers.map((server) {
-        final address = server.serverItem.address ?? server.serverItem.serverAddress;
+        final address =
+            server.serverItem.address ?? server.serverItem.serverAddress;
         if (address == null) return server;
-        
+
         final score = scores[address];
         if (score == null || score.ctScore == null || score.tScore == null) {
           return server;
         }
-        
+
         // 创建 TeamScores 并更新服务器（包含 dataQuality）
         final teamScores = TeamScores(
           ctScore: score.ctScore,
           tScore: score.tScore,
           dataQuality: score.dataQuality,
         );
-        
+
         return server.copyWith(teamScores: teamScores);
       }).toList();
-      
+
       if (!emit.isDone && requestId == _currentRequestId) {
         emit(state.copyWith(servers: updatedServers));
         _lastScoreFetchTime = DateTime.now();
@@ -296,7 +335,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       LogService.w('批量比分查询失败: $e');
     }
   }
-  
+
   /// 获取单个服务器信息（异步独立执行）
   Future<void> _fetchSingleServerInfo({
     required String address,
@@ -305,42 +344,44 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     required Emitter<ServerState> emit,
   }) async {
     if (requestId != _currentRequestId || emit.isDone) return;
-    
+
     try {
       final info = await _getServerInfo(address);
       if (requestId != _currentRequestId || emit.isDone) return;
-      
+
       // 通过地址查找当前服务器索引（并行更新时索引可能变化）
       final currentIndex = state.servers.indexWhere(
-        (s) => (s.serverItem.address ?? s.serverItem.serverAddress) == address
+        (s) => (s.serverItem.address ?? s.serverItem.serverAddress) == address,
       );
       if (currentIndex == -1) return;
-      
+
       final currentServer = state.servers[currentIndex];
-      
+
       if (info != null) {
         final newMap = info.map;
         final cachedMap = _serverMapCache[address];
         // 检测换图：与缓存的地图名比较
         // 过滤 graphics_settings 地图（服务器重启时的加载地图）
-        final mapChanged = cachedMap != null && 
-                           cachedMap != newMap && 
-                           newMap != 'graphics_settings';
-        final hasDataChanged = currentServer.serverData == null ||
+        final mapChanged =
+            cachedMap != null &&
+            cachedMap != newMap &&
+            newMap != 'graphics_settings';
+        final hasDataChanged =
+            currentServer.serverData == null ||
             currentServer.serverData!.players != info.players ||
             currentServer.serverData!.map != info.map;
-        
+
         // 更新地图缓存（graphics_settings 不更新缓存，保留原地图名）
         if (newMap != 'graphics_settings') {
           _serverMapCache[address] = newMap;
         }
-        
+
         // 如果换图了，清除该服务器的 runtime 缓存
         if (mapChanged) {
           _mapRuntimeCache.remove(address);
           _mapRuntimeLastFetchedCache.remove(address);
         }
-        
+
         // 成功获取数据，重置失败计数和离线状态
         _failureCountCache[address] = 0; // 更新全局缓存
         final updatedServer = currentServer.copyWith(
@@ -353,23 +394,26 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           isOffline: false,
           mapInfo: mapChanged ? null : currentServer.mapInfo,
           mapRuntime: mapChanged ? null : currentServer.mapRuntime,
-          mapRuntimeLastFetched: mapChanged ? null : currentServer.mapRuntimeLastFetched,
+          mapRuntimeLastFetched: mapChanged
+              ? null
+              : currentServer.mapRuntimeLastFetched,
           mapRuntimeError: mapChanged ? false : currentServer.mapRuntimeError,
         );
-        
+
         _updateServerByAddress(address, updatedServer, emit);
-        
+
         // graphics_settings 是服务器启动中的加载地图，不获取其背景图
         final isCustomServer = currentServer.serverItem.isCustom;
         final isValidMap = newMap != 'graphics_settings';
-        
+
         if (isValidMap) {
           // 需要获取背景图的情况：
           // 1. 换图了（mapChanged）
           // 2. 没有背景图数据
           // 3. 当前背景图对应的地图与新地图不同（从 graphics_settings 恢复或首次加载后地图变化）
           final currentMapInInfo = currentServer.serverData?.map;
-          final needFetchMapInfo = mapChanged || 
+          final needFetchMapInfo =
+              mapChanged ||
               currentServer.mapInfo == null ||
               (currentMapInInfo != null && currentMapInInfo != newMap);
           if (needFetchMapInfo) {
@@ -377,7 +421,10 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           }
           // 自定义服务器不获取 mapRuntime（需要 API 交互）
           // 只有换图或没有缓存的 runtime 时才重新获取
-          if (!isCustomServer && (mapChanged || (currentServer.mapRuntime == null && _mapRuntimeCache[address] == null))) {
+          if (!isCustomServer &&
+              (mapChanged ||
+                  (currentServer.mapRuntime == null &&
+                      _mapRuntimeCache[address] == null))) {
             _fetchMapRuntimeAsync(address, info.map, requestId, serverApi);
           }
         }
@@ -386,17 +433,21 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         final newFailureCount = currentServer.consecutiveFailures + 1;
         final isNowOffline = newFailureCount >= 3; // 连续失败3次判定为离线
         _failureCountCache[address] = newFailureCount; // 更新全局缓存
-        
-        _updateServerByAddress(address, currentServer.copyWith(
-          isLoading: false, 
-          hasError: true,
-          consecutiveFailures: newFailureCount,
-          isOffline: isNowOffline,
-          clearServerData: isNowOffline,  // 离线时清除服务器数据
-          clearMapRuntime: isNowOffline,  // 离线时清除地图运行时间
-          clearMapInfo: isNowOffline,     // 离线时清除地图信息（背景图）
-        ), emit);
-        
+
+        _updateServerByAddress(
+          address,
+          currentServer.copyWith(
+            isLoading: false,
+            hasError: true,
+            consecutiveFailures: newFailureCount,
+            isOffline: isNowOffline,
+            clearServerData: isNowOffline, // 离线时清除服务器数据
+            clearMapRuntime: isNowOffline, // 离线时清除地图运行时间
+            clearMapInfo: isNowOffline, // 离线时清除地图信息（背景图）
+          ),
+          emit,
+        );
+
         // 离线时清除 runtime 缓存，但保留 _serverMapCache 以便恢复后检测换图
         if (isNowOffline) {
           _mapRuntimeCache.remove(address);
@@ -406,7 +457,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     } catch (e) {
       LogService.e('加载服务器数据失败 ($address): $e', e);
       final currentIndex = state.servers.indexWhere(
-        (s) => (s.serverItem.address ?? s.serverItem.serverAddress) == address
+        (s) => (s.serverItem.address ?? s.serverItem.serverAddress) == address,
       );
       if (currentIndex != -1 && !emit.isDone) {
         final currentServer = state.servers[currentIndex];
@@ -414,17 +465,21 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         final newFailureCount = currentServer.consecutiveFailures + 1;
         final isNowOffline = newFailureCount >= 3;
         _failureCountCache[address] = newFailureCount; // 更新全局缓存
-        
-        _updateServerByAddress(address, currentServer.copyWith(
-          isLoading: false, 
-          hasError: true,
-          consecutiveFailures: newFailureCount,
-          isOffline: isNowOffline,
-          clearServerData: isNowOffline,
-          clearMapRuntime: isNowOffline,
-          clearMapInfo: isNowOffline,
-        ), emit);
-        
+
+        _updateServerByAddress(
+          address,
+          currentServer.copyWith(
+            isLoading: false,
+            hasError: true,
+            consecutiveFailures: newFailureCount,
+            isOffline: isNowOffline,
+            clearServerData: isNowOffline,
+            clearMapRuntime: isNowOffline,
+            clearMapInfo: isNowOffline,
+          ),
+          emit,
+        );
+
         if (isNowOffline) {
           _mapRuntimeCache.remove(address);
           _mapRuntimeLastFetchedCache.remove(address);
@@ -432,84 +487,139 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       }
     }
   }
-  
+
   /// 通过地址更新服务器（并行安全）
-  void _updateServerByAddress(String address, ExtendedServerItem server, Emitter<ServerState> emit) {
+  void _updateServerByAddress(
+    String address,
+    ExtendedServerItem server,
+    Emitter<ServerState> emit,
+  ) {
     if (emit.isDone) return;
     final index = state.servers.indexWhere(
-      (s) => (s.serverItem.address ?? s.serverItem.serverAddress) == address
+      (s) => (s.serverItem.address ?? s.serverItem.serverAddress) == address,
     );
     if (index == -1) return;
     final servers = List<ExtendedServerItem>.from(state.servers);
     servers[index] = server;
     emit(state.copyWith(servers: servers));
   }
-  
+
   void _clearRecentlyUpdatedAfterDelay(int requestId) {
     Future.delayed(const Duration(seconds: 2), () {
-      if (requestId == _currentRequestId && state.servers.any((s) => s.recentlyUpdated)) {
+      if (requestId == _currentRequestId &&
+          state.servers.any((s) => s.recentlyUpdated)) {
         add(ServerClearRecentlyUpdated(requestId));
       }
     });
   }
 
-  void _onClearRecentlyUpdated(ServerClearRecentlyUpdated event, Emitter<ServerState> emit) {
+  void _onClearRecentlyUpdated(
+    ServerClearRecentlyUpdated event,
+    Emitter<ServerState> emit,
+  ) {
     if (event.requestId != _currentRequestId) return;
-    final updatedServers = state.servers.map((s) => s.recentlyUpdated ? s.copyWith(recentlyUpdated: false) : s).toList();
+    final updatedServers = state.servers
+        .map((s) => s.recentlyUpdated ? s.copyWith(recentlyUpdated: false) : s)
+        .toList();
     emit(state.copyWith(servers: updatedServers));
   }
 
-  void _onUpdateSingleServer(ServerUpdateSingleServer event, Emitter<ServerState> emit) {
-    final index = state.servers.indexWhere((s) => (s.serverItem.address ?? s.serverItem.serverAddress) == event.address);
+  void _onUpdateSingleServer(
+    ServerUpdateSingleServer event,
+    Emitter<ServerState> emit,
+  ) {
+    final index = state.servers.indexWhere(
+      (s) =>
+          (s.serverItem.address ?? s.serverItem.serverAddress) == event.address,
+    );
     if (index == -1) return;
-    
+
     final servers = List<ExtendedServerItem>.from(state.servers);
     final current = servers[index];
-    
+
     // 更新全局缓存
     if (event.mapRuntime != null) {
       _mapRuntimeCache[event.address] = event.mapRuntime!;
-      _mapRuntimeLastFetchedCache[event.address] = DateTime.now().millisecondsSinceEpoch;
+      _mapRuntimeLastFetchedCache[event.address] =
+          DateTime.now().millisecondsSinceEpoch;
       _trimCacheIfNeeded();
     }
-    
+
     servers[index] = current.copyWith(
       pingInfo: event.pingInfo ?? current.pingInfo,
       mapInfo: event.mapInfo ?? current.mapInfo,
       mapRuntime: event.mapRuntime ?? current.mapRuntime,
-      mapRuntimeLastFetched: event.mapRuntime != null ? DateTime.now().millisecondsSinceEpoch : current.mapRuntimeLastFetched,
+      mapRuntimeLastFetched: event.mapRuntime != null
+          ? DateTime.now().millisecondsSinceEpoch
+          : current.mapRuntimeLastFetched,
       mapRuntimeError: event.mapRuntimeError ?? current.mapRuntimeError,
     );
     emit(state.copyWith(servers: servers));
   }
 
-  void _fetchMapInfoAsync(String address, String mapName, int requestId, ServerApi serverApi) {
-    serverApi.getMapInfo(mapName).then((mapInfo) {
-      if (requestId == _currentRequestId && mapInfo != null) {
-        add(ServerUpdateSingleServer(address: address, mapInfo: mapInfo));
-      }
-    }).catchError((e) {
-      LogService.e('加载地图信息失败 ($mapName): $e', e);
-    });
+  void _fetchMapInfoAsync(
+    String address,
+    String mapName,
+    int requestId,
+    ServerApi serverApi,
+  ) {
+    serverApi
+        .getMapInfo(mapName)
+        .then((mapInfo) {
+          if (requestId == _currentRequestId && mapInfo != null) {
+            add(ServerUpdateSingleServer(address: address, mapInfo: mapInfo));
+          }
+        })
+        .catchError((e) {
+          LogService.e('加载地图信息失败 ($mapName): $e', e);
+        });
   }
 
-  void _fetchMapRuntimeAsync(String address, String mapName, int requestId, ServerApi serverApi) {
-    serverApi.getMapRuntime(address, mapName).then((mapRuntime) {
-      if (requestId == _currentRequestId) {
-        add(ServerUpdateSingleServer(address: address, mapRuntime: mapRuntime, mapRuntimeError: mapRuntime == null));
-      }
-    }).catchError((e) {
-      LogService.e('加载地图运行时间失败 ($address, $mapName): $e', e);
-      add(ServerUpdateSingleServer(address: address, mapRuntimeError: true));
-    });
+  void _fetchMapRuntimeAsync(
+    String address,
+    String mapName,
+    int requestId,
+    ServerApi serverApi,
+  ) {
+    serverApi
+        .getMapRuntime(address, mapName)
+        .then((mapRuntime) {
+          if (requestId == _currentRequestId) {
+            add(
+              ServerUpdateSingleServer(
+                address: address,
+                mapRuntime: mapRuntime,
+                mapRuntimeError: mapRuntime == null,
+              ),
+            );
+          }
+        })
+        .catchError((e) {
+          LogService.e('加载地图运行时间失败 ($address, $mapName): $e', e);
+          add(
+            ServerUpdateSingleServer(address: address, mapRuntimeError: true),
+          );
+        });
   }
 
-  Future<void> _onClearCategory(ServerClearCategory event, Emitter<ServerState> emit) async {
-    emit(state.copyWith(clearSelectedCategory: true, servers: [], isLoadingServers: false));
+  Future<void> _onClearCategory(
+    ServerClearCategory event,
+    Emitter<ServerState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        clearSelectedCategory: true,
+        servers: [],
+        isLoadingServers: false,
+      ),
+    );
     _resetCountdown(emit);
   }
 
-  Future<void> _onRefresh(ServerRefresh event, Emitter<ServerState> emit) async {
+  Future<void> _onRefresh(
+    ServerRefresh event,
+    Emitter<ServerState> emit,
+  ) async {
     await _onFetchList(ServerFetchList(), emit);
     if (state.selectedCategory != null) {
       final updatedCategory = state.serverCategories.firstWhere(
@@ -520,12 +630,18 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     }
   }
 
-  void _onStartPeriodicRefresh(ServerStartPeriodicRefresh event, Emitter<ServerState> emit) {
+  void _onStartPeriodicRefresh(
+    ServerStartPeriodicRefresh event,
+    Emitter<ServerState> emit,
+  ) {
     // 只设置状态，刷新时机由 UI 倒计时进度条的 onComplete 控制
     emit(state.copyWith(isCountdownActive: true));
   }
 
-  void _onStopPeriodicRefresh(ServerStopPeriodicRefresh event, Emitter<ServerState> emit) {
+  void _onStopPeriodicRefresh(
+    ServerStopPeriodicRefresh event,
+    Emitter<ServerState> emit,
+  ) {
     emit(state.copyWith(isCountdownActive: false));
   }
 
@@ -538,7 +654,10 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     emit(state.copyWith(isPaused: false));
   }
 
-  void _onLifecycleChanged(ServerLifecycleChanged event, Emitter<ServerState> emit) {
+  void _onLifecycleChanged(
+    ServerLifecycleChanged event,
+    Emitter<ServerState> emit,
+  ) {
     if (event.isResumed) {
       add(ServerResumeRefresh());
     } else {
@@ -555,61 +674,79 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     }
   }
 
-  Future<void> _onConnect(ServerConnect event, Emitter<ServerState> emit) async {
-    final address = event.server.serverItem.address ?? event.server.serverItem.serverAddress;
+  Future<void> _onConnect(
+    ServerConnect event,
+    Emitter<ServerState> emit,
+  ) async {
+    final address =
+        event.server.serverItem.address ??
+        event.server.serverItem.serverAddress;
     if (address == null) return;
 
     final gameLauncher = GameLauncherService();
     // 获取服务器的游戏类型
     final gameType = event.server.serverData?.gameType;
-    
+
     try {
       final result = event.password?.isNotEmpty == true
-          ? await gameLauncher.connectToPasswordServer(address, event.password!, gameType: gameType)
+          ? await gameLauncher.connectToPasswordServer(
+              address,
+              event.password!,
+              gameType: gameType,
+            )
           : await gameLauncher.connectToServer(address, gameType: gameType);
-      
+
       if (result.success) {
         LogService.i('连接命令已发送: ${result.message}');
-        emit(state.copyWith(
-          successMessage: result.message,
-          needCsgoLegacy: false,
-          needManualLaunch: false,
-        ));
+        emit(
+          state.copyWith(
+            successMessage: result.message,
+            needCsgoLegacy: false,
+            needManualLaunch: false,
+          ),
+        );
       } else {
         LogService.w('连接失败: ${result.error}');
-        emit(state.copyWith(
-          error: result.error,
-          needCsgoLegacy: result.needCsgoLegacy,
-          needManualLaunch: result.needManualLaunch,
-        ));
+        emit(
+          state.copyWith(
+            error: result.error,
+            needCsgoLegacy: result.needCsgoLegacy,
+            needManualLaunch: result.needManualLaunch,
+          ),
+        );
       }
     } catch (e) {
       LogService.e('连接服务器异常: $e', e);
-      emit(state.copyWith(
-        error: '连接服务器异常',
-        needCsgoLegacy: false,
-        needManualLaunch: false,
-      ));
+      emit(
+        state.copyWith(
+          error: '连接服务器异常',
+          needCsgoLegacy: false,
+          needManualLaunch: false,
+        ),
+      );
     }
   }
 
-  Future<void> _onUpdateCategoryOnlineCounts(ServerUpdateCategoryOnlineCounts event, Emitter<ServerState> emit) async {
+  Future<void> _onUpdateCategoryOnlineCounts(
+    ServerUpdateCategoryOnlineCounts event,
+    Emitter<ServerState> emit,
+  ) async {
     if (state.serverCategories.isEmpty) return;
-    
+
     // 防重入：如果正在更新，直接返回，避免多次触发导致人数翻倍
     if (_isUpdatingCategoryOnlineCounts) return;
     _isUpdatingCategoryOnlineCounts = true;
-    
+
     try {
       final isFirstLoad = !state.hasEverLoadedOnlineCounts;
       if (isFirstLoad) emit(state.copyWith(isLoadingOnlineCounts: true));
-      
+
       // 记录当前选中分类名
       final selectedCategoryName = state.selectedCategory?.modelName;
-      
+
       // 从现有的 categoryOnlineCounts 复制，保留当前选中分类的人数
       final currentCounts = Map<String, int>.from(state.categoryOnlineCounts);
-      
+
       // 为所有分类初始化默认值 0（如果还没有记录）
       for (final category in state.serverCategories) {
         final categoryName = category.modelName ?? '';
@@ -617,44 +754,55 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           currentCounts[categoryName] = 0;
         }
       }
-      
+
       // 先 emit 初始化的数据（显示 0）
       if (!emit.isDone && isFirstLoad) {
-        emit(state.copyWith(
-          categoryOnlineCounts: currentCounts,
-          isLoadingOnlineCounts: true,
-          hasEverLoadedOnlineCounts: true,
-        ));
+        emit(
+          state.copyWith(
+            categoryOnlineCounts: currentCounts,
+            isLoadingOnlineCounts: true,
+            hasEverLoadedOnlineCounts: true,
+          ),
+        );
       }
-      
+
       // 创建共享的 Map 用于收集所有分类的人数（避免并发覆盖）
       final sharedCounts = Map<String, int>.from(currentCounts);
-      
+
       final futures = <Future<void>>[];
-      
+
       for (final category in state.serverCategories) {
         final categoryName = category.modelName ?? '';
-        
+
         // 跳过当前选中的分类，由 _updateCurrentCategoryOnlineCount 负责更新
         // 避免与 _fetchServersInfo 并发查询导致数据覆盖
         if (categoryName == selectedCategoryName) {
           // 如果已有服务器数据，立即更新；否则保留现有值，等待 _fetchServersInfo 完成
           if (state.servers.any((s) => s.serverData != null)) {
-            int totalOnline = state.servers.fold(0, (sum, s) => sum + (s.serverData?.players ?? 0));
+            int totalOnline = state.servers.fold(
+              0,
+              (sum, s) => sum + (s.serverData?.players ?? 0),
+            );
             sharedCounts[categoryName] = totalOnline;
             if (!emit.isDone) {
-              emit(state.copyWith(categoryOnlineCounts: Map<String, int>.from(sharedCounts)));
+              emit(
+                state.copyWith(
+                  categoryOnlineCounts: Map<String, int>.from(sharedCounts),
+                ),
+              );
             }
           }
           continue;
         }
-        
+
         // 其他分类：异步查询人数，每个完成后立即更新
-        futures.add(_fetchCategoryOnlineCountWithEmit(category, sharedCounts, emit));
+        futures.add(
+          _fetchCategoryOnlineCountWithEmit(category, sharedCounts, emit),
+        );
       }
-      
+
       if (futures.isNotEmpty) await Future.wait(futures);
-      
+
       // 所有分类查询完成，关闭加载状态
       if (!emit.isDone) {
         emit(state.copyWith(isLoadingOnlineCounts: false));
@@ -667,32 +815,32 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   /// 获取单个分类的在线人数（查询完成后立即更新状态）
   /// 使用共享的 countsMap 避免并发覆盖问题
   Future<void> _fetchCategoryOnlineCountWithEmit(
-    ServerCategory category, 
+    ServerCategory category,
     Map<String, int> countsMap,
     Emitter<ServerState> emit,
   ) async {
     final categoryName = category.modelName ?? '';
-    
+
     try {
       // 收集所有服务器人数
       final futures = <Future<int>>[];
-      
+
       for (final serverItem in category.serverList) {
         final address = serverItem.address ?? serverItem.serverAddress;
         if (address != null) {
           futures.add(_fetchSingleServerPlayerCount(address));
         }
       }
-      
+
       int totalPlayers = 0;
       if (futures.isNotEmpty) {
         final results = await Future.wait(futures);
         totalPlayers = results.fold(0, (sum, count) => sum + count);
       }
-      
+
       // 更新共享 Map（线程安全，因为 Dart 是单线程）
       countsMap[categoryName] = totalPlayers;
-      
+
       // 查询完成后立即 emit
       // 从 state.categoryOnlineCounts 获取最新值，只更新当前分类
       // 这样可以保留其他分类的最新人数（包括当前选中分类）
@@ -706,7 +854,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       LogService.e('获取分类在线人数失败 ($categoryName): $e', e);
     }
   }
-  
+
   /// 获取单个服务器人数（返回人数，不直接更新状态）
   Future<int> _fetchSingleServerPlayerCount(String address) async {
     try {
@@ -720,8 +868,12 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   void _updateCurrentCategoryOnlineCount(Emitter<ServerState> emit) {
     if (state.selectedCategory == null) return;
     final categoryName = state.selectedCategory!.modelName ?? '';
-    int totalOnline = state.servers.fold(0, (sum, s) => sum + (s.serverData?.players ?? 0));
-    final updatedCounts = Map<String, int>.from(state.categoryOnlineCounts)..[categoryName] = totalOnline;
+    int totalOnline = state.servers.fold(
+      0,
+      (sum, s) => sum + (s.serverData?.players ?? 0),
+    );
+    final updatedCounts = Map<String, int>.from(state.categoryOnlineCounts)
+      ..[categoryName] = totalOnline;
     emit(state.copyWith(categoryOnlineCounts: updatedCounts));
   }
 
@@ -753,7 +905,11 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     final parts = address.split(':');
     if (parts.length != 2) return [];
     try {
-      return await SourceServerService.getServerPlayers(parts[0], int.parse(parts[1]), timeout: 3000);
+      return await SourceServerService.getServerPlayers(
+        parts[0],
+        int.parse(parts[1]),
+        timeout: 3000,
+      );
     } catch (e) {
       LogService.e('获取玩家列表失败 ($address): $e', e);
       return [];
@@ -761,79 +917,117 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   }
 
   // ========== 自定义分类和服务器管理 ==========
-  
-  Future<void> _onAddCategory(ServerAddCategory event, Emitter<ServerState> emit) async {
+
+  Future<void> _onAddCategory(
+    ServerAddCategory event,
+    Emitter<ServerState> emit,
+  ) async {
     try {
       // 检查是否与现有分类（包括 API 分类）重名
       final existingCategory = state.serverCategories.firstWhere(
         (c) => c.modelName == event.categoryName,
         orElse: () => ServerCategory(modelName: null, serverList: []),
       );
-      
+
       if (existingCategory.modelName != null) {
         emit(state.copyWith(error: '分类 "${event.categoryName}" 已存在'));
         LogService.w('添加自定义分类失败: 分类名已存在');
         return;
       }
-      
-      final newCategory = await CustomServerService.addCustomCategory(event.categoryName);
-      
+
+      final newCategory = await CustomServerService.addCustomCategory(
+        event.categoryName,
+      );
+
       // 将新分类插入到列表开头（自定义分类置顶）
-      final customCategories = state.serverCategories.where((c) => c.isCustom).toList();
-      final apiCategories = state.serverCategories.where((c) => !c.isCustom).toList();
-      final updatedCategories = [...customCategories, newCategory, ...apiCategories];
-      
-      emit(state.copyWith(
-        serverCategories: updatedCategories,
-        successMessage: '分类 "${event.categoryName}" 已添加',
-      ));
+      final customCategories = state.serverCategories
+          .where((c) => c.isCustom)
+          .toList();
+      final apiCategories = state.serverCategories
+          .where((c) => !c.isCustom)
+          .toList();
+      final updatedCategories = [
+        ...customCategories,
+        newCategory,
+        ...apiCategories,
+      ];
+
+      emit(
+        state.copyWith(
+          serverCategories: updatedCategories,
+          successMessage: '分类 "${event.categoryName}" 已添加',
+        ),
+      );
       LogService.i('添加自定义分类成功: ${event.categoryName}');
     } catch (e) {
       LogService.e('添加自定义分类失败: $e', e);
-      emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '添加分类失败')));
+      emit(
+        state.copyWith(
+          error: ErrorUtils.getErrorMessage(e, defaultMessage: '添加分类失败'),
+        ),
+      );
     }
   }
 
-  Future<void> _onAddServer(ServerAddServer event, Emitter<ServerState> emit) async {
+  Future<void> _onAddServer(
+    ServerAddServer event,
+    Emitter<ServerState> emit,
+  ) async {
     try {
       final updatedCategory = await CustomServerService.addServerToCategory(
         event.categoryName,
         event.serverAddress,
         nickname: event.nickname,
       );
-      
+
       // 更新分类列表
       final categoryIndex = state.serverCategories.indexWhere(
         (c) => c.modelName == event.categoryName,
       );
-      
+
       if (categoryIndex != -1) {
-        final updatedCategories = List<ServerCategory>.from(state.serverCategories);
+        final updatedCategories = List<ServerCategory>.from(
+          state.serverCategories,
+        );
         updatedCategories[categoryIndex] = updatedCategory;
-        
+
         // 如果当前选中的是该分类，同时更新 selectedCategory
-        final isCurrentCategory = state.selectedCategory?.modelName == event.categoryName;
-        
-        emit(state.copyWith(
-          serverCategories: updatedCategories,
-          selectedCategory: isCurrentCategory ? updatedCategory : state.selectedCategory,
-          successMessage: '服务器 "${event.serverAddress}" 已添加',
-        ));
-        
+        final isCurrentCategory =
+            state.selectedCategory?.modelName == event.categoryName;
+
+        emit(
+          state.copyWith(
+            serverCategories: updatedCategories,
+            selectedCategory: isCurrentCategory
+                ? updatedCategory
+                : state.selectedCategory,
+            successMessage: '服务器 "${event.serverAddress}" 已添加',
+          ),
+        );
+
         // 如果当前选中的是该分类，刷新服务器列表（强制刷新）
         if (isCurrentCategory) {
           add(ServerSelectCategory(updatedCategory, forceRefresh: true));
         }
-        
-        LogService.i('添加服务器成功: ${event.serverAddress} -> ${event.categoryName}');
+
+        LogService.i(
+          '添加服务器成功: ${event.serverAddress} -> ${event.categoryName}',
+        );
       }
     } catch (e) {
       LogService.e('添加服务器失败: $e', e);
-      emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '添加服务器失败')));
+      emit(
+        state.copyWith(
+          error: ErrorUtils.getErrorMessage(e, defaultMessage: '添加服务器失败'),
+        ),
+      );
     }
   }
 
-  Future<void> _onDeleteCategory(ServerDeleteCategory event, Emitter<ServerState> emit) async {
+  Future<void> _onDeleteCategory(
+    ServerDeleteCategory event,
+    Emitter<ServerState> emit,
+  ) async {
     try {
       // 先取消该分类下所有服务器的换图监控
       final monitorService = MapChangeMonitorService();
@@ -841,7 +1035,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         (c) => c.modelName == event.categoryName,
         orElse: () => ServerCategory(modelName: '', serverList: []),
       );
-      
+
       for (final server in categoryToDelete.serverList) {
         final address = server.address ?? server.serverAddress;
         if (address != null) {
@@ -850,49 +1044,59 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           _mapRuntimeCache.remove(address);
           _mapRuntimeLastFetchedCache.remove(address);
           _serverMapCache.remove(address);
-          
+
           if (monitorService.isMonitoring(address)) {
             await monitorService.removeMonitor(address);
             LogService.i('删除分类时取消换图监控: $address');
           }
         }
       }
-      
+
       await CustomServerService.deleteCustomCategory(event.categoryName);
-      
+
       final updatedCategories = state.serverCategories
           .where((c) => c.modelName != event.categoryName)
           .toList();
-      
+
       // 清理该分类的在线人数记录
-      final updatedOnlineCounts = Map<String, int>.from(state.categoryOnlineCounts)
-        ..remove(event.categoryName);
-      
-      emit(state.copyWith(
-        serverCategories: updatedCategories,
-        categoryOnlineCounts: updatedOnlineCounts,
-        successMessage: '分类 "${event.categoryName}" 已删除',
-      ));
-      
+      final updatedOnlineCounts = Map<String, int>.from(
+        state.categoryOnlineCounts,
+      )..remove(event.categoryName);
+
+      emit(
+        state.copyWith(
+          serverCategories: updatedCategories,
+          categoryOnlineCounts: updatedOnlineCounts,
+          successMessage: '分类 "${event.categoryName}" 已删除',
+        ),
+      );
+
       // 如果删除的是当前选中的分类，清除选中状态
       if (state.selectedCategory?.modelName == event.categoryName) {
         add(ServerClearCategory());
       }
-      
+
       LogService.i('删除自定义分类成功: ${event.categoryName}');
     } catch (e) {
       LogService.e('删除自定义分类失败: $e', e);
-      emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '删除分类失败')));
+      emit(
+        state.copyWith(
+          error: ErrorUtils.getErrorMessage(e, defaultMessage: '删除分类失败'),
+        ),
+      );
     }
   }
 
-  Future<void> _onRenameCategory(ServerRenameCategory event, Emitter<ServerState> emit) async {
+  Future<void> _onRenameCategory(
+    ServerRenameCategory event,
+    Emitter<ServerState> emit,
+  ) async {
     try {
       final updatedCategory = await CustomServerService.renameCustomCategory(
         event.oldName,
         event.newName,
       );
-      
+
       // 更新分类列表
       final updatedCategories = state.serverCategories.map((c) {
         if (c.modelName == event.oldName) {
@@ -900,116 +1104,153 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         }
         return c;
       }).toList();
-      
+
       // 更新在线人数记录的 key
-      final updatedOnlineCounts = Map<String, int>.from(state.categoryOnlineCounts);
+      final updatedOnlineCounts = Map<String, int>.from(
+        state.categoryOnlineCounts,
+      );
       if (updatedOnlineCounts.containsKey(event.oldName)) {
         final count = updatedOnlineCounts.remove(event.oldName);
         if (count != null) {
           updatedOnlineCounts[event.newName] = count;
         }
       }
-      
+
       // 如果重命名的是当前选中的分类，更新选中状态
       ServerCategory? newSelectedCategory = state.selectedCategory;
       if (state.selectedCategory?.modelName == event.oldName) {
         newSelectedCategory = updatedCategory;
       }
-      
-      emit(state.copyWith(
-        serverCategories: updatedCategories,
-        categoryOnlineCounts: updatedOnlineCounts,
-        selectedCategory: newSelectedCategory,
-        successMessage: '分类已重命名为 "${event.newName}"',
-      ));
-      
+
+      emit(
+        state.copyWith(
+          serverCategories: updatedCategories,
+          categoryOnlineCounts: updatedOnlineCounts,
+          selectedCategory: newSelectedCategory,
+          successMessage: '分类已重命名为 "${event.newName}"',
+        ),
+      );
+
       LogService.i('重命名自定义分类成功: ${event.oldName} -> ${event.newName}');
     } catch (e) {
       LogService.e('重命名自定义分类失败: $e', e);
-      emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '重命名分类失败')));
+      emit(
+        state.copyWith(
+          error: ErrorUtils.getErrorMessage(e, defaultMessage: '重命名分类失败'),
+        ),
+      );
     }
   }
 
-  Future<void> _onDeleteServer(ServerDeleteServer event, Emitter<ServerState> emit) async {
+  Future<void> _onDeleteServer(
+    ServerDeleteServer event,
+    Emitter<ServerState> emit,
+  ) async {
     try {
       // 清理该服务器的所有缓存
       _failureCountCache.remove(event.serverAddress);
       _mapRuntimeCache.remove(event.serverAddress);
       _mapRuntimeLastFetchedCache.remove(event.serverAddress);
       _serverMapCache.remove(event.serverAddress);
-      
+
       // 取消该服务器的换图监控（如果有）
       final monitorService = MapChangeMonitorService();
       if (monitorService.isMonitoring(event.serverAddress)) {
         await monitorService.removeMonitor(event.serverAddress);
         LogService.i('删除服务器时取消换图监控: ${event.serverAddress}');
       }
-      
-      final updatedCategory = await CustomServerService.deleteServerFromCategory(
-        event.categoryName,
-        event.serverAddress,
-      );
-      
+
+      final updatedCategory =
+          await CustomServerService.deleteServerFromCategory(
+            event.categoryName,
+            event.serverAddress,
+          );
+
       // 更新分类列表
       final categoryIndex = state.serverCategories.indexWhere(
         (c) => c.modelName == event.categoryName,
       );
-      
+
       if (categoryIndex != -1) {
-        final updatedCategories = List<ServerCategory>.from(state.serverCategories);
+        final updatedCategories = List<ServerCategory>.from(
+          state.serverCategories,
+        );
         updatedCategories[categoryIndex] = updatedCategory;
-        
+
         // 重新计算该分类的在线人数（排除被删除的服务器）
-        final updatedOnlineCounts = Map<String, int>.from(state.categoryOnlineCounts);
+        final updatedOnlineCounts = Map<String, int>.from(
+          state.categoryOnlineCounts,
+        );
         if (state.selectedCategory?.modelName == event.categoryName) {
           // 从当前服务器列表中排除被删除的服务器，重新计算人数
           final remainingServers = state.servers.where(
-            (s) => (s.serverItem.address ?? s.serverItem.serverAddress) != event.serverAddress
+            (s) =>
+                (s.serverItem.address ?? s.serverItem.serverAddress) !=
+                event.serverAddress,
           );
-          final newCount = remainingServers.fold(0, (sum, s) => sum + (s.serverData?.players ?? 0));
+          final newCount = remainingServers.fold(
+            0,
+            (sum, s) => sum + (s.serverData?.players ?? 0),
+          );
           updatedOnlineCounts[event.categoryName] = newCount;
         }
-        
-        emit(state.copyWith(
-          serverCategories: updatedCategories,
-          categoryOnlineCounts: updatedOnlineCounts,
-          successMessage: '服务器 "${event.serverAddress}" 已删除',
-        ));
-        
+
+        emit(
+          state.copyWith(
+            serverCategories: updatedCategories,
+            categoryOnlineCounts: updatedOnlineCounts,
+            successMessage: '服务器 "${event.serverAddress}" 已删除',
+          ),
+        );
+
         // 如果当前选中的是该分类，刷新服务器列表（强制刷新）
         if (state.selectedCategory?.modelName == event.categoryName) {
           add(ServerSelectCategory(updatedCategory, forceRefresh: true));
         }
-        
-        LogService.i('删除服务器成功: ${event.serverAddress} <- ${event.categoryName}');
+
+        LogService.i(
+          '删除服务器成功: ${event.serverAddress} <- ${event.categoryName}',
+        );
       }
     } catch (e) {
       LogService.e('删除服务器失败: $e', e);
-      emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '删除服务器失败')));
+      emit(
+        state.copyWith(
+          error: ErrorUtils.getErrorMessage(e, defaultMessage: '删除服务器失败'),
+        ),
+      );
     }
   }
 
-  void _onResetCountdown(ServerResetCountdown event, Emitter<ServerState> emit) {
+  void _onResetCountdown(
+    ServerResetCountdown event,
+    Emitter<ServerState> emit,
+  ) {
     // 重置倒计时：先关闭再开启，并递增 key 触发 UI 重建
-    emit(state.copyWith(
-      isCountdownActive: true,
-      countdownResetKey: state.countdownResetKey + 1,
-    ));
+    emit(
+      state.copyWith(
+        isCountdownActive: true,
+        countdownResetKey: state.countdownResetKey + 1,
+      ),
+    );
   }
 
-  Future<void> _onRefreshMapCache(ServerRefreshMapCache event, Emitter<ServerState> emit) async {
+  Future<void> _onRefreshMapCache(
+    ServerRefreshMapCache event,
+    Emitter<ServerState> emit,
+  ) async {
     // 防抖：如果该地图正在刷新，直接返回
     if (state.isMapRefreshing(event.address)) {
       return;
     }
-    
+
     // 频率限制检查
     final now = DateTime.now();
     final history = _refreshHistory[event.address] ?? [];
-    
+
     // 清理1分钟之前的记录
     history.removeWhere((time) => now.difference(time) > _refreshWindow);
-    
+
     // 检查是否超过限制
     if (history.length >= _maxRefreshPerMinute) {
       LogService.w('刷新频率超限: ${event.address} (${history.length}次/分钟)');
@@ -1023,24 +1264,25 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       });
       return;
     }
-    
+
     // 记录本次刷新时间
     history.add(now);
     _refreshHistory[event.address] = history;
-    
+
     // 添加到刷新集合
-    final refreshingMaps = Set<String>.from(state.refreshingMaps)..add(event.address);
+    final refreshingMaps = Set<String>.from(state.refreshingMaps)
+      ..add(event.address);
     emit(state.copyWith(refreshingMaps: refreshingMaps));
-    
+
     // 记录开始时间
     final startTime = DateTime.now();
-    
+
     try {
       final serverApi = ServerApi();
-      
+
       // 直接从 API 获取最新地图信息（不清除缓存）
       final mapInfo = await serverApi.refreshMapInfo(event.mapName);
-      
+
       if (mapInfo != null && !emit.isDone) {
         // 更新服务器的地图信息
         add(ServerUpdateSingleServer(address: event.address, mapInfo: mapInfo));
@@ -1050,56 +1292,61 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       // 确保至少显示1秒的加载动画
       final elapsed = DateTime.now().difference(startTime);
       final remainingTime = const Duration(seconds: 1) - elapsed;
-      
+
       if (remainingTime.inMilliseconds > 0) {
         await Future.delayed(remainingTime);
       }
-      
+
       // 移除刷新状态
       if (!emit.isDone) {
-        final updatedRefreshingMaps = Set<String>.from(state.refreshingMaps)..remove(event.address);
+        final updatedRefreshingMaps = Set<String>.from(state.refreshingMaps)
+          ..remove(event.address);
         emit(state.copyWith(refreshingMaps: updatedRefreshingMaps));
       }
     }
   }
-  
+
   /// 清理过大的缓存，保留最近使用的数据
   void _trimCacheIfNeeded() {
     if (_mapRuntimeCache.length <= _maxCacheSize) return;
-    
+
     // 按最后获取时间排序，移除最旧的条目
     final sortedEntries = _mapRuntimeLastFetchedCache.entries.toList()
       ..sort((a, b) => a.value.compareTo(b.value));
-    
-    final toRemove = sortedEntries.take(_mapRuntimeCache.length - _maxCacheSize).map((e) => e.key).toList();
-    
+
+    final toRemove = sortedEntries
+        .take(_mapRuntimeCache.length - _maxCacheSize)
+        .map((e) => e.key)
+        .toList();
+
     for (final key in toRemove) {
       _mapRuntimeCache.remove(key);
       _mapRuntimeLastFetchedCache.remove(key);
       _serverMapCache.remove(key);
       _failureCountCache.remove(key);
     }
-    
+
     LogService.d('清理 ServerBloc 缓存: 移除 ${toRemove.length} 条旧数据');
   }
-  
+
   /// 切换分类 tab
   void _onSwitchTab(ServerSwitchTab event, Emitter<ServerState> emit) {
     emit(state.copyWith(selectedTabIndex: event.tabIndex));
-    
+
     // 检查当前选中的分类是否在新 tab 中
     final currentCategory = state.selectedCategory;
     if (currentCategory != null) {
-      final isInNewTab = event.tabIndex == 0 
-          ? !currentCategory.isCustom  // 默认 tab：检查是否为 API 分类
-          : currentCategory.isCustom;  // 自定义 tab：检查是否为自定义分类
-      
+      final isInNewTab = event.tabIndex == 0
+          ? !currentCategory
+                .isCustom // 默认 tab：检查是否为 API 分类
+          : currentCategory.isCustom; // 自定义 tab：检查是否为自定义分类
+
       // 如果当前分类不在新 tab 中，自动选择新 tab 的第一个分类
       if (!isInNewTab) {
         final newTabCategories = event.tabIndex == 0
             ? state.serverCategories.where((c) => !c.isCustom).toList()
             : state.serverCategories.where((c) => c.isCustom).toList();
-        
+
         if (newTabCategories.isNotEmpty) {
           add(ServerSelectCategory(newTabCategories.first));
         } else {
@@ -1109,46 +1356,53 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       }
     }
   }
-  
+
   /// 编辑自定义服务器地址
-  Future<void> _onEditServer(ServerEditServer event, Emitter<ServerState> emit) async {
+  Future<void> _onEditServer(
+    ServerEditServer event,
+    Emitter<ServerState> emit,
+  ) async {
     try {
       // 清理旧地址的缓存
       _failureCountCache.remove(event.oldServerAddress);
       _mapRuntimeCache.remove(event.oldServerAddress);
       _mapRuntimeLastFetchedCache.remove(event.oldServerAddress);
       _serverMapCache.remove(event.oldServerAddress);
-      
+
       // 取消旧地址的换图监控（如果有）
       final monitorService = MapChangeMonitorService();
       if (monitorService.isMonitoring(event.oldServerAddress)) {
         await monitorService.removeMonitor(event.oldServerAddress);
         LogService.i('编辑服务器时取消换图监控: ${event.oldServerAddress}');
       }
-      
+
       final updatedCategory = await CustomServerService.editServerInCategory(
         event.categoryName,
         event.oldServerAddress,
         event.newServerAddress,
         nickname: event.nickname,
       );
-      
+
       // 更新分类列表
       final categoryIndex = state.serverCategories.indexWhere(
         (c) => c.modelName == event.categoryName,
       );
-      
+
       if (categoryIndex != -1) {
-        final updatedCategories = List<ServerCategory>.from(state.serverCategories);
+        final updatedCategories = List<ServerCategory>.from(
+          state.serverCategories,
+        );
         updatedCategories[categoryIndex] = updatedCategory;
-        
+
         // 如果当前选中的是该分类，只更新被编辑的服务器，而不是刷新整个列表
         if (state.selectedCategory?.modelName == event.categoryName) {
           final servers = List<ExtendedServerItem>.from(state.servers);
           final serverIndex = servers.indexWhere(
-            (s) => (s.serverItem.address ?? s.serverItem.serverAddress) == event.oldServerAddress,
+            (s) =>
+                (s.serverItem.address ?? s.serverItem.serverAddress) ==
+                event.oldServerAddress,
           );
-          
+
           if (serverIndex != -1) {
             // 创建新的 ServerItem，保留备注名
             final newServerItem = ServerItem(
@@ -1157,7 +1411,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
               isCustom: true,
               nickname: event.nickname,
             );
-            
+
             // 创建新的 ExtendedServerItem，标记为加载中以触发数据获取
             servers[serverIndex] = ExtendedServerItem(
               serverItem: newServerItem,
@@ -1166,146 +1420,191 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
               mapInfo: null,
               mapRuntime: null,
             );
-            
-            emit(state.copyWith(
-              serverCategories: updatedCategories,
-              selectedCategory: updatedCategory,
-              servers: servers,
-              successMessage: '服务器已更新',
-            ));
-            
+
+            emit(
+              state.copyWith(
+                serverCategories: updatedCategories,
+                selectedCategory: updatedCategory,
+                servers: servers,
+                successMessage: '服务器已更新',
+              ),
+            );
+
             // 异步获取被编辑服务器的数据（不阻塞 UI）
             _fetchEditedServerData(event.newServerAddress, serverIndex);
           } else {
-            emit(state.copyWith(
-              serverCategories: updatedCategories,
-              selectedCategory: updatedCategory,
-              successMessage: '服务器已更新',
-            ));
+            emit(
+              state.copyWith(
+                serverCategories: updatedCategories,
+                selectedCategory: updatedCategory,
+                successMessage: '服务器已更新',
+              ),
+            );
           }
         } else {
-          emit(state.copyWith(
-            serverCategories: updatedCategories,
-            successMessage: '服务器已更新',
-          ));
+          emit(
+            state.copyWith(
+              serverCategories: updatedCategories,
+              successMessage: '服务器已更新',
+            ),
+          );
         }
-        
-        LogService.i('编辑服务器成功: ${event.oldServerAddress} -> ${event.newServerAddress}');
+
+        LogService.i(
+          '编辑服务器成功: ${event.oldServerAddress} -> ${event.newServerAddress}',
+        );
       }
     } catch (e) {
       LogService.e('编辑服务器失败: $e', e);
-      emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '编辑服务器失败')));
+      emit(
+        state.copyWith(
+          error: ErrorUtils.getErrorMessage(e, defaultMessage: '编辑服务器失败'),
+        ),
+      );
     }
   }
-  
+
   /// 异步获取被编辑服务器的数据
   void _fetchEditedServerData(String serverAddress, int serverIndex) async {
     try {
       // 获取服务器数据
       final info = await _getServerInfo(serverAddress);
-      
+
       // 检查服务器是否还在列表中且地址匹配
       if (serverIndex >= state.servers.length) return;
       final currentServer = state.servers[serverIndex];
-      if ((currentServer.serverItem.address ?? currentServer.serverItem.serverAddress) != serverAddress) return;
-      
+      if ((currentServer.serverItem.address ??
+              currentServer.serverItem.serverAddress) !=
+          serverAddress)
+        return;
+
       if (info != null) {
         final serverData = _convertSourceServerInfo(info);
-        
+
         // 使用 add 发送更新事件，而不是直接 emit（因为这是异步方法）
-        add(ServerUpdateEditedServer(
-          serverAddress: serverAddress,
-          serverData: serverData,
-        ));
-        
+        add(
+          ServerUpdateEditedServer(
+            serverAddress: serverAddress,
+            serverData: serverData,
+          ),
+        );
+
         // 获取地图信息
         final mapName = info.map;
         if (mapName != 'graphics_settings') {
           final serverApi = ServerApi();
-          serverApi.getMapInfo(mapName).then((mapInfo) {
-            if (mapInfo != null) {
-              add(ServerUpdateSingleServer(address: serverAddress, mapInfo: mapInfo));
-            }
-          }).catchError((e) {
-            LogService.e('获取地图信息失败: $e', e);
-          });
+          serverApi
+              .getMapInfo(mapName)
+              .then((mapInfo) {
+                if (mapInfo != null) {
+                  add(
+                    ServerUpdateSingleServer(
+                      address: serverAddress,
+                      mapInfo: mapInfo,
+                    ),
+                  );
+                }
+              })
+              .catchError((e) {
+                LogService.e('获取地图信息失败: $e', e);
+              });
         }
       } else {
         // 获取失败
-        add(ServerUpdateEditedServer(
-          serverAddress: serverAddress,
-          serverData: null,
-          hasError: true,
-        ));
+        add(
+          ServerUpdateEditedServer(
+            serverAddress: serverAddress,
+            serverData: null,
+            hasError: true,
+          ),
+        );
       }
     } catch (e) {
       LogService.e('获取服务器数据失败: $serverAddress, $e', e);
-      add(ServerUpdateEditedServer(
-        serverAddress: serverAddress,
-        serverData: null,
-        hasError: true,
-      ));
+      add(
+        ServerUpdateEditedServer(
+          serverAddress: serverAddress,
+          serverData: null,
+          hasError: true,
+        ),
+      );
     }
   }
-  
+
   /// 处理被编辑服务器的数据更新
-  void _onUpdateEditedServer(ServerUpdateEditedServer event, Emitter<ServerState> emit) {
+  void _onUpdateEditedServer(
+    ServerUpdateEditedServer event,
+    Emitter<ServerState> emit,
+  ) {
     final index = state.servers.indexWhere(
-      (s) => (s.serverItem.address ?? s.serverItem.serverAddress) == event.serverAddress,
+      (s) =>
+          (s.serverItem.address ?? s.serverItem.serverAddress) ==
+          event.serverAddress,
     );
     if (index == -1) return;
-    
+
     final servers = List<ExtendedServerItem>.from(state.servers);
     final current = servers[index];
-    
+
     servers[index] = current.copyWith(
       isLoading: false,
       serverData: event.serverData,
       hasError: event.hasError,
     );
-    
+
     emit(state.copyWith(servers: servers));
   }
-  
+
   /// 重新排序自定义服务器
-  Future<void> _onReorderServers(ServerReorderServers event, Emitter<ServerState> emit) async {
+  Future<void> _onReorderServers(
+    ServerReorderServers event,
+    Emitter<ServerState> emit,
+  ) async {
     // 先进行乐观更新（立即更新 UI），避免与 ReorderableListView 动画冲突
     if (state.selectedCategory?.modelName == event.categoryName) {
       final servers = List<ExtendedServerItem>.from(state.servers);
-      if (event.oldIndex >= 0 && event.oldIndex < servers.length &&
-          event.newIndex >= 0 && event.newIndex < servers.length) {
+      if (event.oldIndex >= 0 &&
+          event.oldIndex < servers.length &&
+          event.newIndex >= 0 &&
+          event.newIndex < servers.length) {
         final item = servers.removeAt(event.oldIndex);
         servers.insert(event.newIndex, item);
-        
+
         // 立即更新服务器列表顺序
         emit(state.copyWith(servers: servers));
       }
     }
-    
+
     // 然后异步保存到存储
     try {
-      final updatedCategory = await CustomServerService.reorderServersInCategory(
-        event.categoryName,
-        event.oldIndex,
-        event.newIndex,
-      );
-      
+      final updatedCategory =
+          await CustomServerService.reorderServersInCategory(
+            event.categoryName,
+            event.oldIndex,
+            event.newIndex,
+          );
+
       // 更新分类列表
       final categoryIndex = state.serverCategories.indexWhere(
         (c) => c.modelName == event.categoryName,
       );
-      
+
       if (categoryIndex != -1) {
-        final updatedCategories = List<ServerCategory>.from(state.serverCategories);
+        final updatedCategories = List<ServerCategory>.from(
+          state.serverCategories,
+        );
         updatedCategories[categoryIndex] = updatedCategory;
-        
-        emit(state.copyWith(
-          serverCategories: updatedCategories,
-          selectedCategory: state.selectedCategory?.modelName == event.categoryName 
-              ? updatedCategory 
-              : state.selectedCategory,
-        ));
-        
+
+        emit(
+          state.copyWith(
+            serverCategories: updatedCategories,
+            selectedCategory:
+                state.selectedCategory?.modelName == event.categoryName
+                ? updatedCategory
+                : state.selectedCategory,
+          ),
+        );
+
         LogService.i('重新排序服务器成功: ${event.oldIndex} -> ${event.newIndex}');
       }
     } catch (e) {
@@ -1313,70 +1612,101 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       // 如果保存失败，回滚 UI 状态
       if (state.selectedCategory?.modelName == event.categoryName) {
         final servers = List<ExtendedServerItem>.from(state.servers);
-        if (event.newIndex >= 0 && event.newIndex < servers.length &&
-            event.oldIndex >= 0 && event.oldIndex <= servers.length) {
+        if (event.newIndex >= 0 &&
+            event.newIndex < servers.length &&
+            event.oldIndex >= 0 &&
+            event.oldIndex <= servers.length) {
           final item = servers.removeAt(event.newIndex);
           servers.insert(event.oldIndex, item);
-          emit(state.copyWith(
-            servers: servers,
-            error: ErrorUtils.getErrorMessage(e, defaultMessage: '排序失败'),
-          ));
+          emit(
+            state.copyWith(
+              servers: servers,
+              error: ErrorUtils.getErrorMessage(e, defaultMessage: '排序失败'),
+            ),
+          );
         } else {
-          emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '排序失败')));
+          emit(
+            state.copyWith(
+              error: ErrorUtils.getErrorMessage(e, defaultMessage: '排序失败'),
+            ),
+          );
         }
       } else {
-        emit(state.copyWith(error: ErrorUtils.getErrorMessage(e, defaultMessage: '排序失败')));
+        emit(
+          state.copyWith(
+            error: ErrorUtils.getErrorMessage(e, defaultMessage: '排序失败'),
+          ),
+        );
       }
     }
   }
-  
+
   /// 强制刷新：重置所有状态，用于手动点击刷新时恢复正常
-  Future<void> _onForceRefresh(ServerForceRefresh event, Emitter<ServerState> emit) async {
+  Future<void> _onForceRefresh(
+    ServerForceRefresh event,
+    Emitter<ServerState> emit,
+  ) async {
     if (state.selectedCategory == null) return;
-    
+
     // 1. 强制清除所有 loading 状态
     final clearedLoadingCategories = <String>{};
-    
+
     // 2. 递增 requestId，取消所有进行中的请求
     final requestId = ++_currentRequestId;
-    
+
     // 3. 重置防重入标记
     _isUpdatingCategoryOnlineCounts = false;
-    
-    // 4. 清除当前分类所有服务器的失败计数缓存（解决离线状态残留问题）
+
+    // 4. 重置比分查询时间，确保强制刷新后能立即重新获取比分
+    _lastScoreFetchTime = null;
+
+    // 5. 清除当前分类所有服务器的失败计数缓存（解决离线状态残留问题）
     for (final server in state.servers) {
-      final address = server.serverItem.address ?? server.serverItem.serverAddress;
+      final address =
+          server.serverItem.address ?? server.serverItem.serverAddress;
       if (address != null) {
         _failureCountCache.remove(address);
       }
     }
-    
-    // 5. 重置服务器列表为加载状态
+
+    // 6. 重置服务器列表为加载状态
+    // 保留 serverData/mapInfo/teamScores，避免卡片切换为骨架屏
+    // 骨架屏切换会导致 MouseRegion 的 hover 状态丢失（Flutter widget 重建问题）
     final servers = state.servers.map((server) {
-      final address = server.serverItem.address ?? server.serverItem.serverAddress;
+      final address =
+          server.serverItem.address ?? server.serverItem.serverAddress;
       return ExtendedServerItem(
         serverItem: server.serverItem,
         isLoading: true,
+        // 保留现有的服务器数据和地图信息（避免骨架屏闪烁）
+        serverData: server.serverData,
+        mapInfo: server.mapInfo,
         // 保留缓存的数据
         mapRuntime: address != null ? _mapRuntimeCache[address] : null,
-        mapRuntimeLastFetched: address != null ? _mapRuntimeLastFetchedCache[address] : null,
+        mapRuntimeLastFetched: address != null
+            ? _mapRuntimeLastFetchedCache[address]
+            : null,
         mapRuntimeError: false,
         consecutiveFailures: 0,
         isOffline: false,
+        // 保留比分数据，新数据到来后会覆盖
+        teamScores: server.teamScores,
       );
     }).toList();
-    
+
     // 5. 发射重置后的状态
-    emit(state.copyWith(
-      servers: servers,
-      isLoadingServers: servers.isNotEmpty,
-      loadingCategories: clearedLoadingCategories,
-      error: null,
-      successMessage: null,
-    ));
-    
+    emit(
+      state.copyWith(
+        servers: servers,
+        isLoadingServers: servers.isNotEmpty,
+        loadingCategories: clearedLoadingCategories,
+        error: null,
+        successMessage: null,
+      ),
+    );
+
     LogService.i('强制刷新：已重置所有状态，开始重新加载服务器数据');
-    
+
     // 6. 重新获取服务器信息
     if (servers.isNotEmpty) {
       try {
@@ -1389,15 +1719,12 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       } catch (e) {
         LogService.e('强制刷新异常: $e', e);
         if (!emit.isDone) {
-          emit(state.copyWith(
-            isLoadingServers: false,
-            error: '刷新失败，请重试',
-          ));
+          emit(state.copyWith(isLoadingServers: false, error: '刷新失败，请重试'));
         }
       }
     }
   }
-  
+
   @override
   Future<void> close() {
     // 清理所有缓存
