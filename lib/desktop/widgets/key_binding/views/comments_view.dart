@@ -17,9 +17,9 @@ import '../../../../core/widgets/rich_text_viewer.dart';
 /// 配置评论视图（复用 issue 评论模式）
 class ConfigCommentsView extends StatefulWidget {
   final KeyConfig config;
-  
+
   const ConfigCommentsView({super.key, required this.config});
-  
+
   @override
   State<ConfigCommentsView> createState() => _ConfigCommentsViewState();
 }
@@ -28,25 +28,40 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
   final QuillController _commentController = QuillController.basic();
   final GlobalKey<RichTextEditorState> _editorKey = GlobalKey();
   List<String> _commentImageUrls = [];
-  
+
   @override
   void initState() {
     super.initState();
     // 加载评论列表
-    context.read<KeyBindingBloc>().add(KeyBindingLoadComments(configId: widget.config.id));
+    context.read<KeyBindingBloc>().add(
+      KeyBindingLoadComments(configId: widget.config.id),
+    );
   }
-  
+
+  @override
+  void didUpdateWidget(covariant ConfigCommentsView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 当配置 ID 变化时，重新加载评论
+    if (oldWidget.config.id != widget.config.id) {
+      context.read<KeyBindingBloc>().add(
+        KeyBindingLoadComments(configId: widget.config.id),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _commentController.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<KeyBindingBloc, KeyBindingState>(
-      listenWhen: (prev, curr) => 
-        prev.isSubmittingComment && !curr.isSubmittingComment && curr.successMessage != null,
+      listenWhen: (prev, curr) =>
+          prev.isSubmittingComment &&
+          !curr.isSubmittingComment &&
+          curr.successMessage != null,
       listener: (context, state) {
         // 评论提交成功后清空编辑器
         if (state.successMessage?.contains('评论') == true) {
@@ -57,7 +72,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
       },
       builder: (context, state) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -67,7 +82,11 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF1E293B) : Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB)),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFE5E7EB),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,11 +94,18 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                   _buildHeader(state),
                   const SizedBox(height: 16),
                   if (state.isLoadingComments)
-                    const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
                   else if (state.comments.isEmpty)
                     _buildEmptyState()
                   else
-                    ...state.comments.map((comment) => _buildCommentItem(comment)),
+                    ...state.comments.map(
+                      (comment) => _buildCommentItem(comment),
+                    ),
                 ],
               ),
             ),
@@ -93,7 +119,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
       },
     );
   }
-  
+
   Widget _buildHeader(KeyBindingState state) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
@@ -109,15 +135,21 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
         const Spacer(),
         if (!state.isLoadingComments)
           IconButton(
-            onPressed: () => context.read<KeyBindingBloc>().add(KeyBindingLoadComments(configId: widget.config.id)),
-            icon: Icon(Icons.refresh, size: 18, color: isDark ? Colors.white54 : Colors.grey[600]),
+            onPressed: () => context.read<KeyBindingBloc>().add(
+              KeyBindingLoadComments(configId: widget.config.id),
+            ),
+            icon: Icon(
+              Icons.refresh,
+              size: 18,
+              color: isDark ? Colors.white54 : Colors.grey[600],
+            ),
             tooltip: '刷新评论',
             splashRadius: 18,
           ),
       ],
     );
   }
-  
+
   Widget _buildEmptyState() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
@@ -125,19 +157,23 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
         padding: const EdgeInsets.all(20),
         child: Text(
           '暂无评论',
-          style: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+          style: TextStyle(
+            color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+          ),
         ),
       ),
     );
   }
-  
+
   Widget _buildCommentItem(KeyConfigComment comment) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6)),
+          bottom: BorderSide(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
+          ),
         ),
       ),
       child: Row(
@@ -145,10 +181,19 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
         children: [
           CircleAvatar(
             radius: 18,
-            backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
-            backgroundImage: comment.authorAvatar != null ? NetworkImage(comment.authorAvatar!) : null,
+            backgroundColor: isDark
+                ? const Color(0xFF334155)
+                : const Color(0xFFE5E7EB),
+            backgroundImage: comment.authorAvatar != null
+                ? NetworkImage(comment.authorAvatar!)
+                : null,
             child: comment.authorAvatar == null
-                ? Text(comment.authorName.isNotEmpty ? comment.authorName[0].toUpperCase() : '?', style: const TextStyle(fontSize: 14))
+                ? Text(
+                    comment.authorName.isNotEmpty
+                        ? comment.authorName[0].toUpperCase()
+                        : '?',
+                    style: const TextStyle(fontSize: 14),
+                  )
                 : null,
           ),
           const SizedBox(width: 12),
@@ -160,20 +205,39 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                   children: [
                     Text(
                       comment.authorName,
-                      style: TextStyle(fontWeight: FontWeight.w500, color: isDark ? Colors.white70 : const Color(0xFF374151)),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: isDark
+                            ? Colors.white70
+                            : const Color(0xFF374151),
+                      ),
                     ),
                     if (comment.isAdmin) ...[
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                        decoration: BoxDecoration(color: const Color(0xFF0080FF), borderRadius: BorderRadius.circular(4)),
-                        child: const Text('管理员', style: TextStyle(color: Colors.white, fontSize: 10)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0080FF),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          '管理员',
+                          style: TextStyle(color: Colors.white, fontSize: 10),
+                        ),
                       ),
                     ],
                     const SizedBox(width: 8),
                     Text(
                       Formatters.formatRelativeTime(comment.createdAt),
-                      style: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF9CA3AF), fontSize: 12),
+                      style: TextStyle(
+                        color: isDark
+                            ? Colors.white38
+                            : const Color(0xFF9CA3AF),
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -181,12 +245,22 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                 // 使用 RichTextViewer 显示评论内容（与 issue 一致）
                 RichTextViewer(
                   content: comment.content,
-                  textStyle: TextStyle(fontSize: 14, height: 1.6, color: isDark ? Colors.white70 : const Color(0xFF374151)),
+                  textStyle: TextStyle(
+                    fontSize: 14,
+                    height: 1.6,
+                    color: isDark ? Colors.white70 : const Color(0xFF374151),
+                  ),
                   compact: true,
                 ),
                 if (comment.images.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  ImageGrid(imageUrls: comment.images, imageWidth: 120, imageHeight: 90, spacing: 8, borderRadius: 6),
+                  ImageGrid(
+                    imageUrls: comment.images,
+                    imageWidth: 120,
+                    imageHeight: 90,
+                    spacing: 8,
+                    borderRadius: 6,
+                  ),
                 ],
               ],
             ),
@@ -195,46 +269,61 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
       ),
     );
   }
-  
+
   Widget _buildCommentInput(KeyBindingState state) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final authState = context.watch<AuthBloc>().state;
-    
+
     if (!authState.isAuthenticated) {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1E293B) : Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB)),
+          border: Border.all(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(MdiIcons.loginVariant, size: 16, color: isDark ? Colors.white54 : Colors.grey[600]),
+            Icon(
+              MdiIcons.loginVariant,
+              size: 16,
+              color: isDark ? Colors.white54 : Colors.grey[600],
+            ),
             const SizedBox(width: 8),
             Text(
               '登录后可以发表评论',
-              style: TextStyle(fontSize: 13, color: isDark ? Colors.white54 : Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.white54 : Colors.grey[600],
+              ),
             ),
           ],
         ),
       );
     }
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '发表评论',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: isDark ? Colors.white70 : const Color(0xFF374151)),
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: isDark ? Colors.white70 : const Color(0xFF374151),
+            ),
           ),
           const SizedBox(height: 12),
           // 使用 RichTextEditor（紧凑模式，适合侧边栏宽度）
@@ -246,10 +335,11 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
               hintText: '写下你的评论...',
               maxLength: 200,
               maxImages: 3,
-              compactMode: true,  // 紧凑模式，简化工具栏
+              compactMode: true, // 紧凑模式，简化工具栏
               draftId: null,
               enableDraftManualSave: false,
-              onImagesChanged: (urls) => setState(() => _commentImageUrls = urls),
+              onImagesChanged: (urls) =>
+                  setState(() => _commentImageUrls = urls),
             ),
           ),
           const SizedBox(height: 12),
@@ -261,10 +351,20 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0080FF),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                 ),
                 child: state.isSubmittingComment
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Text('发表评论'),
               ),
             ],
@@ -273,21 +373,23 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
       ),
     );
   }
-  
+
   void _submitComment() {
     final plainText = _commentController.document.toPlainText().trim();
     if (plainText.isEmpty) {
       ToastUtils.showWarning(context, '请输入评论内容');
       return;
     }
-    
+
     // 使用 QuillDeltaCodec 编码富文本内容（与 issue 一致）
     final content = QuillDeltaCodec.encode(_commentController.document);
-    
-    context.read<KeyBindingBloc>().add(KeyBindingAddComment(
-      configId: widget.config.id,
-      content: content,
-      images: _commentImageUrls.isNotEmpty ? _commentImageUrls : null,
-    ));
+
+    context.read<KeyBindingBloc>().add(
+      KeyBindingAddComment(
+        configId: widget.config.id,
+        content: content,
+        images: _commentImageUrls.isNotEmpty ? _commentImageUrls : null,
+      ),
+    );
   }
 }
