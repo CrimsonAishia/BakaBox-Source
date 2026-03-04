@@ -27,7 +27,11 @@ class ConfigCommentsView extends StatefulWidget {
 class _ConfigCommentsViewState extends State<ConfigCommentsView> {
   final QuillController _commentController = QuillController.basic();
   final GlobalKey<RichTextEditorState> _editorKey = GlobalKey();
+  final GlobalKey _commentInputKey = GlobalKey();
   List<String> _commentImageUrls = [];
+
+  // 回复相关
+  KeyConfigComment? _replyToComment;
 
   @override
   void initState() {
@@ -41,11 +45,12 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
   @override
   void didUpdateWidget(covariant ConfigCommentsView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 当配置 ID 变化时，重新加载评论
+    // 当配置 ID 变化时，重新加载评论并清除回复状态
     if (oldWidget.config.id != widget.config.id) {
       context.read<KeyBindingBloc>().add(
         KeyBindingLoadComments(configId: widget.config.id),
       );
+      setState(() => _replyToComment = null);
     }
   }
 
@@ -53,6 +58,30 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
   void dispose() {
     _commentController.dispose();
     super.dispose();
+  }
+
+  void _setReplyTo(KeyConfigComment comment) {
+    setState(() {
+      _replyToComment = comment;
+    });
+    // 滚动到评论输入区域
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = _commentInputKey.currentContext;
+      if (context != null) {
+        Scrollable.ensureVisible(
+          context,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          alignment: 0.1,
+        );
+      }
+    });
+  }
+
+  void _cancelReply() {
+    setState(() {
+      _replyToComment = null;
+    });
   }
 
   @override
@@ -63,11 +92,14 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
           !curr.isSubmittingComment &&
           curr.successMessage != null,
       listener: (context, state) {
-        // 评论提交成功后清空编辑器
+        // 评论提交成功后清空编辑器和回复状态
         if (state.successMessage?.contains('评论') == true) {
           _commentController.clear();
           _editorKey.currentState?.clearImages();
-          setState(() => _commentImageUrls = []);
+          setState(() {
+            _commentImageUrls = [];
+            _replyToComment = null;
+          });
         }
       },
       builder: (context, state) {
@@ -104,7 +136,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                     _buildEmptyState()
                   else
                     ...state.comments.map(
-                      (comment) => _buildCommentItem(comment),
+                      (comment) => _buildCommentItem(comment, state.comments),
                     ),
                 ],
               ),
@@ -112,7 +144,10 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
             // 评论输入区域（仅已通过的配置显示）
             if (widget.config.isApproved) ...[
               const SizedBox(height: 16),
-              _buildCommentInput(state),
+              Container(
+                key: _commentInputKey,
+                child: _buildCommentInput(state),
+              ),
             ],
           ],
         );
@@ -165,104 +200,276 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
     );
   }
 
-  Widget _buildCommentItem(KeyConfigComment comment) {
+  Widget _buildCommentItem(
+    KeyConfigComment comment,
+    List<KeyConfigComment> allComments,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isReplyTarget = _replyToComment?.id == comment.id;
+    // 查找被回复的评论
+    final replyTarget = comment.replyToId != null && comment.replyToId! > 0
+        ? allComments.where((c) => c.id == comment.replyToId).firstOrNull
+        : null;
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
+        color: isReplyTarget
+            ? (isDark
+                  ? const Color(0xFF0080FF).withValues(alpha: 0.08)
+                  : const Color(0xFFEFF6FF))
+            : null,
         border: Border(
           bottom: BorderSide(
             color: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
           ),
         ),
+        borderRadius: isReplyTarget ? BorderRadius.circular(8) : null,
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: isDark
-                ? const Color(0xFF334155)
-                : const Color(0xFFE5E7EB),
-            backgroundImage: comment.authorAvatar != null
-                ? NetworkImage(comment.authorAvatar!)
-                : null,
-            child: comment.authorAvatar == null
-                ? Text(
-                    comment.authorName.isNotEmpty
-                        ? comment.authorName[0].toUpperCase()
-                        : '?',
-                    style: const TextStyle(fontSize: 14),
-                  )
-                : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      comment.authorName,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: isDark
-                            ? Colors.white70
-                            : const Color(0xFF374151),
-                      ),
-                    ),
-                    if (comment.isAdmin) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0080FF),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          '管理员',
-                          style: TextStyle(color: Colors.white, fontSize: 10),
+      child: Padding(
+        padding: isReplyTarget
+            ? const EdgeInsets.symmetric(horizontal: 8)
+            : EdgeInsets.zero,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: isDark
+                  ? const Color(0xFF334155)
+                  : const Color(0xFFE5E7EB),
+              backgroundImage: comment.authorAvatar != null
+                  ? NetworkImage(comment.authorAvatar!)
+                  : null,
+              child: comment.authorAvatar == null
+                  ? Text(
+                      comment.authorName.isNotEmpty
+                          ? comment.authorName[0].toUpperCase()
+                          : '?',
+                      style: const TextStyle(fontSize: 14),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        comment.authorName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: isDark
+                              ? Colors.white70
+                              : const Color(0xFF374151),
                         ),
                       ),
+                      if (comment.isAdmin) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0080FF),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            '管理员',
+                            style: TextStyle(color: Colors.white, fontSize: 10),
+                          ),
+                        ),
+                      ],
+                      if (replyTarget != null) ...[
+                        const SizedBox(width: 6),
+                        Icon(
+                          MdiIcons.arrowRightThin,
+                          size: 14,
+                          color: isDark
+                              ? Colors.white38
+                              : const Color(0xFF9CA3AF),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          replyTarget.authorName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF0080FF),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(width: 8),
+                      Text(
+                        Formatters.formatRelativeTime(comment.createdAt),
+                        style: TextStyle(
+                          color: isDark
+                              ? Colors.white38
+                              : const Color(0xFF9CA3AF),
+                          fontSize: 12,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (widget.config.isApproved)
+                        _buildReplyButton(comment, isDark),
                     ],
-                    const SizedBox(width: 8),
-                    Text(
-                      Formatters.formatRelativeTime(comment.createdAt),
-                      style: TextStyle(
-                        color: isDark
-                            ? Colors.white38
-                            : const Color(0xFF9CA3AF),
-                        fontSize: 12,
-                      ),
+                  ),
+                  if (replyTarget != null) ...[
+                    const SizedBox(height: 6),
+                    _buildReplyQuote(replyTarget, isDark),
+                  ],
+                  const SizedBox(height: 8),
+                  // 使用 RichTextViewer 显示评论内容（与 issue 一致）
+                  RichTextViewer(
+                    content: comment.content,
+                    textStyle: TextStyle(
+                      fontSize: 14,
+                      height: 1.6,
+                      color: isDark ? Colors.white70 : const Color(0xFF374151),
+                    ),
+                    compact: true,
+                  ),
+                  if (comment.images.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    ImageGrid(
+                      imageUrls: comment.images,
+                      imageWidth: 120,
+                      imageHeight: 90,
+                      spacing: 8,
+                      borderRadius: 6,
                     ),
                   ],
-                ),
-                const SizedBox(height: 8),
-                // 使用 RichTextViewer 显示评论内容（与 issue 一致）
-                RichTextViewer(
-                  content: comment.content,
-                  textStyle: TextStyle(
-                    fontSize: 14,
-                    height: 1.6,
-                    color: isDark ? Colors.white70 : const Color(0xFF374151),
-                  ),
-                  compact: true,
-                ),
-                if (comment.images.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  ImageGrid(
-                    imageUrls: comment.images,
-                    imageWidth: 120,
-                    imageHeight: 90,
-                    spacing: 8,
-                    borderRadius: 6,
-                  ),
                 ],
-              ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 回复按钮
+  Widget _buildReplyButton(KeyConfigComment comment, bool isDark) {
+    final isActive = _replyToComment?.id == comment.id;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          if (isActive) {
+            _cancelReply();
+          } else {
+            _setReplyTo(comment);
+          }
+        },
+        borderRadius: BorderRadius.circular(4),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                MdiIcons.replyOutline,
+                size: 14,
+                color: isActive
+                    ? const Color(0xFF0080FF)
+                    : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                isActive ? '取消回复' : '回复',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isActive
+                      ? const Color(0xFF0080FF)
+                      : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 被回复评论的引用块
+  Widget _buildReplyQuote(KeyConfigComment replyTarget, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF334155).withValues(alpha: 0.5)
+            : const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(6),
+        border: Border(
+          left: BorderSide(
+            width: 3,
+            color: isDark ? const Color(0xFF475569) : const Color(0xFFD1D5DB),
+          ),
+        ),
+      ),
+      child: Text(
+        replyTarget.content.length > 80
+            ? '${replyTarget.content.substring(0, 80)}...'
+            : replyTarget.content,
+        style: TextStyle(
+          fontSize: 12,
+          color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+          height: 1.4,
+        ),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
+  /// 评论输入区域上方的回复提示条
+  Widget _buildReplyBar(bool isDark) {
+    if (_replyToComment == null) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF0080FF).withValues(alpha: 0.1)
+            : const Color(0xFFEFF6FF),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(MdiIcons.replyOutline, size: 16, color: const Color(0xFF0080FF)),
+          const SizedBox(width: 8),
+          Text(
+            '回复 ',
+            style: TextStyle(
+              fontSize: 13,
+              color: isDark ? Colors.white70 : const Color(0xFF374151),
+            ),
+          ),
+          Text(
+            _replyToComment!.authorName,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF0080FF),
+            ),
+          ),
+          const Spacer(),
+          InkWell(
+            onTap: _cancelReply,
+            borderRadius: BorderRadius.circular(4),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Icon(
+                Icons.close,
+                size: 16,
+                color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+              ),
             ),
           ),
         ],
@@ -318,7 +525,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '发表评论',
+            _replyToComment != null ? '回复评论' : '发表评论',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
@@ -326,13 +533,17 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
             ),
           ),
           const SizedBox(height: 12),
+          // 回复提示条
+          _buildReplyBar(isDark),
           // 使用 RichTextEditor（紧凑模式，适合侧边栏宽度）
           SizedBox(
             height: 300,
             child: RichTextEditor(
               key: _editorKey,
               controller: _commentController,
-              hintText: '写下你的评论...',
+              hintText: _replyToComment != null
+                  ? '回复 ${_replyToComment!.authorName}...'
+                  : '写下你的评论...',
               maxLength: 200,
               maxImages: 3,
               compactMode: true, // 紧凑模式，简化工具栏
@@ -365,7 +576,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('发表评论'),
+                    : Text(_replyToComment != null ? '回复' : '发表评论'),
               ),
             ],
           ),
@@ -389,6 +600,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
         configId: widget.config.id,
         content: content,
         images: _commentImageUrls.isNotEmpty ? _commentImageUrls : null,
+        replyToId: _replyToComment?.id,
       ),
     );
   }
