@@ -25,10 +25,13 @@ class MapSubscriptionService {
   /// 存储 key
   static const String _storageKeySubscriptions = 'map_subscriptions';
   static const String _storageKeyEnabled = 'map_subscription_enabled';
-  static const String _storageKeyNotificationEnabled = 'map_subscription_notification_enabled';
+  static const String _storageKeyNotificationEnabled =
+      'map_subscription_notification_enabled';
   static const String _storageKeyTtsEnabled = 'map_subscription_tts_enabled';
-  static const String _storageKeyCooldownSeconds = 'map_subscription_cooldown_seconds';
-  static const String _storageKeyGlobalCategories = 'map_subscription_global_categories';
+  static const String _storageKeyCooldownSeconds =
+      'map_subscription_cooldown_seconds';
+  static const String _storageKeyGlobalCategories =
+      'map_subscription_global_categories';
 
   /// 任务 ID
   static const String _taskId = 'map_subscription_monitor';
@@ -123,9 +126,14 @@ class MapSubscriptionService {
 
     await _loadSubscriptions();
     _isEnabled = StorageUtils.getBool(_storageKeyEnabled);
-    _isNotificationEnabled = StorageUtils.getBool(_storageKeyNotificationEnabled, defaultValue: true);
+    _isNotificationEnabled = StorageUtils.getBool(
+      _storageKeyNotificationEnabled,
+      defaultValue: true,
+    );
     _isTtsEnabled = StorageUtils.getBool(_storageKeyTtsEnabled);
-    _cooldownSeconds = StorageUtils.getInt(_storageKeyCooldownSeconds) ?? _defaultCooldownSeconds;
+    _cooldownSeconds =
+        StorageUtils.getInt(_storageKeyCooldownSeconds) ??
+        _defaultCooldownSeconds;
     _globalCategories = StorageUtils.getStringList(_storageKeyGlobalCategories);
     _isInitialized = true;
 
@@ -138,7 +146,9 @@ class MapSubscriptionService {
     if (_isEnabled && _subscriptions.isNotEmpty) {
       _startMonitorLoop();
     } else {
-      LogService.d('[MapSubscription] 初始化时未启动监控: enabled=$_isEnabled, subscriptions=${_subscriptions.length}');
+      LogService.d(
+        '[MapSubscription] 初始化时未启动监控: enabled=$_isEnabled, subscriptions=${_subscriptions.length}',
+      );
     }
   }
 
@@ -186,7 +196,10 @@ class MapSubscriptionService {
   /// [categoryNames] 为空表示监控全部分类（包括新增的）
   Future<void> setGlobalCategories(List<String> categoryNames) async {
     _globalCategories = List.from(categoryNames);
-    await StorageUtils.setStringList(_storageKeyGlobalCategories, _globalCategories);
+    await StorageUtils.setStringList(
+      _storageKeyGlobalCategories,
+      _globalCategories,
+    );
     _notifyStateChange();
 
     LogService.d(
@@ -232,7 +245,7 @@ class MapSubscriptionService {
     await StorageUtils.setInt(_storageKeyCooldownSeconds, _cooldownSeconds);
     _notifyStateChange();
     LogService.d('[MapSubscription] 刷新频率: $_cooldownSeconds 秒');
-    
+
     // 重启监控循环以应用新的刷新频率
     if (_isEnabled && _subscriptions.isNotEmpty) {
       _stopMonitorLoop();
@@ -249,7 +262,9 @@ class MapSubscriptionService {
       return;
     }
     if (_subscriptions.isEmpty || !_isEnabled) {
-      LogService.d('[MapSubscription] 无法启动监控: subscriptions=${_subscriptions.length}, enabled=$_isEnabled');
+      LogService.d(
+        '[MapSubscription] 无法启动监控: subscriptions=${_subscriptions.length}, enabled=$_isEnabled',
+      );
       return;
     }
 
@@ -278,7 +293,9 @@ class MapSubscriptionService {
   /// 检查所有服务器
   Future<void> _checkAllServers() async {
     if (_subscriptions.isEmpty || !_isEnabled) {
-      LogService.d('[MapSubscription] 跳过检查: subscriptions=${_subscriptions.length}, enabled=$_isEnabled');
+      LogService.d(
+        '[MapSubscription] 跳过检查: subscriptions=${_subscriptions.length}, enabled=$_isEnabled',
+      );
       return;
     }
 
@@ -293,7 +310,9 @@ class MapSubscriptionService {
       final customCategories = await CustomServerService.loadCustomCategories();
       // 合并所有分类
       final categories = [...customCategories, ...apiCategories];
-      LogService.d('[MapSubscription] 获取到 ${categories.length} 个分类 (API: ${apiCategories.length}, 自定义: ${customCategories.length})');
+      LogService.d(
+        '[MapSubscription] 获取到 ${categories.length} 个分类 (API: ${apiCategories.length}, 自定义: ${customCategories.length})',
+      );
 
       int serverCount = 0;
       int validServerCount = 0;
@@ -318,14 +337,18 @@ class MapSubscriptionService {
           if (port == null) continue;
 
           // 直接查询服务器信息
-          final serverInfo = await SourceServerService.getServerInfo(ip, port, timeout: 3000);
+          final serverInfo = await SourceServerService.getServerInfo(
+            ip,
+            port,
+            timeout: 3000,
+          );
           if (serverInfo == null) continue;
 
           final currentMap = serverInfo.map;
           if (currentMap.isEmpty || currentMap == 'graphics_settings') continue;
 
           validServerCount++;
-          final hostName = serverInfo.name;
+          final hostName = server.getDisplayName(serverInfo.name);
 
           final lastMap = _lastServerMaps[serverAddress];
 
@@ -334,7 +357,9 @@ class MapSubscriptionService {
 
           // 调试日志：记录地图变化
           if (lastMap != null && lastMap != currentMap) {
-            LogService.d('[MapSubscription] 检测到换图: $serverAddress, $lastMap -> $currentMap');
+            LogService.d(
+              '[MapSubscription] 检测到换图: $serverAddress, $lastMap -> $currentMap',
+            );
           }
 
           // 检测换图
@@ -355,7 +380,9 @@ class MapSubscriptionService {
         }
       }
 
-      LogService.d('[MapSubscription] 检查完成: 总服务器=$serverCount, 有效服务器=$validServerCount, 已记录=${_lastServerMaps.length}');
+      LogService.d(
+        '[MapSubscription] 检查完成: 总服务器=$serverCount, 有效服务器=$validServerCount, 已记录=${_lastServerMaps.length}',
+      );
     } catch (e) {
       LogService.e('[MapSubscription] 检查服务器失败', e);
     }
@@ -447,7 +474,9 @@ class MapSubscriptionService {
 
     // TTS 播报（使用全局 TTS 开关）
     if (_isTtsEnabled) {
-      LogService.d('[MapSubscription] TTS 开关已开启，检查可用性: isAvailable=${_ttsService.isAvailable}');
+      LogService.d(
+        '[MapSubscription] TTS 开关已开启，检查可用性: isAvailable=${_ttsService.isAvailable}',
+      );
       if (_ttsService.isAvailable) {
         try {
           final result = await _ttsService.speakMapAlert(
