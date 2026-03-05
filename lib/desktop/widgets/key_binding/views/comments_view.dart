@@ -32,6 +32,10 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
 
   // 回复相关
   KeyConfigComment? _replyToComment;
+  // 评论元素对应的 Key 映射，用于滚动定位
+  final Map<int, GlobalKey> _commentKeys = {};
+  // 高亮的评论 ID，用于跳转时进行动画提示
+  int? _highlightedCommentId;
 
   @override
   void initState() {
@@ -211,14 +215,25 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
         ? allComments.where((c) => c.id == comment.replyToId).firstOrNull
         : null;
 
-    return Container(
+    final commentKey = _commentKeys.putIfAbsent(comment.id, () => GlobalKey());
+
+    final isHighlighted = _highlightedCommentId == comment.id;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+      key: commentKey,
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        color: isReplyTarget
+        color: isHighlighted
+            ? (isDark
+                  ? const Color(0xFFEAB308).withValues(alpha: 0.15)
+                  : const Color(0xFFFEF08A).withValues(alpha: 0.5))
+            : isReplyTarget
             ? (isDark
                   ? const Color(0xFF0080FF).withValues(alpha: 0.08)
                   : const Color(0xFFEFF6FF))
-            : null,
+            : Colors.transparent,
         border: Border(
           bottom: BorderSide(
             color: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
@@ -396,31 +411,61 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
 
   /// 被回复评论的引用块
   Widget _buildReplyQuote(KeyConfigComment replyTarget, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: isDark
-            ? const Color(0xFF334155).withValues(alpha: 0.5)
-            : const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(6),
-        border: Border(
-          left: BorderSide(
-            width: 3,
-            color: isDark ? const Color(0xFF475569) : const Color(0xFFD1D5DB),
+    return InkWell(
+      onTap: () async {
+        final context = _commentKeys[replyTarget.id]?.currentContext;
+        if (context != null) {
+          await Scrollable.ensureVisible(
+            context,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            alignment: 0.1,
+          );
+          if (mounted) {
+            setState(() {
+              _highlightedCommentId = replyTarget.id;
+            });
+            Future.delayed(const Duration(milliseconds: 1500), () {
+              if (mounted && _highlightedCommentId == replyTarget.id) {
+                setState(() {
+                  _highlightedCommentId = null;
+                });
+              }
+            });
+          }
+        }
+      },
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isDark
+              ? const Color(0xFF334155).withValues(alpha: 0.5)
+              : const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.circular(6),
+          border: Border(
+            left: BorderSide(
+              width: 3,
+              color: isDark ? const Color(0xFF475569) : const Color(0xFFD1D5DB),
+            ),
           ),
         ),
-      ),
-      child: Text(
-        replyTarget.content.length > 80
-            ? '${replyTarget.content.substring(0, 80)}...'
-            : replyTarget.content,
-        style: TextStyle(
-          fontSize: 12,
-          color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
-          height: 1.4,
+        child: IgnorePointer(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 80),
+            child: ClipRect(
+              child: RichTextViewer(
+                content: replyTarget.content,
+                compact: true,
+                textStyle: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ),
         ),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
       ),
     );
   }
