@@ -8,6 +8,7 @@ import '../core/core.dart';
 import '../core/services/game_status_service.dart';
 import '../core/services/gsi_service.dart';
 import '../core/services/policy_service.dart';
+import '../core/services/obs_server_service.dart';
 import 'router/desktop_router.dart';
 import '../core/services/console_log_service.dart';
 import '../core/services/map_change_monitor_service.dart';
@@ -47,6 +48,8 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
     // 然后异步销毁，避免卡顿感
     await windowManager.hide();
     FloatingWindowService().closeAllWindows();
+    // 停止 OBS 服务
+    await ObsServerService().stop();
     await windowManager.destroy();
   }
 
@@ -188,6 +191,9 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
 
       // 启动控制台日志监控（依赖 GameStatusService 的状态流）
       await ConsoleLogService().startMonitoring();
+
+      // 刷新 OBS 服务的 ConsoleLog 状态（确保获取到用户当前所在的服务器）
+      ObsServerService().refreshConsoleLogStatus();
 
       // 以下服务依赖 ConsoleLogService，需要在其启动完成后初始化
       MapChangeMonitorService().initialize();

@@ -4,6 +4,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'dart:async';
 
+import '../services/obs_server_service.dart';
+
 class ExitDialog extends StatefulWidget {
   const ExitDialog({super.key});
 
@@ -68,6 +70,11 @@ class _ExitDialogState extends State<ExitDialog> with TickerProviderStateMixin {
 
   void _handleExit() {
     HapticFeedback.mediumImpact();
+    // 退出前清空 OBS 显示（如果服务正在运行）
+    final obsService = ObsServerService();
+    if (obsService.isRunning) {
+      obsService.clearDisplay();
+    }
     Navigator.of(context).pop(true);
   }
 

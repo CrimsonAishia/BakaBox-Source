@@ -7,6 +7,7 @@ import '../../services/source_server_service.dart';
 import '../../services/game_launcher_service.dart';
 import '../../services/map_change_monitor_service.dart';
 import '../../services/custom_server_service.dart';
+import '../../services/obs_server_service.dart';
 import '../../utils/log_service.dart';
 import '../../utils/error_utils.dart';
 import 'server_event.dart';
@@ -37,6 +38,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   static const Duration _scoreFetchInterval = Duration(seconds: 60);
 
   ServerBloc() : super(const ServerState()) {
+    // 注册到 OBS 服务
+    ObsServerService().setServerBloc(this);
+
     on<ServerFetchList>(_onFetchList);
     on<ServerSelectCategory>(_onSelectCategory);
     on<ServerClearCategory>(_onClearCategory);
