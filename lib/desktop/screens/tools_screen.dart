@@ -9,6 +9,7 @@ import '../../core/bloc/feature_status/feature_status_state.dart';
 import '../../core/models/feature_status_models.dart';
 import '../../core/widgets/feature_gate.dart';
 import '../widgets/key_binding/key_binding_tool.dart';
+import '../widgets/obs_tool/obs_tool.dart';
 import '../widgets/page_layout.dart';
 import 'map_database_desktop.dart';
 
@@ -37,6 +38,13 @@ class _ToolsScreenState extends State<ToolsScreen> {
       name: '地图数据库',
       description: '查看和管理地图信息贡献',
       icon: MdiIcons.database,
+      isFullScreen: true,
+    ),
+    _ToolItem(
+      id: 'obs_overlay',
+      name: 'OBS 投屏组件',
+      description: '为OBS配置可视化服务器信息展示',
+      icon: MdiIcons.televisionGuide,
       isFullScreen: true,
     ),
   ];
@@ -70,9 +78,11 @@ class _ToolsScreenState extends State<ToolsScreen> {
   Widget _buildFullScreenTool(BuildContext context) {
     final tool = _tools.firstWhere((t) => t.id == _openedToolId);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF3F4F6),
+      backgroundColor: isDark
+          ? const Color(0xFF0F172A)
+          : const Color(0xFFF3F4F6),
       body: PageLayout(
         title: tool.name,
         subtitle: tool.description,
@@ -117,10 +127,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
             child: const MapDatabaseDesktop(),
           ),
         );
+      case 'obs_overlay':
+        return const ObsTool();
       default:
-        return const Center(
-          child: Text('工具未找到'),
-        );
+        return const Center(child: Text('工具未找到'));
     }
   }
 
@@ -132,8 +142,17 @@ class _ToolsScreenState extends State<ToolsScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? [const Color(0xFF0F172A), const Color(0xFF1E293B), const Color(0xFF1A1A2E)]
-              : [const Color(0xFFE3F2FD), const Color(0xFFE0F7FA), const Color(0xFFEDE7F6), const Color(0xFFFFF3E0)],
+              ? [
+                  const Color(0xFF0F172A),
+                  const Color(0xFF1E293B),
+                  const Color(0xFF1A1A2E),
+                ]
+              : [
+                  const Color(0xFFE3F2FD),
+                  const Color(0xFFE0F7FA),
+                  const Color(0xFFEDE7F6),
+                  const Color(0xFFFFF3E0),
+                ],
           stops: isDark ? [0.0, 0.5, 1.0] : [0.0, 0.35, 0.7, 1.0],
         ),
       ),
@@ -145,27 +164,30 @@ class _ToolsScreenState extends State<ToolsScreen> {
       builder: (context, constraints) {
         // 固定3列
         const columnCount = 3;
-        final cardWidth = (constraints.maxWidth - 48 - (columnCount - 1) * 20) / columnCount;
-        
+        final cardWidth =
+            (constraints.maxWidth - 48 - (columnCount - 1) * 20) / columnCount;
+
         return SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Wrap(
             spacing: 20,
             runSpacing: 20,
             children: _tools
-                .map((tool) => SizedBox(
-                      width: cardWidth,
-                      child: _ToolCard(
-                        tool: tool,
-                        onOpenFullScreen: tool.isFullScreen
-                            ? () {
-                                setState(() {
-                                  _openedToolId = tool.id;
-                                });
-                              }
-                            : null,
-                      ),
-                    ))
+                .map(
+                  (tool) => SizedBox(
+                    width: cardWidth,
+                    child: _ToolCard(
+                      tool: tool,
+                      onOpenFullScreen: tool.isFullScreen
+                          ? () {
+                              setState(() {
+                                _openedToolId = tool.id;
+                              });
+                            }
+                          : null,
+                    ),
+                  ),
+                )
                 .toList(),
           ),
         );
@@ -182,12 +204,48 @@ class _FloatingShapes extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        _FloatingToolIcon(icon: MdiIcons.wrench, size: 40, top: 0.12, left: 0.06, delay: 0),
-        _FloatingToolIcon(icon: MdiIcons.cog, size: 36, top: 0.28, right: 0.10, delay: 800),
-        _FloatingToolIcon(icon: MdiIcons.hammer, size: 32, bottom: 0.38, left: 0.12, delay: 1600),
-        _FloatingToolIcon(icon: MdiIcons.keyboardOutline, size: 38, top: 0.55, right: 0.06, delay: 2400),
-        _FloatingToolIcon(icon: MdiIcons.screwdriver, size: 30, bottom: 0.22, right: 0.18, delay: 1200),
-        _FloatingToolIcon(icon: MdiIcons.toolboxOutline, size: 34, top: 0.40, left: 0.08, delay: 2000),
+        _FloatingToolIcon(
+          icon: MdiIcons.wrench,
+          size: 40,
+          top: 0.12,
+          left: 0.06,
+          delay: 0,
+        ),
+        _FloatingToolIcon(
+          icon: MdiIcons.cog,
+          size: 36,
+          top: 0.28,
+          right: 0.10,
+          delay: 800,
+        ),
+        _FloatingToolIcon(
+          icon: MdiIcons.hammer,
+          size: 32,
+          bottom: 0.38,
+          left: 0.12,
+          delay: 1600,
+        ),
+        _FloatingToolIcon(
+          icon: MdiIcons.keyboardOutline,
+          size: 38,
+          top: 0.55,
+          right: 0.06,
+          delay: 2400,
+        ),
+        _FloatingToolIcon(
+          icon: MdiIcons.screwdriver,
+          size: 30,
+          bottom: 0.22,
+          right: 0.18,
+          delay: 1200,
+        ),
+        _FloatingToolIcon(
+          icon: MdiIcons.toolboxOutline,
+          size: 34,
+          top: 0.40,
+          left: 0.08,
+          delay: 2000,
+        ),
       ],
     );
   }
@@ -230,12 +288,14 @@ class _FloatingToolIconState extends State<_FloatingToolIcon>
       vsync: this,
       duration: const Duration(seconds: 5),
     );
-    _floatAnimation = Tween<double>(begin: 0, end: 15).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-    _rotateAnimation = Tween<double>(begin: -0.05, end: 0.05).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _floatAnimation = Tween<double>(
+      begin: 0,
+      end: 15,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _rotateAnimation = Tween<double>(
+      begin: -0.05,
+      end: 0.05,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
     Future.delayed(Duration(milliseconds: widget.delay), () {
       if (mounted) _controller.repeat(reverse: true);
     });
@@ -251,7 +311,7 @@ class _FloatingToolIconState extends State<_FloatingToolIcon>
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Positioned(
       top: widget.top != null ? screenSize.height * widget.top! : null,
       bottom: widget.bottom != null ? screenSize.height * widget.bottom! : null,
@@ -293,10 +353,7 @@ class _ToolCard extends StatefulWidget {
   final _ToolItem tool;
   final VoidCallback? onOpenFullScreen;
 
-  const _ToolCard({
-    required this.tool,
-    this.onOpenFullScreen,
-  });
+  const _ToolCard({required this.tool, this.onOpenFullScreen});
 
   @override
   State<_ToolCard> createState() => _ToolCardState();
@@ -320,19 +377,20 @@ class _ToolCardState extends State<_ToolCard> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // 如果有对应的功能类型，检查功能状态
     if (_featureType != null) {
       return BlocBuilder<FeatureStatusBloc, FeatureStatusState>(
         builder: (context, state) {
           // 只有明确加载完成且禁用时才显示为禁用
-          final isEnabled = state.loadState != FeatureStatusLoadState.loaded ||
+          final isEnabled =
+              state.loadState != FeatureStatusLoadState.loaded ||
               state.status.getStatus(_featureType!).enabled;
           return _buildCard(context, isDark, isEnabled);
         },
       );
     }
-    
+
     return _buildCard(context, isDark, true);
   }
 
@@ -340,7 +398,9 @@ class _ToolCardState extends State<_ToolCard> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      cursor: isEnabled ? SystemMouseCursors.click : SystemMouseCursors.forbidden,
+      cursor: isEnabled
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.forbidden,
       child: GestureDetector(
         onTap: isEnabled ? _handleTap : null,
         child: AnimatedScale(
@@ -354,25 +414,29 @@ class _ToolCardState extends State<_ToolCard> {
             child: Opacity(
               opacity: isEnabled ? 1.0 : 0.6,
               child: Container(
-                height: 200,
+                height: 220,
                 decoration: BoxDecoration(
-                  color: isDark 
+                  color: isDark
                       ? const Color(0xFF1E293B).withValues(alpha: 0.9)
                       : Colors.white.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: !isEnabled
-                        ? (isDark ? const Color(0xFF475569) : const Color(0xFFD1D5DB))
+                        ? (isDark
+                              ? const Color(0xFF475569)
+                              : const Color(0xFFD1D5DB))
                         : _isHovered
-                            ? const Color(0xFF22C55E).withValues(alpha: 0.4)
-                            : (isDark 
-                                ? const Color(0xFF334155)
-                                : const Color(0xFF22C55E).withValues(alpha: 0.2)),
+                        ? const Color(0xFF22C55E).withValues(alpha: 0.4)
+                        : (isDark
+                              ? const Color(0xFF334155)
+                              : const Color(0xFF22C55E).withValues(alpha: 0.2)),
                   ),
                   boxShadow: _isHovered && isEnabled
                       ? [
                           BoxShadow(
-                            color: const Color(0xFF22C55E).withValues(alpha: isDark ? 0.2 : 0.15),
+                            color: const Color(
+                              0xFF22C55E,
+                            ).withValues(alpha: isDark ? 0.2 : 0.15),
                             blurRadius: 40,
                             offset: const Offset(0, 20),
                           ),
@@ -529,10 +593,10 @@ class _ToolCardState extends State<_ToolCard> {
           height: 64,
           transform: _isHovered && isEnabled
               ? (Matrix4.identity()
-                ..setEntry(0, 0, 1.1)
-                ..setEntry(1, 1, 1.1)
-                ..setEntry(2, 2, 1.1)
-                ..rotateZ(0.087)) // 约5度
+                  ..setEntry(0, 0, 1.1)
+                  ..setEntry(1, 1, 1.1)
+                  ..setEntry(2, 2, 1.1)
+                  ..rotateZ(0.087)) // 约5度
               : Matrix4.identity(),
           transformAlignment: Alignment.center,
           decoration: BoxDecoration(
@@ -552,9 +616,13 @@ class _ToolCardState extends State<_ToolCard> {
             isEnabled ? widget.tool.icon : MdiIcons.lockOutline,
             size: 32,
             color: isEnabled
-                ? (_isHovered 
-                    ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D4ED8))
-                    : (isDark ? const Color(0xFF60A5FA) : const Color(0xFF3B82F6)))
+                ? (_isHovered
+                      ? (isDark
+                            ? const Color(0xFF60A5FA)
+                            : const Color(0xFF1D4ED8))
+                      : (isDark
+                            ? const Color(0xFF60A5FA)
+                            : const Color(0xFF3B82F6)))
                 : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
           ),
         ),

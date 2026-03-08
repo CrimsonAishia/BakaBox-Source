@@ -9,6 +9,8 @@ import '../../core/bootstrap/app_initializer.dart';
 import '../../core/services/floating_window_service.dart';
 import '../../core/services/notification_window_service.dart';
 import '../../core/services/status_window_service.dart';
+import '../../core/services/obs_server_service.dart';
+import '../../core/utils/storage_utils.dart';
 import '../app.dart';
 
 /// 主窗口启动器
@@ -31,6 +33,12 @@ class MainWindowLauncher {
 
     // 初始化状态窗口服务
     StatusWindowService().initialize();
+
+    // 根据开关状态决定是否启动 OBS 浏览器源数据服务
+    final obsEnabled = StorageUtils.getBool('obs_tool_enabled', defaultValue: false);
+    if (obsEnabled) {
+      ObsServerService().start();
+    }
 
     runApp(const DesktopApp());
   }
@@ -67,7 +75,9 @@ class MainWindowLauncher {
           final notificationId = args?['id'] as String?;
           if (notificationId != null) {
             debugPrint('[MainWindow] Notification closed: $notificationId');
-            NotificationWindowService().onNotificationWindowClosed(notificationId);
+            NotificationWindowService().onNotificationWindowClosed(
+              notificationId,
+            );
           }
           return true;
         case 'floatingWindowClosed':
