@@ -692,7 +692,11 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     if (!_isHovered) return const SizedBox.shrink();
 
     final data = widget.server.serverData;
-    final isDisabled = data == null || widget.server.isLoading;
+    // 离线状态下也允许点击连接和挤服按钮（用户可能想重试连接）
+    // 只在加载中时禁用连接和挤服
+    final isLoading = widget.server.isLoading;
+    // 需要服务器数据的按钮使用这个判断
+    final needsServerData = data == null;
     final address =
         widget.server.serverItem.address ??
         widget.server.serverItem.serverAddress;
@@ -715,6 +719,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     final isOtherServerQueueing = isQueueing && globalState.serverAddress != address;
 
     // 确定连接按钮的文本和状态
+    // 离线状态也允许连接（让用户可以重试）
     String connectText;
     bool connectDisabled;
 
@@ -732,7 +737,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       connectDisabled = true;
     } else {
       connectText = '连接';
-      connectDisabled = isDisabled;
+      // 只在加载中时禁用，离线状态也允许连接
+      connectDisabled = isLoading;
     }
 
     return Positioned(
@@ -783,7 +789,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                     text: isCurrentServerQueueing ? '挤服中' : '挤服',
                     icon: MdiIcons.accountGroup,
                     bgColor: const Color(0xFFFF6E6E),
-                    onPressed: isDisabled || address == null
+                    // 离线状态也允许挤服（让用户可以重试），只在加载中时禁用
+                    onPressed: isLoading || address == null
                         ? null
                         : isCurrentServerQueueing
                             ? () => _openQueueDialog(context, address)
@@ -809,13 +816,15 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                       icon: Icons.people_outline_rounded,
                       tooltip: '玩家列表',
                       color: const Color(0xFF10B981),
-                      onPressed: isDisabled ? null : widget.onTap,
+                      // 需要服务器数据
+                      onPressed: needsServerData || isLoading ? null : widget.onTap,
                     ),
                     if (!isCustomServer)
                       _buildSecondaryBtn(
                         icon: Icons.history_rounded,
                         tooltip: '历史记录',
                         color: const Color(0xFFF59E0B),
+                        // 历史记录不需要服务器数据
                         onPressed: () => _showHistoryDialog(context),
                       ),
                     if (isCustomServer)
@@ -830,7 +839,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                         icon: MdiIcons.imageEditOutline,
                         tooltip: '编辑地图',
                         color: const Color(0xFF8B5CF6),
-                        onPressed: isDisabled
+                        // 需要服务器数据
+                        onPressed: needsServerData || isLoading
                             ? null
                             : () => _showContributionDialog(context),
                       ),
@@ -838,7 +848,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                       icon: MdiIcons.refresh,
                       tooltip: '刷新缓存',
                       color: const Color(0xFFF59E0B),
-                      onPressed: isDisabled ? null : _refreshMapCache,
+                      // 刷新缓存不需要服务器数据，但需要在非加载中状态
+                      onPressed: isLoading ? null : _refreshMapCache,
                     ),
                     _buildSecondaryBtn(
                       icon: _isMonitoring
@@ -847,7 +858,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                       tooltip: '换图监控',
                       color: const Color(0xFF3B82F6),
                       isActive: _isMonitoring,
-                      onPressed: isDisabled ? null : _toggleMapMonitor,
+                      // 换图监控不需要服务器数据，但需要在非加载中状态
+                      onPressed: isLoading ? null : _toggleMapMonitor,
                     ),
                     if (isCustomServer && widget.onDelete != null)
                       _buildSecondaryBtn(
