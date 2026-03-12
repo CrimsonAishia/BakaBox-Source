@@ -16,6 +16,7 @@ import 'issues_desktop.dart';
 import 'tools_screen.dart';
 import 'settings_desktop.dart';
 import 'character_gallery_desktop.dart';
+import 'bilibili_content_screen.dart';
 
 /// 桌面端主屏幕
 class DesktopHomeScreen extends StatefulWidget {
@@ -43,6 +44,10 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
       activeColor: const Color(0xFF0080FF), inactiveColor: const Color(0xFF64748B),
     ),
     NavigationItem(
+      icon: MdiIcons.playCircleOutline, selectedIcon: MdiIcons.playCircle, label: '直播/视频',
+      activeColor: const Color(0xFF0080FF), inactiveColor: const Color(0xFF64748B),
+    ),
+    NavigationItem(
       icon: MdiIcons.fileDocumentOutline, selectedIcon: MdiIcons.fileDocument, label: '更新日志',
       activeColor: const Color(0xFF0080FF), inactiveColor: const Color(0xFF64748B),
     ),
@@ -62,10 +67,11 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
       0 => WelcomeScreen(onNavigateToServers: () => _onIndexChanged(1)),
       1 => const ServersDesktop(),
       2 => const CharacterGalleryDesktop(),
-      3 => const UpdateLogsDesktop(),
-      4 => const ToolsScreen(),
-      5 => const SettingsDesktop(),
-      6 => const IssuesDesktop(),
+      3 => const BilibiliContentScreen(),
+      4 => const UpdateLogsDesktop(),
+      5 => const ToolsScreen(),
+      6 => const SettingsDesktop(),
+      7 => const IssuesDesktop(),
       _ => const SizedBox.shrink(),
     };
   }
@@ -132,8 +138,8 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
                   currentIndex: _currentIndex,
                   onIndexChanged: _onIndexChanged,
                   items: _navigationItems,
-                  onFeedbackTap: () => _onIndexChanged(6),
-                  isFeedbackSelected: _currentIndex == 6,
+                  onFeedbackTap: () => _onIndexChanged(7),
+                  isFeedbackSelected: _currentIndex == 7,
                 ),
                 Expanded(
                   child: AnimatedBuilder(

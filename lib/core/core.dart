@@ -39,6 +39,7 @@ export 'models/issue_models.dart';
 export 'models/feature_status_models.dart';
 export 'models/character_models.dart';
 export 'models/map_subscription_models.dart';
+export 'models/bilibili_content_models.dart';
 
 // Bloc
 export 'bloc/bloc.dart';
@@ -62,6 +63,7 @@ export 'services/scheduler_service.dart';
 export 'services/score_upload_service.dart';
 export 'services/tts_service.dart';
 export 'services/map_subscription_service.dart';
+export 'services/bilibili_service.dart';
 
 // Utils
 export 'utils/announcement_utils.dart';
