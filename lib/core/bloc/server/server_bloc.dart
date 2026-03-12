@@ -30,6 +30,18 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   static const int _maxRefreshPerMinute = 5; // 1分钟内最多刷新5次
   static const Duration _refreshWindow = Duration(minutes: 1);
 
+  // 单个服务器查询超时（毫秒）
+  static const int _serverQueryTimeout = 3000;
+
+  // 并发控制：每批最多并行请求数
+  static const int _maxConcurrentRequests = 5;
+
+  // 批次间延迟（毫秒），避免瞬时并发过高
+  static const int _batchDelayMs = 100;
+
+  // 连续失败多少次才标记为离线（需要更高阈值）
+  static const int _offlineThreshold = 5;
+
   // 缓存大小限制
   static const int _maxCacheSize = 50; // 最多缓存 50 个服务器的数据
 
@@ -232,28 +244,43 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
     final serverApi = ServerApi();
 
-    // 并行获取所有服务器信息，每个服务器独立完成后立即更新 UI
-    final futures = <Future<void>>[];
-
-    for (int i = 0; i < state.servers.length; i++) {
-      final server = state.servers[i];
-      final address =
-          server.serverItem.address ?? server.serverItem.serverAddress;
-      if (address == null) continue;
-
-      // 每个服务器独立异步加载
-      futures.add(
-        _fetchSingleServerInfo(
-          address: address,
-          requestId: requestId,
-          serverApi: serverApi,
-          emit: emit,
-        ),
-      );
+    // 收集所有需要查询的服务器地址
+    final serverAddresses = <String>[];
+    for (final server in state.servers) {
+      final address = server.serverItem.address ?? server.serverItem.serverAddress;
+      if (address != null) {
+        serverAddresses.add(address);
+      }
     }
 
-    // 等待所有服务器加载完成
-    await Future.wait(futures);
+    if (serverAddresses.isEmpty) return;
+
+    // 分批并行获取，每批最多 _maxConcurrentRequests 个
+    // 每批完成后等待一小段时间再发起下一批，避免瞬时并发过高
+    for (var i = 0; i < serverAddresses.length; i += _maxConcurrentRequests) {
+      // 检查是否需要继续（可能被取消）
+      if (requestId != _currentRequestId || emit.isDone) break;
+
+      final end = (i + _maxConcurrentRequests > serverAddresses.length)
+          ? serverAddresses.length
+          : i + _maxConcurrentRequests;
+      final batch = serverAddresses.sublist(i, end);
+
+      // 并行获取这一批服务器的信息
+      final futures = batch.map((address) => _fetchSingleServerInfo(
+        address: address,
+        requestId: requestId,
+        serverApi: serverApi,
+        emit: emit,
+      ));
+
+      await Future.wait(futures, eagerError: false);
+
+      // 批次间短暂延迟，避免瞬时并发过高
+      if (end < serverAddresses.length) {
+        await Future.delayed(const Duration(milliseconds: _batchDelayMs));
+      }
+    }
 
     // 批量查询服务器比分数据（静默失败，不影响主流程）
     if (!emit.isDone && requestId == _currentRequestId) {
@@ -341,6 +368,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   }
 
   /// 获取单个服务器信息（异步独立执行）
+  /// 注意：此方法处理的是服务器信息查询的失败，不影响离线状态判定
+  /// 离线状态只在刷新周期结束后根据连续失败次数判定
   Future<void> _fetchSingleServerInfo({
     required String address,
     required int requestId,
@@ -350,7 +379,15 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     if (requestId != _currentRequestId || emit.isDone) return;
 
     try {
-      final info = await _getServerInfo(address);
+      // 带超时的服务器信息查询
+      final info = await _getServerInfo(address).timeout(
+        const Duration(milliseconds: _serverQueryTimeout),
+        onTimeout: () {
+          LogService.d('服务器查询超时 ($address)');
+          return null; // 超时返回 null，视为查询失败
+        },
+      );
+
       if (requestId != _currentRequestId || emit.isDone) return;
 
       // 通过地址查找当前服务器索引（并行更新时索引可能变化）
@@ -386,7 +423,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           _mapRuntimeLastFetchedCache.remove(address);
         }
 
-        // 成功获取数据，重置失败计数和离线状态
+        // 成功获取数据，重置失败计数
+        // 注意：不再自动判定离线，离线状态在刷新周期结束后统一判定
         _failureCountCache[address] = 0; // 更新全局缓存
         final updatedServer = currentServer.copyWith(
           serverData: _convertSourceServerInfo(info),
@@ -395,7 +433,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           isLoading: false,
           hasError: false,
           consecutiveFailures: 0,
-          isOffline: false,
+          // 不再自动标记 isOffline，让数据保留以便显示
+          // 离线判定逻辑移到刷新周期结束后
           mapInfo: mapChanged ? null : currentServer.mapInfo,
           mapRuntime: mapChanged ? null : currentServer.mapRuntime,
           mapRuntimeLastFetched: mapChanged
@@ -435,27 +474,42 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       } else {
         // 服务器无法访问，增加失败计数
         final newFailureCount = currentServer.consecutiveFailures + 1;
-        final isNowOffline = newFailureCount >= 3; // 连续失败3次判定为离线
+        final isNowOffline = newFailureCount >= _offlineThreshold; // 使用配置的阈值判定离线
         _failureCountCache[address] = newFailureCount; // 更新全局缓存
 
-        _updateServerByAddress(
-          address,
-          currentServer.copyWith(
-            isLoading: false,
-            hasError: true,
-            consecutiveFailures: newFailureCount,
-            isOffline: isNowOffline,
-            clearServerData: isNowOffline, // 离线时清除服务器数据
-            clearMapRuntime: isNowOffline, // 离线时清除地图运行时间
-            clearMapInfo: isNowOffline, // 离线时清除地图信息（背景图）
-          ),
-          emit,
-        );
-
-        // 离线时清除 runtime 缓存，但保留 _serverMapCache 以便恢复后检测换图
+        // 只有当真正达到离线阈值时才更新服务器状态
+        // 这样可以保留上一次成功的数据，直到确认离线才清除
         if (isNowOffline) {
+          _updateServerByAddress(
+            address,
+            currentServer.copyWith(
+              isLoading: false,
+              hasError: true,
+              consecutiveFailures: newFailureCount,
+              isOffline: true,
+              clearServerData: true, // 离线时清除服务器数据
+              clearMapRuntime: true, // 离线时清除地图运行时间
+              clearMapInfo: true, // 离线时清除地图信息（背景图）
+            ),
+            emit,
+          );
+
+          // 离线时清除 runtime 缓存，但保留 _serverMapCache 以便恢复后检测换图
           _mapRuntimeCache.remove(address);
           _mapRuntimeLastFetchedCache.remove(address);
+        } else {
+          // 未达到离线阈值，只更新失败计数，保留现有数据
+          // 这样服务器仍然显示最后一次成功的数据
+          _updateServerByAddress(
+            address,
+            currentServer.copyWith(
+              isLoading: false,
+              hasError: true,
+              consecutiveFailures: newFailureCount,
+              // 不更新 isOffline，不清除数据
+            ),
+            emit,
+          );
         }
       }
     } catch (e) {
@@ -467,26 +521,38 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         final currentServer = state.servers[currentIndex];
         // 服务器异常，增加失败计数
         final newFailureCount = currentServer.consecutiveFailures + 1;
-        final isNowOffline = newFailureCount >= 3;
+        final isNowOffline = newFailureCount >= _offlineThreshold;
         _failureCountCache[address] = newFailureCount; // 更新全局缓存
 
-        _updateServerByAddress(
-          address,
-          currentServer.copyWith(
-            isLoading: false,
-            hasError: true,
-            consecutiveFailures: newFailureCount,
-            isOffline: isNowOffline,
-            clearServerData: isNowOffline,
-            clearMapRuntime: isNowOffline,
-            clearMapInfo: isNowOffline,
-          ),
-          emit,
-        );
-
+        // 只有当真正达到离线阈值时才更新服务器状态
         if (isNowOffline) {
+          _updateServerByAddress(
+            address,
+            currentServer.copyWith(
+              isLoading: false,
+              hasError: true,
+              consecutiveFailures: newFailureCount,
+              isOffline: true,
+              clearServerData: true,
+              clearMapRuntime: true,
+              clearMapInfo: true,
+            ),
+            emit,
+          );
+
           _mapRuntimeCache.remove(address);
           _mapRuntimeLastFetchedCache.remove(address);
+        } else {
+          // 未达到离线阈值，只更新失败计数，保留现有数据
+          _updateServerByAddress(
+            address,
+            currentServer.copyWith(
+              isLoading: false,
+              hasError: true,
+              consecutiveFailures: newFailureCount,
+            ),
+            emit,
+          );
         }
       }
     }
@@ -860,9 +926,21 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   }
 
   /// 获取单个服务器人数（返回人数，不直接更新状态）
+  /// 获取单个服务器人数（用于分类在线人数统计）
+  /// 独立查询，不影响服务器卡片状态，不增加失败计数
   Future<int> _fetchSingleServerPlayerCount(String address) async {
     try {
-      final info = await _getServerInfo(address);
+      final parts = address.split(':');
+      if (parts.length != 2) return 0;
+      final ip = parts[0];
+      final port = int.parse(parts[1]);
+
+      // 使用独立的服务获取人数，设置较短超时
+      final info = await SourceServerService.getServerInfo(
+        ip,
+        port,
+        timeout: 2000, // 2秒超时，只获取人数不需要太久
+      );
       return info?.players ?? 0;
     } catch (_) {
       return 0;
@@ -887,7 +965,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     try {
       final ip = parts[0];
       final port = int.parse(parts[1]);
-      return await SourceServerService.getServerInfo(ip, port, timeout: 5000);
+      return await SourceServerService.getServerInfo(ip, port, timeout: _serverQueryTimeout);
     } catch (e) {
       LogService.e('获取服务器信息失败 ($address): $e', e);
       return null;
@@ -1685,6 +1763,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         // 保留现有的服务器数据和地图信息（避免骨架屏闪烁）
         serverData: server.serverData,
         mapInfo: server.mapInfo,
+        // 保留 ping 信息，避免强制刷新后丢失
+        pingInfo: server.pingInfo,
         // 保留缓存的数据
         mapRuntime: address != null ? _mapRuntimeCache[address] : null,
         mapRuntimeLastFetched: address != null

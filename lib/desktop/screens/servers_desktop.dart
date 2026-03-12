@@ -279,6 +279,8 @@ class _ServersDesktopState extends State<ServersDesktop> {
 
   /// 兜底检查：如果有服务器有数据但缺少 ping，触发获取
   void _checkAndFetchMissingPings() {
+    // 沉浸模式下不触发 ping 获取
+    if (_isInImmersiveMode) return;
     final bloc = _serverBloc;
     if (bloc == null) return;
 
@@ -293,10 +295,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
 
   /// 桌面端自动选择第一个分类（如果没有选中分类）
   void _autoSelectFirstCategory(ServerState state) {
-    if (!mounted) return;
-    if (state.selectedCategory == null &&
-        state.serverCategories.isNotEmpty &&
-        !state.isLoading) {
+    // 防止重复触发：检查是否已选中分类或正在加载
+    if (!mounted || state.selectedCategory != null || state.isLoading) return;
+    if (state.serverCategories.isNotEmpty) {
       // 优先选择默认分类（API 分类）的第一个
       final defaultCategories = state.serverCategories
           .where((c) => !c.isCustom)
@@ -366,7 +367,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
       if (_categoryCountsCountdown <= 0) {
         // 触发分类人数刷新
         _serverBloc?.add(ServerUpdateCategoryOnlineCounts());
-        _categoryCountsCountdown = _kCategoryCountsRefreshInterval;
+        _categoryCountsCountdown = _kCategoryCountsRefreshInterval - 1;
       }
     });
   }
@@ -782,6 +783,8 @@ class _ServersDesktopState extends State<ServersDesktop> {
                         _startCategoryCountsRefreshTimer();
                         // 立即刷新一次，防止数据过旧
                         _serverBloc?.add(ServerRefreshServers());
+                        // 立即触发 ping 获取
+                        _scheduleDelayedPingFetch();
                       }
                     },
                     borderRadius: BorderRadius.circular(6),
