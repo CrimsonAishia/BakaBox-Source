@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dart_ping/dart_ping.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../core/core.dart';
+import '../../core/services/status_window_service.dart';
 import '../widgets/server/server_card.dart';
 import '../widgets/server/server_card_skeleton.dart';
 import '../widgets/category_card.dart';
@@ -31,6 +33,13 @@ class ServersDesktop extends StatefulWidget {
 class _ServersDesktopState extends State<ServersDesktop> {
   ServerBloc? _serverBloc;
   bool _isInitialized = false;
+
+  // 状态窗口服务（用于共享游戏状态）
+  final StatusWindowService _statusService = StatusWindowService();
+
+  // 游戏运行状态（从 StatusWindowService 共享）
+  bool _isGameRunning = false;
+  bool _isLaunchingGame = false;
 
   // ScrollController for lists
   final ScrollController _serversScrollController = ScrollController();
@@ -67,6 +76,37 @@ class _ServersDesktopState extends State<ServersDesktop> {
 
     // 启动分类人数刷新定时器
     _startCategoryCountsRefreshTimer();
+
+    // 监听游戏状态变化
+    _initGameStatusListener();
+  }
+
+  /// 初始化游戏状态监听
+  void _initGameStatusListener() {
+    // 立即检查一次游戏状态
+    _checkGameStatus();
+
+    // 监听 StatusWindowService 状态变化
+    _statusService.stateStream.listen((state) {
+      if (mounted) {
+        setState(() {
+          _isGameRunning = state.isGameRunning;
+          // 判断是否正在启动游戏：type == launching && status == running
+          _isLaunchingGame = state.type == OperationType.launching && 
+              state.status == OperationStatus.running;
+        });
+      }
+    });
+  }
+
+  /// 检查游戏状态
+  Future<void> _checkGameStatus() async {
+    final state = _statusService.state;
+    if (mounted && state.isGameRunning != _isGameRunning) {
+      setState(() {
+        _isGameRunning = state.isGameRunning;
+      });
+    }
   }
 
   void _updateServersScrollIndicators() {
@@ -575,6 +615,133 @@ class _ServersDesktopState extends State<ServersDesktop> {
     );
   }
 
+  /// 启动游戏按钮
+  Widget _buildLaunchGameButton(bool isDark) {
+    // 正在启动游戏时显示启动中状态
+    if (_isLaunchingGame) {
+      return Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+              ),
+            ),
+            const SizedBox(width: 6),
+            const Text(
+              '启动中...',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF3B82F6),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 游戏已运行时显示已启动状态
+    if (_isGameRunning) {
+      return Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.green.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: Colors.green.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              MdiIcons.checkCircle,
+              size: 18,
+              color: Colors.green,
+            ),
+            const SizedBox(width: 6),
+            const Text(
+              '游戏已启动',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.green,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 游戏未运行时显示启动按钮
+    return Tooltip(
+      message: '启动游戏',
+      child: InkWell(
+        onTap: _launchGame,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                MdiIcons.gamepadVariant,
+                size: 18,
+                color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '启动游戏',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 启动游戏
+  Future<void> _launchGame() async {
+    if (_isLaunchingGame || _isGameRunning) return;
+
+    // 使用 StatusWindowService 启动游戏（与挤服页面共享状态）
+    await _statusService.launchGame();
+
+    if (!mounted) return;
+
+    // 获取最新状态判断结果
+    final state = _statusService.state;
+    if (state.status == OperationStatus.success) {
+      ToastUtils.showSuccess(context, '游戏启动成功');
+    } else if (state.status == OperationStatus.failed) {
+      ToastUtils.showError(context, state.message ?? '启动游戏失败');
+    }
+  }
+
   /// 主内容区域（左右布局）
   Widget _buildMainContent() {
     return Row(
@@ -625,111 +792,99 @@ class _ServersDesktopState extends State<ServersDesktop> {
           padding: const EdgeInsets.all(15),
           child: Row(
             children: [
-              Expanded(
-                child: Text(
-                  '服务器',
-                  style: TextStyle(
-                    color: isDark ? Colors.white70 : const Color(0xFF6B7280),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
+              // 服务器标题
+              Text(
+                '服务器',
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
                 ),
               ),
+              const Spacer(),
               // 管理按钮（仅自定义分类显示）
-              AnimatedOpacity(
-                opacity: canAddServer ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 200),
-                child: IgnorePointer(
-                  ignoring: !canAddServer,
-                  child: Tooltip(
-                    message: _isReorderMode ? '完成排序' : '管理卡片',
-                    child: InkWell(
-                      onTap: () {
-                        setState(() => _isReorderMode = !_isReorderMode);
-                      },
-                      borderRadius: BorderRadius.circular(6),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _isReorderMode
-                              ? const Color(0xFF3B82F6).withValues(alpha: 0.2)
-                              : (isDark
-                                    ? Colors.white.withValues(alpha: 0.08)
-                                    : Colors.black.withValues(alpha: 0.06)),
-                          borderRadius: BorderRadius.circular(6),
-                          border: _isReorderMode
-                              ? Border.all(
-                                  color: const Color(
-                                    0xFF3B82F6,
-                                  ).withValues(alpha: 0.5),
-                                  width: 1,
-                                )
-                              : null,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _isReorderMode
-                                  ? Icons.check_rounded
-                                  : Icons.reorder_rounded,
-                              size: 18,
+              if (canAddServer) ...[
+                Tooltip(
+                  message: _isReorderMode ? '完成排序' : '管理卡片',
+                  child: InkWell(
+                    onTap: () {
+                      setState(() => _isReorderMode = !_isReorderMode);
+                    },
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _isReorderMode
+                            ? const Color(0xFF3B82F6).withValues(alpha: 0.2)
+                            : (isDark
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : Colors.black.withValues(alpha: 0.06)),
+                        borderRadius: BorderRadius.circular(6),
+                        border: _isReorderMode
+                            ? Border.all(
+                                color: const Color(
+                                  0xFF3B82F6,
+                                ).withValues(alpha: 0.5),
+                                width: 1,
+                              )
+                            : null,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _isReorderMode
+                                ? Icons.check_rounded
+                                : Icons.reorder_rounded,
+                            size: 18,
+                            color: _isReorderMode
+                                ? const Color(0xFF3B82F6)
+                                : (isDark ? Colors.white70 : Colors.black54),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            _isReorderMode ? '完成' : '管理',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
                               color: _isReorderMode
                                   ? const Color(0xFF3B82F6)
-                                  : (isDark ? Colors.white70 : Colors.black54),
+                                  : (isDark
+                                        ? Colors.white70
+                                        : Colors.black54),
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              _isReorderMode ? '完成' : '管理',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: _isReorderMode
-                                    ? const Color(0xFF3B82F6)
-                                    : (isDark
-                                          ? Colors.white70
-                                          : Colors.black54),
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-              ),
-              if (canAddServer) const SizedBox(width: 8),
-              // 添加服务器按钮
-              AnimatedOpacity(
-                opacity: canAddServer ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 200),
-                child: IgnorePointer(
-                  ignoring: !canAddServer,
-                  child: Tooltip(
-                    message: '添加服务器',
-                    child: InkWell(
-                      onTap: _showAddServerDialog,
-                      borderRadius: BorderRadius.circular(6),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Icon(
-                          Icons.add_rounded,
-                          size: 20,
-                          color: Color(0xFF10B981),
-                        ),
+                const SizedBox(width: 8),
+                // 添加服务器按钮
+                Tooltip(
+                  message: '添加服务器',
+                  child: InkWell(
+                    onTap: _showAddServerDialog,
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Icon(
+                        Icons.add_rounded,
+                        size: 20,
+                        color: Color(0xFF10B981),
                       ),
                     ),
                   ),
                 ),
-              ),
+              ],
               // 倒计时刷新组件
               if (state.selectedCategory != null) ...[
                 const SizedBox(width: 12),
@@ -738,6 +893,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
                   _buildWarmupNotificationToggle(isDark),
                   const SizedBox(width: 8),
                 ],
+                // 启动游戏按钮
+                _buildLaunchGameButton(isDark),
+                const SizedBox(width: 8),
                 // 地图订阅按钮
                 Tooltip(
                   message: '地图订阅',
