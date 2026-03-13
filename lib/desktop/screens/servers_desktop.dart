@@ -1623,43 +1623,10 @@ class _ServersDesktopState extends State<ServersDesktop> {
             Scrollbar(
               controller: _categoriesScrollController,
               thumbVisibility: true,
-              child: ListView.builder(
-                controller: _categoriesScrollController,
-                padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                itemCount: filteredCategories.length,
-                itemBuilder: (context, index) {
-                  final category = filteredCategories[index];
-                  final categoryName = category.modelName ?? '';
-                  final isSelected =
-                      state.selectedCategory?.modelName == categoryName;
-                  final onlineCount = state.getCategoryOnlineCount(
-                    categoryName,
-                  );
-                  // 只在首次加载且该分类还没有获取到人数时显示loading
-                  // 一旦该分类有了人数数据（即使是0），就不再显示loading
-                  final isLoadingOnlineCount =
-                      !state.hasEverLoadedOnlineCounts &&
-                      state.isLoadingOnlineCounts &&
-                      !state.hasCategoryOnlineCount(categoryName);
-
-                  return CategoryCard(
-                    category: category,
-                    isSelected: isSelected,
-                    onlineCount: onlineCount,
-                    isLoadingOnlineCount: isLoadingOnlineCount,
-                    onTap: () => _onCategoryTap(category),
-                    onEdit: category.isCustom
-                        ? () => _showEditCategoryDialog(category)
-                        : null,
-                    onDelete: category.isCustom
-                        ? () {
-                            context.read<ServerBloc>().add(
-                              ServerDeleteCategory(categoryName),
-                            );
-                          }
-                        : null,
-                  );
-                },
+              child: _buildCategoriesListView(
+                context,
+                state,
+                filteredCategories,
               ),
             ),
             // 顶部滚动指示器
@@ -1679,6 +1646,105 @@ class _ServersDesktopState extends State<ServersDesktop> {
                 child: _buildScrollIndicator(isTop: false),
               ),
           ],
+        );
+      },
+    );
+  }
+
+  /// 构建分类列表视图（支持自定义分类拖动排序）
+  Widget _buildCategoriesListView(
+    BuildContext context,
+    ServerState state,
+    List<ServerCategory> filteredCategories,
+  ) {
+    final isCustomTab = state.selectedTabIndex == 1;
+
+    // 自定义分类 tab 使用可拖拽排序列表
+    if (isCustomTab && filteredCategories.isNotEmpty) {
+      return ReorderableListView.builder(
+        scrollController: _categoriesScrollController,
+        padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+        itemCount: filteredCategories.length,
+        buildDefaultDragHandles: false,
+        onReorder: (oldIndex, newIndex) {
+          if (newIndex > oldIndex) {
+            newIndex -= 1;
+          }
+          if (oldIndex != newIndex) {
+            context.read<ServerBloc>().add(
+              ServerReorderCategories(
+                oldIndex: oldIndex,
+                newIndex: newIndex,
+              ),
+            );
+          }
+        },
+        itemBuilder: (context, index) {
+          final category = filteredCategories[index];
+          final categoryName = category.modelName ?? '';
+          final isSelected = state.selectedCategory?.modelName == categoryName;
+          final onlineCount = state.getCategoryOnlineCount(categoryName);
+          final isLoadingOnlineCount =
+              !state.hasEverLoadedOnlineCounts &&
+              state.isLoadingOnlineCounts &&
+              !state.hasCategoryOnlineCount(categoryName);
+
+          return ReorderableDragStartListener(
+            index: index,
+            key: ValueKey('category_$categoryName'),
+            child: CategoryCard(
+              category: category,
+              isSelected: isSelected,
+              onlineCount: onlineCount,
+              isLoadingOnlineCount: isLoadingOnlineCount,
+              onTap: () => _onCategoryTap(category),
+              onEdit: category.isCustom
+                  ? () => _showEditCategoryDialog(category)
+                  : null,
+              onDelete: category.isCustom
+                  ? () {
+                      context.read<ServerBloc>().add(
+                        ServerDeleteCategory(categoryName),
+                      );
+                    }
+                  : null,
+            ),
+          );
+        },
+      );
+    }
+
+    // 默认分类 tab 使用普通列表
+    return ListView.builder(
+      controller: _categoriesScrollController,
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+      itemCount: filteredCategories.length,
+      itemBuilder: (context, index) {
+        final category = filteredCategories[index];
+        final categoryName = category.modelName ?? '';
+        final isSelected = state.selectedCategory?.modelName == categoryName;
+        final onlineCount = state.getCategoryOnlineCount(categoryName);
+        final isLoadingOnlineCount =
+            !state.hasEverLoadedOnlineCounts &&
+            state.isLoadingOnlineCounts &&
+            !state.hasCategoryOnlineCount(categoryName);
+
+        return CategoryCard(
+          category: category,
+          isSelected: isSelected,
+          onlineCount: onlineCount,
+          isLoadingOnlineCount: isLoadingOnlineCount,
+          onTap: () => _onCategoryTap(category),
+          onEdit: category.isCustom
+              ? () => _showEditCategoryDialog(category)
+              : null,
+          onDelete: category.isCustom
+              ? () {
+                  context.read<ServerBloc>().add(
+                    ServerDeleteCategory(categoryName),
+                  );
+                }
+              : null,
         );
       },
     );

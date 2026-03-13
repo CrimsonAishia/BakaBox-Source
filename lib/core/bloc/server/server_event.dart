@@ -192,5 +192,17 @@ class ServerReorderServers extends ServerEvent {
   List<Object?> get props => [categoryName, oldIndex, newIndex];
 }
 
+/// 重新排序自定义分类
+class ServerReorderCategories extends ServerEvent {
+  final int oldIndex;
+  final int newIndex;
+  const ServerReorderCategories({
+    required this.oldIndex,
+    required this.newIndex,
+  });
+  @override
+  List<Object?> get props => [oldIndex, newIndex];
+}
+
 /// 强制刷新服务器列表（重置所有状态，用于手动点击刷新）
 class ServerForceRefresh extends ServerEvent {}

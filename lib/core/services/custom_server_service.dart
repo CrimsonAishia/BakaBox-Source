@@ -31,6 +31,13 @@ class CustomServerService {
       final categories = jsonList
           .map((json) => ServerCategory.fromJson(json as Map<String, dynamic>))
           .toList();
+
+      // 按照 sortOrder 排序（如果有的话）
+      categories.sort((a, b) {
+        final orderA = a.sortOrder ?? 0;
+        final orderB = b.sortOrder ?? 0;
+        return orderA.compareTo(orderB);
+      });
       
       LogService.d('加载自定义分类成功，共 ${categories.length} 个');
       return categories;
@@ -49,11 +56,15 @@ class CustomServerService {
       throw Exception('分类 "$categoryName" 已存在');
     }
     
+    // 设置 sortOrder 为当前列表末尾
+    final newSortOrder = categories.isEmpty ? 0 : categories.length;
+    
     final newCategory = ServerCategory(
       modelName: categoryName,
       category: categoryName,
       serverList: [],
       isCustom: true,
+      sortOrder: newSortOrder,
     );
     
     categories.add(newCategory);
@@ -241,6 +252,25 @@ class CustomServerService {
     
     LogService.i('重新排序服务器: $oldIndex -> $newIndex (分类: $categoryName)');
     return updatedCategory;
+  }
+
+  /// 重新排序自定义分类
+  static Future<void> reorderCategories(List<String> categoryNames) async {
+    final categories = await loadCustomCategories();
+
+    // 根据传入的顺序重新排序
+    final sortedCategories = <ServerCategory>[];
+    for (var i = 0; i < categoryNames.length; i++) {
+      final categoryName = categoryNames[i];
+      final categoryIndex = categories.indexWhere((c) => c.modelName == categoryName);
+      if (categoryIndex != -1) {
+        final category = categories[categoryIndex];
+        sortedCategories.add(category.copyWith(sortOrder: i));
+      }
+    }
+
+    await saveCustomCategories(sortedCategories);
+    LogService.i('重新排序分类: $categoryNames');
   }
   
   /// 清除所有自定义数据
