@@ -123,20 +123,9 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
       _hasError = false;
       _cachedFile = null;
     });
-    
-    // 先检查同步缓存
-    final syncFile = DiskImageCacheService.instance.getCachedFileSync(widget.imageUrl);
-    if (syncFile != null) {
-      if (mounted) {
-        setState(() {
-          _cachedFile = syncFile;
-          _isLoading = false;
-        });
-      }
-      return;
-    }
-    
-    // 异步下载
+
+    // 使用异步方法获取图片，每次都会验证缓存文件是否有效
+    // 如果缓存图片无效（空图片或损坏），会自动删除并重新下载
     final file = await DiskImageCacheService.instance.getImage(widget.imageUrl);
     
     if (mounted) {
