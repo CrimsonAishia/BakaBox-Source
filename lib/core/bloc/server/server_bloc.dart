@@ -79,6 +79,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     on<ServerEditServer>(_onEditServer);
     on<ServerUpdateEditedServer>(_onUpdateEditedServer);
     on<ServerReorderServers>(_onReorderServers);
+    on<ServerReorderCategories>(_onReorderCategories);
     on<ServerForceRefresh>(_onForceRefresh);
   }
 
@@ -1719,6 +1720,63 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
             error: ErrorUtils.getErrorMessage(e, defaultMessage: '排序失败'),
           ),
         );
+      }
+    }
+  }
+
+  /// 重新排序自定义分类
+  Future<void> _onReorderCategories(
+    ServerReorderCategories event,
+    Emitter<ServerState> emit,
+  ) async {
+    // 先进行乐观更新，避免与 ReorderableListView 动画冲突
+    final customCategories = state.serverCategories
+        .where((c) => c.isCustom)
+        .toList();
+
+    if (event.oldIndex >= 0 &&
+        event.oldIndex < customCategories.length &&
+        event.newIndex >= 0 &&
+        event.newIndex < customCategories.length) {
+      // 创建新的分类列表副本
+      final updatedCustomCategories = List<ServerCategory>.from(customCategories);
+      final item = updatedCustomCategories.removeAt(event.oldIndex);
+      updatedCustomCategories.insert(event.newIndex, item);
+
+      // 为每个分类更新 sortOrder
+      for (var i = 0; i < updatedCustomCategories.length; i++) {
+        updatedCustomCategories[i] = updatedCustomCategories[i].copyWith(
+          sortOrder: i,
+        );
+      }
+
+      // 更新整个分类列表（保留默认分类，更新自定义分类的顺序）
+      final allCategories = <ServerCategory>[];
+      // 添加默认分类（保持原顺序）
+      allCategories.addAll(state.serverCategories.where((c) => !c.isCustom));
+      // 添加排序后的自定义分类
+      allCategories.addAll(updatedCustomCategories);
+
+      // 立即更新 UI
+      emit(state.copyWith(serverCategories: allCategories));
+
+      // 然后异步保存到存储
+      try {
+        await CustomServerService.reorderCategories(
+          updatedCustomCategories
+              .map((c) => c.modelName)
+              .whereType<String>()
+              .toList(),
+        );
+
+        LogService.i('重新排序分类成功: ${event.oldIndex} -> ${event.newIndex}');
+      } catch (e) {
+        LogService.e('重新排序分类失败: $e', e);
+        // 如果保存失败，回滚 UI 状态
+        emit(state.copyWith(
+          serverCategories: state.serverCategories,
+          error: ErrorUtils.getErrorMessage(e, defaultMessage: '排序失败'),
+        ));
       }
     }
   }

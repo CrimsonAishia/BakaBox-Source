@@ -8,12 +8,14 @@ class ServerCategory {
   final String? category;
   final List<ServerItem> serverList;
   @JsonKey(defaultValue: false) final bool isCustom; // 标记是否为用户自定义分类
+  final int? sortOrder; // 自定义分类排序顺序
 
   ServerCategory({
     this.modelName, 
     this.category, 
     required this.serverList,
     this.isCustom = false,
+    this.sortOrder,
   });
 
   factory ServerCategory.fromJson(Map<String, dynamic> json) => _$ServerCategoryFromJson(json);
@@ -24,12 +26,14 @@ class ServerCategory {
     String? category,
     List<ServerItem>? serverList,
     bool? isCustom,
+    int? sortOrder,
   }) {
     return ServerCategory(
       modelName: modelName ?? this.modelName,
       category: category ?? this.category,
       serverList: serverList ?? this.serverList,
       isCustom: isCustom ?? this.isCustom,
+      sortOrder: sortOrder ?? this.sortOrder,
     );
   }
 }
