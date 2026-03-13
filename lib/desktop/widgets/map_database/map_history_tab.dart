@@ -199,12 +199,14 @@ class _MapHistoryTabState extends State<MapHistoryTab> {
   /// 格式化时间（简短格式）
   String _formatShortTime(DateTime dateTime) {
     final now = DateTime.now();
-    final diff = now.difference(dateTime);
-    
-    if (diff.inDays == 0) {
+    final nowDate = DateTime(now.year, now.month, now.day);
+    final date = DateTime(dateTime.year, dateTime.month, dateTime.day);
+    final diffDays = nowDate.difference(date).inDays;
+
+    if (diffDays == 0) {
       // 今天：显示时间
       return '今天 ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-    } else if (diff.inDays == 1) {
+    } else if (diffDays == 1) {
       // 昨天
       return '昨天 ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
     } else if (dateTime.year == now.year) {
