@@ -910,6 +910,35 @@ class ObsServerService {
       }
     });
 
+    // 转换十六进制颜色为 rgba 格式
+    // 支持 #RRGGBB 和 #AARRGGBB 格式
+    function convertHexToRgba(hexColor) {
+      if (!hexColor) return null;
+      
+      // 移除 # 号
+      hexColor = hexColor.replace('#', '');
+      
+      let r, g, b, a = 1;
+      
+      if (hexColor.length === 6) {
+        // #RRGGBB 格式
+        r = parseInt(hexColor.substring(0, 2), 16);
+        g = parseInt(hexColor.substring(2, 4), 16);
+        b = parseInt(hexColor.substring(4, 6), 16);
+        a = 1;
+      } else if (hexColor.length === 8) {
+        // #AARRGGBB 格式（Dart 存储格式，alpha 在前）
+        a = parseInt(hexColor.substring(0, 2), 16) / 255;
+        r = parseInt(hexColor.substring(2, 4), 16);
+        g = parseInt(hexColor.substring(4, 6), 16);
+        b = parseInt(hexColor.substring(6, 8), 16);
+      } else {
+        return null;
+      }
+      
+      return 'rgba(' + r + ',' + g + ',' + b + ',' + a.toFixed(2) + ')';
+    }
+
     function getPingColor(ping) {
       if (ping === null || ping === undefined || ping === '???') return 'unknown';
       const p = parseInt(ping) || 0;
@@ -1030,17 +1059,66 @@ class ObsServerService {
            
            wrapper.appendChild(card);
         } else if (el.type === 'text') {
-           wrapper.style.color = el.textColor || el.color || '#FFFFFF';
+           // 转换文本颜色为 rgba 格式
+           wrapper.style.color = convertHexToRgba(el.textColor || el.color) || '#FFFFFF';
            if (el.showBackground !== false) {
-             // Hex color might look like #00000080 which some old OBS browser sources might not support perfectly, 
-             // but obs_tool preview uses it and OBS CEF is quite modern.
-             wrapper.style.backgroundColor = el.backgroundColor || 'rgba(0,0,0,0.5)';
-             wrapper.style.padding = '8px 12px';
-             wrapper.style.borderRadius = '8px';
+             // 转换十六进制颜色为 rgba 格式（支持 #RRGGBB 和 #AARRGGBB 格式）
+             wrapper.style.backgroundColor = convertHexToRgba(el.backgroundColor) || 'rgba(0,0,0,0.5)';
+             // 使用动态的内边距和圆角设置
+             const paddingVal = el.padding !== undefined ? el.padding : 12;
+             wrapper.style.padding = paddingVal + 'px';
+             const radiusVal = el.borderRadius !== undefined ? el.borderRadius : 8;
+             wrapper.style.borderRadius = radiusVal + 'px';
            }
            wrapper.style.fontSize = (el.fontSize || 24) + 'px';
            wrapper.style.fontWeight = el.fontWeight || 'normal';
-           if (el.textShadow) wrapper.style.textShadow = el.textShadow;
+           // 处理斜体
+           if (el.fontStyle === 'italic') {
+             wrapper.style.fontStyle = 'italic';
+           } else {
+             wrapper.style.fontStyle = 'normal';
+           }
+           // 处理下划线
+           if (el.decoration === 'underline') {
+             wrapper.style.textDecoration = 'underline';
+           }
+           // 处理对齐方式
+           if (el.textAlign === 'center') {
+             wrapper.style.textAlign = 'center';
+           } else if (el.textAlign === 'right') {
+             wrapper.style.textAlign = 'right';
+           } else {
+             wrapper.style.textAlign = 'left';
+           }
+          // 处理文字阴影
+          if (el.showTextShadow !== false) {
+            const shadowBlur = el.shadowBlur !== undefined ? el.shadowBlur : 4;
+            const shadowOffset = el.shadowOffset !== undefined ? el.shadowOffset : 2;
+            const shadowColor = 'rgba(0,0,0,0.5)';
+            // 根据scale调整阴影偏移和模糊，抵消CSS transform scale的影响
+            const scale = el.scale || 1.0;
+            const adjustedOffset = shadowOffset / scale;
+            const adjustedBlur = shadowBlur / scale;
+            wrapper.style.textShadow = adjustedOffset + 'px ' + adjustedOffset + 'px ' + adjustedBlur + 'px ' + shadowColor;
+          }
+          // 处理文字描边 - 使用 text-shadow 模拟外描边，避免侵入文字
+          if (el.showTextStroke) {
+            const strokeWidth = el.strokeWidth !== undefined ? el.strokeWidth : 2;
+            const strokeColor = convertHexToRgba(el.strokeColor) || '#000000';
+            // 使用 text-shadow 多层叠加模拟外描边效果
+            // 这样描边只会在文字外侧，不会侵入文字内部
+            const w = strokeWidth;
+            const color = strokeColor;
+            wrapper.style.textShadow = 
+              color + ' ' + w + 'px 0 0, ' +      // 右
+              color + ' -' + w + 'px 0 0, ' +     // 左
+              color + ' 0 ' + w + 'px 0, ' +      // 下
+              color + ' 0 -' + w + 'px 0, ' +     // 上
+              color + ' ' + w + 'px ' + w + 'px 0, ' +   // 右下
+              color + ' -' + w + 'px ' + w + 'px 0, ' +  // 左下
+              color + ' ' + w + 'px -' + w + 'px 0, ' +   // 右上
+              color + ' -' + w + 'px -' + w + 'px 0';    // 左上
+          }
            
            let text = el.template || '';
            

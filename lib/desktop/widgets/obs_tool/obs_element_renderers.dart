@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../../core/models/server_models.dart';
 import '../../../../core/services/server_address_mapping_service.dart';
@@ -39,6 +40,45 @@ Widget buildElementMock(
 
   // 默认返回空容器，避免未知类型导致异常
   return const SizedBox();
+}
+
+/// 构建带模糊效果的地图背景
+Widget _buildMapBackgroundWithBlur(
+  ExtendedServerItem? mockServer,
+  SourceServerInfo? queriedInfo,
+  String? mapRawName,
+  String? mapUrl,
+  double blur,
+) {
+  final hasServerData = mockServer != null || queriedInfo != null;
+  
+  Widget background;
+  if (hasServerData) {
+    background = MapBackground(
+      mapName: mapRawName ?? '',
+      imageUrl: mapUrl,
+      cacheWidth: 800,
+      cacheHeight: 330,
+    );
+  } else {
+    background = Image.asset(
+      'assets/images/default-map-bg.jpg',
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => Container(
+        color: const Color(0xFF1e1e1e),
+      ),
+    );
+  }
+  
+  // 如果需要模糊效果，用 ImageFiltered 包裹
+  if (blur > 0) {
+    return ImageFiltered(
+      imageFilter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+      child: background,
+    );
+  }
+  
+  return background;
 }
 
 /// 构建服务器卡片预览
@@ -135,20 +175,13 @@ Widget buildServerCardMock(
           // 地图背景 - 有服务器数据时显示地图背景，否则显示默认背景
           if (el['showMapImage'] ?? true)
             Positioned.fill(
-              child: (mockServer != null || queriedInfo != null)
-                  ? MapBackground(
-                      mapName: mapRawName,
-                      imageUrl: mapUrl,
-                      cacheWidth: 800,
-                      cacheHeight: 330,
-                    )
-                  : Image.asset(
-                      'assets/images/default-map-bg.jpg',
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: const Color(0xFF1e1e1e),
-                      ),
-                    ),
+              child: _buildMapBackgroundWithBlur(
+                mockServer,
+                queriedInfo,
+                mapRawName,
+                mapUrl,
+                el['bgBlur'] ?? 0.0,
+              ),
             ),
           // 渐变遮罩
           Positioned.fill(
@@ -332,8 +365,8 @@ Widget buildTextMock(
   String? queriedDisplayName,
   String? queriedAddress,
 ]) {
-  final String textColorHex = el['textColor'] ?? '#FFFFFF';
-  final String bgColorHex = el['backgroundColor'] ?? '#00000080';
+  final String textColorHex = el['textColor'] ?? el['color'] ?? '#FFFFFF';
+  final String bgColorHex = el['backgroundColor'] ?? '#80000000';
   final Color textColor = parseColor(textColorHex);
   final Color bgColor = parseColor(bgColorHex);
   final bool showBackground = el['showBackground'] ?? true;
@@ -344,6 +377,12 @@ Widget buildTextMock(
   final bool showTextShadow = el['showTextShadow'] ?? true;
   final double shadowBlur = (el['shadowBlur'] ?? 4.0).toDouble();
   final double shadowOffset = (el['shadowOffset'] ?? 2.0).toDouble();
+
+  // 文字描边设置
+  final bool showTextStroke = el['showTextStroke'] ?? false;
+  final double strokeWidth = (el['strokeWidth'] ?? 2.0).toDouble();
+  final String strokeColorHex = el['strokeColor'] ?? '#000000';
+  final Color strokeColor = parseColor(strokeColorHex);
 
   final String textAlign = el['textAlign'] ?? 'left';
 
@@ -395,6 +434,83 @@ Widget buildTextMock(
   // 清理未识别的变量占位符
   template = _cleanUnknownVariables(template);
 
+  // 构建文字样式
+  final textStyle = TextStyle(
+    color: textColor,
+    fontSize: el['fontSize']?.toDouble() ?? 24.0,
+    fontWeight: el['fontWeight'] == 'bold'
+        ? FontWeight.bold
+        : FontWeight.normal,
+    fontStyle: el['fontStyle'] == 'italic'
+        ? FontStyle.italic
+        : FontStyle.normal,
+    decoration: el['decoration'] == 'underline'
+        ? TextDecoration.underline
+        : null,
+    height: 1.4,
+    shadows: showTextShadow
+        ? [
+            Shadow(
+              color: Colors.black.withValues(alpha: 0.5),
+              blurRadius: shadowBlur,
+              offset: Offset(shadowOffset, shadowOffset),
+            ),
+          ]
+        : null,
+  );
+
+  // 文字内容组件
+  final textWidget = Text(
+    template,
+    textAlign: _getTextAlign(textAlign),
+    style: textStyle,
+  );
+
+  // 如果需要描边，使用多层 text-shadow 模拟外描边效果（与 OBS 端保持一致）
+  // 这样描边只会在文字外侧，不会侵入文字内部
+  final contentWidget = showTextStroke
+      ? Text(
+          template,
+          textAlign: _getTextAlign(textAlign),
+          style: textStyle.copyWith(
+            shadows: [
+              Shadow(
+                color: strokeColor,
+                offset: Offset(strokeWidth, 0),
+              ),
+              Shadow(
+                color: strokeColor,
+                offset: Offset(-strokeWidth, 0),
+              ),
+              Shadow(
+                color: strokeColor,
+                offset: Offset(0, strokeWidth),
+              ),
+              Shadow(
+                color: strokeColor,
+                offset: Offset(0, -strokeWidth),
+              ),
+              Shadow(
+                color: strokeColor,
+                offset: Offset(strokeWidth, strokeWidth),
+              ),
+              Shadow(
+                color: strokeColor,
+                offset: Offset(-strokeWidth, strokeWidth),
+              ),
+              Shadow(
+                color: strokeColor,
+                offset: Offset(strokeWidth, -strokeWidth),
+              ),
+              Shadow(
+                color: strokeColor,
+                offset: Offset(-strokeWidth, -strokeWidth),
+              ),
+            ],
+          ),
+        )
+      : textWidget;
+
   return Container(
     padding: EdgeInsets.all(padding),
     decoration: showBackground
@@ -403,33 +519,7 @@ Widget buildTextMock(
             borderRadius: BorderRadius.circular(borderRadius),
           )
         : null,
-    child: Text(
-      template,
-      textAlign: _getTextAlign(textAlign),
-      style: TextStyle(
-        color: textColor,
-        fontSize: el['fontSize']?.toDouble() ?? 24.0,
-        fontWeight: el['fontWeight'] == 'bold'
-            ? FontWeight.bold
-            : FontWeight.normal,
-        fontStyle: el['fontStyle'] == 'italic'
-            ? FontStyle.italic
-            : FontStyle.normal,
-        decoration: el['decoration'] == 'underline'
-            ? TextDecoration.underline
-            : null,
-        height: 1.4,
-        shadows: showTextShadow
-            ? [
-                Shadow(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  blurRadius: shadowBlur,
-                  offset: Offset(shadowOffset, shadowOffset),
-                ),
-              ]
-            : null,
-      ),
-    ),
+    child: contentWidget,
   );
 }
 

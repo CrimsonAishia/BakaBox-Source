@@ -249,13 +249,23 @@ class _ObsToolState extends State<ObsTool> {
       el['showPlayers'] ??= true;
       el['showMap'] ??= true;
       el['showTitle'] ??= true;
+      el['gradientOpacity'] ??= 0.6;
+      el['bgBlur'] ??= 0.0;
     }
     if (el['type'] == 'text') {
       el['fontSize'] ??= 24.0;
       el['fontWeight'] ??= 'bold';
       el['textColor'] ??= '#FFFFFF';
-      el['backgroundColor'] ??= '#00000080';
+      el['backgroundColor'] ??= '#80000000';
       el['showBackground'] ??= true;
+      el['textAlign'] ??= 'left';
+      el['fontStyle'] ??= 'normal';
+      el['decoration'] ??= 'none';
+      el['showTextShadow'] ??= true;
+      el['shadowBlur'] ??= 4.0;
+      el['shadowOffset'] ??= 2.0;
+      el['padding'] ??= 12.0;
+      el['borderRadius'] ??= 8.0;
     }
   }
 
@@ -307,6 +317,12 @@ class _ObsToolState extends State<ObsTool> {
           'showPing': false,
           'showPlayers': true,
           'showMap': true,
+          'showTitle': true,
+          'titleFontSize': 20.0,
+          'mapFontSize': 16.0,
+          'ipFontSize': 15.0,
+          'gradientOpacity': 0.6,
+          'bgBlur': 0.0,
         };
       case 'text':
         final id = 'text-${DateTime.now().millisecondsSinceEpoch}';
@@ -320,8 +336,16 @@ class _ObsToolState extends State<ObsTool> {
           'fontSize': 24.0,
           'fontWeight': 'bold',
           'textColor': '#FFFFFF',
-          'backgroundColor': '#00000080',
+          'backgroundColor': '#80000000',
           'showBackground': true,
+          'textAlign': 'left',
+          'fontStyle': 'normal',
+          'decoration': 'none',
+          'showTextShadow': true,
+          'shadowBlur': 4.0,
+          'shadowOffset': 2.0,
+          'padding': 12.0,
+          'borderRadius': 8.0,
         };
       default:
         final id = '${type}-${DateTime.now().millisecondsSinceEpoch}';
@@ -480,6 +504,36 @@ class _ObsToolState extends State<ObsTool> {
           // 游戏监控状态
           _buildGameStatusIndicator(context),
           const Spacer(),
+          // 提示：如果 OBS 看不到内容，需要刷新浏览器源
+          Tooltip(
+            message: '如果 OBS 浏览器源未显示，请在 OBS 中选中该浏览器源，并点击上方的"刷新"按钮，一般是先启动OBS在启动BakaBox导致的',
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.orange.withValues(alpha: 0.5),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.refresh, size: 16, color: Colors.orange.shade700),
+                  const SizedBox(width: 6),
+                  Text(
+                    '不显示？',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.orange.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
           FilledButton.tonalIcon(
             onPressed: () => _showTutorial(context),
             icon: const Icon(Icons.help_outline, size: 18),

@@ -8,10 +8,11 @@ Color parseColor(String hexColor) {
     if (hexColor.length == 6) {
       return Color(int.parse('FF$hexColor', radix: 16));
     } else if (hexColor.length == 8) {
-      String rr = hexColor.substring(0, 2);
-      String gg = hexColor.substring(2, 4);
-      String bb = hexColor.substring(4, 6);
-      String aa = hexColor.substring(6, 8);
+      // 格式为 AARRGGBB (alpha 在前)
+      String aa = hexColor.substring(0, 2);
+      String rr = hexColor.substring(2, 4);
+      String gg = hexColor.substring(4, 6);
+      String bb = hexColor.substring(6, 8);
       return Color(int.parse('$aa$rr$gg$bb', radix: 16));
     }
   } catch (e) {
