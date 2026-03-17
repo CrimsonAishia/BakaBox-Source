@@ -1,6 +1,13 @@
 import 'package:equatable/equatable.dart';
 import '../../models/server_models.dart';
 
+/// 加载阶段枚举
+enum LoadingPhase {
+  idle,           // 空闲状态
+  loadingA2S,    // 正在获取 A2S 数据
+  completed,     // A2S 加载完成（可以隐藏遮罩）
+}
+
 class ServerState extends Equatable {
   final List<ServerCategory> serverCategories;
   final bool isLoading;
@@ -21,6 +28,8 @@ class ServerState extends Equatable {
   final bool needCsgoLegacy; // 是否需要安装 CSGO Legacy
   final bool needManualLaunch; // 是否需要手动启动 CSGO
   final DateTime? lastRefreshTime; // 最后一次刷新时间
+  final LoadingPhase loadingPhase; // 当前加载阶段
+  final DateTime? loadingStartTime; // 加载开始时间（用于计算倒计时）
 
   const ServerState({
     this.serverCategories = const [],
@@ -42,6 +51,8 @@ class ServerState extends Equatable {
     this.needCsgoLegacy = false,
     this.needManualLaunch = false,
     this.lastRefreshTime,
+    this.loadingPhase = LoadingPhase.idle,
+    this.loadingStartTime,
   });
 
   ServerState copyWith({
@@ -65,6 +76,8 @@ class ServerState extends Equatable {
     bool? needCsgoLegacy,
     bool? needManualLaunch,
     DateTime? lastRefreshTime,
+    LoadingPhase? loadingPhase,
+    DateTime? loadingStartTime,
   }) {
     return ServerState(
       serverCategories: serverCategories ?? this.serverCategories,
@@ -86,6 +99,8 @@ class ServerState extends Equatable {
       needCsgoLegacy: needCsgoLegacy ?? this.needCsgoLegacy,
       needManualLaunch: needManualLaunch ?? this.needManualLaunch,
       lastRefreshTime: lastRefreshTime ?? this.lastRefreshTime,
+      loadingPhase: loadingPhase ?? this.loadingPhase,
+      loadingStartTime: loadingStartTime ?? this.loadingStartTime,
     );
   }
 
@@ -111,6 +126,6 @@ class ServerState extends Equatable {
     isLoadingServers, isPaused, categoryOnlineCounts, loadingCategories,
     isLoadingOnlineCounts, hasEverLoadedOnlineCounts, countdownResetKey,
     isCountdownActive, refreshingMaps, selectedTabIndex, needCsgoLegacy, needManualLaunch,
-    lastRefreshTime,
+    lastRefreshTime, loadingPhase, loadingStartTime,
   ];
 }
