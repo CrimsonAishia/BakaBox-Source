@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dart_ping/dart_ping.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../core/core.dart';
+import '../../core/bloc/server/server_state.dart';
 import '../../core/services/status_window_service.dart';
 import '../widgets/server/server_card.dart';
 import '../widgets/server/server_card_skeleton.dart';
@@ -16,6 +17,8 @@ import '../widgets/add_category_dialog.dart';
 import '../widgets/edit_category_dialog.dart';
 import '../widgets/add_server_dialog.dart';
 import '../widgets/map_subscription/map_subscription_dialog.dart';
+
+// ==================== 常量定义 ====================
 
 /// 自动刷新间隔（秒）
 const int _kRefreshInterval = 15;
@@ -513,16 +516,18 @@ class _ServersDesktopState extends State<ServersDesktop> {
     );
   }
 
-  /// 处理自动刷新
+  /// 处理自动刷新（定期刷新）
   void _handleRefresh(ServerState state) {
     // 沉浸模式下不触发自动刷新
     if (_isInImmersiveMode) return;
     if (state.selectedCategory != null) {
+      // 定期刷新使用普通刷新（保留现有数据，只更新变化的部分）
       context.read<ServerBloc>().add(ServerRefreshServers());
     }
   }
 
   /// 处理手动强制刷新（重置所有状态）
+  /// 每次点击都执行强制刷新，就像浏览器刷新一样
   void _handleForceRefresh() {
     context.read<ServerBloc>().add(ServerForceRefresh());
   }
@@ -785,8 +790,8 @@ class _ServersDesktopState extends State<ServersDesktop> {
       builder: (context, state) {
         final canAddServer = state.selectedCategory?.isCustom == true;
         final categoryName = state.selectedCategory?.modelName ?? '';
-        final isRefreshing =
-            state.isCategoryLoading(categoryName) || state.isLoadingServers;
+        // 刷新组件独立判断：仅在分类加载中时显示刷新状态（不再等待服务器数据加载完成）
+        final isRefreshing = state.isCategoryLoading(categoryName);
 
         return Padding(
           padding: const EdgeInsets.all(15),
@@ -1181,12 +1186,17 @@ class _ServersDesktopState extends State<ServersDesktop> {
     int index,
   ) {
     final showSkeleton = server.isLoading && server.serverData == null;
+    // 在 A2S 加载阶段显示加载文字
+    final String? loadingText = showSkeleton && state.loadingPhase == LoadingPhase.loadingA2S
+        ? '正在获取服务器数据...'
+        : null;
+    
     return Padding(
       padding: const EdgeInsets.only(bottom: 13),
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: showSkeleton
-            ? const ServerCardSkeleton()
+            ? ServerCardSkeleton(key: ValueKey('skeleton_$index'), loadingText: loadingText)
             : ServerCard(
                 key: ValueKey(server.serverItem.address),
                 server: server,

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 /// 服务器卡片骨架屏
+/// [loadingText] 可选的加载文字（如 "正在获取服务器数据(3秒)"）
 class ServerCardSkeleton extends StatefulWidget {
-  const ServerCardSkeleton({super.key});
+  final String? loadingText;
+
+  const ServerCardSkeleton({super.key, this.loadingText});
 
   @override
   State<ServerCardSkeleton> createState() => _ServerCardSkeletonState();
@@ -68,61 +71,116 @@ class _ServerCardSkeletonState extends State<ServerCardSkeleton>
             // 骨架内容 - 与真实卡片一致的 padding
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 左侧内容
-                  Expanded(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 400),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // 服务器名称 - 20px font
-                          _buildShimmer(widthPercent: 0.7, height: 24),
-                          const SizedBox(height: 11),
-                          // 地图名称行 - 16px font
-                          Row(
-                            children: [
-                              _buildShimmer(width: 44, height: 20), // "地图："
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: _buildShimmer(widthPercent: 0.55, height: 20),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 11),
-                          // 地址和延迟行 - 15px font
-                          Row(
-                            children: [
-                              _buildShimmer(width: 160, height: 18),
-                              const SizedBox(width: 8),
-                              _buildShimmer(width: 50, height: 18, radius: 4),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  // 右侧人数和运行时间
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // 玩家数量框
-                      _buildShimmer(width: 75, height: 44, radius: 6),
-                      const SizedBox(height: 6),
-                      // 运行时间框
-                      _buildShimmer(width: 80, height: 38, radius: 6),
-                    ],
-                  ),
-                ],
+              child: _buildContent(),
+            ),
+            // 底部加载文字遮罩（仅在有 loadingText 时显示）
+            if (widget.loadingText != null)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: _buildBottomLoadingMask(),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建底部加载文字遮罩
+  Widget _buildBottomLoadingMask() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.transparent,
+            Colors.black.withValues(alpha: 0.7),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(
+                strokeWidth: 1.5,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Colors.white.withValues(alpha: 0.8),
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              widget.loadingText!,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.white.withValues(alpha: 0.9),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  /// 构建骨架内容
+  Widget _buildContent() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 左侧内容
+        Expanded(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 服务器名称 - 20px font
+                _buildShimmer(widthPercent: 0.7, height: 24),
+                const SizedBox(height: 11),
+                // 地图名称行 - 16px font
+                Row(
+                  children: [
+                    _buildShimmer(width: 44, height: 20), // "地图："
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: _buildShimmer(widthPercent: 0.55, height: 20),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 11),
+                // 地址和延迟行 - 15px font
+                Row(
+                  children: [
+                    _buildShimmer(width: 160, height: 18),
+                    const SizedBox(width: 8),
+                    _buildShimmer(width: 50, height: 18, radius: 4),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        // 右侧人数和运行时间
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 玩家数量框
+            _buildShimmer(width: 75, height: 44, radius: 6),
+            const SizedBox(height: 6),
+            // 运行时间框
+            _buildShimmer(width: 80, height: 38, radius: 6),
+          ],
+        ),
+      ],
     );
   }
 

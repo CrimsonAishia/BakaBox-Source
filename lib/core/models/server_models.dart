@@ -1,16 +1,17 @@
+import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'server_models.g.dart';
 
 @JsonSerializable()
-class ServerCategory {
+class ServerCategory extends Equatable {
   final String? modelName;
   final String? category;
   final List<ServerItem> serverList;
   @JsonKey(defaultValue: false) final bool isCustom; // 标记是否为用户自定义分类
   final int? sortOrder; // 自定义分类排序顺序
 
-  ServerCategory({
+  const ServerCategory({
     this.modelName, 
     this.category, 
     required this.serverList,
@@ -36,17 +37,20 @@ class ServerCategory {
       sortOrder: sortOrder ?? this.sortOrder,
     );
   }
+
+  @override
+  List<Object?> get props => [modelName, category, serverList, isCustom, sortOrder];
 }
 
 @JsonSerializable()
-class ServerItem {
+class ServerItem extends Equatable {
   final String? address;
   final String? serverAddress;
   final Map<String, dynamic>? serverData;
   @JsonKey(defaultValue: false) final bool isCustom; // 标记是否为用户自定义服务器
   final String? nickname; // 自定义服务器备注名
 
-  ServerItem({
+  const ServerItem({
     this.address, 
     this.serverAddress, 
     this.serverData,
@@ -80,10 +84,13 @@ class ServerItem {
       nickname: clearNickname ? null : (nickname ?? this.nickname),
     );
   }
+
+  @override
+  List<Object?> get props => [address, serverAddress, serverData, isCustom, nickname];
 }
 
 @JsonSerializable()
-class ServerInfo {
+class ServerInfo extends Equatable {
   @JsonKey(name: 'Protocol') final int? protocol;
   @JsonKey(name: 'HostName') final String? hostName;
   @JsonKey(name: 'Map') final String? map;
@@ -108,7 +115,7 @@ class ServerInfo {
   final String? pingStatus;
   @JsonKey(name: 'GameType') final String? gameType;
 
-  ServerInfo({
+  const ServerInfo({
     this.protocol, this.hostName, this.map, this.modDir, this.modDesc, this.appId,
     this.players, this.maxPlayers, this.bots, this.dedicated, this.os, this.password,
     this.secure, this.version, this.extraDataFlags, this.gamePort, this.steamId,
@@ -117,18 +124,28 @@ class ServerInfo {
 
   factory ServerInfo.fromJson(Map<String, dynamic> json) => _$ServerInfoFromJson(json);
   Map<String, dynamic> toJson() => _$ServerInfoToJson(this);
+
+  @override
+  List<Object?> get props => [
+    protocol, hostName, map, modDir, modDesc, appId, players, maxPlayers,
+    bots, dedicated, os, password, secure, version, extraDataFlags, gamePort,
+    steamId, gameTags, gameId, ip, pingLatency, pingStatus, gameType,
+  ];
 }
 
 @JsonSerializable()
-class ServerPingInfo {
+class ServerPingInfo extends Equatable {
   final String ip;
   final int ping;
   final String pingStatus;
 
-  ServerPingInfo({required this.ip, required this.ping, required this.pingStatus});
+  const ServerPingInfo({required this.ip, required this.ping, required this.pingStatus});
 
   factory ServerPingInfo.fromJson(Map<String, dynamic> json) => _$ServerPingInfoFromJson(json);
   Map<String, dynamic> toJson() => _$ServerPingInfoToJson(this);
+
+  @override
+  List<Object?> get props => [ip, ping, pingStatus];
 }
 
 @JsonSerializable()
@@ -145,15 +162,18 @@ class PlayerInfo {
 }
 
 @JsonSerializable()
-class TeamScores {
+class TeamScores extends Equatable {
   @JsonKey(name: 'ct_score') final int? ctScore;
   @JsonKey(name: 't_score') final int? tScore;
   @JsonKey(name: 'data_quality') final String? dataQuality;
 
-  TeamScores({this.ctScore, this.tScore, this.dataQuality});
+  const TeamScores({this.ctScore, this.tScore, this.dataQuality});
 
   factory TeamScores.fromJson(Map<String, dynamic> json) => _$TeamScoresFromJson(json);
   Map<String, dynamic> toJson() => _$TeamScoresToJson(this);
+
+  @override
+  List<Object?> get props => [ctScore, tScore, dataQuality];
 }
 
 @JsonSerializable()
@@ -169,27 +189,33 @@ class ServerDetailInfo {
 }
 
 @JsonSerializable()
-class MapData {
+class MapData extends Equatable {
   final int id;
   final String mapName;
   final String mapLabel;
   final String mapUrl;
 
-  MapData({required this.id, required this.mapName, required this.mapLabel, required this.mapUrl});
+  const MapData({required this.id, required this.mapName, required this.mapLabel, required this.mapUrl});
 
   factory MapData.fromJson(Map<String, dynamic> json) => _$MapDataFromJson(json);
   Map<String, dynamic> toJson() => _$MapDataToJson(this);
+
+  @override
+  List<Object?> get props => [id, mapName, mapLabel, mapUrl];
 }
 
 @JsonSerializable()
-class MapRuntimeData {
+class MapRuntimeData extends Equatable {
   final int currentRuntime;
   final int weeklyOccurrences;
 
-  MapRuntimeData({required this.currentRuntime, required this.weeklyOccurrences});
+  const MapRuntimeData({required this.currentRuntime, required this.weeklyOccurrences});
 
   factory MapRuntimeData.fromJson(Map<String, dynamic> json) => _$MapRuntimeDataFromJson(json);
   Map<String, dynamic> toJson() => _$MapRuntimeDataToJson(this);
+
+  @override
+  List<Object?> get props => [currentRuntime, weeklyOccurrences];
 }
 
 @JsonSerializable()
@@ -236,7 +262,7 @@ class ServerSnapshot {
   Map<String, dynamic> toJson() => _$ServerSnapshotToJson(this);
 }
 
-class ExtendedServerItem {
+class ExtendedServerItem extends Equatable {
   final ServerItem serverItem;
   final ServerInfo? serverData;
   final MapData? mapInfo;
@@ -288,6 +314,13 @@ class ExtendedServerItem {
       teamScores: clearTeamScores ? null : (teamScores ?? this.teamScores),
     );
   }
+
+  @override
+  List<Object?> get props => [
+    serverItem, serverData, mapInfo, updatedAt, recentlyUpdated,
+    isLoading, hasError, pingInfo, mapRuntime, mapRuntimeLastFetched,
+    mapRuntimeError, mapRuntimeFetching, consecutiveFailures, isOffline, teamScores,
+  ];
 }
 
 @JsonSerializable()

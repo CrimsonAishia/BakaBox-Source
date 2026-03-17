@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../models/server_models.dart';
+import '../../models/server_score.dart';
 import '../../api/server_api.dart';
 import '../../api/score_api.dart';
 import '../../services/source_server_service.dart';
@@ -28,6 +29,10 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   // 刷新频率限制：记录每个服务器的刷新时间戳
   final Map<String, List<DateTime>> _refreshHistory = {};
   static const int _maxRefreshPerMinute = 5; // 1分钟内最多刷新5次
+
+  // 指数退避重试配置
+  static const List<int> _retryDelays = [1000, 2000, 4000]; // 1s, 2s, 4s
+  static const int _maxRetries = 3;
   static const Duration _refreshWindow = Duration(minutes: 1);
 
   // 单个服务器查询超时（毫秒）
@@ -48,6 +53,46 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   // 比分查询频率限制（60秒）
   DateTime? _lastScoreFetchTime;
   static const Duration _scoreFetchInterval = Duration(seconds: 60);
+
+  /// 指数退避重试辅助方法
+  /// [operation] 要执行的操作
+  /// [requestId] 当前请求 ID，用于判断是否被取消
+  /// [onRetry] 可选的回调，每次重试前调用
+  Future<T?> _retryWithExponentialBackoff<T>({
+    required Future<T?> Function() operation,
+    required int requestId,
+    Future<void> Function(int retryCount)? onRetry,
+  }) async {
+    for (int retryCount = 0; retryCount < _maxRetries; retryCount++) {
+      // 检查是否被取消
+      if (requestId != _currentRequestId) {
+        return null;
+      }
+
+      try {
+        final result = await operation();
+        if (result != null) {
+          return result;
+        }
+        // 如果结果为空但没有抛异常，也视为失败，需要重试
+      } catch (e) {
+        // 捕获异常，继续重试
+      }
+
+      // 如果还有重试次数，等待后继续
+      if (retryCount < _maxRetries - 1) {
+        final delay = _retryDelays[retryCount];
+        LogService.d('指数退避重试: ${retryCount + 1}/$_maxRetries, 等待 ${delay}ms');
+        await Future.delayed(Duration(milliseconds: delay));
+
+        // 触发重试回调
+        if (onRetry != null) {
+          await onRetry(retryCount);
+        }
+      }
+    }
+    return null;
+  }
 
   ServerBloc() : super(const ServerState()) {
     // 注册到 OBS 服务
@@ -181,6 +226,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         selectedCategory: event.category,
         servers: servers,
         isLoadingServers: !isEmptyCategory, // 空分类不显示加载状态
+        loadingPhase: LoadingPhase.loadingA2S,
+        loadingStartTime: DateTime.now(),
       ),
     );
 
@@ -285,6 +332,10 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
     // 批量查询服务器比分数据（静默失败，不影响主流程）
     if (!emit.isDone && requestId == _currentRequestId) {
+      // A2S 主数据加载完成
+      emit(state.copyWith(
+        loadingPhase: LoadingPhase.completed,
+      ));
       await _fetchBatchScores(requestId, emit);
     }
 
@@ -329,9 +380,27 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
       if (addresses.isEmpty) return;
 
-      // 调用 ScoreApi 批量查询比分
+      // 指数退避重试获取比分数据
       final scoreApi = ScoreApi();
-      final scores = await scoreApi.batchGetScores(addresses);
+      Map<String, ServerScore> scores = {};
+      for (int retryCount = 0; retryCount < _maxRetries; retryCount++) {
+        if (requestId != _currentRequestId) return;
+
+        try {
+          scores = await scoreApi.batchGetScores(addresses);
+          if (scores.isNotEmpty) {
+            break; // 成功获取数据，退出重试循环
+          }
+        } catch (e) {
+          LogService.w('批量比分查询重试 ${retryCount + 1}/$_maxRetries 失败: $e');
+        }
+
+        // 如果还有重试次数，等待后继续
+        if (retryCount < _maxRetries - 1) {
+          final delay = _retryDelays[retryCount];
+          await Future.delayed(Duration(milliseconds: delay));
+        }
+      }
 
       if (scores.isEmpty || emit.isDone || requestId != _currentRequestId)
         return;
@@ -634,16 +703,16 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     int requestId,
     ServerApi serverApi,
   ) {
-    serverApi
-        .getMapInfo(mapName)
-        .then((mapInfo) {
-          if (requestId == _currentRequestId && mapInfo != null) {
-            add(ServerUpdateSingleServer(address: address, mapInfo: mapInfo));
-          }
-        })
-        .catchError((e) {
-          LogService.e('加载地图信息失败 ($mapName): $e', e);
-        });
+    _retryWithExponentialBackoff<MapData>(
+      operation: () => serverApi.getMapInfo(mapName),
+      requestId: requestId,
+    ).then((mapInfo) {
+      if (requestId == _currentRequestId && mapInfo != null) {
+        add(ServerUpdateSingleServer(address: address, mapInfo: mapInfo));
+      }
+    }).catchError((e) {
+      LogService.e('加载地图信息失败 ($mapName): $e', e);
+    });
   }
 
   void _fetchMapRuntimeAsync(
@@ -652,25 +721,25 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     int requestId,
     ServerApi serverApi,
   ) {
-    serverApi
-        .getMapRuntime(address, mapName)
-        .then((mapRuntime) {
-          if (requestId == _currentRequestId) {
-            add(
-              ServerUpdateSingleServer(
-                address: address,
-                mapRuntime: mapRuntime,
-                mapRuntimeError: mapRuntime == null,
-              ),
-            );
-          }
-        })
-        .catchError((e) {
-          LogService.e('加载地图运行时间失败 ($address, $mapName): $e', e);
-          add(
-            ServerUpdateSingleServer(address: address, mapRuntimeError: true),
-          );
-        });
+    _retryWithExponentialBackoff<MapRuntimeData>(
+      operation: () => serverApi.getMapRuntime(address, mapName),
+      requestId: requestId,
+    ).then((mapRuntime) {
+      if (requestId == _currentRequestId) {
+        add(
+          ServerUpdateSingleServer(
+            address: address,
+            mapRuntime: mapRuntime,
+            mapRuntimeError: mapRuntime == null,
+          ),
+        );
+      }
+    }).catchError((e) {
+      LogService.e('加载地图运行时间失败 ($address, $mapName): $e', e);
+      add(
+        ServerUpdateSingleServer(address: address, mapRuntimeError: true),
+      );
+    });
   }
 
   Future<void> _onClearCategory(
@@ -1844,6 +1913,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         loadingCategories: clearedLoadingCategories,
         error: null,
         successMessage: null,
+        loadingPhase: LoadingPhase.loadingA2S,
+        loadingStartTime: DateTime.now(),
       ),
     );
 
