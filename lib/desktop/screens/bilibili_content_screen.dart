@@ -57,7 +57,7 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
     });
   }
 
-  /// 进入页面时加载内容数据（每次进入都刷新）
+  /// 进入页面时加载内容数据（首次加载使用缓存，后台异步刷新）
   void _refreshContentOnPageEnter() {
     if (!mounted) return;
 
@@ -66,9 +66,9 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
     // 进入页面时，重置Tab状态到直播间Tab
     bloc.add(const BilibiliContentTabChanged(0));
 
-    // 每次进入页面都刷新数据
-    // 使用 refresh: true 强制获取最新数据
-    bloc.add(const BilibiliContentFetchRequested(tabIndex: 0, refresh: true));
+    // 首次进入页面不强制刷新，使用缓存并后台异步更新
+    // 这样可以立即显示数据，不需要等待B站API响应
+    bloc.add(const BilibiliContentFetchRequested(tabIndex: 0, refresh: false));
 
     // 加载视频分类列表
     bloc.add(const BilibiliContentFetchCategoriesRequested());

@@ -23,11 +23,27 @@ class BilibiliService {
   static final Map<String, _CacheEntry<BilibiliVideoInfo>> _videoInfoCache =
       {};
 
-  /// 直播间缓存有效期（1分钟）
-  static const Duration _roomCacheDuration = Duration(minutes: 1);
+  /// 用户信息缓存
+  /// Key: mid, Value: { data: BilibiliUserInfo, timestamp: int }
+  static final Map<String, _CacheEntry<BilibiliUserInfo>> _userInfoCache =
+      {};
+
+  /// 直播状态缓存（UID -> 直播状态）
+  /// Key: uid, Value: { data: BilibiliLiveStatus, timestamp: int }
+  static final Map<String, _CacheEntry<BilibiliLiveStatus>> _liveStatusCache =
+      {};
+
+  /// 直播间缓存有效期（30秒）
+  static const Duration _roomCacheDuration = Duration(seconds: 30);
 
   /// 视频缓存有效期（5分钟）
   static const Duration _videoCacheDuration = Duration(minutes: 5);
+
+  /// 用户信息缓存有效期（30秒）
+  static const Duration _userCacheDuration = Duration(seconds: 30);
+
+  /// 直播状态缓存有效期（30秒）
+  static const Duration _liveStatusCacheDuration = Duration(seconds: 30);
 
   /// 从URL中提取直播间ID
   /// 支持格式:
@@ -236,17 +252,38 @@ class BilibiliService {
     return result;
   }
 
-  /// 使用 UID 批量获取直播状态（推荐）
+  /// 使用 UID 批量获取直播状态（推荐，带缓存）
   ///
   /// 使用 B站官方批量接口: /room/v1/Room/get_status_info_by_uids
   /// [uids] 主播UID列表
+  /// [bypassCache] 为 true 时强制从API获取最新数据
   /// 返回: Map<uid, BilibiliLiveStatus>
   Future<Map<String, BilibiliLiveStatus>> getLiveStatusByUids(
-    List<String> uids,
-  ) async {
+    List<String> uids, {
+    bool bypassCache = false,
+  }) async {
     if (uids.isEmpty) return {};
 
     final result = <String, BilibiliLiveStatus>{};
+    final uidsToFetch = <String>[];
+
+    // 检查缓存
+    if (!bypassCache) {
+      for (final uid in uids) {
+        final cached = _liveStatusCache[uid];
+        if (cached != null && !cached.isExpired) {
+          result[uid] = cached.data;
+        } else {
+          uidsToFetch.add(uid);
+        }
+      }
+      // 如果全部命中缓存，直接返回
+      if (uidsToFetch.isEmpty) {
+        return result;
+      }
+    } else {
+      uidsToFetch.addAll(uids);
+    }
 
     try {
       final response = await http
@@ -258,7 +295,7 @@ class BilibiliService {
               ..._headers,
               'Content-Type': 'application/json',
             },
-            body: jsonEncode({'uids': uids}),
+            body: jsonEncode({'uids': uidsToFetch}),
           )
           .timeout(const Duration(seconds: 10));
 
@@ -269,12 +306,19 @@ class BilibiliService {
           for (final entry in dataMap.entries) {
             final uid = entry.key;
             final info = entry.value as Map<String, dynamic>;
-            result[uid] = BilibiliLiveStatus.fromJson(info);
+            final status = BilibiliLiveStatus.fromJson(info);
+            result[uid] = status;
+            // 更新缓存
+            _liveStatusCache[uid] = _CacheEntry(
+              data: status,
+              timestamp: DateTime.now().millisecondsSinceEpoch,
+              cacheDuration: _liveStatusCacheDuration,
+            );
           }
         }
       }
     } catch (e) {
-      // 忽略错误，返回空结果
+      // 忽略错误，返回已获取的结果（包括缓存命中的数据）
     }
     return result;
   }
@@ -399,10 +443,20 @@ class BilibiliService {
     return null;
   }
 
-  /// 获取用户信息
+  /// 获取用户信息（带缓存，默认30秒）
   ///
+  /// [bypassCache] 为 true 时强制从API获取最新数据
   /// 返回: 用户详细信息，包含粉丝数等
-  Future<BilibiliUserInfo?> getUserInfo(String mid) async {
+  Future<BilibiliUserInfo?> getUserInfo(String mid,
+      {bool bypassCache = false}) async {
+    // 检查缓存
+    if (!bypassCache) {
+      final cached = _userInfoCache[mid];
+      if (cached != null && !cached.isExpired) {
+        return cached.data;
+      }
+    }
+
     try {
       final response = await http
           .get(
@@ -414,7 +468,16 @@ class BilibiliService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['code'] == 0 && data['data'] != null) {
-          return BilibiliUserInfo.fromJson(data['data']);
+          final result = BilibiliUserInfo.fromJson(data['data']);
+
+          // 更新缓存
+          _userInfoCache[mid] = _CacheEntry(
+            data: result,
+            timestamp: DateTime.now().millisecondsSinceEpoch,
+            cacheDuration: _userCacheDuration,
+          );
+
+          return result;
         }
       }
     } catch (e) {
