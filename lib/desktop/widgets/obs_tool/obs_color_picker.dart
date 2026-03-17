@@ -112,12 +112,30 @@ Widget buildBgColorOption(
   Color color, {
   VoidCallback? onChanged,
 }) {
-  final isSelected = (el['backgroundColor'] ?? '#00000080') == hexColor;
+  final isSelected = (el['backgroundColor'] ?? '#80000000') == hexColor;
   return _ColorOptionButton(
     color: color,
     isSelected: isSelected,
     onTap: () {
       el['backgroundColor'] = hexColor;
+      onChanged?.call();
+    },
+  );
+}
+
+/// 构建描边颜色选项
+Widget buildStrokeColorOption(
+  Map<String, dynamic> el,
+  String hexColor,
+  Color color, {
+  VoidCallback? onChanged,
+}) {
+  final isSelected = (el['strokeColor'] ?? '#000000') == hexColor;
+  return _ColorOptionButton(
+    color: color,
+    isSelected: isSelected,
+    onTap: () {
+      el['strokeColor'] = hexColor;
       onChanged?.call();
     },
   );
@@ -349,8 +367,9 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
 
             // 颜色选择器
             SizedBox(
-              height: 260,
+              height: 280,
               child: SingleChildScrollView(
+                padding: const EdgeInsets.only(bottom: 8),
                 child: ColorPicker(
                   pickerColor: _selectedColor,
                   onColorChanged: (color) {

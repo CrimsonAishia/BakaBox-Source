@@ -195,6 +195,12 @@ List<Widget> buildServerCardSettings(Map<String, dynamic> el, VoidCallback onSav
       onChanged();
       setState(() {});
     }, divide: 10),
+    _buildSliderRow('背景模糊', el['bgBlur'] ?? 0.0, 0.0, 20.0, (v) {
+      el['bgBlur'] = v;
+      onSave();
+      onChanged();
+      setState(() {});
+    }),
     const SizedBox(height: 16),
 
     // 文字大小
@@ -386,6 +392,20 @@ List<Widget> buildTextSettings(
             },
           ),
         ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildStyleToggle(
+            '下划线',
+            Icons.format_underlined,
+            el['decoration'] == 'underline',
+            () {
+              el['decoration'] = el['decoration'] == 'underline' ? 'none' : 'underline';
+              onSave();
+              onChanged();
+              setState(() {});
+            },
+          ),
+        ),
       ],
     ),
     const SizedBox(height: 16),
@@ -440,9 +460,13 @@ List<Widget> buildTextSettings(
     ),
     const SizedBox(height: 16),
 
-    // 文字阴影
+    // 文字阴影和描边互斥，不能同时启用
     _buildSwitchRow('显示阴影', el['showTextShadow'] ?? true, (v) {
       el['showTextShadow'] = v;
+      // 启用阴影时，自动禁用描边
+      if (v) {
+        el['showTextStroke'] = false;
+      }
       onSave();
       onChanged();
       setState(() {});
@@ -460,6 +484,85 @@ List<Widget> buildTextSettings(
         onChanged();
         setState(() {});
       }),
+    ],
+    const SizedBox(height: 16),
+
+    // 文字描边（与阴影互斥）
+    _buildSectionTitle('文字描边'),
+    Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Text(
+        '与阴影互斥，启用描边将自动关闭阴影',
+        style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+      ),
+    ),
+    _buildSwitchRow('启用描边', el['showTextStroke'] ?? false, (v) {
+      el['showTextStroke'] = v;
+      // 启用描边时，自动禁用阴影
+      if (v) {
+        el['showTextShadow'] = false;
+      }
+      onSave();
+      onChanged();
+      setState(() {});
+    }),
+    if (el['showTextStroke'] ?? false) ...[
+      _buildSliderRow('描边宽度', el['strokeWidth'] ?? 2.0, 0.5, 8.0, (v) {
+        el['strokeWidth'] = v;
+        onSave();
+        onChanged();
+        setState(() {});
+      }),
+      const SizedBox(height: 8),
+      const Text('描边颜色', style: TextStyle(fontSize: 12)),
+      const SizedBox(height: 4),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          buildStrokeColorOption(el, '#000000', Colors.black, onChanged: () {
+            onSave();
+            onChanged();
+            setState(() {});
+          }),
+          buildStrokeColorOption(el, '#FFFFFF', Colors.white, onChanged: () {
+            onSave();
+            onChanged();
+            setState(() {});
+          }),
+          buildStrokeColorOption(el, '#FF0000', Colors.red, onChanged: () {
+            onSave();
+            onChanged();
+            setState(() {});
+          }),
+          buildStrokeColorOption(el, '#00FF00', Colors.green, onChanged: () {
+            onSave();
+            onChanged();
+            setState(() {});
+          }),
+          buildStrokeColorOption(el, '#0000FF', Colors.blue, onChanged: () {
+            onSave();
+            onChanged();
+            setState(() {});
+          }),
+          buildStrokeColorOption(el, '#FFFF00', Colors.yellow, onChanged: () {
+            onSave();
+            onChanged();
+            setState(() {});
+          }),
+          buildCustomColorOption(
+            context,
+            el,
+            'strokeColor',
+            el['strokeColor'] ?? '#000000',
+            onChanged: () {
+              onSave();
+              onChanged();
+              setState(() {});
+            },
+          ),
+        ],
+      ),
     ],
     const SizedBox(height: 16),
 
@@ -563,7 +666,7 @@ List<Widget> buildTextSettings(
         children: [
           buildBgColorOption(
             el,
-            '#00000080',
+            '#80000000',
             Colors.black.withValues(alpha: 0.5),
             onChanged: () {
               onSave();
@@ -573,7 +676,7 @@ List<Widget> buildTextSettings(
           ),
           buildBgColorOption(
             el,
-            '#FFFFFF80',
+            '#80FFFFFF',
             Colors.white.withValues(alpha: 0.5),
             onChanged: () {
               onSave();
@@ -593,7 +696,7 @@ List<Widget> buildTextSettings(
           ),
           buildBgColorOption(
             el,
-            '#FF000080',
+            '#80FF0000',
             Colors.red.withValues(alpha: 0.5),
             onChanged: () {
               onSave();
@@ -603,7 +706,7 @@ List<Widget> buildTextSettings(
           ),
           buildBgColorOption(
             el,
-            '#00FF0080',
+            '#8000FF00',
             Colors.green.withValues(alpha: 0.5),
             onChanged: () {
               onSave();
@@ -613,7 +716,7 @@ List<Widget> buildTextSettings(
           ),
           buildBgColorOption(
             el,
-            '#0000FF80',
+            '#800000FF',
             Colors.blue.withValues(alpha: 0.5),
             onChanged: () {
               onSave();
@@ -625,7 +728,7 @@ List<Widget> buildTextSettings(
             context,
             el,
             'backgroundColor',
-            el['backgroundColor'] ?? '#00000080',
+            el['backgroundColor'] ?? '#80000000',
             enableAlpha: true,
             onChanged: () {
               onSave();
