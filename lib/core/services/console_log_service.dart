@@ -1127,12 +1127,19 @@ class ConsoleLogService {
     // 检测远程连接请求（记录目标服务器）
     final remoteMatch = _regexRemoteConnect.firstMatch(line);
     if (remoteMatch != null) {
-      _targetServer = remoteMatch.group(1) ?? '';
+      final newServer = remoteMatch.group(1) ?? '';
+      _targetServer = newServer;
       _isLoopbackFallback = false;
       _connectTimedOut = false;
       _connectionPhaseFailed = false;
       _isInLoopbackMode = false; // 新的远程连接，退出 loopback 模式
       LogService.d('[ConsoleLog] 检测到远程连接请求，目标服务器: $_targetServer');
+      // 立即更新 serverAddress，避免切换服务器时 OBS 显示旧数据
+      _updateConnectionState(
+        GameState.connecting,
+        serverAddress: newServer,
+        rawLine: line,
+      );
       return;
     }
 
@@ -1143,21 +1150,17 @@ class ConsoleLogService {
     // 例如：Disconnection during connection phase. Sign-on state: 2 (SIGNONSTATE_CONNECTED). Disconnect reason: NETWORK_DISCONNECT_REQUEST_HOSTSTATE_IDLE
     if (_regexDisconnectionDuringConnection.hasMatch(line)) {
       // 检查具体的断开原因
-      if (line.contains('NETWORK_DISCONNECT_TIMEDOUT')) {
+        if (line.contains('NETWORK_DISCONNECT_TIMEDOUT')) {
         // 超时是真正的连接失败
         LogService.d('[ConsoleLog] 检测到连接阶段断开 (TIMEDOUT)');
         _connectTimedOut = true;
         _connectionPhaseFailed = true;
-        if (_targetServer.isNotEmpty ||
-            _currentState.serverAddress.isNotEmpty) {
-          _updateConnectionState(
-            GameState.failed,
-            serverAddress: _targetServer.isNotEmpty
-                ? _targetServer
-                : _currentState.serverAddress,
-            rawLine: line,
-          );
-        }
+        // 连接失败，用户没有成功连接到服务器，应该清空地址
+        _updateConnectionState(
+          GameState.failed,
+          serverAddress: '', // 清空地址
+          rawLine: line,
+        );
       } else if (line.contains('NETWORK_DISCONNECT_LOOP_LEVELLOAD_ACTIVATE') ||
           line.contains('NETWORK_DISCONNECT_REQUEST_HOSTSTATE_IDLE')) {
         // 这些是用户重新发起连接请求导致的断开，是正常的重连流程
@@ -1181,17 +1184,12 @@ class ConsoleLogService {
       _connectTimedOut = true;
       _connectionPhaseFailed = true;
       LogService.d('[ConsoleLog] 检测到服务器断开 (TIMEDOUT)');
-      // 如果还没有标记为失败，现在标记
-      if (_currentState.state != GameState.failed &&
-          _currentState.state != GameState.mainMenu) {
-        _updateConnectionState(
-          GameState.failed,
-          serverAddress: _targetServer.isNotEmpty
-              ? _targetServer
-              : _currentState.serverAddress,
-          rawLine: line,
-        );
-      }
+      // 连接失败，用户没有成功连接到服务器，应该清空地址
+      _updateConnectionState(
+        GameState.failed,
+        serverAddress: '', // 清空地址
+        rawLine: line,
+      );
       return;
     }
 
@@ -1202,9 +1200,10 @@ class ConsoleLogService {
       // 只要有目标服务器且检测到超时，就直接标记为失败
       // 不再等待 loopback 连接，因为超时本身就是终态
       if (_targetServer.isNotEmpty) {
+        // 连接超时，用户没有成功连接到服务器，应该清空地址
         _updateConnectionState(
           GameState.failed,
-          serverAddress: _targetServer,
+          serverAddress: '', // 清空地址
           rawLine: line,
         );
         // 重置目标服务器，避免后续 loopback 检测再次触发失败
@@ -1227,9 +1226,10 @@ class ConsoleLogService {
         LogService.d(
           '[ConsoleLog] 检测到回退到本地服务器，目标服务器: $_targetServer, 原因: $reason',
         );
+        // 回退到本地服务器，意味着远程连接失败，应该清空地址
         _updateConnectionState(
           GameState.failed,
-          serverAddress: _targetServer,
+          serverAddress: '', // 清空地址，因为实际没有连接到远程服务器
           rawLine: line,
         );
       } else if (_currentState.state == GameState.connecting ||
@@ -1237,9 +1237,10 @@ class ConsoleLogService {
         // 如果当前正在连接或加载中，但出现了 loopback，说明连接失败了
         _isLoopbackFallback = true;
         LogService.d('[ConsoleLog] 检测到连接过程中出现 loopback，连接失败');
+        // 连接失败，应该清空地址
         _updateConnectionState(
           GameState.failed,
-          serverAddress: _currentState.serverAddress,
+          serverAddress: '', // 清空地址
           rawLine: line,
         );
       }
@@ -1267,7 +1268,13 @@ class ConsoleLogService {
         return;
       }
 
-      _updateConnectionState(GameState.inGame, rawLine: line);
+      // 进入游戏时，确保 serverAddress 是当前连接的服务器地址
+      // 这样可以正确处理服务器切换的情况
+      _updateConnectionState(
+        GameState.inGame,
+        serverAddress: _currentState.serverAddress,
+        rawLine: line,
+      );
       // 重置追踪状态（但不重置 _isInLoopbackMode，因为可能还在服务器中）
       _targetServer = '';
       _connectTimedOut = false;
@@ -1340,14 +1347,14 @@ class ConsoleLogService {
 
     // 检查服务器满员
     if (_regexServerFull.hasMatch(line)) {
-      _updateConnectionState(GameState.serverFull, rawLine: line);
+      _updateConnectionState(GameState.serverFull, serverAddress: '', rawLine: line);
       return;
     }
 
     // 检查用户主动断开连接（优先级高于普通断开检测）
     if (_regexUserDisconnect.hasMatch(line)) {
       LogService.d('[ConsoleLog] 检测到用户主动断开连接');
-      _updateConnectionState(GameState.mainMenu, rawLine: line);
+      _updateConnectionState(GameState.mainMenu, serverAddress: '', rawLine: line);
       // 重置连接追踪状态
       _targetServer = '';
       _isLoopbackFallback = false;
@@ -1363,7 +1370,7 @@ class ConsoleLogService {
       final currentState = _currentState.state;
       if (currentState == GameState.inGame) {
         LogService.d('[ConsoleLog] 检测到回到主菜单');
-        _updateConnectionState(GameState.mainMenu, rawLine: line);
+        _updateConnectionState(GameState.mainMenu, serverAddress: '', rawLine: line);
         // 重置连接追踪状态
         _targetServer = '';
         _isLoopbackFallback = false;
@@ -1415,7 +1422,7 @@ class ConsoleLogService {
           !line.contains('LOOPDEACTIVATE')) {
         final currentState = _currentState.state;
         if (currentState == GameState.connecting) {
-          _updateConnectionState(GameState.failed, rawLine: line);
+          _updateConnectionState(GameState.failed, serverAddress: '', rawLine: line);
         }
       }
       return;
@@ -1436,7 +1443,7 @@ class ConsoleLogService {
         // 已在上面处理
         final currentState = _currentState.state;
         if (currentState == GameState.inGame) {
-          _updateConnectionState(GameState.mainMenu, rawLine: line);
+          _updateConnectionState(GameState.mainMenu, serverAddress: '', rawLine: line);
         }
       }
       return;
