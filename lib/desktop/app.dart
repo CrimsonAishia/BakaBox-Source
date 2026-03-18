@@ -5,6 +5,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../core/core.dart';
+import '../core/services/game_launcher_service.dart';
 import '../core/services/game_status_service.dart';
 import '../core/services/gsi_service.dart';
 import '../core/services/policy_service.dart';
@@ -188,6 +189,10 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
       final gsiService = GsiService();
       await gsiService.initialize();
       await gsiService.start();
+
+      // 配置 Steam 启动选项（添加 -condebug，在 GSI 启动后执行）
+      final launcher = GameLauncherService();
+      await launcher.ensureCondebugConfigured();
 
       // 启动游戏状态监控（桌面端专属，需要先完成初始检测）
       await GameStatusService().startMonitoring();

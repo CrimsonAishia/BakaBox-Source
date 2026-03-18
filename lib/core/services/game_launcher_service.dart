@@ -9,6 +9,7 @@ import '../utils/server_item_utils.dart';
 import '../utils/storage_utils.dart';
 import 'console_log_service.dart';
 import 'game_status_service.dart';
+import 'steam_user_service.dart';
 
 /// 游戏启动结果
 class GameLaunchResult {
@@ -389,9 +390,18 @@ class GameLauncherService {
 
     LogService.d('收到CS2启动请求');
 
+    // 检查Steam启动选项是否已配置 -condebug（仅Windows）
+    if (PlatformUtils.isWindows) {
+      final condebugConfigured = await ensureCondebugConfigured();
+      if (!condebugConfigured) {
+        LogService.w('未能自动配置Steam启动选项，请手动在Steam中设置');
+        // 继续尝试启动，不阻塞用户
+      }
+    }
+
     // 检查游戏是否已在运行
     if (await isCS2Running()) {
-      LogService.i('游戏已在运行');
+      LogService.d('游戏已在运行');
       return GameLaunchResult.success(
         message: '游戏已在运行',
         alreadyRunning: true,
@@ -629,7 +639,7 @@ class GameLauncherService {
       );
     }
     
-    LogService.i('检测到 CSGO 正在运行，使用普通 connect 命令连接');
+    LogService.d('检测到 CSGO 正在运行，使用普通 connect 命令连接');
     return null; // 验证通过
   }
 
@@ -763,7 +773,7 @@ class GameLauncherService {
       return ServerConnectResult.failure('服务器连接功能仅支持桌面平台');
     }
 
-    LogService.i('收到连接密码服务器请求，目标服务器: $address, 游戏类型: $gameType');
+    LogService.d('收到连接密码服务器请求，目标服务器: $address, 游戏类型: $gameType');
     
     // 验证游戏类型是否匹配
     final typeValidation = await _validateGameTypeMatch(gameType);
@@ -841,7 +851,7 @@ class GameLauncherService {
       return ServerConnectResult.failure('游戏启动功能仅支持桌面平台');
     }
 
-    LogService.i('启动游戏并连接到服务器: $address, 游戏类型: $gameType');
+    LogService.d('启动游戏并连接到服务器: $address, 游戏类型: $gameType');
 
     // 验证游戏类型是否匹配
     final typeValidation = await _validateGameTypeMatch(gameType);
@@ -862,7 +872,7 @@ class GameLauncherService {
       }
       
       // CSGO 已在运行，直接连接
-      LogService.i('检测到 CSGO 正在运行，直接连接');
+      LogService.d('检测到 CSGO 正在运行，直接连接');
       return await connectToServer(address, gameType: gameType);
     }
 
@@ -896,7 +906,7 @@ class GameLauncherService {
     // 重置缓存，因为用户手动设置了路径
     _gamePathDetectionAttempted = false;
     _cachedGamePath = null;
-    LogService.i('游戏路径已设置: $path');
+    LogService.d('游戏路径已设置: $path');
   }
 
   /// 获取Steam路径
@@ -910,7 +920,7 @@ class GameLauncherService {
     // 重置缓存，因为用户手动设置了路径
     _steamPathDetectionAttempted = false;
     _cachedSteamPath = null;
-    LogService.i('Steam路径已设置: $path');
+    LogService.d('Steam路径已设置: $path');
   }
 
   /// 获取启动平台
@@ -925,7 +935,7 @@ class GameLauncherService {
   /// 设置启动平台
   Future<void> setLaunchPlatform(LaunchPlatform platform) async {
     await StorageUtils.setString(_keyLaunchPlatform, platform == LaunchPlatform.perfect ? 'perfect' : 'worldwide');
-    LogService.i('启动平台已设置: ${platform == LaunchPlatform.perfect ? "完美世界" : "国际版"}');
+    LogService.d('启动平台已设置: ${platform == LaunchPlatform.perfect ? "完美世界" : "国际版"}');
   }
 
   /// 获取自定义启动选项
@@ -956,7 +966,7 @@ class GameLauncherService {
       // 方法1: 从注册表查找
       final regPath = await _findSteamPathFromRegistry();
       if (regPath != null) {
-        LogService.i('从注册表检测到Steam路径: $regPath');
+        LogService.d('从注册表检测到Steam路径: $regPath');
         _steamPathDetectionAttempted = true;
         _cachedSteamPath = regPath;
         return regPath;
@@ -965,13 +975,13 @@ class GameLauncherService {
       // 方法2: 从进程查找
       final processPath = await _findSteamPathFromProcess();
       if (processPath != null) {
-        LogService.i('从进程检测到Steam路径: $processPath');
+        LogService.d('从进程检测到Steam路径: $processPath');
         _steamPathDetectionAttempted = true;
         _cachedSteamPath = processPath;
         return processPath;
       }
 
-      LogService.w('未能自动检测到Steam路径');
+        LogService.d('未能自动检测到Steam路径');
       _steamPathDetectionAttempted = true;
       _cachedSteamPath = null;
       return null;
@@ -1070,7 +1080,7 @@ class GameLauncherService {
         final gamePath = '$steamPath\\steamapps\\common\\Counter-Strike Global Offensive';
         final exePath = '$gamePath\\game\\bin\\win64\\cs2.exe';
         if (await File(exePath).exists()) {
-          LogService.i('检测到游戏路径: $gamePath');
+          LogService.d('检测到游戏路径: $gamePath');
           _gamePathDetectionAttempted = true;
           _cachedGamePath = gamePath;
           return gamePath;
@@ -1090,7 +1100,7 @@ class GameLauncherService {
                 final altGamePath = '$libPath\\steamapps\\common\\Counter-Strike Global Offensive';
                 final altExePath = '$altGamePath\\game\\bin\\win64\\cs2.exe';
                 if (await File(altExePath).exists()) {
-                  LogService.i('在Steam库中检测到游戏路径: $altGamePath');
+                  LogService.d('在Steam库中检测到游戏路径: $altGamePath');
                   _gamePathDetectionAttempted = true;
                   _cachedGamePath = altGamePath;
                   return altGamePath;
@@ -1103,7 +1113,7 @@ class GameLauncherService {
         }
       }
 
-      LogService.w('未能自动检测到游戏路径');
+      LogService.d('未能自动检测到游戏路径');
       _gamePathDetectionAttempted = true;
       _cachedGamePath = null;
       return null;
@@ -1122,5 +1132,433 @@ class GameLauncherService {
     _steamPathDetectionAttempted = false;
     _cachedSteamPath = null;
     LogService.d('路径检测缓存已重置');
+  }
+
+  // ==================== Steam 启动选项自动配置 ====================
+
+  /// CS2 的 AppID
+  static const String _cs2AppIdForLaunchOptions = '730';
+
+  /// Steam 用户服务单例
+  final SteamUserService _steamUserService = SteamUserService();
+
+  /// 查找匹配的右括号位置
+  int _findMatchingBrace(String content, int openBracePos) {
+    if (content[openBracePos] != '{') return -1;
+    
+    int depth = 1;
+    int i = openBracePos + 1;
+    
+    while (i < content.length && depth > 0) {
+      if (content[i] == '{') {
+        depth++;
+      } else if (content[i] == '}') {
+        depth--;
+      }
+      i++;
+    }
+    
+    return depth == 0 ? i - 1 : -1;
+  }
+
+  /// 获取当前登录的Steam用户ID
+  Future<String?> _getCurrentSteamUserId() async {
+    return await _steamUserService.getCurrentSteamUserId();
+  }
+
+  /// 获取 Steam 配置文件路径
+  Future<String?> _getSteamConfigPath() async {
+    String? steamPath = await getSteamPath();
+    if (steamPath == null || steamPath.isEmpty) {
+      steamPath = await detectSteamPath();
+    }
+    if (steamPath == null) {
+      LogService.d('无法获取Steam路径');
+      return null;
+    }
+
+    LogService.d('Steam安装路径: $steamPath');
+
+    final userId = await _getCurrentSteamUserId();
+    if (userId == null) {
+      LogService.d('无法获取Steam用户ID');
+      return null;
+    }
+    LogService.d('Steam用户ID: $userId');
+
+    final path = '$steamPath\\userdata\\$userId\\config\\localconfig.vdf';
+    LogService.d('Steam配置文件完整路径: $path');
+    return path;
+  }
+
+  /// 读取当前 CS2 的启动选项
+  /// 
+  /// LaunchOptions 存储在 Software\Valve\Steam\apps\{AppID}\LaunchOptions
+  Future<String?> _getCurrentLaunchOptions() async {
+    final configPath = await _getSteamConfigPath();
+    if (configPath == null) {
+      LogService.d('无法获取Steam配置路径');
+      return null;
+    }
+
+    try {
+      final file = File(configPath);
+      if (!await file.exists()) {
+        return null;
+      }
+
+      final content = await file.readAsString();
+      final lines = content.split('\n');
+      
+      // 复用解析逻辑
+      return _parseLaunchOptionsFromLines(lines);
+    } catch (e) {
+      LogService.d('读取启动选项失败: $e');
+      return null;
+    }
+  }
+
+  /// 在已解析的行中查找 CS2 的 LaunchOptions
+  String? _parseLaunchOptionsFromLines(List<String> lines) {
+    // 第一步：找到 apps 块
+    int appsBlockLine = -1;
+    for (int i = 0; i < lines.length; i++) {
+      if (lines[i].contains('"apps"')) {
+        appsBlockLine = i;
+        LogService.d('找到 apps 块，行号: $i');
+        break;
+      }
+    }
+
+    if (appsBlockLine < 0) {
+      LogService.d('未找到 apps 块');
+      return null;
+    }
+
+    // 第二步：在 apps 块内查找 730 游戏
+    int braceDepth = 0;
+    bool inAppBlock = false;
+    bool inAppsBlock = false;
+
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
+
+      // 先找到 apps 块开始
+      if (!inAppsBlock && line.contains('"apps"')) {
+        inAppsBlock = true;
+        LogService.d('进入 apps 块，行号: $i');
+      }
+
+      if (inAppsBlock) {
+        // 统计括号变化
+        int lineBraceChange = 0;
+        for (final char in line.runes) {
+          if (char == 123) lineBraceChange++;  // {
+          else if (char == 125) lineBraceChange--;  // }
+        }
+
+        // 查找 730 块开始
+        if (!inAppBlock && braceDepth == 0 && line.contains('"$_cs2AppIdForLaunchOptions"')) {
+          inAppBlock = true;
+          braceDepth += lineBraceChange;
+          LogService.d('找到 730 应用块，行号: $i，括号深度: $braceDepth');
+        } else if (inAppBlock) {
+          braceDepth += lineBraceChange;
+        }
+
+        // 如果在 730 块内
+        if (inAppBlock && braceDepth >= 0) {
+          // 检查是否离开 730 块
+          if (braceDepth < 0) {
+            LogService.d('退出 730 应用块，行号: $i');
+            inAppBlock = false;
+            continue;
+          }
+
+          // 检查是否有 LaunchOptions
+          if (line.contains('"LaunchOptions"')) {
+            LogService.d('找到 LaunchOptions 行: ${lines[i].trim()}');
+
+            // 尝试匹配 LaunchOptions 值
+            final match = RegExp(r'"LaunchOptions"[ \t]+"([^"]*)"').firstMatch(line);
+            if (match != null) {
+              LogService.d('解析到的启动选项: ${match.group(1)}');
+              return match.group(1);
+            }
+          }
+        }
+      }
+    }
+
+    LogService.d('未找到 CS2 的启动选项');
+    return null;
+  }
+
+  /// 检查是否已经配置了 -condebug
+  Future<bool> isCondebugConfigured() async {
+    final currentOptions = await _getCurrentLaunchOptions();
+    if (currentOptions == null || currentOptions.isEmpty) return false;
+    
+    // 检查是否包含 -condebug（不区分大小写）
+    final optionsLower = currentOptions.toLowerCase();
+    return optionsLower.contains('-condebug');
+  }
+
+  /// 自动配置 Steam 启动选项，添加 -condebug
+  /// 
+  /// 返回值：
+  /// - true: 配置成功
+  /// - false: 配置失败或用户取消
+  Future<bool> autoConfigureCondebug() async {
+    if (!PlatformUtils.isWindows) {
+      LogService.w('自动配置启动选项仅支持Windows平台');
+      return false;
+    }
+
+    LogService.d('开始自动配置 Steam 启动选项...');
+
+    // 获取 Steam 配置路径
+    final configPath = await _getSteamConfigPath();
+    if (configPath == null) {
+      LogService.e('无法获取Steam配置文件路径');
+      return false;
+    }
+
+    LogService.d('配置文件路径: $configPath');
+
+    final file = File(configPath);
+    if (!await file.exists()) {
+      LogService.e('Steam配置文件不存在: $configPath');
+      return false;
+    }
+
+    try {
+      // 读取现有配置
+      var content = await file.readAsString();
+      LogService.d('配置文件大小: ${content.length} 字节');
+      
+      // 将内容分割成行
+      final lines = content.split('\n');
+      
+      // 直接解析，避免重复读取文件
+      final currentOptions = _parseLaunchOptionsFromLines(lines);
+      LogService.d('当前启动选项: ${currentOptions ?? "(空)"}');
+      
+      String newOptions;
+      if (currentOptions != null && currentOptions.isNotEmpty) {
+        // 如果已有启动选项，检查是否已包含 -condebug
+        if (currentOptions.toLowerCase().contains('-condebug')) {
+          LogService.d('Steam启动选项已包含 -condebug，无需修改');
+          return true;
+        }
+        // 在现有选项基础上添加 -condebug
+        newOptions = '$currentOptions -condebug';
+        LogService.d('现有启动选项: $currentOptions，添加 -condebug');
+      } else {
+        // 新建启动选项
+        newOptions = '-condebug';
+        LogService.d('设置新的启动选项: -condebug');
+      }
+
+      // 更新配置文件
+      // LaunchOptions 存储在 Software\Valve\Steam\apps\{AppID}\LaunchOptions
+      // 如果 LaunchOptions 不存在，需要在 apps 块中添加游戏配置
+      if (currentOptions == null || currentOptions.isEmpty) {
+        LogService.d('需要新建 LaunchOptions 条目');
+        
+        // 检查是否已存在 730 块但没有 LaunchOptions
+        final appBlockExists = content.contains('"$_cs2AppIdForLaunchOptions"');
+        LogService.d('730 块是否已存在: $appBlockExists');
+        
+        if (appBlockExists) {
+          // 730块存在但没有LaunchOptions，需要添加
+          LogService.d('730 块存在，尝试在块内添加 LaunchOptions');
+          
+          // 找到 730 块的起始和结束位置
+          final appBlockStart = content.indexOf('"$_cs2AppIdForLaunchOptions"');
+          final afterAppId = content.indexOf('{', appBlockStart);
+          final closingBrace = _findMatchingBrace(content, afterAppId);
+          
+          if (afterAppId > 0 && closingBrace > afterAppId) {
+            // 在 730 块的第一个 } 前添加 LaunchOptions
+            final insertContent = '''
+		"LaunchOptions"		"$newOptions"
+''';
+            content = content.substring(0, closingBrace) + insertContent + content.substring(closingBrace);
+            LogService.d('已在 730 块内添加 LaunchOptions');
+          } else {
+            LogService.e('无法找到 730 块的正确位置');
+            return false;
+          }
+        } else {
+          // 730 块完全不存在，需要创建
+          LogService.d('730 块不存在，需要新建');
+          
+          // 查找 apps 块的位置
+          final appsPattern = RegExp(r'"apps"\s*\{');
+          final appsMatch = appsPattern.firstMatch(content);
+          
+          if (appsMatch != null) {
+            LogService.d('找到 apps 块，插入位置: ${appsMatch.end}');
+            // 在 apps 块开头添加新的游戏配置
+            final insertPos = appsMatch.end;
+            final newSection = '''
+	"$_cs2AppIdForLaunchOptions"
+	{
+		"LaunchOptions"		"$newOptions"
+	}
+''';
+            content = content.substring(0, insertPos) + newSection + content.substring(insertPos);
+          } else {
+            LogService.d('未找到 apps 块，尝试在 Steam 块中添加');
+            // 如果没有找到 apps 块，尝试在 Steam 块中添加
+            final steamPattern = RegExp(r'"Steam"\s*\{');
+            final steamMatch = steamPattern.firstMatch(content);
+            if (steamMatch != null) {
+              final insertPos = steamMatch.end;
+              final newSection = '''
+	"apps"
+	{
+	"$_cs2AppIdForLaunchOptions"
+	{
+		"LaunchOptions"		"$newOptions"
+	}
+}
+''';
+              content = content.substring(0, insertPos) + newSection + content.substring(insertPos);
+            } else {
+              LogService.e('无法找到配置块位置');
+              return false;
+            }
+          }
+        }
+      } else {
+        // 更新现有的 LaunchOptions
+        LogService.d('更新现有的 LaunchOptions');
+        
+        // 第一步：找到 apps 块的起始位置
+        int appsBlockLine = -1;
+        for (int i = 0; i < lines.length; i++) {
+          if (lines[i].contains('"apps"')) {
+            appsBlockLine = i;
+            LogService.d('找到 apps 块，行号: $i');
+            break;
+          }
+        }
+        
+        if (appsBlockLine < 0) {
+          LogService.e('未找到 apps 块');
+          return false;
+        }
+        
+        // 第二步：在 apps 块内查找 730 游戏
+        int braceDepth = 0;
+        bool inAppBlock = false;
+        bool inAppsBlock = false;
+        int launchOptionsLine = -1;
+        int lineNum = 0;
+
+        for (final line in lines) {
+          // 先找到 apps 块开始
+          if (!inAppsBlock && line.contains('"apps"')) {
+            inAppsBlock = true;
+            LogService.d('进入 apps 块，行号: $lineNum');
+          }
+          
+          if (inAppsBlock) {
+            // 统计括号变化
+            int lineBraceChange = 0;
+            for (final char in line.runes) {
+              if (char == 123) lineBraceChange++;  // {
+              else if (char == 125) lineBraceChange--;  // }
+            }
+            
+            // 查找 730 块开始
+            if (!inAppBlock && braceDepth == 0 && line.contains('"$_cs2AppIdForLaunchOptions"')) {
+              inAppBlock = true;
+              braceDepth += lineBraceChange;
+              LogService.d('进入 730 块，行号: $lineNum');
+            } else if (inAppBlock) {
+              braceDepth += lineBraceChange;
+            }
+            
+            // 如果在 730 块内，查找 LaunchOptions
+            if (inAppBlock && braceDepth >= 0) {
+              if (line.contains('"LaunchOptions"')) {
+                launchOptionsLine = lineNum;
+                LogService.d('在 730 块内找到 LaunchOptions，行号: $lineNum');
+                break;
+              }
+              
+              // 退出 730 块
+              if (braceDepth < 0) {
+                LogService.d('退出 730 块，行号: $lineNum');
+                inAppBlock = false;
+              }
+            }
+          }
+          lineNum++;
+        }
+
+        if (launchOptionsLine >= 0) {
+          // 找到了 LaunchOptions 行，替换值
+          final oldLine = lines[launchOptionsLine];
+          LogService.d('找到 LaunchOptions 行: ${oldLine.trim()}');
+          
+          // 提取旧的选项值
+          final match = RegExp(r'"LaunchOptions"[ \t]+"([^"]*)"').firstMatch(oldLine);
+          if (match != null) {
+            LogService.d('旧启动选项: ${match.group(1)}');
+            
+            // 替换该行
+            final newLine = oldLine.replaceFirst(
+              RegExp(r'"LaunchOptions"[ \t]+"[^"]*"'),
+              '"LaunchOptions"		"$newOptions"'
+            );
+            lines[launchOptionsLine] = newLine;
+            content = lines.join('\n');
+            LogService.d('已更新 LaunchOptions 为: $newOptions');
+          } else {
+            LogService.e('无法解析 LaunchOptions 行: $oldLine');
+            return false;
+          }
+        } else {
+          LogService.e('在 730 块内未找到 LaunchOptions');
+          return false;
+        }
+      }
+
+      // 写入配置文件
+      await file.writeAsString(content);
+      LogService.d('Steam 启动选项已配置: $newOptions');
+      
+      // 注意：需要提示用户重启Steam才能生效
+      return true;
+    } catch (e) {
+      LogService.e('配置Steam启动选项失败: $e');
+      return false;
+    }
+  }
+
+  /// 确保 Steam 启动选项已配置 -condebug
+  /// 
+  /// 如果未配置，会自动配置并返回 true（需要用户重启Steam）
+  /// 如果已配置，返回 true
+  /// 如果配置失败，返回 false
+  Future<bool> ensureCondebugConfigured() async {
+    if (!PlatformUtils.isWindows) {
+      return false;
+    }
+
+    // 检查是否已配置
+    final isConfigured = await isCondebugConfigured();
+    if (isConfigured) {
+      LogService.d('Steam 启动选项已配置 -condebug');
+      return true;
+    }
+
+    // 未配置，尝试自动配置
+    LogService.d('Steam 启动选项未配置 -condebug，正在自动配置...');
+    return await autoConfigureCondebug();
   }
 }
