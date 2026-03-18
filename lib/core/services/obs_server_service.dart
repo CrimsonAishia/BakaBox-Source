@@ -234,13 +234,16 @@ class ObsServerService {
       (state) {
         // 更新内部存储的服务器地址
         if (state.isInServer && state.serverAddress.isNotEmpty) {
+          // 用户在服务器中，检查地址是否变化
           if (_currentServerAddress != state.serverAddress) {
             _currentServerAddress = state.serverAddress;
             _logger.i('[OBS] 用户进入服务器: $_currentServerAddress');
             _refreshCurrentServerData();
           }
         } else {
-          if (_currentServerAddress != null) {
+          // 用户不在服务器中（离开服务器或回到主菜单）
+          // 检查是否需要重置状态（无论是 null 还是空字符串都重置）
+          if (_currentServerAddress != null && _currentServerAddress!.isNotEmpty) {
             _logger.i('[OBS] 用户离开服务器');
             _currentServerAddress = null;
             _refreshCurrentServerData();
@@ -405,6 +408,10 @@ class ObsServerService {
     _obsRefreshTimer?.cancel();
     _obsRefreshTimer = null;
 
+    // 停止定时矫正定时器
+    _correctionTimer?.cancel();
+    _correctionTimer = null;
+
     // 取消 ConsoleLogService 订阅
     _consoleLogSubscription?.cancel();
     _consoleLogSubscription = null;
@@ -446,6 +453,80 @@ class ObsServerService {
     _obsRefreshTimer = Timer.periodic(_obsRefreshInterval, (_) {
       _refreshCurrentServerData();
     });
+
+    // 启动定时矫正定时器（作为额外保障，防止状态不同步）
+    _startCorrectionTimer();
+  }
+
+  /// 定时矫正定时器
+  Timer? _correctionTimer;
+  static const Duration _correctionInterval = Duration(seconds: 30); // 每 30 秒矫正一次
+
+  /// 启动定时矫正定时器
+  /// 定期检查并矫正服务器状态，防止状态不同步
+  void _startCorrectionTimer() {
+    _correctionTimer?.cancel();
+    _correctionTimer = Timer.periodic(_correctionInterval, (_) {
+      _correctServerState();
+    });
+    _logger.d('[OBS] 启动定时矫正定时器，每 $_correctionInterval 检查一次');
+  }
+
+  /// 矫正服务器状态
+  /// 比较 OBS 记录的服务器地址和 ConsoleLogService 报告的服务器地址
+  /// 如果不一致，强制刷新数据
+  Future<void> _correctServerState() async {
+    try {
+      final consoleLogService = ConsoleLogService();
+      final consoleState = consoleLogService.currentState;
+      final consoleAddress = consoleState.serverAddress;
+      final isInServerFromConsole =
+          consoleState.isInServer && consoleAddress.isNotEmpty;
+
+      // 获取 OBS 当前记录的地址
+      final obsAddress = _currentData['ip'] ?? '';
+
+      if (isInServerFromConsole) {
+        // 用户应该在服务器中
+        if (obsAddress.isEmpty) {
+          // OBS 显示不在服务器，但 ConsoleLog 报告在服务器
+          // 这可能是状态同步延迟，强制刷新
+          _logger.i('[OBS] 矫正：检测到用户在服务器中但 OBS 未显示，强制刷新');
+          await _refreshCurrentServerData();
+        } else {
+          // 两者都显示在服务器中，检查地址是否一致
+          // 需要比较原始地址（去除域名映射）
+          final addressMapping = ServerAddressMappingService();
+          final consoleDisplayAddress = addressMapping.getDomainAddress(consoleAddress);
+
+          if (obsAddress != consoleDisplayAddress) {
+            // 地址不一致，说明服务器切换了但 OBS 没更新
+            _logger.i('[OBS] 矫正：检测到服务器切换 (${obsAddress} -> $consoleDisplayAddress)，强制刷新');
+            await _refreshCurrentServerData();
+          }
+        }
+      } else {
+        // 用户应该不在服务器中
+        if (_currentData['isConnected'] == true || obsAddress.isNotEmpty) {
+          // OBS 显示在服务器，但 ConsoleLog 报告不在服务器
+          _logger.i('[OBS] 矫正：检测到用户已离开服务器但 OBS 仍显示，强制重置');
+          _queriedServerInfo = null;
+          _currentData['isConnected'] = false;
+          _currentData['serverName'] = '等待进入服务器';
+          _currentData['ping'] = '0';
+          _currentData['players'] = '0/0';
+          _currentData['map'] = '未知';
+          _currentData['ip'] = '';
+          _currentData['runtime'] = '';
+          _currentData['mapName'] = '';
+          _currentData['mapUrl'] = '';
+          _currentData['mapLabel'] = '';
+          _broadcast();
+        }
+      }
+    } catch (e) {
+      _logger.e('[OBS] 矫正过程出错: $e');
+    }
   }
 
   /// 刷新当前连接的服务器数据
@@ -511,11 +592,19 @@ class ObsServerService {
       );
       if (info != null) {
         final prevInfo = _queriedServerInfo;
+        final prevAddress = _currentData['ip']; // 获取之前查询的地址
+
+        // 使用域名映射后的地址进行比较
+        final addressMapping = ServerAddressMappingService();
+        final currentDisplayAddress = addressMapping.getDomainAddress(address);
+
         _queriedServerInfo = info;
 
         // 检查数据是否有变化
+        // 关键：必须检查地址是否变化！否则服务器切换时如果数据相同不会更新
         final dataChanged =
             prevInfo == null ||
+            prevAddress != currentDisplayAddress ||
             prevInfo.name != info.name ||
             prevInfo.map != info.map ||
             prevInfo.players != info.players ||
@@ -533,9 +622,7 @@ class ObsServerService {
           _currentData['serverName'] = displayName;
 
           // 使用域名映射服务将 IP 转换为域名
-          final addressMapping = ServerAddressMappingService();
-          final displayAddress = addressMapping.getDomainAddress(address);
-          _currentData['ip'] = displayAddress;
+          _currentData['ip'] = currentDisplayAddress;
 
           _currentData['ping'] = info.ping.toString();
           _currentData['players'] = '${info.players}/${info.maxPlayers}';
@@ -559,7 +646,7 @@ class ObsServerService {
           _currentData['isListServer'] = listServer != null;
           _broadcast();
           _logger.d(
-            '[OBS] 查询服务器完成: $displayAddress, 玩家: ${info.players}/${info.maxPlayers}, 地图: ${info.map}, 译名: ${_currentData['mapLabel']}',
+            '[OBS] 查询服务器完成: $currentDisplayAddress, 玩家: ${info.players}/${info.maxPlayers}, 地图: ${info.map}, 译名: ${_currentData['mapLabel']}',
           );
         }
       }
