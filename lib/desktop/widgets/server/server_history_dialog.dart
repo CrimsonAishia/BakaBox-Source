@@ -24,6 +24,9 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
   final ServerApi _serverApi = ServerApi();
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
+  
+  // 搜索防抖定时器
+  Timer? _searchDebounceTimer;
 
   // 状态
   bool _isLoading = true;
@@ -68,6 +71,7 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
 
   @override
   void dispose() {
+    _searchDebounceTimer?.cancel();
     _scrollController.removeListener(_updateScrollIndicators);
     _scrollController.dispose();
     _searchController.dispose();
@@ -227,7 +231,24 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
     if (_searchQuery.isNotEmpty) {
       _searchQuery = '';
       _fetchServerHistory(resetData: true);
+    } else {
+      // 如果搜索条件本来就没有，不刷新但更新UI
+      setState(() {});
     }
+  }
+
+  /// 搜索输入变化（实时搜索，带防抖）
+  void _onSearchChanged(String value) {
+    // 取消之前的定时器
+    _searchDebounceTimer?.cancel();
+    
+    // 立即更新UI显示清空按钮
+    setState(() {});
+    
+    // 500ms 后执行搜索
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+      _handleSearch();
+    });
   }
 
   /// 加载更多
@@ -437,7 +458,7 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
                         ),
                       ),
                     ),
-                    onChanged: (_) => setState(() {}),
+                    onChanged: _onSearchChanged,
                     onSubmitted: (_) => _handleSearch(),
                   ),
                 ),
@@ -458,35 +479,6 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
               ),
             ],
           ),
-          if (_searchQuery.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0080FF).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.search, size: 14, color: const Color(0xFF0080FF)),
-                  const SizedBox(width: 4),
-                  Text(
-                    '搜索"$_searchQuery"的结果',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF0080FF),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${_historyData.length} 条记录',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );
