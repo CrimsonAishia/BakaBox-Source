@@ -262,8 +262,12 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
   String _getFormattedMapName(ServerSnapshot snapshot) {
     // 使用地图信息
     final mapInfo = _mapInfoCache[snapshot.mapName];
-    if (mapInfo != null && mapInfo.mapLabel.isNotEmpty) {
-      return '${snapshot.mapName}（${mapInfo.mapLabel}）';
+    final mapLabel = mapInfo?.mapLabel;
+    // 确保中文名不为空字符串
+    final chineseName = (mapLabel?.isNotEmpty == true) ? mapLabel : null;
+    // 显示格式：有中文名时 "中文名 (英文名)"，否则只显示英文名
+    if (chineseName != null) {
+      return '$chineseName (${snapshot.mapName})';
     }
     return snapshot.mapName.isNotEmpty ? snapshot.mapName : '未知地图';
   }
