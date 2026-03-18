@@ -291,19 +291,21 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        width: 420,
-        height: 600,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          children: [
-            _buildHeader(context),
-            _buildSearchBar(),
-            Expanded(child: _buildContent()),
-          ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: 420,
+          height: 600,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+          ),
+          child: Column(
+            children: [
+              _buildHeader(context),
+              _buildSearchBar(),
+              Expanded(child: _buildContent()),
+            ],
+          ),
         ),
       ),
     );
