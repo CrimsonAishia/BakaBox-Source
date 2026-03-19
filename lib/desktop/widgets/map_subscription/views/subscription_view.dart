@@ -6,6 +6,7 @@ import '../../../../core/models/map_subscription_models.dart';
 import '../../../../core/widgets/map_contribution_dialog.dart';
 import '../../common_scroll_indicator.dart';
 import '../../map_subscription_card.dart';
+import 'subscription_scope_dialog.dart';
 
 /// 订阅管理视图（已订阅列表）
 class SubscriptionView extends StatefulWidget {
@@ -294,6 +295,10 @@ class _SubscriptionViewState extends State<SubscriptionView> {
   }
 
   Widget _buildSubscriptionTile(BuildContext context, bool isDark, MapSubscription sub) {
+    // 计算范围文本
+    final categoryText = sub.isAllCategories ? '继承全局' : '${sub.categoryNames.length}个分类';
+    final serverText = sub.isAllServers ? '继承全局' : '${sub.serverAddresses.length}个服务器';
+
     return MapSubscriptionCard(
       displayName: sub.mapLabel.isNotEmpty ? sub.mapLabel : sub.mapName,
       mapName: sub.mapName,
@@ -308,6 +313,73 @@ class _SubscriptionViewState extends State<SubscriptionView> {
       },
       onDelete: () => _showDeleteConfirmDialog(context, isDark, sub),
       editBeforeDelete: true,
+      // 使用自定义 trailing 显示范围设置按钮
+      trailing: _buildScopeButtons(context, isDark, sub, categoryText, serverText),
+    );
+  }
+
+  /// 构建单个范围设置按钮（点击弹出左右分栏弹窗）
+  Widget _buildScopeButtons(
+    BuildContext context,
+    bool isDark,
+    MapSubscription sub,
+    String categoryText,
+    String serverText,
+  ) {
+    // 计算当前范围描述
+    String scopeDesc;
+    if (sub.isAllCategories && sub.isAllServers) {
+      scopeDesc = '继承全局';
+    } else {
+      final parts = <String>[];
+      if (!sub.isAllCategories) {
+        parts.add('${sub.categoryNames.length}分类');
+      }
+      if (!sub.isAllServers) {
+        parts.add('${sub.serverAddresses.length}服');
+      }
+      scopeDesc = parts.join(' · ');
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(6),
+        onTap: () => _showSubscriptionScopeDialog(context, isDark, sub),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : const Color(0xFFE5E7EB),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.12)
+                  : const Color(0xFFD1D5DB),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.tune_rounded,
+                size: 14,
+                color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                scopeDesc,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -549,4 +621,13 @@ class _SubscriptionViewState extends State<SubscriptionView> {
       ),
     );
   }
+
+  /// 显示监控范围设置对话框（左右分栏：左侧分类，右侧服务器）
+  void _showSubscriptionScopeDialog(BuildContext context, bool isDark, MapSubscription sub) {
+    SubscriptionScopeDialog.show(
+      context,
+      subscription: sub,
+    );
+  }
+
 }

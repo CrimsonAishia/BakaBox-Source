@@ -41,6 +41,12 @@ class MapSubscriptionState extends Equatable {
   /// 是否正在加载分类
   final bool isLoadingCategories;
 
+  /// 可用服务器列表（地址 -> 显示名称）
+  final Map<String, String> availableServers;
+
+  /// 是否正在加载服务器
+  final bool isLoadingServers;
+
   /// TTS 模型是否已下载（当前选中的）
   final bool isTtsModelDownloaded;
 
@@ -88,6 +94,8 @@ class MapSubscriptionState extends Equatable {
     this.availableCategories = const [],
     this.globalCategories = const [],
     this.isLoadingCategories = false,
+    this.availableServers = const {},
+    this.isLoadingServers = false,
     this.isTtsModelDownloaded = false,
     this.ttsDownloadStatus = TtsDownloadStatus.idle,
     this.ttsDownloadProgress = 0.0,
@@ -115,6 +123,8 @@ class MapSubscriptionState extends Equatable {
     List<String>? availableCategories,
     List<String>? globalCategories,
     bool? isLoadingCategories,
+    Map<String, String>? availableServers,
+    bool? isLoadingServers,
     bool? isTtsModelDownloaded,
     TtsDownloadStatus? ttsDownloadStatus,
     double? ttsDownloadProgress,
@@ -141,6 +151,8 @@ class MapSubscriptionState extends Equatable {
       availableCategories: availableCategories ?? this.availableCategories,
       globalCategories: globalCategories ?? this.globalCategories,
       isLoadingCategories: isLoadingCategories ?? this.isLoadingCategories,
+      availableServers: availableServers ?? this.availableServers,
+      isLoadingServers: isLoadingServers ?? this.isLoadingServers,
       isTtsModelDownloaded: isTtsModelDownloaded ?? this.isTtsModelDownloaded,
       ttsDownloadStatus: ttsDownloadStatus ?? this.ttsDownloadStatus,
       ttsDownloadProgress: ttsDownloadProgress ?? this.ttsDownloadProgress,
@@ -170,6 +182,8 @@ class MapSubscriptionState extends Equatable {
     availableCategories,
     globalCategories,
     isLoadingCategories,
+    availableServers,
+    isLoadingServers,
     isTtsModelDownloaded,
     ttsDownloadStatus,
     ttsDownloadProgress,
