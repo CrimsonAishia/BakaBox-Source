@@ -341,6 +341,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
               _buildRefreshIndicator(),
               // 内容
               _buildContent(),
+              // 监控黄点
+              if (_isMonitoring) _buildMonitoringIndicator(),
               // Hover 时的毛玻璃操作层
               _buildHoverActionOverlay(),
             ],
@@ -392,46 +394,12 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     );
   }
 
-  /// 换图监控徽章（行内版本 - 在地址行显示）
-  Widget _buildMonitorBadgeInline() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFA500).withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(
-          color: const Color(0xFFFFA500).withValues(alpha: 0.6),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFFA500).withValues(alpha: 0.4),
-            blurRadius: 8,
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(MdiIcons.bellRing, size: 12, color: const Color(0xFFFFA500)),
-          const SizedBox(width: 4),
-          const Text(
-            '监控中',
-            style: TextStyle(
-              color: Color(0xFFFFA500),
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              shadows: [
-                Shadow(
-                  color: Colors.black,
-                  blurRadius: 2,
-                  offset: Offset(0, 1),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+  /// 监控中浮动黄点（卡片右上角）
+  Widget _buildMonitoringIndicator() {
+    return Positioned(
+      top: 8,
+      right: 8,
+      child: _FloatingYellowDot(),
     );
   }
 
@@ -563,27 +531,19 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         // 地图名称（使用中文翻译，过长时滚动）
         Row(
           children: [
-            const Text(
-              '地图：',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                shadows: [
-                  Shadow(
-                    color: Colors.black,
-                    blurRadius: 2,
-                    offset: Offset(0, 1),
-                  ),
-                  Shadow(color: Colors.black, blurRadius: 6),
-                ],
-              ),
+            Icon(
+              MdiIcons.map,
+              size: 16,
+              color: Colors.white.withValues(alpha: 0.9),
             ),
+            const SizedBox(width: 6),
             Expanded(
               child: _MarqueeText(
                 text: displayMapName,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
+                  fontWeight: FontWeight.bold,
                   shadows: [
                     Shadow(
                       color: Colors.black,
@@ -601,6 +561,12 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         // 地址和延迟
         Row(
           children: [
+            Icon(
+              MdiIcons.ip,
+              size: 16,
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
+            const SizedBox(width: 6),
             Text(
               address,
               style: const TextStyle(
@@ -624,11 +590,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
               child: Text('|', style: TextStyle(color: Colors.white30)),
             ),
             _buildPingBadge(ping),
-            // 换图监控徽章
-            if (_isMonitoring) ...[
-              const SizedBox(width: 8),
-              _buildMonitorBadgeInline(),
-            ],
           ],
         ),
       ],
@@ -1929,5 +1890,75 @@ class _MarchingAntsPainter extends CustomPainter {
   @override
   bool shouldRepaint(_MarchingAntsPainter oldDelegate) {
     return oldDelegate.progress != progress;
+  }
+}
+
+/// 浮动黄点
+class _FloatingYellowDot extends StatefulWidget {
+  @override
+  State<_FloatingYellowDot> createState() => _FloatingYellowDotState();
+}
+
+class _FloatingYellowDotState extends State<_FloatingYellowDot>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+
+    _opacityAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: Opacity(
+            opacity: _opacityAnimation.value,
+            child: Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFFFD700),
+                border: Border.all(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFFD700).withValues(alpha: 0.8),
+                    blurRadius: 6,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }
