@@ -104,7 +104,7 @@ class _LiveRoomCardState extends State<LiveRoomCard> with SingleTickerProviderSt
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
-        transform: Matrix4.identity()..translate(0.0, _isHovered ? -4.0 : 0.0),
+        transform: Matrix4.translationValues(0.0, _isHovered ? -4.0 : 0.0, 0.0),
         child: Card(
           clipBehavior: Clip.antiAlias,
           elevation: _isHovered ? (isDark ? 8 : 6) : (isDark ? 4 : 2),

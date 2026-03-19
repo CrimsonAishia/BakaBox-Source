@@ -5,7 +5,6 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../core/core.dart';
-import '../core/services/game_launcher_service.dart';
 import '../core/services/game_status_service.dart';
 import '../core/services/gsi_service.dart';
 import '../core/services/policy_service.dart';
@@ -13,7 +12,6 @@ import '../core/services/obs_server_service.dart';
 import 'router/desktop_router.dart';
 import '../core/services/console_log_service.dart';
 import '../core/services/map_change_monitor_service.dart';
-import '../core/services/map_subscription_service.dart';
 import '../core/services/update_log_monitor_service.dart';
 import '../core/services/warmup_monitor_service.dart';
 import 'theme/desktop_theme.dart';

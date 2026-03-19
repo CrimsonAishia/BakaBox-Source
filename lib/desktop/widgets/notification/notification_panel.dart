@@ -1216,11 +1216,12 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
                           onTapLink: (text, href, title) {
                             if (href != null) {
                               final uri = Uri.tryParse(href);
-                              if (uri != null)
+                              if (uri != null) {
                                 launchUrl(
                                   uri,
                                   mode: LaunchMode.externalApplication,
                                 );
+                              }
                             }
                           },
                           styleSheet: MarkdownStyleSheet(

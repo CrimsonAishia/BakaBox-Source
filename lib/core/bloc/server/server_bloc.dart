@@ -402,8 +402,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         }
       }
 
-      if (scores.isEmpty || emit.isDone || requestId != _currentRequestId)
+      if (scores.isEmpty || emit.isDone || requestId != _currentRequestId) {
         return;
+      }
 
       // 将比分数据合并到 ExtendedServerItem
       final updatedServers = state.servers.map((server) {
@@ -1627,8 +1628,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       final currentServer = state.servers[serverIndex];
       if ((currentServer.serverItem.address ??
               currentServer.serverItem.serverAddress) !=
-          serverAddress)
+          serverAddress) {
         return;
+      }
 
       if (info != null) {
         final serverData = _convertSourceServerInfo(info);

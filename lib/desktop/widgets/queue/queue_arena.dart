@@ -32,8 +32,6 @@ class _UserAnimationState {
     required this.flyProgress,
     required this.floatPhase,
     required this.floatSpeed,
-    this.fadeController,
-    this.flyController,
   });
 
   factory _UserAnimationState.create({

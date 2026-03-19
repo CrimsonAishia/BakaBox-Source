@@ -348,7 +348,7 @@ class _ObsToolState extends State<ObsTool> {
           'borderRadius': 8.0,
         };
       default:
-        final id = '${type}-${DateTime.now().millisecondsSinceEpoch}';
+        final id = '$type-${DateTime.now().millisecondsSinceEpoch}';
         return {'id': id, 'type': type};
     }
   }

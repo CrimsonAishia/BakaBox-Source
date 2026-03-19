@@ -501,7 +501,7 @@ class ObsServerService {
 
           if (obsAddress != consoleDisplayAddress) {
             // 地址不一致，说明服务器切换了但 OBS 没更新
-            _logger.i('[OBS] 矫正：检测到服务器切换 (${obsAddress} -> $consoleDisplayAddress)，强制刷新');
+            _logger.i('[OBS] 矫正：检测到服务器切换 ($obsAddress -> $consoleDisplayAddress)，强制刷新');
             await _refreshCurrentServerData();
           }
         }

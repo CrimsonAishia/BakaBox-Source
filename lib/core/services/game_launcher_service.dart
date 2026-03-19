@@ -1253,8 +1253,12 @@ class GameLauncherService {
         // 统计括号变化
         int lineBraceChange = 0;
         for (final char in line.runes) {
-          if (char == 123) lineBraceChange++;  // {
-          else if (char == 125) lineBraceChange--;  // }
+          if (char == 123) {
+            lineBraceChange++;
+          }
+          else if (char == 125) {
+            lineBraceChange--;
+          }
         }
 
         // 查找 730 块开始
@@ -1469,8 +1473,12 @@ class GameLauncherService {
             // 统计括号变化
             int lineBraceChange = 0;
             for (final char in line.runes) {
-              if (char == 123) lineBraceChange++;  // {
-              else if (char == 125) lineBraceChange--;  // }
+              if (char == 123) {
+                lineBraceChange++;
+              }
+              else if (char == 125) {
+                lineBraceChange--;
+              }
             }
             
             // 查找 730 块开始
