@@ -647,8 +647,9 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
               ? _buildLoadingSkeleton()
               : const SizedBox.shrink();
         }
-        if (state.error != null && state.issues.isEmpty)
+        if (state.error != null && state.issues.isEmpty) {
           return _buildErrorState(state.error!);
+        }
         if (state.issues.isEmpty) return _buildEmptyState();
         return _buildList(state);
       },
@@ -1573,8 +1574,9 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
         }
       },
       builder: (context, state) {
-        if (state.isLoading)
+        if (state.isLoading) {
           return const Center(child: CircularProgressIndicator());
+        }
         if (state.issue == null) return _buildError(state.error);
         return _buildContent(state);
       },
@@ -2803,11 +2805,12 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
         widget.onCreated(response.id);
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ToastUtils.showError(
           context,
           ErrorUtils.getErrorMessage(e, defaultMessage: '提交失败，请稍后重试'),
         );
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

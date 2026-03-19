@@ -279,7 +279,7 @@ class ExtendedServerItem extends Equatable {
   final bool isOffline; // 是否离线（连续失败3次）
   final TeamScores? teamScores; // 新增：比分数据
 
-  ExtendedServerItem({
+  const ExtendedServerItem({
     required this.serverItem, this.serverData, this.mapInfo, this.updatedAt,
     this.recentlyUpdated = false, this.isLoading = false, this.hasError = false,
     this.pingInfo, this.mapRuntime, this.mapRuntimeLastFetched,

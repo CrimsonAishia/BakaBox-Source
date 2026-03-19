@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../core/models/server_models.dart';
-import '../../../core/api/server_api.dart';
 import '../../../core/services/source_server_service.dart';
 import '../../../core/utils/map_utils.dart';
 import '../../../core/utils/log_service.dart';
@@ -26,8 +25,6 @@ class ServerDetailDialog extends StatefulWidget {
 }
 
 class _ServerDetailDialogState extends State<ServerDetailDialog> {
-  final ServerApi _serverApi = ServerApi();
-  
   // 状态
   bool _isLoading = true;
   bool _isLoadingPlayers = false;
@@ -143,47 +140,12 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
           _isLoading = false;
         });
       }
-
-      // 异步获取延迟信息
-      _fetchPingLatency();
     } catch (e) {
       LogService.e('获取服务器详情失败: $e', e);
       if (mounted) {
         setState(() {
           _error = '获取服务器信息失败';
           _isLoading = false;
-        });
-      }
-    }
-  }
-
-  /// 获取延迟信息
-  Future<void> _fetchPingLatency() async {
-    final address = widget.server.serverItem.address;
-    if (address == null) return;
-
-    final ip = address.split(':').first;
-    if (ip.isEmpty) return;
-
-    try {
-      final pingInfo = await _serverApi.getServerPing(ip);
-      if (pingInfo != null && mounted) {
-        setState(() {
-          _pingLatency = pingInfo.ping;
-        });
-      } else if (mounted) {
-        // 使用现有延迟数据
-        setState(() {
-          _pingLatency = widget.server.pingInfo?.ping ?? 
-                         widget.server.serverData?.pingLatency;
-        });
-      }
-    } catch (e) {
-      LogService.w('获取延迟信息失败: $e');
-      if (mounted) {
-        setState(() {
-          _pingLatency = widget.server.pingInfo?.ping ?? 
-                         widget.server.serverData?.pingLatency;
         });
       }
     }

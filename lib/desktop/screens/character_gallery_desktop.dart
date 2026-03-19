@@ -2296,36 +2296,6 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     );
   }
 
-  /// 显示刀模/枪模图片查看器
-  void _showWeaponModelImages(String name, String? thumbnailUrl, WeaponModelPreview? preview) {
-    final images = <String>[];
-    
-    // 添加缩略图
-    if (thumbnailUrl != null && thumbnailUrl.isNotEmpty) {
-      images.add(thumbnailUrl);
-    }
-    
-    // 添加多角度预览图
-    if (preview != null) {
-      if (preview.front != null && preview.front!.isNotEmpty) images.add(preview.front!);
-      if (preview.left != null && preview.left!.isNotEmpty) images.add(preview.left!);
-      if (preview.right != null && preview.right!.isNotEmpty) images.add(preview.right!);
-      if (preview.back != null && preview.back!.isNotEmpty) images.add(preview.back!);
-      if (preview.hand != null && preview.hand!.isNotEmpty) images.add(preview.hand!);
-    }
-    
-    if (images.isEmpty) return;
-    
-    showDialog(
-      context: context,
-      barrierColor: Colors.black87,
-      builder: (context) => CharacterImageViewerDialog(
-        images: images,
-        characterName: name,
-      ),
-    );
-  }
-
   Widget _buildPreviewSection(CharacterGalleryState state) {
     final previewUrl = state.currentPreviewImage;
 

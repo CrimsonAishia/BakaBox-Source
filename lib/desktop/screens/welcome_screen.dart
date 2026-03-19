@@ -974,8 +974,9 @@ class _DailyTrendChart extends StatelessWidget {
                     interval: 1,
                     getTitlesWidget: (value, meta) {
                       final index = value.toInt();
-                      if (index < 0 || index >= dailyStats.length)
+                      if (index < 0 || index >= dailyStats.length) {
                         return const SizedBox();
+                      }
                       final dateStr = dailyStats[index].date;
                       final parts = dateStr.split('-');
                       return Padding(
@@ -1121,13 +1122,14 @@ class _HourlyChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (hourlyStats.isEmpty)
+    if (hourlyStats.isEmpty) {
       return Center(
         child: Text(
           '暂无数据',
           style: TextStyle(color: isDark ? Colors.white54 : Colors.black38),
         ),
       );
+    }
 
     final maxY = hourlyStats
         .map((h) => h.avgPlayers)
@@ -1329,7 +1331,7 @@ class _TopServersListState extends State<_TopServersList> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.servers.isEmpty)
+    if (widget.servers.isEmpty) {
       return Center(
         child: Text(
           '暂无数据',
@@ -1338,6 +1340,7 @@ class _TopServersListState extends State<_TopServersList> {
           ),
         ),
       );
+    }
 
     return Stack(
       children: [
@@ -1563,7 +1566,7 @@ class _TopMapsListState extends State<_TopMapsList> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.maps.isEmpty)
+    if (widget.maps.isEmpty) {
       return Center(
         child: Text(
           '暂无数据',
@@ -1572,7 +1575,8 @@ class _TopMapsListState extends State<_TopMapsList> {
           ),
         ),
       );
-
+    }
+    
     return Stack(
       children: [
         ListView.separated(

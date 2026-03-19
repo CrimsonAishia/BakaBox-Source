@@ -536,8 +536,9 @@ class NotificationWindowService {
   /// 从等待队列中取出下一个通知显示
   void _showNextFromPendingQueue() {
     if (_pendingQueue.isEmpty) return;
-    if (_activeWindows.length + _createQueue.length >= maxVisibleNotifications)
+    if (_activeWindows.length + _createQueue.length >= maxVisibleNotifications) {
       return;
+    }
 
     final next = _pendingQueue.removeAt(0);
     LogService.d(
