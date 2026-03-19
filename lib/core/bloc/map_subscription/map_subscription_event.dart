@@ -58,6 +58,39 @@ class MapSubscriptionUpdateScope extends MapSubscriptionEvent {
   List<Object?> get props => [categoryNames];
 }
 
+/// 更新单个订阅的分类范围
+class MapSubscriptionUpdateSubscriptionScope extends MapSubscriptionEvent {
+  final String mapName;
+  final List<String> categoryNames;
+
+  const MapSubscriptionUpdateSubscriptionScope({
+    required this.mapName,
+    required this.categoryNames,
+  });
+
+  @override
+  List<Object?> get props => [mapName, categoryNames];
+}
+
+/// 更新单个订阅的服务器范围
+class MapSubscriptionUpdateSubscriptionServers extends MapSubscriptionEvent {
+  final String mapName;
+  final List<String> serverAddresses;
+
+  const MapSubscriptionUpdateSubscriptionServers({
+    required this.mapName,
+    required this.serverAddresses,
+  });
+
+  @override
+  List<Object?> get props => [mapName, serverAddresses];
+}
+
+/// 加载可用服务器列表
+class MapSubscriptionLoadServers extends MapSubscriptionEvent {
+  const MapSubscriptionLoadServers();
+}
+
 /// 切换全局开关
 class MapSubscriptionToggleGlobal extends MapSubscriptionEvent {
   final bool enabled;

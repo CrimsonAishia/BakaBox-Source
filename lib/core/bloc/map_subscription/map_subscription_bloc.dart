@@ -32,6 +32,9 @@ class MapSubscriptionBloc
     on<MapSubscriptionAdd>(_onAdd);
     on<MapSubscriptionRemove>(_onRemove);
     on<MapSubscriptionUpdateScope>(_onUpdateScope);
+    on<MapSubscriptionUpdateSubscriptionScope>(_onUpdateSubscriptionScope);
+    on<MapSubscriptionUpdateSubscriptionServers>(_onUpdateSubscriptionServers);
+    on<MapSubscriptionLoadServers>(_onLoadServers);
     on<MapSubscriptionToggleGlobal>(_onToggleGlobal);
     on<MapSubscriptionToggleNotification>(_onToggleNotification);
     on<MapSubscriptionToggleGlobalTts>(_onToggleGlobalTts);
@@ -158,6 +161,47 @@ class MapSubscriptionBloc
     }
   }
 
+  Future<void> _onUpdateSubscriptionScope(
+    MapSubscriptionUpdateSubscriptionScope event,
+    Emitter<MapSubscriptionState> emit,
+  ) async {
+    try {
+      await _service.updateSubscriptionScope(event.mapName, event.categoryNames);
+      emit(state.copyWith(subscriptions: _service.subscriptions));
+    } catch (e) {
+      LogService.e('[MapSubscriptionBloc] 更新订阅分类范围失败', e);
+    }
+  }
+
+  Future<void> _onUpdateSubscriptionServers(
+    MapSubscriptionUpdateSubscriptionServers event,
+    Emitter<MapSubscriptionState> emit,
+  ) async {
+    try {
+      await _service.updateSubscriptionServers(event.mapName, event.serverAddresses);
+      emit(state.copyWith(subscriptions: _service.subscriptions));
+    } catch (e) {
+      LogService.e('[MapSubscriptionBloc] 更新订阅服务器范围失败', e);
+    }
+  }
+
+  Future<void> _onLoadServers(
+    MapSubscriptionLoadServers event,
+    Emitter<MapSubscriptionState> emit,
+  ) async {
+    emit(state.copyWith(isLoadingServers: true));
+    try {
+      final servers = await _service.getAvailableServers();
+      emit(state.copyWith(
+        availableServers: servers,
+        isLoadingServers: false,
+      ));
+    } catch (e) {
+      LogService.e('[MapSubscriptionBloc] 加载服务器列表失败', e);
+      emit(state.copyWith(isLoadingServers: false));
+    }
+  }
+
   Future<void> _onToggleGlobal(
     MapSubscriptionToggleGlobal event,
     Emitter<MapSubscriptionState> emit,
@@ -212,10 +256,15 @@ class MapSubscriptionBloc
 
     // 如果是加载更多，检查是否还有更多数据
     if (event.loadMore && !state.hasMoreSearchResults) {
+      LogService.d(
+        '[MapSubscriptionBloc] 加载更多被跳过：已无更多结果 (当前: ${state.searchResults.length}, 总计: ${state.searchTotalCount})',
+      );
+      // 更新状态，移除加载中提示
+      emit(state.copyWith(isSearching: false));
       return;
     }
 
-    // 如果正在搜索中，不重复请求
+    // 防重入：如果正在搜索中，跳过新请求
     if (state.isSearching) {
       return;
     }
@@ -405,7 +454,7 @@ class MapSubscriptionBloc
     MapSubscriptionTestTts event,
     Emitter<MapSubscriptionState> emit,
   ) async {
-    emit(state.copyWith(isTtsTesting: true, ttsTestingPhase: 'generating'));
+    emit(state.copyWith(isTtsTesting: true, ttsTestingPhase: 'generating', error: null));
     try {
       await Future.microtask(() {});
       await _ttsService.testSpeakWithCallback(
@@ -413,6 +462,9 @@ class MapSubscriptionBloc
           add(const _MapSubscriptionTtsPhaseUpdate(phase: 'playing'));
         },
       );
+    } catch (e) {
+      LogService.e('[MapSubscriptionBloc] TTS 测试失败', e);
+      emit(state.copyWith(error: 'TTS 测试失败: $e'));
     } finally {
       emit(state.copyWith(isTtsTesting: false, ttsTestingPhase: null));
     }

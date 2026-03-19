@@ -11,11 +11,12 @@ class MapSubscription extends Equatable {
   /// 地图背景图 URL
   final String? mapBackground;
 
-  /// 监控的分类名列表（空=全部 API 分类）
+  /// 监控的分类名列表（空=继承全局设置）
   final List<String> categoryNames;
 
-  /// 是否启用 TTS 语音播报
-  final bool ttsEnabled;
+  /// 指定要监控的服务器地址列表（空=继承全局设置）
+  /// 格式: "IP:端口"，如 "123.45.67.89:27015"
+  final List<String> serverAddresses;
 
   /// 创建时间
   final DateTime createdAt;
@@ -25,7 +26,7 @@ class MapSubscription extends Equatable {
     required this.mapLabel,
     this.mapBackground,
     this.categoryNames = const [],
-    this.ttsEnabled = false,
+    this.serverAddresses = const [],
     required this.createdAt,
   });
 
@@ -40,7 +41,11 @@ class MapSubscription extends Equatable {
               ?.map((e) => e as String)
               .toList() ??
           [],
-      ttsEnabled: json['ttsEnabled'] as bool? ?? false,
+      serverAddresses:
+          (json['serverAddresses'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       createdAt:
           DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.now(),
@@ -53,7 +58,7 @@ class MapSubscription extends Equatable {
     'mapLabel': mapLabel,
     'mapBackground': mapBackground,
     'categoryNames': categoryNames,
-    'ttsEnabled': ttsEnabled,
+    'serverAddresses': serverAddresses,
     'createdAt': createdAt.toIso8601String(),
   };
 
@@ -63,7 +68,7 @@ class MapSubscription extends Equatable {
     String? mapLabel,
     String? mapBackground,
     List<String>? categoryNames,
-    bool? ttsEnabled,
+    List<String>? serverAddresses,
     DateTime? createdAt,
   }) {
     return MapSubscription(
@@ -71,7 +76,7 @@ class MapSubscription extends Equatable {
       mapLabel: mapLabel ?? this.mapLabel,
       mapBackground: mapBackground ?? this.mapBackground,
       categoryNames: categoryNames ?? this.categoryNames,
-      ttsEnabled: ttsEnabled ?? this.ttsEnabled,
+      serverAddresses: serverAddresses ?? this.serverAddresses,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -80,8 +85,19 @@ class MapSubscription extends Equatable {
   String get displayName =>
       mapLabel.isNotEmpty ? '$mapLabel ($mapName)' : mapName;
 
-  /// 是否监控全部分类
+  /// 是否监控全部分类（空=继承全局设置）
   bool get isAllCategories => categoryNames.isEmpty;
+
+  /// 是否监控全部服务器（空=继承全局设置）
+  bool get isAllServers => serverAddresses.isEmpty;
+
+  /// 获取分类范围描述
+  String get categoryScopeText =>
+      isAllCategories ? '全部分类' : '${categoryNames.length}个分类';
+
+  /// 获取服务器范围描述
+  String get serverScopeText =>
+      isAllServers ? '全部服务器' : '${serverAddresses.length}个服务器';
 
   @override
   List<Object?> get props => [
@@ -89,7 +105,7 @@ class MapSubscription extends Equatable {
     mapLabel,
     mapBackground,
     categoryNames,
-    ttsEnabled,
+    serverAddresses,
     createdAt,
   ];
 }
