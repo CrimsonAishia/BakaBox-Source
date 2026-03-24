@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../core/models/server_models.dart';
+import '../../../core/models/map_tag_models.dart';
 import '../../../core/bloc/server/server_bloc.dart';
 import '../../../core/bloc/server/server_event.dart';
 import '../../../core/bloc/server/server_state.dart';
@@ -453,33 +454,28 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   }
 
   /// 内容区域 - 左右布局
-  Widget _buildContent() {
-    // hover 时使用紧凑间距 + 上浮，非 hover 时使用宽松间距填满卡片
-    return AnimatedSlide(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOutCubic,
-      offset: _isHovered ? const Offset(0, -0.08) : Offset.zero,
-      child: AnimatedPadding(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-        padding: _isHovered
-            ? const EdgeInsets.all(16)
-            : const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 左侧信息
-            Expanded(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: _buildLeftContent(),
-              ),
+  Widget _buildContent() {    
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 12,
+        bottom: 12,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 左侧信息
+          Expanded(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: _buildLeftContent(),
             ),
-            const SizedBox(width: 10),
-            // 右侧玩家数量和运行时间
-            _buildRightContent(),
-          ],
-        ),
+          ),
+          const SizedBox(width: 10),
+          // 右侧玩家数量和运行时间
+          _buildRightContent(),
+        ],
       ),
     );
   }
@@ -503,8 +499,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     // 只使用系统 ping 的结果
     final ping = widget.server.pingInfo?.ping;
 
-    // hover 时紧凑间距，非 hover 时宽松间距
-    final verticalSpacing = _isHovered ? 4.0 : 12.0;
+    // 统一紧凑间距
+    final verticalSpacing = 4.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -592,7 +588,155 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
             _buildPingBadge(ping),
           ],
         ),
+        // 地图标签（非 hover 时显示，hover 时隐藏）
+        if (!_isHovered) ...[
+          SizedBox(height: verticalSpacing),
+          _buildMapTagRow(widget.server.mapInfo?.tags ?? []),
+        ],
       ],
+    );
+  }
+
+  /// 地图标签行
+  Widget _buildMapTagRow(List<MapTagSimple> tags) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Icon(
+          tags.isEmpty ? MdiIcons.tagOffOutline : MdiIcons.tagOutline,
+          size: 16,
+          color: Colors.white.withValues(alpha: 0.8),
+        ),
+        const SizedBox(width: 6),
+        if (tags.isEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.15),
+                width: 1,
+              ),
+            ),
+            child: Text(
+              '暂无标签',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          Expanded(
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: tags.map((tag) => _buildTagChip(tag)).toList(),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// 构建单个标签
+  Widget _buildTagChip(MapTagSimple tag) {
+    final tagColorValue = tag.colorValue;
+
+    // 有颜色时的处理
+    if (tagColorValue != null) {
+      final darkColor = Color.lerp(tagColorValue, Colors.black, 0.2)!;
+      final lightColor = Color.lerp(tagColorValue, Colors.white, 0.6)!;
+
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          // 渐变背景，从浅到深，增加层次感
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              lightColor.withValues(alpha: 0.4),
+              tagColorValue.withValues(alpha: 0.5),
+              darkColor.withValues(alpha: 0.45),
+            ],
+            stops: const [0.0, 0.5, 1.0],
+          ),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: tagColorValue.withValues(alpha: 0.7),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: tagColorValue.withValues(alpha: 0.3),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Text(
+          tag.name,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            shadows: [
+              Shadow(
+                color: tagColorValue.withValues(alpha: 0.8),
+                blurRadius: 2,
+                offset: const Offset(0, 0),
+              ),
+              Shadow(
+                color: Colors.black.withValues(alpha: 0.6),
+                blurRadius: 1,
+                offset: const Offset(1, 1),
+              ),
+              Shadow(
+                color: Colors.black.withValues(alpha: 0.6),
+                blurRadius: 1,
+                offset: const Offset(-1, -1),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 无颜色时的处理
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        tag.name,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.9),
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          shadows: [
+            Shadow(
+              color: Colors.black.withValues(alpha: 0.4),
+              blurRadius: 2,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -9,9 +9,13 @@ import '../bloc/auth/auth_event.dart';
 import '../bloc/map_contribution/map_contribution_bloc.dart';
 import '../bloc/map_contribution/map_contribution_event.dart';
 import '../bloc/map_contribution/map_contribution_state.dart';
+import '../bloc/map_tag/map_tag_bloc.dart';
+import '../bloc/map_tag/map_tag_event.dart';
+import '../bloc/map_tag/map_tag_state.dart';
 import '../constants/credit_constants.dart';
 import '../models/feature_status_models.dart';
 import '../models/map_contribution_models.dart';
+import '../models/map_tag_models.dart';
 import '../utils/contribution_validation_utils.dart';
 import '../utils/log_service.dart';
 import '../utils/toast_utils.dart';
@@ -19,14 +23,10 @@ import '../services/file_upload_service.dart';
 import '../services/image_url_service.dart';
 import 'disk_cached_image.dart';
 import 'feature_gate.dart';
+import 'tag_color_picker.dart';
 import '../../desktop/widgets/login_dialog.dart';
 
 /// 地图贡献对话框
-/// 
-/// 显示地图贡献列表、提交表单、投票功能
-/// 使用 Tab 分隔名称贡献和背景贡献两个独立列表
-/// 贡献一旦提交无法删除（Requirements 6.1, 6.2）
-/// Requirements: 1.1, 2.1, 3.1, 4.2, 5.1, 5.2, 5.3, 6.1, 6.2
 class MapContributionDialog extends StatefulWidget {
   final String mapName;
   final String? mapLabel;
@@ -57,8 +57,11 @@ class MapContributionDialog extends StatefulWidget {
     return showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) => BlocProvider(
-        create: (context) => MapContributionBloc(),
+      builder: (context) => MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (context) => MapContributionBloc()),
+          BlocProvider(create: (context) => MapTagBloc()),
+        ],
         child: MapContributionDialog(
           mapName: mapName,
           mapLabel: mapLabel,
@@ -87,18 +90,22 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   // 滚动指示器状态
   bool _canScrollUp = false;
   bool _canScrollDown = false;
-  
+
+  // 标签搜索
+  final _tagSearchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(_onTabChanged);
     _nameController.addListener(_onNameChanged);
     _scrollController.addListener(_updateScrollIndicators);
-    
+    _tagSearchController.addListener(_onTagSearchChanged);
+
     // 初始加载名称贡献列表
     _loadContributions(ContributionType.name);
-    
+
     // 刷新用户积分（确保积分数据是最新的）
     _refreshUserCredits();
   }
@@ -111,7 +118,26 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     }
   }
 
+  /// 处理标签投票（暴露给外部组件）
+  void handleTagVote(MapTag tag, String voteType) {
+    _handleTagVote(tag, voteType);
+  }
+
+  /// 显示编辑标签对话框（暴露给外部组件）
+  void showEditTagDialog(MapTag tag) {
+    _showEditTagDialog(tag);
+  }
+
+  /// 显示删除标签对话框（暴露给外部组件）
+  void showDeleteTagDialog(MapTag tag) {
+    _showDeleteTagDialog(tag);
+  }
+
   void _onNameChanged() {
+    setState(() {});
+  }
+
+  void _onTagSearchChanged() {
     setState(() {});
   }
 
@@ -124,10 +150,12 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     _nameFocusNode.dispose();
     _scrollController.removeListener(_updateScrollIndicators);
     _scrollController.dispose();
-    
+    _tagSearchController.removeListener(_onTagSearchChanged);
+    _tagSearchController.dispose();
+
     // 清理 File 引用，释放文件句柄
     _selectedImage = null;
-    
+
     super.dispose();
   }
 
@@ -146,15 +174,26 @@ class _MapContributionDialogState extends State<MapContributionDialog>
 
   void _onTabChanged() {
     if (_tabController.indexIsChanging) return;
-    final type = _tabController.index == 0
-        ? ContributionType.name
-        : ContributionType.background;
-    _loadContributions(type);
+    final index = _tabController.index;
+    if (index == 0) {
+      _loadContributions(ContributionType.name);
+    } else if (index == 1) {
+      _loadContributions(ContributionType.background);
+    } else if (index == 2) {
+      _loadTagData();
+    }
     // 重置滚动状态
     setState(() {
       _canScrollUp = false;
       _canScrollDown = false;
     });
+  }
+
+  void _loadTagData() {
+    context.read<MapTagBloc>()
+      ..add(const LoadTagList())
+      ..add(LoadMapTagList(mapName: widget.mapName))
+      ..add(const LoadUserTags());
   }
 
   void _loadContributions(ContributionType type) {
@@ -301,6 +340,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         tabs: const [
           Tab(text: '中文名称'),
           Tab(text: '背景图片'),
+          Tab(text: '标签'),
         ],
       ),
     );
@@ -361,6 +401,11 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         }
       },
       builder: (context, state) {
+        // 标签 Tab
+        if (_tabController.index == 2) {
+          return _buildTagContent(isDark);
+        }
+
         final isNameTab = _currentType == ContributionType.name;
         final isLoading = isNameTab ? state.isLoadingNames : state.isLoadingBackgrounds;
         final isEmpty = isNameTab ? state.isNamesEmpty : state.isBackgroundsEmpty;
@@ -412,6 +457,566 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       },
     );
   }
+
+  /// 构建标签 Tab 内容
+  Widget _buildTagContent(bool isDark) {
+    return BlocConsumer<MapTagBloc, MapTagState>(
+      listener: (context, state) {
+        if (state.error != null) {
+          ToastUtils.showError(context, state.error!);
+          context.read<MapTagBloc>().add(const ClearTagError());
+        }
+        if (state.submitSuccess) {
+          ToastUtils.showSuccess(context, '提交成功，等待审核');
+          context.read<MapTagBloc>().add(const RefreshUserTags());
+        }
+        if (state.deleteSuccess) {
+          ToastUtils.showSuccess(context, '删除成功');
+        }
+      },
+      builder: (context, state) {
+        if (state.isLoading) {
+          return const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0080FF)),
+            ),
+          );
+        }
+
+        return Column(
+          children: [
+            // 搜索栏
+            _buildTagSearchBar(isDark),
+            // 标签列表
+            Expanded(
+              child: _buildTagList(state, isDark),
+            ),
+            // 提交区域
+            _buildTagSubmitArea(state, isDark),
+          ],
+        );
+      },
+    );
+  }
+
+  /// 构建标签搜索栏
+  Widget _buildTagSearchBar(bool isDark) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: TextField(
+        controller: _tagSearchController,
+        style: TextStyle(
+          fontSize: 13,
+          color: isDark ? Colors.white : const Color(0xFF1F2937),
+        ),
+        decoration: InputDecoration(
+          hintText: '搜索标签...',
+          hintStyle: TextStyle(
+            fontSize: 13,
+            color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+          ),
+          prefixIcon: Icon(
+            MdiIcons.magnify,
+            size: 18,
+            color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+          ),
+          suffixIcon: _tagSearchController.text.isNotEmpty
+              ? IconButton(
+                  icon: Icon(
+                    MdiIcons.close,
+                    size: 16,
+                    color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                  ),
+                  onPressed: () {
+                    _tagSearchController.clear();
+                  },
+                )
+              : null,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(
+              color: isDark ? Colors.white24 : Colors.black12,
+            ),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(
+              color: isDark ? Colors.white24 : Colors.black12,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(color: Color(0xFF0080FF)),
+          ),
+          filled: true,
+          fillColor: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.grey[100],
+        ),
+      ),
+    );
+  }
+
+  /// 构建标签列表
+  Widget _buildTagList(MapTagState state, bool isDark) {
+    final query = _tagSearchController.text.trim().toLowerCase();
+
+    // 根据搜索关键词过滤标签（不区分大小写）
+    List<MapTag> filteredUserTags = state.userTags;
+    List<MapTag> filteredTagList = state.tagList;
+    if (query.isNotEmpty) {
+      filteredUserTags = state.userTags
+          .where((t) => t.name.toLowerCase().contains(query))
+          .toList();
+      filteredTagList = state.tagList
+          .where((t) => t.name.toLowerCase().contains(query))
+          .toList();
+    }
+
+    final hasNoTags = filteredUserTags.isEmpty &&
+        filteredTagList.isEmpty &&
+        !state.isLoadingTagList &&
+        !state.isLoadingUserTags;
+
+    if (hasNoTags) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              MdiIcons.tagOutline,
+              size: 64,
+              color: isDark ? Colors.white38 : Colors.black26,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              query.isNotEmpty ? '没有找到匹配的标签' : '暂无标签',
+              style: TextStyle(
+                fontSize: 16,
+                color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              query.isNotEmpty ? '试试其他关键词吧' : '成为第一个贡献者吧！',
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? Colors.white38 : const Color(0xFF6B7280).withValues(alpha: 0.7),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 用户标签区块（审核中 + 已拒绝），无数据且非加载中时隐藏
+          if (filteredUserTags.isNotEmpty || state.isLoadingUserTags)
+            _buildTagSection(
+              title: '我的标签',
+              tags: filteredUserTags,
+              isLoading: state.isLoadingUserTags,
+              isDark: isDark,
+              state: state,
+              isUserSection: true,
+            ),
+          _buildTagSection(
+            title: '全局标签',
+            tags: filteredTagList,
+            isLoading: state.isLoadingTagList,
+            isDark: isDark,
+            state: state,
+            isUserSection: false,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建标签分区
+  Widget _buildTagSection({
+    required String title,
+    required List<MapTag> tags,
+    required bool isLoading,
+    required bool isDark,
+    required MapTagState state,
+    required bool isUserSection,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : const Color(0xFF1F2937),
+            ),
+          ),
+        ),
+        if (isLoading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          )
+        else if (tags.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Text(
+              '暂无',
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+              ),
+            ),
+          )
+        else
+          _TagGrid(
+            tags: tags,
+            state: state,
+            isDark: isDark,
+            isUserSection: isUserSection,
+          ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  /// 处理标签投票
+  void _handleTagVote(MapTag tag, String voteType) {
+    if (!_checkLogin()) return;
+    context.read<MapTagBloc>().add(ToggleTagVote(tagId: tag.id, voteType: voteType));
+  }
+
+  /// 显示编辑标签对话框
+  void _showEditTagDialog(MapTag tag) {
+    final controller = TextEditingController(text: tag.name);
+    String? selectedColor = tag.color;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mapTagBloc = context.read<MapTagBloc>();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: Text(
+            '修改标签',
+            style: TextStyle(
+              color: isDark ? Colors.white : const Color(0xFF1F2937),
+            ),
+          ),
+          content: SizedBox(
+            width: 320,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  maxLength: 50,
+                  style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1F2937)),
+                  decoration: InputDecoration(
+                    labelText: '标签名称',
+                    labelStyle: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF6B7280)),
+                    hintText: '输入标签名称',
+                    hintStyle: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF6B7280)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.black12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFF0080FF)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // 颜色选择
+                Text(
+                  '标签颜色',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.white70 : const Color(0xFF374151),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _buildEditTagColorPicker(
+                  selectedColor,
+                  isDark,
+                  (color) => setDialogState(() => selectedColor = color),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(
+                '取消',
+                style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF6B7280)),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final newName = controller.text.trim();
+                if (newName.isEmpty) {
+                  ToastUtils.showError(dialogContext, '标签名称不能为空');
+                  return;
+                }
+                Navigator.of(dialogContext).pop();
+                mapTagBloc.add(UpdateTag(tagId: tag.id, name: newName, color: selectedColor));
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0080FF),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('提交'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 编辑标签时的颜色选择器
+  Widget _buildEditTagColorPicker(
+    String? selectedColor,
+    bool isDark,
+    void Function(String?) onColorChanged,
+  ) {
+    return TagColorPicker(
+      selectedColor: selectedColor,
+      onColorChanged: onColorChanged,
+      enabled: true,
+    );
+  }
+
+  /// 显示删除标签确认对话框
+  void _showDeleteTagDialog(MapTag tag) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mapTagBloc = context.read<MapTagBloc>();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Row(
+          children: [
+            Icon(MdiIcons.alertCircleOutline, color: const Color(0xFFEF4444)),
+            const SizedBox(width: 12),
+            Text(
+              '确认删除',
+              style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1F2937)),
+            ),
+          ],
+        ),
+        content: Text(
+          '确定要删除标签 "${tag.name}" 吗？删除后无法恢复。',
+          style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF374151)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(
+              '取消',
+              style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF6B7280)),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              mapTagBloc.add(DeleteTag(tagId: tag.id));
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建标签提交区域
+  Widget _buildTagSubmitArea(MapTagState state, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+          ),
+        ),
+      ),
+      child: Column(
+        children: [
+                // 添加标签按钮
+                SizedBox(
+                  height: 44,
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: state.isSubmitting ? null : _showAddTagDialog,
+                    icon: Icon(MdiIcons.tagPlusOutline, size: 18),
+                    label: const Text(
+                      '添加标签',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0080FF),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      disabledBackgroundColor: const Color(0xFF0080FF).withValues(alpha: 0.5),
+                    ),
+                  ),
+                ),
+        ],
+      ),
+    );
+  }
+
+  /// 显示添加标签对话框
+  void _showAddTagDialog() {
+    final controller = TextEditingController();
+    String? selectedColor;
+    bool autoVote = false;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mapTagBloc = context.read<MapTagBloc>();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: Text(
+            '添加标签',
+            style: TextStyle(
+              color: isDark ? Colors.white : const Color(0xFF1F2937),
+            ),
+          ),
+          content: SizedBox(
+            width: 320,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  maxLength: 50,
+                  style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1F2937)),
+                  decoration: InputDecoration(
+                    labelText: '标签名称',
+                    labelStyle: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF6B7280)),
+                    hintText: '输入标签名称',
+                    hintStyle: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF6B7280)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.black12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFF0080FF)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // 颜色选择
+                Text(
+                  '标签颜色',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.white70 : const Color(0xFF374151),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TagColorPicker(
+                  selectedColor: selectedColor,
+                  onColorChanged: (color) => setDialogState(() => selectedColor = color),
+                ),
+                const SizedBox(height: 16),
+                // 审核通过自动投票选项
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: Checkbox(
+                        value: autoVote,
+                        onChanged: (value) => setDialogState(() => autoVote = value ?? false),
+                        activeColor: const Color(0xFF0080FF),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setDialogState(() => autoVote = !autoVote),
+                        child: Text(
+                          '审核通过自动为该地图投票',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.white70 : const Color(0xFF374151),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(
+                '取消',
+                style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF6B7280)),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final name = controller.text.trim();
+                if (name.isEmpty) {
+                  ToastUtils.showError(dialogContext, '标签名称不能为空');
+                  return;
+                }
+                Navigator.of(dialogContext).pop();
+                mapTagBloc.add(SubmitTag(name: name, color: selectedColor, autoVote: autoVote));
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0080FF),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('添加'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 
 
   /// 构建空状态
@@ -1184,6 +1789,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                       type: FileType.custom,
                       allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
                     );
+                    if (!context.mounted) return;
                     if (result != null && result.files.single.path != null) {
                       final file = File(result.files.single.path!);
                       final validation = ContributionValidationUtils.validateBackgroundImage(file);
@@ -1602,6 +2208,11 @@ class _MapContributionDialogState extends State<MapContributionDialog>
 
   /// 构建提交区域
   Widget _buildSubmitArea(bool isDark) {
+    // 标签 Tab 不使用这个提交区域
+    if (_tabController.index == 2) {
+      return const SizedBox.shrink();
+    }
+
     final inputBgColor = isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9);
     final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
     final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08);
@@ -1955,6 +2566,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
           return;
         }
 
+        if (!mounted) return;
         setState(() => _selectedImage = file);
       }
     } catch (e) {
@@ -2215,6 +2827,418 @@ class _ContributionImageState extends State<_ContributionImage> {
         child: Icon(
           MdiIcons.imageOff,
           color: isDark ? Colors.white24 : Colors.black26,
+        ),
+      ),
+    );
+  }
+}
+
+/// 标签网格组件
+class _TagGrid extends StatelessWidget {
+  final List<MapTag> tags;
+  final MapTagState state;
+  final bool isDark;
+  final bool isUserSection;
+
+  const _TagGrid({
+    required this.tags,
+    required this.state,
+    required this.isDark,
+    required this.isUserSection,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final dialogState = context.findAncestorStateOfType<_MapContributionDialogState>();
+    if (dialogState == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: tags.asMap().entries.map((entry) {
+        final index = entry.key;
+        final tag = entry.value;
+        final mapVote = state.getMapTagVoteByTagId(tag.id);
+        final hasVoted = mapVote?.hasVoted ?? false;
+        final voteCount = mapVote?.voteCount ?? 0;
+        final isOwner = state.userTags.any((t) => t.id == tag.id);
+
+        return TweenAnimationBuilder<double>(
+          key: ValueKey('tag_${isUserSection ? 'user_' : ''}${tag.id}'),
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: Duration(milliseconds: 200 + index * 50),
+          curve: Curves.easeOutBack,
+          builder: (context, value, child) {
+            return Transform.scale(
+              scale: 0.5 + 0.5 * value,
+              child: Opacity(
+                opacity: value.clamp(0.0, 1.0),
+                child: child,
+              ),
+            );
+          },
+          child: _AnimatedTagChip(
+            tag: tag,
+            hasVoted: hasVoted,
+            voteCount: voteCount,
+            isVoting: state.isVoting,
+            isDark: isDark,
+            isOwner: isOwner,
+            hasUpvoted: mapVote?.hasUpvoted ?? false,
+            hasDownvoted: mapVote?.hasDownvoted ?? false,
+            onVote: (voteType) => dialogState.handleTagVote(tag, voteType),
+            onEdit: () => dialogState.showEditTagDialog(tag),
+            onDelete: () => dialogState.showDeleteTagDialog(tag),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+/// 标签胶囊组件
+class _AnimatedTagChip extends StatefulWidget {
+  final MapTag tag;
+  final bool hasVoted;
+  final int voteCount;
+  final bool isVoting;
+  final bool isDark;
+  final bool isOwner;
+  final bool hasUpvoted;
+  final bool hasDownvoted;
+  final void Function(String voteType) onVote;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _AnimatedTagChip({
+    required this.tag,
+    required this.hasVoted,
+    required this.voteCount,
+    required this.isVoting,
+    required this.isDark,
+    required this.isOwner,
+    required this.hasUpvoted,
+    required this.hasDownvoted,
+    required this.onVote,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  State<_AnimatedTagChip> createState() => _AnimatedTagChipState();
+}
+
+class _AnimatedTagChipState extends State<_AnimatedTagChip> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final tag = widget.tag;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // 主标签按钮
+          _buildTagMainButton(
+            tag,
+            widget.hasVoted,
+            widget.voteCount,
+            widget.isDark,
+            _isHovered,
+          ),
+          // Hover 显示的遮罩 + 操作面板
+          if (_isHovered)
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeOut,
+              top: 0,
+              left: 0,
+              child: _buildTagHoverOverlay(tag),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建标签主按钮
+  Widget _buildTagMainButton(
+    MapTag tag,
+    bool hasVoted,
+    int voteCount,
+    bool isDark,
+    bool isHovered,
+  ) {
+    // 确定标签的背景色、边框色和文字色
+    final Color backgroundColor;
+    final Color borderColor;
+    final Color textColor;
+    final Color badgeBgColor;
+    final Color badgeTextColor;
+
+    // 获取标签的自定义颜色
+    final tagColor = tag.colorValue;
+
+    // 边框颜色由审核状态决定：审核中黄色、已拒绝红色、已投票绿色
+    Color statusBorderColor;
+    if (tag.isPending) {
+      statusBorderColor = const Color(0xFFF59E0B);
+    } else if (tag.isRejected) {
+      statusBorderColor = const Color(0xFFEF4444);
+    } else if (hasVoted) {
+      statusBorderColor = const Color(0xFF10B981);
+    } else {
+      statusBorderColor = Colors.transparent;
+    }
+
+    if (tagColor != null) {
+      // 有自定义颜色：背景填满颜色，边框表示状态
+      backgroundColor = tagColor;
+      final luminance = tagColor.computeLuminance();
+      textColor = luminance > 0.5 ? const Color(0xFF1F2937) : Colors.white;
+      badgeBgColor = luminance > 0.5
+          ? Colors.black.withValues(alpha: 0.15)
+          : Colors.white.withValues(alpha: 0.25);
+      badgeTextColor = textColor;
+      borderColor = statusBorderColor != Colors.transparent
+          ? statusBorderColor
+          : (luminance > 0.5 ? tagColor.withValues(alpha: 0.6) : tagColor.withValues(alpha: 0.8));
+    } else {
+      // 无自定义颜色：背景不变，边框表示状态（isPending/isRejected/hasVoted 共用样式）
+      backgroundColor = isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100]!;
+      textColor = isDark ? Colors.white : Colors.black87;
+      badgeBgColor = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey[200]!;
+      badgeTextColor = isDark ? Colors.white70 : Colors.grey[600]!;
+      borderColor = statusBorderColor;
+    }
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: borderColor,
+            width: 4,
+          ),
+          boxShadow: isHovered
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 65),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                tag.name,
+                style: TextStyle(
+                  color: textColor,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                  height: 1.2,
+                ),
+              ),
+              // 审核中的标签不显示投票数（已拒绝的也没有投票）
+              if (!tag.isPending && !tag.isRejected) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: badgeBgColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '$voteCount',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: badgeTextColor,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+              ],
+              // 审核状态标签
+              if (tag.isUserTag && !tag.isApproved) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: badgeBgColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    tag.isPending ? '审核中' : '已拒绝',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: badgeTextColor,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+    );
+  }
+
+  /// 构建标签 Hover 遮罩层
+  Widget _buildTagHoverOverlay(MapTag tag) {
+    final tagColor = tag.colorValue;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      child: IntrinsicWidth(
+        child: IntrinsicHeight(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.85),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.3),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: (tagColor ?? const Color(0xFF0080FF)).withValues(alpha: 0.4),
+                  blurRadius: 12,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 1),
+              child: _buildTagExpandedPanel(
+                tag,
+                hasUpvoted: widget.hasUpvoted,
+                hasDownvoted: widget.hasDownvoted,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 标签展开面板
+  Widget _buildTagExpandedPanel(
+    MapTag tag, {
+    required bool hasUpvoted,
+    required bool hasDownvoted,
+  }) {
+    // 只有已通过的标签才显示投票按钮
+    final showVoteButtons = tag.isApproved;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 投票按钮（审核中的标签不显示）
+        if (showVoteButtons) ...[
+          // 赞成按钮
+          _buildTagVoteButton(
+            icon: hasUpvoted ? MdiIcons.thumbUp : MdiIcons.thumbUpOutline,
+            isActive: hasUpvoted,
+            isUpvote: true,
+            onTap: widget.isVoting ? null : () => widget.onVote('up'),
+          ),
+          const SizedBox(width: 4),
+          // 反对按钮
+          _buildTagVoteButton(
+            icon: hasDownvoted ? MdiIcons.thumbDown : MdiIcons.thumbDownOutline,
+            isActive: hasDownvoted,
+            isUpvote: false,
+            onTap: widget.isVoting ? null : () => widget.onVote('down'),
+          ),
+        ],
+        // 用户自己的标签显示编辑和删除按钮（仅审核中/已拒绝状态）
+        if (widget.isOwner && (tag.isPending || tag.isRejected)) ...[
+          // 编辑按钮
+          _buildTagActionButton(
+            icon: MdiIcons.pencilOutline,
+            tooltip: '修改后重新提交',
+            color: const Color(0xFFF59E0B),
+            onTap: widget.onEdit,
+          ),
+          const SizedBox(width: 4),
+          // 删除按钮
+          _buildTagActionButton(
+            icon: MdiIcons.deleteOutline,
+            tooltip: '删除',
+            color: const Color(0xFFEF4444),
+            onTap: widget.onDelete,
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// 标签投票按钮（与编辑/删除按钮一致大小）
+  Widget _buildTagVoteButton({
+    required IconData icon,
+    required bool isActive,
+    required bool isUpvote,
+    required VoidCallback? onTap,
+  }) {
+    final activeColor = isUpvote ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    final bgColor = Colors.white.withValues(alpha: 0.15);
+    final iconColor = Colors.white;
+
+    return Tooltip(
+      message: isUpvote ? '赞成' : '反对',
+      child: Material(
+        color: isActive ? activeColor : bgColor,
+        borderRadius: BorderRadius.circular(6),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Icon(icon, size: 18, color: iconColor),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 标签操作按钮
+  Widget _buildTagActionButton({
+    required IconData icon,
+    required String tooltip,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    final bgColor = Colors.white.withValues(alpha: 0.15);
+
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(6),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Icon(icon, size: 18, color: color),
+          ),
         ),
       ),
     );
