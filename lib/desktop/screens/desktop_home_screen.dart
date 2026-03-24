@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,6 +18,8 @@ import 'tools_screen.dart';
 import 'settings_desktop.dart';
 import 'character_gallery_desktop.dart';
 import 'bilibili_content_screen.dart';
+import '../../core/services/game_status_service.dart';
+import '../../core/utils/storage_utils.dart';
 
 /// 桌面端主屏幕
 class DesktopHomeScreen extends StatefulWidget {
@@ -29,6 +32,8 @@ class DesktopHomeScreen extends StatefulWidget {
 class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProviderStateMixin {
   int _currentIndex = 0;
   late AnimationController _contentAnimationController;
+  StreamSubscription<GameStatusEvent>? _gameStatusSubscription;
+  bool _shownObsWarningForCurrentGame = false;
 
   final List<NavigationItem> _navigationItems = [
     NavigationItem(
@@ -90,12 +95,60 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
       final bloc = context.read<AnnouncementBloc>();
       bloc.add(AnnouncementFetch());
       bloc.add(AnnouncementStartAutoRefresh());
+
+      // 检查当前状态，防止错过初始化时的事件
+      final gameService = GameStatusService();
+      if (gameService.isGameRunning && !gameService.isMonitorable) {
+        final obsEnabled = StorageUtils.getBool('obs_tool_enabled', defaultValue: false);
+        if (obsEnabled && mounted && !_shownObsWarningForCurrentGame) {
+          _shownObsWarningForCurrentGame = true;
+          _showObsWarningDialog();
+        }
+      }
     });
+
+    _gameStatusSubscription = GameStatusService().statusStream.listen((event) {
+      if (!event.isRunning) {
+        _shownObsWarningForCurrentGame = false;
+      } else if (event.isRunning && !event.isMonitorable) {
+        final obsEnabled = StorageUtils.getBool('obs_tool_enabled', defaultValue: false);
+        if (obsEnabled && mounted && !_shownObsWarningForCurrentGame) {
+          _shownObsWarningForCurrentGame = true;
+          _showObsWarningDialog();
+        }
+      }
+    });
+  }
+
+  void _showObsWarningDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('无法监控游戏'),
+          ],
+        ),
+        content: const Text(
+          '检测到游戏已启动，但未添加监控支持（比如通过 Steam 快捷方式启动）。\n\n'
+          '如果需要使用 OBS 投屏等功能，请在 BakaBox 软件内启动游戏，或者给 Steam 的游戏加上 "-condebug" 启动项。',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('我知道了'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   void dispose() {
     _contentAnimationController.dispose();
+    _gameStatusSubscription?.cancel();
     super.dispose();
   }
 

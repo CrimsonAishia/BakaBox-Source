@@ -92,8 +92,12 @@ class _ObsToolState extends State<ObsTool> {
 
   /// 加载面板位置
   void _loadPanelPosition() {
-    final savedX = StorageUtils.getDouble('obs_panel_position_x', defaultValue: 24.0) ?? 24.0;
-    final savedY = StorageUtils.getDouble('obs_panel_position_y', defaultValue: 24.0) ?? 24.0;
+    final savedX =
+        StorageUtils.getDouble('obs_panel_position_x', defaultValue: 24.0) ??
+        24.0;
+    final savedY =
+        StorageUtils.getDouble('obs_panel_position_y', defaultValue: 24.0) ??
+        24.0;
     _panelPosition = Offset(savedX, savedY);
     setState(() {});
   }
@@ -506,15 +510,14 @@ class _ObsToolState extends State<ObsTool> {
           const Spacer(),
           // 提示：如果 OBS 看不到内容，需要刷新浏览器源
           Tooltip(
-            message: '如果 OBS 浏览器源未显示，请在 OBS 中选中该浏览器源，并点击上方的"刷新"按钮，一般是先启动OBS在启动BakaBox导致的',
+            message:
+                '如果 OBS 浏览器源未显示，请在 OBS 中选中该浏览器源，并点击上方的"刷新"按钮，一般是先启动OBS在启动BakaBox导致的',
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.orange.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: Colors.orange.withValues(alpha: 0.5),
-                ),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -543,9 +546,9 @@ class _ObsToolState extends State<ObsTool> {
           FilledButton.tonalIcon(
             onPressed: () {
               Clipboard.setData(ClipboardData(text: _obsUrl));
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('已复制服务器地址 ($_obsUrl)')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('已复制服务器地址 ($_obsUrl)')));
             },
             icon: const Icon(Icons.link, size: 18),
             label: const Text('复制OBS插件地址'),
@@ -637,8 +640,12 @@ class _ObsToolState extends State<ObsTool> {
                     ..._elements.map((el) {
                       final isSelected = el['id'] == _selectedElementId;
                       // 根据元素类型设置默认尺寸
-                      final elementWidth = el['type'] == 'server_card' ? 450.0 : 200.0;
-                      final elementHeight = el['type'] == 'server_card' ? 140.0 : 50.0;
+                      final elementWidth = el['type'] == 'server_card'
+                          ? 450.0
+                          : 200.0;
+                      final elementHeight = el['type'] == 'server_card'
+                          ? 140.0
+                          : 50.0;
                       final scale = (el['scale'] as num?)?.toDouble() ?? 1.0;
                       // 基于元素实际大小计算边界
                       final maxX = canvasWidth - (elementWidth * scale);
@@ -651,12 +658,20 @@ class _ObsToolState extends State<ObsTool> {
                           onPanUpdate: (details) {
                             setState(() {
                               _selectedElementId = el['id'];
-                              el['x'] = ((el['x'] as num).toDouble() +
-                                      details.delta.dx / renderScale)
-                                  .clamp(0.0, maxX > 0 ? maxX : canvasWidth - 100);
-                              el['y'] = ((el['y'] as num).toDouble() +
-                                      details.delta.dy / renderScale)
-                                  .clamp(0.0, maxY > 0 ? maxY : canvasHeight - 50);
+                              el['x'] =
+                                  ((el['x'] as num).toDouble() +
+                                          details.delta.dx / renderScale)
+                                      .clamp(
+                                        0.0,
+                                        maxX > 0 ? maxX : canvasWidth - 100,
+                                      );
+                              el['y'] =
+                                  ((el['y'] as num).toDouble() +
+                                          details.delta.dy / renderScale)
+                                      .clamp(
+                                        0.0,
+                                        maxY > 0 ? maxY : canvasHeight - 50,
+                                      );
                             });
                           },
                           onPanEnd: (_) => _saveLayout(),
@@ -675,7 +690,9 @@ class _ObsToolState extends State<ObsTool> {
                                             color: theme.colorScheme.primary,
                                             width: 2,
                                           ),
-                                          borderRadius: BorderRadius.circular(4),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
                                         )
                                       : null,
                                   child: buildElementMock(
@@ -798,12 +815,14 @@ class _ObsToolState extends State<ObsTool> {
 
     // 初始化面板位置，如果之前保存的位置超出当前屏幕范围则重置为默认值
     _panelPosition ??= const Offset(24.0, 24.0);
-    
+
     // 检查保存的位置是否在当前屏幕有效范围内，如果超出则重置
     final maxX = screenSize.width - panelWidth;
     final maxY = screenSize.height - panelHeight - bottomMargin;
-    if (_panelPosition!.dx < 0 || _panelPosition!.dx > maxX ||
-        _panelPosition!.dy < 0 || _panelPosition!.dy > maxY) {
+    if (_panelPosition!.dx < 0 ||
+        _panelPosition!.dx > maxX ||
+        _panelPosition!.dy < 0 ||
+        _panelPosition!.dy > maxY) {
       _panelPosition = const Offset(24.0, 24.0);
     }
 
@@ -850,7 +869,9 @@ class _ObsToolState extends State<ObsTool> {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(28),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -873,15 +894,18 @@ class _ObsToolState extends State<ObsTool> {
                         children: [
                           Text(
                             'OBS 投屏工具',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           Text(
                             '将游戏状态实时投屏到 OBS',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
-                            ),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimaryContainer
+                                      .withValues(alpha: 0.8),
+                                ),
                           ),
                         ],
                       ),
@@ -900,6 +924,43 @@ class _ObsToolState extends State<ObsTool> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // 游戏启动说明
+                      _buildTutorialSection(
+                        context,
+                        icon: Icons.play_circle_outline,
+                        title: '游戏启动说明',
+                        color: Colors.redAccent,
+                        children: [
+                          _buildStepRow(
+                            context,
+                            '1',
+                            '使用 BakaBox 启动游戏',
+                            '软件会自动添加监控所需的参数',
+                          ),
+                          _buildStepRow(
+                            context,
+                            '2',
+                            '使用 Steam 启动游戏',
+                            '请手动给 Steam 的 CS2 游戏添加 -condebug 启动项',
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              left: 36,
+                              top: 4,
+                              bottom: 8,
+                            ),
+                            child: Text(
+                              '注意：必须使用上述方法之一启动游戏，否则将无法监控游戏状态。',
+                              style: TextStyle(
+                                color: Colors.red.shade400,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
                       // 快速开始卡片
                       _buildTutorialSection(
                         context,
@@ -910,7 +971,12 @@ class _ObsToolState extends State<ObsTool> {
                           _buildStepRow(context, '1', '点击右下角 + 按钮', '添加组件到画布'),
                           _buildStepRow(context, '2', '拖拽组件', '调整在画面中的位置'),
                           _buildStepRow(context, '3', '点击组件', '打开属性设置面板'),
-                          _buildStepRow(context, '4', '复制 OBS 地址', '在 OBS 中添加浏览器源'),
+                          _buildStepRow(
+                            context,
+                            '4',
+                            '复制 OBS 地址',
+                            '在 OBS 中添加浏览器源',
+                          ),
                         ],
                       ),
                       const SizedBox(height: 20),
@@ -987,7 +1053,12 @@ class _ObsToolState extends State<ObsTool> {
                               ),
                             ),
                           ),
-                          _buildObsStep(context, '2', '设置参数', '填写 URL、分辨率，添加自定义 CSS'),
+                          _buildObsStep(
+                            context,
+                            '2',
+                            '设置参数',
+                            '填写 URL、分辨率，添加自定义 CSS',
+                          ),
                           // URL
                           Padding(
                             padding: const EdgeInsets.only(top: 12),
@@ -996,7 +1067,9 @@ class _ObsToolState extends State<ObsTool> {
                               borderRadius: BorderRadius.circular(8),
                               child: InkWell(
                                 onTap: () {
-                                  Clipboard.setData(ClipboardData(text: _obsUrl));
+                                  Clipboard.setData(
+                                    ClipboardData(text: _obsUrl),
+                                  );
                                   ToastUtils.showSuccess(context, '已复制 URL');
                                 },
                                 borderRadius: BorderRadius.circular(8),
@@ -1004,29 +1077,49 @@ class _ObsToolState extends State<ObsTool> {
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                                    border: Border.all(
+                                      color: Colors.grey.withValues(alpha: 0.3),
+                                    ),
                                   ),
                                   child: Row(
                                     children: [
-                                      Icon(Icons.link, size: 16, color: Theme.of(context).colorScheme.secondary),
+                                      Icon(
+                                        Icons.link,
+                                        size: 16,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.secondary,
+                                      ),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           _obsUrl,
-                                          style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                                          style: const TextStyle(
+                                            fontFamily: 'monospace',
+                                            fontSize: 12,
+                                          ),
                                         ),
                                       ),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: Theme.of(context).colorScheme.secondaryContainer,
-                                          borderRadius: BorderRadius.circular(4),
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.secondaryContainer,
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
                                         ),
                                         child: Text(
                                           '点击复制',
                                           style: TextStyle(
                                             fontSize: 11,
-                                            color: Theme.of(context).colorScheme.onSecondaryContainer,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSecondaryContainer,
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -1046,7 +1139,12 @@ class _ObsToolState extends State<ObsTool> {
                               borderRadius: BorderRadius.circular(8),
                               child: InkWell(
                                 onTap: () {
-                                  Clipboard.setData(ClipboardData(text: 'body { margin: 0; background: transparent; }'));
+                                  Clipboard.setData(
+                                    ClipboardData(
+                                      text:
+                                          'body { margin: 0; background: transparent; }',
+                                    ),
+                                  );
                                   ToastUtils.showSuccess(context, '已复制 CSS 代码');
                                 },
                                 borderRadius: BorderRadius.circular(8),
@@ -1054,29 +1152,49 @@ class _ObsToolState extends State<ObsTool> {
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                                    border: Border.all(
+                                      color: Colors.grey.withValues(alpha: 0.3),
+                                    ),
                                   ),
                                   child: Row(
                                     children: [
-                                      Icon(Icons.copy, size: 16, color: Theme.of(context).colorScheme.primary),
+                                      Icon(
+                                        Icons.copy,
+                                        size: 16,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                      ),
                                       const SizedBox(width: 8),
                                       const Expanded(
                                         child: Text(
                                           'body { margin: 0; background: transparent; }',
-                                          style: TextStyle(fontFamily: 'monospace', fontSize: 12),
+                                          style: TextStyle(
+                                            fontFamily: 'monospace',
+                                            fontSize: 12,
+                                          ),
                                         ),
                                       ),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: Theme.of(context).colorScheme.primaryContainer,
-                                          borderRadius: BorderRadius.circular(4),
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primaryContainer,
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
                                         ),
                                         child: Text(
                                           '点击复制',
                                           style: TextStyle(
                                             fontSize: 11,
-                                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimaryContainer,
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -1141,9 +1259,9 @@ class _ObsToolState extends State<ObsTool> {
             const SizedBox(width: 10),
             Text(
               title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -1153,7 +1271,12 @@ class _ObsToolState extends State<ObsTool> {
     );
   }
 
-  Widget _buildStepRow(BuildContext context, String num, String title, String desc) {
+  Widget _buildStepRow(
+    BuildContext context,
+    String num,
+    String title,
+    String desc,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -1179,7 +1302,10 @@ class _ObsToolState extends State<ObsTool> {
           const SizedBox(width: 12),
           Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
           const SizedBox(width: 8),
-          Text(desc, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+          Text(
+            desc,
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+          ),
         ],
       ),
     );
@@ -1197,7 +1323,9 @@ class _ObsToolState extends State<ObsTool> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+        ),
       ),
       child: Row(
         children: [
@@ -1215,7 +1343,10 @@ class _ObsToolState extends State<ObsTool> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text(desc, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                Text(
+                  desc,
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
               ],
             ),
           ),
@@ -1223,14 +1354,30 @@ class _ObsToolState extends State<ObsTool> {
           Wrap(
             spacing: 4,
             runSpacing: 4,
-            children: features.take(4).map((f) => Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.secondaryContainer,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(f, style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSecondaryContainer)),
-            )).toList(),
+            children: features
+                .take(4)
+                .map(
+                  (f) => Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.secondaryContainer,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      f,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSecondaryContainer,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
           ),
         ],
       ),
@@ -1258,13 +1405,21 @@ class _ObsToolState extends State<ObsTool> {
             ),
           ),
           const SizedBox(width: 6),
-          Text(desc, style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+          Text(
+            desc,
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildObsStep(BuildContext context, String num, String title, String desc) {
+  Widget _buildObsStep(
+    BuildContext context,
+    String num,
+    String title,
+    String desc,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
@@ -1277,13 +1432,26 @@ class _ObsToolState extends State<ObsTool> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
-              child: Text(num, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.purple)),
+              child: Text(
+                num,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.purple,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+          ),
           const SizedBox(width: 8),
-          Text(desc, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+          Text(
+            desc,
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          ),
         ],
       ),
     );
@@ -1357,12 +1525,12 @@ class _ObsToolState extends State<ObsTool> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isMonitoring 
+          color: isMonitoring
               ? Colors.green.withValues(alpha: 0.15)
               : Colors.grey.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isMonitoring 
+            color: isMonitoring
                 ? Colors.green.withValues(alpha: 0.5)
                 : Colors.grey.withValues(alpha: 0.3),
           ),
