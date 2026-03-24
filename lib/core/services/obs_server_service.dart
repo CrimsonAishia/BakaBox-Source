@@ -10,6 +10,17 @@ import '../api/server_api.dart';
 import '../services/console_log_service.dart';
 import '../services/source_server_service.dart';
 import '../services/server_address_mapping_service.dart';
+import '../services/game_status_service.dart';
+
+String _getWaitingText() {
+  try {
+    final gameStatus = GameStatusService();
+    if (gameStatus.isGameRunning && !gameStatus.isMonitorable) {
+      return '无法监控游戏';
+    }
+  } catch (_) {}
+  return '等待进入服务器';
+}
 
 class ObsServerService {
   static final ObsServerService _instance = ObsServerService._internal();
@@ -66,7 +77,7 @@ class ObsServerService {
 
   Map<String, dynamic> _currentData = {
     'isConnected': false,
-    'serverName': '等待进入服务器',
+    'serverName': _getWaitingText(),
     'ping': '0',
     'players': '0/0',
     'map': '未知',
@@ -111,7 +122,7 @@ class ObsServerService {
   void _resetCurrentData() {
     _currentData = {
       'isConnected': false,
-      'serverName': '等待进入服务器',
+      'serverName': _getWaitingText(),
       'ping': '0',
       'players': '0/0',
       'map': '未知',
@@ -265,7 +276,7 @@ class ObsServerService {
 
     // 强制重置为初始状态，等待 ConsoleLogService 解析完历史日志后再更新
     _currentData['isConnected'] = false;
-    _currentData['serverName'] = '等待进入服务器';
+    _currentData['serverName'] = _getWaitingText();
     _currentData['ping'] = '0';
     _currentData['players'] = '0/0';
     _currentData['map'] = '未知';
@@ -512,7 +523,7 @@ class ObsServerService {
           _logger.i('[OBS] 矫正：检测到用户已离开服务器但 OBS 仍显示，强制重置');
           _queriedServerInfo = null;
           _currentData['isConnected'] = false;
-          _currentData['serverName'] = '等待进入服务器';
+          _currentData['serverName'] = _getWaitingText();
           _currentData['ping'] = '0';
           _currentData['players'] = '0/0';
           _currentData['map'] = '未知';
@@ -538,12 +549,15 @@ class ObsServerService {
         consoleState.isInServer && consoleState.serverAddress.isNotEmpty;
 
     if (!isInServerFromConsole) {
-      // 用户没有在服务器中，显示"等待进入服务器"
-      if (_currentData['isConnected'] == true || _queriedServerInfo != null) {
+      // 用户没有在服务器中，显示"等待进入服务器"或"无法监控游戏"
+      final targetWaitingText = _getWaitingText();
+      if (_currentData['isConnected'] == true || 
+          _queriedServerInfo != null ||
+          _currentData['serverName'] != targetWaitingText) {
         _queriedServerInfo = null;
         _currentData['isConnected'] = false;
         // 修改为显示等待进入服务器提示
-        _currentData['serverName'] = '等待进入服务器';
+        _currentData['serverName'] = targetWaitingText;
         _currentData['ping'] = '0';
         _currentData['players'] = '0/0';
         _currentData['map'] = '未知';
