@@ -14,6 +14,7 @@ ServerCategory _$ServerCategoryFromJson(Map<String, dynamic> json) =>
           .map((e) => ServerItem.fromJson(e as Map<String, dynamic>))
           .toList(),
       isCustom: json['isCustom'] as bool? ?? false,
+      sortOrder: (json['sortOrder'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$ServerCategoryToJson(ServerCategory instance) =>
@@ -22,6 +23,7 @@ Map<String, dynamic> _$ServerCategoryToJson(ServerCategory instance) =>
       'category': instance.category,
       'serverList': instance.serverList,
       'isCustom': instance.isCustom,
+      'sortOrder': instance.sortOrder,
     };
 
 ServerItem _$ServerItemFromJson(Map<String, dynamic> json) => ServerItem(
@@ -161,6 +163,11 @@ MapData _$MapDataFromJson(Map<String, dynamic> json) => MapData(
   mapName: json['mapName'] as String,
   mapLabel: json['mapLabel'] as String,
   mapUrl: json['mapUrl'] as String,
+  tags:
+      (json['tags'] as List<dynamic>?)
+          ?.map((e) => MapTagSimple.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      [],
 );
 
 Map<String, dynamic> _$MapDataToJson(MapData instance) => <String, dynamic>{
@@ -168,6 +175,7 @@ Map<String, dynamic> _$MapDataToJson(MapData instance) => <String, dynamic>{
   'mapName': instance.mapName,
   'mapLabel': instance.mapLabel,
   'mapUrl': instance.mapUrl,
+  'tags': instance.tags,
 };
 
 MapRuntimeData _$MapRuntimeDataFromJson(Map<String, dynamic> json) =>

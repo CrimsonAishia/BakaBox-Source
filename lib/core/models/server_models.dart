@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'map_tag_models.dart';
 
 part 'server_models.g.dart';
 
@@ -194,14 +195,22 @@ class MapData extends Equatable {
   final String mapName;
   final String mapLabel;
   final String mapUrl;
+  @JsonKey(defaultValue: <MapTagSimple>[])
+  final List<MapTagSimple> tags;
 
-  const MapData({required this.id, required this.mapName, required this.mapLabel, required this.mapUrl});
+  const MapData({
+    required this.id,
+    required this.mapName,
+    required this.mapLabel,
+    required this.mapUrl,
+    this.tags = const [],
+  });
 
   factory MapData.fromJson(Map<String, dynamic> json) => _$MapDataFromJson(json);
   Map<String, dynamic> toJson() => _$MapDataToJson(this);
 
   @override
-  List<Object?> get props => [id, mapName, mapLabel, mapUrl];
+  List<Object?> get props => [id, mapName, mapLabel, mapUrl, tags];
 }
 
 @JsonSerializable()

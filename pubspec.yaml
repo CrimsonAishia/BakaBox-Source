@@ -102,7 +102,7 @@ dependencies:
   json_annotation: ^4.8.1
   source_server: ^4.0.0
   just_the_tooltip: ^0.0.12
-  flutter_colorpicker: ^1.1.0
+  flex_color_picker: ^3.7.2
 
 dev_dependencies:
   flutter_test:
