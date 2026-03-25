@@ -746,7 +746,7 @@ class StatusWindowService {
     ));
     
     _updateWindow(state: 'paused', message: _Messages.queuePaused, autoDismissSeconds: 1);
-    _scheduleClose(seconds: 1);
+    _scheduleClose(seconds: 0);
     
     LogService.d('[StatusWindowService] 挤服已暂停');
   }
@@ -1486,8 +1486,8 @@ class StatusWindowService {
   /// 作为备份机制，比浮窗自己的倒计时多2秒
   void _scheduleClose({int seconds = 3}) {
     _cancelCloseTimer();
-    // 增加2秒作为备份，让浮窗自己的倒计时先尝试关闭
-    final backupSeconds = seconds + 2;
+    // 增加1秒作为备份，让浮窗自己的倒计时先尝试关闭
+    final backupSeconds = seconds + 1;
     _closeTimer = Timer(Duration(seconds: backupSeconds), () async {
       await closeWindow();
       reset();
