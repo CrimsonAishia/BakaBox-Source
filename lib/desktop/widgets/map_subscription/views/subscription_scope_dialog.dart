@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -7,6 +8,7 @@ import '../../../../core/models/map_subscription_models.dart';
 import '../../../../core/models/server_models.dart';
 import '../../../../core/services/custom_server_service.dart';
 import '../../../../core/services/source_server_service.dart';
+import '../../../../core/utils/storage_utils.dart';
 
 /// 监控范围设置弹窗
 ///
@@ -95,8 +97,59 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
     _selectedServers = Set.from(widget.subscription.serverAddresses);
     _activeCategory = null;
 
+    // 先加载本地缓存的 A2S 服务器名称，避免每次打开弹窗都重新查
+    _loadCachedRealNames();
+
     // 加载数据
     _loadData();
+  }
+
+  Future<void> _loadCachedRealNames() async {
+    final cachedData = StorageUtils.getString('a2s_server_names_cache');
+    if (cachedData != null && cachedData.isNotEmpty) {
+      try {
+        final Map<String, dynamic> decoded = jsonDecode(cachedData);
+        final now = DateTime.now().millisecondsSinceEpoch;
+        final validNames = <String, String>{};
+        bool needClean = false;
+
+        for (final entry in decoded.entries) {
+          final data = entry.value as Map<String, dynamic>;
+          final name = data['name'] as String?;
+          final time = data['time'] as int?;
+
+          if (name != null && time != null) {
+            // 缓存 4 小时 (4 * 60 * 60 * 1000 = 14400000)
+            if (now - time < 14400000) {
+              validNames[entry.key] = name;
+            } else {
+              needClean = true; // 有过期的，准备清理
+            }
+          }
+        }
+        _serverRealNames.addAll(validNames);
+        if (needClean) {
+          _saveCachedRealNames(); // 异步清理过期缓存
+        }
+      } catch (_) {
+        // 如果遇到了旧版本（只有名字）的存储结构，直接丢弃，让其重新缓存即可
+      }
+    }
+  }
+
+  Future<void> _saveCachedRealNames() async {
+    try {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final dataToSave = <String, dynamic>{};
+      _serverRealNames.forEach((key, value) {
+        dataToSave[key] = {
+          'name': value,
+          'time': now,
+        };
+      });
+      final encoded = jsonEncode(dataToSave);
+      await StorageUtils.setString('a2s_server_names_cache', encoded);
+    } catch (_) {}
   }
 
   Future<void> _loadData() async {
@@ -128,20 +181,25 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
     }
   }
 
-  /// 异步查询服务器真实名称（跳过有备注名的）
+  /// 异步查询服务器真实名称（仅限没有备注名的自定义服务器）
   Future<void> _queryServerNames() async {
     for (final category in _allCategories) {
       for (final server in category.serverList) {
         final address = server.address ?? server.serverAddress ?? '';
         if (address.isEmpty) continue;
 
+        // 非自定义服务器不进行查询
+        if (!server.isCustom) {
+          continue;
+        }
+
         // 跳过有备注名的服务器
         if (server.nickname != null && server.nickname!.isNotEmpty) {
           continue;
         }
 
-        // 避免重复查询
-        if (_queryingServers.contains(address)) {
+        // 避免重复查询或者是已经有缓存的真实名称
+        if (_serverRealNames.containsKey(address) || _queryingServers.contains(address)) {
           continue;
         }
 
@@ -168,6 +226,9 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
           _serverRealNames[address] = info.name;
           _queryingServers.remove(address);
         });
+        
+        // 更新缓存（异步写入）
+        _saveCachedRealNames();
       }
     } catch (e) {
       // 查询失败，忽略
@@ -184,18 +245,22 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
   String _getServerDisplayName(ServerItem server) {
     final address = server.address ?? server.serverAddress ?? '';
 
-    // 1. 优先使用备注名
-    if (server.nickname != null && server.nickname!.isNotEmpty) {
-      return server.nickname!;
+    String? hostName;
+    if (server.isCustom) {
+      // 自定义服务器，没有备注名时使用 A2S 查到的真实名称
+      if ((server.nickname == null || server.nickname!.isEmpty) && _serverRealNames.containsKey(address)) {
+        hostName = _serverRealNames[address];
+      }
+    } else {
+      // 非自定义服务器，从 serverData 中获取映射名称
+      try {
+        if (server.serverData != null) {
+          hostName = ServerInfo.fromJson(server.serverData!).hostName;
+        }
+      } catch (_) {}
     }
 
-    // 2. 使用查询到的真实名称
-    if (_serverRealNames.containsKey(address)) {
-      return _serverRealNames[address]!;
-    }
-
-    // 3. 使用地址
-    return address;
+    return server.getDisplayName(hostName);
   }
 
   @override

@@ -436,28 +436,11 @@ class MapSubscriptionService {
     if (tasks.isEmpty) return [];
 
     final results = <_ServerQueryResult>[];
-    final futures = <Future<_ServerQueryResult>>[];
-
-    for (final task in tasks) {
-      // 使用受限的并发度
-      if (futures.length >= _maxConcurrency) {
-        // 等待任何一个完成
-        final completed = await Future.any(futures);
-        futures.removeWhere((f) => f == completed);
-        if (completed.result != null) {
-          results.add(completed);
-        }
-      }
-
-      futures.add(_querySingleServer(task));
-    }
-
-    // 等待剩余的
-    for (final future in futures) {
-      final completed = await future;
-      if (completed.result != null) {
-        results.add(completed);
-      }
+    
+    for (var i = 0; i < tasks.length; i += _maxConcurrency) {
+      final chunk = tasks.skip(i).take(_maxConcurrency);
+      final chunkResults = await Future.wait(chunk.map((task) => _querySingleServer(task)));
+      results.addAll(chunkResults.where((r) => r.result != null));
     }
 
     return results;
@@ -530,12 +513,27 @@ class MapSubscriptionService {
           final port = int.tryParse(parts[1]);
           if (port == null) continue;
 
+          String initialServerName = '';
+          if (server.isCustom) {
+            // 自定义服务器优先获取备注名
+            initialServerName = server.nickname ?? '';
+          } else {
+            // 非自定义服务器，直接取服务器 API 返回的映射名称
+            String? apiHostName;
+            try {
+              if (server.serverData != null) {
+                apiHostName = ServerInfo.fromJson(server.serverData!).hostName;
+              }
+            } catch (_) {}
+            initialServerName = apiHostName ?? '';
+          }
+
           queryTasks.add(_ServerQueryTask(
             serverAddress: serverAddress,
             ip: ip,
             port: port,
             categoryName: categoryName,
-            serverName: server.getDisplayName(''),
+            serverName: initialServerName,
             isCustomServer: server.isCustom,
           ));
         }
@@ -561,7 +559,7 @@ class MapSubscriptionService {
         final currentMap = info.map;
         final hostName = task.serverName.isNotEmpty
             ? task.serverName
-            : info.name;
+            : (info.name.isNotEmpty ? info.name : task.serverAddress);
 
         final lastMap = _lastServerMaps[task.serverAddress];
 
