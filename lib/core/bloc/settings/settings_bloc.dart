@@ -33,6 +33,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       'warmup_notification_enabled';
   static const String _keyUpdateLogNotificationEnabled =
       'update_log_notification_enabled';
+  static const String _keyAppExitBehavior = 'app_exit_behavior';
 
   final AudioService _audioService = AudioService();
   final GamePathService _gamePathService = GamePathService();
@@ -74,6 +75,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<SettingsSetUpdateLogNotificationEnabled>(
       _onSetUpdateLogNotificationEnabled,
     );
+    on<SettingsSetAppExitBehavior>(_onSetAppExitBehavior);
   }
 
   Future<void> _onInit(SettingsInit event, Emitter<SettingsState> emit) async {
@@ -120,10 +122,13 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         _keyUpdateLogNotificationEnabled,
         defaultValue: true,
       );
+      final appExitBehaviorIndex =
+          StorageUtils.getInt(_keyAppExitBehavior) ?? AppExitBehavior.ask.index;
       final notificationPosition =
           NotificationPositionType.values[notificationPositionIndex];
       final floatingWindowPosition =
           NotificationPositionType.values[floatingWindowPositionIndex];
+      final appExitBehavior = AppExitBehavior.values[appExitBehaviorIndex];
 
       // 同步通知位置到 NotificationWindowService
       if (PlatformUtils.isDesktopPlatform) {
@@ -143,6 +148,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
           floatingWindowPosition: floatingWindowPosition,
           warmupNotificationEnabled: warmupNotificationEnabled,
           updateLogNotificationEnabled: updateLogNotificationEnabled,
+          appExitBehavior: appExitBehavior,
         ),
       );
     } catch (e) {
@@ -1059,6 +1065,19 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       LogService.d('更新日志通知已${event.enabled ? '启用' : '禁用'}');
     } catch (e) {
       LogService.e('设置更新日志通知开关失败', e);
+    }
+  }
+
+  Future<void> _onSetAppExitBehavior(
+    SettingsSetAppExitBehavior event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      await StorageUtils.setInt(_keyAppExitBehavior, event.behavior.index);
+      emit(state.copyWith(appExitBehavior: event.behavior));
+      LogService.d('主窗口关闭行为已设置: ${event.behavior.displayName}');
+    } catch (e) {
+      LogService.e('设置主窗口关闭行为失败', e);
     }
   }
 }

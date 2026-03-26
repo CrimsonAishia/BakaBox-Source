@@ -139,3 +139,11 @@ class SettingsSetUpdateLogNotificationEnabled extends SettingsEvent {
   @override
   List<Object?> get props => [enabled];
 }
+
+// 主窗口关闭行为设置事件
+class SettingsSetAppExitBehavior extends SettingsEvent {
+  final AppExitBehavior behavior;
+  const SettingsSetAppExitBehavior(this.behavior);
+  @override
+  List<Object?> get props => [behavior];
+}

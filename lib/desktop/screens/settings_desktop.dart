@@ -61,6 +61,8 @@ class _SettingsDesktopState extends State<SettingsDesktop> {
           children: [
             AppearanceSettings(settingsState: settingsState),
             const SizedBox(height: 30),
+            WindowSettings(settingsState: settingsState),
+            const SizedBox(height: 30),
             GameSettings(settingsState: settingsState),
             const SizedBox(height: 30),
             AppSettings(settingsState: settingsState),

@@ -194,8 +194,10 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
   }
 
   Future<bool> _handleExit() async {
-    final result = await ExitDialog.show(context);
-    return result ?? false;
+    return ExitDialog.handleWindowClose(
+      context,
+      behavior: context.read<SettingsBloc>().state.appExitBehavior,
+    );
   }
 
   @override
