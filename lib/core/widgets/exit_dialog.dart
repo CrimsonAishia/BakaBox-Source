@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:window_manager/window_manager.dart';
 import 'dart:async';
 
+import '../bloc/settings/settings_state.dart';
+import '../services/floating_window_service.dart';
 import '../services/obs_server_service.dart';
+import '../services/tray_service.dart';
 
 class ExitDialog extends StatefulWidget {
   const ExitDialog({super.key});
@@ -19,6 +23,44 @@ class ExitDialog extends StatefulWidget {
       barrierDismissible: true,
       builder: (context) => const ExitDialog(),
     );
+  }
+
+  static Future<bool> handleWindowClose(
+    BuildContext context, {
+    required AppExitBehavior behavior,
+  }) async {
+    switch (behavior) {
+      case AppExitBehavior.ask:
+        final result = await show(context);
+        if (result == true) {
+          await _exitApplication();
+        } else if (result == false) {
+          await _hideToTray();
+        }
+        return false;
+      case AppExitBehavior.exit:
+        await _exitApplication();
+        return false;
+      case AppExitBehavior.minimizeToTray:
+        await _hideToTray();
+        return false;
+    }
+  }
+
+  static Future<void> _hideToTray() async {
+    await TrayService.instance.initialize();
+    await windowManager.hide();
+  }
+
+  static Future<void> _exitApplication() async {
+    final obsService = ObsServerService();
+    if (obsService.isRunning) {
+      obsService.clearDisplay();
+      await obsService.stop();
+    }
+    await FloatingWindowService().closeAllWindows();
+    await TrayService.instance.dispose();
+    await windowManager.destroy();
   }
 }
 
@@ -78,7 +120,7 @@ class _ExitDialogState extends State<ExitDialog> with TickerProviderStateMixin {
     Navigator.of(context).pop(true);
   }
 
-  void _handleCancel() {
+  void _handleHideToTray() {
     HapticFeedback.lightImpact();
     Navigator.of(context).pop(false);
   }
@@ -121,106 +163,138 @@ class _ExitDialogState extends State<ExitDialog> with TickerProviderStateMixin {
                 ),
               ],
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+            child: Stack(
               children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 32, bottom: 16),
-                  child: ScaleTransition(
-                    scale: _iconScaleAnimation,
-                    child:
-                        Container(
-                              width: 64,
-                              height: 64,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    const Color(
-                                      0xFFEF4444,
-                                    ).withValues(alpha: 0.1),
-                                    const Color(
-                                      0xFFDC2626,
-                                    ).withValues(alpha: 0.05),
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: const Color(
-                                    0xFFEF4444,
-                                  ).withValues(alpha: 0.2),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Icon(
-                                MdiIcons.exitToApp,
-                                size: 28,
-                                color: const Color(0xFFEF4444),
-                              ),
-                            )
-                            .animate()
-                            .scale(
-                              delay: 200.ms,
-                              duration: 400.ms,
-                              curve: Curves.elasticOut,
-                            )
-                            .shimmer(
-                              delay: 300.ms,
-                              duration: 800.ms,
-                              colors: [
-                                Colors.transparent,
-                                const Color(0xFFEF4444).withValues(alpha: 0.1),
-                                Colors.transparent,
-                              ],
-                            ),
+                Positioned(
+                  top: 14,
+                  right: 14,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      hoverColor: const Color(0xFF0080FF).withValues(alpha: 0.08),
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Ink(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: colorScheme.outline.withValues(alpha: 0.18),
+                          ),
+                        ),
+                        child: Icon(
+                          MdiIcons.close,
+                          size: 18,
+                          color: colorScheme.onSurface.withValues(alpha: 0.72),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 24),
-                  child:
-                      Text(
-                            '确认退出',
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.onSurface,
-                            ),
-                            textAlign: TextAlign.center,
-                          )
-                          .animate()
-                          .fadeIn(delay: 100.ms, duration: 300.ms)
-                          .slideY(
-                            begin: 0.3,
-                            end: 0,
-                            delay: 100.ms,
-                            duration: 300.ms,
-                          ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 24),
-                  child:
-                      Text(
-                            '确定要退出 BakaBox 应用吗？',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurface.withValues(
-                                alpha: 0.7,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 32, bottom: 16),
+                      child: ScaleTransition(
+                        scale: _iconScaleAnimation,
+                        child:
+                            Container(
+                                  width: 64,
+                                  height: 64,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        const Color(
+                                          0xFFEF4444,
+                                        ).withValues(alpha: 0.1),
+                                        const Color(
+                                          0xFFDC2626,
+                                        ).withValues(alpha: 0.05),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: const Color(
+                                        0xFFEF4444,
+                                      ).withValues(alpha: 0.2),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    MdiIcons.exitToApp,
+                                    size: 28,
+                                    color: const Color(0xFFEF4444),
+                                  ),
+                                )
+                                .animate()
+                                .scale(
+                                  delay: 200.ms,
+                                  duration: 400.ms,
+                                  curve: Curves.elasticOut,
+                                )
+                                .shimmer(
+                                  delay: 300.ms,
+                                  duration: 800.ms,
+                                  colors: [
+                                    Colors.transparent,
+                                    const Color(0xFFEF4444).withValues(alpha: 0.1),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                      ),
+                    ),
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 24),
+                      child:
+                          Text(
+                                '确认退出',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: colorScheme.onSurface,
+                                ),
+                                textAlign: TextAlign.center,
+                              )
+                              .animate()
+                              .fadeIn(delay: 100.ms, duration: 300.ms)
+                              .slideY(
+                                begin: 0.3,
+                                end: 0,
+                                delay: 100.ms,
+                                duration: 300.ms,
                               ),
-                              height: 1.4,
-                            ),
-                            textAlign: TextAlign.center,
-                          )
-                          .animate()
-                          .fadeIn(delay: 200.ms, duration: 300.ms)
-                          .slideY(
-                            begin: 0.3,
-                            end: 0,
-                            delay: 200.ms,
-                            duration: 300.ms,
-                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 24),
+                      child:
+                          Text(
+                                '确定要退出 BakaBox 应用吗？',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.7,
+                                  ),
+                                  height: 1.4,
+                                ),
+                                textAlign: TextAlign.center,
+                              )
+                              .animate()
+                              .fadeIn(delay: 200.ms, duration: 300.ms)
+                              .slideY(
+                                begin: 0.3,
+                                end: 0,
+                                delay: 200.ms,
+                                duration: 300.ms,
+                              ),
+                    ),
+                    const SizedBox(height: 32),
+                    _buildButtons(context, theme, colorScheme),
+                  ],
                 ),
-                const SizedBox(height: 32),
-                _buildButtons(context, theme, colorScheme),
               ],
             ),
           ),
@@ -254,14 +328,26 @@ class _ExitDialogState extends State<ExitDialog> with TickerProviderStateMixin {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
-                          onTap: _handleCancel,
+                          hoverColor: const Color(0xFF0080FF).withValues(alpha: 0.06),
+                          onTap: _handleHideToTray,
                           child: Center(
-                            child: Text(
-                              '取消',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: colorScheme.onSurface,
-                                fontWeight: FontWeight.w500,
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  MdiIcons.trayArrowDown,
+                                  size: 18,
+                                  color: colorScheme.onSurface,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '隐藏到托盘',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: colorScheme.onSurface,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -302,6 +388,7 @@ class _ExitDialogState extends State<ExitDialog> with TickerProviderStateMixin {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
+                          hoverColor: Colors.white.withValues(alpha: 0.08),
                           onTap: _handleExit,
                           child: Center(
                             child: Row(

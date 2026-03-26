@@ -46,6 +46,38 @@ extension NotificationPositionTypeExtension on NotificationPositionType {
   }
 }
 
+/// 关闭主窗口时的行为
+enum AppExitBehavior {
+  ask, // 每次询问
+  exit, // 直接退出程序
+  minimizeToTray, // 最小化到系统托盘
+}
+
+/// 关闭行为扩展
+extension AppExitBehaviorExtension on AppExitBehavior {
+  String get displayName {
+    switch (this) {
+      case AppExitBehavior.ask:
+        return '每次询问';
+      case AppExitBehavior.exit:
+        return '直接退出程序';
+      case AppExitBehavior.minimizeToTray:
+        return '隐藏到系统托盘';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case AppExitBehavior.ask:
+        return '关闭窗口时弹出确认对话框，由您决定如何处理。';
+      case AppExitBehavior.exit:
+        return '关闭窗口时直接退出 BakaBox。';
+      case AppExitBehavior.minimizeToTray:
+        return '关闭窗口时隐藏到系统托盘，可从托盘图标恢复。';
+    }
+  }
+}
+
 /// 缓存类型枚举
 enum CacheType {
   cacheFiles, // 图片和临时文件缓存
@@ -139,6 +171,9 @@ class SettingsState extends Equatable {
   // 更新日志通知开关
   final bool updateLogNotificationEnabled;
 
+  // 主窗口关闭行为
+  final AppExitBehavior appExitBehavior;
+
   const SettingsState({
     this.appVersion = '',
     this.buildNumber = '',
@@ -161,6 +196,7 @@ class SettingsState extends Equatable {
     this.needsRestart = false,
     this.warmupNotificationEnabled = true,
     this.updateLogNotificationEnabled = true,
+    this.appExitBehavior = AppExitBehavior.ask,
   });
 
   /// 获取总缓存大小（字节）
@@ -225,6 +261,7 @@ class SettingsState extends Equatable {
     bool? needsRestart,
     bool? warmupNotificationEnabled,
     bool? updateLogNotificationEnabled,
+    AppExitBehavior? appExitBehavior,
   }) {
     return SettingsState(
       appVersion: appVersion ?? this.appVersion,
@@ -252,6 +289,7 @@ class SettingsState extends Equatable {
           warmupNotificationEnabled ?? this.warmupNotificationEnabled,
       updateLogNotificationEnabled:
           updateLogNotificationEnabled ?? this.updateLogNotificationEnabled,
+      appExitBehavior: appExitBehavior ?? this.appExitBehavior,
     );
   }
 
@@ -278,5 +316,6 @@ class SettingsState extends Equatable {
     needsRestart,
     warmupNotificationEnabled,
     updateLogNotificationEnabled,
+    appExitBehavior,
   ];
 }

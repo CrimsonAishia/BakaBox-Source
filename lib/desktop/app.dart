@@ -43,13 +43,8 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
 
   @override
   void onWindowClose() async {
-    // 先隐藏窗口，用户看到窗口立即消失
-    // 然后异步销毁，避免卡顿感
-    await windowManager.hide();
-    FloatingWindowService().closeAllWindows();
-    // 停止 OBS 服务
-    await ObsServerService().stop();
-    await windowManager.destroy();
+    final behavior = context.read<SettingsBloc>().state.appExitBehavior;
+    await ExitDialog.handleWindowClose(context, behavior: behavior);
   }
 
   @override

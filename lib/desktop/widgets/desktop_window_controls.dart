@@ -23,14 +23,12 @@ class _DesktopWindowControlsState extends State<DesktopWindowControls> {
   final GlobalKey _bellKey = GlobalKey();
   OverlayEntry? _panelOverlay;
 
-  /// 显示退出确认对话框，用户确认后关闭窗口
+  /// 按当前设置处理关闭主窗口行为
   Future<void> _handleClose(BuildContext context) async {
-    final result = await ExitDialog.show(context);
-    if (result == true) {
-      await windowManager.hide();
-      FloatingWindowService().closeAllWindows();
-      await windowManager.destroy();
-    }
+    await ExitDialog.handleWindowClose(
+      context,
+      behavior: context.read<SettingsBloc>().state.appExitBehavior,
+    );
   }
 
   /// 显示消息中心面板

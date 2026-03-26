@@ -8,5 +8,6 @@ export 'appearance_settings.dart';
 export 'notification_settings.dart';
 export 'game_settings.dart';
 export 'app_settings.dart';
+export 'window_settings.dart';
 export 'cache_settings.dart';
 export 'about_settings.dart';
