@@ -115,6 +115,8 @@ class QueueBlocState extends Equatable {
   /// 是否应该连接（玩家数小于目标人数）
   bool get shouldConnect {
     if (serverInfo == null || serverInfo!.maxPlayers == null) return false;
+    // 如果服务器未启动完全也不加入
+    if (serverInfo?.map == "graphics_settings") return false;
     return (serverInfo!.players ?? 0) < config.targetPlayers;
   }
 
