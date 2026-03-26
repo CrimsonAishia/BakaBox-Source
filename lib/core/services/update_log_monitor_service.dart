@@ -29,7 +29,7 @@ class UpdateLogMonitorService {
 
   /// 是否已初始化
   bool _initialized = false;
-  
+
   /// 通知开关
   bool _enabled = true;
 
@@ -51,12 +51,14 @@ class UpdateLogMonitorService {
   void _startMonitorLoop() {
     if (_scheduler.hasTask(_taskId)) return;
 
-    _scheduler.register(ScheduledTask(
-      id: _taskId,
-      name: '更新日志监控',
-      interval: Intervals.fiveMinutes,
-      callback: () async => checkForUpdates(),
-    ));
+    _scheduler.register(
+      ScheduledTask(
+        id: _taskId,
+        name: '更新日志监控',
+        interval: Intervals.fiveMinutes,
+        callback: () async => checkForUpdates(),
+      ),
+    );
 
     // 延迟10秒后执行首次检查，避免启动时立即弹出通知
     Future.delayed(const Duration(seconds: 10), () => checkForUpdates());
@@ -94,7 +96,7 @@ class UpdateLogMonitorService {
       // 使用时间戳比较，避免字符串格式不一致导致的问题
       final latestTime = TimeUtils.parseServerTime(latestUpdateTime);
       final lastTime = TimeUtils.parseServerTime(lastCheckTime);
-      
+
       if (latestTime == null || lastTime == null) {
         LogService.w('[UpdateLogMonitor] 时间解析失败，使用字符串比较');
         // 降级到字符串比较
@@ -106,7 +108,9 @@ class UpdateLogMonitorService {
 
       // 比较时间戳，如果有新更新则通知
       if (latestTime.isAfter(lastTime)) {
-        LogService.i('[UpdateLogMonitor] 检测到新更新: $latestUpdateTime (上次: $lastCheckTime)');
+        LogService.i(
+          '[UpdateLogMonitor] 检测到新更新: $latestUpdateTime (上次: $lastCheckTime)',
+        );
         await _sendUpdateNotification(latestLog, latestUpdateTime);
       }
     } catch (e) {
@@ -116,7 +120,10 @@ class UpdateLogMonitorService {
   }
 
   /// 发送更新通知
-  Future<void> _sendUpdateNotification(dynamic latestLog, String latestUpdateTime) async {
+  Future<void> _sendUpdateNotification(
+    dynamic latestLog,
+    String latestUpdateTime,
+  ) async {
     // 如果通知已禁用，不发送
     if (!_enabled) {
       LogService.d('[UpdateLogMonitor] 通知已禁用，跳过发送');
@@ -124,14 +131,14 @@ class UpdateLogMonitorService {
       await StorageUtils.setString(_lastCheckTimeKey, latestUpdateTime);
       return;
     }
-    
+
     try {
       // 格式化时间（去掉秒）
       final displayTime = _formatUpdateTime(latestUpdateTime);
 
       // 发送通知（优先使用 rawHtml，否则使用 content）
-      final htmlContent = latestLog.rawHtml.isNotEmpty 
-          ? latestLog.rawHtml 
+      final htmlContent = latestLog.rawHtml.isNotEmpty
+          ? latestLog.rawHtml
           : latestLog.content;
       await _notificationService.showUpdateLogNotification(
         updateTime: displayTime,
@@ -175,8 +182,8 @@ class UpdateLogMonitorService {
       final displayTime = _formatUpdateTime(latestLog.updateTime);
 
       // 优先使用 rawHtml，否则使用 content
-      final htmlContent = latestLog.rawHtml.isNotEmpty 
-          ? latestLog.rawHtml 
+      final htmlContent = latestLog.rawHtml.isNotEmpty
+          ? latestLog.rawHtml
           : latestLog.content;
       await _notificationService.showUpdateLogNotification(
         updateTime: displayTime,
@@ -192,10 +199,10 @@ class UpdateLogMonitorService {
     _stopMonitorLoop();
     _initialized = false;
   }
-  
+
   /// 通知是否启用
   bool get isEnabled => _enabled;
-  
+
   /// 设置通知开关
   void setEnabled(bool enabled) {
     _enabled = enabled;

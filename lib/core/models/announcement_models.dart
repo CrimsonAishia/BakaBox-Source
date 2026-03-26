@@ -8,15 +8,15 @@ class AnnouncementItem {
   final int id;
   final String title;
   final String content;
-  final String type;           // info, success, warning, error, maintenance
-  final int priority;          // 优先级，数值越大越高
+  final String type; // info, success, warning, error, maintenance
+  final int priority; // 优先级，数值越大越高
   final bool isActive;
-  final bool isSticky;         // 是否置顶
-  final int? startTime;        // 开始时间戳（秒）
-  final int? endTime;          // 结束时间戳（秒）
+  final bool isSticky; // 是否置顶
+  final int? startTime; // 开始时间戳（秒）
+  final int? endTime; // 结束时间戳（秒）
   final int readCount;
-  final int createdAt;         // 创建时间戳（秒）
-  final int updatedAt;         // 更新时间戳（秒）
+  final int createdAt; // 创建时间戳（秒）
+  final int updatedAt; // 更新时间戳（秒）
 
   AnnouncementItem({
     required this.id,
@@ -33,7 +33,8 @@ class AnnouncementItem {
     required this.updatedAt,
   });
 
-  factory AnnouncementItem.fromJson(Map<String, dynamic> json) => _$AnnouncementItemFromJson(json);
+  factory AnnouncementItem.fromJson(Map<String, dynamic> json) =>
+      _$AnnouncementItemFromJson(json);
   Map<String, dynamic> toJson() => _$AnnouncementItemToJson(this);
 
   AnnouncementItem copyWith({
@@ -104,12 +105,13 @@ class AnnouncementItem {
 @JsonSerializable()
 class AnnouncementListResponse {
   final int total;
-  
+
   @JsonKey(defaultValue: [])
   final List<AnnouncementItem> items;
 
   AnnouncementListResponse({required this.total, required this.items});
 
-  factory AnnouncementListResponse.fromJson(Map<String, dynamic> json) => _$AnnouncementListResponseFromJson(json);
+  factory AnnouncementListResponse.fromJson(Map<String, dynamic> json) =>
+      _$AnnouncementListResponseFromJson(json);
   Map<String, dynamic> toJson() => _$AnnouncementListResponseToJson(this);
 }

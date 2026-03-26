@@ -9,22 +9,27 @@ class OnboardingService {
 
   static const String _keyOnboardingCompleted = 'onboarding_completed';
   static const String _keyOnboardingVersion = 'onboarding_version';
-  
+
   /// 当前引导版本，升级此值可强制用户重新完成引导
   static const int currentOnboardingVersion = 1;
 
   /// 检查是否需要显示引导
   Future<bool> shouldShowOnboarding() async {
     try {
-      final completed = StorageUtils.getBool(_keyOnboardingCompleted, defaultValue: false);
+      final completed = StorageUtils.getBool(
+        _keyOnboardingCompleted,
+        defaultValue: false,
+      );
       final version = StorageUtils.getInt(_keyOnboardingVersion) ?? 0;
-      
+
       // 未完成或版本过旧都需要显示引导
       if (!completed || version < currentOnboardingVersion) {
-        LogService.d('[OnboardingService] 需要显示引导: completed=$completed, version=$version');
+        LogService.d(
+          '[OnboardingService] 需要显示引导: completed=$completed, version=$version',
+        );
         return true;
       }
-      
+
       return false;
     } catch (e) {
       LogService.e('[OnboardingService] 检查引导状态失败', e);
@@ -36,7 +41,10 @@ class OnboardingService {
   Future<void> completeOnboarding() async {
     try {
       await StorageUtils.setBool(_keyOnboardingCompleted, true);
-      await StorageUtils.setInt(_keyOnboardingVersion, currentOnboardingVersion);
+      await StorageUtils.setInt(
+        _keyOnboardingVersion,
+        currentOnboardingVersion,
+      );
       LogService.d('[OnboardingService] 引导已完成');
     } catch (e) {
       LogService.e('[OnboardingService] 保存引导状态失败', e);

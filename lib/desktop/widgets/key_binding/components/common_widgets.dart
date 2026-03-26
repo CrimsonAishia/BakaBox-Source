@@ -60,7 +60,11 @@ class EmptyHint extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 52, color: iconColor ?? (isDark ? Colors.white24 : Colors.grey[300])),
+            Icon(
+              icon,
+              size: 52,
+              color: iconColor ?? (isDark ? Colors.white24 : Colors.grey[300]),
+            ),
             const SizedBox(height: 16),
             Text(
               title,
@@ -81,10 +85,7 @@ class EmptyHint extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ],
-            if (action != null) ...[
-              const SizedBox(height: 16),
-              action!,
-            ],
+            if (action != null) ...[const SizedBox(height: 16), action!],
           ],
         ),
       ),
@@ -109,7 +110,8 @@ class IconButton extends StatefulWidget {
   State<IconButton> createState() => _IconButtonState();
 }
 
-class _IconButtonState extends State<IconButton> with SingleTickerProviderStateMixin {
+class _IconButtonState extends State<IconButton>
+    with SingleTickerProviderStateMixin {
   bool _hovered = false;
   late AnimationController _rotationController;
 
@@ -145,7 +147,9 @@ class _IconButtonState extends State<IconButton> with SingleTickerProviderStateM
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
-      cursor: widget.loading ? SystemMouseCursors.basic : SystemMouseCursors.click,
+      cursor: widget.loading
+          ? SystemMouseCursors.basic
+          : SystemMouseCursors.click,
       child: GestureDetector(
         onTap: widget.loading ? null : widget.onTap,
         child: AnimatedContainer(
@@ -154,8 +158,8 @@ class _IconButtonState extends State<IconButton> with SingleTickerProviderStateM
           height: 32,
           margin: const EdgeInsets.only(left: 4),
           decoration: BoxDecoration(
-            color: _hovered && !widget.loading 
-                ? (isDark ? const Color(0xFF334155) : Colors.grey[100]) 
+            color: _hovered && !widget.loading
+                ? (isDark ? const Color(0xFF334155) : Colors.grey[100])
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
@@ -163,9 +167,17 @@ class _IconButtonState extends State<IconButton> with SingleTickerProviderStateM
             child: widget.loading
                 ? RotationTransition(
                     turns: _rotationController,
-                    child: Icon(widget.icon, size: 18, color: const Color(0xFF0080FF)),
+                    child: Icon(
+                      widget.icon,
+                      size: 18,
+                      color: const Color(0xFF0080FF),
+                    ),
                   )
-                : Icon(widget.icon, size: 18, color: isDark ? Colors.white54 : Colors.grey[600]),
+                : Icon(
+                    widget.icon,
+                    size: 18,
+                    color: isDark ? Colors.white54 : Colors.grey[600],
+                  ),
           ),
         ),
       ),
@@ -218,12 +230,21 @@ class _SegmentedButtonState extends State<SegmentedButton> {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: widget.selected == i 
+                  color: widget.selected == i
                       ? (isDark ? const Color(0xFF1E293B) : Colors.white)
-                      : (_hoveredIndex == i ? (isDark ? const Color(0xFF475569) : Colors.grey[300]) : Colors.transparent),
+                      : (_hoveredIndex == i
+                            ? (isDark
+                                  ? const Color(0xFF475569)
+                                  : Colors.grey[300])
+                            : Colors.transparent),
                   borderRadius: BorderRadius.circular(6),
-                  boxShadow: widget.selected == i 
-                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2)] 
+                  boxShadow: widget.selected == i
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 2,
+                          ),
+                        ]
                       : null,
                 ),
                 child: Text(
@@ -231,8 +252,8 @@ class _SegmentedButtonState extends State<SegmentedButton> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: widget.selected == i 
-                        ? const Color(0xFF0080FF) 
+                    color: widget.selected == i
+                        ? const Color(0xFF0080FF)
                         : (isDark ? Colors.white54 : Colors.grey[600]),
                   ),
                 ),
@@ -283,10 +304,16 @@ class _ConfigActionButtonState extends State<ConfigActionButton> {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: _hovered ? color.withValues(alpha: 0.1) : Colors.transparent,
+              color: _hovered
+                  ? color.withValues(alpha: 0.1)
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(widget.icon, size: 18, color: _hovered ? color : Colors.grey[500]),
+            child: Icon(
+              widget.icon,
+              size: 18,
+              color: _hovered ? color : Colors.grey[500],
+            ),
           ),
         ),
       ),
@@ -327,22 +354,28 @@ class _HoverChipState extends State<HoverChip> {
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: widget.selected 
-                ? const Color(0xFF0080FF) 
-                : (_hovered ? (isDark ? const Color(0xFF475569) : Colors.grey[200]) : (isDark ? const Color(0xFF334155) : Colors.grey[100])),
+            color: widget.selected
+                ? const Color(0xFF0080FF)
+                : (_hovered
+                      ? (isDark ? const Color(0xFF475569) : Colors.grey[200])
+                      : (isDark ? const Color(0xFF334155) : Colors.grey[100])),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: widget.selected 
-                  ? const Color(0xFF0080FF) 
-                  : (_hovered ? (isDark ? const Color(0xFF64748B) : Colors.grey[300]!) : Colors.transparent),
+              color: widget.selected
+                  ? const Color(0xFF0080FF)
+                  : (_hovered
+                        ? (isDark ? const Color(0xFF64748B) : Colors.grey[300]!)
+                        : Colors.transparent),
             ),
           ),
           child: Text(
-            widget.label, 
+            widget.label,
             style: TextStyle(
-              fontSize: 11, 
-              fontWeight: FontWeight.w500, 
-              color: widget.selected ? Colors.white : (isDark ? Colors.white70 : Colors.grey[700]),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: widget.selected
+                  ? Colors.white
+                  : (isDark ? Colors.white70 : Colors.grey[700]),
             ),
           ),
         ),
@@ -388,14 +421,20 @@ class _HoverTypeOptionState extends State<HoverTypeOption> {
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: widget.selected 
-                ? const Color(0xFF0080FF).withValues(alpha: 0.06) 
-                : (_hovered ? (isDark ? const Color(0xFF334155) : Colors.grey[100]) : (isDark ? const Color(0xFF1E293B) : Colors.grey[50])),
+            color: widget.selected
+                ? const Color(0xFF0080FF).withValues(alpha: 0.06)
+                : (_hovered
+                      ? (isDark ? const Color(0xFF334155) : Colors.grey[100])
+                      : (isDark ? const Color(0xFF1E293B) : Colors.grey[50])),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: widget.selected 
-                  ? const Color(0xFF0080FF) 
-                  : (_hovered ? (isDark ? const Color(0xFF475569) : Colors.grey[300]!) : (isDark ? const Color(0xFF334155) : Colors.grey[200]!)), 
+              color: widget.selected
+                  ? const Color(0xFF0080FF)
+                  : (_hovered
+                        ? (isDark ? const Color(0xFF475569) : Colors.grey[300]!)
+                        : (isDark
+                              ? const Color(0xFF334155)
+                              : Colors.grey[200]!)),
               width: widget.selected ? 1.5 : 1,
             ),
           ),
@@ -404,7 +443,9 @@ class _HoverTypeOptionState extends State<HoverTypeOption> {
               Icon(
                 widget.icon,
                 size: 18,
-                color: widget.selected ? const Color(0xFF0080FF) : (isDark ? Colors.white54 : Colors.grey[500]),
+                color: widget.selected
+                    ? const Color(0xFF0080FF)
+                    : (isDark ? Colors.white54 : Colors.grey[500]),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -413,11 +454,13 @@ class _HoverTypeOptionState extends State<HoverTypeOption> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      widget.title, 
+                      widget.title,
                       style: TextStyle(
-                        fontSize: 12, 
-                        fontWeight: FontWeight.w500, 
-                        color: widget.selected ? const Color(0xFF0080FF) : (isDark ? Colors.white70 : Colors.grey[700]),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: widget.selected
+                            ? const Color(0xFF0080FF)
+                            : (isDark ? Colors.white70 : Colors.grey[700]),
                       ),
                     ),
                     if (widget.subtitle != null) ...[
@@ -433,7 +476,12 @@ class _HoverTypeOptionState extends State<HoverTypeOption> {
                   ],
                 ),
               ),
-              if (widget.selected) const Icon(Icons.check_circle, size: 16, color: Color(0xFF0080FF)),
+              if (widget.selected)
+                const Icon(
+                  Icons.check_circle,
+                  size: 16,
+                  color: Color(0xFF0080FF),
+                ),
             ],
           ),
         ),
@@ -470,16 +518,22 @@ class _PlaceholderTagState extends State<PlaceholderTag> {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: _hovered 
-              ? const Color(0xFFf59e0b).withValues(alpha: 0.2) 
+          color: _hovered
+              ? const Color(0xFFf59e0b).withValues(alpha: 0.2)
               : const Color(0xFFf59e0b).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: const Color(0xFFf59e0b).withValues(alpha: 0.3)),
+          border: Border.all(
+            color: const Color(0xFFf59e0b).withValues(alpha: 0.3),
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(MdiIcons.keyboardOutline, size: 10, color: const Color(0xFFf59e0b)),
+            Icon(
+              MdiIcons.keyboardOutline,
+              size: 10,
+              color: const Color(0xFFf59e0b),
+            ),
             const SizedBox(width: 4),
             Text(
               widget.label,
@@ -500,10 +554,16 @@ class _PlaceholderTagState extends State<PlaceholderTag> {
                   duration: const Duration(milliseconds: 150),
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: _closeHovered ? const Color(0xFFf59e0b).withValues(alpha: 0.3) : Colors.transparent,
+                    color: _closeHovered
+                        ? const Color(0xFFf59e0b).withValues(alpha: 0.3)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(2),
                   ),
-                  child: const Icon(Icons.close, size: 10, color: Color(0xFFf59e0b)),
+                  child: const Icon(
+                    Icons.close,
+                    size: 10,
+                    color: Color(0xFFf59e0b),
+                  ),
                 ),
               ),
             ),

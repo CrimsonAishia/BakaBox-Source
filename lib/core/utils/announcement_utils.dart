@@ -39,7 +39,7 @@ class AnnouncementUtils {
   ];
 
   /// 获取公告类型信息（颜色、图标、标签）
-  /// 
+  ///
   /// [type] 公告类型：info, success, warning, error
   /// 返回对应的类型信息，未知类型返回默认样式
   static AnnouncementTypeInfo getAnnouncementTypeInfo(String type) {
@@ -79,7 +79,7 @@ class AnnouncementUtils {
   }
 
   /// 格式化时间戳为相对时间
-  /// 
+  ///
   /// [timestamp] Unix 时间戳（秒）
   /// 返回相对时间字符串，如 "刚刚"、"5分钟前"、"2小时前"、"3天前"
   /// 无效时间戳返回 "未知时间"
@@ -129,7 +129,7 @@ class AnnouncementUtils {
   }
 
   /// 合并并排序公告列表
-  /// 
+  ///
   /// [active] 有效公告列表
   /// [sticky] 置顶公告列表
   /// 返回去重后的排序列表：置顶优先，然后按优先级降序，最后按创建时间降序
@@ -152,7 +152,7 @@ class AnnouncementUtils {
 
     // 转换为列表并排序
     final result = uniqueMap.values.toList();
-    
+
     result.sort((a, b) {
       // 1. 置顶优先（isSticky = true 排在前面）
       if (a.isSticky != b.isSticky) {

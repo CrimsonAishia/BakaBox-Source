@@ -14,10 +14,11 @@ class DesktopSplashScreen extends StatefulWidget {
   State<DesktopSplashScreen> createState() => _DesktopSplashScreenState();
 }
 
-class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTickerProviderStateMixin {
+class _DesktopSplashScreenState extends State<DesktopSplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _progressController;
   String _loadingText = 'LOADING';
-  
+
   @override
   void initState() {
     super.initState();
@@ -34,74 +35,97 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTi
       if (mounted) {
         setState(() => _loadingText = 'INITIALIZING');
       }
-      _progressController.animateTo(0.3, duration: const Duration(milliseconds: 400));
+      _progressController.animateTo(
+        0.3,
+        duration: const Duration(milliseconds: 400),
+      );
       await Future.delayed(const Duration(milliseconds: 400));
-      
+
       // 阶段2: 检查更新 (30-60%)
       if (mounted) {
         setState(() => _loadingText = 'CHECKING UPDATE');
         final updateBloc = context.read<UpdateBloc>();
-        
+
         // 开始更新检查
         updateBloc.add(UpdateAutoCheck());
-        
+
         // 启动进度条动画到60%
-        _progressController.animateTo(0.6, duration: const Duration(milliseconds: 1200));
-        
+        _progressController.animateTo(
+          0.6,
+          duration: const Duration(milliseconds: 1200),
+        );
+
         // 等待更新检查完成，设置合理的超时时间
         try {
-          await updateBloc.stream.firstWhere(
-            (state) => state.status != UpdateStatus.checking,
-            orElse: () => updateBloc.state,
-          ).timeout(
-            const Duration(milliseconds: 1200),
-            onTimeout: () {
-              // 超时时记录日志，但不影响启动流程
-              LogService.w('[SplashScreen] 更新检查超时，继续启动流程');
-              return updateBloc.state;
-            },
-          );
+          await updateBloc.stream
+              .firstWhere(
+                (state) => state.status != UpdateStatus.checking,
+                orElse: () => updateBloc.state,
+              )
+              .timeout(
+                const Duration(milliseconds: 1200),
+                onTimeout: () {
+                  // 超时时记录日志，但不影响启动流程
+                  LogService.w('[SplashScreen] 更新检查超时，继续启动流程');
+                  return updateBloc.state;
+                },
+              );
         } catch (e) {
           // 捕获任何异常，确保启动流程不会中断
           LogService.e('[SplashScreen] 更新检查异常: $e', e);
         }
-        
+
         // 更新检查完成，快速推进到60%
         if (_progressController.value < 0.6) {
-          await _progressController.animateTo(0.6, duration: const Duration(milliseconds: 200));
+          await _progressController.animateTo(
+            0.6,
+            duration: const Duration(milliseconds: 200),
+          );
         }
       }
-      
+
       // 阶段3: 加载功能状态 (60-80%)
       if (mounted) {
         setState(() => _loadingText = 'LOADING FEATURES');
         final featureStatusBloc = context.read<FeatureStatusBloc>();
-        
+
         // 启动进度条动画到80%
-        _progressController.animateTo(0.8, duration: const Duration(milliseconds: 800));
-        
-        // 等待功能状态加载完成
-        await featureStatusBloc.stream.firstWhere(
-          (state) => state.loadState == FeatureStatusLoadState.loaded ||
-                     state.loadState == FeatureStatusLoadState.error,
-          orElse: () => featureStatusBloc.state,
-        ).timeout(
-          const Duration(milliseconds: 800),
-          onTimeout: () => featureStatusBloc.state,
+        _progressController.animateTo(
+          0.8,
+          duration: const Duration(milliseconds: 800),
         );
-        
+
+        // 等待功能状态加载完成
+        await featureStatusBloc.stream
+            .firstWhere(
+              (state) =>
+                  state.loadState == FeatureStatusLoadState.loaded ||
+                  state.loadState == FeatureStatusLoadState.error,
+              orElse: () => featureStatusBloc.state,
+            )
+            .timeout(
+              const Duration(milliseconds: 800),
+              onTimeout: () => featureStatusBloc.state,
+            );
+
         // 功能状态加载完成，快速推进到80%
         if (_progressController.value < 0.8) {
-          await _progressController.animateTo(0.8, duration: const Duration(milliseconds: 200));
+          await _progressController.animateTo(
+            0.8,
+            duration: const Duration(milliseconds: 200),
+          );
         }
       }
-      
+
       // 阶段4: 完成 (80-100%)
       if (mounted) {
         setState(() => _loadingText = 'LOADING');
-        _progressController.animateTo(1.0, duration: const Duration(milliseconds: 400));
+        _progressController.animateTo(
+          1.0,
+          duration: const Duration(milliseconds: 400),
+        );
         await Future.delayed(const Duration(milliseconds: 400));
-        
+
         // 进度条走完后检查是否需要显示引导
         if (mounted) {
           await _navigateToNextScreen();
@@ -109,7 +133,10 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTi
       }
     } catch (e) {
       // 出错时快速完成进度条并跳转
-      _progressController.animateTo(1.0, duration: const Duration(milliseconds: 500));
+      _progressController.animateTo(
+        1.0,
+        duration: const Duration(milliseconds: 500),
+      );
       await Future.delayed(const Duration(milliseconds: 500));
       if (mounted) {
         await _navigateToNextScreen();
@@ -121,7 +148,7 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTi
   Future<void> _navigateToNextScreen() async {
     final onboardingService = OnboardingService();
     final shouldShowOnboarding = await onboardingService.shouldShowOnboarding();
-    
+
     if (mounted) {
       if (shouldShowOnboarding) {
         context.go(DesktopRoutes.onboarding);
@@ -141,9 +168,11 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTi
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFE9EEF8),
+      backgroundColor: isDark
+          ? const Color(0xFF0F172A)
+          : const Color(0xFFE9EEF8),
       body: Stack(
         children: [
           // 简化的背景光效
@@ -172,139 +201,153 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTi
   /// 简化的背景光效
   Widget _buildBackgroundGlow(bool isDark) {
     return Positioned.fill(
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.center,
-            radius: 0.6,
-            colors: [
-              const Color(0xFF3B82F6).withValues(alpha: isDark ? 0.08 : 0.04),
-              Colors.transparent,
-            ],
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment.center,
+                radius: 0.6,
+                colors: [
+                  const Color(
+                    0xFF3B82F6,
+                  ).withValues(alpha: isDark ? 0.08 : 0.04),
+                  Colors.transparent,
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
-    )
-    .animate(onPlay: (c) => c.repeat(reverse: true))
-    .fadeIn(duration: 2000.ms)
-    .then()
-    .fadeOut(duration: 2000.ms);
+        )
+        .animate(onPlay: (c) => c.repeat(reverse: true))
+        .fadeIn(duration: 2000.ms)
+        .then()
+        .fadeOut(duration: 2000.ms);
   }
 
   /// Logo + 发光效果
   Widget _buildLogoWithGlow(bool isDark) {
     return SizedBox(
-      width: 160,
-      height: 160,
-      child: Image.asset(
-        'assets/images/logo.png',
-        fit: BoxFit.contain,
-      ),
-    )
-    .animate(onPlay: (c) => c.repeat(reverse: true))
-    .custom(
-      duration: 2500.ms,
-      curve: Curves.easeInOut,
-      builder: (context, value, child) {
-        final glowIntensity = 0.5 + (value * 0.3);
-        
-        return Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF3B82F6).withValues(alpha: glowIntensity * 0.4),
-                blurRadius: 30 + (glowIntensity * 20),
-                spreadRadius: 5 + (glowIntensity * 10),
+          width: 160,
+          height: 160,
+          child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
+        )
+        .animate(onPlay: (c) => c.repeat(reverse: true))
+        .custom(
+          duration: 2500.ms,
+          curve: Curves.easeInOut,
+          builder: (context, value, child) {
+            final glowIntensity = 0.5 + (value * 0.3);
+
+            return Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(
+                      0xFF3B82F6,
+                    ).withValues(alpha: glowIntensity * 0.4),
+                    blurRadius: 30 + (glowIntensity * 20),
+                    spreadRadius: 5 + (glowIntensity * 10),
+                  ),
+                  BoxShadow(
+                    color: const Color(
+                      0xFF0080FF,
+                    ).withValues(alpha: glowIntensity * 0.3),
+                    blurRadius: 50 + (glowIntensity * 30),
+                    spreadRadius: 10 + (glowIntensity * 15),
+                  ),
+                ],
               ),
-              BoxShadow(
-                color: const Color(0xFF0080FF).withValues(alpha: glowIntensity * 0.3),
-                blurRadius: 50 + (glowIntensity * 30),
-                spreadRadius: 10 + (glowIntensity * 15),
-              ),
-            ],
-          ),
-          child: child,
+              child: child,
+            );
+          },
+        )
+        .fadeIn(duration: 400.ms)
+        .scale(
+          begin: const Offset(0.7, 0.7),
+          end: const Offset(1.0, 1.0),
+          duration: 400.ms,
+          curve: Curves.easeOutBack,
         );
-      },
-    )
-    .fadeIn(duration: 400.ms)
-    .scale(
-      begin: const Offset(0.7, 0.7),
-      end: const Offset(1.0, 1.0),
-      duration: 400.ms,
-      curve: Curves.easeOutBack,
-    );
   }
 
   /// 应用名称
   Widget _buildAppName(ThemeData theme, bool isDark) {
     return Column(
-      children: [
-        // Logo 图片
-        Image.asset(
-          'assets/images/sidebar-logo.png',
-          height: 72,
-          fit: BoxFit.contain,
-        ),
-        const SizedBox(height: 10),
-        // 副标题 - 使用灰蓝色
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 20,
-              height: 1,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.transparent,
-                    (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))
-                        .withValues(alpha: 0.5),
-                  ],
-                ),
-              ),
+            // Logo 图片
+            Image.asset(
+              'assets/images/sidebar-logo.png',
+              height: 72,
+              fit: BoxFit.contain,
             ),
-            const SizedBox(width: 8),
-            Text(
-              'CS2 LAUNCHER',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 3.0,
-                color: isDark 
-                    ? const Color(0xFF94A3B8)
-                    : const Color(0xFF64748B),
-                shadows: [
-                  Shadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.15),
-                    offset: const Offset(0, 1),
-                    blurRadius: 2,
+            const SizedBox(height: 10),
+            // 副标题 - 使用灰蓝色
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 20,
+                  height: 1,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.transparent,
+                        (isDark
+                                ? const Color(0xFF64748B)
+                                : const Color(0xFF94A3B8))
+                            .withValues(alpha: 0.5),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              width: 20,
-              height: 1,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))
-                        .withValues(alpha: 0.5),
-                    Colors.transparent,
-                  ],
                 ),
-              ),
+                const SizedBox(width: 8),
+                Text(
+                  'CS2 LAUNCHER',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 3.0,
+                    color: isDark
+                        ? const Color(0xFF94A3B8)
+                        : const Color(0xFF64748B),
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withValues(
+                          alpha: isDark ? 0.3 : 0.15,
+                        ),
+                        offset: const Offset(0, 1),
+                        blurRadius: 2,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  width: 20,
+                  height: 1,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        (isDark
+                                ? const Color(0xFF64748B)
+                                : const Color(0xFF94A3B8))
+                            .withValues(alpha: 0.5),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
-        ),
-      ],
-    )
-    .animate()
-    .fadeIn(duration: 500.ms, delay: 300.ms)
-    .slideY(begin: 0.15, end: 0, duration: 400.ms, curve: Curves.easeOutCubic);
+        )
+        .animate()
+        .fadeIn(duration: 500.ms, delay: 300.ms)
+        .slideY(
+          begin: 0.15,
+          end: 0,
+          duration: 400.ms,
+          curve: Curves.easeOutCubic,
+        );
   }
 
   /// 进度条
@@ -322,7 +365,9 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTi
                   Container(
                     height: 3,
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE2E8F0),
                       borderRadius: BorderRadius.circular(1.5),
                     ),
                   ),
@@ -338,7 +383,9 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTi
                         borderRadius: BorderRadius.circular(1.5),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF3B82F6).withValues(alpha: 0.5),
+                            color: const Color(
+                              0xFF3B82F6,
+                            ).withValues(alpha: 0.5),
                             blurRadius: 6,
                             spreadRadius: 0.5,
                           ),
@@ -359,7 +406,9 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTi
                 _loadingText,
                 style: TextStyle(
                   fontSize: 11,
-                  color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                  color: isDark
+                      ? const Color(0xFF64748B)
+                      : const Color(0xFF94A3B8),
                   letterSpacing: 2.5,
                   fontWeight: FontWeight.w600,
                 ),
@@ -370,9 +419,7 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTi
           ),
         ],
       ),
-    )
-    .animate()
-    .fadeIn(duration: 500.ms, delay: 500.ms);
+    ).animate().fadeIn(duration: 500.ms, delay: 500.ms);
   }
 
   /// 构建加载点动画
@@ -382,21 +429,21 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen> with SingleTi
       children: List.generate(3, (index) {
         return Padding(
           padding: EdgeInsets.only(left: index == 0 ? 0 : 2),
-          child: Container(
-            width: 3,
-            height: 3,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
-            ),
-          )
-          .animate(onPlay: (c) => c.repeat())
-          .fadeIn(
-            duration: 600.ms,
-            delay: (index * 200).ms,
-          )
-          .then()
-          .fadeOut(duration: 600.ms),
+          child:
+              Container(
+                    width: 3,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isDark
+                          ? const Color(0xFF64748B)
+                          : const Color(0xFF94A3B8),
+                    ),
+                  )
+                  .animate(onPlay: (c) => c.repeat())
+                  .fadeIn(duration: 600.ms, delay: (index * 200).ms)
+                  .then()
+                  .fadeOut(duration: 600.ms),
         );
       }),
     );

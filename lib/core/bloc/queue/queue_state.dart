@@ -5,12 +5,12 @@ import '../../services/status_window_service.dart';
 
 /// 挤服状态枚举
 enum QueueStatus {
-  idle,           // 空闲
-  running,        // 挤服中
-  connecting,     // 连接中
+  idle, // 空闲
+  running, // 挤服中
+  connecting, // 连接中
   waitingConsole, // 等待控制台确认
-  success,        // 成功加入
-  paused,         // 已暂停
+  success, // 成功加入
+  paused, // 已暂停
 }
 
 /// 连接状态
@@ -26,60 +26,55 @@ enum QueueConnectionState {
 }
 
 /// 线程状态（UI 用）
-enum QueueThreadStatus {
-  idle,
-  requesting,
-  success,
-  failed,
-}
+enum QueueThreadStatus { idle, requesting, success, failed }
 
 /// 挤服Bloc状态
 class QueueBlocState extends Equatable {
   /// 挤服状态
   final QueueStatus status;
-  
+
   /// 服务器信息
   final ServerInfo? serverInfo;
-  
+
   /// 地图信息
   final MapData? mapInfo;
-  
+
   /// 配置
   final QueueConfig config;
-  
+
   /// 线程状态列表
   final List<QueueThreadStatus> threadStatuses;
-  
+
   /// 连接状态
   final QueueConnectionState connectionState;
-  
+
   /// 连接消息
   final String? connectionMessage;
-  
+
   /// 游戏是否运行
   final bool isGameRunning;
-  
+
   /// 是否正在启动游戏
   final bool isLaunchingGame;
-  
+
   /// 启动游戏状态消息
   final String? launchMessage;
-  
+
   /// 是否正在检查游戏
   final bool isCheckingGame;
-  
+
   /// 错误信息
   final String? error;
-  
+
   /// 是否已初始化
   final bool isInitialized;
-  
+
   /// 服务器地址
   final String? serverAddress;
-  
+
   /// 是否为自定义服务器
   final bool isCustomServer;
-  
+
   /// 是否需要手动启动 CSGO
   final bool needManualLaunch;
 
@@ -106,8 +101,8 @@ class QueueBlocState extends Equatable {
   bool get isQueueActive => status == QueueStatus.running;
 
   /// 是否正在连接
-  bool get isConnecting => status == QueueStatus.connecting || 
-                           status == QueueStatus.waitingConsole;
+  bool get isConnecting =>
+      status == QueueStatus.connecting || status == QueueStatus.waitingConsole;
 
   /// 是否成功加入
   bool get isJoinedSuccessfully => status == QueueStatus.success;

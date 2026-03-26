@@ -78,7 +78,6 @@ class ContributorInfo extends Equatable {
   List<Object?> get props => [userId, username, avatar];
 }
 
-
 /// 地图贡献
 @JsonSerializable()
 class MapContribution extends Equatable {
@@ -86,29 +85,37 @@ class MapContribution extends Equatable {
   final String mapName;
   final ContributionType type;
   final String content;
+
   /// 净票数（用于排序）
   final int voteCount;
+
   /// 点赞数
   @JsonKey(defaultValue: 0)
   final int upCount;
+
   /// 点踩数
   @JsonKey(defaultValue: 0)
   final int downCount;
+
   /// 贡献者信息，系统数据时为 null
   final ContributorInfo? contributor;
   final bool hasVoted;
   @JsonKey(name: 'voteType')
   final VoteType? voteType;
   final bool isOwner;
+
   /// 是否为系统数据（来自 Steam，不可投票）
   @JsonKey(defaultValue: false)
   final bool isSystem;
+
   /// 审核状态
   @JsonKey(defaultValue: AuditStatus.approved)
   final AuditStatus auditStatus;
+
   /// 审核备注（拒绝原因）
   @JsonKey(defaultValue: '')
   final String auditRemark;
+
   /// 审核时间
   @NullableServerTimeConverter()
   final DateTime? auditAt;
@@ -143,37 +150,37 @@ class MapContribution extends Equatable {
 
   /// 是否待审核
   bool get isPending => auditStatus == AuditStatus.pending;
-  
+
   /// 是否已通过
   bool get isApproved => auditStatus == AuditStatus.approved;
-  
+
   /// 是否已拒绝
   bool get isRejected => auditStatus == AuditStatus.rejected;
 
   /// 获取背景图片的 fileId 引用格式
-  /// 
+  ///
   /// 背景贡献的 content 存储的是 fileId，需要转换为 "file:xxx" 格式
   /// 以便 ImageUrlService 获取签名 URL
   String? get backgroundImageRef {
     if (type != ContributionType.background) return null;
     if (content.isEmpty) return null;
-    
+
     // 如果已经是完整 URL，直接返回
     if (content.startsWith('http://') || content.startsWith('https://')) {
       return content;
     }
-    
+
     // 如果已经是 file: 格式，直接返回
     if (content.startsWith('file:')) {
       return content;
     }
-    
+
     // 尝试解析为 fileId 并转换为引用格式
     final fileId = int.tryParse(content);
     if (fileId != null) {
       return 'file:$fileId';
     }
-    
+
     return content;
   }
 
@@ -222,9 +229,23 @@ class MapContribution extends Equatable {
 
   @override
   List<Object?> get props => [
-    id, mapName, type, content, voteCount, upCount, downCount, contributor,
-    hasVoted, voteType, isOwner, isSystem, auditStatus, auditRemark, auditAt,
-    createdAt, updatedAt,
+    id,
+    mapName,
+    type,
+    content,
+    voteCount,
+    upCount,
+    downCount,
+    contributor,
+    hasVoted,
+    voteType,
+    isOwner,
+    isSystem,
+    auditStatus,
+    auditRemark,
+    auditAt,
+    createdAt,
+    updatedAt,
   ];
 }
 
@@ -248,32 +269,38 @@ class MapContributionSummary extends Equatable {
   Map<String, dynamic> toJson() => _$MapContributionSummaryToJson(this);
 
   /// 获取背景图片的 fileId 引用格式
-  /// 
+  ///
   /// topBackground 存储的是 fileId，需要转换为 "file:xxx" 格式
   String? get topBackgroundRef {
     if (topBackground == null || topBackground!.isEmpty) return null;
-    
+
     // 如果已经是完整 URL，直接返回
-    if (topBackground!.startsWith('http://') || topBackground!.startsWith('https://')) {
+    if (topBackground!.startsWith('http://') ||
+        topBackground!.startsWith('https://')) {
       return topBackground;
     }
-    
+
     // 如果已经是 file: 格式，直接返回
     if (topBackground!.startsWith('file:')) {
       return topBackground;
     }
-    
+
     // 尝试解析为 fileId 并转换为引用格式
     final fileId = int.tryParse(topBackground!);
     if (fileId != null) {
       return 'file:$fileId';
     }
-    
+
     return topBackground;
   }
 
   @override
-  List<Object?> get props => [topName, topBackground, nameCount, backgroundCount];
+  List<Object?> get props => [
+    topName,
+    topBackground,
+    nameCount,
+    backgroundCount,
+  ];
 }
 
 /// 投票响应
@@ -281,9 +308,11 @@ class MapContributionSummary extends Equatable {
 class ContributionVoteResponse extends Equatable {
   final bool success;
   final int newVoteCount;
+
   /// 点赞数
   @JsonKey(defaultValue: 0)
   final int upCount;
+
   /// 点踩数
   @JsonKey(defaultValue: 0)
   final int downCount;
@@ -304,7 +333,14 @@ class ContributionVoteResponse extends Equatable {
   Map<String, dynamic> toJson() => _$ContributionVoteResponseToJson(this);
 
   @override
-  List<Object?> get props => [success, newVoteCount, upCount, downCount, hasVoted, voteType];
+  List<Object?> get props => [
+    success,
+    newVoteCount,
+    upCount,
+    downCount,
+    hasVoted,
+    voteType,
+  ];
 }
 
 /// 地图信息（用于分组展示）
@@ -334,7 +370,14 @@ class MapInfo extends Equatable {
   Map<String, dynamic> toJson() => _$MapInfoToJson(this);
 
   @override
-  List<Object?> get props => [mapName, mapLabel, mapBackground, contribCount, nameCount, backgroundCount];
+  List<Object?> get props => [
+    mapName,
+    mapLabel,
+    mapBackground,
+    contribCount,
+    nameCount,
+    backgroundCount,
+  ];
 }
 
 /// 地图贡献分组
@@ -343,10 +386,7 @@ class MapContributionGroup extends Equatable {
   final MapInfo mapInfo;
   final List<MapContribution> items;
 
-  const MapContributionGroup({
-    required this.mapInfo,
-    required this.items,
-  });
+  const MapContributionGroup({required this.mapInfo, required this.items});
 
   factory MapContributionGroup.fromJson(Map<String, dynamic> json) =>
       _$MapContributionGroupFromJson(json);
@@ -408,7 +448,17 @@ class MapContributionListRequest extends Equatable {
   Map<String, dynamic> toJson() => _$MapContributionListRequestToJson(this);
 
   @override
-  List<Object?> get props => [pagination, mapName, type, userId, auditStatus, keyword, keywordType, startAt, endAt];
+  List<Object?> get props => [
+    pagination,
+    mapName,
+    type,
+    userId,
+    auditStatus,
+    keyword,
+    keywordType,
+    startAt,
+    endAt,
+  ];
 }
 
 /// 地图贡献列表响应
@@ -436,10 +486,7 @@ class MapListResponse extends Equatable {
   final int total;
   final List<MapInfo> items;
 
-  const MapListResponse({
-    required this.total,
-    required this.items,
-  });
+  const MapListResponse({required this.total, required this.items});
 
   factory MapListResponse.fromJson(Map<String, dynamic> json) =>
       _$MapListResponseFromJson(json);
@@ -455,10 +502,7 @@ class MapListRequest extends Equatable {
   final PaginationParams pagination;
   final String? mapName;
 
-  const MapListRequest({
-    required this.pagination,
-    this.mapName,
-  });
+  const MapListRequest({required this.pagination, this.mapName});
 
   factory MapListRequest.fromJson(Map<String, dynamic> json) =>
       _$MapListRequestFromJson(json);
@@ -521,7 +565,16 @@ class MapHistoryRecord extends Equatable {
   Map<String, dynamic> toJson() => _$MapHistoryRecordToJson(this);
 
   @override
-  List<Object?> get props => [id, address, mapName, maxPlayers, createdAt, infos, finalCtScore, finalTScore];
+  List<Object?> get props => [
+    id,
+    address,
+    mapName,
+    maxPlayers,
+    createdAt,
+    infos,
+    finalCtScore,
+    finalTScore,
+  ];
 }
 
 /// 地图历史记录响应
@@ -531,10 +584,7 @@ class MapHistoryResponse extends Equatable {
   @JsonKey(defaultValue: <MapHistoryRecord>[])
   final List<MapHistoryRecord> data;
 
-  const MapHistoryResponse({
-    required this.total,
-    required this.data,
-  });
+  const MapHistoryResponse({required this.total, required this.data});
 
   factory MapHistoryResponse.fromJson(Map<String, dynamic> json) =>
       _$MapHistoryResponseFromJson(json);
@@ -550,10 +600,7 @@ class MapHistoryRequest extends Equatable {
   final String mapName;
   final PaginationParams pagination;
 
-  const MapHistoryRequest({
-    required this.mapName,
-    required this.pagination,
-  });
+  const MapHistoryRequest({required this.mapName, required this.pagination});
 
   factory MapHistoryRequest.fromJson(Map<String, dynamic> json) =>
       _$MapHistoryRequestFromJson(json);

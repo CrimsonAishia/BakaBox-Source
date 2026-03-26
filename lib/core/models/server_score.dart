@@ -3,19 +3,26 @@ import 'package:json_annotation/json_annotation.dart';
 part 'server_score.g.dart';
 
 /// 服务器比分数据模型（从 API 返回）
-/// 
+///
 /// 用于存储众包聚合后的服务器比分信息
 @JsonSerializable()
 class ServerScore {
-  @JsonKey(name: 'server_address') final String serverAddress;
-  @JsonKey(name: 'ct_score') final int? ctScore;
-  @JsonKey(name: 't_score') final int? tScore;
+  @JsonKey(name: 'server_address')
+  final String serverAddress;
+  @JsonKey(name: 'ct_score')
+  final int? ctScore;
+  @JsonKey(name: 't_score')
+  final int? tScore;
   final int? round;
-  @JsonKey(name: 'map_name') final String? mapName;
+  @JsonKey(name: 'map_name')
+  final String? mapName;
   final int? confidence;
-  @JsonKey(name: 'source_count') final int? sourceCount;
-  @JsonKey(name: 'updated_at') final String? updatedAt;
-  @JsonKey(name: 'data_quality') final String dataQuality;
+  @JsonKey(name: 'source_count')
+  final int? sourceCount;
+  @JsonKey(name: 'updated_at')
+  final String? updatedAt;
+  @JsonKey(name: 'data_quality')
+  final String dataQuality;
 
   ServerScore({
     required this.serverAddress,
@@ -29,7 +36,8 @@ class ServerScore {
     required this.dataQuality,
   });
 
-  factory ServerScore.fromJson(Map<String, dynamic> json) => _$ServerScoreFromJson(json);
+  factory ServerScore.fromJson(Map<String, dynamic> json) =>
+      _$ServerScoreFromJson(json);
   Map<String, dynamic> toJson() => _$ServerScoreToJson(this);
 
   ServerScore copyWith({

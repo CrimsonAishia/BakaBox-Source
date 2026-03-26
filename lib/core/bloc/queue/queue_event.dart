@@ -15,8 +15,10 @@ abstract class QueueEvent extends Equatable {
 class QueueInitialize extends QueueEvent {
   final String serverAddress;
   final bool isCustomServer;
+
   /// 初始服务器信息（可选，用于立即显示已有数据）
   final ServerInfo? initialServerInfo;
+
   /// 初始地图信息（可选）
   final MapData? initialMapInfo;
 
@@ -28,7 +30,12 @@ class QueueInitialize extends QueueEvent {
   });
 
   @override
-  List<Object?> get props => [serverAddress, isCustomServer, initialServerInfo, initialMapInfo];
+  List<Object?> get props => [
+    serverAddress,
+    isCustomServer,
+    initialServerInfo,
+    initialMapInfo,
+  ];
 }
 
 /// 开始挤服

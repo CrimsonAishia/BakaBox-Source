@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 
 /// CSGO Legacy 安装教程对话框
-/// 
+///
 /// 参考现代应用的引导设计（Discord、Notion 风格）
 /// 采用卡片式布局，左侧步骤导航，右侧内容展示
 class CsgoLegacyInstallDialog extends StatefulWidget {
   const CsgoLegacyInstallDialog({super.key});
 
   @override
-  State<CsgoLegacyInstallDialog> createState() => _CsgoLegacyInstallDialogState();
+  State<CsgoLegacyInstallDialog> createState() =>
+      _CsgoLegacyInstallDialogState();
 }
 
-class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog> 
+class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog>
     with SingleTickerProviderStateMixin {
   int _currentStep = 0;
   late AnimationController _animationController;
@@ -28,7 +29,8 @@ class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog>
     InstallStep(
       title: '切换到 CSGO 分支',
       subtitle: '选择 csgo_legacy 测试版',
-      description: '在属性窗口中点击"游戏版本及测试版"标签，在下拉菜单中选择"csgo_legacy - Legacy Version of CS:GO"，Steam 会自动开始下载',
+      description:
+          '在属性窗口中点击"游戏版本及测试版"标签，在下拉菜单中选择"csgo_legacy - Legacy Version of CS:GO"，Steam 会自动开始下载',
       imagePath: 'assets/images/tutorials/properties_and_select.png',
     ),
   ];
@@ -43,10 +45,13 @@ class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.05, 0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0.05, 0), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
     _animationController.forward();
   }
 
@@ -68,7 +73,7 @@ class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(24),
@@ -90,11 +95,9 @@ class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog>
           children: [
             // 左侧导航栏
             _buildSidebar(isDark),
-            
+
             // 右侧内容区
-            Expanded(
-              child: _buildContent(isDark),
-            ),
+            Expanded(child: _buildContent(isDark)),
           ],
         ),
       ),
@@ -157,9 +160,9 @@ class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog>
               ],
             ),
           ),
-          
+
           const Divider(height: 1),
-          
+
           // 步骤列表
           Expanded(
             child: ListView.builder(
@@ -169,7 +172,7 @@ class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog>
                 final step = _steps[index];
                 final isActive = index == _currentStep;
                 final isCompleted = index < _currentStep;
-                
+
                 return _buildStepItem(
                   index: index,
                   step: step,
@@ -203,7 +206,9 @@ class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog>
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: isActive
-                  ? (isDark ? Colors.orange.withValues(alpha: 0.15) : Colors.orange.withValues(alpha: 0.1))
+                  ? (isDark
+                        ? Colors.orange.withValues(alpha: 0.15)
+                        : Colors.orange.withValues(alpha: 0.1))
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
               border: isActive
@@ -220,8 +225,8 @@ class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog>
                     color: isCompleted
                         ? Colors.green
                         : isActive
-                            ? Colors.orange
-                            : (isDark ? Colors.white12 : Colors.black12),
+                        ? Colors.orange
+                        : (isDark ? Colors.white12 : Colors.black12),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -230,7 +235,9 @@ class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog>
                         : Text(
                             '${index + 1}',
                             style: TextStyle(
-                              color: isActive ? Colors.white : (isDark ? Colors.white54 : Colors.black54),
+                              color: isActive
+                                  ? Colors.white
+                                  : (isDark ? Colors.white54 : Colors.black54),
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
@@ -238,7 +245,7 @@ class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog>
                   ),
                 ),
                 const SizedBox(width: 12),
-                
+
                 // 步骤文字
                 Expanded(
                   child: Column(
@@ -248,7 +255,9 @@ class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog>
                         step.title,
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                          fontWeight: isActive
+                              ? FontWeight.bold
+                              : FontWeight.w500,
                           color: isActive
                               ? Colors.orange
                               : (isDark ? Colors.white : Colors.black87),
@@ -275,7 +284,7 @@ class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog>
 
   Widget _buildContent(bool isDark) {
     final step = _steps[_currentStep];
-    
+
     return FadeTransition(
       opacity: _fadeAnimation,
       child: SlideTransition(
@@ -292,13 +301,15 @@ class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog>
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.close),
                     style: IconButton.styleFrom(
-                      backgroundColor: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                      backgroundColor: isDark
+                          ? Colors.white10
+                          : Colors.black.withValues(alpha: 0.05),
                     ),
                   ),
                 ],
               ),
             ),
-            
+
             // 内容区域
             Expanded(
               child: SingleChildScrollView(
@@ -316,7 +327,7 @@ class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog>
                       ),
                     ),
                     const SizedBox(height: 6),
-                    
+
                     Text(
                       step.description,
                       style: TextStyle(
@@ -326,7 +337,7 @@ class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog>
                       ),
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // 截图 - 限制大小
                     Center(
                       child: Container(
@@ -337,7 +348,9 @@ class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog>
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.1),
+                            color: isDark
+                                ? Colors.white10
+                                : Colors.black.withValues(alpha: 0.1),
                           ),
                           boxShadow: [
                             BoxShadow(
@@ -355,7 +368,9 @@ class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog>
                             errorBuilder: (context, error, stackTrace) {
                               return Container(
                                 height: 300,
-                                color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02),
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.05)
+                                    : Colors.black.withValues(alpha: 0.02),
                                 child: Center(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -363,13 +378,17 @@ class _CsgoLegacyInstallDialogState extends State<CsgoLegacyInstallDialog>
                                       Icon(
                                         Icons.image_not_supported_outlined,
                                         size: 48,
-                                        color: isDark ? Colors.white24 : Colors.black26,
+                                        color: isDark
+                                            ? Colors.white24
+                                            : Colors.black26,
                                       ),
                                       const SizedBox(height: 12),
                                       Text(
                                         '图片加载失败',
                                         style: TextStyle(
-                                          color: isDark ? Colors.white38 : Colors.black38,
+                                          color: isDark
+                                              ? Colors.white38
+                                              : Colors.black38,
                                         ),
                                       ),
                                     ],

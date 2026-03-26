@@ -18,7 +18,7 @@ const String _keyQueueThreadCount = 'queue_thread_count';
 const String _keyQueueIsDonator = 'queue_is_donator';
 
 /// 挤服Bloc
-/// 
+///
 /// 管理挤服页面的 UI 状态，实际业务逻辑由 StatusWindowService 处理。
 class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
   final StatusWindowService _statusService = StatusWindowService();
@@ -47,23 +47,23 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
     Emitter<QueueBlocState> emit,
   ) async {
     LogService.d('[QueueBloc] 初始化: ${event.serverAddress}');
-    
+
     // 加载保存的配置
     final savedConfig = await _loadSavedConfig();
-    
+
     // 监听服务状态变化
     _stateSubscription?.cancel();
     _stateSubscription = _statusService.stateStream.listen((serviceState) {
       add(QueueStateUpdated(serviceState));
     });
-    
+
     // 从当前服务状态初始化
     final currentState = _statusService.state;
-    
+
     // 使用传入的初始数据（如果有），否则后续异步获取
     final initialServerInfo = event.initialServerInfo;
     final initialMapInfo = event.initialMapInfo;
-    
+
     // 调整目标人数不超过允许的最大值
     var config = savedConfig;
     if (initialServerInfo != null) {
@@ -72,31 +72,36 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
         config = config.copyWith(targetPlayers: maxTarget);
       }
     }
-    
-    emit(state.copyWith(
-      isInitialized: true,
-      serverAddress: event.serverAddress,
-      isCustomServer: event.isCustomServer,
-      isGameRunning: currentState.isGameRunning,
-      config: config,
-      serverInfo: initialServerInfo,
-      mapInfo: initialMapInfo,
-    ));
-    
+
+    emit(
+      state.copyWith(
+        isInitialized: true,
+        serverAddress: event.serverAddress,
+        isCustomServer: event.isCustomServer,
+        isGameRunning: currentState.isGameRunning,
+        config: config,
+        serverInfo: initialServerInfo,
+        mapInfo: initialMapInfo,
+      ),
+    );
+
     // 异步刷新服务器信息（获取最新数据）
     // 使用 add 事件而不是直接调用，避免 emit 失效问题
     add(QueueRefreshServerInfo());
-    
+
     // 启动定时更新（非挤服状态下每5秒更新一次）
     _startRegularUpdate(event.serverAddress);
   }
-  
+
   /// 加载保存的配置
   Future<QueueConfig> _loadSavedConfig() async {
     try {
       final targetPlayers = StorageUtils.getInt(_keyQueueTargetPlayers) ?? 60;
       final threadCount = StorageUtils.getInt(_keyQueueThreadCount) ?? 3;
-      final isDonator = StorageUtils.getBool(_keyQueueIsDonator, defaultValue: false);
+      final isDonator = StorageUtils.getBool(
+        _keyQueueIsDonator,
+        defaultValue: false,
+      );
       return QueueConfig(
         targetPlayers: targetPlayers,
         threadCount: threadCount,
@@ -108,7 +113,7 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
       return const QueueConfig();
     }
   }
-  
+
   /// 保存配置
   Future<void> _saveConfig(QueueConfig config) async {
     try {
@@ -119,37 +124,44 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
       LogService.e('[QueueBloc] 保存配置失败', e);
     }
   }
-  
+
   /// 启动定时更新
   void _startRegularUpdate(String serverAddress) {
     _stopRegularUpdate();
     _regularUpdateTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       // 只在非挤服状态下更新
-      if (state.status != QueueStatus.running && 
+      if (state.status != QueueStatus.running &&
           state.status != QueueStatus.connecting) {
         add(QueueRefreshServerInfo());
       }
     });
   }
-  
+
   /// 停止定时更新
   void _stopRegularUpdate() {
     _regularUpdateTimer?.cancel();
     _regularUpdateTimer = null;
   }
-  
+
   /// 获取服务器信息
-  Future<void> _fetchServerInfo(String serverAddress, Emitter<QueueBlocState> emit) async {
+  Future<void> _fetchServerInfo(
+    String serverAddress,
+    Emitter<QueueBlocState> emit,
+  ) async {
     try {
       final parts = serverAddress.split(':');
       if (parts.length != 2) return;
-      
+
       final ip = parts[0];
       final port = int.tryParse(parts[1]);
       if (port == null) return;
-      
-      final sourceInfo = await SourceServerService.getServerInfo(ip, port, timeout: 5000);
-      
+
+      final sourceInfo = await SourceServerService.getServerInfo(
+        ip,
+        port,
+        timeout: 5000,
+      );
+
       if (sourceInfo != null) {
         final serverInfo = ServerInfo(
           hostName: sourceInfo.name,
@@ -159,7 +171,7 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
           pingLatency: sourceInfo.ping,
           gameType: sourceInfo.gameType,
         );
-        
+
         // 获取地图信息
         MapData? mapInfo;
         try {
@@ -167,19 +179,21 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
         } catch (e) {
           LogService.d('[QueueBloc] 获取地图信息失败: $e');
         }
-        
+
         // 调整目标人数不超过允许的最大值
         var config = state.config;
         final maxTarget = sourceInfo.maxPlayers - 1;
         if (maxTarget > 0 && config.targetPlayers > maxTarget) {
           config = config.copyWith(targetPlayers: maxTarget);
         }
-        
-        emit(state.copyWith(
-          serverInfo: serverInfo,
-          mapInfo: mapInfo,
-          config: config,
-        ));
+
+        emit(
+          state.copyWith(
+            serverInfo: serverInfo,
+            mapInfo: mapInfo,
+            config: config,
+          ),
+        );
       }
     } catch (e) {
       LogService.e('[QueueBloc] 获取服务器信息失败', e);
@@ -187,33 +201,27 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
   }
 
   /// 开始挤服
-  Future<void> _onStart(
-    QueueStart event,
-    Emitter<QueueBlocState> emit,
-  ) async {
+  Future<void> _onStart(QueueStart event, Emitter<QueueBlocState> emit) async {
     LogService.d('[QueueBloc] 开始挤服');
-    
+
     emit(state.copyWith(isCheckingGame: true));
-    
+
     final success = await _statusService.startQueue(
       serverAddress: state.serverAddress ?? '',
       config: state.config,
       serverInfo: state.serverInfo,
       mapInfo: state.mapInfo,
     );
-    
+
     emit(state.copyWith(isCheckingGame: false));
-    
+
     if (!success) {
       emit(state.copyWith(error: '游戏未运行，请先启动游戏'));
     }
   }
 
   /// 暂停挤服
-  void _onPause(
-    QueuePause event,
-    Emitter<QueueBlocState> emit,
-  ) {
+  void _onPause(QueuePause event, Emitter<QueueBlocState> emit) {
     LogService.d('[QueueBloc] 暂停挤服');
     _statusService.pauseQueue();
   }
@@ -253,20 +261,23 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
         return;
       }
     }
-    
+
     // 如果正在挤服，同步到 StatusWindowService
-    if (state.status == QueueStatus.running || state.status == QueueStatus.connecting) {
+    if (state.status == QueueStatus.running ||
+        state.status == QueueStatus.connecting) {
       final success = await _statusService.setAutoRetry(event.enable);
       if (!success) {
         emit(state.copyWith(error: '请使用 BakaBox 启动游戏'));
         return;
       }
     }
-    
+
     // 更新本地配置
-    emit(state.copyWith(
-      config: state.config.copyWith(enableAutoRetry: event.enable),
-    ));
+    emit(
+      state.copyWith(
+        config: state.config.copyWith(enableAutoRetry: event.enable),
+      ),
+    );
   }
 
   /// 设置是否捐助者
@@ -275,13 +286,14 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
     Emitter<QueueBlocState> emit,
   ) async {
     // 正在挤服或连接时不允许修改
-    if (state.status == QueueStatus.running || state.status == QueueStatus.connecting) {
+    if (state.status == QueueStatus.running ||
+        state.status == QueueStatus.connecting) {
       emit(state.copyWith(error: '挤服中无法修改捐助者设置'));
       return;
     }
-    
+
     final maxPlayers = state.serverInfo?.maxPlayers ?? 64;
-    
+
     // 切换捐助者状态时，调整目标人数
     int newTargetPlayers;
     if (event.isDonator) {
@@ -290,17 +302,17 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
     } else {
       // 关闭捐助者：如果当前超过59，则设为59
       final maxNonDonator = 59;
-      newTargetPlayers = state.config.targetPlayers > maxNonDonator 
-          ? maxNonDonator 
+      newTargetPlayers = state.config.targetPlayers > maxNonDonator
+          ? maxNonDonator
           : state.config.targetPlayers;
     }
-    
+
     // 更新配置
     final newConfig = state.config.copyWith(
       isDonator: event.isDonator,
       targetPlayers: newTargetPlayers,
     );
-    
+
     emit(state.copyWith(config: newConfig));
     await _saveConfig(newConfig);
   }
@@ -311,15 +323,17 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
     Emitter<QueueBlocState> emit,
   ) async {
     if (state.isLaunchingGame || state.isGameRunning) return;
-    
+
     LogService.d('[QueueBloc] 启动游戏');
-    
-    emit(state.copyWith(
-      isLaunchingGame: true,
-      launchMessage: '正在启动游戏...',
-      needManualLaunch: false, // 重置状态
-    ));
-    
+
+    emit(
+      state.copyWith(
+        isLaunchingGame: true,
+        launchMessage: '正在启动游戏...',
+        needManualLaunch: false, // 重置状态
+      ),
+    );
+
     final success = await _statusService.launchGame(
       serverAddress: null, // 挤服页面启动游戏不自动连接
       serverName: state.serverInfo?.hostName,
@@ -328,15 +342,17 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
       mapBackground: state.mapInfo?.mapUrl,
       gameType: state.serverInfo?.gameType,
     );
-    
+
     // 只在这里设置一次 needManualLaunch
-    emit(state.copyWith(
-      isLaunchingGame: false,
-      launchMessage: success ? '启动成功' : null,
-      isGameRunning: success,
-      error: success ? null : '游戏启动失败',
-      needManualLaunch: _statusService.state.needManualLaunch,
-    ));
+    emit(
+      state.copyWith(
+        isLaunchingGame: false,
+        launchMessage: success ? '启动成功' : null,
+        isGameRunning: success,
+        error: success ? null : '游戏启动失败',
+        needManualLaunch: _statusService.state.needManualLaunch,
+      ),
+    );
   }
 
   /// 刷新服务器信息
@@ -349,21 +365,18 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
   }
 
   /// 服务状态更新
-  void _onStateUpdated(
-    QueueStateUpdated event,
-    Emitter<QueueBlocState> emit,
-  ) {
+  void _onStateUpdated(QueueStateUpdated event, Emitter<QueueBlocState> emit) {
     final serviceState = event.state;
-    
+
     // 如果正在启动游戏，忽略服务状态更新（避免干扰 _onLaunchGame）
     if (state.isLaunchingGame) {
       return;
     }
-    
+
     // 映射服务状态到 Bloc 状态
     QueueStatus status;
     QueueConnectionState connectionState;
-    
+
     switch (serviceState.status) {
       case OperationStatus.running:
         if (serviceState.type == OperationType.queueing) {
@@ -401,7 +414,7 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
         status = QueueStatus.idle;
         connectionState = QueueConnectionState.idle;
     }
-    
+
     // 映射线程状态
     final threadStatuses = serviceState.threadStatuses.map((t) {
       switch (t) {
@@ -415,25 +428,27 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
           return QueueThreadStatus.failed;
       }
     }).toList();
-    
+
     // 保留用户设置的目标人数和线程数量，只同步自动重试状态
     final updatedConfig = state.config.copyWith(
       enableAutoRetry: serviceState.queueConfig.enableAutoRetry,
     );
-    
-    emit(state.copyWith(
-      status: status,
-      serverInfo: serviceState.serverInfo,
-      mapInfo: serviceState.mapInfo,
-      threadStatuses: threadStatuses,
-      connectionState: connectionState,
-      connectionMessage: serviceState.message,
-      isGameRunning: serviceState.isGameRunning,
-      config: updatedConfig,
-      error: serviceState.error,
-      // 保持当前的 needManualLaunch 状态，不被 StatusWindowService 覆盖
-      // needManualLaunch 只由 _onLaunchGame 控制
-    ));
+
+    emit(
+      state.copyWith(
+        status: status,
+        serverInfo: serviceState.serverInfo,
+        mapInfo: serviceState.mapInfo,
+        threadStatuses: threadStatuses,
+        connectionState: connectionState,
+        connectionMessage: serviceState.message,
+        isGameRunning: serviceState.isGameRunning,
+        config: updatedConfig,
+        error: serviceState.error,
+        // 保持当前的 needManualLaunch 状态，不被 StatusWindowService 覆盖
+        // needManualLaunch 只由 _onLaunchGame 控制
+      ),
+    );
   }
 
   /// 销毁

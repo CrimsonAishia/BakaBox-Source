@@ -8,12 +8,12 @@ import '../utils/platform_utils.dart';
 class AnalyticsService {
   static final AnalyticsService _instance = AnalyticsService._internal();
   static AnalyticsService get instance => _instance;
-  
+
   AnalyticsService._internal();
 
   /// 应用启动时间，在 main() 中设置
   DateTime? _appStartTime;
-  
+
   /// 是否已上报启动统计
   bool _startupReported = false;
 
@@ -34,26 +34,29 @@ class AnalyticsService {
       final packageInfo = await PackageInfo.fromPlatform();
       final arch = _getDeviceArchitecture();
       final platform = PlatformUtils.platformName;
-      
+
       // 从编译时环境变量获取构建日期
-      const buildDate = String.fromEnvironment('BUILD_DATE', defaultValue: 'dev');
-      
+      const buildDate = String.fromEnvironment(
+        'BUILD_DATE',
+        defaultValue: 'dev',
+      );
+
       final data = {
         'event_type': 'app_startup',
         'timestamp': DateTime.now().millisecondsSinceEpoch ~/ 1000,
         'client_id': 'bakabox_${platform}_${arch}_${packageInfo.version}',
-        
+
         'app_version': packageInfo.version,
         'build_date': buildDate,
         'build_platform': '$platform/$arch',
-        
+
         'os_platform': platform,
         'os_arch': arch,
         'os_version': Platform.operatingSystemVersion,
-        
+
         'startup_time_ms': DateTime.now().difference(startTime).inMilliseconds,
       };
-      
+
       await Api.post('/steam/app/startup/stats', body: data);
       LogService.d('启动统计已发送');
     } catch (e) {
@@ -67,7 +70,9 @@ class AnalyticsService {
       if (PlatformUtils.isWindows) {
         // Dart 运行时信息包含架构
         final version = Platform.version;
-        if (version.contains('x64') || version.contains('x86_64') || version.contains('amd64')) {
+        if (version.contains('x64') ||
+            version.contains('x86_64') ||
+            version.contains('amd64')) {
           return 'x86_64';
         }
         if (version.contains('arm64') || version.contains('aarch64')) {
@@ -78,22 +83,24 @@ class AnalyticsService {
         }
         return 'x86_64'; // Windows 默认 x86_64
       }
-      
+
       // iOS 设备
       if (PlatformUtils.isIOS) {
         return 'arm64'; // 所有现代 iOS 设备都是 arm64
       }
-      
+
       // Android 设备
       if (PlatformUtils.isAndroid) {
         final version = Platform.version;
-        if (version.contains('arm64') || version.contains('aarch64')) return 'arm64';
+        if (version.contains('arm64') || version.contains('aarch64')) {
+          return 'arm64';
+        }
         if (version.contains('arm')) return 'arm';
         if (version.contains('x86_64')) return 'x86_64';
         if (version.contains('x86')) return 'x86';
         return 'arm64'; // Android 默认 arm64
       }
-      
+
       return 'unknown';
     } catch (e) {
       return 'unknown';

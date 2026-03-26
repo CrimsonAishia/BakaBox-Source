@@ -106,7 +106,6 @@ class GsiService {
     }
   }
 
-
   /// 停止 GSI 服务
   Future<({bool success, String? error})> stop() async {
     if (!_isRunning) {
@@ -151,8 +150,10 @@ class GsiService {
       _addGameLog(body, gameState);
 
       if (gameState.player != null) {
-        LogService.d('[GSI] 数据接收: 玩家=${gameState.player!.name}, '
-            '队伍=${gameState.player!.team}, 活动=${gameState.player!.activity}');
+        LogService.d(
+          '[GSI] 数据接收: 玩家=${gameState.player!.name}, '
+          '队伍=${gameState.player!.team}, 活动=${gameState.player!.activity}',
+        );
       }
 
       request.response
@@ -175,16 +176,20 @@ class GsiService {
     if (gameState.player != null) {
       final health = gameState.player!.state?.health ?? 0;
       final money = gameState.player!.state?.money ?? 0;
-      summary.write('玩家: ${gameState.player!.name} | '
-          '队伍: ${gameState.player!.team} | '
-          '生命: $health | 金钱: \$$money | '
-          '活动: ${gameState.player!.activity}');
+      summary.write(
+        '玩家: ${gameState.player!.name} | '
+        '队伍: ${gameState.player!.team} | '
+        '生命: $health | 金钱: \$$money | '
+        '活动: ${gameState.player!.activity}',
+      );
     }
 
     if (gameState.map != null) {
-      summary.write(' | 地图: ${gameState.map!.name} | '
-          '回合: ${gameState.map!.round} | '
-          '阶段: ${gameState.map!.phase}');
+      summary.write(
+        ' | 地图: ${gameState.map!.name} | '
+        '回合: ${gameState.map!.round} | '
+        '阶段: ${gameState.map!.phase}',
+      );
     }
 
     final log = GsiGameLog(
@@ -225,7 +230,7 @@ class GsiService {
     if (gamePath != null && gamePath.isNotEmpty) {
       return gamePath;
     }
-    
+
     // 使用 GameLauncherService 的检测方法（有更完善的注册表查询）
     gamePath = await _gameLauncherService.detectGamePath();
     if (gamePath != null) {
@@ -237,51 +242,78 @@ class GsiService {
   /// 安装 GSI 配置文件到 CS2 目录
   /// [force] 强制覆盖，即使端口匹配也重新写入
   /// 返回 needRestart 表示游戏正在运行，需要重启才能生效
-  Future<({bool success, String? error, String? path, bool needRestart})> installConfigFile({bool force = false}) async {
+  Future<({bool success, String? error, String? path, bool needRestart})>
+  installConfigFile({bool force = false}) async {
     final gamePath = await _getGamePath();
-    
+
     if (gamePath == null || gamePath.isEmpty) {
       LogService.w('[GSI] 无法获取游戏路径');
-      return (success: false, error: '无法自动检测游戏路径，请在设置中手动配置', path: null, needRestart: false);
+      return (
+        success: false,
+        error: '无法自动检测游戏路径，请在设置中手动配置',
+        path: null,
+        needRestart: false,
+      );
     }
 
-    final cfgDir = '$gamePath${Platform.pathSeparator}game${Platform.pathSeparator}csgo${Platform.pathSeparator}cfg';
+    final cfgDir =
+        '$gamePath${Platform.pathSeparator}game${Platform.pathSeparator}csgo${Platform.pathSeparator}cfg';
     final dir = Directory(cfgDir);
     if (!await dir.exists()) {
       LogService.w('[GSI] 配置目录不存在: $cfgDir');
-      return (success: false, error: '配置目录不存在: $cfgDir\n请确认游戏路径是否正确', path: null, needRestart: false);
+      return (
+        success: false,
+        error: '配置目录不存在: $cfgDir\n请确认游戏路径是否正确',
+        path: null,
+        needRestart: false,
+      );
     }
 
     final configFileName = 'gamestate_integration_bakabox.cfg';
     final configFilePath = '$cfgDir${Platform.pathSeparator}$configFileName';
-    
+
     // 检查现有配置文件的端口是否匹配
     final existingFile = File(configFilePath);
     if (await existingFile.exists() && !force) {
       final content = await existingFile.readAsString();
       if (content.contains(':$_port"')) {
         LogService.i('[GSI] 配置文件已存在且端口匹配，无需更新');
-        return (success: true, error: null, path: configFilePath, needRestart: false);
+        return (
+          success: true,
+          error: null,
+          path: configFilePath,
+          needRestart: false,
+        );
       }
       LogService.i('[GSI] 配置文件端口不匹配，需要更新');
     }
 
     // 检查游戏是否运行
     final gameRunning = await _gameLauncherService.isCS2Running();
-    
+
     final configContent = _generateConfigFileContent();
     try {
       await File(configFilePath).writeAsString(configContent);
       LogService.i('[GSI] 配置文件已安装到: $configFilePath');
-      
+
       if (gameRunning) {
         LogService.w('[GSI] 游戏正在运行，配置需要重启游戏后生效');
       }
-      
-      return (success: true, error: null, path: configFilePath, needRestart: gameRunning);
+
+      return (
+        success: true,
+        error: null,
+        path: configFilePath,
+        needRestart: gameRunning,
+      );
     } catch (e) {
       LogService.e('[GSI] 写入配置文件失败', e);
-      return (success: false, error: '写入配置文件失败: $e', path: null, needRestart: false);
+      return (
+        success: false,
+        error: '写入配置文件失败: $e',
+        path: null,
+        needRestart: false,
+      );
     }
   }
 
@@ -292,8 +324,10 @@ class GsiService {
       return (success: false, error: '游戏路径未设置');
     }
 
-    final cfgDir = '$gamePath${Platform.pathSeparator}game${Platform.pathSeparator}csgo${Platform.pathSeparator}cfg';
-    final configFilePath = '$cfgDir${Platform.pathSeparator}gamestate_integration_bakabox.cfg';
+    final cfgDir =
+        '$gamePath${Platform.pathSeparator}game${Platform.pathSeparator}csgo${Platform.pathSeparator}cfg';
+    final configFilePath =
+        '$cfgDir${Platform.pathSeparator}gamestate_integration_bakabox.cfg';
 
     final file = File(configFilePath);
     if (!await file.exists()) {
@@ -344,7 +378,10 @@ class GsiService {
   /// 检查端口是否被占用
   Future<bool> _isPortInUse(int port) async {
     try {
-      final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, port);
+      final server = await ServerSocket.bind(
+        InternetAddress.loopbackIPv4,
+        port,
+      );
       await server.close();
       return false;
     } catch (_) {

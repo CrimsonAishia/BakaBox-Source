@@ -25,12 +25,15 @@ class AppUpdateInfo {
   });
 
   /// 从后端响应解析
-  factory AppUpdateInfo.fromJson(Map<String, dynamic> json, String currentVersion) {
+  factory AppUpdateInfo.fromJson(
+    Map<String, dynamic> json,
+    String currentVersion,
+  ) {
     final hasUpdate = json['hasUpdate'] as bool? ?? false;
     if (!hasUpdate) {
       return AppUpdateInfo.noUpdate(currentVersion);
     }
-    
+
     final updateInfo = json['updateInfo'] as Map<String, dynamic>?;
     if (updateInfo == null) {
       return AppUpdateInfo.noUpdate(currentVersion);
@@ -38,13 +41,14 @@ class AppUpdateInfo {
 
     final minSupportVersion = updateInfo['minSupportVersion'] as String?;
     final isForced = updateInfo['isForced'] as bool? ?? false;
-    
+
     // 检查是否低于最低支持版本
     // 如果当前版本低于最低支持版本，则强制更新
     bool shouldForceUpdate = false;
     if (minSupportVersion != null && minSupportVersion.isNotEmpty) {
       try {
-        shouldForceUpdate = _compareVersion(currentVersion, minSupportVersion) < 0;
+        shouldForceUpdate =
+            _compareVersion(currentVersion, minSupportVersion) < 0;
       } catch (e) {
         // 版本比较失败时保守处理，不强制更新
         shouldForceUpdate = false;
@@ -59,7 +63,9 @@ class AppUpdateInfo {
       downloadUrl: updateInfo['downloadUrl'] as String?,
       fileSize: updateInfo['fileSize'] as int? ?? 0,
       fileMd5: updateInfo['fileMd5'] as String?,
-      publishDate: DateTime.tryParse(updateInfo['publishDate'] as String? ?? '') ?? DateTime.now(),
+      publishDate:
+          DateTime.tryParse(updateInfo['publishDate'] as String? ?? '') ??
+          DateTime.now(),
       isForced: isForced || shouldForceUpdate, // 服务器强制 或 版本过低时强制
       minSupportVersion: minSupportVersion,
     );
@@ -82,7 +88,7 @@ class AppUpdateInfo {
   static int _compareVersion(String v1, String v2) {
     final parts1 = _parseVersion(v1);
     final parts2 = _parseVersion(v2);
-    
+
     // 逐位比较
     for (int i = 0; i < 3; i++) {
       if (parts1[i] < parts2[i]) return -1;
@@ -98,7 +104,7 @@ class AppUpdateInfo {
     if (normalized.toLowerCase().startsWith('v')) {
       normalized = normalized.substring(1);
     }
-    
+
     // 移除预发布标识和构建元数据
     if (normalized.contains('-')) {
       normalized = normalized.split('-').first;
@@ -106,8 +112,11 @@ class AppUpdateInfo {
     if (normalized.contains('+')) {
       normalized = normalized.split('+').first;
     }
-    
-    final parts = normalized.split('.').map((e) => int.tryParse(e.trim()) ?? 0).toList();
+
+    final parts = normalized
+        .split('.')
+        .map((e) => int.tryParse(e.trim()) ?? 0)
+        .toList();
     while (parts.length < 3) {
       parts.add(0);
     }
@@ -126,7 +135,8 @@ class AppUpdateInfo {
     return '${size.toStringAsFixed(unitIndex == 0 ? 0 : 1)} ${units[unitIndex]}';
   }
 
-  String get formattedPublishDate => '${publishDate.year}年${publishDate.month}月${publishDate.day}日';
+  String get formattedPublishDate =>
+      '${publishDate.year}年${publishDate.month}月${publishDate.day}日';
 }
 
 /// 下载进度
@@ -160,7 +170,18 @@ class DownloadProgress {
 }
 
 /// 更新状态
-enum UpdateStatus { idle, checking, available, downloading, downloaded, preparing, installing, completed, failed, cancelled }
+enum UpdateStatus {
+  idle,
+  checking,
+  available,
+  downloading,
+  downloaded,
+  preparing,
+  installing,
+  completed,
+  failed,
+  cancelled,
+}
 
 /// 更新上报请求
 class UpdateReportRequest {

@@ -1,13 +1,7 @@
 import 'package:equatable/equatable.dart';
 import '../../models/user_info.dart';
 
-enum AuthStatus {
-  initial,
-  loading,
-  authenticated,
-  unauthenticated,
-  error,
-}
+enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
 
 /// 认证状态
 class AuthState extends Equatable {
@@ -49,10 +43,10 @@ class AuthState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        userInfo,
-        hasBackendToken,
-        errorMessage,
-        isRefreshing,
-      ];
+    status,
+    userInfo,
+    hasBackendToken,
+    errorMessage,
+    isRefreshing,
+  ];
 }

@@ -18,11 +18,7 @@ class QueueUserAvatar extends StatelessWidget {
   /// 头像大小
   final double size;
 
-  const QueueUserAvatar({
-    super.key,
-    required this.user,
-    this.size = 36,
-  });
+  const QueueUserAvatar({super.key, required this.user, this.size = 36});
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +62,9 @@ class QueueUserAvatar extends StatelessWidget {
   /// 构建头像内容
   Widget _buildAvatarContent() {
     // 已登录用户：显示头像
-    if (!user.isAnonymous && user.avatarUrl != null && user.avatarUrl!.isNotEmpty) {
+    if (!user.isAnonymous &&
+        user.avatarUrl != null &&
+        user.avatarUrl!.isNotEmpty) {
       return DiskCachedImage(
         imageUrl: user.avatarUrl!,
         fit: BoxFit.cover,

@@ -8,7 +8,7 @@ import 'map_contribution_event.dart';
 import 'map_contribution_state.dart';
 
 /// 地图贡献 Bloc
-/// 
+///
 /// 分别管理名称贡献和背景贡献两个独立列表
 /// 支持加载、提交、投票操作
 /// 贡献一旦提交无法删除（Requirements 6.1, 6.2）
@@ -45,7 +45,9 @@ class MapContributionBloc
 
   /// 对贡献列表排序：按票数降序，相同票数按时间升序
   /// Requirements 4.1, 4.3
-  List<MapContribution> _sortContributions(List<MapContribution> contributions) {
+  List<MapContribution> _sortContributions(
+    List<MapContribution> contributions,
+  ) {
     final sorted = List<MapContribution>.from(contributions);
     sorted.sort((a, b) {
       final voteCompare = b.voteCount.compareTo(a.voteCount);
@@ -61,18 +63,22 @@ class MapContributionBloc
     LoadNameContributions event,
     Emitter<MapContributionState> emit,
   ) async {
-    emit(state.copyWith(
-      isLoadingNames: true,
-      clearError: true,
-      currentMapName: event.mapName,
-    ));
+    emit(
+      state.copyWith(
+        isLoadingNames: true,
+        clearError: true,
+        currentMapName: event.mapName,
+      ),
+    );
 
     try {
       final contributions = await _api.getNameContributions(event.mapName);
-      emit(state.copyWith(
-        nameContributions: _sortContributions(contributions),
-        isLoadingNames: false,
-      ));
+      emit(
+        state.copyWith(
+          nameContributions: _sortContributions(contributions),
+          isLoadingNames: false,
+        ),
+      );
     } catch (e) {
       emit(state.copyWith(error: _getErrorMessage(e), isLoadingNames: false));
       LogService.e('加载名称贡献列表失败', e);
@@ -85,20 +91,28 @@ class MapContributionBloc
     LoadBackgroundContributions event,
     Emitter<MapContributionState> emit,
   ) async {
-    emit(state.copyWith(
-      isLoadingBackgrounds: true,
-      clearError: true,
-      currentMapName: event.mapName,
-    ));
+    emit(
+      state.copyWith(
+        isLoadingBackgrounds: true,
+        clearError: true,
+        currentMapName: event.mapName,
+      ),
+    );
 
     try {
-      final contributions = await _api.getBackgroundContributions(event.mapName);
-      emit(state.copyWith(
-        backgroundContributions: _sortContributions(contributions),
-        isLoadingBackgrounds: false,
-      ));
+      final contributions = await _api.getBackgroundContributions(
+        event.mapName,
+      );
+      emit(
+        state.copyWith(
+          backgroundContributions: _sortContributions(contributions),
+          isLoadingBackgrounds: false,
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(error: _getErrorMessage(e), isLoadingBackgrounds: false));
+      emit(
+        state.copyWith(error: _getErrorMessage(e), isLoadingBackgrounds: false),
+      );
       LogService.e('加载背景贡献列表失败', e);
     }
   }
@@ -108,29 +122,37 @@ class MapContributionBloc
     LoadAllContributions event,
     Emitter<MapContributionState> emit,
   ) async {
-    emit(state.copyWith(
-      isLoadingNames: true,
-      isLoadingBackgrounds: true,
-      clearError: true,
-      currentMapName: event.mapName,
-    ));
+    emit(
+      state.copyWith(
+        isLoadingNames: true,
+        isLoadingBackgrounds: true,
+        clearError: true,
+        currentMapName: event.mapName,
+      ),
+    );
 
     try {
       final nameContributions = await _api.getNameContributions(event.mapName);
-      final backgroundContributions = await _api.getBackgroundContributions(event.mapName);
-      
-      emit(state.copyWith(
-        nameContributions: _sortContributions(nameContributions),
-        backgroundContributions: _sortContributions(backgroundContributions),
-        isLoadingNames: false,
-        isLoadingBackgrounds: false,
-      ));
+      final backgroundContributions = await _api.getBackgroundContributions(
+        event.mapName,
+      );
+
+      emit(
+        state.copyWith(
+          nameContributions: _sortContributions(nameContributions),
+          backgroundContributions: _sortContributions(backgroundContributions),
+          isLoadingNames: false,
+          isLoadingBackgrounds: false,
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        error: _getErrorMessage(e),
-        isLoadingNames: false,
-        isLoadingBackgrounds: false,
-      ));
+      emit(
+        state.copyWith(
+          error: _getErrorMessage(e),
+          isLoadingNames: false,
+          isLoadingBackgrounds: false,
+        ),
+      );
       LogService.e('加载贡献列表失败', e);
     }
   }
@@ -150,11 +172,13 @@ class MapContributionBloc
       );
       if (contribution != null) {
         final updatedList = [...state.nameContributions, contribution];
-        emit(state.copyWith(
-          nameContributions: _sortContributions(updatedList),
-          isSubmitting: false,
-          submitSuccess: true,
-        ));
+        emit(
+          state.copyWith(
+            nameContributions: _sortContributions(updatedList),
+            isSubmitting: false,
+            submitSuccess: true,
+          ),
+        );
       } else {
         emit(state.copyWith(isSubmitting: false));
       }
@@ -179,11 +203,13 @@ class MapContributionBloc
       );
       if (contribution != null) {
         final updatedList = [...state.backgroundContributions, contribution];
-        emit(state.copyWith(
-          backgroundContributions: _sortContributions(updatedList),
-          isSubmitting: false,
-          submitSuccess: true,
-        ));
+        emit(
+          state.copyWith(
+            backgroundContributions: _sortContributions(updatedList),
+            isSubmitting: false,
+            submitSuccess: true,
+          ),
+        );
       } else {
         emit(state.copyWith(isSubmitting: false));
       }
@@ -201,18 +227,23 @@ class MapContributionBloc
     emit(state.copyWith(isSubmitting: true, clearError: true));
 
     try {
-      final contribution = await _api.updateNameContribution(event.id, event.name);
+      final contribution = await _api.updateNameContribution(
+        event.id,
+        event.name,
+      );
       if (contribution != null) {
         // 更新列表中的贡献
         final updatedList = state.nameContributions.map((c) {
           if (c.id == event.id) return contribution;
           return c;
         }).toList();
-        emit(state.copyWith(
-          nameContributions: _sortContributions(updatedList),
-          isSubmitting: false,
-          submitSuccess: true,
-        ));
+        emit(
+          state.copyWith(
+            nameContributions: _sortContributions(updatedList),
+            isSubmitting: false,
+            submitSuccess: true,
+          ),
+        );
       } else {
         emit(state.copyWith(isSubmitting: false));
       }
@@ -230,18 +261,23 @@ class MapContributionBloc
     emit(state.copyWith(isSubmitting: true, clearError: true));
 
     try {
-      final contribution = await _api.updateBackgroundContribution(event.id, event.fileId);
+      final contribution = await _api.updateBackgroundContribution(
+        event.id,
+        event.fileId,
+      );
       if (contribution != null) {
         // 更新列表中的贡献
         final updatedList = state.backgroundContributions.map((c) {
           if (c.id == event.id) return contribution;
           return c;
         }).toList();
-        emit(state.copyWith(
-          backgroundContributions: _sortContributions(updatedList),
-          isSubmitting: false,
-          submitSuccess: true,
-        ));
+        emit(
+          state.copyWith(
+            backgroundContributions: _sortContributions(updatedList),
+            isSubmitting: false,
+            submitSuccess: true,
+          ),
+        );
       } else {
         emit(state.copyWith(isSubmitting: false));
       }
@@ -265,11 +301,13 @@ class MapContributionBloc
         final updatedList = state.nameContributions
             .where((c) => c.id != event.id)
             .toList();
-        emit(state.copyWith(
-          nameContributions: updatedList,
-          isSubmitting: false,
-          deleteSuccess: true,
-        ));
+        emit(
+          state.copyWith(
+            nameContributions: updatedList,
+            isSubmitting: false,
+            deleteSuccess: true,
+          ),
+        );
       } else {
         emit(state.copyWith(isSubmitting: false));
       }
@@ -293,11 +331,13 @@ class MapContributionBloc
         final updatedList = state.backgroundContributions
             .where((c) => c.id != event.id)
             .toList();
-        emit(state.copyWith(
-          backgroundContributions: updatedList,
-          isSubmitting: false,
-          deleteSuccess: true,
-        ));
+        emit(
+          state.copyWith(
+            backgroundContributions: updatedList,
+            isSubmitting: false,
+            deleteSuccess: true,
+          ),
+        );
       } else {
         emit(state.copyWith(isSubmitting: false));
       }
@@ -314,7 +354,10 @@ class MapContributionBloc
     Emitter<MapContributionState> emit,
   ) async {
     try {
-      final response = await _api.toggleVote(event.contributionId, event.voteType);
+      final response = await _api.toggleVote(
+        event.contributionId,
+        event.voteType,
+      );
       if (response != null && response.success) {
         // 更新名称贡献列表中的投票状态
         final updatedNames = state.nameContributions.map((c) {
@@ -346,10 +389,12 @@ class MapContributionBloc
           return c;
         }).toList();
 
-        emit(state.copyWith(
-          nameContributions: _sortContributions(updatedNames),
-          backgroundContributions: _sortContributions(updatedBackgrounds),
-        ));
+        emit(
+          state.copyWith(
+            nameContributions: _sortContributions(updatedNames),
+            backgroundContributions: _sortContributions(updatedBackgrounds),
+          ),
+        );
       }
     } catch (e) {
       emit(state.copyWith(error: _getErrorMessage(e)));
@@ -398,20 +443,24 @@ class MapContributionBloc
     LoadAllMaps event,
     Emitter<MapContributionState> emit,
   ) async {
-    emit(state.copyWith(
-      isLoadingAllMaps: true,
-      clearError: true,
-      allMapsRequest: event.request,
-    ));
+    emit(
+      state.copyWith(
+        isLoadingAllMaps: true,
+        clearError: true,
+        allMapsRequest: event.request,
+      ),
+    );
 
     try {
       final response = await _api.getAllMaps(event.request);
       if (response != null) {
-        emit(state.copyWith(
-          allMaps: response.items,
-          allMapsTotal: response.total,
-          isLoadingAllMaps: false,
-        ));
+        emit(
+          state.copyWith(
+            allMaps: response.items,
+            allMapsTotal: response.total,
+            isLoadingAllMaps: false,
+          ),
+        );
       } else {
         emit(state.copyWith(isLoadingAllMaps: false));
       }
@@ -426,20 +475,24 @@ class MapContributionBloc
     LoadMyMapContributions event,
     Emitter<MapContributionState> emit,
   ) async {
-    emit(state.copyWith(
-      isLoadingMyMaps: true,
-      clearError: true,
-      myMapsRequest: event.request,
-    ));
+    emit(
+      state.copyWith(
+        isLoadingMyMaps: true,
+        clearError: true,
+        myMapsRequest: event.request,
+      ),
+    );
 
     try {
       final response = await _api.getMyContributions(event.request);
       if (response != null) {
-        emit(state.copyWith(
-          myMapGroups: response.groups,
-          myMapsTotal: response.total,
-          isLoadingMyMaps: false,
-        ));
+        emit(
+          state.copyWith(
+            myMapGroups: response.groups,
+            myMapsTotal: response.total,
+            isLoadingMyMaps: false,
+          ),
+        );
       } else {
         emit(state.copyWith(isLoadingMyMaps: false));
       }

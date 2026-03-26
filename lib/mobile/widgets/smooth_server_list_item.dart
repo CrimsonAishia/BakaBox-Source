@@ -25,7 +25,7 @@ class _SmoothServerListItemState extends State<SmoothServerListItem>
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
-  
+
   bool _showRealCard = false;
   bool _hasData = false;
   Timer? _timeoutTimer;
@@ -74,17 +74,20 @@ class _SmoothServerListItemState extends State<SmoothServerListItem>
   void _checkDataAvailability() {
     final hasServerData = widget.server.serverData != null;
     final shouldShowReal = hasServerData;
-    
+
     if (shouldShowReal && !_hasData) {
       _hasData = true;
       _timeoutTimer?.cancel();
-      
-      _timeoutTimer = Timer(Duration(milliseconds: 200 + (widget.index * 100)), () {
-        if (mounted) {
-          setState(() => _showRealCard = true);
-          _controller.forward();
-        }
-      });
+
+      _timeoutTimer = Timer(
+        Duration(milliseconds: 200 + (widget.index * 100)),
+        () {
+          if (mounted) {
+            setState(() => _showRealCard = true);
+            _controller.forward();
+          }
+        },
+      );
     }
   }
 

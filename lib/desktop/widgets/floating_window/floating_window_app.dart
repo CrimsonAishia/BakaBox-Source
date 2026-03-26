@@ -13,7 +13,7 @@ import 'floating_window_state.dart';
 typedef StateUpdateCallback = void Function(Map<dynamic, dynamic> args);
 
 /// 浮窗状态通知器 - 单一状态源
-/// 
+///
 /// 重构后的状态管理器，确保：
 /// 1. 状态只有一个权威来源
 /// 2. 初始化只执行一次
@@ -26,13 +26,13 @@ class FloatingWindowStateNotifier extends ChangeNotifier {
 
   /// 当前状态
   FloatingWindowState get state => _state;
-  
+
   /// 是否已初始化
   bool get initialized => _initialized;
-  
+
   /// 自动关闭倒计时秒数（如果有更新）
   int? get autoDismissSeconds => _autoDismissSeconds;
-  
+
   /// 兼容旧代码的 lastUpdate getter
   Map<dynamic, dynamic>? get lastUpdate => null;
 
@@ -44,64 +44,90 @@ class FloatingWindowStateNotifier extends ChangeNotifier {
     }
     _state = initialState;
     _initialized = true;
-    debugPrint('[FloatingWindowStateNotifier] Initialized with state: ${_state.state}');
+    debugPrint(
+      '[FloatingWindowStateNotifier] Initialized with state: ${_state.state}',
+    );
     notifyListeners();
   }
 
   /// 更新状态（来自 IPC）
   void updateState(Map<dynamic, dynamic> args) {
     final newStateStr = args['state'] as String?;
-    
-    debugPrint('[FloatingWindowStateNotifier] updateState called: newState=$newStateStr, currentState=${_state.state}');
-    
+
+    debugPrint(
+      '[FloatingWindowStateNotifier] updateState called: newState=$newStateStr, currentState=${_state.state}',
+    );
+
     // 检查是否有 autoDismissSeconds 更新
     if (args.containsKey('autoDismissSeconds')) {
       _autoDismissSeconds = args['autoDismissSeconds'] as int?;
-      debugPrint('[FloatingWindowStateNotifier] autoDismissSeconds updated: $_autoDismissSeconds');
+      debugPrint(
+        '[FloatingWindowStateNotifier] autoDismissSeconds updated: $_autoDismissSeconds',
+      );
     }
-    
+
     // 如果当前是终态，检查是否允许转换
     if (_state.isTerminal && newStateStr != null) {
       final newState = FloatingWindowState.fromMap({'state': newStateStr});
       // 允许从终态转换到活跃状态（挤服、连接、加载、启动）
-      if (newState.isQueueing || newState.isConnecting || newState.isLoading || newState.isLaunching) {
-        debugPrint('[FloatingWindowStateNotifier] Allowing transition from terminal to active state: $newStateStr');
+      if (newState.isQueueing ||
+          newState.isConnecting ||
+          newState.isLoading ||
+          newState.isLaunching) {
+        debugPrint(
+          '[FloatingWindowStateNotifier] Allowing transition from terminal to active state: $newStateStr',
+        );
         // 继续处理
       } else {
-        debugPrint('[FloatingWindowStateNotifier] Ignoring update while in terminal state: ${_state.state}');
+        debugPrint(
+          '[FloatingWindowStateNotifier] Ignoring update while in terminal state: ${_state.state}',
+        );
         return;
       }
     }
-    
+
     // 如果当前是启动状态，只接受特定状态转换
     if (_state.isLaunching && newStateStr != null) {
       final newState = FloatingWindowState.fromMap({'state': newStateStr});
       // 允许转换到成功、失败、挤服状态
-      if (newState.isPaused && !newState.isSuccess && !newState.isFailed && !newState.isQueueing) {
-        debugPrint('[FloatingWindowStateNotifier] Ignoring paused update while in launching state: $newStateStr');
+      if (newState.isPaused &&
+          !newState.isSuccess &&
+          !newState.isFailed &&
+          !newState.isQueueing) {
+        debugPrint(
+          '[FloatingWindowStateNotifier] Ignoring paused update while in launching state: $newStateStr',
+        );
         return;
       }
     }
-    
+
     final hasMapNameKey = args.containsKey('mapName');
     final hasMapNameCnKey = args.containsKey('mapNameCn');
     final hasMapBackgroundKey = args.containsKey('mapBackground');
-    
+
     _state = FloatingWindowState(
       state: newStateStr ?? _state.state,
       message: args['message'] as String? ?? _state.message,
       subtitle: args['subtitle'] as String? ?? _state.subtitle,
       currentPlayers: args['currentPlayers'] as int? ?? _state.currentPlayers,
       targetPlayers: args['targetPlayers'] as int? ?? _state.targetPlayers,
-      threadStatuses: (args['threadStatuses'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList() ?? _state.threadStatuses,
+      threadStatuses:
+          (args['threadStatuses'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          _state.threadStatuses,
       mapName: hasMapNameKey ? args['mapName'] as String? : _state.mapName,
-      mapNameCn: hasMapNameCnKey ? args['mapNameCn'] as String? : _state.mapNameCn,
-      mapBackground: hasMapBackgroundKey ? args['mapBackground'] as String? : _state.mapBackground,
+      mapNameCn: hasMapNameCnKey
+          ? args['mapNameCn'] as String?
+          : _state.mapNameCn,
+      mapBackground: hasMapBackgroundKey
+          ? args['mapBackground'] as String?
+          : _state.mapBackground,
     );
-    
-    debugPrint('[FloatingWindowStateNotifier] State updated: ${_state.state} - ${_state.message}');
+
+    debugPrint(
+      '[FloatingWindowStateNotifier] State updated: ${_state.state} - ${_state.message}',
+    );
     notifyListeners();
   }
 }
@@ -179,7 +205,7 @@ class _FloatingWindowInitializerState
       final screenWidth = screenInfo['screenWidth']!;
       final workAreaHeight = screenInfo['workAreaHeight']!;
       final workAreaY = screenInfo['workAreaY']!;
-      
+
       // 从设置中读取浮窗位置
       final position = await _calculateFloatingPosition(
         screenWidth,
@@ -200,9 +226,11 @@ class _FloatingWindowInitializerState
       await windowManager.waitUntilReadyToShow(windowOptions, () async {
         await windowManager.setPosition(position);
         await windowManager.setMinimumSize(
-            Size(size.width - 60, size.height - 60));
+          Size(size.width - 60, size.height - 60),
+        );
         await windowManager.setMaximumSize(
-            Size(size.width + 100, size.height + 100));
+          Size(size.width + 100, size.height + 100),
+        );
         if (Platform.isWindows) {
           await windowManager.setAsFrameless();
         }
@@ -230,48 +258,72 @@ class _FloatingWindowInitializerState
   ) async {
     try {
       // 从 config.extra 中读取浮窗位置设置
-      final positionIndex = widget.config.extra?['floatingWindowPosition'] as int? ?? 8; // 默认右下角
+      final positionIndex =
+          widget.config.extra?['floatingWindowPosition'] as int? ?? 8; // 默认右下角
       final position = NotificationPositionType.values[positionIndex];
-      
+
       const padding = 20.0;
       final availableHeight = workAreaHeight;
       final centerY = workAreaY + (availableHeight - windowSize.height) / 2;
-      
+
       Offset calculatedPosition;
-      
+
       switch (position) {
         case NotificationPositionType.topLeft:
           calculatedPosition = Offset(padding, workAreaY + padding);
           break;
         case NotificationPositionType.topCenter:
-          calculatedPosition = Offset((screenWidth - windowSize.width) / 2, workAreaY + padding);
+          calculatedPosition = Offset(
+            (screenWidth - windowSize.width) / 2,
+            workAreaY + padding,
+          );
           break;
         case NotificationPositionType.topRight:
-          calculatedPosition = Offset(screenWidth - windowSize.width - padding, workAreaY + padding);
+          calculatedPosition = Offset(
+            screenWidth - windowSize.width - padding,
+            workAreaY + padding,
+          );
           break;
         case NotificationPositionType.centerLeft:
           calculatedPosition = Offset(padding, centerY);
           break;
         case NotificationPositionType.center:
-          calculatedPosition = Offset((screenWidth - windowSize.width) / 2, centerY);
+          calculatedPosition = Offset(
+            (screenWidth - windowSize.width) / 2,
+            centerY,
+          );
           break;
         case NotificationPositionType.centerRight:
-          calculatedPosition = Offset(screenWidth - windowSize.width - padding, centerY);
+          calculatedPosition = Offset(
+            screenWidth - windowSize.width - padding,
+            centerY,
+          );
           break;
         case NotificationPositionType.bottomLeft:
-          calculatedPosition = Offset(padding, workAreaY + availableHeight - windowSize.height - padding);
+          calculatedPosition = Offset(
+            padding,
+            workAreaY + availableHeight - windowSize.height - padding,
+          );
           break;
         case NotificationPositionType.bottomCenter:
-          calculatedPosition = Offset((screenWidth - windowSize.width) / 2, workAreaY + availableHeight - windowSize.height - padding);
+          calculatedPosition = Offset(
+            (screenWidth - windowSize.width) / 2,
+            workAreaY + availableHeight - windowSize.height - padding,
+          );
           break;
         case NotificationPositionType.bottomRight:
-          calculatedPosition = Offset(screenWidth - windowSize.width - padding, workAreaY + availableHeight - windowSize.height - padding);
+          calculatedPosition = Offset(
+            screenWidth - windowSize.width - padding,
+            workAreaY + availableHeight - windowSize.height - padding,
+          );
           break;
       }
-      
+
       return calculatedPosition;
     } catch (e) {
-      debugPrint('[FloatingWindow] Failed to read position setting, using default: $e');
+      debugPrint(
+        '[FloatingWindow] Failed to read position setting, using default: $e',
+      );
       // 默认右下角
       const padding = 20.0;
       return Offset(
@@ -287,7 +339,10 @@ class _FloatingWindowInitializerState
       return Scaffold(
         backgroundColor: const Color(0xFF1E293B),
         body: Center(
-          child: Text('Error: $_error', style: const TextStyle(color: Colors.red)),
+          child: Text(
+            'Error: $_error',
+            style: const TextStyle(color: Colors.red),
+          ),
         ),
       );
     }

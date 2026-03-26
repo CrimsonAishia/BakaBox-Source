@@ -34,22 +34,28 @@ class FeatureStatusBloc extends Bloc<FeatureStatusEvent, FeatureStatusState> {
     try {
       final allStatus = await _api.getAllFeatureStatus();
 
-      emit(state.copyWith(
-        loadState: FeatureStatusLoadState.loaded,
-        status: allStatus,
-        lastUpdated: DateTime.now(),
-      ));
+      emit(
+        state.copyWith(
+          loadState: FeatureStatusLoadState.loaded,
+          status: allStatus,
+          lastUpdated: DateTime.now(),
+        ),
+      );
 
-      LogService.d('功能状态加载完成: '
-          'keyConfig=${allStatus.keyConfig.enabled}, '
-          'issue=${allStatus.issue.enabled}, '
-          'mapContribution=${allStatus.mapContribution.enabled}');
+      LogService.d(
+        '功能状态加载完成: '
+        'keyConfig=${allStatus.keyConfig.enabled}, '
+        'issue=${allStatus.issue.enabled}, '
+        'mapContribution=${allStatus.mapContribution.enabled}',
+      );
     } catch (e) {
       LogService.e('加载功能状态失败', e);
-      emit(state.copyWith(
-        loadState: FeatureStatusLoadState.error,
-        errorMessage: '加载功能状态失败',
-      ));
+      emit(
+        state.copyWith(
+          loadState: FeatureStatusLoadState.error,
+          errorMessage: '加载功能状态失败',
+        ),
+      );
     }
   }
 
@@ -61,11 +67,13 @@ class FeatureStatusBloc extends Bloc<FeatureStatusEvent, FeatureStatusState> {
     try {
       final allStatus = await _api.getAllFeatureStatus();
 
-      emit(state.copyWith(
-        loadState: FeatureStatusLoadState.loaded,
-        status: allStatus,
-        lastUpdated: DateTime.now(),
-      ));
+      emit(
+        state.copyWith(
+          loadState: FeatureStatusLoadState.loaded,
+          status: allStatus,
+          lastUpdated: DateTime.now(),
+        ),
+      );
 
       LogService.d('功能状态刷新完成');
     } catch (e) {
@@ -94,13 +102,11 @@ class FeatureStatusBloc extends Bloc<FeatureStatusEvent, FeatureStatusState> {
           break;
       }
 
-      emit(state.copyWith(
-        status: newStatus,
-        lastUpdated: DateTime.now(),
-      ));
+      emit(state.copyWith(status: newStatus, lastUpdated: DateTime.now()));
 
       LogService.d(
-          '功能状态刷新: ${event.feature.displayName}=${featureStatus.enabled}');
+        '功能状态刷新: ${event.feature.displayName}=${featureStatus.enabled}',
+      );
     } catch (e) {
       LogService.e('刷新单个功能状态失败: ${event.feature.displayName}', e);
     }
@@ -110,17 +116,19 @@ class FeatureStatusBloc extends Bloc<FeatureStatusEvent, FeatureStatusState> {
     FeatureStatusStartPeriodicRefresh event,
     Emitter<FeatureStatusState> emit,
   ) {
-    SchedulerService().register(ScheduledTask(
-      id: _taskId,
-      name: '功能状态刷新',
-      interval: Intervals.fiveMinutes,
-      callback: () async {
-        // 检查 Bloc 是否已关闭，避免内存泄漏
-        if (!isClosed) {
-          add(FeatureStatusRefresh());
-        }
-      },
-    ));
+    SchedulerService().register(
+      ScheduledTask(
+        id: _taskId,
+        name: '功能状态刷新',
+        interval: Intervals.fiveMinutes,
+        callback: () async {
+          // 检查 Bloc 是否已关闭，避免内存泄漏
+          if (!isClosed) {
+            add(FeatureStatusRefresh());
+          }
+        },
+      ),
+    );
   }
 
   void _onStopPeriodicRefresh(

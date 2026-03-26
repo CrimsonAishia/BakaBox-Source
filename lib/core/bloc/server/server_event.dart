@@ -73,7 +73,13 @@ class ServerUpdateSingleServer extends ServerEvent {
   });
 
   @override
-  List<Object?> get props => [address, pingInfo, mapInfo, mapRuntime, mapRuntimeError];
+  List<Object?> get props => [
+    address,
+    pingInfo,
+    mapInfo,
+    mapRuntime,
+    mapRuntimeError,
+  ];
 }
 
 /// 内部事件:清除 recentlyUpdated 标记
@@ -97,7 +103,11 @@ class ServerAddServer extends ServerEvent {
   final String categoryName;
   final String serverAddress;
   final String? nickname; // 备注名
-  const ServerAddServer({required this.categoryName, required this.serverAddress, this.nickname});
+  const ServerAddServer({
+    required this.categoryName,
+    required this.serverAddress,
+    this.nickname,
+  });
   @override
   List<Object?> get props => [categoryName, serverAddress, nickname];
 }
@@ -123,7 +133,10 @@ class ServerRenameCategory extends ServerEvent {
 class ServerDeleteServer extends ServerEvent {
   final String categoryName;
   final String serverAddress;
-  const ServerDeleteServer({required this.categoryName, required this.serverAddress});
+  const ServerDeleteServer({
+    required this.categoryName,
+    required this.serverAddress,
+  });
   @override
   List<Object?> get props => [categoryName, serverAddress];
 }
@@ -161,7 +174,12 @@ class ServerEditServer extends ServerEvent {
     this.nickname,
   });
   @override
-  List<Object?> get props => [categoryName, oldServerAddress, newServerAddress, nickname];
+  List<Object?> get props => [
+    categoryName,
+    oldServerAddress,
+    newServerAddress,
+    nickname,
+  ];
 }
 
 /// 更新被编辑服务器的数据（内部事件）

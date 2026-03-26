@@ -19,10 +19,7 @@ class SubscriptionScopeDialog extends StatefulWidget {
   /// 地图订阅数据
   final MapSubscription subscription;
 
-  const SubscriptionScopeDialog({
-    super.key,
-    required this.subscription,
-  });
+  const SubscriptionScopeDialog({super.key, required this.subscription});
 
   /// 显示弹窗
   static Future<void> show(
@@ -33,15 +30,14 @@ class SubscriptionScopeDialog extends StatefulWidget {
       context: context,
       builder: (_) => BlocProvider.value(
         value: context.read<MapSubscriptionBloc>(),
-        child: SubscriptionScopeDialog(
-          subscription: subscription,
-        ),
+        child: SubscriptionScopeDialog(subscription: subscription),
       ),
     );
   }
 
   @override
-  State<SubscriptionScopeDialog> createState() => _SubscriptionScopeDialogState();
+  State<SubscriptionScopeDialog> createState() =>
+      _SubscriptionScopeDialogState();
 }
 
 class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
@@ -142,10 +138,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
       final now = DateTime.now().millisecondsSinceEpoch;
       final dataToSave = <String, dynamic>{};
       _serverRealNames.forEach((key, value) {
-        dataToSave[key] = {
-          'name': value,
-          'time': now,
-        };
+        dataToSave[key] = {'name': value, 'time': now};
       });
       final encoded = jsonEncode(dataToSave);
       await StorageUtils.setString('a2s_server_names_cache', encoded);
@@ -199,7 +192,8 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
         }
 
         // 避免重复查询或者是已经有缓存的真实名称
-        if (_serverRealNames.containsKey(address) || _queryingServers.contains(address)) {
+        if (_serverRealNames.containsKey(address) ||
+            _queryingServers.contains(address)) {
           continue;
         }
 
@@ -220,13 +214,17 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
       final port = int.tryParse(parts[1]);
       if (port == null) return;
 
-      final info = await SourceServerService.getServerInfo(ip, port, timeout: 3000);
+      final info = await SourceServerService.getServerInfo(
+        ip,
+        port,
+        timeout: 3000,
+      );
       if (info != null && info.name.isNotEmpty && mounted) {
         setState(() {
           _serverRealNames[address] = info.name;
           _queryingServers.remove(address);
         });
-        
+
         // 更新缓存（异步写入）
         _saveCachedRealNames();
       }
@@ -248,7 +246,8 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
     String? hostName;
     if (server.isCustom) {
       // 自定义服务器，没有备注名时使用 A2S 查到的真实名称
-      if ((server.nickname == null || server.nickname!.isEmpty) && _serverRealNames.containsKey(address)) {
+      if ((server.nickname == null || server.nickname!.isEmpty) &&
+          _serverRealNames.containsKey(address)) {
         hostName = _serverRealNames[address];
       }
     } else {
@@ -283,9 +282,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
       child: Container(
         width: 720,
         height: 520,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
         child: Column(
           children: [
             _buildHeader(),
@@ -296,10 +293,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                   : Row(
                       children: [
                         // 左侧：分类列表
-                        Expanded(
-                          flex: 3,
-                          child: _buildCategoryPanel(),
-                        ),
+                        Expanded(flex: 3, child: _buildCategoryPanel()),
                         // 分隔线
                         VerticalDivider(
                           width: 1,
@@ -309,10 +303,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                               : const Color(0xFFE5E7EB),
                         ),
                         // 右侧：服务器列表
-                        Expanded(
-                          flex: 4,
-                          child: _buildServerPanel(),
-                        ),
+                        Expanded(flex: 4, child: _buildServerPanel()),
                       ],
                     ),
             ),
@@ -410,9 +401,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
         color: isDark
             ? Colors.white.withValues(alpha: 0.02)
             : const Color(0xFFFAFAFA),
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(16),
-        ),
+        borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(16)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -463,7 +452,9 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                       '暂无可用分类',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                        color: isDark
+                            ? Colors.white38
+                            : const Color(0xFF9CA3AF),
                       ),
                     ),
                   )
@@ -472,8 +463,12 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                     itemCount: _allCategories.length,
                     itemBuilder: (context, index) {
                       final category = _allCategories[index];
-                      final categoryName = category.modelName ?? category.category ?? '';
-                      return _buildCategoryTile(categoryName, category.isCustom);
+                      final categoryName =
+                          category.modelName ?? category.category ?? '';
+                      return _buildCategoryTile(
+                        categoryName,
+                        category.isCustom,
+                      );
                     },
                   ),
           ),
@@ -507,8 +502,8 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
               color: _inheritGlobal
                   ? const Color(0xFF6366F1).withValues(alpha: 0.3)
                   : (isDark
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : const Color(0xFFE5E7EB)),
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : const Color(0xFFE5E7EB)),
             ),
           ),
           child: Row(
@@ -552,10 +547,14 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                       ),
                     ),
                     Text(
-                      isAllGlobal ? '监控全部分类' : '${_globalCategories.length} 个分类',
+                      isAllGlobal
+                          ? '监控全部分类'
+                          : '${_globalCategories.length} 个分类',
                       style: TextStyle(
                         fontSize: 10,
-                        color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                        color: isDark
+                            ? Colors.white38
+                            : const Color(0xFF9CA3AF),
                       ),
                     ),
                   ],
@@ -581,8 +580,10 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
     }).length;
 
     // 复选框状态：由右侧服务器选择状态决定
-    final bool isAllSelected = selectedServerCount == servers.length && servers.isNotEmpty;
-    final bool isPartialSelected = selectedServerCount > 0 && selectedServerCount < servers.length;
+    final bool isAllSelected =
+        selectedServerCount == servers.length && servers.isNotEmpty;
+    final bool isPartialSelected =
+        selectedServerCount > 0 && selectedServerCount < servers.length;
 
     return Material(
       color: Colors.transparent,
@@ -603,15 +604,15 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
             color: isActive
                 ? const Color(0xFF6366F1).withValues(alpha: 0.15)
                 : (isSelected
-                    ? const Color(0xFF6366F1).withValues(alpha: 0.08)
-                    : Colors.transparent),
+                      ? const Color(0xFF6366F1).withValues(alpha: 0.08)
+                      : Colors.transparent),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: isActive
                   ? const Color(0xFF6366F1).withValues(alpha: 0.4)
                   : (isSelected
-                      ? const Color(0xFF6366F1).withValues(alpha: 0.2)
-                      : Colors.transparent),
+                        ? const Color(0xFF6366F1).withValues(alpha: 0.2)
+                        : Colors.transparent),
             ),
           ),
           child: Row(
@@ -638,12 +639,12 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                         color: Colors.white,
                       )
                     : (isPartialSelected
-                        ? const Icon(
-                            Icons.remove_rounded,
-                            size: 12,
-                            color: Colors.white,
-                          )
-                        : null),
+                          ? const Icon(
+                              Icons.remove_rounded,
+                              size: 12,
+                              color: Colors.white,
+                            )
+                          : null),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -654,10 +655,14 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                         categoryName,
                         style: TextStyle(
                           fontSize: 13,
-                          fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                          fontWeight: isSelected
+                              ? FontWeight.w500
+                              : FontWeight.normal,
                           color: isSelected
                               ? const Color(0xFF6366F1)
-                              : (isDark ? Colors.white : const Color(0xFF1F2937)),
+                              : (isDark
+                                    ? Colors.white
+                                    : const Color(0xFF1F2937)),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -666,9 +671,14 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                     if (isCustom) ...[
                       const SizedBox(width: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                          color: const Color(
+                            0xFFF59E0B,
+                          ).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(3),
                         ),
                         child: const Text(
@@ -744,9 +754,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
         color: isDark
             ? Colors.white.withValues(alpha: 0.02)
             : const Color(0xFFFAFAFA),
-        borderRadius: const BorderRadius.only(
-          bottomRight: Radius.circular(16),
-        ),
+        borderRadius: const BorderRadius.only(bottomRight: Radius.circular(16)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -811,7 +819,9 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                         icon: Icon(
                           Icons.close_rounded,
                           size: 14,
-                          color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                          color: isDark
+                              ? Colors.white38
+                              : const Color(0xFF9CA3AF),
                         ),
                         onPressed: () {
                           _searchController.clear();
@@ -824,7 +834,10 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                 fillColor: isDark
                     ? Colors.white.withValues(alpha: 0.05)
                     : Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide.none,
@@ -859,7 +872,8 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                   onTap: () {
                     setState(() {
                       for (final server in _getServersToShow()) {
-                        final address = server.address ?? server.serverAddress ?? '';
+                        final address =
+                            server.address ?? server.serverAddress ?? '';
                         if (address.isNotEmpty) {
                           _selectedServers.add(address);
                         }
@@ -874,7 +888,8 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                   onTap: () {
                     setState(() {
                       for (final server in _getServersToShow()) {
-                        final address = server.address ?? server.serverAddress ?? '';
+                        final address =
+                            server.address ?? server.serverAddress ?? '';
                         _selectedServers.remove(address);
                       }
                     });
@@ -885,9 +900,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
           ),
           const SizedBox(height: 4),
           // 服务器列表
-          Expanded(
-            child: _buildServerList(),
-          ),
+          Expanded(child: _buildServerList()),
         ],
       ),
     );
@@ -899,9 +912,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
         color: isDark
             ? Colors.white.withValues(alpha: 0.02)
             : const Color(0xFFFAFAFA),
-        borderRadius: const BorderRadius.only(
-          bottomRight: Radius.circular(16),
-        ),
+        borderRadius: const BorderRadius.only(bottomRight: Radius.circular(16)),
       ),
       child: Center(
         child: Column(
@@ -948,9 +959,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
         color: isDark
             ? Colors.white.withValues(alpha: 0.02)
             : const Color(0xFFFAFAFA),
-        borderRadius: const BorderRadius.only(
-          bottomRight: Radius.circular(16),
-        ),
+        borderRadius: const BorderRadius.only(bottomRight: Radius.circular(16)),
       ),
       child: Center(
         child: Column(
@@ -1055,7 +1064,8 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
         final displayName = _getServerDisplayName(server);
         final isSelected = _selectedServers.contains(address);
         // 如果没有备注名且正在查询中，显示加载状态
-        final isQuerying = (server.nickname == null || server.nickname!.isEmpty) && 
+        final isQuerying =
+            (server.nickname == null || server.nickname!.isEmpty) &&
             _queryingServers.contains(address);
 
         return _buildServerTile(address, displayName, isSelected, isQuerying);
@@ -1063,7 +1073,12 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
     );
   }
 
-  Widget _buildServerTile(String address, String displayName, bool isSelected, bool isQuerying) {
+  Widget _buildServerTile(
+    String address,
+    String displayName,
+    bool isSelected,
+    bool isQuerying,
+  ) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1092,7 +1107,9 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                 width: 16,
                 height: 16,
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF6366F1) : Colors.transparent,
+                  color: isSelected
+                      ? const Color(0xFF6366F1)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(3),
                   border: Border.all(
                     color: isSelected
@@ -1123,10 +1140,14 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                               color: isQuerying
-                                  ? (isDark ? Colors.white38 : const Color(0xFF9CA3AF))
+                                  ? (isDark
+                                        ? Colors.white38
+                                        : const Color(0xFF9CA3AF))
                                   : (isSelected
-                                      ? const Color(0xFF6366F1)
-                                      : (isDark ? Colors.white : const Color(0xFF1F2937))),
+                                        ? const Color(0xFF6366F1)
+                                        : (isDark
+                                              ? Colors.white
+                                              : const Color(0xFF1F2937))),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1139,7 +1160,9 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                             height: 10,
                             child: CircularProgressIndicator(
                               strokeWidth: 1.5,
-                              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                              color: isDark
+                                  ? Colors.white38
+                                  : const Color(0xFF9CA3AF),
                             ),
                           ),
                         ],
@@ -1149,7 +1172,9 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                       address,
                       style: TextStyle(
                         fontSize: 10,
-                        color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                        color: isDark
+                            ? Colors.white38
+                            : const Color(0xFF9CA3AF),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1204,7 +1229,9 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
               Navigator.of(context).pop();
             },
             style: TextButton.styleFrom(
-              foregroundColor: isDark ? Colors.white54 : const Color(0xFF6B7280),
+              foregroundColor: isDark
+                  ? Colors.white54
+                  : const Color(0xFF6B7280),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
             child: const Text('取消'),
@@ -1259,16 +1286,20 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
     }
 
     // 更新分类范围
-    bloc.add(MapSubscriptionUpdateSubscriptionScope(
-      mapName: widget.subscription.mapName,
-      categoryNames: categoryNames,
-    ));
+    bloc.add(
+      MapSubscriptionUpdateSubscriptionScope(
+        mapName: widget.subscription.mapName,
+        categoryNames: categoryNames,
+      ),
+    );
 
     // 更新服务器范围
-    bloc.add(MapSubscriptionUpdateSubscriptionServers(
-      mapName: widget.subscription.mapName,
-      serverAddresses: serverAddresses,
-    ));
+    bloc.add(
+      MapSubscriptionUpdateSubscriptionServers(
+        mapName: widget.subscription.mapName,
+        serverAddresses: serverAddresses,
+      ),
+    );
 
     Navigator.of(context).pop();
   }

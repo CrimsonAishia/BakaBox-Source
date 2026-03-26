@@ -5,7 +5,7 @@ import '../../core/utils/formatters.dart';
 
 /// 更新日志时间线项组件
 /// 以时间线形式展示日志项，支持选中状态高亮
-/// 
+///
 /// Requirements: 4.1
 class TimelineLogItem extends StatelessWidget {
   final SteamWorkChangeLog log;
@@ -31,7 +31,7 @@ class TimelineLogItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
-    
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -44,9 +44,7 @@ class TimelineLogItem extends StatelessWidget {
             _buildTimelineIndicator(context, primaryColor),
             const SizedBox(width: 16),
             // 日志内容卡片
-            Expanded(
-              child: _buildLogCard(context, primaryColor),
-            ),
+            Expanded(child: _buildLogCard(context, primaryColor)),
           ],
         ),
       ),
@@ -57,7 +55,7 @@ class TimelineLogItem extends StatelessWidget {
   Widget _buildTimelineIndicator(BuildContext context, Color primaryColor) {
     // 最新日志使用绿色，其他使用主题色
     final indicatorColor = isLatest ? const Color(0xFF10B981) : primaryColor;
-    
+
     return SizedBox(
       width: 24,
       child: Column(
@@ -68,8 +66,8 @@ class TimelineLogItem extends StatelessWidget {
             Container(
               width: 2,
               height: 8,
-              color: isSelected 
-                  ? indicatorColor 
+              color: isSelected
+                  ? indicatorColor
                   : Theme.of(context).dividerColor.withValues(alpha: 0.3),
             ),
           // 圆点指示器
@@ -78,10 +76,12 @@ class TimelineLogItem extends StatelessWidget {
             height: 12,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: (isSelected || isLatest) ? indicatorColor : Colors.transparent,
+              color: (isSelected || isLatest)
+                  ? indicatorColor
+                  : Colors.transparent,
               border: Border.all(
                 color: (isSelected || isLatest)
-                    ? indicatorColor 
+                    ? indicatorColor
                     : Theme.of(context).dividerColor.withValues(alpha: 0.5),
                 width: 2,
               ),
@@ -111,19 +111,19 @@ class TimelineLogItem extends StatelessWidget {
   /// 构建日志内容卡片
   Widget _buildLogCard(BuildContext context, Color primaryColor) {
     final theme = Theme.of(context);
-    
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isSelected 
+        color: isSelected
             ? primaryColor.withValues(alpha: 0.1)
             : theme.cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isSelected 
-              ? primaryColor 
+          color: isSelected
+              ? primaryColor
               : theme.dividerColor.withValues(alpha: 0.1),
           width: isSelected ? 2 : 1,
         ),
@@ -161,14 +161,14 @@ class TimelineLogItem extends StatelessWidget {
   /// 构建标题行
   Widget _buildTitleRow(BuildContext context, Color primaryColor) {
     final theme = Theme.of(context);
-    
+
     return Row(
       children: [
         // 版本标签
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: isSelected 
+            color: isSelected
                 ? primaryColor.withValues(alpha: 0.2)
                 : primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(6),
@@ -176,11 +176,7 @@ class TimelineLogItem extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                MdiIcons.tagOutline,
-                size: 14,
-                color: primaryColor,
-              ),
+              Icon(MdiIcons.tagOutline, size: 14, color: primaryColor),
               const SizedBox(width: 4),
               Text(
                 '更新 ${Formatters.formatDate(log.updateTime)}',
@@ -197,11 +193,7 @@ class TimelineLogItem extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              MdiIcons.calendarClock,
-              size: 14,
-              color: theme.disabledColor,
-            ),
+            Icon(MdiIcons.calendarClock, size: 14, color: theme.disabledColor),
             const SizedBox(width: 4),
             Text(
               _formatDate(log.createdAt),
@@ -218,10 +210,10 @@ class TimelineLogItem extends StatelessWidget {
   /// 构建内容预览
   Widget _buildContentPreview(BuildContext context) {
     final theme = Theme.of(context);
-    final previewText = log.content.length > 150 
-        ? '${log.content.substring(0, 150)}...' 
+    final previewText = log.content.length > 150
+        ? '${log.content.substring(0, 150)}...'
         : log.content;
-    
+
     return Text(
       previewText,
       style: theme.textTheme.bodySmall?.copyWith(

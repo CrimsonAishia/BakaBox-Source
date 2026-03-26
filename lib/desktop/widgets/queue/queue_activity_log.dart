@@ -7,8 +7,10 @@ import '../../../core/models/queue_user.dart';
 enum QueueActivityType {
   /// 用户加入
   join,
+
   /// 用户离开
   leave,
+
   /// 用户成功进入服务器
   success,
 }
@@ -41,12 +43,12 @@ class QueueActivityItem {
 }
 
 /// 挤服活动日志组件
-/// 
+///
 /// 显示用户加入、离开、成功进入服务器的消息
 class QueueActivityLog extends StatefulWidget {
   /// 活动日志列表
   final List<QueueActivityItem> activities;
-  
+
   /// 最大显示条数
   final int maxItems;
 
@@ -62,7 +64,7 @@ class QueueActivityLog extends StatefulWidget {
 
 class _QueueActivityLogState extends State<QueueActivityLog> {
   final ScrollController _scrollController = ScrollController();
-  
+
   // 记录上次最后一条消息的 id，用于检测新消息
   String? _lastActivityId;
 
@@ -75,13 +77,13 @@ class _QueueActivityLogState extends State<QueueActivityLog> {
   @override
   void didUpdateWidget(QueueActivityLog oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // 列表为空时重置
     if (widget.activities.isEmpty) {
       _lastActivityId = null;
       return;
     }
-    
+
     // 检测是否有新消息（通过比较最后一条消息的 id）
     final currentLastId = widget.activities.last.id;
     if (currentLastId != _lastActivityId) {
@@ -89,13 +91,13 @@ class _QueueActivityLogState extends State<QueueActivityLog> {
       _scrollToBottom();
     }
   }
-  
+
   /// 滚动到底部
   void _scrollToBottom() {
     // 使用 addPostFrameCallback 确保 ListView 已经更新
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      
+
       // 如果 ScrollController 还没有 attach（比如从空列表变为非空）
       // 需要再等一帧
       if (!_scrollController.hasClients) {
@@ -105,7 +107,7 @@ class _QueueActivityLogState extends State<QueueActivityLog> {
         });
         return;
       }
-      
+
       _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
     });
   }
@@ -120,7 +122,7 @@ class _QueueActivityLogState extends State<QueueActivityLog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     // 限制显示条数
     final displayActivities = widget.activities.length > widget.maxItems
         ? widget.activities.sublist(widget.activities.length - widget.maxItems)
@@ -129,12 +131,12 @@ class _QueueActivityLogState extends State<QueueActivityLog> {
     return Container(
       height: 100,
       decoration: BoxDecoration(
-        color: isDark 
+        color: isDark
             ? const Color(0xFF1E293B).withValues(alpha: 0.5)
             : const Color(0xFFF1F5F9).withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isDark 
+          color: isDark
               ? Colors.white.withValues(alpha: 0.1)
               : Colors.black.withValues(alpha: 0.05),
         ),
@@ -148,7 +150,7 @@ class _QueueActivityLogState extends State<QueueActivityLog> {
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: isDark 
+                  color: isDark
                       ? Colors.white.withValues(alpha: 0.1)
                       : Colors.black.withValues(alpha: 0.05),
                 ),
@@ -195,7 +197,10 @@ class _QueueActivityLogState extends State<QueueActivityLog> {
                   )
                 : ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     itemCount: displayActivities.length,
                     itemBuilder: (context, index) {
                       return _ActivityItemWidget(
@@ -215,16 +220,13 @@ class _ActivityItemWidget extends StatelessWidget {
   final QueueActivityItem activity;
   final bool isDark;
 
-  const _ActivityItemWidget({
-    required this.activity,
-    required this.isDark,
-  });
+  const _ActivityItemWidget({required this.activity, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
     final (icon, color, message) = _getActivityInfo();
     final timeStr = _formatTime(activity.timestamp);
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -284,23 +286,11 @@ class _ActivityItemWidget extends StatelessWidget {
   (IconData, Color, String) _getActivityInfo() {
     switch (activity.type) {
       case QueueActivityType.join:
-        return (
-          MdiIcons.accountPlus,
-          const Color(0xFF22C55E),
-          '加入了挤服',
-        );
+        return (MdiIcons.accountPlus, const Color(0xFF22C55E), '加入了挤服');
       case QueueActivityType.leave:
-        return (
-          MdiIcons.accountMinus,
-          const Color(0xFFF59E0B),
-          '离开了挤服',
-        );
+        return (MdiIcons.accountMinus, const Color(0xFFF59E0B), '离开了挤服');
       case QueueActivityType.success:
-        return (
-          MdiIcons.checkCircle,
-          const Color(0xFF3B82F6),
-          '成功进入服务器！',
-        );
+        return (MdiIcons.checkCircle, const Color(0xFF3B82F6), '成功进入服务器！');
     }
   }
 }

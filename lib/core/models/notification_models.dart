@@ -87,7 +87,17 @@ class NotificationItem extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, userId, type, title, content, data, isRead, readAt, createdAt];
+  List<Object?> get props => [
+    id,
+    userId,
+    type,
+    title,
+    content,
+    data,
+    isRead,
+    readAt,
+    createdAt,
+  ];
 }
 
 /// 通知列表响应

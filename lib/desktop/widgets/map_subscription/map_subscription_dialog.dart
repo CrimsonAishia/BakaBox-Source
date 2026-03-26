@@ -10,11 +10,7 @@ import 'views/tts_settings_view.dart';
 import 'components/nav_item.dart';
 
 /// 导航项枚举
-enum MapSubscriptionNavItem {
-  subscription,
-  add,
-  tts,
-}
+enum MapSubscriptionNavItem { subscription, add, tts }
 
 /// 地图订阅管理弹窗 - 左右分栏布局
 class MapSubscriptionDialog extends StatefulWidget {
@@ -70,9 +66,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
                       : const Color(0xFFE5E7EB),
                 ),
                 // 右侧内容区
-                Expanded(
-                  child: _buildContent(isDark, state),
-                ),
+                Expanded(child: _buildContent(isDark, state)),
               ],
             );
           },
@@ -156,13 +150,15 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
                 statusIcon: !state.isTtsModelDownloaded
                     ? Icons.download_rounded
                     : (state.isTtsEnabled
-                        ? Icons.check_circle_rounded
-                        : Icons.cancel_rounded),
+                          ? Icons.check_circle_rounded
+                          : Icons.cancel_rounded),
                 statusColor: !state.isTtsModelDownloaded
                     ? const Color(0xFFF59E0B)
                     : (state.isTtsEnabled
-                        ? const Color(0xFF10B981)
-                        : (isDark ? Colors.white38 : const Color(0xFF9CA3AF))),
+                          ? const Color(0xFF10B981)
+                          : (isDark
+                                ? Colors.white38
+                                : const Color(0xFF9CA3AF))),
                 isSelected: _selectedNav == MapSubscriptionNavItem.tts,
                 onTap: () => setState(() {
                   _selectedNav = MapSubscriptionNavItem.tts;
@@ -182,7 +178,9 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
               child: TextButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: TextButton.styleFrom(
-                  foregroundColor: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                  foregroundColor: isDark
+                      ? Colors.white54
+                      : const Color(0xFF6B7280),
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -218,10 +216,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
             ),
           ),
         ),
-        ...items.map((item) => NavItem(
-              isDark: isDark,
-              data: item,
-            )),
+        ...items.map((item) => NavItem(isDark: isDark, data: item)),
       ],
     );
   }
@@ -232,9 +227,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
       margin: const EdgeInsets.symmetric(horizontal: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isDark
@@ -253,8 +246,8 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
             value: state.isEnabled,
             activeColor: const Color(0xFF10B981),
             onChanged: (v) => context.read<MapSubscriptionBloc>().add(
-                  MapSubscriptionToggleGlobal(enabled: v),
-                ),
+              MapSubscriptionToggleGlobal(enabled: v),
+            ),
           ),
           const SizedBox(height: 8),
           // 通知开关
@@ -268,8 +261,8 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
             value: state.isNotificationEnabled,
             activeColor: const Color(0xFF6366F1),
             onChanged: (v) => context.read<MapSubscriptionBloc>().add(
-                  MapSubscriptionToggleNotification(enabled: v),
-                ),
+              MapSubscriptionToggleNotification(enabled: v),
+            ),
           ),
           const SizedBox(height: 8),
           // TTS 语音播报开关
@@ -279,15 +272,15 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
                 ? Icons.volume_up_rounded
                 : Icons.volume_off_rounded,
             label: '语音',
-            tooltip: state.isTtsModelDownloaded 
+            tooltip: state.isTtsModelDownloaded
                 ? '开启后地图变更时会语音播报'
                 : '需要先下载 TTS 模型',
             value: state.isTtsEnabled,
             activeColor: const Color(0xFFF59E0B),
             enabled: state.isTtsModelDownloaded,
             onChanged: (v) => context.read<MapSubscriptionBloc>().add(
-                  MapSubscriptionToggleGlobalTts(enabled: v),
-                ),
+              MapSubscriptionToggleGlobalTts(enabled: v),
+            ),
           ),
         ],
       ),
@@ -307,7 +300,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
   }) {
     final isDisabled = !enabled;
     final disabledColor = isDark ? Colors.white24 : const Color(0xFFD1D5DB);
-    
+
     return Tooltip(
       message: tooltip,
       child: Row(
@@ -318,8 +311,8 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
             color: isDisabled
                 ? disabledColor
                 : (value
-                    ? activeColor
-                    : (isDark ? Colors.white38 : const Color(0xFF9CA3AF))),
+                      ? activeColor
+                      : (isDark ? Colors.white38 : const Color(0xFF9CA3AF))),
           ),
           const SizedBox(width: 8),
           Expanded(

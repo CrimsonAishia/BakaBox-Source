@@ -4,7 +4,7 @@ import '../../core/utils/category_utils.dart';
 
 /// 服务器分类卡片组件
 /// 显示分类图标、名称、服务器数量和在线人数
-/// 
+///
 /// Requirements: 2.1, 2.2, 2.3
 class CategoryCard extends StatelessWidget {
   final ServerCategory category;
@@ -30,7 +30,7 @@ class CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final categoryColor = CategoryUtils.getCategoryColor(category.category);
-    
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
@@ -41,7 +41,9 @@ class CategoryCard extends StatelessWidget {
         border: isSelected
             ? Border.all(color: categoryColor, width: 2)
             : Border.all(
-                color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB),
+                color: isDark
+                    ? const Color(0xFF475569)
+                    : const Color(0xFFE5E7EB),
                 width: 1,
               ),
         boxShadow: isSelected
@@ -65,7 +67,9 @@ class CategoryCard extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
           onTap: onTap,
-          hoverColor: isDark ? const Color(0xFF475569) : const Color(0xFFF3F4F6),
+          hoverColor: isDark
+              ? const Color(0xFF475569)
+              : const Color(0xFFF3F4F6),
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Row(
@@ -249,9 +253,9 @@ class CategoryCard extends StatelessWidget {
         ),
       );
     }
-    
+
     final isZeroOnline = onlineCount == 0;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(

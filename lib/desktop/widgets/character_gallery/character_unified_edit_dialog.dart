@@ -547,7 +547,8 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
     final thumbnailUrl = widget.subModel.thumbnailUrl;
 
     // 获取待审核申请中的预览图 fileId（用于预填充）
-    final pendingPreviewImages = widget.pendingRequestDetail?.parsedEditData?.previewImages;
+    final pendingPreviewImages =
+        widget.pendingRequestDetail?.parsedEditData?.previewImages;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -774,16 +775,26 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                 ),
               ),
               // 自定义选项
-              _buildZombieOriginChip('自定义', null, customColor, isMaintained: isMaintained),
+              _buildZombieOriginChip(
+                '自定义',
+                null,
+                customColor,
+                isMaintained: isMaintained,
+              ),
               // 只有未维护时才显示"未知"选项
               if (!isMaintained)
-                _buildZombieOriginChip('未知', 'unknown', scrollBrown, isMaintained: isMaintained),
+                _buildZombieOriginChip(
+                  '未知',
+                  'unknown',
+                  scrollBrown,
+                  isMaintained: isMaintained,
+                ),
             ],
           ),
 
           // 自定义输入框（仅在选择"自定义"时显示，且不是未知状态）
-          if (_acquisitionType == AcquisitionType.custom && 
-              _currentZombieOriginPreset == null && 
+          if (_acquisitionType == AcquisitionType.custom &&
+              _currentZombieOriginPreset == null &&
               !_isZombieOriginPreset) ...[
             const SizedBox(height: 20),
             _buildSectionTitle('自定义来源', Icons.edit_outlined),
@@ -815,7 +826,12 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
   /// [label] 显示的文本
   /// [value] 存储的值，null 表示自定义选项，'unknown' 表示未知选项
   /// [isMaintained] 是否已维护
-  Widget _buildZombieOriginChip(String label, String? value, Color color, {required bool isMaintained}) {
+  Widget _buildZombieOriginChip(
+    String label,
+    String? value,
+    Color color, {
+    required bool isMaintained,
+  }) {
     // 判断是否选中
     bool isSelected;
     if (value == 'unknown') {
@@ -823,15 +839,17 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
       isSelected = _acquisitionType == AcquisitionType.unknown;
     } else if (value == null) {
       // "自定义"选项：当 _acquisitionType 是 custom 且不是预设值时选中
-      isSelected = _acquisitionType == AcquisitionType.custom && 
-                   _currentZombieOriginPreset == null && 
-                   !_isZombieOriginPreset;
+      isSelected =
+          _acquisitionType == AcquisitionType.custom &&
+          _currentZombieOriginPreset == null &&
+          !_isZombieOriginPreset;
     } else {
       // 预设选项：当 _acquisitionType 是 custom 且 customSource 等于该值时选中
-      isSelected = _acquisitionType == AcquisitionType.custom && 
-                   _acquisitionCustomController.text == value;
+      isSelected =
+          _acquisitionType == AcquisitionType.custom &&
+          _acquisitionCustomController.text == value;
     }
-    
+
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inputBg = CharacterGalleryTheme.getInputBackground(context);
@@ -3421,7 +3439,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
 enum StatFieldType {
   number, // 数字（冷却、消耗）
   damage, // 伤害（允许范围如 150-300）
-  text,   // 文本（范围、特殊效果）
+  text, // 文本（范围、特殊效果）
 }
 
 /// 确保只有一个小数点的格式化器

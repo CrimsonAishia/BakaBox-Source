@@ -43,8 +43,10 @@ class _CategoryButtonState extends State<CategoryButton> {
             color: widget.isSelected
                 ? CharacterGalleryTheme.getVermillion(context)
                 : _isHovered
-                    ? CharacterGalleryTheme.getVermillion(context).withValues(alpha: isDark ? 0.2 : 0.1)
-                    : cardBg.withValues(alpha: 0.8),
+                ? CharacterGalleryTheme.getVermillion(
+                    context,
+                  ).withValues(alpha: isDark ? 0.2 : 0.1)
+                : cardBg.withValues(alpha: 0.8),
             border: Border.all(
               color: widget.isSelected || _isHovered
                   ? CharacterGalleryTheme.getVermillion(context)
@@ -93,7 +95,7 @@ class _HoverButtonState extends State<HoverButton> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     final iconSize = widget.small ? 12.0 : 14.0;
     final fontSize = widget.small ? 11.0 : 12.0;
     final hPadding = widget.small ? 8.0 : 10.0;
@@ -107,10 +109,15 @@ class _HoverButtonState extends State<HoverButton> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
+          padding: EdgeInsets.symmetric(
+            horizontal: hPadding,
+            vertical: vPadding,
+          ),
           decoration: BoxDecoration(
             color: _isHovered
-                ? CharacterGalleryTheme.getVermillion(context).withValues(alpha: isDark ? 0.2 : 0.1)
+                ? CharacterGalleryTheme.getVermillion(
+                    context,
+                  ).withValues(alpha: isDark ? 0.2 : 0.1)
                 : Colors.transparent,
             border: Border.all(
               color: _isHovered
@@ -157,7 +164,7 @@ class ScrollIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return IgnorePointer(
       child: Container(
         height: 40,
@@ -195,7 +202,7 @@ class SectionDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    
+
     return Padding(
       padding: const EdgeInsets.only(top: 20),
       child: Row(
@@ -218,10 +225,7 @@ class SectionDivider extends StatelessWidget {
               color: scrollBrown.withValues(alpha: 0.3),
             ),
           ),
-          if (trailing != null) ...[
-            const SizedBox(width: 8),
-            trailing!,
-          ],
+          if (trailing != null) ...[const SizedBox(width: 8), trailing!],
         ],
       ),
     );

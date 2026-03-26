@@ -95,7 +95,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         // 服务端 totalPages 可能不正确，根据 total 和 pageSize 计算
         final calculatedTotalPages = (response.total / _pageSize).ceil();
         final totalPages = calculatedTotalPages > 0 ? calculatedTotalPages : 1;
-        
+
         emit(
           state.copyWith(
             notifications: response.items,
@@ -141,7 +141,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         // 服务端 totalPages 可能不正确，根据 total 和 pageSize 计算
         final calculatedTotalPages = (response.total / _pageSize).ceil();
         final totalPages = calculatedTotalPages > 0 ? calculatedTotalPages : 1;
-        
+
         emit(
           state.copyWith(
             notifications: response.items,
@@ -151,7 +151,9 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
             isLoading: false,
           ),
         );
-        LogService.d('成功刷新消息列表，共 ${response.items.length} 条, totalPages: $totalPages');
+        LogService.d(
+          '成功刷新消息列表，共 ${response.items.length} 条, totalPages: $totalPages',
+        );
 
         // 获取准确的未读数量
         add(const NotificationFetchUnreadCount());
@@ -188,12 +190,14 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         // 服务端 totalPages 可能不正确，根据 total 和 pageSize 计算
         final calculatedTotalPages = (response.total / _pageSize).ceil();
         final totalPages = calculatedTotalPages > 0 ? calculatedTotalPages : 1;
-        
+
         // 去重：根据 id 过滤已存在的消息
         final existingIds = state.notifications.map((n) => n.id).toSet();
-        final newItems = response.items.where((n) => !existingIds.contains(n.id)).toList();
+        final newItems = response.items
+            .where((n) => !existingIds.contains(n.id))
+            .toList();
         final updatedList = [...state.notifications, ...newItems];
-        
+
         emit(
           state.copyWith(
             notifications: updatedList,
@@ -326,7 +330,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       LogService.d('获取未读消息数量跳过：用户未登录');
       return;
     }
-    
+
     try {
       final count = await _notificationApi.getUnreadCount();
       emit(state.copyWith(unreadCount: count));

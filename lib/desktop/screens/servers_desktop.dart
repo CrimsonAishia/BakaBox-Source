@@ -94,7 +94,8 @@ class _ServersDesktopState extends State<ServersDesktop> {
         setState(() {
           _isGameRunning = state.isGameRunning;
           // 判断是否正在启动游戏：type == launching && status == running
-          _isLaunchingGame = state.type == OperationType.launching && 
+          _isLaunchingGame =
+              state.type == OperationType.launching &&
               state.status == OperationStatus.running;
         });
       }
@@ -664,18 +665,12 @@ class _ServersDesktopState extends State<ServersDesktop> {
         decoration: BoxDecoration(
           color: Colors.green.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: Colors.green.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              MdiIcons.checkCircle,
-              size: 18,
-              color: Colors.green,
-            ),
+            Icon(MdiIcons.checkCircle, size: 18, color: Colors.green),
             const SizedBox(width: 6),
             const Text(
               '游戏已启动',
@@ -857,9 +852,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
                               fontWeight: FontWeight.w500,
                               color: _isReorderMode
                                   ? const Color(0xFF3B82F6)
-                                  : (isDark
-                                        ? Colors.white70
-                                        : Colors.black54),
+                                  : (isDark ? Colors.white70 : Colors.black54),
                             ),
                           ),
                         ],
@@ -1186,16 +1179,20 @@ class _ServersDesktopState extends State<ServersDesktop> {
   ) {
     final showSkeleton = server.isLoading && server.serverData == null;
     // 在 A2S 加载阶段显示加载文字
-    final String? loadingText = showSkeleton && state.loadingPhase == LoadingPhase.loadingA2S
+    final String? loadingText =
+        showSkeleton && state.loadingPhase == LoadingPhase.loadingA2S
         ? '正在获取服务器数据...'
         : null;
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 13),
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: showSkeleton
-            ? ServerCardSkeleton(key: ValueKey('skeleton_$index'), loadingText: loadingText)
+            ? ServerCardSkeleton(
+                key: ValueKey('skeleton_$index'),
+                loadingText: loadingText,
+              )
             : ServerCard(
                 key: ValueKey(server.serverItem.address),
                 server: server,
@@ -1681,10 +1678,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
           }
           if (oldIndex != newIndex) {
             context.read<ServerBloc>().add(
-              ServerReorderCategories(
-                oldIndex: oldIndex,
-                newIndex: newIndex,
-              ),
+              ServerReorderCategories(oldIndex: oldIndex, newIndex: newIndex),
             );
           }
         },

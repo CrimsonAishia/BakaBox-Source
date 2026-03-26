@@ -7,7 +7,7 @@ import '../utils/log_service.dart';
 import '../utils/storage_utils.dart';
 
 /// 应用初始化器
-/// 
+///
 /// 负责初始化各种服务和资源
 class AppInitializer {
   AppInitializer._();

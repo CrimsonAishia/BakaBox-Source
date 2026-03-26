@@ -11,21 +11,14 @@ import 'settings_item.dart';
 class AppSettings extends StatelessWidget {
   final SettingsState settingsState;
 
-  const AppSettings({
-    super.key,
-    required this.settingsState,
-  });
+  const AppSettings({super.key, required this.settingsState});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SettingsGroupTitle(
-          title: '应用设置',
-          hasGlow: true,
-          icon: MdiIcons.cog,
-        ),
+        SettingsGroupTitle(title: '应用设置', hasGlow: true, icon: MdiIcons.cog),
         AppSettingItem(
           title: '挤服成功音效音量',
           description: '调节挤服成功时播放音效的音量大小',
@@ -37,7 +30,9 @@ class AppSettings extends StatelessWidget {
                     context.read<SettingsBloc>().add(SettingsTestAudio());
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('测试音效播放，音量: ${(settingsState.audioVolume * 100).toInt()}%'),
+                        content: Text(
+                          '测试音效播放，音量: ${(settingsState.audioVolume * 100).toInt()}%',
+                        ),
                         duration: const Duration(seconds: 1),
                         backgroundColor: const Color(0xFF0080FF),
                       ),
@@ -79,7 +74,9 @@ class _VolumeSlider extends StatelessWidget {
           child: SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: const Color(0xFF0080FF),
-              inactiveTrackColor: const Color(0xFF0080FF).withValues(alpha: 0.2),
+              inactiveTrackColor: const Color(
+                0xFF0080FF,
+              ).withValues(alpha: 0.2),
               thumbColor: const Color(0xFF0080FF),
               overlayColor: const Color(0xFF0080FF).withValues(alpha: 0.2),
               trackHeight: 4,

@@ -28,7 +28,7 @@ class VideoUploadResult {
 }
 
 /// 视频上传组件
-/// 
+///
 /// 支持选择视频文件，自动转换为 WebM 格式（1080p），然后上传
 class VideoUploadWidget extends StatefulWidget {
   final String? currentVideoUrl;
@@ -61,7 +61,7 @@ class _VideoUploadWidgetState extends State<VideoUploadWidget> {
   Widget build(BuildContext context) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -99,7 +99,7 @@ class _VideoUploadWidgetState extends State<VideoUploadWidget> {
   Widget _buildUploadArea(BuildContext context) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inputBg = CharacterGalleryTheme.getInputBackground(context);
-    
+
     return Container(
       height: 80,
       decoration: BoxDecoration(
@@ -108,8 +108,8 @@ class _VideoUploadWidgetState extends State<VideoUploadWidget> {
           color: _status == VideoUploadStatus.error
               ? Colors.red
               : _status == VideoUploadStatus.completed
-                  ? Colors.green
-                  : scrollBrown.withValues(alpha: 0.4),
+              ? Colors.green
+              : scrollBrown.withValues(alpha: 0.4),
           width: _status == VideoUploadStatus.completed ? 2 : 1,
         ),
         borderRadius: BorderRadius.circular(4),
@@ -138,7 +138,7 @@ class _VideoUploadWidgetState extends State<VideoUploadWidget> {
   Widget _buildIdleContent(BuildContext context) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
-    
+
     return InkWell(
       onTap: widget.enabled ? _selectAndUploadVideo : null,
       borderRadius: BorderRadius.circular(4),
@@ -179,7 +179,7 @@ class _VideoUploadWidgetState extends State<VideoUploadWidget> {
   Widget _buildLoadingContent(BuildContext context, String text) {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final vermillion = CharacterGalleryTheme.getVermillion(context);
-    
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -187,10 +187,7 @@ class _VideoUploadWidgetState extends State<VideoUploadWidget> {
           SizedBox(
             width: 24,
             height: 24,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: vermillion,
-            ),
+            child: CircularProgressIndicator(strokeWidth: 2, color: vermillion),
           ),
           const SizedBox(height: 8),
           Text(
@@ -205,11 +202,15 @@ class _VideoUploadWidgetState extends State<VideoUploadWidget> {
     );
   }
 
-  Widget _buildProgressContent(BuildContext context, String title, String detail) {
+  Widget _buildProgressContent(
+    BuildContext context,
+    String title,
+    String detail,
+  ) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final vermillion = CharacterGalleryTheme.getVermillion(context);
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -270,7 +271,7 @@ class _VideoUploadWidgetState extends State<VideoUploadWidget> {
   Widget _buildCompletedContent(BuildContext context) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
-    
+
     return InkWell(
       onTap: widget.enabled ? _selectAndUploadVideo : null,
       borderRadius: BorderRadius.circular(4),
@@ -315,11 +316,7 @@ class _VideoUploadWidgetState extends State<VideoUploadWidget> {
                 ],
               ),
             ),
-            Icon(
-              Icons.refresh,
-              color: scrollBrown,
-              size: 20,
-            ),
+            Icon(Icons.refresh, color: scrollBrown, size: 20),
           ],
         ),
       ),
@@ -334,18 +331,11 @@ class _VideoUploadWidgetState extends State<VideoUploadWidget> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.error_outline,
-              color: Colors.red,
-              size: 28,
-            ),
+            const Icon(Icons.error_outline, color: Colors.red, size: 28),
             const SizedBox(height: 4),
             Text(
               '上传失败，点击重试',
-              style: TextStyle(
-                color: Colors.red.shade700,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: Colors.red.shade700, fontSize: 12),
             ),
           ],
         ),
@@ -434,7 +424,8 @@ class _VideoUploadWidgetState extends State<VideoUploadWidget> {
         onProgress: (progress) {
           setState(() {
             _progress = progress.progress;
-            _statusText = '${(progress.uploadedBytes / 1024 / 1024).toStringAsFixed(1)} MB / ${(progress.totalBytes / 1024 / 1024).toStringAsFixed(1)} MB';
+            _statusText =
+                '${(progress.uploadedBytes / 1024 / 1024).toStringAsFixed(1)} MB / ${(progress.totalBytes / 1024 / 1024).toStringAsFixed(1)} MB';
           });
         },
       );
@@ -459,9 +450,7 @@ class _VideoUploadWidgetState extends State<VideoUploadWidget> {
         _status = VideoUploadStatus.error;
         _errorMessage = '上传失败: $e';
       });
-      widget.onUploadComplete?.call(
-        VideoUploadResult(error: e.toString()),
-      );
+      widget.onUploadComplete?.call(VideoUploadResult(error: e.toString()));
     }
   }
 

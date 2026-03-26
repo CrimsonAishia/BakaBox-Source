@@ -83,11 +83,11 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                 : Border.all(
                     color: _isHovered
                         ? (isDark
-                            ? Colors.white.withValues(alpha: 0.15)
-                            : const Color(0xFFD1D5DB))
+                              ? Colors.white.withValues(alpha: 0.15)
+                              : const Color(0xFFD1D5DB))
                         : (isDark
-                            ? Colors.white.withValues(alpha: 0.08)
-                            : const Color(0xFFE5E7EB)),
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : const Color(0xFFE5E7EB)),
                   ),
             boxShadow: [
               BoxShadow(
@@ -170,13 +170,14 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                                       color: hasBackground
                                           ? Colors.white
                                           : (isDark
-                                              ? Colors.white
-                                              : const Color(0xFF1F2937)),
+                                                ? Colors.white
+                                                : const Color(0xFF1F2937)),
                                       shadows: hasBackground
                                           ? [
                                               Shadow(
-                                                color: Colors.black
-                                                    .withValues(alpha: 0.5),
+                                                color: Colors.black.withValues(
+                                                  alpha: 0.5,
+                                                ),
                                                 blurRadius: 4,
                                               ),
                                             ]
@@ -195,8 +196,8 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                                         color: hasBackground
                                             ? Colors.white70
                                             : (isDark
-                                                ? Colors.white54
-                                                : const Color(0xFF6B7280)),
+                                                  ? Colors.white54
+                                                  : const Color(0xFF6B7280)),
                                         shadows: hasBackground
                                             ? [
                                                 Shadow(
@@ -227,7 +228,9 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                                 widget.onScopeTap == null)
                               _buildSubscribedBadge(isDark, hasBackground),
                             // 编辑按钮（editBeforeDelete=true 时在删除按钮前显示，仅已订阅时）
-                            if (widget.onEdit != null && widget.editBeforeDelete && widget.isSubscribed) ...[
+                            if (widget.onEdit != null &&
+                                widget.editBeforeDelete &&
+                                widget.isSubscribed) ...[
                               const SizedBox(width: 4),
                               Tooltip(
                                 message: '编辑地图信息',
@@ -239,8 +242,8 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                                     color: hasBackground
                                         ? Colors.white70
                                         : (isDark
-                                            ? Colors.white38
-                                            : const Color(0xFF9CA3AF)),
+                                              ? Colors.white38
+                                              : const Color(0xFF9CA3AF)),
                                   ),
                                   iconSize: 16,
                                   splashRadius: 14,
@@ -263,8 +266,8 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                                   color: hasBackground
                                       ? Colors.white70
                                       : (isDark
-                                          ? Colors.white38
-                                          : const Color(0xFF9CA3AF)),
+                                            ? Colors.white38
+                                            : const Color(0xFF9CA3AF)),
                                 ),
                                 iconSize: 18,
                                 splashRadius: 14,
@@ -276,7 +279,10 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                               ),
                             ],
                             // 编辑按钮（editBeforeDelete=false 时在删除按钮后显示，仅已订阅且有背景图时）
-                            if (widget.onEdit != null && !widget.editBeforeDelete && hasBackground && widget.isSubscribed) ...[
+                            if (widget.onEdit != null &&
+                                !widget.editBeforeDelete &&
+                                hasBackground &&
+                                widget.isSubscribed) ...[
                               const SizedBox(width: 4),
                               Tooltip(
                                 message: '编辑地图信息',
@@ -288,8 +294,8 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                                     color: hasBackground
                                         ? Colors.white70
                                         : (isDark
-                                            ? Colors.white30
-                                            : const Color(0xFFD1D5DB)),
+                                              ? Colors.white30
+                                              : const Color(0xFFD1D5DB)),
                                   ),
                                   iconSize: 16,
                                   splashRadius: 14,
@@ -324,23 +330,20 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
           borderRadius: BorderRadius.circular(6),
           onTap: widget.onScopeTap,
           child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 5,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: hasBackground
                   ? Colors.black.withValues(alpha: 0.4)
                   : (isDark
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : const Color(0xFFE5E7EB)),
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : const Color(0xFFE5E7EB)),
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
                 color: hasBackground
                     ? Colors.white.withValues(alpha: 0.3)
                     : (isDark
-                        ? Colors.white.withValues(alpha: 0.15)
-                        : const Color(0xFFD1D5DB)),
+                          ? Colors.white.withValues(alpha: 0.15)
+                          : const Color(0xFFD1D5DB)),
               ),
             ),
             child: Row(
@@ -373,10 +376,7 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
 
   Widget _buildSubscribedBadge(bool isDark, bool hasBackground) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 5,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: hasBackground
             ? const Color(0xFF10B981).withValues(alpha: 0.3)

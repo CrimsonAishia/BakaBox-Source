@@ -4,12 +4,12 @@ import '../utils/platform_utils.dart';
 import '../utils/storage_utils.dart';
 
 /// 音频服务 - 管理应用音效播放
-/// 
+///
 /// 提供以下功能：
 /// - 挤服成功音效播放
 /// - 音量控制
 /// - 音量持久化存储
-/// 
+///
 /// 注意：
 /// - 此服务仅在桌面端有效，移动端调用会直接返回
 /// - AudioPlayer 延迟初始化，首次播放时才创建，节省内存
@@ -19,7 +19,7 @@ class AudioService {
   AudioService._internal();
 
   static const String _keyAudioVolume = 'audio_volume';
-  
+
   AudioPlayer? _audioPlayer;
   double _volume = 0.8; // 默认音量 80%
   bool _isVolumeLoaded = false; // 音量配置是否已加载
@@ -30,7 +30,7 @@ class AudioService {
   /// 加载音量配置（不创建 AudioPlayer，节省内存）
   Future<void> initialize() async {
     if (_isVolumeLoaded) return;
-    
+
     try {
       _volume = StorageUtils.getDouble(_keyAudioVolume) ?? 0.8;
       _isVolumeLoaded = true;
@@ -39,12 +39,12 @@ class AudioService {
       LogService.e('加载音量配置失败', e);
     }
   }
-  
+
   /// 确保 AudioPlayer 已创建（首次播放时调用）
   Future<void> _ensurePlayerCreated() async {
     if (_audioPlayer != null) return;
     if (!PlatformUtils.isDesktopPlatform) return;
-    
+
     try {
       _audioPlayer = AudioPlayer();
       await _audioPlayer!.setReleaseMode(ReleaseMode.stop);
@@ -57,7 +57,7 @@ class AudioService {
   /// 设置音量
   Future<void> setVolume(double volume) async {
     _volume = volume.clamp(0.0, 1.0);
-    
+
     try {
       await StorageUtils.setDouble(_keyAudioVolume, _volume);
       LogService.d('音量已设置: ${(_volume * 100).toInt()}%');
@@ -70,11 +70,11 @@ class AudioService {
   Future<bool> playQueueSuccessSound() async {
     if (_volume <= 0) return false;
     if (!PlatformUtils.isDesktopPlatform) return false;
-    
+
     // 延迟创建 AudioPlayer，首次播放时才初始化
     await _ensurePlayerCreated();
     if (_audioPlayer == null) return false;
-    
+
     try {
       await _audioPlayer!.setVolume(_volume);
       await _audioPlayer!.play(AssetSource('audio/queue_success.mp3'));

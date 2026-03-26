@@ -1,12 +1,7 @@
 import 'package:equatable/equatable.dart';
 import '../../models/feature_status_models.dart';
 
-enum FeatureStatusLoadState {
-  initial,
-  loading,
-  loaded,
-  error,
-}
+enum FeatureStatusLoadState { initial, loading, loaded, error }
 
 class FeatureStatusState extends Equatable {
   final FeatureStatusLoadState loadState;
@@ -39,9 +34,7 @@ class FeatureStatusState extends Equatable {
   /// 获取功能禁用提示信息
   String getDisabledMessage(FeatureType feature) {
     final featureStatus = status.getStatus(feature);
-    return featureStatus.message.isNotEmpty
-        ? featureStatus.message
-        : '该功能暂未开放';
+    return featureStatus.message.isNotEmpty ? featureStatus.message : '该功能暂未开放';
   }
 
   /// 检查缓存是否过期（5分钟）

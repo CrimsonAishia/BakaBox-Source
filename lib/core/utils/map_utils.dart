@@ -7,52 +7,52 @@ class MapUtils {
   static const String defaultMapBackground = 'assets/images/default-map-bg.jpg';
 
   /// 获取地图图片URL
-  /// 
+  ///
   /// [mapName] 地图名称
   /// [mapUrl] 从API获取的地图图片URL（可选）
-  /// 
+  ///
   /// 返回地图图片URL，如果没有则返回默认背景
   static String getMapImageUrl(String? mapName, {String? mapUrl}) {
     // 如果有API返回的URL，直接使用
     if (mapUrl != null && mapUrl.isNotEmpty) {
       return mapUrl;
     }
-    
+
     // 如果没有地图名称，返回默认背景
     if (mapName == null || mapName.isEmpty) {
       return defaultMapBackground;
     }
-    
+
     // 尝试从已知地图映射中获取
     final normalizedName = mapName.toLowerCase().trim();
     final knownUrl = _knownMapImages[normalizedName];
     if (knownUrl != null) {
       return knownUrl;
     }
-    
+
     // 返回默认背景
     return defaultMapBackground;
   }
 
   /// 格式化地图名称显示
-  /// 
+  ///
   /// [mapName] 原始地图名称
-  /// 
+  ///
   /// 返回格式化后的地图名称（保持原始大小写）
   static String formatMapName(String? mapName) {
     if (mapName == null || mapName.isEmpty) {
       return '未知地图';
     }
-    
+
     // 直接返回原始地图名称，不做任何格式化
     return mapName;
   }
 
   /// 获取地图显示名称
-  /// 
+  ///
   /// [mapName] 原始地图名称
   /// [mapLabel] 地图标签（可选）
-  /// 
+  ///
   /// 返回带标签的地图显示名称
   static String getMapDisplayName(String? mapName, {String? mapLabel}) {
     if (mapLabel != null && mapLabel.isNotEmpty) {
@@ -66,9 +66,9 @@ class MapUtils {
     if (url == null || url.isEmpty) {
       return false;
     }
-    return url.startsWith('http://') || 
-           url.startsWith('https://') || 
-           url.startsWith('assets/');
+    return url.startsWith('http://') ||
+        url.startsWith('https://') ||
+        url.startsWith('assets/');
   }
 
   /// 已知地图图片映射表

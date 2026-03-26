@@ -34,18 +34,18 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
   int _totalCountdownSeconds = 5;
   Timer? _countdownTimer;
   bool _isCountdownActive = false;
-  
+
   // 窗口关闭状态
   bool _isClosing = false;
-  
+
   // 窗口收起状态
   bool _isMinimized = false;
-  
+
   // 窗口尺寸
   static const double _expandedHeight = 160.0;
   static const double _minimizedHeight = 44.0;
   static const double _windowWidth = 280.0;
-  
+
   // 倒计时配置
   static const int _successCountdown = 5;
   static const int _failureCountdown = 8;
@@ -54,10 +54,10 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
   @override
   void initState() {
     super.initState();
-    
+
     // 监听状态变化
     widget.stateNotifier.addListener(_onStateChanged);
-    
+
     // 检查初始状态
     if (widget.stateNotifier.state.isTerminal) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -68,60 +68,72 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
 
   void _onStateChanged() {
     final state = widget.stateNotifier.state;
-    
+
     // 检查是否有 autoDismissSeconds 更新
     final autoDismiss = widget.stateNotifier.autoDismissSeconds;
-    
+
     // 如果从暂停/终态恢复到活跃状态，取消倒计时
-    if (_isCountdownActive && (state.isQueueing || state.isLaunching || state.isConnecting || state.isLoading)) {
+    if (_isCountdownActive &&
+        (state.isQueueing ||
+            state.isLaunching ||
+            state.isConnecting ||
+            state.isLoading)) {
       _cancelCountdown();
       return;
     }
-    
+
     // 进入终态时启动倒计时
     if (state.isTerminal && !_isCountdownActive) {
       _startCountdown(state.isSuccess, customSeconds: autoDismiss);
       return;
     }
-    
+
     // 进入暂停状态时启动倒计时
     if (state.isPaused && !_isCountdownActive) {
       _startCountdown(false, isPaused: true, customSeconds: autoDismiss);
     }
   }
-  
+
   void _cancelCountdown() {
     _countdownTimer?.cancel();
     _isCountdownActive = false;
-    _isClosing = false;  // 重置关闭标志，允许新的倒计时
+    _isClosing = false; // 重置关闭标志，允许新的倒计时
     if (mounted) setState(() {});
   }
 
-  void _startCountdown(bool isSuccess, {bool isPaused = false, int? customSeconds}) {
+  void _startCountdown(
+    bool isSuccess, {
+    bool isPaused = false,
+    int? customSeconds,
+  }) {
     _countdownTimer?.cancel();
-    
+
     // 优先使用自定义秒数，否则使用默认值
     if (customSeconds != null && customSeconds > 0) {
       _totalCountdownSeconds = customSeconds;
     } else if (isPaused) {
       _totalCountdownSeconds = _pausedCountdown;
     } else {
-      _totalCountdownSeconds = isSuccess ? _successCountdown : _failureCountdown;
+      _totalCountdownSeconds = isSuccess
+          ? _successCountdown
+          : _failureCountdown;
     }
-    
+
     _countdownSeconds = _totalCountdownSeconds;
     _isCountdownActive = true;
-    
-    debugPrint('[FloatingWindowShell] Starting countdown: $_totalCountdownSeconds seconds (isPaused: $isPaused, customSeconds: $customSeconds)');
-    
+
+    debugPrint(
+      '[FloatingWindowShell] Starting countdown: $_totalCountdownSeconds seconds (isPaused: $isPaused, customSeconds: $customSeconds)',
+    );
+
     if (mounted) setState(() {});
-    
+
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
         timer.cancel();
         return;
       }
-      
+
       if (_countdownSeconds <= 1) {
         // 最后一秒，等进度条动画完成后再关闭
         setState(() {
@@ -137,13 +149,13 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
       }
     });
   }
-  
+
   /// 调度窗口关闭（确保一定会关闭）
   void _scheduleWindowClose() {
     // 防止重复调度
     if (_isClosing) return;
     _isClosing = true;
-    
+
     Future.delayed(const Duration(milliseconds: 1000), () {
       // 即使 mounted 为 false，也尝试关闭窗口
       _closeWindow();
@@ -153,12 +165,12 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
   Future<void> _closeWindow() async {
     _countdownTimer?.cancel();
     _isCountdownActive = false;
-    
+
     debugPrint('[FloatingWindowShell] Closing window: ${widget.windowId}');
-    
+
     // 先通知主窗口，窗口即将关闭
     await _notifyMainWindowClosed();
-    
+
     // 尝试多种关闭方式，确保窗口一定关闭
     try {
       await windowManager.close();
@@ -169,7 +181,9 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
         await windowManager.destroy();
         debugPrint('[FloatingWindowShell] Window closed via destroy()');
       } catch (e2) {
-        debugPrint('[FloatingWindowShell] destroy() also failed: $e2, trying hide()');
+        debugPrint(
+          '[FloatingWindowShell] destroy() also failed: $e2, trying hide()',
+        );
         // 最后尝试隐藏窗口
         try {
           await windowManager.hide();
@@ -182,7 +196,7 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
       }
     }
   }
-  
+
   /// 通知主窗口，浮动窗口已关闭
   Future<void> _notifyMainWindowClosed() async {
     try {
@@ -204,7 +218,7 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
     setState(() {
       _isMinimized = !_isMinimized;
     });
-    
+
     // 调整窗口大小
     final newHeight = _isMinimized ? _minimizedHeight : _expandedHeight;
     await windowManager.setSize(Size(_windowWidth, newHeight));
@@ -224,8 +238,9 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
       builder: (context, child) {
         final state = widget.stateNotifier.state;
         final color = FloatingWindowColors.fromState(state);
-        final hasMapBackground = state.mapBackground != null && state.mapBackground!.isNotEmpty;
-        
+        final hasMapBackground =
+            state.mapBackground != null && state.mapBackground!.isNotEmpty;
+
         return Scaffold(
           backgroundColor: Colors.transparent,
           body: ClipRRect(
@@ -235,10 +250,7 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
               decoration: BoxDecoration(
                 color: const Color(0xFF1E293B),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: color,
-                  width: 2,
-                ),
+                border: Border.all(color: color, width: 2),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.5),
@@ -282,7 +294,9 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
                     ),
                   // 主内容
                   Column(
-                    mainAxisSize: _isMinimized ? MainAxisSize.min : MainAxisSize.max,
+                    mainAxisSize: _isMinimized
+                        ? MainAxisSize.min
+                        : MainAxisSize.max,
                     children: [
                       // 标题栏
                       _buildHeader(color),
@@ -327,7 +341,8 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
     return Image.asset(
       mapUrl,
       fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) => Container(color: const Color(0xFF1E293B)),
+      errorBuilder: (context, error, stackTrace) =>
+          Container(color: const Color(0xFF1E293B)),
     );
   }
 

@@ -39,7 +39,9 @@ class TimeUtils {
       // 创建 UTC+8 时间，然后转换为本地时间
       final serverTime = DateTime.utc(year, month, day, hour, minute, second);
       // 服务器时间是 UTC+8，所以需要减去8小时得到真正的 UTC 时间
-      final utcTime = serverTime.subtract(const Duration(hours: serverTimezoneOffset));
+      final utcTime = serverTime.subtract(
+        const Duration(hours: serverTimezoneOffset),
+      );
       // 转换为用户本地时间
       return utcTime.toLocal();
     } catch (e) {
@@ -149,7 +151,9 @@ class TimeUtils {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
-    if (difference.inDays > 365) return '${(difference.inDays / 365).floor()}年前';
+    if (difference.inDays > 365) {
+      return '${(difference.inDays / 365).floor()}年前';
+    }
     if (difference.inDays > 30) return '${(difference.inDays / 30).floor()}个月前';
     if (difference.inDays > 0) return '${difference.inDays}天前';
     if (difference.inHours > 0) return '${difference.inHours}小时前';

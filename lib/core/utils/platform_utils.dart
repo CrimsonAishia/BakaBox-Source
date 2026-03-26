@@ -19,7 +19,7 @@ class PlatformUtils {
   static bool get isDesktopPlatform => !kIsWeb && Platform.isWindows;
 
   /// 检测是否从 Microsoft Store 安装（同步版本）
-  /// 
+  ///
   /// 注意：首次使用前建议先调用 StoreDetectionUtils.isInstalledFromStore() 初始化
   /// 这个同步版本使用缓存结果，适合在 getter 中使用
   static bool get isInstalledFromStore {
@@ -70,7 +70,7 @@ class PlatformUtils {
         'deviceType': getDeviceType(context),
         'screenWidth': MediaQuery.of(context).size.width,
         'screenHeight': MediaQuery.of(context).size.height,
-      }
+      },
     };
   }
 }

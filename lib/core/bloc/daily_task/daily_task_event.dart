@@ -27,10 +27,7 @@ class DailyTaskShakeCompleted extends DailyTaskEvent {
   final bool success;
   final int? rewardAmount;
 
-  const DailyTaskShakeCompleted({
-    required this.success,
-    this.rewardAmount,
-  });
+  const DailyTaskShakeCompleted({required this.success, this.rewardAmount});
 
   @override
   List<Object?> get props => [success, rewardAmount];

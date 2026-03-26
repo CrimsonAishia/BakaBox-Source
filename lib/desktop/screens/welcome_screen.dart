@@ -1576,7 +1576,7 @@ class _TopMapsListState extends State<_TopMapsList> {
         ),
       );
     }
-    
+
     return Stack(
       children: [
         ListView.separated(

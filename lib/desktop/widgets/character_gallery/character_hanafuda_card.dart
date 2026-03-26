@@ -117,7 +117,9 @@ class _HanafudaCardState extends State<HanafudaCard> {
                             child: Center(
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: CharacterGalleryTheme.getVermillion(context),
+                                color: CharacterGalleryTheme.getVermillion(
+                                  context,
+                                ),
                               ),
                             ),
                           ),
@@ -136,7 +138,10 @@ class _HanafudaCardState extends State<HanafudaCard> {
                             top: 0,
                             right: 0,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.black.withValues(alpha: 0.6),
                                 borderRadius: const BorderRadius.only(
@@ -153,9 +158,13 @@ class _HanafudaCardState extends State<HanafudaCard> {
                                   ),
                                   const SizedBox(width: 2),
                                   Text(
-                                    _formatViewCount(widget.character.viewCount),
+                                    _formatViewCount(
+                                      widget.character.viewCount,
+                                    ),
                                     style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.9),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.9,
+                                      ),
                                       fontSize: 10,
                                       fontWeight: FontWeight.w500,
                                     ),

@@ -255,7 +255,6 @@ class ToggleTierExpanded extends CharacterGalleryEvent {
   List<Object?> get props => [tier];
 }
 
-
 /// 加载角色专属刀模/枪模
 class LoadCharacterWeaponModels extends CharacterGalleryEvent {
   final int characterId;
@@ -337,7 +336,10 @@ class LoadWeaponModelDetailInCharacterView extends CharacterGalleryEvent {
   final int id;
   final bool isKnife;
 
-  const LoadWeaponModelDetailInCharacterView({required this.id, required this.isKnife});
+  const LoadWeaponModelDetailInCharacterView({
+    required this.id,
+    required this.isKnife,
+  });
 
   @override
   List<Object?> get props => [id, isKnife];

@@ -13,17 +13,15 @@ import 'settings_item.dart';
 class GameSettings extends StatefulWidget {
   final SettingsState settingsState;
 
-  const GameSettings({
-    super.key,
-    required this.settingsState,
-  });
+  const GameSettings({super.key, required this.settingsState});
 
   @override
   State<GameSettings> createState() => _GameSettingsState();
 }
 
 class _GameSettingsState extends State<GameSettings> {
-  final TextEditingController _customLaunchOptionController = TextEditingController();
+  final TextEditingController _customLaunchOptionController =
+      TextEditingController();
 
   @override
   void dispose() {
@@ -41,16 +39,15 @@ class _GameSettingsState extends State<GameSettings> {
           hasGlow: true,
           icon: MdiIcons.gamepadVariant,
         ),
-        SettingsItem(
-          label: '启动平台',
-          control: _buildLaunchPlatformSelector(),
-        ),
+        SettingsItem(label: '启动平台', control: _buildLaunchPlatformSelector()),
         SettingsItem(
           label: '游戏安装路径',
           control: _buildPathSelector(
             path: widget.settingsState.gamePath,
-            placeholder: '例如: C:\\Program Files (x86)\\Steam\\steamapps\\common\\Counter-Strike Global Offensive',
-            onDetect: () => context.read<SettingsBloc>().add(SettingsDetectGamePath()),
+            placeholder:
+                '例如: C:\\Program Files (x86)\\Steam\\steamapps\\common\\Counter-Strike Global Offensive',
+            onDetect: () =>
+                context.read<SettingsBloc>().add(SettingsDetectGamePath()),
             onSelect: _selectGamePath,
             isDetecting: widget.settingsState.isDetectingPath,
             errorMessage: widget.settingsState.gamePathError,
@@ -61,7 +58,8 @@ class _GameSettingsState extends State<GameSettings> {
           control: _buildPathSelector(
             path: widget.settingsState.steamPath,
             placeholder: '例如: C:\\Program Files (x86)\\Steam',
-            onDetect: () => context.read<SettingsBloc>().add(SettingsDetectSteamPath()),
+            onDetect: () =>
+                context.read<SettingsBloc>().add(SettingsDetectSteamPath()),
             onSelect: _selectSteamPath,
             isDetecting: widget.settingsState.isDetectingPath,
             errorMessage: widget.settingsState.steamPathError,
@@ -87,7 +85,9 @@ class _GameSettingsState extends State<GameSettings> {
         _PlatformOption(
           icon: MdiIcons.steam,
           label: 'Steam平台',
-          isSelected: widget.settingsState.launchPlatform == LaunchPlatformType.worldwide,
+          isSelected:
+              widget.settingsState.launchPlatform ==
+              LaunchPlatformType.worldwide,
           onTap: () => context.read<SettingsBloc>().add(
             const SettingsSetLaunchPlatform(LaunchPlatformType.worldwide),
           ),
@@ -96,7 +96,8 @@ class _GameSettingsState extends State<GameSettings> {
         _PlatformOption(
           icon: MdiIcons.earth,
           label: '完美平台',
-          isSelected: widget.settingsState.launchPlatform == LaunchPlatformType.perfect,
+          isSelected:
+              widget.settingsState.launchPlatform == LaunchPlatformType.perfect,
           onTap: () => context.read<SettingsBloc>().add(
             const SettingsSetLaunchPlatform(LaunchPlatformType.perfect),
           ),
@@ -124,14 +125,21 @@ class _GameSettingsState extends State<GameSettings> {
           children: [
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                  color: isDark
+                      ? const Color(0xFF1E293B)
+                      : const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: hasError
                         ? Colors.red.withValues(alpha: 0.5)
-                        : (isDark ? const Color(0xFF475569) : const Color(0xFFE2E8F0)),
+                        : (isDark
+                              ? const Color(0xFF475569)
+                              : const Color(0xFFE2E8F0)),
                   ),
                 ),
                 child: Text(
@@ -150,21 +158,39 @@ class _GameSettingsState extends State<GameSettings> {
             OutlinedButton(
               onPressed: isDetecting ? null : onDetect,
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 foregroundColor: isDark ? Colors.white70 : null,
-                side: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFD1D5DB)),
+                side: BorderSide(
+                  color: isDark
+                      ? const Color(0xFF475569)
+                      : const Color(0xFFD1D5DB),
+                ),
               ),
               child: isDetecting
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Text('自动检测'),
             ),
             const SizedBox(width: 10),
             OutlinedButton(
               onPressed: onSelect,
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 foregroundColor: isDark ? Colors.white70 : null,
-                side: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFD1D5DB)),
+                side: BorderSide(
+                  color: isDark
+                      ? const Color(0xFF475569)
+                      : const Color(0xFFD1D5DB),
+                ),
               ),
               child: const Text('选择路径'),
             ),
@@ -182,10 +208,17 @@ class _GameSettingsState extends State<GameSettings> {
               ),
               child: Row(
                 children: [
-                  Icon(MdiIcons.alertCircleOutline, color: Colors.red, size: 16),
+                  Icon(
+                    MdiIcons.alertCircleOutline,
+                    color: Colors.red,
+                    size: 16,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(errorMessage, style: const TextStyle(fontSize: 12, color: Colors.red)),
+                    child: Text(
+                      errorMessage,
+                      style: const TextStyle(fontSize: 12, color: Colors.red),
+                    ),
                   ),
                 ],
               ),
@@ -197,18 +230,26 @@ class _GameSettingsState extends State<GameSettings> {
 
   Future<void> _selectGamePath() async {
     try {
-      final result = await FilePicker.platform.getDirectoryPath(dialogTitle: '选择游戏安装目录');
+      final result = await FilePicker.platform.getDirectoryPath(
+        dialogTitle: '选择游戏安装目录',
+      );
       if (result != null && mounted) {
         context.read<SettingsBloc>().add(SettingsSetGamePath(result));
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('游戏路径已设置'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('游戏路径已设置'),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
       LogService.e('选择游戏路径失败', e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('选择路径失败，请重试'), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text('选择路径失败，请重试'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -216,18 +257,26 @@ class _GameSettingsState extends State<GameSettings> {
 
   Future<void> _selectSteamPath() async {
     try {
-      final result = await FilePicker.platform.getDirectoryPath(dialogTitle: '选择Steam安装目录');
+      final result = await FilePicker.platform.getDirectoryPath(
+        dialogTitle: '选择Steam安装目录',
+      );
       if (result != null && mounted) {
         context.read<SettingsBloc>().add(SettingsSetSteamPath(result));
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Steam路径已设置'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Steam路径已设置'),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
       LogService.e('选择Steam路径失败', e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('选择路径失败，请重试'), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text('选择路径失败，请重试'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -262,7 +311,9 @@ class _GameSettingsState extends State<GameSettings> {
           spacing: 8,
           runSpacing: 8,
           children: _availableLaunchOptions.map((option) {
-            final isSelected = widget.settingsState.launchOptions.contains(option['value']);
+            final isSelected = widget.settingsState.launchOptions.contains(
+              option['value'],
+            );
             return FilterChip(
               label: Text(
                 option['label']!,
@@ -276,15 +327,23 @@ class _GameSettingsState extends State<GameSettings> {
               selected: isSelected,
               onSelected: (selected) {
                 if (selected) {
-                  context.read<SettingsBloc>().add(SettingsAddLaunchOption(option['value']!));
+                  context.read<SettingsBloc>().add(
+                    SettingsAddLaunchOption(option['value']!),
+                  );
                 } else {
-                  context.read<SettingsBloc>().add(SettingsRemoveLaunchOption(option['value']!));
+                  context.read<SettingsBloc>().add(
+                    SettingsRemoveLaunchOption(option['value']!),
+                  );
                 }
               },
               selectedColor: const Color(0xFF0080FF),
               checkmarkColor: Colors.white,
               backgroundColor: isDark ? const Color(0xFF334155) : null,
-              side: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB)),
+              side: BorderSide(
+                color: isDark
+                    ? const Color(0xFF475569)
+                    : const Color(0xFFE5E7EB),
+              ),
             );
           }).toList(),
         ),
@@ -300,16 +359,27 @@ class _GameSettingsState extends State<GameSettings> {
                     fontSize: 13,
                     color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   filled: true,
                   fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB)),
+                    borderSide: BorderSide(
+                      color: isDark
+                          ? const Color(0xFF475569)
+                          : const Color(0xFFE5E7EB),
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB)),
+                    borderSide: BorderSide(
+                      color: isDark
+                          ? const Color(0xFF475569)
+                          : const Color(0xFFE5E7EB),
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -326,12 +396,18 @@ class _GameSettingsState extends State<GameSettings> {
             ),
             const SizedBox(width: 8),
             ElevatedButton(
-              onPressed: () => _addCustomLaunchOption(_customLaunchOptionController.text),
+              onPressed: () =>
+                  _addCustomLaunchOption(_customLaunchOptionController.text),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0080FF),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: const Text('添加'),
             ),
@@ -385,11 +461,15 @@ class _GameSettingsState extends State<GameSettings> {
             size: 14,
             color: isDark ? Colors.white54 : const Color(0xFF6B7280),
           ),
-          onDeleted: () => context.read<SettingsBloc>().add(SettingsRemoveLaunchOption(option)),
+          onDeleted: () => context.read<SettingsBloc>().add(
+            SettingsRemoveLaunchOption(option),
+          ),
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           visualDensity: VisualDensity.compact,
           backgroundColor: isDark ? const Color(0xFF334155) : null,
-          side: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB)),
+          side: BorderSide(
+            color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB),
+          ),
         );
       }).toList(),
     );
@@ -429,7 +509,9 @@ class _PlatformOption extends StatelessWidget {
                   ],
                 )
               : null,
-          color: isSelected ? null : (isDark ? const Color(0xFF334155) : const Color(0xFFF9FAFB)),
+          color: isSelected
+              ? null
+              : (isDark ? const Color(0xFF334155) : const Color(0xFFF9FAFB)),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
@@ -455,7 +537,10 @@ class _PlatformOption extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isSelected
                     ? const Color(0xFF0080FF).withValues(alpha: 0.15)
-                    : (isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB)).withValues(alpha: 0.5),
+                    : (isDark
+                              ? const Color(0xFF475569)
+                              : const Color(0xFFE5E7EB))
+                          .withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -479,7 +564,11 @@ class _PlatformOption extends StatelessWidget {
             ),
             if (isSelected) ...[
               const SizedBox(width: 8),
-              Icon(MdiIcons.checkCircle, size: 18, color: const Color(0xFF0080FF)),
+              Icon(
+                MdiIcons.checkCircle,
+                size: 18,
+                color: const Color(0xFF0080FF),
+              ),
             ],
           ],
         ),

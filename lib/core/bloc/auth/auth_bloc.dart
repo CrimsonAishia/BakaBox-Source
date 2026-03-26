@@ -36,16 +36,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     try {
       final restored = await _authService.restoreFromLocal();
-      
+
       if (restored && _authService.isLoggedIn) {
-        emit(state.copyWith(
-          status: AuthStatus.authenticated,
-          userInfo: _authService.userInfo,
-          hasBackendToken: TokenService.instance.isTokenValid,
-        ));
-        
+        emit(
+          state.copyWith(
+            status: AuthStatus.authenticated,
+            userInfo: _authService.userInfo,
+            hasBackendToken: TokenService.instance.isTokenValid,
+          ),
+        );
+
         _startTimers();
-        
+
         // 延迟验证会话
         Future.delayed(const Duration(seconds: 3), () {
           add(const AuthValidateSessionRequested());
@@ -67,32 +69,38 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     try {
       final result = await _authService.login(event.username, event.password);
-      
+
       if (result.success) {
-        emit(state.copyWith(
-          status: AuthStatus.authenticated,
-          userInfo: result.userInfo,
-          hasBackendToken: TokenService.instance.isTokenValid,
-        ));
-        
+        emit(
+          state.copyWith(
+            status: AuthStatus.authenticated,
+            userInfo: result.userInfo,
+            hasBackendToken: TokenService.instance.isTokenValid,
+          ),
+        );
+
         _startTimers();
-        
+
         // 登录成功后立即刷新一次统计信息
         Future.delayed(const Duration(milliseconds: 500), () {
           add(const AuthRefreshRequested());
         });
       } else {
-        emit(state.copyWith(
-          status: AuthStatus.error,
-          errorMessage: result.message,
-        ));
+        emit(
+          state.copyWith(
+            status: AuthStatus.error,
+            errorMessage: result.message,
+          ),
+        );
       }
     } catch (e) {
       LogService.e('登录失败', e);
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: ErrorUtils.getErrorMessage(e, defaultMessage: '登录失败'),
-      ));
+      emit(
+        state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: ErrorUtils.getErrorMessage(e, defaultMessage: '登录失败'),
+        ),
+      );
     }
   }
 
@@ -104,31 +112,37 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     try {
       final result = await _authService.loginWithCookies(event.cookies);
-      
+
       if (result.success) {
-        emit(state.copyWith(
-          status: AuthStatus.authenticated,
-          userInfo: result.userInfo,
-          hasBackendToken: TokenService.instance.isTokenValid,
-        ));
-        
+        emit(
+          state.copyWith(
+            status: AuthStatus.authenticated,
+            userInfo: result.userInfo,
+            hasBackendToken: TokenService.instance.isTokenValid,
+          ),
+        );
+
         _startTimers();
-        
+
         Future.delayed(const Duration(milliseconds: 500), () {
           add(const AuthRefreshRequested());
         });
       } else {
-        emit(state.copyWith(
-          status: AuthStatus.error,
-          errorMessage: result.message,
-        ));
+        emit(
+          state.copyWith(
+            status: AuthStatus.error,
+            errorMessage: result.message,
+          ),
+        );
       }
     } catch (e) {
       LogService.e('QQ登录失败', e);
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: ErrorUtils.getErrorMessage(e, defaultMessage: 'QQ登录失败'),
-      ));
+      emit(
+        state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: ErrorUtils.getErrorMessage(e, defaultMessage: 'QQ登录失败'),
+        ),
+      );
     }
   }
 
@@ -141,7 +155,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       _stopTimers();
       await _authService.logout();
-      
+
       emit(const AuthState(status: AuthStatus.unauthenticated));
     } catch (e) {
       LogService.e('退出登录失败', e);
@@ -160,12 +174,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       // 只刷新用户统计信息，会话验证由专门的定时器处理
       final userInfo = await _authService.refreshUserStats();
-      
-      emit(state.copyWith(
-        userInfo: userInfo,
-        hasBackendToken: TokenService.instance.isTokenValid,
-        isRefreshing: false,
-      ));
+
+      emit(
+        state.copyWith(
+          userInfo: userInfo,
+          hasBackendToken: TokenService.instance.isTokenValid,
+          isRefreshing: false,
+        ),
+      );
     } catch (e) {
       LogService.e('刷新用户数据失败', e);
       emit(state.copyWith(isRefreshing: false));
@@ -180,15 +196,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     try {
       final result = await _authService.validateAndRefreshSession();
-      
+
       if (result.shouldLogout) {
         add(const AuthSessionExpired());
         return;
       }
 
-      emit(state.copyWith(
-        hasBackendToken: TokenService.instance.isTokenValid,
-      ));
+      emit(state.copyWith(hasBackendToken: TokenService.instance.isTokenValid));
     } catch (e) {
       LogService.e('验证会话失败', e);
     }
@@ -201,30 +215,36 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     _stopTimers();
     await _authService.forceLogout();
 
-    emit(const AuthState(
-      status: AuthStatus.unauthenticated,
-      errorMessage: '账号已过期，请重新关联',
-    ));
+    emit(
+      const AuthState(
+        status: AuthStatus.unauthenticated,
+        errorMessage: '账号已过期，请重新关联',
+      ),
+    );
   }
 
   void _startTimers() {
     _stopTimers();
 
     // 会话验证定时器（每5分钟）
-    _scheduler.register(ScheduledTask(
-      id: _taskIdSessionValidation,
-      name: '会话验证',
-      interval: Intervals.fiveMinutes,
-      callback: () async => add(const AuthValidateSessionRequested()),
-    ));
+    _scheduler.register(
+      ScheduledTask(
+        id: _taskIdSessionValidation,
+        name: '会话验证',
+        interval: Intervals.fiveMinutes,
+        callback: () async => add(const AuthValidateSessionRequested()),
+      ),
+    );
 
     // 统计信息刷新定时器（每5分钟）
-    _scheduler.register(ScheduledTask(
-      id: _taskIdStatsRefresh,
-      name: '统计信息刷新',
-      interval: Intervals.fiveMinutes,
-      callback: () async => add(const AuthRefreshRequested()),
-    ));
+    _scheduler.register(
+      ScheduledTask(
+        id: _taskIdStatsRefresh,
+        name: '统计信息刷新',
+        interval: Intervals.fiveMinutes,
+        callback: () async => add(const AuthRefreshRequested()),
+      ),
+    );
 
     LogService.d('认证定时器已启动');
   }

@@ -6,24 +6,20 @@ import '../../core/constants/policy_constants.dart';
 import '../../core/services/policy_service.dart';
 
 /// 协议更新对话框
-/// 
+///
 /// 当协议版本更新时显示，要求用户重新同意
 class PolicyUpdateDialog extends StatefulWidget {
   final VoidCallback onAgreed;
 
-  const PolicyUpdateDialog({
-    super.key,
-    required this.onAgreed,
-  });
+  const PolicyUpdateDialog({super.key, required this.onAgreed});
 
   /// 显示协议更新对话框
   static Future<bool?> show(BuildContext context) {
     return showDialog<bool>(
       context: context,
       barrierDismissible: false, // 不允许点击外部关闭
-      builder: (context) => PolicyUpdateDialog(
-        onAgreed: () => Navigator.of(context).pop(true),
-      ),
+      builder: (context) =>
+          PolicyUpdateDialog(onAgreed: () => Navigator.of(context).pop(true)),
     );
   }
 
@@ -33,7 +29,7 @@ class PolicyUpdateDialog extends StatefulWidget {
 
 class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
   final PolicyService _policyService = PolicyService();
-  
+
   bool _agreedToPrivacy = false;
   bool _agreedToTerms = false;
   String? _previousVersion;
@@ -54,7 +50,9 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
-    final secondaryTextColor = isDark ? Colors.white70 : const Color(0xFF64748B);
+    final secondaryTextColor = isDark
+        ? Colors.white70
+        : const Color(0xFF64748B);
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -81,7 +79,9 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : const Color(0xFFE2E8F0),
                   ),
                 ),
               ),
@@ -186,7 +186,8 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
                     _buildAgreementCheckbox(
                       isDark: isDark,
                       isChecked: _agreedToPrivacy,
-                      onTap: () => setState(() => _agreedToPrivacy = !_agreedToPrivacy),
+                      onTap: () =>
+                          setState(() => _agreedToPrivacy = !_agreedToPrivacy),
                       label: '隐私政策',
                       onViewTap: () => _showPolicyDialog(context, isDark, true),
                     ),
@@ -194,9 +195,11 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
                     _buildAgreementCheckbox(
                       isDark: isDark,
                       isChecked: _agreedToTerms,
-                      onTap: () => setState(() => _agreedToTerms = !_agreedToTerms),
+                      onTap: () =>
+                          setState(() => _agreedToTerms = !_agreedToTerms),
                       label: '用户协议',
-                      onViewTap: () => _showPolicyDialog(context, isDark, false),
+                      onViewTap: () =>
+                          _showPolicyDialog(context, isDark, false),
                     ),
                   ],
                 ),
@@ -208,7 +211,9 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
               decoration: BoxDecoration(
                 border: Border(
                   top: BorderSide(
-                    color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : const Color(0xFFE2E8F0),
                   ),
                 ),
               ),
@@ -217,23 +222,27 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
                   Expanded(
                     child: Text(
                       '继续使用即表示您同意更新后的协议',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: secondaryTextColor,
-                      ),
+                      style: TextStyle(fontSize: 12, color: secondaryTextColor),
                     ),
                   ),
                   const SizedBox(width: 16),
                   ElevatedButton(
-                    onPressed: (_agreedToPrivacy && _agreedToTerms) ? _handleAgree : null,
+                    onPressed: (_agreedToPrivacy && _agreedToTerms)
+                        ? _handleAgree
+                        : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3B82F6),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 14,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      disabledBackgroundColor: const Color(0xFF3B82F6).withValues(alpha: 0.3),
+                      disabledBackgroundColor: const Color(
+                        0xFF3B82F6,
+                      ).withValues(alpha: 0.3),
                     ),
                     child: const Text('同意并继续', style: TextStyle(fontSize: 15)),
                   ),
@@ -265,7 +274,9 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
           border: Border.all(
             color: isChecked
                 ? const Color(0xFF3B82F6).withValues(alpha: 0.5)
-                : (isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFE2E8F0)),
+                : (isDark
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : const Color(0xFFE2E8F0)),
           ),
         ),
         child: Row(
@@ -282,7 +293,9 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
                 border: Border.all(
                   color: isChecked
                       ? const Color(0xFF3B82F6)
-                      : (isDark ? Colors.white.withValues(alpha: 0.2) : const Color(0xFFCBD5E1)),
+                      : (isDark
+                            ? Colors.white.withValues(alpha: 0.2)
+                            : const Color(0xFFCBD5E1)),
                   width: 1.5,
                 ),
               ),
@@ -317,7 +330,10 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
               onTap: onViewTap,
               borderRadius: BorderRadius.circular(6),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
@@ -334,7 +350,11 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
                       ),
                     ),
                     const SizedBox(width: 4),
-                    Icon(MdiIcons.openInNew, size: 12, color: const Color(0xFF3B82F6)),
+                    Icon(
+                      MdiIcons.openInNew,
+                      size: 12,
+                      color: const Color(0xFF3B82F6),
+                    ),
                   ],
                 ),
               ),
@@ -346,7 +366,11 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
   }
 
   /// 显示协议详情对话框
-  void _showPolicyDialog(BuildContext context, bool isDark, bool isPrivacyPolicy) {
+  void _showPolicyDialog(
+    BuildContext context,
+    bool isDark,
+    bool isPrivacyPolicy,
+  ) {
     showDialog(
       context: context,
       builder: (context) => _PolicyDetailDialog(
@@ -366,9 +390,9 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
       widget.onAgreed();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('保存失败，请重试')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('保存失败，请重试')));
       }
     }
   }
@@ -390,7 +414,9 @@ class _PolicyDetailDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
-    final secondaryTextColor = isDark ? Colors.white70 : const Color(0xFF64748B);
+    final secondaryTextColor = isDark
+        ? Colors.white70
+        : const Color(0xFF64748B);
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -416,7 +442,9 @@ class _PolicyDetailDialog extends StatelessWidget {
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : const Color(0xFFE2E8F0),
                   ),
                 ),
               ),
@@ -450,12 +478,35 @@ class _PolicyDetailDialog extends StatelessWidget {
               child: Markdown(
                 data: content,
                 styleSheet: MarkdownStyleSheet(
-                  p: TextStyle(fontSize: 14, height: 1.7, color: secondaryTextColor),
-                  h2: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textColor, height: 1.5),
-                  h3: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textColor, height: 1.5),
-                  listBullet: TextStyle(fontSize: 14, color: secondaryTextColor),
-                  strong: TextStyle(fontWeight: FontWeight.w600, color: textColor),
-                  a: const TextStyle(color: Color(0xFF3B82F6), decoration: TextDecoration.underline),
+                  p: TextStyle(
+                    fontSize: 14,
+                    height: 1.7,
+                    color: secondaryTextColor,
+                  ),
+                  h2: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                    height: 1.5,
+                  ),
+                  h3: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                    height: 1.5,
+                  ),
+                  listBullet: TextStyle(
+                    fontSize: 14,
+                    color: secondaryTextColor,
+                  ),
+                  strong: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                  ),
+                  a: const TextStyle(
+                    color: Color(0xFF3B82F6),
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
                 padding: const EdgeInsets.all(32),
               ),
@@ -466,7 +517,9 @@ class _PolicyDetailDialog extends StatelessWidget {
               decoration: BoxDecoration(
                 border: Border(
                   top: BorderSide(
-                    color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : const Color(0xFFE2E8F0),
                   ),
                 ),
               ),
@@ -478,7 +531,10 @@ class _PolicyDetailDialog extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3B82F6),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 14,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),

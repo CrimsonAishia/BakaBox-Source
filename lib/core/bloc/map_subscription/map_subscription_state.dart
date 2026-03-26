@@ -140,7 +140,8 @@ class MapSubscriptionState extends Equatable {
     return MapSubscriptionState(
       subscriptions: subscriptions ?? this.subscriptions,
       isEnabled: isEnabled ?? this.isEnabled,
-      isNotificationEnabled: isNotificationEnabled ?? this.isNotificationEnabled,
+      isNotificationEnabled:
+          isNotificationEnabled ?? this.isNotificationEnabled,
       isTtsEnabled: isTtsEnabled ?? this.isTtsEnabled,
       isLoading: isLoading ?? this.isLoading,
       searchResults: searchResults ?? this.searchResults,

@@ -5,7 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'platform_utils.dart';
 
 /// 商店检测工具类
-/// 
+///
 /// 提供多种方法检测应用是否从 Microsoft Store 安装
 /// 参考：Electron、VS Code、Microsoft Teams 等成熟应用的做法
 class StoreDetectionUtils {
@@ -14,7 +14,7 @@ class StoreDetectionUtils {
   static bool? _cachedResult;
 
   /// 检测是否从 Microsoft Store 安装
-  /// 
+  ///
   /// 使用多重检测策略，确保准确性：
   /// 1. 检查可执行文件路径（WindowsApps 目录）
   /// 2. 检查包名格式（MSIX 特有格式）
@@ -66,7 +66,7 @@ class StoreDetectionUtils {
   }
 
   /// 同步版本（使用缓存结果）
-  /// 
+  ///
   /// 注意：首次调用前应先调用异步版本初始化
   static bool isInstalledFromStoreSync() {
     if (_cachedResult != null) {
@@ -82,15 +82,15 @@ class StoreDetectionUtils {
   }
 
   /// 方法 1: 检查可执行文件路径
-  /// 
+  ///
   /// MSIX 应用固定安装在：
   /// C:\Program Files\WindowsApps\{PublisherName}.{AppName}_{Version}_{Architecture}__{PublisherId}\
-  /// 
+  ///
   /// 这是最可靠的检测方法，几乎不会误判
   static bool _checkExecutablePath() {
     try {
       final exePath = Platform.resolvedExecutable.toLowerCase();
-      
+
       // 检查是否包含 windowsapps 目录
       if (exePath.contains('windowsapps')) {
         return true;
@@ -112,10 +112,10 @@ class StoreDetectionUtils {
   }
 
   /// 方法 2: 检查包名格式
-  /// 
+  ///
   /// MSIX 应用的包名格式：PublisherName.AppName
   /// 例如：Aishia.BakaBox
-  /// 
+  ///
   /// 传统 EXE 应用通常使用简单的名称
   static Future<bool> _checkPackageName() async {
     try {
@@ -124,8 +124,8 @@ class StoreDetectionUtils {
 
       // MSIX 包名通常包含点号分隔的发布者和应用名
       // 例如：Aishia.BakaBox
-      if (packageName.contains('.') && 
-          !packageName.startsWith('com.') && 
+      if (packageName.contains('.') &&
+          !packageName.startsWith('com.') &&
           !packageName.startsWith('org.')) {
         // 排除 Android 风格的包名（com.xxx, org.xxx）
         // MSIX 包名格式：PublisherName.AppName
@@ -142,7 +142,7 @@ class StoreDetectionUtils {
   }
 
   /// 方法 3: 检查环境变量
-  /// 
+  ///
   /// MSIX 应用运行在容器中，会设置特定的环境变量
   /// 参考：https://docs.microsoft.com/windows/msix/detect-package-identity
   static bool _checkEnvironmentVariables() {
@@ -182,10 +182,7 @@ class StoreDetectionUtils {
   /// 获取详细的检测信息（用于调试）
   static Future<Map<String, dynamic>> getDetectionDetails() async {
     if (!PlatformUtils.isWindows) {
-      return {
-        'platform': 'non-windows',
-        'isStore': false,
-      };
+      return {'platform': 'non-windows', 'isStore': false};
     }
 
     final pathCheck = _checkExecutablePath();
@@ -215,5 +212,4 @@ class StoreDetectionUtils {
       },
     };
   }
-
 }

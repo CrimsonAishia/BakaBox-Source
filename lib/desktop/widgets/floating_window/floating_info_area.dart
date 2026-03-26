@@ -70,7 +70,7 @@ class FloatingInfoArea extends StatelessWidget {
     if (state.isTerminal) {
       return _buildTerminalContent();
     }
-    
+
     // 暂停状态：显示消息
     if (state.isPaused) {
       return _buildPausedContent();
@@ -159,7 +159,7 @@ class FloatingInfoArea extends StatelessWidget {
   String _formatMapName() {
     final mapName = state.mapName ?? '';
     final mapNameCn = state.mapNameCn;
-    
+
     if (mapName.isEmpty) return '';
     if (mapNameCn != null && mapNameCn.isNotEmpty) {
       return '$mapName ($mapNameCn)';
@@ -211,7 +211,7 @@ class FloatingInfoArea extends StatelessWidget {
     }
     return const SizedBox.shrink();
   }
-  
+
   /// 暂停状态内容
   Widget _buildPausedContent() {
     if (state.message.isNotEmpty) {

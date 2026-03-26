@@ -35,7 +35,10 @@ class MainWindowLauncher {
     StatusWindowService().initialize();
 
     // 根据开关状态决定是否启动 OBS 浏览器源数据服务
-    final obsEnabled = StorageUtils.getBool('obs_tool_enabled', defaultValue: false);
+    final obsEnabled = StorageUtils.getBool(
+      'obs_tool_enabled',
+      defaultValue: false,
+    );
     if (obsEnabled) {
       ObsServerService().start();
     }

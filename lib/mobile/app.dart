@@ -37,9 +37,7 @@ class _MobileAppState extends State<MobileApp> {
   Widget build(BuildContext context) {
     if (!_initialized) {
       return const MaterialApp(
-        home: Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        ),
+        home: Scaffold(body: Center(child: CircularProgressIndicator())),
       );
     }
 
@@ -50,11 +48,14 @@ class _MobileAppState extends State<MobileApp> {
         BlocProvider(create: (_) => UpdateLogBloc()),
         BlocProvider(create: (_) => UpdateBloc()),
         BlocProvider(create: (_) => SettingsBloc()..add(SettingsInit())),
-        BlocProvider(create: (_) => AuthBloc()..add(const AuthCheckRequested())),
         BlocProvider(
-            create: (_) => FeatureStatusBloc()
-              ..add(FeatureStatusLoad())
-              ..add(FeatureStatusStartPeriodicRefresh())),
+          create: (_) => AuthBloc()..add(const AuthCheckRequested()),
+        ),
+        BlocProvider(
+          create: (_) => FeatureStatusBloc()
+            ..add(FeatureStatusLoad())
+            ..add(FeatureStatusStartPeriodicRefresh()),
+        ),
       ],
       child: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {
@@ -67,10 +68,7 @@ class _MobileAppState extends State<MobileApp> {
               GlobalCupertinoLocalizations.delegate,
               FlutterQuillLocalizations.delegate,
             ],
-            supportedLocales: const [
-              Locale('zh', 'CN'),
-              Locale('en', 'US'),
-            ],
+            supportedLocales: const [Locale('zh', 'CN'), Locale('en', 'US')],
             theme: MobileTheme.lightTheme,
             darkTheme: MobileTheme.darkTheme,
             themeMode: settingsState.themeMode,
@@ -104,7 +102,7 @@ class _MobileAppHomeState extends State<MobileAppHome> {
 
   void _initializeBlocs() {
     context.read<ServerBloc>().add(ServerStartPeriodicRefresh());
-    
+
     // 首帧渲染完成，上报启动统计
     AnalyticsService.instance.reportStartupIfNeeded();
   }
@@ -113,7 +111,9 @@ class _MobileAppHomeState extends State<MobileAppHome> {
     final updateBloc = context.read<UpdateBloc>();
 
     // 检查启动屏幕是否已经检测到更新
-    if (updateBloc.state.hasUpdate && updateBloc.state.updateInfo != null && !_hasShownAutoUpdateDialog) {
+    if (updateBloc.state.hasUpdate &&
+        updateBloc.state.updateInfo != null &&
+        !_hasShownAutoUpdateDialog) {
       _hasShownAutoUpdateDialog = true;
       UpdateDialog.show(context, updateBloc.state.updateInfo!);
     }
@@ -127,24 +127,27 @@ class _MobileAppHomeState extends State<MobileAppHome> {
         // 监听两种情况：
         // 1. 状态从非 available 变为 available（有更新）
         // 2. 状态从 checking 变为 idle（无更新）
-        final hasNewUpdate = prev.status != UpdateStatus.available && 
-                             curr.status == UpdateStatus.available && 
-                             curr.updateInfo != null;
-        
-        final checkCompleteNoUpdate = prev.status == UpdateStatus.checking &&
-                                      curr.status == UpdateStatus.idle &&
-                                      curr.updateInfo != null &&
-                                      !curr.updateInfo!.hasUpdate;
-        
+        final hasNewUpdate =
+            prev.status != UpdateStatus.available &&
+            curr.status == UpdateStatus.available &&
+            curr.updateInfo != null;
+
+        final checkCompleteNoUpdate =
+            prev.status == UpdateStatus.checking &&
+            curr.status == UpdateStatus.idle &&
+            curr.updateInfo != null &&
+            !curr.updateInfo!.hasUpdate;
+
         return hasNewUpdate || checkCompleteNoUpdate;
       },
       listener: (context, state) {
-        if (state.status == UpdateStatus.available && state.updateInfo != null) {
+        if (state.status == UpdateStatus.available &&
+            state.updateInfo != null) {
           // 有更新：弹出更新对话框
           UpdateDialog.show(context, state.updateInfo!);
-        } else if (state.status == UpdateStatus.idle && 
-                   state.updateInfo != null && 
-                   !state.updateInfo!.hasUpdate) {
+        } else if (state.status == UpdateStatus.idle &&
+            state.updateInfo != null &&
+            !state.updateInfo!.hasUpdate) {
           // 无更新：显示提示
           ToastUtils.showSuccess(context, '已是最新版本');
         }

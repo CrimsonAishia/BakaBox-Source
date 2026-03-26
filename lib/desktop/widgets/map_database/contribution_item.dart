@@ -9,7 +9,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/disk_cached_image.dart';
 
 /// 贡献项组件
-/// 
+///
 /// 显示单个贡献的详细信息，包括内容、投票、审核状态等
 class ContributionItem extends StatelessWidget {
   final MapContribution contribution;
@@ -29,9 +29,7 @@ class ContributionItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark
-            ? const Color(0xFF0F172A)
-            : const Color(0xFFFAFAFA),
+        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFFAFAFA),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isDark
@@ -44,9 +42,9 @@ class ContributionItem extends StatelessWidget {
         children: [
           // 主要内容区域
           _buildMainContent(context, isDark),
-          
+
           const SizedBox(height: 14),
-          
+
           // 次要信息区域（元数据）
           _buildMetadata(context, isDark),
         ],
@@ -118,14 +116,14 @@ class ContributionItem extends StatelessWidget {
           const SizedBox(width: 6),
           _buildStatusTag(isDark),
         ],
-        
+
         const Spacer(),
-        
+
         // 投票按钮
         _buildVoteButtons(context, isDark),
-        
+
         const SizedBox(width: 12),
-        
+
         // 时间和贡献者
         _buildContributorInfo(isDark),
       ],
@@ -136,15 +134,13 @@ class ContributionItem extends StatelessWidget {
     final color = contribution.type == ContributionType.name
         ? const Color(0xFF10B981)
         : const Color(0xFFF59E0B);
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(
-          color: color.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Text(
         contribution.type.label,
@@ -159,15 +155,13 @@ class ContributionItem extends StatelessWidget {
 
   Widget _buildStatusTag(bool isDark) {
     final color = _getAuditStatusColor(contribution.auditStatus);
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(
-          color: color.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Text(
         contribution.auditStatus.label,
@@ -194,7 +188,7 @@ class ContributionItem extends StatelessWidget {
                 : Colors.black.withValues(alpha: 0.35),
           ),
         ),
-        
+
         // 贡献者
         if (contribution.contributor != null) ...[
           const SizedBox(width: 8),
@@ -255,7 +249,7 @@ class ContributionItem extends StatelessWidget {
           const Color(0xFF10B981),
         ),
         const SizedBox(width: 12),
-        
+
         // 反对票
         _buildVoteButton(
           context,
@@ -281,15 +275,17 @@ class ContributionItem extends StatelessWidget {
     bool isActive,
     Color activeColor,
   ) {
-    final isDisabled = contribution.isSystem || contribution.auditStatus != AuditStatus.approved;
-    
+    final isDisabled =
+        contribution.isSystem ||
+        contribution.auditStatus != AuditStatus.approved;
+
     return InkWell(
       onTap: isDisabled
           ? null
           : () {
               context.read<MapContributionBloc>().add(
-                    ToggleVote(contribution.id, voteType),
-                  );
+                ToggleVote(contribution.id, voteType),
+              );
             },
       borderRadius: BorderRadius.circular(6),
       child: Container(
@@ -298,14 +294,11 @@ class ContributionItem extends StatelessWidget {
           color: isActive
               ? activeColor.withValues(alpha: 0.12)
               : isDark
-                  ? Colors.white.withValues(alpha: 0.04)
-                  : Colors.black.withValues(alpha: 0.04),
+              ? Colors.white.withValues(alpha: 0.04)
+              : Colors.black.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(6),
           border: isActive
-              ? Border.all(
-                  color: activeColor.withValues(alpha: 0.3),
-                  width: 1,
-                )
+              ? Border.all(color: activeColor.withValues(alpha: 0.3), width: 1)
               : null,
         ),
         child: Row(
@@ -317,8 +310,8 @@ class ContributionItem extends StatelessWidget {
               color: isActive
                   ? activeColor
                   : isDark
-                      ? Colors.white.withValues(alpha: 0.5)
-                      : Colors.black.withValues(alpha: 0.5),
+                  ? Colors.white.withValues(alpha: 0.5)
+                  : Colors.black.withValues(alpha: 0.5),
             ),
             const SizedBox(width: 6),
             Text(
@@ -329,8 +322,8 @@ class ContributionItem extends StatelessWidget {
                 color: isActive
                     ? activeColor
                     : isDark
-                        ? Colors.white.withValues(alpha: 0.6)
-                        : Colors.black.withValues(alpha: 0.6),
+                    ? Colors.white.withValues(alpha: 0.6)
+                    : Colors.black.withValues(alpha: 0.6),
               ),
             ),
           ],

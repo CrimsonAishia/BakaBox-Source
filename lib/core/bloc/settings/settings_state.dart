@@ -3,21 +3,21 @@ import 'package:flutter/material.dart';
 
 /// 启动平台枚举
 enum LaunchPlatformType {
-  worldwide,  // 国际版 (Steam)
-  perfect,    // 完美世界
+  worldwide, // 国际版 (Steam)
+  perfect, // 完美世界
 }
 
 /// 通知位置枚举
 enum NotificationPositionType {
-  topLeft,      // 左上角
-  topCenter,    // 顶部居中
-  topRight,     // 右上角
-  centerLeft,   // 左侧居中
-  center,       // 正中间
-  centerRight,  // 右侧居中
-  bottomLeft,   // 左下角
+  topLeft, // 左上角
+  topCenter, // 顶部居中
+  topRight, // 右上角
+  centerLeft, // 左侧居中
+  center, // 正中间
+  centerRight, // 右侧居中
+  bottomLeft, // 左下角
   bottomCenter, // 底部居中
-  bottomRight,  // 右下角
+  bottomRight, // 右下角
 }
 
 /// 通知位置扩展
@@ -48,10 +48,10 @@ extension NotificationPositionTypeExtension on NotificationPositionType {
 
 /// 缓存类型枚举
 enum CacheType {
-  cacheFiles,       // 图片和临时文件缓存
-  serverData,       // 服务器相关数据（列表、地图信息、自定义服务器、监控列表）
-  appData,          // 应用数据（草稿、已读状态、游戏路径、主题、音量等）
-  logs,             // 日志文件
+  cacheFiles, // 图片和临时文件缓存
+  serverData, // 服务器相关数据（列表、地图信息、自定义服务器、监控列表）
+  appData, // 应用数据（草稿、已读状态、游戏路径、主题、音量等）
+  logs, // 日志文件
 }
 
 /// 缓存项信息
@@ -105,37 +105,37 @@ class SettingsState extends Equatable {
   final ThemeMode themeMode;
   final bool isLoading;
   final bool isCheckingUpdate;
-  
+
   // 游戏设置
   final String? gamePath;
   final String? steamPath;
   final LaunchPlatformType launchPlatform;
   final List<String> launchOptions;
   final bool isDetectingPath;
-  
+
   // 路径错误信息
   final String? gamePathError;
   final String? steamPathError;
-  
+
   // 音效设置
   final double audioVolume;
-  
+
   // 详细缓存信息
   final List<CacheItemInfo> cacheDetails;
   final bool isLoadingCacheDetails;
-  
+
   // 通知位置设置
   final NotificationPositionType notificationPosition;
-  
+
   // 浮窗位置设置
   final NotificationPositionType floatingWindowPosition;
-  
+
   // 是否需要重启应用（清理应用数据后需要重启）
   final bool needsRestart;
-  
+
   // 热身通知开关
   final bool warmupNotificationEnabled;
-  
+
   // 更新日志通知开关
   final bool updateLogNotificationEnabled;
 
@@ -162,12 +162,12 @@ class SettingsState extends Equatable {
     this.warmupNotificationEnabled = true,
     this.updateLogNotificationEnabled = true,
   });
-  
+
   /// 获取总缓存大小（字节）
   int get totalCacheSizeInBytes {
     return cacheDetails.fold(0, (sum, item) => sum + item.sizeInBytes);
   }
-  
+
   /// 获取格式化的总缓存大小
   String get formattedTotalCacheSize {
     final bytes = totalCacheSizeInBytes;
@@ -182,16 +182,21 @@ class SettingsState extends Equatable {
 
   String get currentThemeModeText {
     switch (themeMode) {
-      case ThemeMode.system: return '跟随系统';
-      case ThemeMode.light: return '浅色模式';
-      case ThemeMode.dark: return '深色模式';
+      case ThemeMode.system:
+        return '跟随系统';
+      case ThemeMode.light:
+        return '浅色模式';
+      case ThemeMode.dark:
+        return '深色模式';
     }
   }
 
   String get launchPlatformText {
     switch (launchPlatform) {
-      case LaunchPlatformType.worldwide: return 'Steam平台';
-      case LaunchPlatformType.perfect: return '完美平台';
+      case LaunchPlatformType.worldwide:
+        return 'Steam平台';
+      case LaunchPlatformType.perfect:
+        return '完美平台';
     }
   }
 
@@ -237,22 +242,26 @@ class SettingsState extends Equatable {
       steamPathError: steamPathError,
       audioVolume: audioVolume ?? this.audioVolume,
       cacheDetails: cacheDetails ?? this.cacheDetails,
-      isLoadingCacheDetails: isLoadingCacheDetails ?? this.isLoadingCacheDetails,
+      isLoadingCacheDetails:
+          isLoadingCacheDetails ?? this.isLoadingCacheDetails,
       notificationPosition: notificationPosition ?? this.notificationPosition,
-      floatingWindowPosition: floatingWindowPosition ?? this.floatingWindowPosition,
+      floatingWindowPosition:
+          floatingWindowPosition ?? this.floatingWindowPosition,
       needsRestart: needsRestart ?? this.needsRestart,
-      warmupNotificationEnabled: warmupNotificationEnabled ?? this.warmupNotificationEnabled,
-      updateLogNotificationEnabled: updateLogNotificationEnabled ?? this.updateLogNotificationEnabled,
+      warmupNotificationEnabled:
+          warmupNotificationEnabled ?? this.warmupNotificationEnabled,
+      updateLogNotificationEnabled:
+          updateLogNotificationEnabled ?? this.updateLogNotificationEnabled,
     );
   }
 
   @override
   List<Object?> get props => [
-    appVersion, 
-    buildNumber, 
-    cacheSize, 
-    themeMode, 
-    isLoading, 
+    appVersion,
+    buildNumber,
+    cacheSize,
+    themeMode,
+    isLoading,
     isCheckingUpdate,
     gamePath,
     steamPath,

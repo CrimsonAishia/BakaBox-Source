@@ -41,10 +41,7 @@ extension WindowPositionTypeExtension on WindowPositionType {
 }
 
 /// 窗口类型枚举
-enum DraggableWindowType {
-  notification,
-  floating,
-}
+enum DraggableWindowType { notification, floating }
 
 /// 窗口位置编辑器 - 模拟电脑屏幕，用户可以拖动通知和浮窗位置
 class NotificationPositionEditor extends StatefulWidget {
@@ -105,18 +102,25 @@ class _NotificationPositionEditorState
   @override
   void didUpdateWidget(NotificationPositionEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.initialNotificationPosition != widget.initialNotificationPosition) {
-      setState(() => _notificationPosition = widget.initialNotificationPosition);
+    if (oldWidget.initialNotificationPosition !=
+        widget.initialNotificationPosition) {
+      setState(
+        () => _notificationPosition = widget.initialNotificationPosition,
+      );
     }
     if (oldWidget.initialFloatingPosition != widget.initialFloatingPosition) {
       setState(() => _floatingPosition = widget.initialFloatingPosition);
     }
   }
 
-  Offset _getOffsetForPosition(WindowPositionType position, double width, double height) {
+  Offset _getOffsetForPosition(
+    WindowPositionType position,
+    double width,
+    double height,
+  ) {
     final availableHeight = _screenHeight - _taskbarHeight;
     final centerY = (availableHeight - height) / 2;
-    
+
     switch (position) {
       case WindowPositionType.topLeft:
         return const Offset(_padding, _padding);
@@ -133,13 +137,23 @@ class _NotificationPositionEditorState
       case WindowPositionType.bottomLeft:
         return Offset(_padding, availableHeight - height - _padding);
       case WindowPositionType.bottomCenter:
-        return Offset((_screenWidth - width) / 2, availableHeight - height - _padding);
+        return Offset(
+          (_screenWidth - width) / 2,
+          availableHeight - height - _padding,
+        );
       case WindowPositionType.bottomRight:
-        return Offset(_screenWidth - width - _padding, availableHeight - height - _padding);
+        return Offset(
+          _screenWidth - width - _padding,
+          availableHeight - height - _padding,
+        );
     }
   }
 
-  WindowPositionType _getClosestPosition(Offset offset, double width, double height) {
+  WindowPositionType _getClosestPosition(
+    Offset offset,
+    double width,
+    double height,
+  ) {
     double minDistance = double.infinity;
     WindowPositionType closestPosition = WindowPositionType.topRight;
 
@@ -186,7 +200,9 @@ class _NotificationPositionEditorState
               Positioned.fill(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: CustomPaint(painter: _DesktopBackgroundPainter(isDark: isDark)),
+                  child: CustomPaint(
+                    painter: _DesktopBackgroundPainter(isDark: isDark),
+                  ),
                 ),
               ),
               // 任务栏
@@ -208,9 +224,19 @@ class _NotificationPositionEditorState
                   child: Row(
                     children: [
                       const SizedBox(width: 8),
-                      Icon(MdiIcons.microsoftWindows, size: 16, color: isDark ? Colors.white54 : Colors.black45),
+                      Icon(
+                        MdiIcons.microsoftWindows,
+                        size: 16,
+                        color: isDark ? Colors.white54 : Colors.black45,
+                      ),
                       const Spacer(),
-                      Text('12:00', style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.black45)),
+                      Text(
+                        '12:00',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? Colors.white54 : Colors.black45,
+                        ),
+                      ),
                       const SizedBox(width: 8),
                     ],
                   ),
@@ -282,13 +308,18 @@ class _NotificationPositionEditorState
       left: offset.dx,
       top: offset.dy,
       child: GestureDetector(
-        onTap: () => setState(() => _selectedType = _selectedType == type ? null : type),
+        onTap: () =>
+            setState(() => _selectedType = _selectedType == type ? null : type),
         onPanStart: (_) => setState(() => _selectedType = type),
         onPanUpdate: (details) {
           final RenderBox? box = context.findRenderObject() as RenderBox?;
           if (box != null) {
             final localPosition = box.globalToLocal(details.globalPosition);
-            final newPosition = _getClosestPosition(localPosition, width, height);
+            final newPosition = _getClosestPosition(
+              localPosition,
+              width,
+              height,
+            );
             if (newPosition != position) {
               onPositionChanged(newPosition);
             }
@@ -299,9 +330,17 @@ class _NotificationPositionEditorState
     );
   }
 
-  Widget _buildWindowCard(DraggableWindowType type, double width, double height, bool isDark, bool isSelected) {
+  Widget _buildWindowCard(
+    DraggableWindowType type,
+    double width,
+    double height,
+    bool isDark,
+    bool isSelected,
+  ) {
     final isNotification = type == DraggableWindowType.notification;
-    final color = isNotification ? const Color(0xFF0080FF) : const Color(0xFFFF9800);
+    final color = isNotification
+        ? const Color(0xFF0080FF)
+        : const Color(0xFFFF9800);
     final icon = isNotification ? MdiIcons.bellOutline : MdiIcons.gamepad;
     final label = isNotification ? '通知' : '浮窗';
 
@@ -343,23 +382,40 @@ class _NotificationPositionEditorState
     final indicators = <Widget>[];
 
     for (final position in WindowPositionType.values) {
-      final notificationOffset = _getOffsetForPosition(position, _notificationWidth, _notificationHeight);
-      final floatingOffset = _getOffsetForPosition(position, _floatingWidth, _floatingHeight);
+      final notificationOffset = _getOffsetForPosition(
+        position,
+        _notificationWidth,
+        _notificationHeight,
+      );
+      final floatingOffset = _getOffsetForPosition(
+        position,
+        _floatingWidth,
+        _floatingHeight,
+      );
       final isNotificationSelected = position == _notificationPosition;
       final isFloatingSelected = position == _floatingPosition;
 
       if (!isNotificationSelected && !isFloatingSelected) {
         indicators.add(
           Positioned(
-            left: (notificationOffset.dx + floatingOffset.dx) / 2 + (_notificationWidth + _floatingWidth) / 4 - 4,
-            top: (notificationOffset.dy + floatingOffset.dy) / 2 + (_notificationHeight + _floatingHeight) / 4 - 4,
+            left:
+                (notificationOffset.dx + floatingOffset.dx) / 2 +
+                (_notificationWidth + _floatingWidth) / 4 -
+                4,
+            top:
+                (notificationOffset.dy + floatingOffset.dy) / 2 +
+                (_notificationHeight + _floatingHeight) / 4 -
+                4,
             child: Container(
               width: 8,
               height: 8,
               decoration: BoxDecoration(
                 color: isDark ? Colors.white12 : Colors.black12,
                 shape: BoxShape.circle,
-                border: Border.all(color: isDark ? Colors.white24 : Colors.black26, width: 1),
+                border: Border.all(
+                  color: isDark ? Colors.white24 : Colors.black26,
+                  width: 1,
+                ),
               ),
             ),
           ),
@@ -380,7 +436,9 @@ class _NotificationPositionEditorState
           isDark: isDark,
           isSelected: _selectedType == DraggableWindowType.notification,
           onTap: () => setState(() {
-            _selectedType = _selectedType == DraggableWindowType.notification ? null : DraggableWindowType.notification;
+            _selectedType = _selectedType == DraggableWindowType.notification
+                ? null
+                : DraggableWindowType.notification;
           }),
           onPreview: widget.onNotificationPreview,
           isPreviewActive: widget.isNotificationPreviewActive,
@@ -394,7 +452,9 @@ class _NotificationPositionEditorState
           isDark: isDark,
           isSelected: _selectedType == DraggableWindowType.floating,
           onTap: () => setState(() {
-            _selectedType = _selectedType == DraggableWindowType.floating ? null : DraggableWindowType.floating;
+            _selectedType = _selectedType == DraggableWindowType.floating
+                ? null
+                : DraggableWindowType.floating;
           }),
           onPreview: widget.onFloatingPreview,
           isPreviewActive: widget.isFloatingPreviewActive,
@@ -423,7 +483,9 @@ class _NotificationPositionEditorState
           color: isSelected ? color.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? color : (isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB)),
+            color: isSelected
+                ? color
+                : (isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB)),
           ),
         ),
         child: Row(
@@ -454,7 +516,11 @@ class _NotificationPositionEditorState
                 ),
                 Text(
                   position.displayName,
-                  style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -471,7 +537,6 @@ class _NotificationPositionEditorState
       ),
     );
   }
-
 }
 
 /// 桌面背景绘制器
@@ -483,7 +548,9 @@ class _DesktopBackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.03)
+      ..color = isDark
+          ? Colors.white.withValues(alpha: 0.03)
+          : Colors.black.withValues(alpha: 0.03)
       ..strokeWidth = 1;
 
     const gridSize = 20.0;
@@ -496,21 +563,30 @@ class _DesktopBackgroundPainter extends CustomPainter {
     }
 
     final iconPaint = Paint()
-      ..color = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08);
+      ..color = isDark
+          ? Colors.white.withValues(alpha: 0.1)
+          : Colors.black.withValues(alpha: 0.08);
 
-    final iconPositions = [const Offset(20, 20), const Offset(20, 70), const Offset(20, 120)];
+    final iconPositions = [
+      const Offset(20, 20),
+      const Offset(20, 70),
+      const Offset(20, 120),
+    ];
     for (final pos in iconPositions) {
       canvas.drawRRect(
-        RRect.fromRectAndRadius(Rect.fromLTWH(pos.dx, pos.dy, 30, 30), const Radius.circular(4)),
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(pos.dx, pos.dy, 30, 30),
+          const Radius.circular(4),
+        ),
         iconPaint,
       );
     }
   }
 
   @override
-  bool shouldRepaint(covariant _DesktopBackgroundPainter oldDelegate) => oldDelegate.isDark != isDark;
+  bool shouldRepaint(covariant _DesktopBackgroundPainter oldDelegate) =>
+      oldDelegate.isDark != isDark;
 }
-
 
 /// 预览眼睛按钮
 class _PreviewEyeButton extends StatelessWidget {

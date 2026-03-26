@@ -56,11 +56,11 @@ class KeyConfig extends Equatable {
   final DateTime createdAt;
   @ServerTimeConverter()
   final DateTime updatedAt;
-  
+
   // 用户信息（可选，由后端返回，仅列表接口返回）
   final String? userNickname;
   final String? userAvatar;
-  
+
   // 投票信息（仅列表接口返回）
   @JsonKey(defaultValue: 0)
   final int upCount;
@@ -73,7 +73,7 @@ class KeyConfig extends Equatable {
   final String? voteType;
   @JsonKey(defaultValue: false)
   final bool isOwner;
-  
+
   // 审核信息
   @JsonKey(defaultValue: KeyConfigAuditStatus.approved)
   final KeyConfigAuditStatus auditStatus;
@@ -81,7 +81,7 @@ class KeyConfig extends Equatable {
   final String auditRemark;
   @NullableServerTimeConverter()
   final DateTime? auditAt;
-  
+
   // 新增字段：应用次数、评论数、编辑理由
   @JsonKey(defaultValue: 0)
   final int useCount;
@@ -126,13 +126,13 @@ class KeyConfig extends Equatable {
     if (voteType == 'down') return KeyConfigVoteType.down;
     return null;
   }
-  
+
   /// 是否待审核
   bool get isPending => auditStatus == KeyConfigAuditStatus.pending;
-  
+
   /// 是否已通过
   bool get isApproved => auditStatus == KeyConfigAuditStatus.approved;
-  
+
   /// 是否已拒绝
   bool get isRejected => auditStatus == KeyConfigAuditStatus.rejected;
 
@@ -198,41 +198,43 @@ class KeyConfig extends Equatable {
       auditAt: auditAt == _sentinel ? this.auditAt : auditAt as DateTime?,
       useCount: useCount ?? this.useCount,
       commentCount: commentCount ?? this.commentCount,
-      editReason: editReason == _sentinel ? this.editReason : editReason as String?,
+      editReason: editReason == _sentinel
+          ? this.editReason
+          : editReason as String?,
     );
   }
 
   @override
   List<Object?> get props => [
-        id,
-        configId,
-        name,
-        description,
-        categoryId,
-        category,
-        icon,
-        config,
-        needsKeybind,
-        userID,
-        isActive,
-        sort,
-        createdAt,
-        updatedAt,
-        userNickname,
-        userAvatar,
-        upCount,
-        downCount,
-        voteCount,
-        hasVoted,
-        voteType,
-        isOwner,
-        auditStatus,
-        auditRemark,
-        auditAt,
-        useCount,
-        commentCount,
-        editReason,
-      ];
+    id,
+    configId,
+    name,
+    description,
+    categoryId,
+    category,
+    icon,
+    config,
+    needsKeybind,
+    userID,
+    isActive,
+    sort,
+    createdAt,
+    updatedAt,
+    userNickname,
+    userAvatar,
+    upCount,
+    downCount,
+    voteCount,
+    hasVoted,
+    voteType,
+    isOwner,
+    auditStatus,
+    auditRemark,
+    auditAt,
+    useCount,
+    commentCount,
+    editReason,
+  ];
 }
 
 /// 配置列表响应
@@ -242,10 +244,7 @@ class KeyConfigListResponse extends Equatable {
   final List<KeyConfig> items;
   final int total;
 
-  const KeyConfigListResponse({
-    required this.items,
-    required this.total,
-  });
+  const KeyConfigListResponse({required this.items, required this.total});
 
   factory KeyConfigListResponse.fromJson(Map<String, dynamic> json) =>
       _$KeyConfigListResponseFromJson(json);
@@ -261,10 +260,7 @@ class KeyConfigCategory extends Equatable {
   final int id;
   final String name;
 
-  const KeyConfigCategory({
-    required this.id,
-    required this.name,
-  });
+  const KeyConfigCategory({required this.id, required this.name});
 
   factory KeyConfigCategory.fromJson(Map<String, dynamic> json) =>
       _$KeyConfigCategoryFromJson(json);
@@ -307,7 +303,17 @@ class KeyConfigCreateRequest extends Equatable {
   Map<String, dynamic> toJson() => _$KeyConfigCreateRequestToJson(this);
 
   @override
-  List<Object?> get props => [configId, name, description, categoryId, icon, config, needsKeybind, isActive, sort];
+  List<Object?> get props => [
+    configId,
+    name,
+    description,
+    categoryId,
+    icon,
+    config,
+    needsKeybind,
+    isActive,
+    sort,
+  ];
 }
 
 /// autoexec.cfg 中的配置块
@@ -346,9 +352,14 @@ class ConfigBlock extends Equatable {
   }
 
   @override
-  List<Object?> get props => [configId, configName, content, keyBindings, isManaged];
+  List<Object?> get props => [
+    configId,
+    configName,
+    content,
+    keyBindings,
+    isManaged,
+  ];
 }
-
 
 /// 投票响应
 @JsonSerializable()
@@ -377,9 +388,15 @@ class KeyConfigVoteResponse extends Equatable {
   Map<String, dynamic> toJson() => _$KeyConfigVoteResponseToJson(this);
 
   @override
-  List<Object?> get props => [success, upCount, downCount, voteCount, hasVoted, voteType];
+  List<Object?> get props => [
+    success,
+    upCount,
+    downCount,
+    voteCount,
+    hasVoted,
+    voteType,
+  ];
 }
-
 
 /// 按键配置评论模型
 @JsonSerializable()
@@ -422,19 +439,19 @@ class KeyConfigComment extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        configId,
-        authorId,
-        authorName,
-        authorAvatar,
-        isAdmin,
-        content,
-        images,
-        replyToId,
-        replyCount,
-        createdAt,
-        updatedAt,
-      ];
+    id,
+    configId,
+    authorId,
+    authorName,
+    authorAvatar,
+    isAdmin,
+    content,
+    images,
+    replyToId,
+    replyCount,
+    createdAt,
+    updatedAt,
+  ];
 }
 
 /// 评论列表响应

@@ -148,7 +148,8 @@ class BilibiliContentState extends Equatable {
           : (videoCategoryFilter ?? this.videoCategoryFilter),
       videoCategories: videoCategories ?? this.videoCategories,
       isRefreshing: isRefreshing ?? this.isRefreshing,
-      isLoadingBilibiliData: isLoadingBilibiliData ?? this.isLoadingBilibiliData,
+      isLoadingBilibiliData:
+          isLoadingBilibiliData ?? this.isLoadingBilibiliData,
       lastOperationSuccess: clearLastOperation
           ? null
           : (lastOperationSuccess ?? this.lastOperationSuccess),

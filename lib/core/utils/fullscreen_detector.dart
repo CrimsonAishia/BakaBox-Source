@@ -26,7 +26,8 @@ enum UserNotificationState {
 /// 使用 Windows API SHQueryUserNotificationState 检测是否有全屏应用运行
 class FullscreenDetector {
   static FullscreenDetector? _instance;
-  static FullscreenDetector get instance => _instance ??= FullscreenDetector._();
+  static FullscreenDetector get instance =>
+      _instance ??= FullscreenDetector._();
 
   FullscreenDetector._();
 
@@ -50,9 +51,10 @@ class FullscreenDetector {
     try {
       _shell32 = DynamicLibrary.open('shell32.dll');
       _shQueryUserNotificationState = _shell32!
-          .lookupFunction<Int32 Function(Pointer<Int32>), int Function(Pointer<Int32>)>(
-        'SHQueryUserNotificationState',
-      );
+          .lookupFunction<
+            Int32 Function(Pointer<Int32>),
+            int Function(Pointer<Int32>)
+          >('SHQueryUserNotificationState');
       LogService.d('[FullscreenDetector] Initialized successfully');
     } catch (e) {
       LogService.e('[FullscreenDetector] Failed to initialize: $e');
@@ -111,15 +113,20 @@ class FullscreenDetector {
 }
 
 // 简单的内存分配，使用 msvcrt
-final DynamicLibrary _msvcrt = Platform.isWindows 
-    ? DynamicLibrary.open('msvcrt.dll') 
+final DynamicLibrary _msvcrt = Platform.isWindows
+    ? DynamicLibrary.open('msvcrt.dll')
     : DynamicLibrary.process();
 
 final Pointer<Void> Function(int) _malloc = _msvcrt
-    .lookupFunction<Pointer<Void> Function(IntPtr), Pointer<Void> Function(int)>('malloc');
+    .lookupFunction<
+      Pointer<Void> Function(IntPtr),
+      Pointer<Void> Function(int)
+    >('malloc');
 
 final void Function(Pointer<Void>) _free = _msvcrt
-    .lookupFunction<Void Function(Pointer<Void>), void Function(Pointer<Void>)>('free');
+    .lookupFunction<Void Function(Pointer<Void>), void Function(Pointer<Void>)>(
+      'free',
+    );
 
 Pointer<Int32> _allocateInt32() {
   return _malloc(4).cast<Int32>(); // Int32 = 4 bytes

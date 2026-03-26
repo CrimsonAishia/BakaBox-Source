@@ -17,11 +17,12 @@ class IssueDetailMobile extends StatefulWidget {
 }
 
 class _IssueDetailMobileState extends State<IssueDetailMobile> {
-  final quill.QuillController _commentController = quill.QuillController.basic();
+  final quill.QuillController _commentController =
+      quill.QuillController.basic();
   final ScrollController _scrollController = ScrollController();
   final _commentEditorKey = GlobalKey<RichTextEditorState>();
   List<String> _commentImageUrls = [];
-  
+
   // 评论草稿相关
   bool _showCommentDraftPrompt = false;
   DraftData? _savedCommentDraft;
@@ -62,7 +63,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   /// 恢复评论草稿
   void _restoreCommentDraft() {
     if (_savedCommentDraft == null) return;
-    
+
     // 恢复内容
     if (_savedCommentDraft!.content.isNotEmpty) {
       try {
@@ -72,14 +73,14 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
         LogService.e('解码评论草稿失败', e);
       }
     }
-    
+
     // 恢复图片
     setState(() {
       _commentImageUrls = _savedCommentDraft!.imageUrls;
       _showCommentDraftPrompt = false;
       _savedCommentDraft = null;
     });
-    
+
     ToastUtils.showSuccess(context, '草稿已恢复');
   }
 
@@ -104,11 +105,13 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       return;
     }
     context.read<IssueDetailBloc>().add(IssueDetailSetUser(authState.userInfo));
-    context.read<IssueDetailBloc>().add(IssueDetailAddComment(content, images: _commentImageUrls));
-    
+    context.read<IssueDetailBloc>().add(
+      IssueDetailAddComment(content, images: _commentImageUrls),
+    );
+
     // 提交后删除草稿
     DraftService().deleteDraft('comment_${widget.issueId}');
-    
+
     _commentController.clear();
     _commentEditorKey.currentState?.clearImages();
     setState(() {
@@ -135,13 +138,13 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
 
     try {
       final content = QuillDeltaCodec.encode(_commentController.document);
-      
+
       await DraftService().saveDraft(
         draftId: 'comment_${widget.issueId}',
         content: content,
         imageUrls: _commentImageUrls,
       );
-      
+
       if (mounted) {
         ToastUtils.showSuccess(context, '草稿已保存');
       }
@@ -188,10 +191,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           const Expanded(
             child: Text(
               '发现未保存的评论草稿',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
           TextButton(
@@ -215,7 +215,10 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 borderRadius: BorderRadius.circular(6),
               ),
             ),
-            child: const Text('恢复', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+            child: const Text(
+              '恢复',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),
@@ -240,9 +243,11 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           body: state.isLoading
               ? _buildLoadingState()
               : state.issue == null
-                  ? _buildErrorState()
-                  : _buildContent(state),
-          bottomNavigationBar: state.issue != null ? _buildBottomBar(state) : null,
+              ? _buildErrorState()
+              : _buildContent(state),
+          bottomNavigationBar: state.issue != null
+              ? _buildBottomBar(state)
+              : null,
         );
       },
     );
@@ -252,7 +257,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   Widget _buildAppBar(BuildContext context, IssueDetailState state) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return SliverAppBar(
       pinned: true,
       elevation: 0,
@@ -294,25 +299,31 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 const SizedBox(width: 8),
                 // 图标容器
                 Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0080FF), Color(0xFF0066CC)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0080FF).withValues(alpha: 0.3),
-                        offset: const Offset(0, 4),
-                        blurRadius: 12,
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0080FF), Color(0xFF0066CC)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(
+                              0xFF0080FF,
+                            ).withValues(alpha: 0.3),
+                            offset: const Offset(0, 4),
+                            blurRadius: 12,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Icon(MdiIcons.fileDocumentOutline, color: Colors.white, size: 24),
-                )
+                      child: Icon(
+                        MdiIcons.fileDocumentOutline,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    )
                     .animate()
                     .scale(
                       begin: const Offset(0.5, 0.5),
@@ -353,7 +364,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                         '问题详情',
                         style: TextStyle(
                           fontSize: 13,
-                          color: theme.appBarTheme.foregroundColor?.withValues(alpha: 0.7),
+                          color: theme.appBarTheme.foregroundColor?.withValues(
+                            alpha: 0.7,
+                          ),
                         ),
                       ).animate().fadeIn(duration: 300.ms, delay: 80.ms),
                     ],
@@ -384,19 +397,24 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
               alignment: Alignment.center,
               children: [
                 Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
-                    color: const Color(0xFF0080FF).withValues(alpha: 0.2),
-                  ),
-                ).animate(onPlay: (controller) => controller.repeat()).scale(duration: 1000.ms).fadeIn(duration: 500.ms),
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        color: const Color(0xFF0080FF).withValues(alpha: 0.2),
+                      ),
+                    )
+                    .animate(onPlay: (controller) => controller.repeat())
+                    .scale(duration: 1000.ms)
+                    .fadeIn(duration: 500.ms),
                 const SizedBox(
                   width: 40,
                   height: 40,
                   child: CircularProgressIndicator(
                     strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0080FF)),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFF0080FF),
+                    ),
                   ),
                 ),
               ],
@@ -404,16 +422,22 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           ),
           const SizedBox(height: 32),
           Text(
-            '正在加载问题详情',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: const Color(0xFF0080FF),
-              fontWeight: FontWeight.w500,
-            ),
-          ).animate(onPlay: (controller) => controller.repeat(reverse: true)).fadeIn(duration: 800.ms).then(delay: 200.ms).fadeOut(duration: 800.ms),
+                '正在加载问题详情',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: const Color(0xFF0080FF),
+                  fontWeight: FontWeight.w500,
+                ),
+              )
+              .animate(onPlay: (controller) => controller.repeat(reverse: true))
+              .fadeIn(duration: 800.ms)
+              .then(delay: 200.ms)
+              .fadeOut(duration: 800.ms),
           const SizedBox(height: 8),
           Text(
             '请稍候...',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
           ).animate().fadeIn(delay: 300.ms, duration: 500.ms),
         ],
       ),
@@ -438,12 +462,20 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 color: const Color(0xFFFEE2E2),
                 borderRadius: BorderRadius.circular(36),
               ),
-              child: Icon(MdiIcons.alertCircleOutline, size: 36, color: const Color(0xFFDC2626)),
+              child: Icon(
+                MdiIcons.alertCircleOutline,
+                size: 36,
+                color: const Color(0xFFDC2626),
+              ),
             ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
             const SizedBox(height: 20),
             const Text(
               '加载失败',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1F2937),
+              ),
             ).animate().fadeIn(delay: 100.ms, duration: 300.ms),
             const SizedBox(height: 12),
             Container(
@@ -456,12 +488,19 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(MdiIcons.informationOutline, size: 16, color: const Color(0xFFDC2626)),
+                  Icon(
+                    MdiIcons.informationOutline,
+                    size: 16,
+                    color: const Color(0xFFDC2626),
+                  ),
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
                       errorMessage,
-                      style: const TextStyle(color: Color(0xFFDC2626), fontSize: 13),
+                      style: const TextStyle(
+                        color: Color(0xFFDC2626),
+                        fontSize: 13,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -470,16 +509,26 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
             ).animate().fadeIn(delay: 200.ms, duration: 300.ms),
             const SizedBox(height: 20),
             ElevatedButton.icon(
-              onPressed: () => context.read<IssueDetailBloc>().add(IssueDetailFetch(widget.issueId)),
-              icon: Icon(MdiIcons.refresh, size: 18),
-              label: const Text('重新加载'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0080FF),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ).animate().fadeIn(delay: 300.ms, duration: 300.ms).slideY(begin: 0.2, end: 0),
+                  onPressed: () => context.read<IssueDetailBloc>().add(
+                    IssueDetailFetch(widget.issueId),
+                  ),
+                  icon: Icon(MdiIcons.refresh, size: 18),
+                  label: const Text('重新加载'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0080FF),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                )
+                .animate()
+                .fadeIn(delay: 300.ms, duration: 300.ms)
+                .slideY(begin: 0.2, end: 0),
           ],
         ),
       ),
@@ -490,7 +539,8 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   Widget _buildContent(IssueDetailState state) {
     final issue = state.issue!;
     return RefreshIndicator(
-      onRefresh: () async => context.read<IssueDetailBloc>().add(IssueDetailFetch(widget.issueId)),
+      onRefresh: () async =>
+          context.read<IssueDetailBloc>().add(IssueDetailFetch(widget.issueId)),
       child: CustomScrollView(
         controller: _scrollController,
         slivers: [
@@ -501,9 +551,15 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildIssueCard(issue).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0),
+                  _buildIssueCard(issue)
+                      .animate()
+                      .fadeIn(duration: 300.ms)
+                      .slideY(begin: 0.1, end: 0),
                   const SizedBox(height: 16),
-                  _buildCommentsSection(state).animate().fadeIn(duration: 300.ms, delay: 100.ms).slideY(begin: 0.1, end: 0),
+                  _buildCommentsSection(state)
+                      .animate()
+                      .fadeIn(duration: 300.ms, delay: 100.ms)
+                      .slideY(begin: 0.1, end: 0),
                   const SizedBox(height: 80),
                 ],
               ),
@@ -513,7 +569,6 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       ),
     );
   }
-
 
   /// 构建问题详情卡片
   Widget _buildIssueCard(Issue issue) {
@@ -564,19 +619,28 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 18,
-                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  backgroundImage: issue.authorAvatar != null ? NetworkImage(issue.authorAvatar!) : null,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
+                  backgroundImage: issue.authorAvatar != null
+                      ? NetworkImage(issue.authorAvatar!)
+                      : null,
                   child: issue.authorAvatar == null
                       ? Text(
                           issue.authorName[0].toUpperCase(),
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
                         )
                       : null,
                 ),
@@ -587,7 +651,10 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                     children: [
                       Text(
                         issue.authorName,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Row(
@@ -595,13 +662,17 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                           Icon(
                             MdiIcons.clockOutline,
                             size: 12,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             Formatters.formatRelativeTime(issue.createdAt),
                             style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                               fontSize: 12,
                             ),
                           ),
@@ -663,7 +734,11 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          Icon(
+            icon,
+            size: 14,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 4),
           Text(
             '$count',
@@ -683,7 +758,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
@@ -728,7 +805,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
@@ -781,9 +860,21 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   /// 构建类型标签
   Widget _buildTypeTag(IssueType type) {
     final (color, bgColor, icon) = switch (type) {
-      IssueType.bug => (const Color(0xFFDC2626), const Color(0xFFFEE2E2), MdiIcons.bug),
-      IssueType.feature => (const Color(0xFF2563EB), const Color(0xFFDBEAFE), MdiIcons.lightbulbOnOutline),
-      IssueType.question => (const Color(0xFF059669), const Color(0xFFD1FAE5), MdiIcons.helpCircleOutline),
+      IssueType.bug => (
+        const Color(0xFFDC2626),
+        const Color(0xFFFEE2E2),
+        MdiIcons.bug,
+      ),
+      IssueType.feature => (
+        const Color(0xFF2563EB),
+        const Color(0xFFDBEAFE),
+        MdiIcons.lightbulbOnOutline,
+      ),
+      IssueType.question => (
+        const Color(0xFF059669),
+        const Color(0xFFD1FAE5),
+        MdiIcons.helpCircleOutline,
+      ),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -798,7 +889,11 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           const SizedBox(width: 5),
           Text(
             type.label,
-            style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -822,21 +917,21 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           Container(
             width: 6,
             height: 6,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 5),
           Text(
             status.label,
-            style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
     );
   }
-
 
   /// 构建评论区域
   Widget _buildCommentsSection(IssueDetailState state) {
@@ -871,7 +966,10 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
               const SizedBox(width: 12),
               Text(
                 '评论',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(width: 8),
               Container(
@@ -901,7 +999,10 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
             ...state.comments.asMap().entries.map((entry) {
               return _buildCommentItem(entry.value, entry.key)
                   .animate()
-                  .fadeIn(duration: 300.ms, delay: Duration(milliseconds: 50 * entry.key))
+                  .fadeIn(
+                    duration: 300.ms,
+                    delay: Duration(milliseconds: 50 * entry.key),
+                  )
                   .slideX(begin: 0.05, end: 0);
             }),
         ],
@@ -983,7 +1084,8 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
 
   /// 构建评论项
   Widget _buildCommentItem(IssueComment comment, int index) {
-    final isLast = index == context.read<IssueDetailBloc>().state.comments.length - 1;
+    final isLast =
+        index == context.read<IssueDetailBloc>().state.comments.length - 1;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: BoxDecoration(
@@ -1003,12 +1105,19 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                backgroundImage: comment.authorAvatar != null ? NetworkImage(comment.authorAvatar!) : null,
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest,
+                backgroundImage: comment.authorAvatar != null
+                    ? NetworkImage(comment.authorAvatar!)
+                    : null,
                 child: comment.authorAvatar == null
                     ? Text(
                         comment.authorName[0].toUpperCase(),
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
                       )
                     : null,
               ),
@@ -1048,12 +1157,18 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                   children: [
                     Text(
                       comment.authorName,
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
                     ),
                     if (comment.isAdmin) ...[
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [Color(0xFF0080FF), Color(0xFF0066CC)],
@@ -1062,7 +1177,11 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                         ),
                         child: const Text(
                           '管理员',
-                          style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
@@ -1108,13 +1227,15 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     );
   }
 
-
   /// 构建底部操作栏
   Widget _buildBottomBar(IssueDetailState state) {
     final issue = state.issue!;
     final authState = context.read<AuthBloc>().state;
     final backendUserInfo = TokenService.instance.userInfo;
-    final isAuthor = authState.isAuthenticated && backendUserInfo != null && backendUserInfo.id == issue.authorId;
+    final isAuthor =
+        authState.isAuthenticated &&
+        backendUserInfo != null &&
+        backendUserInfo.id == issue.authorId;
 
     return Container(
       padding: EdgeInsets.only(
@@ -1126,7 +1247,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(
-          top: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
+          top: BorderSide(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+          ),
         ),
         boxShadow: [
           BoxShadow(
@@ -1172,7 +1295,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 : Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: issue.isVoted ? const Color(0xFF0080FF) : Colors.transparent,
+              color: issue.isVoted
+                  ? const Color(0xFF0080FF)
+                  : Colors.transparent,
               width: 1.5,
             ),
           ),
@@ -1218,7 +1343,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 if (isOpen) {
                   context.read<IssueDetailBloc>().add(const IssueDetailClose());
                 } else {
-                  context.read<IssueDetailBloc>().add(const IssueDetailReopen());
+                  context.read<IssueDetailBloc>().add(
+                    const IssueDetailReopen(),
+                  );
                 }
               },
         borderRadius: BorderRadius.circular(12),
@@ -1296,7 +1423,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
@@ -1344,17 +1473,24 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               // 标题栏
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                      color: Theme.of(
+                        context,
+                      ).dividerColor.withValues(alpha: 0.5),
                     ),
                   ),
                 ),
@@ -1376,7 +1512,10 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                     const SizedBox(width: 12),
                     const Text(
                       '写评论',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const Spacer(),
                     Material(
@@ -1388,13 +1527,17 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.close_rounded,
                             size: 20,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -1447,7 +1590,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                   color: Theme.of(context).colorScheme.surface,
                   border: Border(
                     top: BorderSide(
-                      color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                      color: Theme.of(
+                        context,
+                      ).dividerColor.withValues(alpha: 0.5),
                     ),
                   ),
                   boxShadow: [
@@ -1468,7 +1613,10 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF0080FF),
                         side: const BorderSide(color: Color(0xFF0080FF)),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -1509,7 +1657,10 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                                   const SizedBox(width: 8),
                                   const Text(
                                     '发表评论',
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ],
                               ),

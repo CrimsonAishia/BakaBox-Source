@@ -6,7 +6,7 @@ import '../services/disk_image_cache_service.dart';
 import 'disk_cached_image.dart';
 
 /// 统一的地图背景组件
-/// 
+///
 /// 自动处理：
 /// - 网络图片加载和缓存
 /// - 本地资源图片
@@ -17,20 +17,20 @@ import 'disk_cached_image.dart';
 class MapBackground extends StatefulWidget {
   /// 地图名称（用于生成缓存 key）
   final String? mapName;
-  
+
   /// 地图背景 URL（可以是网络 URL、本地资源路径或 fileId 引用格式）
   final String? imageUrl;
-  
+
   /// 圆角
   final BorderRadius? borderRadius;
-  
+
   /// 图片填充方式
   final BoxFit fit;
-  
+
   /// 解码缓存宽度（限制图片解码尺寸以节省内存）
   /// 建议设置为显示宽度的 2 倍以保证清晰度
   final int? cacheWidth;
-  
+
   /// 解码缓存高度（限制图片解码尺寸以节省内存）
   /// 建议设置为显示高度的 2 倍以保证清晰度
   final int? cacheHeight;
@@ -124,8 +124,8 @@ class _MapBackgroundState extends State<MapBackground>
   }
 
   Future<void> _resolveUrl() async {
-    final url = (widget.imageUrl != null && widget.imageUrl!.isNotEmpty) 
-        ? widget.imageUrl! 
+    final url = (widget.imageUrl != null && widget.imageUrl!.isNotEmpty)
+        ? widget.imageUrl!
         : MapUtils.defaultMapBackground;
 
     // 如果 URL 没变，不需要重新解析
@@ -177,7 +177,7 @@ class _MapBackgroundState extends State<MapBackground>
     final url = _resolvedUrl!;
     // 原始的 imageUrl，用于生成稳定的缓存 key
     final originalUrl = widget.imageUrl ?? MapUtils.defaultMapBackground;
-    
+
     Widget child;
     if (url.startsWith('http://') || url.startsWith('https://')) {
       // 生成稳定的缓存 key
@@ -186,7 +186,7 @@ class _MapBackgroundState extends State<MapBackground>
       final cacheKey = ImageUrlService.isFileIdRef(originalUrl)
           ? originalUrl
           : DiskImageCacheService.extractCacheKey(url);
-      
+
       child = DiskCachedImage(
         // 使用 cacheKey 作为 widget key，确保图片变化时刷新
         key: ValueKey('map_bg_$cacheKey'),
@@ -243,20 +243,14 @@ class _MapBackgroundState extends State<MapBackground>
           fit: StackFit.expand,
           children: [
             _buildFallbackGradient(),
-            FadeTransition(
-              opacity: _fadeAnimation,
-              child: assetImage,
-            ),
+            FadeTransition(opacity: _fadeAnimation, child: assetImage),
           ],
         );
       }
     }
 
     if (widget.borderRadius != null) {
-      return ClipRRect(
-        borderRadius: widget.borderRadius!,
-        child: child,
-      );
+      return ClipRRect(borderRadius: widget.borderRadius!, child: child);
     }
     return child;
   }

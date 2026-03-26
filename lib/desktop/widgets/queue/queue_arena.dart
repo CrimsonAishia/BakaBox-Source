@@ -17,7 +17,7 @@ class _UserAnimationState {
   double flyProgress;
   double floatPhase; // 漂浮动画相位
   double floatSpeed; // 漂浮速度
-  
+
   // 动画控制
   AnimationController? fadeController;
   AnimationController? flyController;
@@ -55,7 +55,7 @@ class _UserAnimationState {
       floatSpeed: floatSpeed,
     );
   }
-  
+
   void dispose() {
     fadeController?.dispose();
     flyController?.dispose();
@@ -267,23 +267,26 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
   void _syncUserList() {
     final limitedUsers = _limitDisplayUsers(widget.users);
     final currentIds = limitedUsers.map((u) => u.uniqueId).toSet();
-    
+
     // 移除不在列表中的用户（但不移除正在淡出的用户）
     final toRemove = _userStates.keys
-        .where((id) => !currentIds.contains(id) && !_fadingOutUsers.containsKey(id))
+        .where(
+          (id) => !currentIds.contains(id) && !_fadingOutUsers.containsKey(id),
+        )
         .toList();
     for (final id in toRemove) {
       _userStates[id]?.dispose();
       _userStates.remove(id);
     }
-    
+
     // 添加新用户（不在 _userStates 和 _fadingOutUsers 中的用户）
     for (final user in limitedUsers) {
       final userId = user.uniqueId;
-      if (!_userStates.containsKey(userId) && !_fadingOutUsers.containsKey(userId)) {
+      if (!_userStates.containsKey(userId) &&
+          !_fadingOutUsers.containsKey(userId)) {
         final position = _findAvailablePosition();
         final size = _randomSize();
-        
+
         final state = _UserAnimationState.create(
           user: user,
           x: position.$1,
@@ -291,9 +294,9 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
           size: size,
           floatPhase: _random.nextDouble() * 2 * pi,
           floatSpeed: 0.3 + _random.nextDouble() * 0.2,
-          opacity: 0.0,  // 从透明开始，淡入显示
+          opacity: 0.0, // 从透明开始，淡入显示
         );
-        
+
         _userStates[userId] = state;
         _animateFadeIn(userId, state);
       }
@@ -324,7 +327,7 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
       floatSpeed: 0.3 + _random.nextDouble() * 0.2,
       opacity: 0.0,
     );
-    
+
     _userStates[userId] = state;
     _animateFadeIn(userId, state);
   }
@@ -354,9 +357,9 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
       vsync: this,
       duration: _fadeInDuration,
     );
-    
+
     state.fadeController = controller;
-    
+
     controller.addListener(() {
       if (mounted) {
         setState(() {
@@ -364,14 +367,14 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
         });
       }
     });
-    
+
     controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         controller.dispose();
         state.fadeController = null;
       }
     });
-    
+
     controller.forward();
   }
 
@@ -381,18 +384,19 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
       vsync: this,
       duration: _fadeOutDuration,
     );
-    
+
     state.fadeController = controller;
     final startOpacity = state.opacity;
-    
+
     controller.addListener(() {
       if (mounted) {
         setState(() {
-          state.opacity = startOpacity * (1.0 - Curves.easeIn.transform(controller.value));
+          state.opacity =
+              startOpacity * (1.0 - Curves.easeIn.transform(controller.value));
         });
       }
     });
-    
+
     controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         if (mounted) {
@@ -403,24 +407,21 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
         state.dispose();
       }
     });
-    
+
     controller.forward();
   }
 
   /// 飞入中心动画
   void _animateFlyToCenter(String userId, _UserAnimationState state) {
-    final controller = AnimationController(
-      vsync: this,
-      duration: _flyDuration,
-    );
-    
+    final controller = AnimationController(vsync: this, duration: _flyDuration);
+
     state.flyController = controller;
-    
+
     controller.addListener(() {
       if (mounted) {
         final progress = controller.value;
         final easedProgress = Curves.easeInQuart.transform(progress);
-        
+
         setState(() {
           state.flyProgress = easedProgress;
           if (progress > 0.6) {
@@ -429,7 +430,7 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
         });
       }
     });
-    
+
     controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         final user = state.user;
@@ -442,7 +443,7 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
         widget.onUserSuccessAnimationComplete?.call(user);
       }
     });
-    
+
     controller.forward();
   }
 
@@ -496,8 +497,15 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
     double centerY,
   ) {
     // 使用正弦函数实现平滑漂浮，结合多个频率实现更自然的效果
-    final floatOffsetY = sin(_floatTime * state.floatSpeed * 2 * pi + state.floatPhase) * _floatAmplitude;
-    final floatOffsetX = sin(_floatTime * state.floatSpeed * 1.3 * pi + state.floatPhase + pi / 3) * _floatAmplitude * 0.5;
+    final floatOffsetY =
+        sin(_floatTime * state.floatSpeed * 2 * pi + state.floatPhase) *
+        _floatAmplitude;
+    final floatOffsetX =
+        sin(
+          _floatTime * state.floatSpeed * 1.3 * pi + state.floatPhase + pi / 3,
+        ) *
+        _floatAmplitude *
+        0.5;
 
     double x = state.x * width - state.size / 2 + floatOffsetX;
     double y = state.y * height - state.size / 2 + floatOffsetY;
@@ -519,10 +527,7 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
         opacity: state.opacity.clamp(0.0, 1.0),
         child: Transform.scale(
           scale: scale,
-          child: QueueUserAvatar(
-            user: state.user,
-            size: state.size,
-          ),
+          child: QueueUserAvatar(user: state.user, size: state.size),
         ),
       ),
     );

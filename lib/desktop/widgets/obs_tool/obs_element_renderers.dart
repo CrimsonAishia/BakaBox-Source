@@ -51,7 +51,7 @@ Widget _buildMapBackgroundWithBlur(
   double blur,
 ) {
   final hasServerData = mockServer != null || queriedInfo != null;
-  
+
   Widget background;
   if (hasServerData) {
     background = MapBackground(
@@ -64,12 +64,10 @@ Widget _buildMapBackgroundWithBlur(
     background = Image.asset(
       'assets/images/default-map-bg.jpg',
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => Container(
-        color: const Color(0xFF1e1e1e),
-      ),
+      errorBuilder: (_, __, ___) => Container(color: const Color(0xFF1e1e1e)),
     );
   }
-  
+
   // 如果需要模糊效果，用 ImageFiltered 包裹
   if (blur > 0) {
     return ImageFiltered(
@@ -77,7 +75,7 @@ Widget _buildMapBackgroundWithBlur(
       child: background,
     );
   }
-  
+
   return background;
 }
 
@@ -474,22 +472,10 @@ Widget buildTextMock(
           textAlign: _getTextAlign(textAlign),
           style: textStyle.copyWith(
             shadows: [
-              Shadow(
-                color: strokeColor,
-                offset: Offset(strokeWidth, 0),
-              ),
-              Shadow(
-                color: strokeColor,
-                offset: Offset(-strokeWidth, 0),
-              ),
-              Shadow(
-                color: strokeColor,
-                offset: Offset(0, strokeWidth),
-              ),
-              Shadow(
-                color: strokeColor,
-                offset: Offset(0, -strokeWidth),
-              ),
+              Shadow(color: strokeColor, offset: Offset(strokeWidth, 0)),
+              Shadow(color: strokeColor, offset: Offset(-strokeWidth, 0)),
+              Shadow(color: strokeColor, offset: Offset(0, strokeWidth)),
+              Shadow(color: strokeColor, offset: Offset(0, -strokeWidth)),
               Shadow(
                 color: strokeColor,
                 offset: Offset(strokeWidth, strokeWidth),

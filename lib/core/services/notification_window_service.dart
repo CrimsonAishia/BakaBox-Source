@@ -343,7 +343,9 @@ class NotificationWindowService {
   Future<void> _createWindow(NotificationData notification) async {
     // 检测是否有全屏应用运行（仅 Windows）
     if (Platform.isWindows && !FullscreenDetector.instance.canCreateWindow()) {
-      LogService.w('[NotificationWindow] Fullscreen app detected, skipping window creation');
+      LogService.w(
+        '[NotificationWindow] Fullscreen app detected, skipping window creation',
+      );
       return;
     }
 
@@ -536,7 +538,8 @@ class NotificationWindowService {
   /// 从等待队列中取出下一个通知显示
   void _showNextFromPendingQueue() {
     if (_pendingQueue.isEmpty) return;
-    if (_activeWindows.length + _createQueue.length >= maxVisibleNotifications) {
+    if (_activeWindows.length + _createQueue.length >=
+        maxVisibleNotifications) {
       return;
     }
 

@@ -40,11 +40,11 @@ class VideoEmbedDialog extends StatefulWidget {
 class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
   // video_player 控制器（用于直链）
   VideoPlayerController? _controller;
-  
+
   // WebView 控制器（用于B站原始链接）
   windows_webview.WebviewController? _webviewController;
   bool _isWebViewReady = false;
-  
+
   bool _isPlaying = false;
   bool _hasError = false;
   String? _errorMessage;
@@ -53,10 +53,10 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
   String? _coverUrl;
   String? _videoTitle;
   bool _isFetchingCover = false;
-  
+
   // 是否使用 WebView（非直链B站视频）
-  bool get _useWebView => 
-      widget.videoUrlSource != VideoUrlSource.bilibiliParsed && 
+  bool get _useWebView =>
+      widget.videoUrlSource != VideoUrlSource.bilibiliParsed &&
       _isBilibili(widget.videoUrl);
 
   @override
@@ -116,9 +116,11 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
 
   /// 通过BV号获取封面
   Future<void> _fetchCoverByBvid(String bvid) async {
-    final response = await http.get(
-      Uri.parse('https://api.bilibili.com/x/web-interface/view?bvid=$bvid'),
-    ).timeout(const Duration(seconds: 5));
+    final response = await http
+        .get(
+          Uri.parse('https://api.bilibili.com/x/web-interface/view?bvid=$bvid'),
+        )
+        .timeout(const Duration(seconds: 5));
 
     if (mounted && response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -180,14 +182,15 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
 
     try {
       final url = widget.videoUrl;
-      
+
       // B站直链需要设置 Referer 头
       if (widget.videoUrlSource == VideoUrlSource.bilibiliParsed) {
         _controller = VideoPlayerController.networkUrl(
           Uri.parse(url),
           httpHeaders: {
             'Referer': 'https://www.bilibili.com/',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           },
         );
       } else {
@@ -195,10 +198,10 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
       }
 
       await _controller!.initialize();
-      
+
       // 监听错误
       _controller!.addListener(_onVideoPlayerUpdate);
-      
+
       // 开始播放
       await _controller!.play();
 
@@ -227,7 +230,8 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isBili = _isBilibili(widget.videoUrl) ||
+    final isBili =
+        _isBilibili(widget.videoUrl) ||
         widget.videoUrlSource == VideoUrlSource.bilibiliParsed;
 
     return Dialog(
@@ -259,9 +263,8 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
 
   Widget _buildTitleBar(bool isDark, bool isBili) {
     final color = isBili ? const Color(0xFFFB7299) : const Color(0xFF4A90D9);
-    final displayTitle = widget.title ??
-        _videoTitle ??
-        (isBili ? 'Bilibili 视频预览' : '视频预览');
+    final displayTitle =
+        widget.title ?? _videoTitle ?? (isBili ? 'Bilibili 视频预览' : '视频预览');
 
     return Container(
       height: 44,
@@ -269,9 +272,7 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-        border: Border(
-          bottom: BorderSide(color: color.withValues(alpha: 0.3)),
-        ),
+        border: Border(bottom: BorderSide(color: color.withValues(alpha: 0.3))),
       ),
       child: Row(
         children: [
@@ -352,15 +353,21 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
     if (_useWebView) {
       if (_isPlaying && _isWebViewReady && _webviewController != null) {
         return ClipRRect(
-          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+          borderRadius: const BorderRadius.vertical(
+            bottom: Radius.circular(12),
+          ),
           child: windows_webview.Webview(_webviewController!),
         );
       }
     } else {
       // video_player 播放（直链）
-      if (_isPlaying && _controller != null && _controller!.value.isInitialized) {
+      if (_isPlaying &&
+          _controller != null &&
+          _controller!.value.isInitialized) {
         return ClipRRect(
-          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+          borderRadius: const BorderRadius.vertical(
+            bottom: Radius.circular(12),
+          ),
           child: _buildVideoPlayer(),
         );
       }
@@ -389,7 +396,8 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
   }
 
   Widget _buildLoadingWithCover(bool isDark) {
-    final isBili = _isBilibili(widget.videoUrl) ||
+    final isBili =
+        _isBilibili(widget.videoUrl) ||
         widget.videoUrlSource == VideoUrlSource.bilibiliParsed;
 
     return ClipRRect(
@@ -448,8 +456,9 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
                   fontSize: 13,
                   shadows: [
                     Shadow(
-                        color: Colors.black.withValues(alpha: 0.8),
-                        blurRadius: 4),
+                      color: Colors.black.withValues(alpha: 0.8),
+                      blurRadius: 4,
+                    ),
                   ],
                 ),
                 maxLines: 2,
@@ -561,7 +570,9 @@ class _VideoControlsOverlayState extends State<_VideoControlsOverlay> {
                   child: IconButton(
                     iconSize: 64,
                     icon: Icon(
-                      value.isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                      value.isPlaying
+                          ? Icons.pause_circle_filled
+                          : Icons.play_circle_filled,
                       color: Colors.white.withValues(alpha: 0.9),
                     ),
                     onPressed: () {
@@ -577,7 +588,10 @@ class _VideoControlsOverlayState extends State<_VideoControlsOverlay> {
               ),
               // 进度条
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Row(
                   children: [
                     Text(
@@ -589,16 +603,22 @@ class _VideoControlsOverlayState extends State<_VideoControlsOverlay> {
                       child: SliderTheme(
                         data: SliderTheme.of(context).copyWith(
                           trackHeight: 3,
-                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                          thumbShape: const RoundSliderThumbShape(
+                            enabledThumbRadius: 6,
+                          ),
+                          overlayShape: const RoundSliderOverlayShape(
+                            overlayRadius: 12,
+                          ),
                         ),
                         child: Slider(
                           value: value.duration.inMilliseconds > 0
-                              ? value.position.inMilliseconds / value.duration.inMilliseconds
+                              ? value.position.inMilliseconds /
+                                    value.duration.inMilliseconds
                               : 0,
                           onChanged: (v) {
                             final position = Duration(
-                              milliseconds: (v * value.duration.inMilliseconds).toInt(),
+                              milliseconds: (v * value.duration.inMilliseconds)
+                                  .toInt(),
                             );
                             widget.controller.seekTo(position);
                             _startHideTimer();

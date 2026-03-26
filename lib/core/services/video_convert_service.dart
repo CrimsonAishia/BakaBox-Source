@@ -4,7 +4,8 @@ import 'package:path_provider/path_provider.dart';
 import '../utils/log_service.dart';
 
 /// 视频转换进度回调
-typedef VideoConvertProgressCallback = void Function(double progress, String status);
+typedef VideoConvertProgressCallback =
+    void Function(double progress, String status);
 
 /// 视频转换结果
 class VideoConvertResult {
@@ -29,25 +30,22 @@ class VideoConvertResult {
   }
 
   factory VideoConvertResult.failure(String error) {
-    return VideoConvertResult(
-      success: false,
-      error: error,
-    );
+    return VideoConvertResult(success: false, error: error);
   }
 }
 
 /// 视频转换服务
-/// 
+///
 /// 使用 FFmpeg 将视频转换为 WebM 格式（VP9 编码）并降为 1080p
-/// 
+///
 /// 注意：需要系统安装 FFmpeg 并添加到 PATH
 class VideoConvertService {
   /// 最大输出分辨率（1080p）
   static const int maxHeight = 1080;
-  
+
   /// 视频比特率（适中质量）
   static const String videoBitrate = '2M';
-  
+
   /// 音频比特率
   static const String audioBitrate = '128k';
 
@@ -66,10 +64,14 @@ class VideoConvertService {
   static Future<VideoInfo?> getVideoInfo(String inputPath) async {
     try {
       final result = await Process.run('ffprobe', [
-        '-v', 'error',
-        '-select_streams', 'v:0',
-        '-show_entries', 'stream=width,height,duration',
-        '-of', 'csv=p=0',
+        '-v',
+        'error',
+        '-select_streams',
+        'v:0',
+        '-show_entries',
+        'stream=width,height,duration',
+        '-of',
+        'csv=p=0',
         inputPath,
       ]);
 
@@ -95,11 +97,11 @@ class VideoConvertService {
   }
 
   /// 转换视频为 WebM 格式（VP9 + Opus）
-  /// 
+  ///
   /// 参数:
   /// - [inputPath]: 输入视频路径
   /// - [onProgress]: 进度回调
-  /// 
+  ///
   /// 返回:
   /// - [VideoConvertResult]: 转换结果
   static Future<VideoConvertResult> convertToWebM(
@@ -147,38 +149,45 @@ class VideoConvertService {
       // VP9 编码 + Opus 音频，适合网页播放
       final process = await Process.start('ffmpeg', [
         '-i', inputPath,
-        '-c:v', 'libvpx-vp9',      // VP9 视频编码
-        '-b:v', videoBitrate,      // 视频比特率
-        '-crf', '30',              // 质量因子（0-63，越低质量越好）
-        '-vf', scaleFilter,        // 缩放滤镜
-        '-c:a', 'libopus',         // Opus 音频编码
-        '-b:a', audioBitrate,      // 音频比特率
-        '-deadline', 'good',       // 编码速度（realtime/good/best）
-        '-cpu-used', '2',          // CPU 使用级别（0-5，越高越快但质量越低）
-        '-row-mt', '1',            // 启用行级多线程
-        '-y',                      // 覆盖输出文件
+        '-c:v', 'libvpx-vp9', // VP9 视频编码
+        '-b:v', videoBitrate, // 视频比特率
+        '-crf', '30', // 质量因子（0-63，越低质量越好）
+        '-vf', scaleFilter, // 缩放滤镜
+        '-c:a', 'libopus', // Opus 音频编码
+        '-b:a', audioBitrate, // 音频比特率
+        '-deadline', 'good', // 编码速度（realtime/good/best）
+        '-cpu-used', '2', // CPU 使用级别（0-5，越高越快但质量越低）
+        '-row-mt', '1', // 启用行级多线程
+        '-y', // 覆盖输出文件
         outputPath,
       ]);
 
       // 监听 stderr 获取进度（FFmpeg 输出进度信息到 stderr）
       final stderrBuffer = StringBuffer();
       double lastProgress = 0.1;
-      
+
       process.stderr.transform(const SystemEncoding().decoder).listen((data) {
         stderrBuffer.write(data);
-        
+
         // 解析进度（FFmpeg 输出格式：time=00:00:05.00）
-        final timeMatch = RegExp(r'time=(\d+):(\d+):(\d+\.\d+)').firstMatch(data);
-        if (timeMatch != null && videoInfo.duration != null && videoInfo.duration! > 0) {
+        final timeMatch = RegExp(
+          r'time=(\d+):(\d+):(\d+\.\d+)',
+        ).firstMatch(data);
+        if (timeMatch != null &&
+            videoInfo.duration != null &&
+            videoInfo.duration! > 0) {
           final hours = int.parse(timeMatch.group(1)!);
           final minutes = int.parse(timeMatch.group(2)!);
           final seconds = double.parse(timeMatch.group(3)!);
           final currentTime = hours * 3600 + minutes * 60 + seconds;
           final progress = (currentTime / videoInfo.duration!).clamp(0.1, 0.95);
-          
+
           if (progress > lastProgress) {
             lastProgress = progress;
-            onProgress?.call(progress, '正在转换视频... ${(progress * 100).toInt()}%');
+            onProgress?.call(
+              progress,
+              '正在转换视频... ${(progress * 100).toInt()}%',
+            );
           }
         }
       });
@@ -199,7 +208,9 @@ class VideoConvertService {
       final fileSize = await outputFile.length();
       onProgress?.call(1.0, '转换完成');
 
-      LogService.i('视频转换成功: $outputPath (${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB)');
+      LogService.i(
+        '视频转换成功: $outputPath (${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB)',
+      );
       return VideoConvertResult.success(outputPath, fileSize);
     } catch (e) {
       LogService.e('视频转换异常', e);
@@ -228,11 +239,7 @@ class VideoInfo {
   final int height;
   final double? duration;
 
-  const VideoInfo({
-    required this.width,
-    required this.height,
-    this.duration,
-  });
+  const VideoInfo({required this.width, required this.height, this.duration});
 
   @override
   String toString() => 'VideoInfo(${width}x$height, duration: $duration)';

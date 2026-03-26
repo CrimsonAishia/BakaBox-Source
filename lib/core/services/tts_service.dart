@@ -26,6 +26,7 @@ enum TtsModelRegion {
 enum TtsModelType {
   /// VITS 模型
   vits,
+
   /// Kokoro 模型
   kokoro,
 }
@@ -47,16 +48,16 @@ class TtsModelInfo {
 
   /// espeak-ng 数据目录（Piper 模型需要）
   final String? dataDir;
-  
+
   /// Kokoro 模型专用：voices.bin 文件
   final String? voicesFile;
-  
+
   /// 模型类型
   final TtsModelType modelType;
-  
+
   /// 说话人数量（多音色模型）
   final int speakerCount;
-  
+
   final TtsModelRegion region;
   final String estimatedSize;
 
@@ -284,7 +285,8 @@ class TtsService {
         final lexiconZhPath = p.join(modelDir.path, 'lexicon-zh.txt');
         final lexiconEnPath = p.join(modelDir.path, 'lexicon-us-en.txt');
         String lexiconPath = '';
-        if (File(lexiconEnPath).existsSync() && File(lexiconZhPath).existsSync()) {
+        if (File(lexiconEnPath).existsSync() &&
+            File(lexiconZhPath).existsSync()) {
           lexiconPath = '$lexiconEnPath,$lexiconZhPath';
         }
 
@@ -410,8 +412,8 @@ class TtsService {
     try {
       // 构建播报文本
       // 地图名也需要数字转换
-      final cleanedMapLabel = mapLabel.isNotEmpty 
-          ? _cleanMapNameForTts(mapLabel) 
+      final cleanedMapLabel = mapLabel.isNotEmpty
+          ? _cleanMapNameForTts(mapLabel)
           : _cleanMapNameForTts(mapName);
       // 清理服务器名中的特殊字符，避免 TTS 截断
       final cleanServerName = serverName != null
@@ -475,9 +477,7 @@ class TtsService {
   }
 
   /// 测试 TTS 播报（带回调，用于更新 UI 状态）
-  Future<bool> testSpeakWithCallback({
-    VoidCallback? onPlayingStart,
-  }) async {
+  Future<bool> testSpeakWithCallback({VoidCallback? onPlayingStart}) async {
     return await speakMapAlertWithCallback(
       mapLabel: '炙热沙城2',
       mapName: 'de_dust2',
@@ -499,8 +499,8 @@ class TtsService {
 
     try {
       // 构建播报文本
-      final cleanedMapLabel = mapLabel.isNotEmpty 
-          ? _cleanMapNameForTts(mapLabel) 
+      final cleanedMapLabel = mapLabel.isNotEmpty
+          ? _cleanMapNameForTts(mapLabel)
           : _cleanMapNameForTts(mapName);
       final cleanServerName = serverName != null
           ? _cleanTextForTts(serverName)
@@ -516,7 +516,10 @@ class TtsService {
 
       LogService.d('[TTS] 播报: $text');
 
-      return await speakAsyncWithCallback(text: text, onPlayingStart: onPlayingStart);
+      return await speakAsyncWithCallback(
+        text: text,
+        onPlayingStart: onPlayingStart,
+      );
     } catch (e) {
       LogService.e('[TTS] 播报失败', e);
       return false;
@@ -547,7 +550,10 @@ class TtsService {
       }
 
       final tempDir = await getTemporaryDirectory();
-      final outputPath = p.join(tempDir.path, 'tts_output_${DateTime.now().millisecondsSinceEpoch}.wav');
+      final outputPath = p.join(
+        tempDir.path,
+        'tts_output_${DateTime.now().millisecondsSinceEpoch}.wav',
+      );
 
       LogService.d('[TTS] 开始在后台生成音频: $text');
 
@@ -572,7 +578,8 @@ class TtsService {
         // Kokoro 模型的 lexicon 路径
         final lexiconZhPath = p.join(modelDir.path, 'lexicon-zh.txt');
         final lexiconEnPath = p.join(modelDir.path, 'lexicon-us-en.txt');
-        if (File(lexiconEnPath).existsSync() && File(lexiconZhPath).existsSync()) {
+        if (File(lexiconEnPath).existsSync() &&
+            File(lexiconZhPath).existsSync()) {
           params['lexiconPath'] = '$lexiconEnPath,$lexiconZhPath';
         } else {
           params['lexiconPath'] = '';
@@ -616,7 +623,9 @@ class TtsService {
 
   /// 在后台 isolate 中生成 TTS 音频并保存到文件
   /// 返回生成的 WAV 文件路径，失败返回 null
-  static Future<String?> _generateTtsInIsolate(Map<String, dynamic> params) async {
+  static Future<String?> _generateTtsInIsolate(
+    Map<String, dynamic> params,
+  ) async {
     try {
       final modelPath = params['modelPath'] as String;
       final lexiconPath = params['lexiconPath'] as String;
@@ -690,17 +699,17 @@ class TtsService {
         final abs = audio.samples[i].abs();
         if (abs > peak) peak = abs;
       }
-      
+
       // 归一化增益（目标峰值 0.9，留余量避免削波）
       final normalizeGain = peak > 0.001 ? (0.9 / peak) : 1.0;
-      
+
       // 2. 应用归一化 + 用户音量
       final adjustedSamples = Float32List(audio.samples.length);
       for (int i = 0; i < audio.samples.length; i++) {
         double sample = audio.samples[i] * normalizeGain * volume;
         // 软限幅：平滑处理超出范围的值（用户音量 > 100% 时可能触发）
         if (sample > 1.0 || sample < -1.0) {
-          sample = sample > 0 
+          sample = sample > 0
               ? (1.0 - 0.1 / (sample + 0.1))
               : -(1.0 - 0.1 / (-sample + 0.1));
         }
@@ -771,9 +780,7 @@ class TtsService {
   }
 
   /// 异步播报（在后台 isolate 中生成音频，主线程只负责播放）
-  Future<bool> speakAsync({
-    required String text,
-  }) async {
+  Future<bool> speakAsync({required String text}) async {
     if (_volume <= 0) return false;
     if (!PlatformUtils.isDesktopPlatform) return false;
     if (!isModelDownloaded) return false;
@@ -794,7 +801,10 @@ class TtsService {
       }
 
       final tempDir = await getTemporaryDirectory();
-      final outputPath = p.join(tempDir.path, 'tts_output_${DateTime.now().millisecondsSinceEpoch}.wav');
+      final outputPath = p.join(
+        tempDir.path,
+        'tts_output_${DateTime.now().millisecondsSinceEpoch}.wav',
+      );
 
       LogService.d('[TTS] 开始在后台生成音频: $text');
 
@@ -819,7 +829,8 @@ class TtsService {
         // Kokoro 模型的 lexicon 路径
         final lexiconZhPath = p.join(modelDir.path, 'lexicon-zh.txt');
         final lexiconEnPath = p.join(modelDir.path, 'lexicon-us-en.txt');
-        if (File(lexiconEnPath).existsSync() && File(lexiconZhPath).existsSync()) {
+        if (File(lexiconEnPath).existsSync() &&
+            File(lexiconZhPath).existsSync()) {
           params['lexiconPath'] = '$lexiconEnPath,$lexiconZhPath';
         } else {
           params['lexiconPath'] = '';

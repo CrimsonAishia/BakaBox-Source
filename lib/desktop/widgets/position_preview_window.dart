@@ -77,13 +77,11 @@ class PositionPreviewConfig {
 class PositionPreviewWindowApp extends StatefulWidget {
   final PositionPreviewConfig config;
 
-  const PositionPreviewWindowApp({
-    super.key,
-    required this.config,
-  });
+  const PositionPreviewWindowApp({super.key, required this.config});
 
   @override
-  State<PositionPreviewWindowApp> createState() => _PositionPreviewWindowAppState();
+  State<PositionPreviewWindowApp> createState() =>
+      _PositionPreviewWindowAppState();
 }
 
 class _PositionPreviewWindowAppState extends State<PositionPreviewWindowApp> {
@@ -103,7 +101,9 @@ class _PositionPreviewWindowAppState extends State<PositionPreviewWindowApp> {
       final size = Size(widget.config.width, widget.config.height);
       final position = Offset(widget.config.x, widget.config.y);
 
-      debugPrint('[PositionPreview] Init window at x=${position.dx}, y=${position.dy}, size=${size.width}x${size.height}');
+      debugPrint(
+        '[PositionPreview] Init window at x=${position.dx}, y=${position.dy}, size=${size.width}x${size.height}',
+      );
 
       // 使用 waitUntilReadyToShow 模式（参考 notification_window_app.dart）
       await windowManager.waitUntilReadyToShow(null, () async {
@@ -148,7 +148,9 @@ class _PositionPreviewWindowAppState extends State<PositionPreviewWindowApp> {
     }
 
     final isNotification = widget.config.previewType == 'notification';
-    final color = isNotification ? const Color(0xFF0080FF) : const Color(0xFFFF9800);
+    final color = isNotification
+        ? const Color(0xFF0080FF)
+        : const Color(0xFFFF9800);
     final icon = isNotification ? MdiIcons.bellOutline : MdiIcons.gamepad;
 
     return MaterialApp(
@@ -165,10 +167,7 @@ class _PositionPreviewWindowAppState extends State<PositionPreviewWindowApp> {
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: color,
-                width: 3,
-              ),
+              border: Border.all(color: color, width: 3),
               boxShadow: [
                 BoxShadow(
                   color: color.withValues(alpha: 0.4),

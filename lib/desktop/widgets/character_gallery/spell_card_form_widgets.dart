@@ -42,7 +42,10 @@ class SpellCardFormStyle {
   }
 
   /// 根据 SpellCardType 枚举获取样式
-  static SpellCardFormStyle fromSpellCardType(BuildContext context, SpellCardType type) {
+  static SpellCardFormStyle fromSpellCardType(
+    BuildContext context,
+    SpellCardType type,
+  ) {
     return switch (type) {
       SpellCardType.passive => SpellCardFormStyle(
         accentColor: const Color(0xFF4A7C59),
@@ -114,7 +117,10 @@ class SpellCardTextField extends StatelessWidget {
             hintStyle: TextStyle(color: inkColor.withValues(alpha: 0.4)),
             filled: true,
             fillColor: inputBg,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
               borderSide: BorderSide(color: scrollBrown.withValues(alpha: 0.3)),
@@ -125,7 +131,10 @@ class SpellCardTextField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
-              borderSide: BorderSide(color: CharacterGalleryTheme.getVermillion(context), width: 2),
+              borderSide: BorderSide(
+                color: CharacterGalleryTheme.getVermillion(context),
+                width: 2,
+              ),
             ),
           ),
         ),
@@ -133,7 +142,6 @@ class SpellCardTextField extends StatelessWidget {
     );
   }
 }
-
 
 /// 数值输入框（允许整数和小数）
 class SpellCardNumberField extends StatelessWidget {
@@ -196,7 +204,10 @@ class SpellCardNumberField extends StatelessWidget {
             suffixStyle: TextStyle(color: scrollBrown, fontSize: 12),
             filled: true,
             fillColor: inputBg,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
               borderSide: BorderSide(color: scrollBrown.withValues(alpha: 0.3)),
@@ -207,7 +218,10 @@ class SpellCardNumberField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
-              borderSide: BorderSide(color: CharacterGalleryTheme.getVermillion(context), width: 2),
+              borderSide: BorderSide(
+                color: CharacterGalleryTheme.getVermillion(context),
+                width: 2,
+              ),
             ),
           ),
         ),
@@ -283,7 +297,10 @@ class SpellCardDamageField extends StatelessWidget {
             hintStyle: TextStyle(color: inkColor.withValues(alpha: 0.4)),
             filled: true,
             fillColor: inputBg,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
               borderSide: BorderSide(color: scrollBrown.withValues(alpha: 0.3)),
@@ -294,7 +311,10 @@ class SpellCardDamageField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
-              borderSide: BorderSide(color: CharacterGalleryTheme.getVermillion(context), width: 2),
+              borderSide: BorderSide(
+                color: CharacterGalleryTheme.getVermillion(context),
+                width: 2,
+              ),
             ),
           ),
         ),
@@ -364,16 +384,18 @@ class SpellCardTierDropdown extends StatelessWidget {
                   value: null,
                   child: Text('未选择', style: TextStyle(color: scrollBrown)),
                 ),
-                ...SpellCardTier.values.map((tier) => DropdownMenuItem(
-                  value: tier,
-                  child: Text(
-                    tier.label,
-                    style: TextStyle(
-                      color: _getTierColor(context, tier),
-                      fontWeight: FontWeight.w500,
+                ...SpellCardTier.values.map(
+                  (tier) => DropdownMenuItem(
+                    value: tier,
+                    child: Text(
+                      tier.label,
+                      style: TextStyle(
+                        color: _getTierColor(context, tier),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                )),
+                ),
               ],
               onChanged: onChanged,
             ),
@@ -383,7 +405,6 @@ class SpellCardTierDropdown extends StatelessWidget {
     );
   }
 }
-
 
 /// 符卡类型选择器
 class SpellCardTypeSelector extends StatelessWidget {
@@ -577,7 +598,10 @@ class SpellCardDialogHeader extends StatelessWidget {
                 ],
                 const SizedBox(width: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: style.accentColor.withValues(alpha: 0.1),
                     border: Border.all(color: style.accentColor),
@@ -700,8 +724,8 @@ class SpellCardCostField extends StatelessWidget {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final inputBg = CharacterGalleryTheme.getInputBackground(context);
     // 大符卡用金色，小符卡用蓝色（区别于伤害的红色）
-    final costColor = isUltimate 
-        ? CharacterGalleryTheme.getGold(context) 
+    final costColor = isUltimate
+        ? CharacterGalleryTheme.getGold(context)
         : CharacterGalleryTheme.getPCostColor(context);
 
     return Column(
@@ -735,7 +759,10 @@ class SpellCardCostField extends StatelessWidget {
             hintStyle: TextStyle(color: inkColor.withValues(alpha: 0.4)),
             filled: true,
             fillColor: inputBg,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
               borderSide: BorderSide(color: scrollBrown.withValues(alpha: 0.3)),
@@ -746,7 +773,10 @@ class SpellCardCostField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
-              borderSide: BorderSide(color: CharacterGalleryTheme.getVermillion(context), width: 2),
+              borderSide: BorderSide(
+                color: CharacterGalleryTheme.getVermillion(context),
+                width: 2,
+              ),
             ),
           ),
         ),

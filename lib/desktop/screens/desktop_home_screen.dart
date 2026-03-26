@@ -29,7 +29,8 @@ class DesktopHomeScreen extends StatefulWidget {
   State<DesktopHomeScreen> createState() => _DesktopHomeScreenState();
 }
 
-class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProviderStateMixin {
+class _DesktopHomeScreenState extends State<DesktopHomeScreen>
+    with TickerProviderStateMixin {
   int _currentIndex = 0;
   late AnimationController _contentAnimationController;
   StreamSubscription<GameStatusEvent>? _gameStatusSubscription;
@@ -37,32 +38,53 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
 
   final List<NavigationItem> _navigationItems = [
     NavigationItem(
-      icon: Icons.home_outlined, selectedIcon: Icons.home, label: '首页',
-      activeColor: const Color(0xFF0080FF), inactiveColor: const Color(0xFF64748B),
+      icon: Icons.home_outlined,
+      selectedIcon: Icons.home,
+      label: '首页',
+      activeColor: const Color(0xFF0080FF),
+      inactiveColor: const Color(0xFF64748B),
     ),
     NavigationItem(
-      icon: MdiIcons.server, selectedIcon: MdiIcons.serverNetwork, label: '服务器列表',
-      activeColor: const Color(0xFF0080FF), inactiveColor: const Color(0xFF64748B),
+      icon: MdiIcons.server,
+      selectedIcon: MdiIcons.serverNetwork,
+      label: '服务器列表',
+      activeColor: const Color(0xFF0080FF),
+      inactiveColor: const Color(0xFF64748B),
     ),
     NavigationItem(
-      icon: MdiIcons.accountGroup, selectedIcon: MdiIcons.accountGroupOutline, label: '角色图鉴',
-      activeColor: const Color(0xFF0080FF), inactiveColor: const Color(0xFF64748B),
+      icon: MdiIcons.accountGroup,
+      selectedIcon: MdiIcons.accountGroupOutline,
+      label: '角色图鉴',
+      activeColor: const Color(0xFF0080FF),
+      inactiveColor: const Color(0xFF64748B),
     ),
     NavigationItem(
-      icon: MdiIcons.playCircleOutline, selectedIcon: MdiIcons.playCircle, label: '直播/视频',
-      activeColor: const Color(0xFF0080FF), inactiveColor: const Color(0xFF64748B),
+      icon: MdiIcons.playCircleOutline,
+      selectedIcon: MdiIcons.playCircle,
+      label: '直播/视频',
+      activeColor: const Color(0xFF0080FF),
+      inactiveColor: const Color(0xFF64748B),
     ),
     NavigationItem(
-      icon: MdiIcons.fileDocumentOutline, selectedIcon: MdiIcons.fileDocument, label: '更新日志',
-      activeColor: const Color(0xFF0080FF), inactiveColor: const Color(0xFF64748B),
+      icon: MdiIcons.fileDocumentOutline,
+      selectedIcon: MdiIcons.fileDocument,
+      label: '更新日志',
+      activeColor: const Color(0xFF0080FF),
+      inactiveColor: const Color(0xFF64748B),
     ),
     NavigationItem(
-      icon: MdiIcons.toolboxOutline, selectedIcon: MdiIcons.toolbox, label: '工具箱',
-      activeColor: const Color(0xFF0080FF), inactiveColor: const Color(0xFF64748B),
+      icon: MdiIcons.toolboxOutline,
+      selectedIcon: MdiIcons.toolbox,
+      label: '工具箱',
+      activeColor: const Color(0xFF0080FF),
+      inactiveColor: const Color(0xFF64748B),
     ),
     NavigationItem(
-      icon: MdiIcons.cogOutline, selectedIcon: MdiIcons.cog, label: '设置',
-      activeColor: const Color(0xFF0080FF), inactiveColor: const Color(0xFF64748B),
+      icon: MdiIcons.cogOutline,
+      selectedIcon: MdiIcons.cog,
+      label: '设置',
+      activeColor: const Color(0xFF0080FF),
+      inactiveColor: const Color(0xFF64748B),
     ),
   ];
 
@@ -89,7 +111,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
       vsync: this,
     );
     _contentAnimationController.forward();
-    
+
     // 初始化时获取公告数据并启动自动刷新
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final bloc = context.read<AnnouncementBloc>();
@@ -99,7 +121,10 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
       // 检查当前状态，防止错过初始化时的事件
       final gameService = GameStatusService();
       if (gameService.isGameRunning && !gameService.isMonitorable) {
-        final obsEnabled = StorageUtils.getBool('obs_tool_enabled', defaultValue: false);
+        final obsEnabled = StorageUtils.getBool(
+          'obs_tool_enabled',
+          defaultValue: false,
+        );
         if (obsEnabled && mounted && !_shownObsWarningForCurrentGame) {
           _shownObsWarningForCurrentGame = true;
           _showObsWarningDialog();
@@ -111,7 +136,10 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
       if (!event.isRunning) {
         _shownObsWarningForCurrentGame = false;
       } else if (event.isRunning && !event.isMonitorable) {
-        final obsEnabled = StorageUtils.getBool('obs_tool_enabled', defaultValue: false);
+        final obsEnabled = StorageUtils.getBool(
+          'obs_tool_enabled',
+          defaultValue: false,
+        );
         if (obsEnabled && mounted && !_shownObsWarningForCurrentGame) {
           _shownObsWarningForCurrentGame = true;
           _showObsWarningDialog();
@@ -154,10 +182,10 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
 
   void _onIndexChanged(int index) {
     if (_currentIndex == index) return;
-    
+
     // 页面切换时清理 Flutter 图片缓存，释放内存
     PaintingBinding.instance.imageCache.clear();
-    
+
     setState(() {
       _currentIndex = index;
       _contentAnimationController.reset();
@@ -172,7 +200,8 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+    final isDesktop =
+        Platform.isWindows || Platform.isLinux || Platform.isMacOS;
 
     return PopScope(
       canPop: false,
@@ -200,12 +229,22 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
                     builder: (context, child) {
                       return FadeTransition(
                         opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
-                          CurvedAnimation(parent: _contentAnimationController, curve: Curves.easeOutCubic),
+                          CurvedAnimation(
+                            parent: _contentAnimationController,
+                            curve: Curves.easeOutCubic,
+                          ),
                         ),
                         child: SlideTransition(
-                          position: Tween<Offset>(begin: const Offset(0.1, 0.0), end: Offset.zero).animate(
-                            CurvedAnimation(parent: _contentAnimationController, curve: Curves.easeOutCubic),
-                          ),
+                          position:
+                              Tween<Offset>(
+                                begin: const Offset(0.1, 0.0),
+                                end: Offset.zero,
+                              ).animate(
+                                CurvedAnimation(
+                                  parent: _contentAnimationController,
+                                  curve: Curves.easeOutCubic,
+                                ),
+                              ),
                           child: _buildPageContent(),
                         ),
                       );
@@ -215,14 +254,13 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
               ],
             ),
             if (isDesktop)
-              Positioned(
-                top: 12,
-                right: 12,
-                child: DesktopWindowControls(),
-              ),
+              Positioned(top: 12, right: 12, child: DesktopWindowControls()),
             if (isDesktop)
               const Positioned(
-                top: 0, left: 0, right: 120, height: 56,
+                top: 0,
+                left: 0,
+                right: 120,
+                height: 56,
                 child: DragToMoveArea(child: SizedBox.expand()),
               ),
             // 挤服悬浮卡片
@@ -237,7 +275,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> with TickerProvid
       ),
     );
   }
-  
+
   /// 构建页面内容，使用 KeyedSubtree 确保页面切换时正确销毁
   Widget _buildPageContent() {
     return KeyedSubtree(

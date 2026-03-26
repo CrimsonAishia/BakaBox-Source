@@ -23,11 +23,12 @@ class UpdateService {
   final UpdateApi _updateApi = UpdateApi();
   static const String _keyLastCheckTime = 'last_update_check_time';
   static const String _keyPendingInstallVersion = 'pending_install_version';
-  static const String _keyPendingInstallFromVersion = 'pending_install_from_version';
+  static const String _keyPendingInstallFromVersion =
+      'pending_install_from_version';
   static const int _minCheckIntervalHours = 6;
 
   /// 检查并上报安装成功（应用启动时调用）
-  /// 
+  ///
   /// 原理：
   /// 1. 安装前记录待安装版本号
   /// 2. 新版本启动时检测版本号变化
@@ -36,23 +37,25 @@ class UpdateService {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
-      
+
       // 获取待安装版本号
       final pendingVersion = StorageUtils.getString(_keyPendingInstallVersion);
       final fromVersion = StorageUtils.getString(_keyPendingInstallFromVersion);
-      
+
       if (pendingVersion != null && pendingVersion == currentVersion) {
         // 版本匹配，说明安装成功
         // 上报安装成功
-        await _updateApi.reportUpdateResult(UpdateReportRequest(
-          platform: PlatformUtils.isDesktopPlatform ? 'desktop' : 'mobile',
-          os: Platform.operatingSystem,
-          fromVersion: fromVersion ?? 'unknown',
-          toVersion: currentVersion,
-          status: 'install_success',
-          errorMessage: null,
-        ));
-        
+        await _updateApi.reportUpdateResult(
+          UpdateReportRequest(
+            platform: PlatformUtils.isDesktopPlatform ? 'desktop' : 'mobile',
+            os: Platform.operatingSystem,
+            fromVersion: fromVersion ?? 'unknown',
+            toVersion: currentVersion,
+            status: 'install_success',
+            errorMessage: null,
+          ),
+        );
+
         // 清除待安装标记
         await StorageUtils.remove(_keyPendingInstallVersion);
         await StorageUtils.remove(_keyPendingInstallFromVersion);
@@ -122,7 +125,10 @@ class UpdateService {
 
       // 校验文件MD5
       if (updateInfo.fileMd5 != null) {
-        final isValid = await _verifyFileMd5(downloadedFilePath, updateInfo.fileMd5!);
+        final isValid = await _verifyFileMd5(
+          downloadedFilePath,
+          updateInfo.fileMd5!,
+        );
         if (!isValid) {
           try {
             await File(downloadedFilePath).delete();
@@ -137,7 +143,11 @@ class UpdateService {
       return downloadedFilePath;
     } catch (e) {
       // 上报下载失败
-      await _reportResult(updateInfo, 'download_failed', errorMessage: _getErrorMessageForReport(e));
+      await _reportResult(
+        updateInfo,
+        'download_failed',
+        errorMessage: _getErrorMessageForReport(e),
+      );
       rethrow;
     }
   }
@@ -147,10 +157,16 @@ class UpdateService {
     try {
       // 记录待安装版本号（用于下次启动时检测安装成功）
       if (updateInfo != null) {
-        await StorageUtils.setString(_keyPendingInstallVersion, updateInfo.latestVersion);
-        await StorageUtils.setString(_keyPendingInstallFromVersion, updateInfo.currentVersion);
+        await StorageUtils.setString(
+          _keyPendingInstallVersion,
+          updateInfo.latestVersion,
+        );
+        await StorageUtils.setString(
+          _keyPendingInstallFromVersion,
+          updateInfo.currentVersion,
+        );
       }
-      
+
       // 在安装前上报（Windows 会立即退出，必须提前上报）
       if (updateInfo != null) {
         await _reportResult(updateInfo, 'install_started');
@@ -159,7 +175,11 @@ class UpdateService {
     } catch (e) {
       // 上报安装启动失败
       if (updateInfo != null) {
-        await _reportResult(updateInfo, 'install_failed', errorMessage: _getErrorMessageForReport(e));
+        await _reportResult(
+          updateInfo,
+          'install_failed',
+          errorMessage: _getErrorMessageForReport(e),
+        );
       }
       rethrow;
     }
@@ -191,7 +211,7 @@ class UpdateService {
 
     String? downloadedFilePath;
     bool downloadSucceeded = false;
-    
+
     try {
       // 下载文件
       downloadedFilePath = await _updateApi.downloadUpdate(
@@ -202,7 +222,10 @@ class UpdateService {
 
       // 校验文件MD5
       if (updateInfo.fileMd5 != null) {
-        final isValid = await _verifyFileMd5(downloadedFilePath, updateInfo.fileMd5!);
+        final isValid = await _verifyFileMd5(
+          downloadedFilePath,
+          updateInfo.fileMd5!,
+        );
         if (!isValid) {
           try {
             await File(downloadedFilePath).delete();
@@ -216,8 +239,14 @@ class UpdateService {
       downloadSucceeded = true;
 
       // 记录待安装版本号（用于下次启动时检测安装成功）
-      await StorageUtils.setString(_keyPendingInstallVersion, updateInfo.latestVersion);
-      await StorageUtils.setString(_keyPendingInstallFromVersion, updateInfo.currentVersion);
+      await StorageUtils.setString(
+        _keyPendingInstallVersion,
+        updateInfo.latestVersion,
+      );
+      await StorageUtils.setString(
+        _keyPendingInstallFromVersion,
+        updateInfo.currentVersion,
+      );
 
       // 安装更新
       // 在安装前上报（Windows 会立即退出，必须提前上报）
@@ -227,12 +256,20 @@ class UpdateService {
       // 判断是下载失败还是安装失败
       if (!downloadSucceeded) {
         // 下载阶段失败
-        await _reportResult(updateInfo, 'download_failed', errorMessage: _getErrorMessageForReport(e));
+        await _reportResult(
+          updateInfo,
+          'download_failed',
+          errorMessage: _getErrorMessageForReport(e),
+        );
       } else {
         // 安装阶段失败
-        await _reportResult(updateInfo, 'install_failed', errorMessage: _getErrorMessageForReport(e));
+        await _reportResult(
+          updateInfo,
+          'install_failed',
+          errorMessage: _getErrorMessageForReport(e),
+        );
       }
-      
+
       if (e is UpdateException) rethrow;
       throw const UpdateException('下载安装失败，请检查网络后重试');
     }
@@ -241,11 +278,11 @@ class UpdateService {
   /// 打开应用商店
   Future<void> openAppStore(AppUpdateInfo? updateInfo) async {
     String? url;
-    
+
     if (updateInfo?.downloadUrl != null) {
       url = updateInfo!.downloadUrl;
     }
-    
+
     if (url != null) {
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
@@ -282,7 +319,10 @@ class UpdateService {
 
   /// 更新最后检查时间
   Future<void> _updateLastCheckTime() async {
-    await StorageUtils.setInt(_keyLastCheckTime, DateTime.now().millisecondsSinceEpoch);
+    await StorageUtils.setInt(
+      _keyLastCheckTime,
+      DateTime.now().millisecondsSinceEpoch,
+    );
   }
 
   /// 从URL提取文件名
@@ -290,7 +330,7 @@ class UpdateService {
     final uri = Uri.parse(url);
     final fileName = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : '';
     if (fileName.isNotEmpty) return fileName;
-    
+
     // 根据平台返回默认文件名
     if (PlatformUtils.isAndroid) return 'bakabox_update.apk';
     if (PlatformUtils.isWindows) return 'bakabox_update.exe';
@@ -324,32 +364,31 @@ class UpdateService {
   }
 
   /// 安装 Windows EXE（静默模式）
-  /// 
+  ///
   /// 直接启动安装程序，NSIS 脚本会等待本程序退出后再继续安装
   Future<void> _installWindowsExe(String exePath) async {
     try {
-      await Process.start(
-        exePath,
-        ['/S'],
-        mode: ProcessStartMode.detached,
-      );
-      
+      await Process.start(exePath, ['/S'], mode: ProcessStartMode.detached);
+
       // 立即退出，安装程序会等待本进程退出
       exit(0);
     } catch (e) {
       LogService.e('启动安装程序失败', e);
-      
+
       // 备用方案：通过 start 命令启动（/b 表示不打开新窗口）
       try {
-        await Process.start(
-          'cmd',
-          ['/c', 'start', '/b', '', exePath, '/S'],
-          mode: ProcessStartMode.detached,
-        );
+        await Process.start('cmd', [
+          '/c',
+          'start',
+          '/b',
+          '',
+          exePath,
+          '/S',
+        ], mode: ProcessStartMode.detached);
         exit(0);
       } catch (e2) {
         LogService.e('cmd 方式启动也失败', e2);
-        
+
         // 最后尝试直接打开（非静默）
         final uri = Uri.file(exePath);
         if (await canLaunchUrl(uri)) {
@@ -369,7 +408,7 @@ class UpdateService {
       if (!await file.exists()) {
         throw UpdateException('APK 文件不存在: $apkPath');
       }
-      
+
       // 使用 MethodChannel 调用原生安装
       const platform = MethodChannel('cc.aishia.bakabox/install');
       await platform.invokeMethod('installApk', {'path': apkPath});
@@ -383,7 +422,7 @@ class UpdateService {
   }
 
   /// 获取错误信息用于上报
-  /// 
+  ///
   /// 对于 AppException，返回 "ExceptionType: message" 格式
   /// 对于其他异常，返回 toString() 结果
   String _getErrorMessageForReport(Object e) {
@@ -394,16 +433,22 @@ class UpdateService {
   }
 
   /// 上报更新结果（同步等待，确保上报完成）
-  Future<void> _reportResult(AppUpdateInfo updateInfo, String status, {String? errorMessage}) async {
+  Future<void> _reportResult(
+    AppUpdateInfo updateInfo,
+    String status, {
+    String? errorMessage,
+  }) async {
     try {
-      await _updateApi.reportUpdateResult(UpdateReportRequest(
-        platform: PlatformUtils.isDesktopPlatform ? 'desktop' : 'mobile',
-        os: Platform.operatingSystem,
-        fromVersion: updateInfo.currentVersion,
-        toVersion: updateInfo.latestVersion,
-        status: status,
-        errorMessage: errorMessage,
-      ));
+      await _updateApi.reportUpdateResult(
+        UpdateReportRequest(
+          platform: PlatformUtils.isDesktopPlatform ? 'desktop' : 'mobile',
+          os: Platform.operatingSystem,
+          fromVersion: updateInfo.currentVersion,
+          toVersion: updateInfo.latestVersion,
+          status: status,
+          errorMessage: errorMessage,
+        ),
+      );
     } catch (e) {
       // 上报失败不影响主流程，静默处理
     }

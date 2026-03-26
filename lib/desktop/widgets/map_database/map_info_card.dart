@@ -8,15 +8,12 @@ import '../../../core/widgets/marquee_text.dart';
 import 'map_history_dialog.dart';
 
 /// 地图信息卡片组件
-/// 
+///
 /// 显示单个地图的信息卡片，点击后弹出贡献对话框
 class MapInfoCard extends StatefulWidget {
   final MapInfo mapInfo;
 
-  const MapInfoCard({
-    super.key,
-    required this.mapInfo,
-  });
+  const MapInfoCard({super.key, required this.mapInfo});
 
   @override
   State<MapInfoCard> createState() => _MapInfoCardState();
@@ -57,8 +54,8 @@ class _MapInfoCardState extends State<MapInfoCard> {
             color: _isHovered
                 ? const Color(0xFF0080FF)
                 : (isDark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.08)),
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.08)),
             width: _isHovered ? 2 : 1,
           ),
           boxShadow: [
@@ -85,7 +82,7 @@ class _MapInfoCardState extends State<MapInfoCard> {
               children: [
                 // 背景图
                 _buildMapBackground(widget.mapInfo, isDark),
-                
+
                 // 底部渐变遮罩（始终显示）
                 Positioned(
                   left: 0,
@@ -100,13 +97,15 @@ class _MapInfoCardState extends State<MapInfoCard> {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withValues(alpha: _isHovered ? 0.95 : 0.8),
+                          Colors.black.withValues(
+                            alpha: _isHovered ? 0.95 : 0.8,
+                          ),
                         ],
                       ),
                     ),
                   ),
                 ),
-                
+
                 // 地图名称（始终显示）
                 Positioned(
                   left: 12,
@@ -129,10 +128,7 @@ class _MapInfoCardState extends State<MapInfoCard> {
                             fontFamily: 'monospace',
                             letterSpacing: 0.5,
                             shadows: [
-                              Shadow(
-                                color: Colors.black,
-                                blurRadius: 8,
-                              ),
+                              Shadow(color: Colors.black, blurRadius: 8),
                             ],
                           ),
                         ),
@@ -144,10 +140,7 @@ class _MapInfoCardState extends State<MapInfoCard> {
                             fontWeight: FontWeight.w500,
                             color: Colors.white.withValues(alpha: 0.8),
                             shadows: const [
-                              Shadow(
-                                color: Colors.black,
-                                blurRadius: 4,
-                              ),
+                              Shadow(color: Colors.black, blurRadius: 4),
                             ],
                           ),
                         ),
@@ -155,7 +148,7 @@ class _MapInfoCardState extends State<MapInfoCard> {
                     ),
                   ),
                 ),
-                
+
                 // Hover 时显示的按钮
                 if (_isHovered)
                   Positioned(
@@ -193,9 +186,7 @@ class _MapInfoCardState extends State<MapInfoCard> {
   Widget _buildMapBackground(MapInfo mapInfo, bool isDark) {
     if (mapInfo.mapBackground == null || mapInfo.mapBackground!.isEmpty) {
       return Container(
-        color: isDark
-            ? const Color(0xFF1E293B)
-            : const Color(0xFFE5E7EB),
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE5E7EB),
         child: Center(
           child: Icon(
             Icons.map_outlined,
@@ -216,9 +207,7 @@ class _MapInfoCardState extends State<MapInfoCard> {
           imageUrl: imageUrl,
           fit: BoxFit.cover,
           placeholder: Container(
-            color: isDark
-                ? const Color(0xFF1E293B)
-                : const Color(0xFFE5E7EB),
+            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE5E7EB),
             child: const Center(
               child: SizedBox(
                 width: 24,
@@ -228,9 +217,7 @@ class _MapInfoCardState extends State<MapInfoCard> {
             ),
           ),
           errorWidget: Container(
-            color: isDark
-                ? const Color(0xFF1E293B)
-                : const Color(0xFFE5E7EB),
+            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE5E7EB),
             child: Center(
               child: Icon(
                 Icons.broken_image_outlined,
@@ -251,11 +238,7 @@ class _MapInfoCardState extends State<MapInfoCard> {
     required String label,
     required VoidCallback onPressed,
   }) {
-    return _BottomButton(
-      icon: icon,
-      label: label,
-      onPressed: onPressed,
-    );
+    return _BottomButton(icon: icon, label: label, onPressed: onPressed);
   }
 }
 

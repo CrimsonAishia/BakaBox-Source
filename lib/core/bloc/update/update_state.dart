@@ -39,5 +39,11 @@ class UpdateState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [status, updateInfo, downloadProgress, errorMessage, downloadedFilePath];
+  List<Object?> get props => [
+    status,
+    updateInfo,
+    downloadProgress,
+    errorMessage,
+    downloadedFilePath,
+  ];
 }

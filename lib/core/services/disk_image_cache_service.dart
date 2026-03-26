@@ -107,30 +107,47 @@ class DiskImageCacheService {
     final firstBytes = bytes.sublist(0, 8);
 
     // JPEG: FF D8 FF
-    if (firstBytes[0] == 0xFF && firstBytes[1] == 0xD8 && firstBytes[2] == 0xFF) {
+    if (firstBytes[0] == 0xFF &&
+        firstBytes[1] == 0xD8 &&
+        firstBytes[2] == 0xFF) {
       return true;
     }
 
     // PNG: 89 50 4E 47 0D 0A 1A 0A
-    if (firstBytes[0] == 0x89 && firstBytes[1] == 0x50 && firstBytes[2] == 0x4E && firstBytes[3] == 0x47) {
+    if (firstBytes[0] == 0x89 &&
+        firstBytes[1] == 0x50 &&
+        firstBytes[2] == 0x4E &&
+        firstBytes[3] == 0x47) {
       return true;
     }
 
     // GIF: 47 49 46 38 (GIF8)
-    if (firstBytes[0] == 0x47 && firstBytes[1] == 0x49 && firstBytes[2] == 0x46 && firstBytes[3] == 0x38) {
+    if (firstBytes[0] == 0x47 &&
+        firstBytes[1] == 0x49 &&
+        firstBytes[2] == 0x46 &&
+        firstBytes[3] == 0x38) {
       return true;
     }
 
     // WebP: RIFF....WEBP 或 RIFF....VP8L
-    if (firstBytes[0] == 0x52 && firstBytes[1] == 0x49 && firstBytes[2] == 0x46 && firstBytes[3] == 0x46) {
+    if (firstBytes[0] == 0x52 &&
+        firstBytes[1] == 0x49 &&
+        firstBytes[2] == 0x46 &&
+        firstBytes[3] == 0x46) {
       // 需要验证是 WebP 格式
       if (bytes.length >= 12) {
         // Lossy WebP: RIFF....WEBP
-        if (bytes[8] == 0x57 && bytes[9] == 0x45 && bytes[10] == 0x42 && bytes[11] == 0x50) {
+        if (bytes[8] == 0x57 &&
+            bytes[9] == 0x45 &&
+            bytes[10] == 0x42 &&
+            bytes[11] == 0x50) {
           return true;
         }
         // Lossless WebP: RIFF....VP8L
-        if (bytes[8] == 0x56 && bytes[9] == 0x50 && bytes[10] == 0x38 && bytes[11] == 0x4C) {
+        if (bytes[8] == 0x56 &&
+            bytes[9] == 0x50 &&
+            bytes[10] == 0x38 &&
+            bytes[11] == 0x4C) {
           return true;
         }
         // Animated WebP: RIFF....WEBP (with ANIM chunk)
@@ -144,7 +161,10 @@ class DiskImageCacheService {
     }
 
     // ICO: 00 00 01 00 或 00 00 02 00
-    if (firstBytes[0] == 0x00 && firstBytes[1] == 0x00 && (firstBytes[2] == 0x01 || firstBytes[2] == 0x02) && firstBytes[3] == 0x00) {
+    if (firstBytes[0] == 0x00 &&
+        firstBytes[1] == 0x00 &&
+        (firstBytes[2] == 0x01 || firstBytes[2] == 0x02) &&
+        firstBytes[3] == 0x00) {
       return true;
     }
 
@@ -165,21 +185,28 @@ class DiskImageCacheService {
 
       // 检查文件是否为空
       if (bytes.isEmpty) {
-        LogService.w('[DiskImageCacheService] Detected empty image file, removing: $filePath');
+        LogService.w(
+          '[DiskImageCacheService] Detected empty image file, removing: $filePath',
+        );
         await file.delete();
         return false;
       }
 
       // 验证图片格式
       if (!_validateImageBytes(bytes)) {
-        LogService.w('[DiskImageCacheService] Detected invalid/corrupt image file, removing: $filePath');
+        LogService.w(
+          '[DiskImageCacheService] Detected invalid/corrupt image file, removing: $filePath',
+        );
         await file.delete();
         return false;
       }
 
       return true;
     } catch (e) {
-      LogService.e('[DiskImageCacheService] Error validating cache file: $filePath', e);
+      LogService.e(
+        '[DiskImageCacheService] Error validating cache file: $filePath',
+        e,
+      );
       try {
         await File(filePath).delete();
       } catch (_) {}
@@ -233,7 +260,9 @@ class DiskImageCacheService {
 
           // 验证下载的图片是否有效
           if (!_validateImageBytes(bytes)) {
-            LogService.w('[DiskImageCacheService] Downloaded invalid image, ${attempt < maxRetries ? "retrying" : "giving up"}: $url');
+            LogService.w(
+              '[DiskImageCacheService] Downloaded invalid image, ${attempt < maxRetries ? "retrying" : "giving up"}: $url',
+            );
             if (attempt < maxRetries) {
               await Future.delayed(const Duration(milliseconds: 500));
               continue;
@@ -243,15 +272,22 @@ class DiskImageCacheService {
 
           // 保存到磁盘
           await file.writeAsBytes(bytes);
-          LogService.d('[DiskImageCacheService] Cached image: $url (${bytes.length} bytes)');
+          LogService.d(
+            '[DiskImageCacheService] Cached image: $url (${bytes.length} bytes)',
+          );
           return file;
         }
       } catch (e) {
         if (attempt < maxRetries) {
-          LogService.w('[DiskImageCacheService] Download failed, retrying ($attempt + 1/$maxRetries): $url');
+          LogService.w(
+            '[DiskImageCacheService] Download failed, retrying ($attempt + 1/$maxRetries): $url',
+          );
           await Future.delayed(const Duration(milliseconds: 500));
         } else {
-          LogService.e('[DiskImageCacheService] Failed to download image after ${maxRetries + 1} attempts: $url', e);
+          LogService.e(
+            '[DiskImageCacheService] Failed to download image after ${maxRetries + 1} attempts: $url',
+            e,
+          );
         }
       }
     }

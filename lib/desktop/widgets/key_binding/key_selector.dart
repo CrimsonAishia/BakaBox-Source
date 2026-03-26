@@ -3,21 +3,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 /// 按键选择器组件
-/// 
+///
 /// 用于捕获用户按下的键盘按键或鼠标按键，并显示按键名称
 class KeySelector extends StatefulWidget {
   /// 按键标签（占位符名称）
   final String label;
-  
+
   /// 当前选中的按键
   final String? selectedKey;
-  
+
   /// 按键选择回调
   final ValueChanged<String>? onKeySelected;
-  
+
   /// 清除按键回调
   final VoidCallback? onClear;
-  
+
   /// 是否禁用
   final bool disabled;
 
@@ -234,15 +234,15 @@ class _KeySelectorState extends State<KeySelector> {
           color: _isListening
               ? theme.colorScheme.primary.withValues(alpha: 0.1)
               : (isDark
-                  ? Colors.white.withValues(alpha: 0.05)
-                  : Colors.black.withValues(alpha: 0.03)),
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.03)),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: _isListening
                 ? theme.colorScheme.primary
                 : (isDark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.1)),
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.1)),
             width: _isListening ? 2 : 1,
           ),
         ),
@@ -272,7 +272,9 @@ class _KeySelectorState extends State<KeySelector> {
                           '绑定至：',
                           style: TextStyle(
                             fontSize: 11,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 4),
@@ -284,12 +286,16 @@ class _KeySelectorState extends State<KeySelector> {
                               : (hasKey ? widget.selectedKey! : '点击选择按键'),
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight: hasKey ? FontWeight.w600 : FontWeight.normal,
+                            fontWeight: hasKey
+                                ? FontWeight.w600
+                                : FontWeight.normal,
                             color: _isListening
                                 ? theme.colorScheme.primary
                                 : (hasKey
-                                    ? const Color(0xFF0080FF)
-                                    : theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+                                      ? const Color(0xFF0080FF)
+                                      : theme.colorScheme.onSurface.withValues(
+                                          alpha: 0.5,
+                                        )),
                           ),
                         ),
                       ),
@@ -309,10 +315,7 @@ class _KeySelectorState extends State<KeySelector> {
                 onPressed: widget.disabled ? null : widget.onClear,
                 tooltip: '清除',
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 32,
-                  minHeight: 32,
-                ),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               )
             else
               Icon(
@@ -346,7 +349,7 @@ class _KeyBindingOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Material(
       color: Colors.transparent,
       child: KeyboardListener(
@@ -371,7 +374,10 @@ class _KeyBindingOverlay extends StatelessWidget {
             color: Colors.black.withValues(alpha: 0.6),
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 32),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 48,
+                  vertical: 32,
+                ),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
@@ -405,7 +411,9 @@ class _KeyBindingOverlay extends StatelessWidget {
                       '按 ESC 或点击任意位置取消',
                       style: TextStyle(
                         fontSize: 12,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.4,
+                        ),
                       ),
                     ),
                   ],

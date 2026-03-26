@@ -14,11 +14,7 @@ class NotificationFetch extends NotificationEvent {
   final String? type;
   final bool? isRead;
 
-  const NotificationFetch({
-    this.page = 1,
-    this.type,
-    this.isRead,
-  });
+  const NotificationFetch({this.page = 1, this.type, this.isRead});
 
   @override
   List<Object?> get props => [page, type, isRead];

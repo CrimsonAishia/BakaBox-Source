@@ -14,7 +14,7 @@ import '../components/common_widgets.dart';
 import '../../login_dialog.dart';
 
 /// 发布视图
-/// 
+///
 /// 包括：
 /// - 登录提示
 /// - 发布表单（名称、描述、分类、类型、脚本）
@@ -62,7 +62,7 @@ class _PublishViewState extends State<PublishView> {
     final authState = context.read<AuthBloc>().state;
     final userInfo = authState.userInfo;
     if (userInfo == null) return false;
-    
+
     final credits = int.tryParse(userInfo.credits ?? '0') ?? 0;
     if (credits < CreditConstants.minCredits) {
       _showCreditsPrompt(credits);
@@ -80,9 +80,19 @@ class _PublishViewState extends State<PublishView> {
         backgroundColor: isDark ? const Color(0xFF1E293B) : null,
         title: Row(
           children: [
-            Icon(MdiIcons.starCircleOutline, color: const Color(0xFFf59e0b), size: 24),
+            Icon(
+              MdiIcons.starCircleOutline,
+              color: const Color(0xFFf59e0b),
+              size: 24,
+            ),
             const SizedBox(width: 10),
-            Text(CreditConstants.insufficientCreditsTitle, style: TextStyle(fontSize: 16, color: isDark ? Colors.white : null)),
+            Text(
+              CreditConstants.insufficientCreditsTitle,
+              style: TextStyle(
+                fontSize: 16,
+                color: isDark ? Colors.white : null,
+              ),
+            ),
           ],
         ),
         content: Column(
@@ -90,20 +100,36 @@ class _PublishViewState extends State<PublishView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              CreditConstants.getPublishConfigCreditsMessage(CreditConstants.minCredits),
+              CreditConstants.getPublishConfigCreditsMessage(
+                CreditConstants.minCredits,
+              ),
               style: TextStyle(color: isDark ? Colors.white70 : null),
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                Text(CreditConstants.getCurrentCreditsLabel(), style: TextStyle(color: isDark ? Colors.white54 : Colors.grey[600])),
-                Text('$currentCredits', style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFFef4444))),
+                Text(
+                  CreditConstants.getCurrentCreditsLabel(),
+                  style: TextStyle(
+                    color: isDark ? Colors.white54 : Colors.grey[600],
+                  ),
+                ),
+                Text(
+                  '$currentCredits',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFef4444),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
             Text(
               CreditConstants.creditsAcquisitionHint,
-              style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.grey[500]),
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? Colors.white38 : Colors.grey[500],
+              ),
             ),
           ],
         ),
@@ -142,7 +168,11 @@ class _PublishViewState extends State<PublishView> {
               color: const Color(0xFF0080FF).withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(MdiIcons.accountLockOutline, size: 32, color: const Color(0xFF0080FF)),
+            child: Icon(
+              MdiIcons.accountLockOutline,
+              size: 32,
+              color: const Color(0xFF0080FF),
+            ),
           ),
           const SizedBox(height: 16),
           Text(
@@ -179,7 +209,7 @@ class _PublishViewState extends State<PublishView> {
   Widget _buildPublishForm(BuildContext context, AuthState authState) {
     final credits = int.tryParse(authState.userInfo?.credits ?? '0') ?? 0;
     final hasEnoughCredits = credits >= CreditConstants.minCredits;
-    
+
     return BlocBuilder<KeyBindingBloc, KeyBindingState>(
       builder: (context, state) {
         if (_categoryId == null && state.categories.isNotEmpty) {
@@ -189,9 +219,9 @@ class _PublishViewState extends State<PublishView> {
             }
           });
         }
-        
+
         final placeholders = KeyPlaceholderParser.parse(_scriptCtrl.text);
-        
+
         return Column(
           children: [
             _buildHeader(),
@@ -208,30 +238,68 @@ class _PublishViewState extends State<PublishView> {
                       _buildInput('配置描述', '简单描述功能', _descCtrl, maxLines: 2),
                       const SizedBox(height: 16),
                       // 分类选择
-                      Text('选择分类', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Theme.of(context).brightness == Brightness.dark ? Colors.white54 : Colors.grey[600])),
+                      Text(
+                        '选择分类',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white54
+                              : Colors.grey[600],
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       _buildCategoryChips(state.categories),
                       const SizedBox(height: 16),
                       // 类型选择
-                      Text('配置类型', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Theme.of(context).brightness == Brightness.dark ? Colors.white54 : Colors.grey[600])),
+                      Text(
+                        '配置类型',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white54
+                              : Colors.grey[600],
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       _buildTypeSelector(),
                       const SizedBox(height: 16),
                       // 脚本编辑
                       Row(
                         children: [
-                          Text('配置脚本', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Theme.of(context).brightness == Brightness.dark ? Colors.white54 : Colors.grey[600])),
+                          Text(
+                            '配置脚本',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.white54
+                                  : Colors.grey[600],
+                            ),
+                          ),
                           if (_needsKey) ...[
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFf59e0b).withValues(alpha: 0.1),
+                                color: const Color(
+                                  0xFFf59e0b,
+                                ).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: const Text(
                                 '需要按键绑定',
-                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: Color(0xFFf59e0b)),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFFf59e0b),
+                                ),
                               ),
                             ),
                           ],
@@ -279,7 +347,11 @@ class _PublishViewState extends State<PublishView> {
               color: const Color(0xFF0080FF).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(MdiIcons.rocketLaunchOutline, size: 18, color: const Color(0xFF0080FF)),
+            child: Icon(
+              MdiIcons.rocketLaunchOutline,
+              size: 18,
+              color: const Color(0xFF0080FF),
+            ),
           ),
           const SizedBox(width: 12),
           Column(
@@ -308,7 +380,12 @@ class _PublishViewState extends State<PublishView> {
     );
   }
 
-  Widget _buildInput(String label, String hint, TextEditingController ctrl, {int maxLines = 1}) {
+  Widget _buildInput(
+    String label,
+    String hint,
+    TextEditingController ctrl, {
+    int maxLines = 1,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -337,7 +414,10 @@ class _PublishViewState extends State<PublishView> {
             ),
             filled: true,
             fillColor: isDark ? const Color(0xFF334155) : Colors.grey[50],
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
@@ -407,7 +487,10 @@ class _PublishViewState extends State<PublishView> {
     return FilledButton.icon(
       onPressed: _insertPlaceholder,
       icon: Icon(MdiIcons.keyboardOutline, size: 16),
-      label: const Text('插入按键绑定', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+      label: const Text(
+        '插入按键绑定',
+        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      ),
       style: FilledButton.styleFrom(
         backgroundColor: const Color(0xFF0080FF),
         foregroundColor: Colors.white,
@@ -428,7 +511,9 @@ class _PublishViewState extends State<PublishView> {
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF334155) : Colors.grey[50],
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: isDark ? const Color(0xFF475569) : Colors.grey[200]!),
+            border: Border.all(
+              color: isDark ? const Color(0xFF475569) : Colors.grey[200]!,
+            ),
           ),
           child: TextFormField(
             controller: _scriptCtrl,
@@ -443,14 +528,19 @@ class _PublishViewState extends State<PublishView> {
             ),
             decoration: InputDecoration(
               hintText: _needsKey ? '输入脚本，使用 {{KEY:名称}} 插入按键占位符' : '输入脚本...',
-              hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.grey[400], fontSize: 13),
+              hintStyle: TextStyle(
+                color: isDark ? Colors.white38 : Colors.grey[400],
+                fontSize: 13,
+              ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.all(12),
             ),
             onChanged: (_) => setState(() {}),
             validator: (v) {
               if (v?.trim().isEmpty == true) return '必填';
-              if (_needsKey && !KeyPlaceholderParser.hasPlaceholders(v!)) return '需包含按键占位符';
+              if (_needsKey && !KeyPlaceholderParser.hasPlaceholders(v!)) {
+                return '需包含按键占位符';
+              }
               return null;
             },
           ),
@@ -462,11 +552,17 @@ class _PublishViewState extends State<PublishView> {
             decoration: BoxDecoration(
               color: const Color(0xFF0080FF).withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: const Color(0xFF0080FF).withValues(alpha: 0.2)),
+              border: Border.all(
+                color: const Color(0xFF0080FF).withValues(alpha: 0.2),
+              ),
             ),
             child: Row(
               children: [
-                Icon(Icons.lightbulb_outline, size: 14, color: const Color(0xFF0080FF)),
+                Icon(
+                  Icons.lightbulb_outline,
+                  size: 14,
+                  color: const Color(0xFF0080FF),
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -493,7 +589,11 @@ class _PublishViewState extends State<PublishView> {
       children: [
         Row(
           children: [
-            Icon(MdiIcons.keyboardOutline, size: 12, color: const Color(0xFFf59e0b)),
+            Icon(
+              MdiIcons.keyboardOutline,
+              size: 12,
+              color: const Color(0xFFf59e0b),
+            ),
             const SizedBox(width: 6),
             Text(
               '已添加的按键占位符',
@@ -509,13 +609,20 @@ class _PublishViewState extends State<PublishView> {
         Wrap(
           spacing: 6,
           runSpacing: 6,
-          children: placeholders.map((p) => PlaceholderTag(
-            label: p.label,
-            onRemove: () {
-              _scriptCtrl.text = _scriptCtrl.text.replaceAll('{{KEY:${p.label}}}', '');
-              setState(() {});
-            },
-          )).toList(),
+          children: placeholders
+              .map(
+                (p) => PlaceholderTag(
+                  label: p.label,
+                  onRemove: () {
+                    _scriptCtrl.text = _scriptCtrl.text.replaceAll(
+                      '{{KEY:${p.label}}}',
+                      '',
+                    );
+                    setState(() {});
+                  },
+                ),
+              )
+              .toList(),
         ),
       ],
     );
@@ -527,9 +634,11 @@ class _PublishViewState extends State<PublishView> {
     final hasDesc = _descCtrl.text.trim().isNotEmpty;
     final hasScript = _scriptCtrl.text.trim().isNotEmpty;
     final hasCategory = _categoryId != null;
-    final hasPlaceholders = KeyPlaceholderParser.hasPlaceholders(_scriptCtrl.text);
+    final hasPlaceholders = KeyPlaceholderParser.hasPlaceholders(
+      _scriptCtrl.text,
+    );
     const double fixedHeight = 44.0;
-    
+
     String? hint;
     if (!hasEnoughCredits) {
       hint = '积分不足，无法发布';
@@ -544,9 +653,11 @@ class _PublishViewState extends State<PublishView> {
     } else if (_needsKey && !hasPlaceholders) {
       hint = '请在脚本中插入按键绑定';
     }
-    
-    final hintColor = !hasEnoughCredits ? const Color(0xFFef4444) : const Color(0xFFf59e0b);
-    
+
+    final hintColor = !hasEnoughCredits
+        ? const Color(0xFFef4444)
+        : const Color(0xFFf59e0b);
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -572,7 +683,11 @@ class _PublishViewState extends State<PublishView> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(MdiIcons.informationOutline, size: 18, color: hintColor),
+                    Icon(
+                      MdiIcons.informationOutline,
+                      size: 18,
+                      color: hintColor,
+                    ),
                     const SizedBox(width: 10),
                     Flexible(
                       child: Text(
@@ -607,9 +722,16 @@ class _PublishViewState extends State<PublishView> {
                   ? const SizedBox(
                       width: 14,
                       height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
-                  : Icon(MdiIcons.rocketLaunchOutline, size: 14, color: Colors.white),
+                  : Icon(
+                      MdiIcons.rocketLaunchOutline,
+                      size: 14,
+                      color: Colors.white,
+                    ),
               label: Text(
                 state.isPublishing ? '发布中' : '发布',
                 style: const TextStyle(fontSize: 12),
@@ -651,10 +773,20 @@ class _PublishViewState extends State<PublishView> {
                 color: const Color(0xFF0080FF).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: Icon(MdiIcons.keyboardOutline, size: 18, color: const Color(0xFF0080FF)),
+              child: Icon(
+                MdiIcons.keyboardOutline,
+                size: 18,
+                color: const Color(0xFF0080FF),
+              ),
             ),
             const SizedBox(width: 10),
-            Text('插入按键绑定', style: TextStyle(fontSize: 15, color: isDark ? Colors.white : null)),
+            Text(
+              '插入按键绑定',
+              style: TextStyle(
+                fontSize: 15,
+                color: isDark ? Colors.white : null,
+              ),
+            ),
           ],
         ),
         content: Column(
@@ -663,7 +795,11 @@ class _PublishViewState extends State<PublishView> {
           children: [
             Text(
               '给这个按键位置起个说明，使用者会根据这个说明选择按键',
-              style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.grey[600], height: 1.4),
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? Colors.white54 : Colors.grey[600],
+                height: 1.4,
+              ),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -674,16 +810,23 @@ class _PublishViewState extends State<PublishView> {
                 labelText: '按键说明',
                 hintText: '例如：触发键1、触发键2',
                 helperText: '将在脚本中插入 {{KEY:按键说明}}',
-                helperStyle: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : Colors.grey[500]),
+                helperStyle: TextStyle(
+                  fontSize: 11,
+                  color: isDark ? Colors.white38 : Colors.grey[500],
+                ),
                 filled: true,
                 fillColor: isDark ? const Color(0xFF334155) : Colors.grey[50],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: isDark ? const Color(0xFF475569) : Colors.grey[300]!),
+                  borderSide: BorderSide(
+                    color: isDark ? const Color(0xFF475569) : Colors.grey[300]!,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: isDark ? const Color(0xFF475569) : Colors.grey[300]!),
+                  borderSide: BorderSide(
+                    color: isDark ? const Color(0xFF475569) : Colors.grey[300]!,
+                  ),
                 ),
                 prefixIcon: Icon(MdiIcons.tagOutline, size: 18),
               ),
@@ -697,7 +840,10 @@ class _PublishViewState extends State<PublishView> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消'),
+          ),
           FilledButton.icon(
             onPressed: () {
               if (ctrl.text.trim().isNotEmpty) {
@@ -719,10 +865,10 @@ class _PublishViewState extends State<PublishView> {
     final sel = _scriptCtrl.selection;
     final start = sel.isValid ? sel.start : text.length;
     final end = sel.isValid ? sel.end : text.length;
-    
+
     final newText = text.replaceRange(start, end, ph);
     final newCursorPos = start + ph.length;
-    
+
     _scriptCtrl.value = TextEditingValue(
       text: newText,
       selection: TextSelection.collapsed(offset: newCursorPos),
@@ -732,20 +878,23 @@ class _PublishViewState extends State<PublishView> {
 
   void _submit() {
     if (!_checkCredits()) return;
-    
+
     if (_formKey.currentState?.validate() == true && _categoryId != null) {
-      final configId = 'cfg_${DateTime.now().millisecondsSinceEpoch}_${_nameCtrl.text.trim().hashCode.abs()}';
-      
-      context.read<KeyBindingBloc>().add(KeyBindingPublishConfig(
-        KeyConfigCreateRequest(
-          configId: configId,
-          name: _nameCtrl.text.trim(),
-          description: _descCtrl.text.trim(),
-          categoryId: _categoryId!,
-          config: _scriptCtrl.text,
-          needsKeybind: _needsKey,
+      final configId =
+          'cfg_${DateTime.now().millisecondsSinceEpoch}_${_nameCtrl.text.trim().hashCode.abs()}';
+
+      context.read<KeyBindingBloc>().add(
+        KeyBindingPublishConfig(
+          KeyConfigCreateRequest(
+            configId: configId,
+            name: _nameCtrl.text.trim(),
+            description: _descCtrl.text.trim(),
+            categoryId: _categoryId!,
+            config: _scriptCtrl.text,
+            needsKeybind: _needsKey,
+          ),
         ),
-      ));
+      );
       _clear();
     }
   }

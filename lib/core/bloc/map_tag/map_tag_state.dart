@@ -54,10 +54,15 @@ class MapTagState extends Equatable {
   });
 
   /// 是否正在加载
-  bool get isLoading => isLoadingTagList || isLoadingUserTags || isLoadingMapTagVotes;
+  bool get isLoading =>
+      isLoadingTagList || isLoadingUserTags || isLoadingMapTagVotes;
 
   /// 标签列表是否为空（全局标签 + 用户标签都为空）
-  bool get isTagListEmpty => tagList.isEmpty && userTags.isEmpty && !isLoadingTagList && !isLoadingUserTags;
+  bool get isTagListEmpty =>
+      tagList.isEmpty &&
+      userTags.isEmpty &&
+      !isLoadingTagList &&
+      !isLoadingUserTags;
 
   /// 地图标签投票列表是否为空
   bool get isMapTagVotesEmpty => mapTagVotes.isEmpty && !isLoadingMapTagVotes;
@@ -125,17 +130,17 @@ class MapTagState extends Equatable {
 
   @override
   List<Object?> get props => [
-        tagList,
-        userTags,
-        mapTagVotes,
-        isLoadingTagList,
-        isLoadingUserTags,
-        isLoadingMapTagVotes,
-        isSubmitting,
-        isVoting,
-        submitSuccess,
-        deleteSuccess,
-        error,
-        currentMapName,
-      ];
+    tagList,
+    userTags,
+    mapTagVotes,
+    isLoadingTagList,
+    isLoadingUserTags,
+    isLoadingMapTagVotes,
+    isSubmitting,
+    isVoting,
+    submitSuccess,
+    deleteSuccess,
+    error,
+    currentMapName,
+  ];
 }

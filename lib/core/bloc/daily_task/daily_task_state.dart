@@ -48,21 +48,25 @@ class DailyTaskState extends Equatable {
       isCheckingStatus: isCheckingStatus ?? this.isCheckingStatus,
       isCheckingIn: isCheckingIn ?? this.isCheckingIn,
       hasCheckedIn: hasCheckedIn ?? this.hasCheckedIn,
-      checkInRewardAmount: clearCheckInReward ? null : (checkInRewardAmount ?? this.checkInRewardAmount),
+      checkInRewardAmount: clearCheckInReward
+          ? null
+          : (checkInRewardAmount ?? this.checkInRewardAmount),
       canShake: canShake ?? this.canShake,
       hasShaked: hasShaked ?? this.hasShaked,
-      shakeRewardAmount: clearShakeReward ? null : (shakeRewardAmount ?? this.shakeRewardAmount),
+      shakeRewardAmount: clearShakeReward
+          ? null
+          : (shakeRewardAmount ?? this.shakeRewardAmount),
     );
   }
 
   @override
   List<Object?> get props => [
-        isCheckingStatus,
-        isCheckingIn,
-        hasCheckedIn,
-        checkInRewardAmount,
-        canShake,
-        hasShaked,
-        shakeRewardAmount,
-      ];
+    isCheckingStatus,
+    isCheckingIn,
+    hasCheckedIn,
+    checkInRewardAmount,
+    canShake,
+    hasShaked,
+    shakeRewardAmount,
+  ];
 }

@@ -11,11 +11,7 @@ class TtsSettingsView extends StatefulWidget {
   final bool isDark;
   final MapSubscriptionState state;
 
-  const TtsSettingsView({
-    super.key,
-    required this.isDark,
-    required this.state,
-  });
+  const TtsSettingsView({super.key, required this.isDark, required this.state});
 
   @override
   State<TtsSettingsView> createState() => _TtsSettingsViewState();
@@ -33,7 +29,9 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
   void initState() {
     super.initState();
     _scrollController.addListener(_updateScrollIndicators);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollIndicators());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _updateScrollIndicators(),
+    );
   }
 
   @override
@@ -144,8 +142,8 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
                 color: state.isTtsEnabled
                     ? const Color(0xFF10B981).withValues(alpha: 0.12)
                     : (isDark
-                        ? Colors.white.withValues(alpha: 0.08)
-                        : const Color(0xFFF3F4F6)),
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : const Color(0xFFF3F4F6)),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -237,7 +235,9 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
                           : '需要下载语音模型才能使用播报功能',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                        color: isDark
+                            ? Colors.white54
+                            : const Color(0xFF6B7280),
                       ),
                     ),
                   ],
@@ -270,8 +270,8 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
       max: 2.0,
       displayValue: '${(volumeValue * 100).round()}%',
       onChanged: (v) => context.read<MapSubscriptionBloc>().add(
-            MapSubscriptionSetTtsVolume(volume: v),
-          ),
+        MapSubscriptionSetTtsVolume(volume: v),
+      ),
     );
   }
 
@@ -288,8 +288,8 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
       max: 2.0,
       displayValue: '${speedValue.toStringAsFixed(1)}x',
       onChanged: (v) => context.read<MapSubscriptionBloc>().add(
-            MapSubscriptionSetTtsSpeed(speed: v),
-          ),
+        MapSubscriptionSetTtsSpeed(speed: v),
+      ),
     );
   }
 
@@ -306,7 +306,10 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
       return const SizedBox.shrink();
     }
 
-    final speakerId = state.ttsSpeakerId.clamp(0, selectedModel.speakerCount - 1);
+    final speakerId = state.ttsSpeakerId.clamp(
+      0,
+      selectedModel.speakerCount - 1,
+    );
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -377,8 +380,8 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
               max: (selectedModel.speakerCount - 1).toDouble(),
               divisions: selectedModel.speakerCount - 1,
               onChanged: (v) => context.read<MapSubscriptionBloc>().add(
-                    MapSubscriptionSetTtsSpeakerId(speakerId: v.round()),
-                  ),
+                MapSubscriptionSetTtsSpeakerId(speakerId: v.round()),
+              ),
             ),
           ),
           const SizedBox(height: 4),
@@ -484,24 +487,26 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
   Widget _buildActionButtons(BuildContext context) {
     final isTesting = state.isTtsTesting;
     final phase = state.ttsTestingPhase;
-    final label = isTesting 
+    final label = isTesting
         ? (phase == 'playing' ? '播报中...' : '生成中...')
         : '测试播报';
-    
+
     return Row(
       children: [
         Expanded(
           child: _buildActionButton(
             context: context,
-            icon: isTesting ? Icons.hourglass_empty_rounded : Icons.play_arrow_rounded,
+            icon: isTesting
+                ? Icons.hourglass_empty_rounded
+                : Icons.play_arrow_rounded,
             label: label,
             isPrimary: true,
             isLoading: isTesting,
             onTap: isTesting
                 ? () {}
                 : () => context.read<MapSubscriptionBloc>().add(
-                      const MapSubscriptionTestTts(),
-                    ),
+                    const MapSubscriptionTestTts(),
+                  ),
           ),
         ),
       ],
@@ -526,12 +531,12 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: isPrimary
-                ? (isLoading 
-                    ? const Color(0xFF6366F1).withValues(alpha: 0.6)
-                    : const Color(0xFF6366F1))
+                ? (isLoading
+                      ? const Color(0xFF6366F1).withValues(alpha: 0.6)
+                      : const Color(0xFF6366F1))
                 : (isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : const Color(0xFFF3F4F6)),
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : const Color(0xFFF3F4F6)),
             borderRadius: BorderRadius.circular(10),
             border: isPrimary
                 ? null

@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 
 /// 图片上传按钮组件
-/// 
+///
 /// 显示上传按钮和上传进度
 class ImageUploadButton extends StatelessWidget {
   /// 点击回调
   final VoidCallback onPressed;
-  
+
   /// 是否正在上传
   final bool isUploading;
-  
+
   /// 上传进度 (0.0 - 1.0)
   final double? progress;
-  
+
   /// 是否使用紧凑模式（移动端）
   final bool compact;
 
@@ -53,8 +53,8 @@ class ImageUploadButton extends StatelessWidget {
         label: Text(
           isUploading
               ? (progress != null
-                  ? '上传中 ${(progress! * 100).toInt()}%'
-                  : '上传中...')
+                    ? '上传中 ${(progress! * 100).toInt()}%'
+                    : '上传中...')
               : '上传图片',
         ),
         style: ElevatedButton.styleFrom(

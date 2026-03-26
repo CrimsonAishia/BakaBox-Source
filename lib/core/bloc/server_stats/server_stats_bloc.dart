@@ -10,7 +10,10 @@ class ServerStatsBloc extends Bloc<ServerStatsEvent, ServerStatsState> {
     on<ServerStatsRefresh>(_onRefresh);
   }
 
-  Future<void> _onFetch(ServerStatsFetch event, Emitter<ServerStatsState> emit) async {
+  Future<void> _onFetch(
+    ServerStatsFetch event,
+    Emitter<ServerStatsState> emit,
+  ) async {
     if (state.isLoading) return;
     if (state.stats != null) return; // 已有数据不重复请求
 
@@ -25,7 +28,10 @@ class ServerStatsBloc extends Bloc<ServerStatsEvent, ServerStatsState> {
     }
   }
 
-  Future<void> _onRefresh(ServerStatsRefresh event, Emitter<ServerStatsState> emit) async {
+  Future<void> _onRefresh(
+    ServerStatsRefresh event,
+    Emitter<ServerStatsState> emit,
+  ) async {
     if (state.isLoading) return;
 
     emit(state.copyWith(isLoading: true));

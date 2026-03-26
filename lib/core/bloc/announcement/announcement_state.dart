@@ -60,5 +60,12 @@ class AnnouncementState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [announcements, readIds, isLoading, error, currentDetail, isLoadingDetail];
+  List<Object?> get props => [
+    announcements,
+    readIds,
+    isLoading,
+    error,
+    currentDetail,
+    isLoadingDetail,
+  ];
 }

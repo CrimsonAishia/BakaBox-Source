@@ -199,9 +199,7 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
             : Colors.white.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark
-              ? const Color(0xFF334155)
-              : const Color(0xFFE5E7EB),
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
           width: 1,
         ),
         boxShadow: [
@@ -291,7 +289,7 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
       children: [
         // 排序和分类选项（始终显示在视频列表上方）
         Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 2),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 2),
           child: _buildVideoSortAndCategoryOptions(state),
         ),
         Expanded(
@@ -303,10 +301,7 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
     );
   }
 
-  Widget _buildLiveRoomGrid(
-    BilibiliContentState state,
-    List<LiveRoom> rooms,
-  ) {
+  Widget _buildLiveRoomGrid(BilibiliContentState state, List<LiveRoom> rooms) {
     if (rooms.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -361,10 +356,7 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
             totalPages: totalPages,
             onPageChanged: (page) {
               context.read<BilibiliContentBloc>().add(
-                BilibiliContentFetchRequested(
-                  tabIndex: 0,
-                  pageIndex: page,
-                ),
+                BilibiliContentFetchRequested(tabIndex: 0, pageIndex: page),
               );
             },
           ),
@@ -382,9 +374,7 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(
-            color: isDark ? Colors.white10 : Colors.black12,
-          ),
+          top: BorderSide(color: isDark ? Colors.white10 : Colors.black12),
         ),
       ),
       child: Row(
@@ -468,21 +458,21 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
             color: isActive
                 ? kBilibiliBlue
                 : (isHovered
-                    ? (isDark
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : Colors.black.withValues(alpha: 0.06))
-                    : (isDark
-                        ? Colors.white.withValues(alpha: 0.05)
-                        : Colors.black.withValues(alpha: 0.03))),
+                      ? (isDark
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : Colors.black.withValues(alpha: 0.06))
+                      : (isDark
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : Colors.black.withValues(alpha: 0.03))),
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
               color: isActive
                   ? kBilibiliBlue
                   : (isHovered
-                      ? kBilibiliBlue.withValues(alpha: 0.5)
-                      : (isDark
-                          ? Colors.white.withValues(alpha: 0.1)
-                          : Colors.black.withValues(alpha: 0.1))),
+                        ? kBilibiliBlue.withValues(alpha: 0.5)
+                        : (isDark
+                              ? Colors.white.withValues(alpha: 0.1)
+                              : Colors.black.withValues(alpha: 0.1))),
             ),
           ),
           child: Center(
@@ -527,24 +517,24 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
           decoration: BoxDecoration(
             color: enabled
                 ? (isHovered
-                    ? (isDark
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : Colors.black.withValues(alpha: 0.06))
-                    : (isDark
-                        ? Colors.white.withValues(alpha: 0.05)
-                        : Colors.black.withValues(alpha: 0.03)))
+                      ? (isDark
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : Colors.black.withValues(alpha: 0.06))
+                      : (isDark
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : Colors.black.withValues(alpha: 0.03)))
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
               color: enabled
                   ? (isHovered
-                      ? kBilibiliBlue.withValues(alpha: 0.5)
-                      : (isDark
-                          ? Colors.white.withValues(alpha: 0.1)
-                          : Colors.black.withValues(alpha: 0.1)))
+                        ? kBilibiliBlue.withValues(alpha: 0.5)
+                        : (isDark
+                              ? Colors.white.withValues(alpha: 0.1)
+                              : Colors.black.withValues(alpha: 0.1)))
                   : (isDark
-                      ? Colors.white.withValues(alpha: 0.05)
-                      : Colors.black.withValues(alpha: 0.05)),
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : Colors.black.withValues(alpha: 0.05)),
             ),
           ),
           child: Icon(
@@ -552,8 +542,8 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
             size: 18,
             color: enabled
                 ? (isHovered
-                    ? kBilibiliBlue
-                    : (isDark ? Colors.white70 : Colors.black87))
+                      ? kBilibiliBlue
+                      : (isDark ? Colors.white70 : Colors.black87))
                 : (isDark ? Colors.white30 : Colors.black38),
           ),
         ),
@@ -634,11 +624,13 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
                                 onEdit: null,
                                 onDelete: null,
                                 isRefreshing: state.isRefreshing,
-                                isLoadingBilibiliData: state.isLoadingBilibiliData,
+                                isLoadingBilibiliData:
+                                    state.isLoadingBilibiliData,
                                 onTap: () {
                                   context.read<BilibiliContentBloc>().add(
                                     BilibiliContentIncreaseVideoViewRequested(
-                                      id: videos[rowIndex * _itemsPerRow + col].id,
+                                      id: videos[rowIndex * _itemsPerRow + col]
+                                          .id,
                                     ),
                                   );
                                 },
@@ -661,10 +653,7 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
             totalPages: totalPages,
             onPageChanged: (page) {
               context.read<BilibiliContentBloc>().add(
-                BilibiliContentFetchRequested(
-                  tabIndex: 1,
-                  pageIndex: page,
-                ),
+                BilibiliContentFetchRequested(tabIndex: 1, pageIndex: page),
               );
             },
           ),
@@ -772,7 +761,9 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
                   selectedCategoryId,
                   () {
                     context.read<BilibiliContentBloc>().add(
-                      BilibiliContentVideoCategoryFilterChanged(categories[i].id),
+                      BilibiliContentVideoCategoryFilterChanged(
+                        categories[i].id,
+                      ),
                     );
                   },
                 ),
@@ -784,7 +775,12 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
     );
   }
 
-  Widget _buildCategoryOption(String label, int? categoryId, int? selectedCategoryId, VoidCallback onTap) {
+  Widget _buildCategoryOption(
+    String label,
+    int? categoryId,
+    int? selectedCategoryId,
+    VoidCallback onTap,
+  ) {
     final isSelected = categoryId == selectedCategoryId;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(

@@ -20,7 +20,7 @@ class CountdownProgressBar extends StatefulWidget {
 class _CountdownProgressBarState extends State<CountdownProgressBar> {
   Timer? _timer;
   int _remaining = 0;
-  bool _isRefreshing = false;  // 内部管理的刷新状态
+  bool _isRefreshing = false; // 内部管理的刷新状态
 
   @override
   void initState() {
@@ -34,12 +34,12 @@ class _CountdownProgressBarState extends State<CountdownProgressBar> {
   @override
   void didUpdateWidget(CountdownProgressBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // duration 变化时重新计算
     if (widget.duration != oldWidget.duration) {
       _remaining = widget.duration;
     }
-    
+
     // isActive 变化时启动或停止
     if (widget.isActive != oldWidget.isActive) {
       if (widget.isActive) {
@@ -60,7 +60,7 @@ class _CountdownProgressBarState extends State<CountdownProgressBar> {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted || !widget.isActive || _isRefreshing) return;
-      
+
       setState(() {
         _remaining--;
         if (_remaining <= 0) {
@@ -74,7 +74,7 @@ class _CountdownProgressBarState extends State<CountdownProgressBar> {
     _isRefreshing = true;
     _remaining = widget.duration;
     widget.onComplete?.call();
-    
+
     // 1秒后结束刷新动画
     Future.delayed(const Duration(seconds: 1), () {
       if (mounted) {
@@ -107,7 +107,9 @@ class _CountdownProgressBarState extends State<CountdownProgressBar> {
                 : CircularProgressIndicator(
                     value: progress,
                     strokeWidth: 3,
-                    backgroundColor: const Color(0xFF0080FF).withValues(alpha: 0.2),
+                    backgroundColor: const Color(
+                      0xFF0080FF,
+                    ).withValues(alpha: 0.2),
                     valueColor: AlwaysStoppedAnimation<Color>(
                       _remaining <= 5 ? Colors.orange : const Color(0xFF0080FF),
                     ),
@@ -118,7 +120,9 @@ class _CountdownProgressBarState extends State<CountdownProgressBar> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: _remaining <= 5 || _isRefreshing ? Colors.orange : const Color(0xFF0080FF),
+              color: _remaining <= 5 || _isRefreshing
+                  ? Colors.orange
+                  : const Color(0xFF0080FF),
             ),
           ),
         ],

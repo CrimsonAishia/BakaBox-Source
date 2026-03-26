@@ -3,7 +3,7 @@ import '../utils/log_service.dart';
 import '../utils/storage_utils.dart';
 
 /// 协议管理服务
-/// 
+///
 /// 负责管理用户对隐私政策和用户协议的同意状态
 class PolicyService {
   static const String _keyAgreedVersion = 'policy_agreed_version';
@@ -12,24 +12,26 @@ class PolicyService {
   static const String _keyTermsAgreed = 'terms_of_service_agreed';
 
   /// 检查用户是否需要重新同意协议
-  /// 
+  ///
   /// 返回 true 表示需要显示协议更新对话框
   Future<bool> needsReAgreement() async {
     try {
       // 获取用户上次同意的版本
       final agreedVersion = StorageUtils.getString(_keyAgreedVersion);
-      
+
       // 如果从未同意过，需要同意
       if (agreedVersion == null) {
         return true;
       }
-      
+
       // 比较版本号
       final currentVersion = PolicyConstants.version;
       if (agreedVersion != currentVersion) {
         // 版本不同，检查是否为重大变更
         if (PolicyConstants.requiresReAgreement) {
-          LogService.i('[Policy] 协议已更新（$agreedVersion → $currentVersion），需要重新同意');
+          LogService.i(
+            '[Policy] 协议已更新（$agreedVersion → $currentVersion），需要重新同意',
+          );
           return true;
         } else {
           // 非重大变更，自动更新版本号
@@ -38,7 +40,7 @@ class PolicyService {
           return false;
         }
       }
-      
+
       return false;
     } catch (e) {
       LogService.e('[Policy] 检查协议状态失败', e);
@@ -50,10 +52,13 @@ class PolicyService {
   Future<void> agreeToPolicy() async {
     try {
       await StorageUtils.setString(_keyAgreedVersion, PolicyConstants.version);
-      await StorageUtils.setString(_keyAgreedDate, DateTime.now().toIso8601String());
+      await StorageUtils.setString(
+        _keyAgreedDate,
+        DateTime.now().toIso8601String(),
+      );
       await StorageUtils.setBool(_keyPrivacyAgreed, true);
       await StorageUtils.setBool(_keyTermsAgreed, true);
-      
+
       LogService.i('[Policy] 用户已同意协议版本 ${PolicyConstants.version}');
     } catch (e) {
       LogService.e('[Policy] 保存协议同意状态失败', e);
@@ -112,7 +117,7 @@ class PolicyService {
       await StorageUtils.remove(_keyAgreedDate);
       await StorageUtils.remove(_keyPrivacyAgreed);
       await StorageUtils.remove(_keyTermsAgreed);
-      
+
       LogService.i('[Policy] 已清除协议同意状态');
     } catch (e) {
       LogService.e('[Policy] 清除协议同意状态失败', e);
@@ -124,7 +129,10 @@ class PolicyService {
   Future<void> _updateAgreedVersion() async {
     try {
       await StorageUtils.setString(_keyAgreedVersion, PolicyConstants.version);
-      await StorageUtils.setString(_keyAgreedDate, DateTime.now().toIso8601String());
+      await StorageUtils.setString(
+        _keyAgreedDate,
+        DateTime.now().toIso8601String(),
+      );
     } catch (e) {
       LogService.e('[Policy] 更新协议版本失败', e);
     }
@@ -134,15 +142,15 @@ class PolicyService {
   int compareVersions(String v1, String v2) {
     final parts1 = v1.split('.').map(int.parse).toList();
     final parts2 = v2.split('.').map(int.parse).toList();
-    
+
     for (int i = 0; i < 3; i++) {
       final p1 = i < parts1.length ? parts1[i] : 0;
       final p2 = i < parts2.length ? parts2[i] : 0;
-      
+
       if (p1 < p2) return -1;
       if (p1 > p2) return 1;
     }
-    
+
     return 0;
   }
 }

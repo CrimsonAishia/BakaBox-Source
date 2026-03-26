@@ -54,7 +54,10 @@ class KeyBindingClearAllKeyBindings extends KeyBindingEvent {}
 class KeyBindingApplyConfig extends KeyBindingEvent {
   final KeyConfig config;
   final Map<String, String> keyBindings;
-  const KeyBindingApplyConfig({required this.config, required this.keyBindings});
+  const KeyBindingApplyConfig({
+    required this.config,
+    required this.keyBindings,
+  });
   @override
   List<Object?> get props => [config, keyBindings];
 }
@@ -103,7 +106,11 @@ class KeyBindingUpdateConfig extends KeyBindingEvent {
   final int id;
   final KeyConfigCreateRequest request;
   final String? editReason;
-  const KeyBindingUpdateConfig({required this.id, required this.request, this.editReason});
+  const KeyBindingUpdateConfig({
+    required this.id,
+    required this.request,
+    this.editReason,
+  });
   @override
   List<Object?> get props => [id, request, editReason];
 }

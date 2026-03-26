@@ -29,9 +29,8 @@ class DesktopRouter {
       GoRoute(
         path: DesktopRoutes.onboarding,
         name: 'onboarding',
-        builder: (context, state) => OnboardingScreen(
-          onComplete: () => router.go(DesktopRoutes.home),
-        ),
+        builder: (context, state) =>
+            OnboardingScreen(onComplete: () => router.go(DesktopRoutes.home)),
       ),
       GoRoute(
         path: DesktopRoutes.home,

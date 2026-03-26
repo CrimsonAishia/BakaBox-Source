@@ -34,9 +34,10 @@ class _SkeletonBoxState extends State<SkeletonBox>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat();
-    _animation = Tween<double>(begin: -1.0, end: 2.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _animation = Tween<double>(
+      begin: -1.0,
+      end: 2.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -49,7 +50,8 @@ class _SkeletonBoxState extends State<SkeletonBox>
   Widget build(BuildContext context) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final baseColor = widget.baseColor ?? scrollBrown.withValues(alpha: 0.08);
-    final highlightColor = widget.highlightColor ?? scrollBrown.withValues(alpha: 0.15);
+    final highlightColor =
+        widget.highlightColor ?? scrollBrown.withValues(alpha: 0.15);
 
     return AnimatedBuilder(
       animation: _animation,
@@ -75,7 +77,6 @@ class _SkeletonBoxState extends State<SkeletonBox>
     );
   }
 }
-
 
 /// 详情面板骨架屏
 class DetailPanelSkeleton extends StatelessWidget {
@@ -123,12 +124,18 @@ class DetailPanelSkeleton extends StatelessWidget {
           _buildSkillCardSkeleton(context, scrollBrown, cardBg),
           const SizedBox(height: 16),
           // 符卡分组标题 - 大符卡
-          _buildGroupHeaderSkeleton(scrollBrown, CharacterGalleryTheme.getGold(context)),
+          _buildGroupHeaderSkeleton(
+            scrollBrown,
+            CharacterGalleryTheme.getGold(context),
+          ),
           const SizedBox(height: 8),
           _buildSkillCardSkeleton(context, scrollBrown, cardBg),
           const SizedBox(height: 16),
           // 符卡分组标题 - 小符卡
-          _buildGroupHeaderSkeleton(scrollBrown, CharacterGalleryTheme.getVermillion(context)),
+          _buildGroupHeaderSkeleton(
+            scrollBrown,
+            CharacterGalleryTheme.getVermillion(context),
+          ),
           const SizedBox(height: 8),
           _buildSkillCardSkeleton(context, scrollBrown, cardBg),
           _buildSkillCardSkeleton(context, scrollBrown, cardBg),
@@ -147,7 +154,9 @@ class DetailPanelSkeleton extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             border: Border.all(
-              color: CharacterGalleryTheme.getGold(context).withValues(alpha: 0.3),
+              color: CharacterGalleryTheme.getGold(
+                context,
+              ).withValues(alpha: 0.3),
               width: 3,
             ),
             borderRadius: BorderRadius.circular(8),
@@ -178,9 +187,7 @@ class DetailPanelSkeleton extends StatelessWidget {
                 height: 36,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: scrollBrown.withValues(alpha: 0.2),
-                  ),
+                  border: Border.all(color: scrollBrown.withValues(alpha: 0.2)),
                 ),
                 child: SkeletonBox(
                   width: 36,
@@ -207,8 +214,12 @@ class DetailPanelSkeleton extends StatelessWidget {
           width: 18,
           height: 18,
           borderRadius: 2,
-          baseColor: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.2),
-          highlightColor: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.35),
+          baseColor: CharacterGalleryTheme.getVermillion(
+            context,
+          ).withValues(alpha: 0.2),
+          highlightColor: CharacterGalleryTheme.getVermillion(
+            context,
+          ).withValues(alpha: 0.35),
         ),
         const SizedBox(width: 8),
         // 名称和英文名
@@ -238,8 +249,12 @@ class DetailPanelSkeleton extends StatelessWidget {
           width: 60,
           height: 24,
           borderRadius: 4,
-          baseColor: CharacterGalleryTheme.getGold(context).withValues(alpha: 0.15),
-          highlightColor: CharacterGalleryTheme.getGold(context).withValues(alpha: 0.25),
+          baseColor: CharacterGalleryTheme.getGold(
+            context,
+          ).withValues(alpha: 0.15),
+          highlightColor: CharacterGalleryTheme.getGold(
+            context,
+          ).withValues(alpha: 0.25),
         ),
       ],
     );
@@ -252,7 +267,11 @@ class DetailPanelSkeleton extends StatelessWidget {
       padding: const EdgeInsets.only(top: 20),
       child: Row(
         children: [
-          Container(width: 30, height: 2, color: scrollBrown.withValues(alpha: 0.15)),
+          Container(
+            width: 30,
+            height: 2,
+            color: scrollBrown.withValues(alpha: 0.15),
+          ),
           const SizedBox(width: 8),
           SkeletonBox(
             width: titleWidth,
@@ -262,7 +281,12 @@ class DetailPanelSkeleton extends StatelessWidget {
             highlightColor: scrollBrown.withValues(alpha: 0.2),
           ),
           const SizedBox(width: 8),
-          Expanded(child: Container(height: 2, color: scrollBrown.withValues(alpha: 0.08))),
+          Expanded(
+            child: Container(
+              height: 2,
+              color: scrollBrown.withValues(alpha: 0.08),
+            ),
+          ),
         ],
       ),
     );
@@ -293,7 +317,11 @@ class DetailPanelSkeleton extends StatelessWidget {
   }
 
   /// 技能卡片骨架
-  Widget _buildSkillCardSkeleton(BuildContext context, Color scrollBrown, Color cardBg) {
+  Widget _buildSkillCardSkeleton(
+    BuildContext context,
+    Color scrollBrown,
+    Color cardBg,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
@@ -312,8 +340,12 @@ class DetailPanelSkeleton extends StatelessWidget {
               SkeletonBox(
                 width: 44,
                 height: 20,
-                baseColor: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.1),
-                highlightColor: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.2),
+                baseColor: CharacterGalleryTheme.getVermillion(
+                  context,
+                ).withValues(alpha: 0.1),
+                highlightColor: CharacterGalleryTheme.getVermillion(
+                  context,
+                ).withValues(alpha: 0.2),
               ),
               const SizedBox(width: 8),
               // 名称
@@ -347,11 +379,20 @@ class DetailPanelSkeleton extends StatelessWidget {
           // 属性行：冷却、伤害、消耗
           Row(
             children: [
-              _buildStatItemSkeleton(scrollBrown, CharacterGalleryTheme.getCooldownColor(context)),
+              _buildStatItemSkeleton(
+                scrollBrown,
+                CharacterGalleryTheme.getCooldownColor(context),
+              ),
               const SizedBox(width: 12),
-              _buildStatItemSkeleton(scrollBrown, CharacterGalleryTheme.getDamageColor(context)),
+              _buildStatItemSkeleton(
+                scrollBrown,
+                CharacterGalleryTheme.getDamageColor(context),
+              ),
               const SizedBox(width: 12),
-              _buildStatItemSkeleton(scrollBrown, CharacterGalleryTheme.getBCostColor(context)),
+              _buildStatItemSkeleton(
+                scrollBrown,
+                CharacterGalleryTheme.getBCostColor(context),
+              ),
             ],
           ),
         ],
@@ -397,7 +438,6 @@ class DetailPanelSkeleton extends StatelessWidget {
   }
 }
 
-
 /// 符卡加载骨架屏
 class SpellCardsLoadingSkeleton extends StatelessWidget {
   const SpellCardsLoadingSkeleton({super.key});
@@ -426,8 +466,12 @@ class SpellCardsLoadingSkeleton extends StatelessWidget {
                   SkeletonBox(
                     width: 40,
                     height: 20,
-                    baseColor: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.1),
-                    highlightColor: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.2),
+                    baseColor: CharacterGalleryTheme.getVermillion(
+                      context,
+                    ).withValues(alpha: 0.1),
+                    highlightColor: CharacterGalleryTheme.getVermillion(
+                      context,
+                    ).withValues(alpha: 0.2),
                   ),
                   const SizedBox(width: 8),
                   SkeletonBox(
@@ -462,8 +506,12 @@ class SpellCardsLoadingSkeleton extends StatelessWidget {
                     width: 60,
                     height: 14,
                     borderRadius: 2,
-                    baseColor: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.08),
-                    highlightColor: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.15),
+                    baseColor: CharacterGalleryTheme.getVermillion(
+                      context,
+                    ).withValues(alpha: 0.08),
+                    highlightColor: CharacterGalleryTheme.getVermillion(
+                      context,
+                    ).withValues(alpha: 0.15),
                   ),
                 ],
               ),
@@ -474,7 +522,6 @@ class SpellCardsLoadingSkeleton extends StatelessWidget {
     );
   }
 }
-
 
 /// 刀枪模详情面板骨架屏
 class WeaponModelDetailSkeleton extends StatelessWidget {
@@ -529,7 +576,9 @@ class WeaponModelDetailSkeleton extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             border: Border.all(
-              color: CharacterGalleryTheme.getGold(context).withValues(alpha: 0.3),
+              color: CharacterGalleryTheme.getGold(
+                context,
+              ).withValues(alpha: 0.3),
               width: 3,
             ),
             borderRadius: BorderRadius.circular(8),
@@ -586,8 +635,12 @@ class WeaponModelDetailSkeleton extends StatelessWidget {
           width: 18,
           height: 18,
           borderRadius: 2,
-          baseColor: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.2),
-          highlightColor: CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.35),
+          baseColor: CharacterGalleryTheme.getVermillion(
+            context,
+          ).withValues(alpha: 0.2),
+          highlightColor: CharacterGalleryTheme.getVermillion(
+            context,
+          ).withValues(alpha: 0.35),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -602,15 +655,23 @@ class WeaponModelDetailSkeleton extends StatelessWidget {
           width: 60,
           height: 24,
           borderRadius: 4,
-          baseColor: CharacterGalleryTheme.getGold(context).withValues(alpha: 0.15),
-          highlightColor: CharacterGalleryTheme.getGold(context).withValues(alpha: 0.25),
+          baseColor: CharacterGalleryTheme.getGold(
+            context,
+          ).withValues(alpha: 0.15),
+          highlightColor: CharacterGalleryTheme.getGold(
+            context,
+          ).withValues(alpha: 0.25),
         ),
       ],
     );
   }
 
   /// 专属角色区域骨架
-  Widget _buildExclusiveCharacterSkeleton(BuildContext context, Color scrollBrown, Color cardBg) {
+  Widget _buildExclusiveCharacterSkeleton(
+    BuildContext context,
+    Color scrollBrown,
+    Color cardBg,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -649,8 +710,12 @@ class WeaponModelDetailSkeleton extends StatelessWidget {
                       width: 50,
                       height: 18,
                       borderRadius: 4,
-                      baseColor: CharacterGalleryTheme.getGold(context).withValues(alpha: 0.12),
-                      highlightColor: CharacterGalleryTheme.getGold(context).withValues(alpha: 0.2),
+                      baseColor: CharacterGalleryTheme.getGold(
+                        context,
+                      ).withValues(alpha: 0.12),
+                      highlightColor: CharacterGalleryTheme.getGold(
+                        context,
+                      ).withValues(alpha: 0.2),
                     ),
                   ],
                 ),
@@ -669,7 +734,11 @@ class WeaponModelDetailSkeleton extends StatelessWidget {
       padding: const EdgeInsets.only(top: 20),
       child: Row(
         children: [
-          Container(width: 30, height: 2, color: scrollBrown.withValues(alpha: 0.15)),
+          Container(
+            width: 30,
+            height: 2,
+            color: scrollBrown.withValues(alpha: 0.15),
+          ),
           const SizedBox(width: 8),
           SkeletonBox(
             width: titleWidth,
@@ -679,7 +748,12 @@ class WeaponModelDetailSkeleton extends StatelessWidget {
             highlightColor: scrollBrown.withValues(alpha: 0.2),
           ),
           const SizedBox(width: 8),
-          Expanded(child: Container(height: 2, color: scrollBrown.withValues(alpha: 0.08))),
+          Expanded(
+            child: Container(
+              height: 2,
+              color: scrollBrown.withValues(alpha: 0.08),
+            ),
+          ),
         ],
       ),
     );

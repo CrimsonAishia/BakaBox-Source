@@ -71,5 +71,19 @@ class IssueState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [issues, isLoading, isLoadingMore, hasMore, error, totalCount, currentType, currentStatus, currentSort, currentKeyword, showMine, currentPage, pageSize];
+  List<Object?> get props => [
+    issues,
+    isLoading,
+    isLoadingMore,
+    hasMore,
+    error,
+    totalCount,
+    currentType,
+    currentStatus,
+    currentSort,
+    currentKeyword,
+    showMine,
+    currentPage,
+    pageSize,
+  ];
 }

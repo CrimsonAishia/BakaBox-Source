@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 class MobileTheme {
   static const Color primaryColor = Color(0xFF0080FF);
   static const Color secondaryColor = Color(0xFF1976D2);
-  
+
   static ThemeData get lightTheme => ThemeData(
     colorScheme: ColorScheme.fromSeed(
       seedColor: primaryColor,
@@ -21,7 +21,11 @@ class MobileTheme {
       centerTitle: true,
       backgroundColor: Colors.white.withValues(alpha: 0.95),
       foregroundColor: const Color(0xFF1F2937),
-      titleTextStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
+      titleTextStyle: const TextStyle(
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF1F2937),
+      ),
     ),
     cardTheme: CardThemeData(
       elevation: 0,
@@ -43,16 +47,41 @@ class MobileTheme {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: Colors.white,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.1))),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.1))),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: primaryColor, width: 2)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.1)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.1)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: primaryColor, width: 2),
+      ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
     ),
     textTheme: const TextTheme(
-      headlineLarge: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
-      headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
-      titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
-      titleMedium: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Color(0xFF1F2937)),
+      headlineLarge: TextStyle(
+        fontSize: 28,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFF1F2937),
+      ),
+      headlineMedium: TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF1F2937),
+      ),
+      titleLarge: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF1F2937),
+      ),
+      titleMedium: TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w500,
+        color: Color(0xFF1F2937),
+      ),
       bodyLarge: TextStyle(fontSize: 15, color: Color(0xFF374151)),
       bodyMedium: TextStyle(fontSize: 13, color: Color(0xFF374151)),
       bodySmall: TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
@@ -85,7 +114,11 @@ class MobileTheme {
       centerTitle: true,
       backgroundColor: const Color(0xFF1E293B).withValues(alpha: 0.95),
       foregroundColor: Colors.white,
-      titleTextStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Colors.white),
+      titleTextStyle: const TextStyle(
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
+      ),
     ),
     cardTheme: CardThemeData(
       elevation: 0,
@@ -96,10 +129,26 @@ class MobileTheme {
       ),
     ),
     textTheme: const TextTheme(
-      headlineLarge: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
-      headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: Colors.white),
-      titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white),
-      titleMedium: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.white),
+      headlineLarge: TextStyle(
+        fontSize: 28,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+      ),
+      headlineMedium: TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
+      ),
+      titleLarge: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
+      ),
+      titleMedium: TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w500,
+        color: Colors.white,
+      ),
       bodyLarge: TextStyle(fontSize: 15, color: Color(0xFFE2E8F0)),
       bodyMedium: TextStyle(fontSize: 13, color: Color(0xFFE2E8F0)),
       bodySmall: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),

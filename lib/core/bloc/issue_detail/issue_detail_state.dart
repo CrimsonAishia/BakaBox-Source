@@ -42,10 +42,20 @@ class IssueDetailState extends Equatable {
       isLoadingComments: isLoadingComments ?? this.isLoadingComments,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       error: clearError ? null : (error ?? this.error),
-      successMessage: clearSuccess ? null : (successMessage ?? this.successMessage),
+      successMessage: clearSuccess
+          ? null
+          : (successMessage ?? this.successMessage),
     );
   }
 
   @override
-  List<Object?> get props => [issue, comments, isLoading, isLoadingComments, isSubmitting, error, successMessage];
+  List<Object?> get props => [
+    issue,
+    comments,
+    isLoading,
+    isLoadingComments,
+    isSubmitting,
+    error,
+    successMessage,
+  ];
 }

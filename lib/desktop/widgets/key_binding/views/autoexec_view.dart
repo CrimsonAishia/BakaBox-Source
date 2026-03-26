@@ -8,7 +8,7 @@ import '../../../../core/models/key_config_models.dart';
 import '../components/common_widgets.dart' as common;
 
 /// Autoexec 视图
-/// 
+///
 /// 包括：
 /// - 已应用配置列表
 /// - 编辑器模式
@@ -48,34 +48,39 @@ class _AutoexecViewState extends State<AutoexecView> {
             iconColor: const Color(0xFFf59e0b),
           );
         }
-        
+
         if (!state.autoexecFileExists) {
           return common.EmptyHint(
             icon: MdiIcons.fileDocumentPlusOutline,
             title: '文件不存在',
             desc: 'autoexec.cfg 尚未创建',
             action: FilledButton.icon(
-              onPressed: state.isSaving 
-                  ? null 
-                  : () => context.read<KeyBindingBloc>().add(KeyBindingCreateAutoexecFile()),
+              onPressed: state.isSaving
+                  ? null
+                  : () => context.read<KeyBindingBloc>().add(
+                      KeyBindingCreateAutoexecFile(),
+                    ),
               icon: state.isSaving
                   ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Icon(Icons.add, size: 18),
               label: Text(state.isSaving ? '创建中' : '创建文件'),
             ),
           );
         }
-        
+
         return Column(
           children: [
             _buildHeader(context, state),
             Expanded(
-              child: _editMode 
-                  ? _buildEditor(state) 
+              child: _editMode
+                  ? _buildEditor(state)
                   : _buildAppliedList(context, state),
             ),
             if (_changed) _buildSaveBar(context, state),
@@ -98,7 +103,11 @@ class _AutoexecViewState extends State<AutoexecView> {
       ),
       child: Row(
         children: [
-          Icon(MdiIcons.fileCodeOutline, size: 20, color: const Color(0xFF0080FF)),
+          Icon(
+            MdiIcons.fileCodeOutline,
+            size: 20,
+            color: const Color(0xFF0080FF),
+          ),
           const SizedBox(width: 8),
           Text(
             'autoexec.cfg',
@@ -117,16 +126,21 @@ class _AutoexecViewState extends State<AutoexecView> {
           const SizedBox(width: 12),
           common.IconButton(
             icon: Icons.copy_rounded,
-            onTap: () => context.read<KeyBindingBloc>().add(KeyBindingCopyAutoexecContent()),
+            onTap: () => context.read<KeyBindingBloc>().add(
+              KeyBindingCopyAutoexecContent(),
+            ),
           ),
           common.IconButton(
             icon: MdiIcons.folderOpenOutline,
-            onTap: () => context.read<KeyBindingBloc>().add(KeyBindingOpenInExplorer()),
+            onTap: () =>
+                context.read<KeyBindingBloc>().add(KeyBindingOpenInExplorer()),
           ),
           common.IconButton(
             icon: Icons.refresh_rounded,
             loading: state.isLoadingAutoexec,
-            onTap: () => context.read<KeyBindingBloc>().add(KeyBindingLoadAutoexecContent()),
+            onTap: () => context.read<KeyBindingBloc>().add(
+              KeyBindingLoadAutoexecContent(),
+            ),
           ),
         ],
       ),
@@ -141,7 +155,7 @@ class _AutoexecViewState extends State<AutoexecView> {
         desc: '选择配置并点击应用',
       );
     }
-    
+
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: state.appliedConfigs.length,
@@ -158,7 +172,7 @@ class _AutoexecViewState extends State<AutoexecView> {
     if (_editCtrl.text.isEmpty && state.autoexecContent != null) {
       _editCtrl.text = state.autoexecContent!;
     }
-    
+
     return Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -182,8 +196,9 @@ class _AutoexecViewState extends State<AutoexecView> {
           border: InputBorder.none,
           contentPadding: EdgeInsets.all(14),
         ),
-        onChanged: (v) => setState(() => 
-          _changed = v != context.read<KeyBindingBloc>().state.autoexecContent
+        onChanged: (v) => setState(
+          () => _changed =
+              v != context.read<KeyBindingBloc>().state.autoexecContent,
         ),
       ),
     );
@@ -213,17 +228,22 @@ class _AutoexecViewState extends State<AutoexecView> {
           ),
           const SizedBox(width: 8),
           FilledButton.icon(
-            onPressed: state.isSaving ? null : () {
-              context.read<KeyBindingBloc>().add(
-                KeyBindingSaveAutoexecContent(_editCtrl.text),
-              );
-              setState(() => _changed = false);
-            },
+            onPressed: state.isSaving
+                ? null
+                : () {
+                    context.read<KeyBindingBloc>().add(
+                      KeyBindingSaveAutoexecContent(_editCtrl.text),
+                    );
+                    setState(() => _changed = false);
+                  },
             icon: state.isSaving
                 ? const SizedBox(
                     width: 14,
                     height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
                 : const Icon(Icons.save, size: 16),
             label: Text(state.isSaving ? '保存中' : '保存'),
@@ -265,7 +285,7 @@ class _AutoexecViewState extends State<AutoexecView> {
 class _AppliedCard extends StatefulWidget {
   final ConfigBlock config;
   final VoidCallback onRemove;
-  
+
   const _AppliedCard({required this.config, required this.onRemove});
 
   @override
@@ -295,7 +315,11 @@ class _AppliedCardState extends State<_AppliedCard> {
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  Icon(MdiIcons.checkCircle, size: 18, color: const Color(0xFF10b981)),
+                  Icon(
+                    MdiIcons.checkCircle,
+                    size: 18,
+                    color: const Color(0xFF10b981),
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(

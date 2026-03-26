@@ -6,11 +6,7 @@ class ServerStatsState extends Equatable {
   final String? error;
   final ServerStatsResponse? stats;
 
-  const ServerStatsState({
-    this.isLoading = false,
-    this.error,
-    this.stats,
-  });
+  const ServerStatsState({this.isLoading = false, this.error, this.stats});
 
   ServerStatsState copyWith({
     bool? isLoading,

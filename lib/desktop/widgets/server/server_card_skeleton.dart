@@ -64,9 +64,7 @@ class _ServerCardSkeletonState extends State<ServerCardSkeleton>
             ),
             // 半透明遮罩
             Positioned.fill(
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.5),
-              ),
+              child: Container(color: Colors.black.withValues(alpha: 0.5)),
             ),
             // 骨架内容 - 与真实卡片一致的 padding
             Padding(
@@ -95,10 +93,7 @@ class _ServerCardSkeletonState extends State<ServerCardSkeleton>
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Colors.transparent,
-            Colors.black.withValues(alpha: 0.7),
-          ],
+          colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
         ),
       ),
       child: Center(
@@ -196,7 +191,8 @@ class _ServerCardSkeletonState extends State<ServerCardSkeleton>
       builder: (context, child) {
         return LayoutBuilder(
           builder: (context, constraints) {
-            final actualWidth = width ?? (constraints.maxWidth * (widthPercent ?? 1.0));
+            final actualWidth =
+                width ?? (constraints.maxWidth * (widthPercent ?? 1.0));
             return Container(
               width: actualWidth,
               height: height,

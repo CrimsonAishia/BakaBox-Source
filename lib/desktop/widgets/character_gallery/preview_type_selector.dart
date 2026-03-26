@@ -53,13 +53,15 @@ class _PreviewTypeSelectorState extends State<PreviewTypeSelector> {
   }
 
   void _notifyChange() {
-    widget.onChanged(PreviewMediaData(
-      previewType: _selectedType,
-      previewFileId: _selectedType == 'image' ? _fileId : null,
-      previewVideoUrl: _selectedType == 'video_url'
-          ? _videoUrlController.text.trim()
-          : null,
-    ));
+    widget.onChanged(
+      PreviewMediaData(
+        previewType: _selectedType,
+        previewFileId: _selectedType == 'image' ? _fileId : null,
+        previewVideoUrl: _selectedType == 'video_url'
+            ? _videoUrlController.text.trim()
+            : null,
+      ),
+    );
   }
 
   @override
@@ -84,11 +86,19 @@ class _PreviewTypeSelectorState extends State<PreviewTypeSelector> {
           children: [
             _buildTypeChip('none', '无', Icons.block, Colors.grey),
             const SizedBox(width: 8),
-            _buildTypeChip('image', '图片', Icons.image_outlined,
-                const Color(0xFF4A90D9)),
+            _buildTypeChip(
+              'image',
+              '图片',
+              Icons.image_outlined,
+              const Color(0xFF4A90D9),
+            ),
             const SizedBox(width: 8),
-            _buildTypeChip('video_url', '视频外链', Icons.link,
-                const Color(0xFFFB7299)),
+            _buildTypeChip(
+              'video_url',
+              '视频外链',
+              Icons.link,
+              const Color(0xFFFB7299),
+            ),
           ],
         ),
         // 根据类型显示对应的输入区域
@@ -104,8 +114,7 @@ class _PreviewTypeSelectorState extends State<PreviewTypeSelector> {
     );
   }
 
-  Widget _buildTypeChip(
-      String type, String label, IconData icon, Color color) {
+  Widget _buildTypeChip(String type, String label, IconData icon, Color color) {
     final isSelected = _selectedType == type;
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
@@ -133,8 +142,11 @@ class _PreviewTypeSelectorState extends State<PreviewTypeSelector> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 14,
-                  color: isSelected ? color : inkColor.withValues(alpha: 0.6)),
+              Icon(
+                icon,
+                size: 14,
+                color: isSelected ? color : inkColor.withValues(alpha: 0.6),
+              ),
               const SizedBox(width: 4),
               Text(
                 label,
@@ -172,7 +184,10 @@ class _PreviewTypeSelectorState extends State<PreviewTypeSelector> {
   }
 
   Widget _buildVideoUrlInput(
-      BuildContext context, Color inkColor, Color scrollBrown) {
+    BuildContext context,
+    Color inkColor,
+    Color scrollBrown,
+  ) {
     final inputBg = CharacterGalleryTheme.getInputBackground(context);
     final vermillion = CharacterGalleryTheme.getVermillion(context);
 
@@ -189,28 +204,37 @@ class _PreviewTypeSelectorState extends State<PreviewTypeSelector> {
                 decoration: InputDecoration(
                   hintText: '粘贴B站视频链接或视频直链',
                   hintStyle: TextStyle(
-                      color: inkColor.withValues(alpha: 0.4), fontSize: 13),
+                    color: inkColor.withValues(alpha: 0.4),
+                    fontSize: 13,
+                  ),
                   filled: true,
                   fillColor: inputBg,
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(6),
                     borderSide: BorderSide(
-                        color: scrollBrown.withValues(alpha: 0.3)),
+                      color: scrollBrown.withValues(alpha: 0.3),
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(6),
                     borderSide: BorderSide(
-                        color: scrollBrown.withValues(alpha: 0.3)),
+                      color: scrollBrown.withValues(alpha: 0.3),
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(6),
                     borderSide: BorderSide(color: vermillion, width: 2),
                   ),
                   suffixIcon: IconButton(
-                    icon: Icon(Icons.play_circle_outline, size: 18,
-                        color: scrollBrown.withValues(alpha: 0.6)),
+                    icon: Icon(
+                      Icons.play_circle_outline,
+                      size: 18,
+                      color: scrollBrown.withValues(alpha: 0.6),
+                    ),
                     tooltip: '预览视频',
                     onPressed: () => _previewVideoUrl(context),
                   ),

@@ -44,10 +44,12 @@ Widget buildObsFloatingPanel({
             // 头部支持拖动
             GestureDetector(
               onPanUpdate: (details) {
-                onPositionChanged(Offset(
-                  panelPosition.dx + details.delta.dx,
-                  panelPosition.dy + details.delta.dy,
-                ));
+                onPositionChanged(
+                  Offset(
+                    panelPosition.dx + details.delta.dx,
+                    panelPosition.dy + details.delta.dy,
+                  ),
+                );
               },
               child: Container(
                 padding: const EdgeInsets.all(12),
@@ -102,7 +104,15 @@ Widget buildObsFloatingPanel({
                 builder: (context, setState) {
                   return SingleChildScrollView(
                     padding: const EdgeInsets.all(16),
-                    child: buildProperties(context, element, theme, onSave, setState, onChanged, textController),
+                    child: buildProperties(
+                      context,
+                      element,
+                      theme,
+                      onSave,
+                      setState,
+                      onChanged,
+                      textController,
+                    ),
                   );
                 },
               ),
@@ -143,14 +153,29 @@ Widget buildProperties(
         },
       ),
       const Divider(height: 24),
-      if (el['type'] == 'server_card') ...buildServerCardSettings(el, onSave, setState, onChanged),
-      if (el['type'] == 'text') ...buildTextSettings(context, el, theme, onSave, setState, onChanged, textController),
+      if (el['type'] == 'server_card')
+        ...buildServerCardSettings(el, onSave, setState, onChanged),
+      if (el['type'] == 'text')
+        ...buildTextSettings(
+          context,
+          el,
+          theme,
+          onSave,
+          setState,
+          onChanged,
+          textController,
+        ),
     ],
   );
 }
 
 /// 构建服务器卡片设置
-List<Widget> buildServerCardSettings(Map<String, dynamic> el, VoidCallback onSave, StateSetter setState, VoidCallback onChanged) {
+List<Widget> buildServerCardSettings(
+  Map<String, dynamic> el,
+  VoidCallback onSave,
+  StateSetter setState,
+  VoidCallback onChanged,
+) {
   return [
     // 显示/隐藏设置
     _buildSectionTitle('显示内容'),
@@ -308,7 +333,9 @@ List<Widget> buildTextSettings(
   TextEditingController? textController,
 ) {
   // 使用传入的 controller，如果不存在则创建一个临时的
-  final controller = textController ?? TextEditingController(text: el['template']?.toString() ?? '');
+  final controller =
+      textController ??
+      TextEditingController(text: el['template']?.toString() ?? '');
 
   return [
     const Text('文本内容', style: TextStyle(fontSize: 12, color: Colors.grey)),
@@ -385,7 +412,9 @@ List<Widget> buildTextSettings(
             Icons.format_italic,
             el['fontStyle'] == 'italic',
             () {
-              el['fontStyle'] = el['fontStyle'] == 'italic' ? 'normal' : 'italic';
+              el['fontStyle'] = el['fontStyle'] == 'italic'
+                  ? 'normal'
+                  : 'italic';
               onSave();
               onChanged();
               setState(() {});
@@ -399,7 +428,9 @@ List<Widget> buildTextSettings(
             Icons.format_underlined,
             el['decoration'] == 'underline',
             () {
-              el['decoration'] = el['decoration'] == 'underline' ? 'none' : 'underline';
+              el['decoration'] = el['decoration'] == 'underline'
+                  ? 'none'
+                  : 'underline';
               onSave();
               onChanged();
               setState(() {});
@@ -520,36 +551,66 @@ List<Widget> buildTextSettings(
         spacing: 8,
         runSpacing: 8,
         children: [
-          buildStrokeColorOption(el, '#000000', Colors.black, onChanged: () {
-            onSave();
-            onChanged();
-            setState(() {});
-          }),
-          buildStrokeColorOption(el, '#FFFFFF', Colors.white, onChanged: () {
-            onSave();
-            onChanged();
-            setState(() {});
-          }),
-          buildStrokeColorOption(el, '#FF0000', Colors.red, onChanged: () {
-            onSave();
-            onChanged();
-            setState(() {});
-          }),
-          buildStrokeColorOption(el, '#00FF00', Colors.green, onChanged: () {
-            onSave();
-            onChanged();
-            setState(() {});
-          }),
-          buildStrokeColorOption(el, '#0000FF', Colors.blue, onChanged: () {
-            onSave();
-            onChanged();
-            setState(() {});
-          }),
-          buildStrokeColorOption(el, '#FFFF00', Colors.yellow, onChanged: () {
-            onSave();
-            onChanged();
-            setState(() {});
-          }),
+          buildStrokeColorOption(
+            el,
+            '#000000',
+            Colors.black,
+            onChanged: () {
+              onSave();
+              onChanged();
+              setState(() {});
+            },
+          ),
+          buildStrokeColorOption(
+            el,
+            '#FFFFFF',
+            Colors.white,
+            onChanged: () {
+              onSave();
+              onChanged();
+              setState(() {});
+            },
+          ),
+          buildStrokeColorOption(
+            el,
+            '#FF0000',
+            Colors.red,
+            onChanged: () {
+              onSave();
+              onChanged();
+              setState(() {});
+            },
+          ),
+          buildStrokeColorOption(
+            el,
+            '#00FF00',
+            Colors.green,
+            onChanged: () {
+              onSave();
+              onChanged();
+              setState(() {});
+            },
+          ),
+          buildStrokeColorOption(
+            el,
+            '#0000FF',
+            Colors.blue,
+            onChanged: () {
+              onSave();
+              onChanged();
+              setState(() {});
+            },
+          ),
+          buildStrokeColorOption(
+            el,
+            '#FFFF00',
+            Colors.yellow,
+            onChanged: () {
+              onSave();
+              onChanged();
+              setState(() {});
+            },
+          ),
           buildCustomColorOption(
             context,
             el,
@@ -592,46 +653,86 @@ List<Widget> buildTextSettings(
       spacing: 8,
       runSpacing: 8,
       children: [
-        buildTextColorOption(el, '#FFFFFF', Colors.white, onChanged: () {
-          onSave();
-          onChanged();
-          setState(() {});
-        }),
-        buildTextColorOption(el, '#000000', Colors.black, onChanged: () {
-          onSave();
-          onChanged();
-          setState(() {});
-        }),
-        buildTextColorOption(el, '#FF0000', Colors.red, onChanged: () {
-          onSave();
-          onChanged();
-          setState(() {});
-        }),
-        buildTextColorOption(el, '#00FF00', Colors.green, onChanged: () {
-          onSave();
-          onChanged();
-          setState(() {});
-        }),
-        buildTextColorOption(el, '#0000FF', Colors.blue, onChanged: () {
-          onSave();
-          onChanged();
-          setState(() {});
-        }),
-        buildTextColorOption(el, '#FFFF00', Colors.yellow, onChanged: () {
-          onSave();
-          onChanged();
-          setState(() {});
-        }),
-        buildTextColorOption(el, '#FFA500', Colors.orange, onChanged: () {
-          onSave();
-          onChanged();
-          setState(() {});
-        }),
-        buildTextColorOption(el, '#FF00FF', Colors.purple, onChanged: () {
-          onSave();
-          onChanged();
-          setState(() {});
-        }),
+        buildTextColorOption(
+          el,
+          '#FFFFFF',
+          Colors.white,
+          onChanged: () {
+            onSave();
+            onChanged();
+            setState(() {});
+          },
+        ),
+        buildTextColorOption(
+          el,
+          '#000000',
+          Colors.black,
+          onChanged: () {
+            onSave();
+            onChanged();
+            setState(() {});
+          },
+        ),
+        buildTextColorOption(
+          el,
+          '#FF0000',
+          Colors.red,
+          onChanged: () {
+            onSave();
+            onChanged();
+            setState(() {});
+          },
+        ),
+        buildTextColorOption(
+          el,
+          '#00FF00',
+          Colors.green,
+          onChanged: () {
+            onSave();
+            onChanged();
+            setState(() {});
+          },
+        ),
+        buildTextColorOption(
+          el,
+          '#0000FF',
+          Colors.blue,
+          onChanged: () {
+            onSave();
+            onChanged();
+            setState(() {});
+          },
+        ),
+        buildTextColorOption(
+          el,
+          '#FFFF00',
+          Colors.yellow,
+          onChanged: () {
+            onSave();
+            onChanged();
+            setState(() {});
+          },
+        ),
+        buildTextColorOption(
+          el,
+          '#FFA500',
+          Colors.orange,
+          onChanged: () {
+            onSave();
+            onChanged();
+            setState(() {});
+          },
+        ),
+        buildTextColorOption(
+          el,
+          '#FF00FF',
+          Colors.purple,
+          onChanged: () {
+            onSave();
+            onChanged();
+            setState(() {});
+          },
+        ),
         buildCustomColorOption(
           context,
           el,
@@ -742,14 +843,21 @@ List<Widget> buildTextSettings(
   ];
 }
 
-Widget _buildStyleToggle(String label, IconData icon, bool isSelected, VoidCallback onTap) {
+Widget _buildStyleToggle(
+  String label,
+  IconData icon,
+  bool isSelected,
+  VoidCallback onTap,
+) {
   return InkWell(
     onTap: onTap,
     borderRadius: BorderRadius.circular(8),
     child: Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: isSelected ? Colors.blue.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.1),
+        color: isSelected
+            ? Colors.blue.withValues(alpha: 0.2)
+            : Colors.grey.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isSelected ? Colors.blue : Colors.grey.withValues(alpha: 0.3),
@@ -773,14 +881,21 @@ Widget _buildStyleToggle(String label, IconData icon, bool isSelected, VoidCallb
   );
 }
 
-Widget _buildAlignButton(String label, IconData icon, bool isSelected, VoidCallback onTap) {
+Widget _buildAlignButton(
+  String label,
+  IconData icon,
+  bool isSelected,
+  VoidCallback onTap,
+) {
   return InkWell(
     onTap: onTap,
     borderRadius: BorderRadius.circular(8),
     child: Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: isSelected ? Colors.blue.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.1),
+        color: isSelected
+            ? Colors.blue.withValues(alpha: 0.2)
+            : Colors.grey.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isSelected ? Colors.blue : Colors.grey.withValues(alpha: 0.3),

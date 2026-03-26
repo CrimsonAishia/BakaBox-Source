@@ -101,7 +101,4 @@ VideoCategory _$VideoCategoryFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$VideoCategoryToJson(VideoCategory instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'name': instance.name,
-    };
+    <String, dynamic>{'id': instance.id, 'name': instance.name};

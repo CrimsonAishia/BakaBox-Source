@@ -27,7 +27,7 @@ class QueueServerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Container(
       height: 140,
       decoration: BoxDecoration(
@@ -69,9 +69,7 @@ class QueueServerCard extends StatelessWidget {
       return DiskCachedImage(
         imageUrl: mapUrl,
         fit: BoxFit.cover,
-        placeholder: Container(
-          color: const Color(0xFF1E293B),
-        ),
+        placeholder: Container(color: const Color(0xFF1E293B)),
         errorWidget: _buildDefaultBackground(),
       );
     }
@@ -117,7 +115,10 @@ class QueueServerCard extends StatelessWidget {
     final mapName = serverInfo?.map ?? '未知地图';
     final players = serverInfo?.players ?? 0;
     final maxPlayers = serverInfo?.maxPlayers ?? 0;
-    final playerColor = PlayerCountUtils.getPlayerCountColor(players, maxPlayers);
+    final playerColor = PlayerCountUtils.getPlayerCountColor(
+      players,
+      maxPlayers,
+    );
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -129,7 +130,10 @@ class QueueServerCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: playerColor.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(8),
@@ -182,10 +186,7 @@ class QueueServerCard extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildInfoChip(
-                  icon: MdiIcons.ip,
-                  text: serverAddress,
-                ),
+                child: _buildInfoChip(icon: MdiIcons.ip, text: serverAddress),
               ),
             ],
           ),
@@ -235,18 +236,11 @@ class QueueServerCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              MdiIcons.alertCircle,
-              color: Colors.red.shade300,
-              size: 32,
-            ),
+            Icon(MdiIcons.alertCircle, color: Colors.red.shade300, size: 32),
             const SizedBox(height: 8),
             Text(
               error!,
-              style: TextStyle(
-                color: Colors.red.shade300,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: Colors.red.shade300, fontSize: 12),
               textAlign: TextAlign.center,
             ),
           ],

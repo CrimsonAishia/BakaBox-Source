@@ -151,7 +151,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
   /// 检查当前服务器是否正在挤服
   bool get _isCurrentServerQueueing {
-    final address = widget.server.serverItem.address ??
+    final address =
+        widget.server.serverItem.address ??
         widget.server.serverItem.serverAddress;
     final globalState = _statusService.state;
     return globalState.type == OperationType.queueing &&
@@ -241,7 +242,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   /// 处理卡片hover状态变化
   void _onCardHoverChanged(bool isHovered) {
     if (!mounted) return;
-    
+
     // 如果禁用了悬浮效果（排序模式），不响应 hover
     if (widget.disableHoverEffect) return;
 
@@ -283,7 +284,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   /// 构建卡片内容
   Widget _buildCardContent(Color rgbColor) {
     final isQueueing = _isCurrentServerQueueing;
-    
+
     // 边框颜色优先级：挤服 > 热身 > hover > 无
     Color borderColor;
     if (isQueueing && _isHovered) {
@@ -295,7 +296,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     } else {
       borderColor = Colors.transparent;
     }
-    
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
@@ -308,10 +309,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
               blurRadius: 12,
             ),
           ] else if (_isWarmingUp) ...[
-            BoxShadow(
-              color: rgbColor,
-              blurRadius: 8,
-            ),
+            BoxShadow(color: rgbColor, blurRadius: 8),
           ] else ...[
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.1),
@@ -336,7 +334,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
               if (isQueueing && _marchingAntsController != null)
                 _buildMarchingAntsBorder()
               // 热身边框（挤服时不显示）
-              else if (_isWarmingUp) 
+              else if (_isWarmingUp)
                 _buildWarmupBorder(rgbColor),
               // 刷新加载指示器
               _buildRefreshIndicator(),
@@ -397,11 +395,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
   /// 监控中浮动黄点（卡片右上角）
   Widget _buildMonitoringIndicator() {
-    return Positioned(
-      top: 8,
-      right: 8,
-      child: _FloatingYellowDot(),
-    );
+    return Positioned(top: 8, right: 8, child: _FloatingYellowDot());
   }
 
   Widget _buildMapBackground() {
@@ -454,14 +448,9 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   }
 
   /// 内容区域 - 左右布局
-  Widget _buildContent() {    
+  Widget _buildContent() {
     return Padding(
-      padding: const EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 12,
-        bottom: 12,
-      ),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -816,12 +805,15 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         globalState.serverAddress == address && isGlobalBusy;
     final isOtherServerBusy =
         globalState.serverAddress != address && isGlobalBusy;
-    
+
     // 检查是否正在挤服
-    final isQueueing = globalState.type == OperationType.queueing &&
+    final isQueueing =
+        globalState.type == OperationType.queueing &&
         globalState.status == OperationStatus.running;
-    final isCurrentServerQueueing = isQueueing && globalState.serverAddress == address;
-    final isOtherServerQueueing = isQueueing && globalState.serverAddress != address;
+    final isCurrentServerQueueing =
+        isQueueing && globalState.serverAddress == address;
+    final isOtherServerQueueing =
+        isQueueing && globalState.serverAddress != address;
 
     // 确定连接按钮的文本和状态
     // 离线状态也允许连接（让用户可以重试）
@@ -857,14 +849,16 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         builder: (context, value, child) {
           return Transform.translate(
             offset: Offset(0, value * 50),
-            child: Opacity(
-              opacity: 1 - value,
-              child: child,
-            ),
+            child: Opacity(opacity: 1 - value, child: child),
           );
         },
         child: Container(
-          padding: const EdgeInsets.only(left: 14, right: 14, top: 12, bottom: 8),
+          padding: const EdgeInsets.only(
+            left: 14,
+            right: 14,
+            top: 12,
+            bottom: 8,
+          ),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
@@ -898,10 +892,10 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                     onPressed: isLoading || address == null
                         ? null
                         : isCurrentServerQueueing
-                            ? () => _openQueueDialog(context, address)
-                            : isOtherServerQueueing
-                                ? () => _showQueueBusyTip(context)
-                                : () => _showQueueWindow(context),
+                        ? () => _openQueueDialog(context, address)
+                        : isOtherServerQueueing
+                        ? () => _showQueueBusyTip(context)
+                        : () => _showQueueWindow(context),
                   ),
                 ],
               ),
@@ -922,7 +916,9 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                       tooltip: '玩家列表',
                       color: const Color(0xFF10B981),
                       // 需要服务器数据
-                      onPressed: needsServerData || isLoading ? null : widget.onTap,
+                      onPressed: needsServerData || isLoading
+                          ? null
+                          : widget.onTap,
                     ),
                     if (!isCustomServer)
                       _buildSecondaryBtn(
@@ -993,9 +989,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     final disabled = onPressed == null;
 
     return Material(
-      color: disabled
-          ? Colors.white.withValues(alpha: 0.1)
-          : bgColor,
+      color: disabled ? Colors.white.withValues(alpha: 0.1) : bgColor,
       borderRadius: BorderRadius.circular(4),
       child: InkWell(
         onTap: onPressed,
@@ -1174,7 +1168,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   bool get _isStarting => widget.server.serverData?.map == 'graphics_settings';
 
   /// 检测是否为僵尸地图
-  /// 
+  ///
   /// 僵尸地图前缀：ze_（zombie escape）、zm_（zombie mod）
   bool _isZombieMap(String? mapName) {
     if (mapName == null || mapName.isEmpty) return false;
@@ -1183,37 +1177,42 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   }
 
   /// 构建比分显示组件
-  /// 
+  ///
   /// 普通模式：CT(蓝) X : Y T(黄)
   /// 僵尸模式：人类(绿) X : Y 僵尸(红)
   /// 数据过期（unknown）：全部灰色显示
-  Widget _buildScoreDisplay(int ctScore, int tScore, String? mapName, {String? dataQuality}) {
+  Widget _buildScoreDisplay(
+    int ctScore,
+    int tScore,
+    String? mapName, {
+    String? dataQuality,
+  }) {
     final isZombie = _isZombieMap(mapName);
     final isUnknown = dataQuality == 'unknown';
-    
+
     // 颜色定义（unknown 时全部灰色）
     final Color leftColor;
     final Color rightColor;
     final Color iconColor;
-    
+
     if (isUnknown) {
-      leftColor = const Color(0xFF9CA3AF);  // 灰色
+      leftColor = const Color(0xFF9CA3AF); // 灰色
       rightColor = const Color(0xFF9CA3AF); // 灰色
-      iconColor = const Color(0xFF9CA3AF);  // 灰色
+      iconColor = const Color(0xFF9CA3AF); // 灰色
     } else if (isZombie) {
-      leftColor = const Color(0xFF22C55E);  // 人类 - 绿色
+      leftColor = const Color(0xFF22C55E); // 人类 - 绿色
       rightColor = const Color(0xFFEF4444); // 僵尸 - 红色
-      iconColor = const Color(0xFF6B7280);  // 深灰色
+      iconColor = const Color(0xFF6B7280); // 深灰色
     } else {
-      leftColor = const Color(0xFF3B82F6);  // CT - 蓝色
+      leftColor = const Color(0xFF3B82F6); // CT - 蓝色
       rightColor = const Color(0xFFEAB308); // T - 黄色
-      iconColor = const Color(0xFF6B7280);  // 深灰色
+      iconColor = const Color(0xFF6B7280); // 深灰色
     }
-    
+
     // 标签
     final leftLabel = isZombie ? '人类' : 'CT';
     final rightLabel = isZombie ? '僵尸' : 'T';
-    
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1227,11 +1226,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Icon(
-            MdiIcons.swordCross,
-            size: 12,
-            color: iconColor,
-          ),
+          child: Icon(MdiIcons.swordCross, size: 12, color: iconColor),
         ),
         Text(
           '$tScore $rightLabel',
@@ -1260,7 +1255,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       return _buildStartingStatus();
     }
 
-    final showRuntime = data?.map != null &&
+    final showRuntime =
+        data?.map != null &&
         !widget.server.isLoading &&
         !widget.server.serverItem.isCustom;
 
@@ -1503,7 +1499,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
           if (!_isWarmingUp &&
               widget.server.teamScores?.ctScore != null &&
               widget.server.teamScores?.tScore != null &&
-              (widget.server.teamScores!.ctScore! > 0 || widget.server.teamScores!.tScore! > 0)) ...[
+              (widget.server.teamScores!.ctScore! > 0 ||
+                  widget.server.teamScores!.tScore! > 0)) ...[
             const SizedBox(height: 2),
             _buildScoreDisplay(
               widget.server.teamScores!.ctScore!,
@@ -1628,16 +1625,16 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
     final statusService = StatusWindowService();
     final currentState = statusService.state;
-    
+
     // 检查是否有正在进行的挤服
-    if (currentState.type == OperationType.queueing && 
+    if (currentState.type == OperationType.queueing &&
         currentState.status == OperationStatus.running) {
       // 如果是同一个服务器，直接打开对话框查看详情
       if (currentState.serverAddress == address) {
         _openQueueDialog(context, address);
         return;
       }
-      
+
       // 不同服务器，提示无法切换
       _showQueueBusyTip(context);
       return;
@@ -1648,11 +1645,11 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       _openQueueDialog(context, address);
     }
   }
-  
+
   void _showQueueBusyTip(BuildContext context) {
     ToastUtils.showWarning(context, '正在挤服中，无法切换服务器');
   }
-  
+
   void _openQueueDialog(BuildContext context, String address) {
     showDialog(
       context: context,
@@ -1873,9 +1870,11 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
   @override
   Widget build(BuildContext context) {
     final isHovered = _isHovered && !widget.disabled;
-    
+
     return MouseRegion(
-      cursor: widget.disabled ? SystemMouseCursors.basic : SystemMouseCursors.click,
+      cursor: widget.disabled
+          ? SystemMouseCursors.basic
+          : SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
@@ -1889,16 +1888,24 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
             color: widget.isActive
                 ? widget.color.withValues(alpha: 0.35)
                 : isHovered
-                    ? widget.color.withValues(alpha: 0.25)
-                    : Colors.white.withValues(alpha: widget.disabled ? 0.05 : 0.15),
+                ? widget.color.withValues(alpha: 0.25)
+                : Colors.white.withValues(alpha: widget.disabled ? 0.05 : 0.15),
             borderRadius: BorderRadius.circular(4),
             border: widget.isActive
                 ? Border.all(color: widget.color, width: 1.5)
                 : isHovered
-                    ? Border.all(color: widget.color.withValues(alpha: 0.6), width: 1)
-                    : null,
+                ? Border.all(
+                    color: widget.color.withValues(alpha: 0.6),
+                    width: 1,
+                  )
+                : null,
             boxShadow: widget.isActive
-                ? [BoxShadow(color: widget.color.withValues(alpha: 0.5), blurRadius: 6)]
+                ? [
+                    BoxShadow(
+                      color: widget.color.withValues(alpha: 0.5),
+                      blurRadius: 6,
+                    ),
+                  ]
                 : null,
           ),
           child: Icon(
@@ -1907,8 +1914,8 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
             color: widget.disabled
                 ? Colors.white.withValues(alpha: 0.3)
                 : widget.isActive || isHovered
-                    ? Colors.white
-                    : Colors.white.withValues(alpha: 0.85),
+                ? Colors.white
+                : Colors.white.withValues(alpha: 0.85),
           ),
         ),
       ),
@@ -1916,16 +1923,12 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
   }
 }
 
-
 /// 挤服边框绘制器 - 绿色流光 + 脉冲效果
 class _MarchingAntsPainter extends CustomPainter {
   final double progress;
   final double borderRadius;
 
-  _MarchingAntsPainter({
-    required this.progress,
-    required this.borderRadius,
-  });
+  _MarchingAntsPainter({required this.progress, required this.borderRadius});
 
   // 挤服主题色：绿色
   static const _primaryColor = Color(0xFF22C55E);
@@ -1935,14 +1938,17 @@ class _MarchingAntsPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final rect = Rect.fromLTWH(0, 0, size.width, size.height);
     final rrect = RRect.fromRectAndRadius(rect, Radius.circular(borderRadius));
-    
+
     final path = Path()..addRRect(rrect);
     final pathMetrics = path.computeMetrics().first;
     final totalLength = pathMetrics.length;
-    
+
     // 脉冲效果（呼吸感）
-    final pulse = (0.5 + 0.5 * (progress * 2 * 3.14159).abs() % 1).clamp(0.3, 1.0);
-    
+    final pulse = (0.5 + 0.5 * (progress * 2 * 3.14159).abs() % 1).clamp(
+      0.3,
+      1.0,
+    );
+
     // 1. 绘制底层发光边框（整圈微弱发光）
     final baseGlowPaint = Paint()
       ..style = PaintingStyle.stroke
@@ -1950,33 +1956,38 @@ class _MarchingAntsPainter extends CustomPainter {
       ..color = _primaryColor.withValues(alpha: 0.2 * pulse)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
     canvas.drawPath(path, baseGlowPaint);
-    
+
     // 2. 绘制底层实线边框
     final basePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5
       ..color = _primaryColor.withValues(alpha: 0.5);
     canvas.drawPath(path, basePaint);
-    
+
     // 3. 绘制两道对向流光（更有动感）
     _drawFlowingLight(canvas, pathMetrics, totalLength, progress);
     _drawFlowingLight(canvas, pathMetrics, totalLength, (progress + 0.5) % 1.0);
   }
-  
-  void _drawFlowingLight(Canvas canvas, ui.PathMetric pathMetrics, double totalLength, double prog) {
+
+  void _drawFlowingLight(
+    Canvas canvas,
+    ui.PathMetric pathMetrics,
+    double totalLength,
+    double prog,
+  ) {
     const glowLength = 100.0;
     const tailLength = 150.0;
-    
+
     final headPosition = prog * totalLength;
-    
+
     // 绘制拖尾
     for (var i = 0.0; i < tailLength; i += 3) {
       var pos = headPosition - i;
       if (pos < 0) pos += totalLength;
-      
+
       final alpha = (1 - i / tailLength).clamp(0.0, 1.0) * 0.5;
       final width = 3.0 * (1 - i / tailLength).clamp(0.3, 1.0);
-      
+
       final segmentEnd = (pos + 4).clamp(0.0, totalLength);
       if (segmentEnd > pos) {
         final tailPath = pathMetrics.extractPath(pos, segmentEnd);
@@ -1987,11 +1998,11 @@ class _MarchingAntsPainter extends CustomPainter {
         canvas.drawPath(tailPath, tailPaint);
       }
     }
-    
+
     // 绘制流光头部
     final glowStart = headPosition;
     var glowEnd = headPosition + glowLength;
-    
+
     // 处理循环
     if (glowEnd > totalLength) {
       // 绘制到末尾
@@ -2005,7 +2016,7 @@ class _MarchingAntsPainter extends CustomPainter {
       _drawGlowSegment(canvas, glowPath);
     }
   }
-  
+
   void _drawGlowSegment(Canvas canvas, Path glowPath) {
     // 外层大发光
     final outerGlow = Paint()
@@ -2014,7 +2025,7 @@ class _MarchingAntsPainter extends CustomPainter {
       ..color = _primaryColor.withValues(alpha: 0.4)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
     canvas.drawPath(glowPath, outerGlow);
-    
+
     // 中层发光
     final midGlow = Paint()
       ..style = PaintingStyle.stroke
@@ -2022,7 +2033,7 @@ class _MarchingAntsPainter extends CustomPainter {
       ..color = _glowColor.withValues(alpha: 0.7)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
     canvas.drawPath(glowPath, midGlow);
-    
+
     // 核心亮线
     final core = Paint()
       ..style = PaintingStyle.stroke
@@ -2057,13 +2068,15 @@ class _FloatingYellowDotState extends State<_FloatingYellowDot>
       vsync: this,
     )..repeat(reverse: true);
 
-    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 0.9,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
-    _opacityAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _opacityAnimation = Tween<double>(
+      begin: 0.9,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override

@@ -35,14 +35,19 @@ class _SubscriptionViewState extends State<SubscriptionView> {
   void initState() {
     super.initState();
     _scrollController.addListener(_updateScrollIndicators);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollIndicators());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _updateScrollIndicators(),
+    );
   }
 
   @override
   void didUpdateWidget(SubscriptionView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.state.subscriptions.length != widget.state.subscriptions.length) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollIndicators());
+    if (oldWidget.state.subscriptions.length !=
+        widget.state.subscriptions.length) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _updateScrollIndicators(),
+      );
     }
   }
 
@@ -78,7 +83,11 @@ class _SubscriptionViewState extends State<SubscriptionView> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isDark, MapSubscriptionState state) {
+  Widget _buildHeader(
+    BuildContext context,
+    bool isDark,
+    MapSubscriptionState state,
+  ) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
       child: Row(
@@ -122,7 +131,11 @@ class _SubscriptionViewState extends State<SubscriptionView> {
     );
   }
 
-  Widget _buildGlobalScopeSetting(BuildContext context, bool isDark, MapSubscriptionState state) {
+  Widget _buildGlobalScopeSetting(
+    BuildContext context,
+    bool isDark,
+    MapSubscriptionState state,
+  ) {
     final scopeText = state.globalCategories.isEmpty
         ? '全部分类'
         : '${state.globalCategories.length}个分类';
@@ -171,7 +184,11 @@ class _SubscriptionViewState extends State<SubscriptionView> {
     );
   }
 
-  Widget _buildCooldownSetting(BuildContext context, bool isDark, MapSubscriptionState state) {
+  Widget _buildCooldownSetting(
+    BuildContext context,
+    bool isDark,
+    MapSubscriptionState state,
+  ) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -209,8 +226,8 @@ class _SubscriptionViewState extends State<SubscriptionView> {
               max: 60,
               divisions: 10,
               onChanged: (v) => context.read<MapSubscriptionBloc>().add(
-                    MapSubscriptionSetCooldown(seconds: v.round()),
-                  ),
+                MapSubscriptionSetCooldown(seconds: v.round()),
+              ),
             ),
           ),
         ),
@@ -227,7 +244,11 @@ class _SubscriptionViewState extends State<SubscriptionView> {
     );
   }
 
-  Widget _buildSubscriptionList(BuildContext context, bool isDark, MapSubscriptionState state) {
+  Widget _buildSubscriptionList(
+    BuildContext context,
+    bool isDark,
+    MapSubscriptionState state,
+  ) {
     if (state.isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: Color(0xFF6366F1)),
@@ -294,10 +315,18 @@ class _SubscriptionViewState extends State<SubscriptionView> {
     );
   }
 
-  Widget _buildSubscriptionTile(BuildContext context, bool isDark, MapSubscription sub) {
+  Widget _buildSubscriptionTile(
+    BuildContext context,
+    bool isDark,
+    MapSubscription sub,
+  ) {
     // 计算范围文本
-    final categoryText = sub.isAllCategories ? '继承全局' : '${sub.categoryNames.length}个分类';
-    final serverText = sub.isAllServers ? '继承全局' : '${sub.serverAddresses.length}个服务器';
+    final categoryText = sub.isAllCategories
+        ? '继承全局'
+        : '${sub.categoryNames.length}个分类';
+    final serverText = sub.isAllServers
+        ? '继承全局'
+        : '${sub.serverAddresses.length}个服务器';
 
     return MapSubscriptionCard(
       displayName: sub.mapLabel.isNotEmpty ? sub.mapLabel : sub.mapName,
@@ -314,7 +343,13 @@ class _SubscriptionViewState extends State<SubscriptionView> {
       onDelete: () => _showDeleteConfirmDialog(context, isDark, sub),
       editBeforeDelete: true,
       // 使用自定义 trailing 显示范围设置按钮
-      trailing: _buildScopeButtons(context, isDark, sub, categoryText, serverText),
+      trailing: _buildScopeButtons(
+        context,
+        isDark,
+        sub,
+        categoryText,
+        serverText,
+      ),
     );
   }
 
@@ -383,7 +418,11 @@ class _SubscriptionViewState extends State<SubscriptionView> {
     );
   }
 
-  void _showDeleteConfirmDialog(BuildContext context, bool isDark, MapSubscription sub) {
+  void _showDeleteConfirmDialog(
+    BuildContext context,
+    bool isDark,
+    MapSubscription sub,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -408,15 +447,17 @@ class _SubscriptionViewState extends State<SubscriptionView> {
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             style: TextButton.styleFrom(
-              foregroundColor: isDark ? Colors.white54 : const Color(0xFF6B7280),
+              foregroundColor: isDark
+                  ? Colors.white54
+                  : const Color(0xFF6B7280),
             ),
             child: const Text('取消'),
           ),
           ElevatedButton(
             onPressed: () {
               context.read<MapSubscriptionBloc>().add(
-                    MapSubscriptionRemove(mapName: sub.mapName),
-                  );
+                MapSubscriptionRemove(mapName: sub.mapName),
+              );
               Navigator.of(ctx).pop();
             },
             style: ElevatedButton.styleFrom(
@@ -433,8 +474,14 @@ class _SubscriptionViewState extends State<SubscriptionView> {
     );
   }
 
-  void _showGlobalCategoryScopeDialog(BuildContext context, bool isDark, MapSubscriptionState state) {
-    context.read<MapSubscriptionBloc>().add(const MapSubscriptionLoadCategories());
+  void _showGlobalCategoryScopeDialog(
+    BuildContext context,
+    bool isDark,
+    MapSubscriptionState state,
+  ) {
+    context.read<MapSubscriptionBloc>().add(
+      const MapSubscriptionLoadCategories(),
+    );
 
     final selectedCategories = <String>{...state.globalCategories};
     bool isAll = state.globalCategories.isEmpty;
@@ -445,7 +492,9 @@ class _SubscriptionViewState extends State<SubscriptionView> {
         builder: (blocContext, currentState) => StatefulBuilder(
           builder: (dialogContext, setDialogState) => AlertDialog(
             backgroundColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             title: Row(
               children: [
                 Icon(
@@ -499,7 +548,9 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                       '监控所有服务器分类',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                        color: isDark
+                            ? Colors.white38
+                            : const Color(0xFF9CA3AF),
                       ),
                     ),
                     activeColor: const Color(0xFF6366F1),
@@ -512,7 +563,9 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                       '选择特定分类：',
                       style: TextStyle(
                         fontSize: 13,
-                        color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                        color: isDark
+                            ? Colors.white54
+                            : const Color(0xFF6B7280),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -527,7 +580,9 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                               height: 14,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                                color: isDark
+                                    ? Colors.white38
+                                    : const Color(0xFF9CA3AF),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -535,7 +590,9 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                               '正在加载分类...',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                                color: isDark
+                                    ? Colors.white38
+                                    : const Color(0xFF9CA3AF),
                               ),
                             ),
                           ],
@@ -548,7 +605,9 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                           '暂无可用分类',
                           style: TextStyle(
                             fontSize: 13,
-                            color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                            color: isDark
+                                ? Colors.white38
+                                : const Color(0xFF9CA3AF),
                           ),
                         ),
                       )
@@ -559,8 +618,12 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                           child: Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: currentState.availableCategories.map((cat) {
-                              final isSelected = selectedCategories.contains(cat);
+                            children: currentState.availableCategories.map((
+                              cat,
+                            ) {
+                              final isSelected = selectedCategories.contains(
+                                cat,
+                              );
                               return FilterChip(
                                 label: Text(cat),
                                 selected: isSelected,
@@ -573,13 +636,17 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                                     }
                                   });
                                 },
-                                selectedColor: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                                selectedColor: const Color(
+                                  0xFF6366F1,
+                                ).withValues(alpha: 0.2),
                                 checkmarkColor: const Color(0xFF6366F1),
                                 labelStyle: TextStyle(
                                   fontSize: 13,
                                   color: isSelected
                                       ? const Color(0xFF6366F1)
-                                      : (isDark ? Colors.white70 : const Color(0xFF374151)),
+                                      : (isDark
+                                            ? Colors.white70
+                                            : const Color(0xFF374151)),
                                 ),
                               );
                             }).toList(),
@@ -594,7 +661,9 @@ class _SubscriptionViewState extends State<SubscriptionView> {
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
                 style: TextButton.styleFrom(
-                  foregroundColor: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                  foregroundColor: isDark
+                      ? Colors.white54
+                      : const Color(0xFF6B7280),
                 ),
                 child: const Text('取消'),
               ),
@@ -602,8 +671,8 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                 onPressed: () {
                   final cats = isAll ? <String>[] : selectedCategories.toList();
                   context.read<MapSubscriptionBloc>().add(
-                        MapSubscriptionUpdateScope(categoryNames: cats),
-                      );
+                    MapSubscriptionUpdateScope(categoryNames: cats),
+                  );
                   Navigator.of(ctx).pop();
                 },
                 style: ElevatedButton.styleFrom(
@@ -623,11 +692,11 @@ class _SubscriptionViewState extends State<SubscriptionView> {
   }
 
   /// 显示监控范围设置对话框（左右分栏：左侧分类，右侧服务器）
-  void _showSubscriptionScopeDialog(BuildContext context, bool isDark, MapSubscription sub) {
-    SubscriptionScopeDialog.show(
-      context,
-      subscription: sub,
-    );
+  void _showSubscriptionScopeDialog(
+    BuildContext context,
+    bool isDark,
+    MapSubscription sub,
+  ) {
+    SubscriptionScopeDialog.show(context, subscription: sub);
   }
-
 }

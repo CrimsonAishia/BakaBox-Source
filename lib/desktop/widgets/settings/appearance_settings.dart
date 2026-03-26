@@ -11,10 +11,7 @@ import 'settings_item.dart';
 class AppearanceSettings extends StatelessWidget {
   final SettingsState settingsState;
 
-  const AppearanceSettings({
-    super.key,
-    required this.settingsState,
-  });
+  const AppearanceSettings({super.key, required this.settingsState});
 
   @override
   Widget build(BuildContext context) {
@@ -47,27 +44,27 @@ class AppearanceSettings extends StatelessWidget {
           label: '跟随系统',
           isSelected: settingsState.themeMode == ThemeMode.system,
           isDark: isDark,
-          onTap: () => context
-              .read<SettingsBloc>()
-              .add(const SettingsSetThemeMode(ThemeMode.system)),
+          onTap: () => context.read<SettingsBloc>().add(
+            const SettingsSetThemeMode(ThemeMode.system),
+          ),
         ),
         _ThemeModeOption(
           icon: MdiIcons.weatherSunny,
           label: '浅色',
           isSelected: settingsState.themeMode == ThemeMode.light,
           isDark: isDark,
-          onTap: () => context
-              .read<SettingsBloc>()
-              .add(const SettingsSetThemeMode(ThemeMode.light)),
+          onTap: () => context.read<SettingsBloc>().add(
+            const SettingsSetThemeMode(ThemeMode.light),
+          ),
         ),
         _ThemeModeOption(
           icon: MdiIcons.weatherNight,
           label: '深色',
           isSelected: settingsState.themeMode == ThemeMode.dark,
           isDark: isDark,
-          onTap: () => context
-              .read<SettingsBloc>()
-              .add(const SettingsSetThemeMode(ThemeMode.dark)),
+          onTap: () => context.read<SettingsBloc>().add(
+            const SettingsSetThemeMode(ThemeMode.dark),
+          ),
         ),
       ],
     );
@@ -151,7 +148,11 @@ class _ThemeModeOption extends StatelessWidget {
             ),
             if (isSelected) ...[
               const SizedBox(width: 6),
-              Icon(MdiIcons.checkCircle, size: 16, color: const Color(0xFF0080FF)),
+              Icon(
+                MdiIcons.checkCircle,
+                size: 16,
+                color: const Color(0xFF0080FF),
+              ),
             ],
           ],
         ),

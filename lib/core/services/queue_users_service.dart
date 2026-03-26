@@ -93,17 +93,18 @@ abstract class QueueUsersService {
 }
 
 /// QueueUsersService 的默认实现（单例）
-/// 
+///
 /// 独立于窗口生命周期，窗口关闭后 WebSocket 连接保持
 class QueueUsersServiceImpl implements QueueUsersService {
   // 单例模式
-  static final QueueUsersServiceImpl _instance = QueueUsersServiceImpl._internal();
+  static final QueueUsersServiceImpl _instance =
+      QueueUsersServiceImpl._internal();
   factory QueueUsersServiceImpl() => _instance;
   QueueUsersServiceImpl._internal();
-  
+
   /// 获取单例实例
   static QueueUsersServiceImpl get instance => _instance;
-  
+
   WebSocket? _webSocket;
   StreamSubscription? _socketSubscription;
   Timer? _heartbeatTimer;
@@ -176,12 +177,11 @@ class QueueUsersServiceImpl implements QueueUsersService {
 
       // 获取认证 headers
       final authHeaders = TokenService.instance.getAuthHeaders();
-      LogService.d('[QueueUsersService] 认证状态: ${authHeaders.isNotEmpty ? '已登录' : '未登录'}');
+      LogService.d(
+        '[QueueUsersService] 认证状态: ${authHeaders.isNotEmpty ? '已登录' : '未登录'}',
+      );
 
-      _webSocket = await WebSocket.connect(
-        wsUrl,
-        headers: authHeaders,
-      ).timeout(
+      _webSocket = await WebSocket.connect(wsUrl, headers: authHeaders).timeout(
         const Duration(seconds: 10),
         onTimeout: () {
           throw TimeoutException('WebSocket 连接超时');
@@ -298,12 +298,16 @@ class QueueUsersServiceImpl implements QueueUsersService {
       final visitorId = json['visitorId'] as String? ?? '';
       final sequence = json['sequence'] as int? ?? 0;
 
-      LogService.d('[QueueUsersService] 用户离开: odId=$odId, visitorId=$visitorId');
-      _safeAddEvent(QueueUserLeftEvent(
-        odId: odId,
-        visitorId: visitorId,
-        sequence: sequence,
-      ));
+      LogService.d(
+        '[QueueUsersService] 用户离开: odId=$odId, visitorId=$visitorId',
+      );
+      _safeAddEvent(
+        QueueUserLeftEvent(
+          odId: odId,
+          visitorId: visitorId,
+          sequence: sequence,
+        ),
+      );
     } catch (e) {
       LogService.e('[QueueUsersService] 解析 leave 消息失败', e);
     }
@@ -315,12 +319,16 @@ class QueueUsersServiceImpl implements QueueUsersService {
       final visitorId = json['visitorId'] as String? ?? '';
       final sequence = json['sequence'] as int? ?? 0;
 
-      LogService.d('[QueueUsersService] 用户成功: odId=$odId, visitorId=$visitorId');
-      _safeAddEvent(QueueUserSuccessEvent(
-        odId: odId,
-        visitorId: visitorId,
-        sequence: sequence,
-      ));
+      LogService.d(
+        '[QueueUsersService] 用户成功: odId=$odId, visitorId=$visitorId',
+      );
+      _safeAddEvent(
+        QueueUserSuccessEvent(
+          odId: odId,
+          visitorId: visitorId,
+          sequence: sequence,
+        ),
+      );
     } catch (e) {
       LogService.e('[QueueUsersService] 解析 success 消息失败', e);
     }
@@ -403,7 +411,9 @@ class QueueUsersServiceImpl implements QueueUsersService {
     final delay = calculateReconnectDelay(_reconnectAttempts);
     _reconnectAttempts++;
 
-    LogService.d('[QueueUsersService] 将在 ${delay}s 后重连 (第 $_reconnectAttempts 次)');
+    LogService.d(
+      '[QueueUsersService] 将在 ${delay}s 后重连 (第 $_reconnectAttempts 次)',
+    );
 
     _reconnectTimer = Timer(Duration(seconds: delay), () {
       if (_shouldReconnect && !_isConnected && !_isConnecting) {
@@ -418,7 +428,9 @@ class QueueUsersServiceImpl implements QueueUsersService {
     if (attempts < 0) return 1;
     // 2^attempts，但最小为 1，最大为 30
     final delay = 1 << attempts; // 等价于 pow(2, attempts)
-    return delay > _maxReconnectDelaySeconds ? _maxReconnectDelaySeconds : delay;
+    return delay > _maxReconnectDelaySeconds
+        ? _maxReconnectDelaySeconds
+        : delay;
   }
 
   @override

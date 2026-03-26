@@ -7,17 +7,14 @@ class UpdateLogItem extends StatefulWidget {
   final SteamWorkChangeLog log;
   final bool isLatest;
 
-  const UpdateLogItem({
-    super.key,
-    required this.log,
-    this.isLatest = false,
-  });
+  const UpdateLogItem({super.key, required this.log, this.isLatest = false});
 
   @override
   State<UpdateLogItem> createState() => _UpdateLogItemState();
 }
 
-class _UpdateLogItemState extends State<UpdateLogItem> with SingleTickerProviderStateMixin {
+class _UpdateLogItemState extends State<UpdateLogItem>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
 
@@ -47,133 +44,149 @@ class _UpdateLogItemState extends State<UpdateLogItem> with SingleTickerProvider
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return AnimatedBuilder(
-      animation: _scaleAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: GestureDetector(
-            onTapDown: _onTapDown,
-            onTapUp: _onTapUp,
-            onTapCancel: _onTapCancel,
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: widget.isLatest 
-                        ? colorScheme.error.withValues(alpha: 0.15)
-                        : colorScheme.shadow.withValues(alpha: 0.08),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                  BoxShadow(
-                    color: widget.isLatest 
-                        ? colorScheme.error.withValues(alpha: 0.1)
-                        : colorScheme.shadow.withValues(alpha: 0.04),
-                    blurRadius: 40,
-                    offset: const Offset(0, 16),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
+          animation: _scaleAnimation,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _scaleAnimation.value,
+              child: GestureDetector(
+                onTapDown: _onTapDown,
+                onTapUp: _onTapUp,
+                onTapCancel: _onTapCancel,
                 child: Container(
+                  margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    gradient: widget.isLatest
-                        ? LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              colorScheme.surface,
-                              colorScheme.errorContainer.withValues(alpha: 0.3),
-                              colorScheme.errorContainer.withValues(alpha: 0.2),
-                            ],
-                            stops: const [0.0, 0.6, 1.0],
-                          )
-                        : LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              colorScheme.surface,
-                              colorScheme.surfaceContainer,
-                              colorScheme.surfaceContainerLow,
-                            ],
-                            stops: const [0.0, 0.6, 1.0],
-                          ),
-                    border: Border.all(
-                      color: widget.isLatest
-                          ? colorScheme.error.withValues(alpha: 0.2)
-                          : colorScheme.outline.withValues(alpha: 0.2),
-                      width: 1.5,
-                    ),
                     borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Stack(
-                    children: [
-                      if (widget.isLatest)
-                        Positioned(
-                          top: -50,
-                          right: -50,
-                          child: Container(
-                            width: 120,
-                            height: 120,
-                            decoration: BoxDecoration(
-                              gradient: RadialGradient(
-                                colors: [
-                                  colorScheme.error.withValues(alpha: 0.05),
-                                  colorScheme.error.withValues(alpha: 0.0),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (widget.isLatest)
-                            Container(
-                              height: 4,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    colorScheme.error,
-                                    colorScheme.error.withValues(alpha: 0.8),
-                                    colorScheme.error.withValues(alpha: 0.6),
-                                    colorScheme.error.withValues(alpha: 0.8),
-                                    colorScheme.error,
-                                  ],
-                                ),
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(20),
-                                  topRight: Radius.circular(20),
-                                ),
-                              ),
-                            ).animate().shimmer(duration: 2000.ms, delay: 500.ms),
-                          Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildHeader(context, colorScheme),
-                                const SizedBox(height: 20),
-                                _buildContentArea(context, colorScheme),
-                              ],
-                            ),
-                          ),
-                        ],
+                    boxShadow: [
+                      BoxShadow(
+                        color: widget.isLatest
+                            ? colorScheme.error.withValues(alpha: 0.15)
+                            : colorScheme.shadow.withValues(alpha: 0.08),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                      BoxShadow(
+                        color: widget.isLatest
+                            ? colorScheme.error.withValues(alpha: 0.1)
+                            : colorScheme.shadow.withValues(alpha: 0.04),
+                        blurRadius: 40,
+                        offset: const Offset(0, 16),
                       ),
                     ],
                   ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: widget.isLatest
+                            ? LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  colorScheme.surface,
+                                  colorScheme.errorContainer.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  colorScheme.errorContainer.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                ],
+                                stops: const [0.0, 0.6, 1.0],
+                              )
+                            : LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  colorScheme.surface,
+                                  colorScheme.surfaceContainer,
+                                  colorScheme.surfaceContainerLow,
+                                ],
+                                stops: const [0.0, 0.6, 1.0],
+                              ),
+                        border: Border.all(
+                          color: widget.isLatest
+                              ? colorScheme.error.withValues(alpha: 0.2)
+                              : colorScheme.outline.withValues(alpha: 0.2),
+                          width: 1.5,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Stack(
+                        children: [
+                          if (widget.isLatest)
+                            Positioned(
+                              top: -50,
+                              right: -50,
+                              child: Container(
+                                width: 120,
+                                height: 120,
+                                decoration: BoxDecoration(
+                                  gradient: RadialGradient(
+                                    colors: [
+                                      colorScheme.error.withValues(alpha: 0.05),
+                                      colorScheme.error.withValues(alpha: 0.0),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (widget.isLatest)
+                                Container(
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        colorScheme.error,
+                                        colorScheme.error.withValues(
+                                          alpha: 0.8,
+                                        ),
+                                        colorScheme.error.withValues(
+                                          alpha: 0.6,
+                                        ),
+                                        colorScheme.error.withValues(
+                                          alpha: 0.8,
+                                        ),
+                                        colorScheme.error,
+                                      ],
+                                    ),
+                                    borderRadius: const BorderRadius.only(
+                                      topLeft: Radius.circular(20),
+                                      topRight: Radius.circular(20),
+                                    ),
+                                  ),
+                                ).animate().shimmer(
+                                  duration: 2000.ms,
+                                  delay: 500.ms,
+                                ),
+                              Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _buildHeader(context, colorScheme),
+                                    const SizedBox(height: 20),
+                                    _buildContentArea(context, colorScheme),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-        );
-      },
-    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.3, duration: 400.ms, curve: Curves.easeOutCubic);
+            );
+          },
+        )
+        .animate()
+        .fadeIn(duration: 400.ms)
+        .slideY(begin: 0.3, duration: 400.ms, curve: Curves.easeOutCubic);
   }
 
   Widget _buildHeader(BuildContext context, ColorScheme colorScheme) {
@@ -186,8 +199,14 @@ class _UpdateLogItemState extends State<UpdateLogItem> with SingleTickerProvider
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: widget.isLatest
-                  ? [colorScheme.error, colorScheme.error.withValues(alpha: 0.8)]
-                  : [colorScheme.primary, colorScheme.primary.withValues(alpha: 0.8)],
+                  ? [
+                      colorScheme.error,
+                      colorScheme.error.withValues(alpha: 0.8),
+                    ]
+                  : [
+                      colorScheme.primary,
+                      colorScheme.primary.withValues(alpha: 0.8),
+                    ],
             ),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
@@ -210,16 +229,22 @@ class _UpdateLogItemState extends State<UpdateLogItem> with SingleTickerProvider
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
-                  widget.isLatest ? Icons.new_releases_rounded : Icons.schedule_rounded,
+                  widget.isLatest
+                      ? Icons.new_releases_rounded
+                      : Icons.schedule_rounded,
                   size: 14,
-                  color: widget.isLatest ? colorScheme.onError : colorScheme.onPrimary,
+                  color: widget.isLatest
+                      ? colorScheme.onError
+                      : colorScheme.onPrimary,
                 ),
               ),
               const SizedBox(width: 8),
               Text(
                 Formatters.formatDate(widget.log.updateTime),
                 style: TextStyle(
-                  color: widget.isLatest ? colorScheme.onError : colorScheme.onPrimary,
+                  color: widget.isLatest
+                      ? colorScheme.onError
+                      : colorScheme.onPrimary,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
@@ -232,15 +257,16 @@ class _UpdateLogItemState extends State<UpdateLogItem> with SingleTickerProvider
     );
   }
 
-
-
   Widget _buildContentArea(BuildContext context, ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorScheme.surface.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2), width: 1),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.2),
+          width: 1,
+        ),
       ),
       child: _buildContent(context),
     );
@@ -248,8 +274,10 @@ class _UpdateLogItemState extends State<UpdateLogItem> with SingleTickerProvider
 
   Widget _buildContent(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final content = widget.log.rawHtml.isNotEmpty ? widget.log.rawHtml : widget.log.content;
-    
+    final content = widget.log.rawHtml.isNotEmpty
+        ? widget.log.rawHtml
+        : widget.log.content;
+
     if (content.isEmpty) {
       return Container(
         padding: const EdgeInsets.symmetric(vertical: 20),
@@ -282,7 +310,8 @@ class _UpdateLogItemState extends State<UpdateLogItem> with SingleTickerProvider
       );
     }
 
-    if (widget.log.rawHtml.isNotEmpty && _containsHtmlTags(widget.log.rawHtml)) {
+    if (widget.log.rawHtml.isNotEmpty &&
+        _containsHtmlTags(widget.log.rawHtml)) {
       return Html(
         data: widget.log.rawHtml,
         style: {
@@ -294,15 +323,41 @@ class _UpdateLogItemState extends State<UpdateLogItem> with SingleTickerProvider
             lineHeight: const LineHeight(1.6),
             fontWeight: FontWeight.w400,
           ),
-          "p": Style(margin: Margins.only(bottom: 12), fontSize: FontSize(14), lineHeight: const LineHeight(1.6)),
+          "p": Style(
+            margin: Margins.only(bottom: 12),
+            fontSize: FontSize(14),
+            lineHeight: const LineHeight(1.6),
+          ),
           "br": Style(margin: Margins.only(bottom: 6)),
           "ul": Style(margin: Margins.only(left: 20, bottom: 12)),
           "ol": Style(margin: Margins.only(left: 20, bottom: 12)),
-          "li": Style(margin: Margins.only(bottom: 4), fontSize: FontSize(14), lineHeight: const LineHeight(1.6)),
-          "h1": Style(fontSize: FontSize(20), fontWeight: FontWeight.bold, margin: Margins.only(bottom: 12), color: colorScheme.onSurface),
-          "h2": Style(fontSize: FontSize(18), fontWeight: FontWeight.bold, margin: Margins.only(bottom: 10), color: colorScheme.onSurface),
-          "h3": Style(fontSize: FontSize(16), fontWeight: FontWeight.w600, margin: Margins.only(bottom: 8), color: colorScheme.onSurfaceVariant),
-          "strong": Style(fontWeight: FontWeight.bold, color: colorScheme.onSurface),
+          "li": Style(
+            margin: Margins.only(bottom: 4),
+            fontSize: FontSize(14),
+            lineHeight: const LineHeight(1.6),
+          ),
+          "h1": Style(
+            fontSize: FontSize(20),
+            fontWeight: FontWeight.bold,
+            margin: Margins.only(bottom: 12),
+            color: colorScheme.onSurface,
+          ),
+          "h2": Style(
+            fontSize: FontSize(18),
+            fontWeight: FontWeight.bold,
+            margin: Margins.only(bottom: 10),
+            color: colorScheme.onSurface,
+          ),
+          "h3": Style(
+            fontSize: FontSize(16),
+            fontWeight: FontWeight.w600,
+            margin: Margins.only(bottom: 8),
+            color: colorScheme.onSurfaceVariant,
+          ),
+          "strong": Style(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
           "b": Style(fontWeight: FontWeight.bold, color: colorScheme.onSurface),
           "em": Style(fontStyle: FontStyle.italic),
           "i": Style(fontStyle: FontStyle.italic),
@@ -311,7 +366,12 @@ class _UpdateLogItemState extends State<UpdateLogItem> with SingleTickerProvider
     } else {
       return Text(
         content,
-        style: TextStyle(fontSize: 14, color: colorScheme.onSurface, height: 1.6, fontWeight: FontWeight.w400),
+        style: TextStyle(
+          fontSize: 14,
+          color: colorScheme.onSurface,
+          height: 1.6,
+          fontWeight: FontWeight.w400,
+        ),
       );
     }
   }

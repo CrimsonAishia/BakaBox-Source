@@ -11,7 +11,7 @@ class RightPanel extends StatelessWidget {
   final KeyConfig? editingConfig;
   final VoidCallback? onEditComplete;
   final void Function(KeyConfig config)? onEditConfig;
-  
+
   const RightPanel({
     super.key,
     required this.mode,
@@ -40,9 +40,10 @@ class RightPanel extends StatelessWidget {
         child: switch (mode) {
           1 => AutoexecView(),
           2 => PublishView(),
-          3 => editingConfig != null 
-              ? EditView(config: editingConfig!, onComplete: onEditComplete)
-              : ConfigDetailView(onEditConfig: onEditConfig),
+          3 =>
+            editingConfig != null
+                ? EditView(config: editingConfig!, onComplete: onEditComplete)
+                : ConfigDetailView(onEditConfig: onEditConfig),
           _ => ConfigDetailView(onEditConfig: onEditConfig),
         },
       ),

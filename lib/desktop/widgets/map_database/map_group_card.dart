@@ -7,7 +7,7 @@ import '../../../core/widgets/marquee_text.dart';
 import 'map_history_dialog.dart';
 
 /// 地图大卡片组件
-/// 
+///
 /// 显示单个地图的大卡片，点击后弹出详情对话框
 class MapGroupCard extends StatefulWidget {
   final MapContributionGroup group;
@@ -38,7 +38,8 @@ class _MapGroupCardState extends State<MapGroupCard> {
   @override
   void didUpdateWidget(MapGroupCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.group.mapInfo.mapBackground != widget.group.mapInfo.mapBackground) {
+    if (oldWidget.group.mapInfo.mapBackground !=
+        widget.group.mapInfo.mapBackground) {
       _loadSignedUrl();
     }
   }
@@ -77,8 +78,8 @@ class _MapGroupCardState extends State<MapGroupCard> {
             color: _isHovered
                 ? const Color(0xFF0080FF)
                 : (isDark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.08)),
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.08)),
             width: _isHovered ? 2 : 1,
           ),
           boxShadow: [
@@ -105,15 +106,17 @@ class _MapGroupCardState extends State<MapGroupCard> {
               children: [
                 // 背景图
                 _buildMapBackground(mapInfo, isDark),
-                
+
                 // 审核状态标签（右上角）
                 if (widget.showAuditStatus && widget.group.items.isNotEmpty)
                   Positioned(
                     top: 8,
                     right: 8,
-                    child: _buildAuditStatusBadge(widget.group.items.first.auditStatus),
+                    child: _buildAuditStatusBadge(
+                      widget.group.items.first.auditStatus,
+                    ),
                   ),
-                
+
                 // 底部渐变遮罩（始终显示）
                 Positioned(
                   left: 0,
@@ -128,13 +131,15 @@ class _MapGroupCardState extends State<MapGroupCard> {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withValues(alpha: _isHovered ? 0.95 : 0.8),
+                          Colors.black.withValues(
+                            alpha: _isHovered ? 0.95 : 0.8,
+                          ),
                         ],
                       ),
                     ),
                   ),
                 ),
-                
+
                 // 地图名称（始终显示）
                 Positioned(
                   left: 12,
@@ -157,10 +162,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
                             fontFamily: 'monospace',
                             letterSpacing: 0.5,
                             shadows: [
-                              Shadow(
-                                color: Colors.black,
-                                blurRadius: 8,
-                              ),
+                              Shadow(color: Colors.black, blurRadius: 8),
                             ],
                           ),
                         ),
@@ -172,10 +174,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
                             fontWeight: FontWeight.w500,
                             color: Colors.white.withValues(alpha: 0.8),
                             shadows: const [
-                              Shadow(
-                                color: Colors.black,
-                                blurRadius: 4,
-                              ),
+                              Shadow(color: Colors.black, blurRadius: 4),
                             ],
                           ),
                         ),
@@ -183,7 +182,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
                     ),
                   ),
                 ),
-                
+
                 // Hover 时显示的按钮
                 if (_isHovered)
                   Positioned(
@@ -222,11 +221,11 @@ class _MapGroupCardState extends State<MapGroupCard> {
     // 统计各状态的贡献数量
     final items = widget.group.items;
     if (items.isEmpty) return const SizedBox.shrink();
-    
+
     final pendingCount = items.where((item) => item.isPending).length;
     final approvedCount = items.where((item) => item.isApproved).length;
     final rejectedCount = items.where((item) => item.isRejected).length;
-    
+
     // 优先级：待审核 > 已拒绝 > 已通过
     // 如果有待审核的，显示待审核
     if (pendingCount > 0) {
@@ -238,7 +237,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
         totalCount: items.length,
       );
     }
-    
+
     // 如果有被拒绝的，显示已拒绝
     if (rejectedCount > 0) {
       return _buildStatusBadge(
@@ -249,7 +248,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
         totalCount: items.length,
       );
     }
-    
+
     // 全部通过，显示已通过
     if (approvedCount > 0) {
       return _buildStatusBadge(
@@ -260,7 +259,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
         totalCount: items.length,
       );
     }
-    
+
     return const SizedBox.shrink();
   }
 
@@ -273,7 +272,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
   }) {
     // 如果只有一个贡献，不显示数量
     final showCount = totalCount > 1;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -319,9 +318,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
   Widget _buildMapBackground(MapInfo mapInfo, bool isDark) {
     if (mapInfo.mapBackground == null || mapInfo.mapBackground!.isEmpty) {
       return Container(
-        color: isDark
-            ? const Color(0xFF1E293B)
-            : const Color(0xFFE5E7EB),
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE5E7EB),
         child: Center(
           child: Icon(
             Icons.map_outlined,
@@ -343,9 +340,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
           imageUrl: imageUrl,
           fit: BoxFit.cover,
           placeholder: Container(
-            color: isDark
-                ? const Color(0xFF1E293B)
-                : const Color(0xFFE5E7EB),
+            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE5E7EB),
             child: const Center(
               child: SizedBox(
                 width: 24,
@@ -355,9 +350,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
             ),
           ),
           errorWidget: Container(
-            color: isDark
-                ? const Color(0xFF1E293B)
-                : const Color(0xFFE5E7EB),
+            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE5E7EB),
             child: Center(
               child: Icon(
                 Icons.broken_image_outlined,
@@ -378,11 +371,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
     required String label,
     required VoidCallback onPressed,
   }) {
-    return _BottomButton(
-      icon: icon,
-      label: label,
-      onPressed: onPressed,
-    );
+    return _BottomButton(icon: icon, label: label, onPressed: onPressed);
   }
 }
 

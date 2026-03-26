@@ -3,18 +3,18 @@ import 'package:flex_color_picker/flex_color_picker.dart';
 
 /// 标签颜色选择器预设颜色列表
 const List<String?> tagPresetColors = [
-  null,        // 无颜色
-  '#EF4444',   // 红色
-  '#F97316',   // 橙色
-  '#F59E0B',   // 琥珀色
-  '#84CC16',   // 酸绿色
-  '#22C55E',   // 绿色
-  '#14B8A6',   // 青色
-  '#0EA5E9',   // 天蓝色
-  '#3B82F6',   // 蓝色
-  '#8B5CF6',   // 紫色
-  '#EC4899',   // 粉色
-  '#6B7280',   // 灰色
+  null, // 无颜色
+  '#EF4444', // 红色
+  '#F97316', // 橙色
+  '#F59E0B', // 琥珀色
+  '#84CC16', // 酸绿色
+  '#22C55E', // 绿色
+  '#14B8A6', // 青色
+  '#0EA5E9', // 天蓝色
+  '#3B82F6', // 蓝色
+  '#8B5CF6', // 紫色
+  '#EC4899', // 粉色
+  '#6B7280', // 灰色
 ];
 
 /// 预设颜色的中文名称（用于无障碍提示）
@@ -50,9 +50,9 @@ Color? hexToColor(String? hex) {
 /// 将 Color 转换为十六进制字符串（带 # 前缀，无透明度）
 String colorToHex(Color color) {
   return '#'
-      '${(color.r * 255).toInt().toRadixString(16).padLeft(2, '0')}'
-      '${(color.g * 255).toInt().toRadixString(16).padLeft(2, '0')}'
-      '${(color.b * 255).toInt().toRadixString(16).padLeft(2, '0')}'
+          '${(color.r * 255).toInt().toRadixString(16).padLeft(2, '0')}'
+          '${(color.g * 255).toInt().toRadixString(16).padLeft(2, '0')}'
+          '${(color.b * 255).toInt().toRadixString(16).padLeft(2, '0')}'
       .toUpperCase();
 }
 
@@ -145,7 +145,9 @@ class _PresetColorButtonState extends State<_PresetColorButton> {
       return Tooltip(
         message: '无颜色',
         child: MouseRegion(
-          cursor: widget.enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+          cursor: widget.enabled
+              ? SystemMouseCursors.click
+              : SystemMouseCursors.basic,
           onEnter: (_) => setState(() => _isHovered = true),
           onExit: (_) => setState(() => _isHovered = false),
           child: GestureDetector(
@@ -161,8 +163,8 @@ class _PresetColorButtonState extends State<_PresetColorButton> {
                   color: widget.isSelected
                       ? const Color(0xFF0080FF)
                       : _isHovered
-                          ? (widget.isDark ? Colors.white54 : Colors.grey[400]!)
-                          : (widget.isDark ? Colors.white24 : Colors.grey[300]!),
+                      ? (widget.isDark ? Colors.white54 : Colors.grey[400]!)
+                      : (widget.isDark ? Colors.white24 : Colors.grey[300]!),
                   width: widget.isSelected ? 2 : 1,
                 ),
                 boxShadow: widget.isSelected
@@ -192,7 +194,9 @@ class _PresetColorButtonState extends State<_PresetColorButton> {
     return Tooltip(
       message: tagPresetColorNames[widget.colorHex] ?? widget.colorHex!,
       child: MouseRegion(
-        cursor: widget.enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+        cursor: widget.enabled
+            ? SystemMouseCursors.click
+            : SystemMouseCursors.basic,
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
         child: GestureDetector(
@@ -208,8 +212,8 @@ class _PresetColorButtonState extends State<_PresetColorButton> {
                 color: widget.isSelected
                     ? const Color(0xFF0080FF)
                     : _isHovered
-                        ? (widget.isDark ? Colors.white70 : Colors.grey[500]!)
-                        : Colors.transparent,
+                    ? (widget.isDark ? Colors.white70 : Colors.grey[500]!)
+                    : Colors.transparent,
                 width: widget.isSelected ? 2.5 : 1,
               ),
               boxShadow: widget.isSelected
@@ -221,13 +225,15 @@ class _PresetColorButtonState extends State<_PresetColorButton> {
                       ),
                     ]
                   : _isHovered
-                      ? [
-                          BoxShadow(
-                            color: (widget.colorValue ?? Colors.black).withValues(alpha: 0.3),
-                            blurRadius: 4,
-                          ),
-                        ]
-                      : null,
+                  ? [
+                      BoxShadow(
+                        color: (widget.colorValue ?? Colors.black).withValues(
+                          alpha: 0.3,
+                        ),
+                        blurRadius: 4,
+                      ),
+                    ]
+                  : null,
             ),
             child: widget.isSelected
                 ? Icon(
@@ -282,7 +288,9 @@ class _CustomColorButtonState extends State<_CustomColorButton> {
     return Tooltip(
       message: '自定义颜色',
       child: MouseRegion(
-        cursor: widget.enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+        cursor: widget.enabled
+            ? SystemMouseCursors.click
+            : SystemMouseCursors.basic,
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
         child: GestureDetector(
@@ -293,7 +301,14 @@ class _CustomColorButtonState extends State<_CustomColorButton> {
             height: 28,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Colors.red, Colors.orange, Colors.yellow, Colors.green, Colors.blue, Colors.purple],
+                colors: [
+                  Colors.red,
+                  Colors.orange,
+                  Colors.yellow,
+                  Colors.green,
+                  Colors.blue,
+                  Colors.purple,
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -302,8 +317,8 @@ class _CustomColorButtonState extends State<_CustomColorButton> {
                 color: isSelected
                     ? const Color(0xFF0080FF)
                     : _isHovered
-                        ? Colors.white
-                        : (widget.isDark ? Colors.white54 : Colors.grey[400]!),
+                    ? Colors.white
+                    : (widget.isDark ? Colors.white54 : Colors.grey[400]!),
                 width: isSelected ? 2.5 : (_isHovered ? 2 : 1.5),
               ),
               boxShadow: isSelected
@@ -315,19 +330,21 @@ class _CustomColorButtonState extends State<_CustomColorButton> {
                       ),
                     ]
                   : _isHovered
-                      ? [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.3),
-                            blurRadius: 4,
-                            offset: const Offset(1, 1),
-                          ),
-                        ]
-                      : null,
+                  ? [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        blurRadius: 4,
+                        offset: const Offset(1, 1),
+                      ),
+                    ]
+                  : null,
             ),
             child: isSelected
                 ? Icon(
                     Icons.check,
-                    color: widget.currentColor!.computeLuminance() > 0.5 ? Colors.black : Colors.white,
+                    color: widget.currentColor!.computeLuminance() > 0.5
+                        ? Colors.black
+                        : Colors.white,
                     size: 16,
                   )
                 : const Icon(Icons.colorize, size: 14, color: Colors.white),
@@ -340,14 +357,14 @@ class _CustomColorButtonState extends State<_CustomColorButton> {
   void _showCustomColorPicker(BuildContext context) async {
     Color pickerColor = widget.currentColor ?? const Color(0xFF3B82F6);
 
-    final Color? result = await showColorPickerDialog(
+    final Color result = await showColorPickerDialog(
       context,
       pickerColor,
       title: Text(
         '自定义颜色',
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
       ),
       width: 40,
       height: 40,
@@ -371,11 +388,13 @@ class _CustomColorButtonState extends State<_CustomColorButton> {
         closeButton: true,
         dialogActionButtons: false,
       ),
-      constraints: const BoxConstraints(minHeight: 360, minWidth: 300, maxWidth: 320),
+      constraints: const BoxConstraints(
+        minHeight: 360,
+        minWidth: 300,
+        maxWidth: 320,
+      ),
     );
 
-    if (result != null) {
-      widget.onColorSelected(colorToHex(result));
+    widget.onColorSelected(colorToHex(result));
     }
-  }
 }

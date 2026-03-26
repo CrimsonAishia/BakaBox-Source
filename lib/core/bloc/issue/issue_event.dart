@@ -30,11 +30,7 @@ class IssueFetchMine extends IssueEvent {
   final String? status;
   final String? sort;
 
-  const IssueFetchMine({
-    this.type,
-    this.status,
-    this.sort,
-  });
+  const IssueFetchMine({this.type, this.status, this.sort});
 
   @override
   List<Object?> get props => [type, status, sort];

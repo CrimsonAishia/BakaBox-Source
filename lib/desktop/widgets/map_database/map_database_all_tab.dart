@@ -12,7 +12,7 @@ import 'pagination_bar.dart';
 class MapDatabaseAllTab extends StatelessWidget {
   final int currentPage;
   final ValueChanged<int> onPageChanged;
-  
+
   const MapDatabaseAllTab({
     super.key,
     required this.currentPage,
@@ -24,9 +24,7 @@ class MapDatabaseAllTab extends StatelessWidget {
     return BlocBuilder<MapContributionBloc, MapContributionState>(
       builder: (context, state) {
         if (state.isLoadingAllMaps && state.allMaps.isEmpty) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (state.isAllMapsEmpty) {
@@ -43,10 +41,14 @@ class MapDatabaseAllTab extends StatelessWidget {
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       // 根据宽度计算列数
-                      final crossAxisCount = _calculateCrossAxisCount(constraints.maxWidth);
-                      
+                      final crossAxisCount = _calculateCrossAxisCount(
+                        constraints.maxWidth,
+                      );
+
                       return GridView.builder(
-                        key: PageStorageKey('map_database_all_grid_page_$currentPage'),
+                        key: PageStorageKey(
+                          'map_database_all_grid_page_$currentPage',
+                        ),
                         padding: const EdgeInsets.all(20),
                         physics: const NeverScrollableScrollPhysics(),
                         shrinkWrap: true,
@@ -65,7 +67,9 @@ class MapDatabaseAllTab extends StatelessWidget {
                             items: const [],
                           );
                           return MapGroupCard(
-                            key: ValueKey('map_${mapInfo.mapName}_page_$currentPage'),
+                            key: ValueKey(
+                              'map_${mapInfo.mapName}_page_$currentPage',
+                            ),
                             group: group,
                             onTap: () {
                               MapContributionDialog.show(
@@ -80,7 +84,7 @@ class MapDatabaseAllTab extends StatelessWidget {
                     },
                   ),
                 ),
-                
+
                 // 分页器
                 PaginationBar(
                   currentPage: currentPage,
@@ -91,7 +95,7 @@ class MapDatabaseAllTab extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             // Loading 覆盖层（切换分页时显示）
             if (state.isLoadingAllMaps && state.allMaps.isNotEmpty)
               _buildLoadingOverlay(context),
@@ -104,7 +108,7 @@ class MapDatabaseAllTab extends StatelessWidget {
   Widget _buildLoadingOverlay(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Positioned.fill(
       child: Container(
         color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.6),
@@ -131,10 +135,7 @@ class MapDatabaseAllTab extends StatelessWidget {
                   child: CircularProgressIndicator(strokeWidth: 3),
                 ),
                 SizedBox(height: 12),
-                Text(
-                  '加载中...',
-                  style: TextStyle(fontSize: 14),
-                ),
+                Text('加载中...', style: TextStyle(fontSize: 14)),
               ],
             ),
           ),

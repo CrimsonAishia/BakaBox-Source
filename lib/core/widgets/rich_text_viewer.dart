@@ -4,15 +4,15 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/quill_delta_codec.dart';
 
 /// 只读富文本显示组件
-/// 
+///
 /// 用于显示 Quill Delta JSON 编码的内容
 class RichTextViewer extends StatefulWidget {
   /// Delta JSON 编码的内容
   final String content;
-  
+
   /// 文本样式（可选）
   final TextStyle? textStyle;
-  
+
   /// 是否紧凑模式（减少间距）
   final bool compact;
 
@@ -65,12 +65,14 @@ class _RichTextViewerState extends State<RichTextViewer> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
-    final baseTextStyle = widget.textStyle ?? TextStyle(
-      fontSize: 15,
-      height: 1.7,
-      color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF374151),
-    );
+
+    final baseTextStyle =
+        widget.textStyle ??
+        TextStyle(
+          fontSize: 15,
+          height: 1.7,
+          color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF374151),
+        );
 
     return QuillEditor.basic(
       controller: _controller,
@@ -88,10 +90,10 @@ class _RichTextViewerState extends State<RichTextViewer> {
 
   Future<void> _handleLaunchUrl(String? url) async {
     if (url == null || url.isEmpty) return;
-    
+
     final uri = Uri.tryParse(url);
     if (uri == null) return;
-    
+
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (_) {
@@ -100,10 +102,10 @@ class _RichTextViewerState extends State<RichTextViewer> {
   }
 
   DefaultStyles _buildStyles(bool isDark, TextStyle baseTextStyle) {
-    final verticalSpacing = widget.compact 
-        ? const VerticalSpacing(4, 0) 
+    final verticalSpacing = widget.compact
+        ? const VerticalSpacing(4, 0)
         : const VerticalSpacing(6, 0);
-    
+
     return DefaultStyles(
       paragraph: DefaultTextBlockStyle(
         baseTextStyle,
@@ -120,7 +122,9 @@ class _RichTextViewerState extends State<RichTextViewer> {
           color: isDark ? Colors.white : const Color(0xFF1F2937),
         ),
         HorizontalSpacing.zero,
-        widget.compact ? const VerticalSpacing(12, 6) : const VerticalSpacing(16, 8),
+        widget.compact
+            ? const VerticalSpacing(12, 6)
+            : const VerticalSpacing(16, 8),
         VerticalSpacing.zero,
         null,
       ),
@@ -132,7 +136,9 @@ class _RichTextViewerState extends State<RichTextViewer> {
           color: isDark ? Colors.white : const Color(0xFF1F2937),
         ),
         HorizontalSpacing.zero,
-        widget.compact ? const VerticalSpacing(10, 4) : const VerticalSpacing(12, 6),
+        widget.compact
+            ? const VerticalSpacing(10, 4)
+            : const VerticalSpacing(12, 6),
         VerticalSpacing.zero,
         null,
       ),
@@ -144,7 +150,9 @@ class _RichTextViewerState extends State<RichTextViewer> {
           color: isDark ? Colors.white : const Color(0xFF1F2937),
         ),
         HorizontalSpacing.zero,
-        widget.compact ? const VerticalSpacing(8, 4) : const VerticalSpacing(10, 4),
+        widget.compact
+            ? const VerticalSpacing(8, 4)
+            : const VerticalSpacing(10, 4),
         VerticalSpacing.zero,
         null,
       ),
@@ -172,7 +180,9 @@ class _RichTextViewerState extends State<RichTextViewer> {
           fontSize: 13,
           fontFamily: 'Consolas, Monaco, monospace',
           color: isDark ? const Color(0xFFE879F9) : const Color(0xFFDC2626),
-          backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
+          backgroundColor: isDark
+              ? const Color(0xFF334155)
+              : const Color(0xFFF3F4F6),
         ),
         HorizontalSpacing.zero,
         const VerticalSpacing(8, 8),
@@ -181,7 +191,9 @@ class _RichTextViewerState extends State<RichTextViewer> {
           color: isDark ? const Color(0xFF334155) : const Color(0xFFF9FAFB),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE5E7EB),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : const Color(0xFFE5E7EB),
           ),
         ),
       ),

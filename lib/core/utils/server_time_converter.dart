@@ -17,7 +17,9 @@ class ServerTimeConverter implements JsonConverter<DateTime, String> {
   String toJson(DateTime object) {
     // 转换回服务器时间格式（北京时间）
     final utcTime = object.toUtc();
-    final serverTime = utcTime.add(const Duration(hours: TimeUtils.serverTimezoneOffset));
+    final serverTime = utcTime.add(
+      const Duration(hours: TimeUtils.serverTimezoneOffset),
+    );
     return '${serverTime.year}-${serverTime.month.toString().padLeft(2, '0')}-${serverTime.day.toString().padLeft(2, '0')} '
         '${serverTime.hour.toString().padLeft(2, '0')}:${serverTime.minute.toString().padLeft(2, '0')}:${serverTime.second.toString().padLeft(2, '0')}';
   }

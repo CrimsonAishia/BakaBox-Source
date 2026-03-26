@@ -37,7 +37,7 @@ class PlayerTrendPopup extends StatefulWidget {
   State<PlayerTrendPopup> createState() => _PlayerTrendPopupState();
 }
 
-class _PlayerTrendPopupState extends State<PlayerTrendPopup> 
+class _PlayerTrendPopupState extends State<PlayerTrendPopup>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -84,7 +84,7 @@ class _PlayerTrendPopupState extends State<PlayerTrendPopup>
       animation: _fadeAnimation,
       builder: (context, child) {
         if (_fadeAnimation.value == 0) return const SizedBox.shrink();
-        
+
         return Positioned(
           left: widget.position.dx,
           top: widget.position.dy,
@@ -111,7 +111,7 @@ class PlayerTrendHoverController {
   bool _isHoveringTrigger = false;
   bool _isHoveringPopup = false;
   VoidCallback? _onShowChange;
-  
+
   /// 设置显示状态变化回调
   set onShowChange(VoidCallback? callback) {
     _onShowChange = callback;
@@ -178,7 +178,8 @@ class PlayerTrendHoverWrapper extends StatefulWidget {
   });
 
   @override
-  State<PlayerTrendHoverWrapper> createState() => _PlayerTrendHoverWrapperState();
+  State<PlayerTrendHoverWrapper> createState() =>
+      _PlayerTrendHoverWrapperState();
 }
 
 class _PlayerTrendHoverWrapperState extends State<PlayerTrendHoverWrapper> {
@@ -199,7 +200,9 @@ class _PlayerTrendHoverWrapperState extends State<PlayerTrendHoverWrapper> {
   }
 
   void _updateOverlay() {
-    if (_controller.shouldShow && widget.infos != null && widget.infos!.isNotEmpty) {
+    if (_controller.shouldShow &&
+        widget.infos != null &&
+        widget.infos!.isNotEmpty) {
       _showOverlay();
     } else {
       _removeOverlay();

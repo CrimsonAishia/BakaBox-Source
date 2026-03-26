@@ -254,7 +254,8 @@ class ObsServerService {
         } else {
           // 用户不在服务器中（离开服务器或回到主菜单）
           // 检查是否需要重置状态（无论是 null 还是空字符串都重置）
-          if (_currentServerAddress != null && _currentServerAddress!.isNotEmpty) {
+          if (_currentServerAddress != null &&
+              _currentServerAddress!.isNotEmpty) {
             _logger.i('[OBS] 用户离开服务器');
             _currentServerAddress = null;
             _refreshCurrentServerData();
@@ -394,7 +395,8 @@ class ObsServerService {
   Future<void> stop() async {
     // 记录当前是否有活动连接需要广播清空信号
     // 有客户端连接 或 当前显示的是连接状态时才需要广播
-    final bool needsBroadcast = _clients.isNotEmpty ||
+    final bool needsBroadcast =
+        _clients.isNotEmpty ||
         _currentData['isConnected'] == true ||
         _currentData['serverName']?.isNotEmpty == true;
 
@@ -471,7 +473,9 @@ class ObsServerService {
 
   /// 定时矫正定时器
   Timer? _correctionTimer;
-  static const Duration _correctionInterval = Duration(seconds: 30); // 每 30 秒矫正一次
+  static const Duration _correctionInterval = Duration(
+    seconds: 30,
+  ); // 每 30 秒矫正一次
 
   /// 启动定时矫正定时器
   /// 定期检查并矫正服务器状态，防止状态不同步
@@ -508,11 +512,15 @@ class ObsServerService {
           // 两者都显示在服务器中，检查地址是否一致
           // 需要比较原始地址（去除域名映射）
           final addressMapping = ServerAddressMappingService();
-          final consoleDisplayAddress = addressMapping.getDomainAddress(consoleAddress);
+          final consoleDisplayAddress = addressMapping.getDomainAddress(
+            consoleAddress,
+          );
 
           if (obsAddress != consoleDisplayAddress) {
             // 地址不一致，说明服务器切换了但 OBS 没更新
-            _logger.i('[OBS] 矫正：检测到服务器切换 ($obsAddress -> $consoleDisplayAddress)，强制刷新');
+            _logger.i(
+              '[OBS] 矫正：检测到服务器切换 ($obsAddress -> $consoleDisplayAddress)，强制刷新',
+            );
             await _refreshCurrentServerData();
           }
         }
@@ -551,7 +559,7 @@ class ObsServerService {
     if (!isInServerFromConsole) {
       // 用户没有在服务器中，显示"等待进入服务器"或"无法监控游戏"
       final targetWaitingText = _getWaitingText();
-      if (_currentData['isConnected'] == true || 
+      if (_currentData['isConnected'] == true ||
           _queriedServerInfo != null ||
           _currentData['serverName'] != targetWaitingText) {
         _queriedServerInfo = null;
