@@ -1532,7 +1532,6 @@ class SpellCardTierListResponse extends Equatable {
   List<Object?> get props => [tiers, totalCount];
 }
 
-
 // ============ 刀模/枪模 API 相关模型 ============
 
 /// 武器模型预览图集

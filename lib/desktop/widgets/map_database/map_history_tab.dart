@@ -14,10 +14,7 @@ import '../player_trend/player_trend_chart.dart';
 class MapHistoryTab extends StatefulWidget {
   final String mapName;
 
-  const MapHistoryTab({
-    super.key,
-    required this.mapName,
-  });
+  const MapHistoryTab({super.key, required this.mapName});
 
   @override
   State<MapHistoryTab> createState() => _MapHistoryTabState();
@@ -50,12 +47,12 @@ class _MapHistoryTabState extends State<MapHistoryTab> {
   @override
   void dispose() {
     _scrollController.dispose();
-    
+
     // 清理大列表和缓存，防止内存泄漏
     _historyData.clear();
     _serverNameCache.clear();
     _loadingServers.clear();
-    
+
     super.dispose();
   }
 
@@ -141,7 +138,7 @@ class _MapHistoryTabState extends State<MapHistoryTab> {
     final futures = <Future>[];
 
     for (final address in addresses) {
-      if (!_serverNameCache.containsKey(address) && 
+      if (!_serverNameCache.containsKey(address) &&
           !_loadingServers.contains(address)) {
         _loadingServers.add(address);
         futures.add(_loadServerNameSilent(address));
@@ -173,12 +170,12 @@ class _MapHistoryTabState extends State<MapHistoryTab> {
         port,
         timeout: 3000,
       );
-      
+
       if (!mounted) {
         _loadingServers.remove(address);
         return;
       }
-      
+
       if (info != null && info.name.isNotEmpty) {
         _serverNameCache[address] = info.name;
       }
@@ -230,10 +227,10 @@ class _MapHistoryTabState extends State<MapHistoryTab> {
     final earliest = sortedInfos.first.createdAt;
     final latest = sortedInfos.last.createdAt;
     final diff = latest.difference(earliest);
-    
+
     final hours = diff.inHours;
     final minutes = diff.inMinutes % 60;
-    
+
     if (hours > 0) {
       return '${hours}h${minutes}m';
     } else {
@@ -244,7 +241,9 @@ class _MapHistoryTabState extends State<MapHistoryTab> {
   /// 获取最大玩家数
   int _getMaxPlayers(MapHistoryRecord record) {
     if (record.infos.isEmpty) return 0;
-    return record.infos.map((e) => e.playerCount).reduce((a, b) => a > b ? a : b);
+    return record.infos
+        .map((e) => e.playerCount)
+        .reduce((a, b) => a > b ? a : b);
   }
 
   @override
@@ -281,11 +280,7 @@ class _MapHistoryTabState extends State<MapHistoryTab> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              MdiIcons.alertCircle,
-              size: 48,
-              color: Colors.orange,
-            ),
+            Icon(MdiIcons.alertCircle, size: 48, color: Colors.orange),
             const SizedBox(height: 16),
             Text(
               _error!,
@@ -372,7 +367,8 @@ class _MapHistoryTabState extends State<MapHistoryTab> {
           child: ListView.builder(
             controller: _scrollController,
             padding: const EdgeInsets.all(20),
-            itemCount: _historyData.length + (_hasMoreData || _isLoadingMore ? 1 : 1),
+            itemCount:
+                _historyData.length + (_hasMoreData || _isLoadingMore ? 1 : 1),
             itemBuilder: (context, index) {
               if (index < _historyData.length) {
                 return _buildHistoryItem(_historyData[index], index, isDark);
@@ -561,7 +557,8 @@ class _HistoryListItem extends StatefulWidget {
   State<_HistoryListItem> createState() => _HistoryListItemState();
 }
 
-class _HistoryListItemState extends State<_HistoryListItem> with SingleTickerProviderStateMixin {
+class _HistoryListItemState extends State<_HistoryListItem>
+    with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
   bool _isHovered = false;
   List<PlayerTrendInfo>? _trendData; // 懒加载的趋势数据
@@ -584,11 +581,11 @@ class _HistoryListItemState extends State<_HistoryListItem> with SingleTickerPro
   @override
   void dispose() {
     _animationController.dispose();
-    
+
     // 清理趋势数据，释放内存
     _trendData?.clear();
     _trendData = null;
-    
+
     super.dispose();
   }
 
@@ -597,14 +594,18 @@ class _HistoryListItemState extends State<_HistoryListItem> with SingleTickerPro
 
     setState(() {
       _isExpanded = !_isExpanded;
-      
+
       // 懒加载趋势数据
       if (_isExpanded && _trendData == null && widget.getTrendData != null) {
         final data = widget.getTrendData!();
-        _trendData = data.map((info) => PlayerTrendInfo(
-          playerCount: info.playerCount,
-          createdAt: info.createdAt.toIso8601String(),
-        )).toList();
+        _trendData = data
+            .map(
+              (info) => PlayerTrendInfo(
+                playerCount: info.playerCount,
+                createdAt: info.createdAt.toIso8601String(),
+              ),
+            )
+            .toList();
       }
     });
 
@@ -625,18 +626,18 @@ class _HistoryListItemState extends State<_HistoryListItem> with SingleTickerPro
         decoration: BoxDecoration(
           color: _isHovered
               ? (widget.isDark
-                  ? Colors.white.withValues(alpha: 0.05)
-                  : Colors.black.withValues(alpha: 0.02))
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.02))
               : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: _isExpanded
                 ? const Color(0xFF0080FF).withValues(alpha: 0.5)
                 : (_isHovered
-                    ? const Color(0xFF0080FF).withValues(alpha: 0.3)
-                    : (widget.isDark
-                        ? Colors.white.withValues(alpha: 0.05)
-                        : Colors.black.withValues(alpha: 0.05))),
+                      ? const Color(0xFF0080FF).withValues(alpha: 0.3)
+                      : (widget.isDark
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : Colors.black.withValues(alpha: 0.05))),
           ),
         ),
         child: Column(
@@ -654,13 +655,15 @@ class _HistoryListItemState extends State<_HistoryListItem> with SingleTickerPro
                     Row(
                       children: [
                         Icon(
-                          widget.isLatest ? MdiIcons.fire : MdiIcons.clockOutline,
+                          widget.isLatest
+                              ? MdiIcons.fire
+                              : MdiIcons.clockOutline,
                           size: 16,
                           color: widget.isLatest
                               ? const Color(0xFFF59E0B)
                               : (widget.isDark
-                                  ? Colors.white.withValues(alpha: 0.5)
-                                  : Colors.black.withValues(alpha: 0.5)),
+                                    ? Colors.white.withValues(alpha: 0.5)
+                                    : Colors.black.withValues(alpha: 0.5)),
                         ),
                         const SizedBox(width: 6),
                         Text(
@@ -671,8 +674,8 @@ class _HistoryListItemState extends State<_HistoryListItem> with SingleTickerPro
                             color: widget.isLatest
                                 ? const Color(0xFFF59E0B)
                                 : (widget.isDark
-                                    ? Colors.white.withValues(alpha: 0.7)
-                                    : Colors.black.withValues(alpha: 0.7)),
+                                      ? Colors.white.withValues(alpha: 0.7)
+                                      : Colors.black.withValues(alpha: 0.7)),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -711,7 +714,10 @@ class _HistoryListItemState extends State<_HistoryListItem> with SingleTickerPro
                         const SizedBox(width: 22), // 对齐图标
                         _buildStatItem(MdiIcons.clockOutline, widget.duration),
                         const SizedBox(width: 16),
-                        _buildStatItem(MdiIcons.chartLine, '${widget.dataPoints}点'),
+                        _buildStatItem(
+                          MdiIcons.chartLine,
+                          '${widget.dataPoints}点',
+                        ),
                         const SizedBox(width: 16),
                         _buildStatItem(
                           MdiIcons.accountGroup,
@@ -719,7 +725,10 @@ class _HistoryListItemState extends State<_HistoryListItem> with SingleTickerPro
                         ),
                         if (widget.hasFinalScore) ...[
                           const SizedBox(width: 16),
-                          _buildScoreBadge(widget.finalCtScore!, widget.finalTScore!),
+                          _buildScoreBadge(
+                            widget.finalCtScore!,
+                            widget.finalTScore!,
+                          ),
                         ],
                       ],
                     ),
@@ -821,8 +830,9 @@ class _HistoryListItemState extends State<_HistoryListItem> with SingleTickerPro
 
   Widget _buildScoreBadge(int ctScore, int tScore) {
     // 判断是否为僵尸模式地图
-    final isZombieMap = widget.mapName.startsWith('ze_') || widget.mapName.startsWith('zm_');
-    
+    final isZombieMap =
+        widget.mapName.startsWith('ze_') || widget.mapName.startsWith('zm_');
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
@@ -842,7 +852,9 @@ class _HistoryListItemState extends State<_HistoryListItem> with SingleTickerPro
           Text(
             '$ctScore',
             style: TextStyle(
-              color: isZombieMap ? const Color(0xFF22C55E) : const Color(0xFF3B82F6), // 人类绿色 / CT蓝色
+              color: isZombieMap
+                  ? const Color(0xFF22C55E)
+                  : const Color(0xFF3B82F6), // 人类绿色 / CT蓝色
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -861,7 +873,9 @@ class _HistoryListItemState extends State<_HistoryListItem> with SingleTickerPro
           Text(
             '$tScore',
             style: TextStyle(
-              color: isZombieMap ? const Color(0xFFEF4444) : const Color(0xFFF59E0B), // 僵尸红色 / T黄色
+              color: isZombieMap
+                  ? const Color(0xFFEF4444)
+                  : const Color(0xFFF59E0B), // 僵尸红色 / T黄色
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),

@@ -69,294 +69,296 @@ class _VideoCardState extends State<VideoCard> {
 
   Widget _buildCardContent(bool isDark) {
     return InkWell(
-        onTap: () {
-          // 先调用点击回调（增加点击数），再打开链接
-          widget.onTap?.call();
-          final url = Uri.parse('https://www.bilibili.com/video/${widget.video.bvid}');
-          launchUrl(url);
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 封面区域 - 固定高度，宽度自适应
-            SizedBox(
-              height: 157,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // 封面图
-                  DiskCachedImage(
-                    imageUrl: widget.video.displayCover ?? '',
-                    fit: BoxFit.cover,
-                    placeholder: Container(
-                      color: isDark
-                          ? Colors.grey.shade800
-                          : Colors.grey.shade200,
-                      child: const Center(child: CircularProgressIndicator()),
-                    ),
-                    errorWidget: Container(
-                      color: isDark
-                          ? Colors.grey.shade800
-                          : Colors.grey.shade200,
-                      child: const Icon(
-                        Icons.video_library,
-                        size: 48,
-                        color: Colors.grey,
-                      ),
+      onTap: () {
+        // 先调用点击回调（增加点击数），再打开链接
+        widget.onTap?.call();
+        final url = Uri.parse(
+          'https://www.bilibili.com/video/${widget.video.bvid}',
+        );
+        launchUrl(url);
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 封面区域 - 固定高度，宽度自适应
+          SizedBox(
+            height: 157,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // 封面图
+                DiskCachedImage(
+                  imageUrl: widget.video.displayCover ?? '',
+                  fit: BoxFit.cover,
+                  placeholder: Container(
+                    color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                    child: const Center(child: CircularProgressIndicator()),
+                  ),
+                  errorWidget: Container(
+                    color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                    child: const Icon(
+                      Icons.video_library,
+                      size: 48,
+                      color: Colors.grey,
                     ),
                   ),
-                  // 刷新状态动画
-                  if (widget.isRefreshing)
-                    Positioned.fill(
-                      child: Container(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        child: Center(
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.6),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  // 数据加载状态
-                  if (widget.isLoadingBilibiliData && !widget.isRefreshing)
-                    Positioned.fill(
-                      child: AnimatedOpacity(
-                        opacity: 1.0,
-                        duration: const Duration(milliseconds: 200),
+                ),
+                // 刷新状态动画
+                if (widget.isRefreshing)
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      child: Center(
                         child: Container(
-                          color: Colors.black.withValues(alpha: 0.15),
-                          child: const Center(
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  // 审核状态标签
-                  if (widget.video.auditStatus != null &&
-                      widget.video.auditStatus != 'approved')
-                    Positioned(
-                      top: 8,
-                      left: 8,
-                      child: _buildAuditStatusBadge(),
-                    ),
-                  // 播放量（左下角）
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.play_arrow,
-                            size: 12,
-                            color: Colors.white,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _formatNumber(widget.video.viewCount),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // 点赞数（右下角）
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.pink.shade400.withValues(alpha: 0.9),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.thumb_up,
-                            size: 12,
-                            color: Colors.white,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _formatNumber(widget.video.likeCount),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // 所有者编辑按钮
-                  if (widget.isOwner)
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: PopupMenuButton<String>(
-                        icon: Container(
-                          padding: const EdgeInsets.all(4),
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.black54,
-                            borderRadius: BorderRadius.circular(4),
+                            color: Colors.black.withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
-                            Icons.more_vert,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                        onSelected: (value) {
-                          if (value == 'edit') {
-                            widget.onEdit?.call();
-                          } else if (value == 'delete') {
-                            widget.onDelete?.call();
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
-                            value: 'edit',
-                            child: Row(
-                              children: [
-                                Icon(Icons.edit, size: 18),
-                                SizedBox(width: 8),
-                                Text('编辑'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                Icon(Icons.delete, size: 18, color: Colors.red),
-                                SizedBox(width: 8),
-                                Text('删除', style: TextStyle(color: Colors.red)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            // 信息区域
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 标题
-                    Text(
-                      widget.isLoadingBilibiliData ? '获取中...' : widget.video.displayName,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const Spacer(),
-                    // 作者信息行：头像 + 名称 + 时间
-                    Row(
-                      children: [
-                        // 作者头像
-                        ClipOval(
-                          child: SizedBox(
+                          child: const SizedBox(
                             width: 24,
                             height: 24,
-                            child: DiskCachedImage(
-                              imageUrl: widget.video.displayFace ?? '',
-                              fit: BoxFit.cover,
-                              placeholder: Container(
-                                color: _bilibiliBlue.withValues(alpha: 0.2),
-                                child: Icon(
-                                  Icons.person,
-                                  size: 16,
-                                  color: _bilibiliBlue.withValues(alpha: 0.7),
-                                ),
-                              ),
-                              errorWidget: Container(
-                                color: _bilibiliBlue.withValues(alpha: 0.2),
-                                child: Icon(
-                                  Icons.person,
-                                  size: 16,
-                                  color: _bilibiliBlue.withValues(alpha: 0.7),
-                                ),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        // 作者名称
-                        Expanded(
-                          child: Text(
-                            widget.isLoadingBilibiliData ? '获取中...' : widget.video.ownerName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: isDark ? Colors.white70 : Colors.black54,
+                      ),
+                    ),
+                  ),
+                // 数据加载状态
+                if (widget.isLoadingBilibiliData && !widget.isRefreshing)
+                  Positioned.fill(
+                    child: AnimatedOpacity(
+                      opacity: 1.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        child: const Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white70,
+                              ),
                             ),
                           ),
                         ),
-                        // 后端时间
+                      ),
+                    ),
+                  ),
+                // 审核状态标签
+                if (widget.video.auditStatus != null &&
+                    widget.video.auditStatus != 'approved')
+                  Positioned(top: 8, left: 8, child: _buildAuditStatusBadge()),
+                // 播放量（左下角）
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.play_arrow,
+                          size: 12,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 4),
                         Text(
-                          _formatDateTime(widget.video.createdAt),
-                          style: TextStyle(
+                          _formatNumber(widget.video.viewCount),
+                          style: const TextStyle(
+                            color: Colors.white,
                             fontSize: 11,
-                            color: isDark ? Colors.white38 : Colors.black38,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
+                // 点赞数（右下角）
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.pink.shade400.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.thumb_up,
+                          size: 12,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _formatNumber(widget.video.likeCount),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // 所有者编辑按钮
+                if (widget.isOwner)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: PopupMenuButton<String>(
+                      icon: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Icon(
+                          Icons.more_vert,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          widget.onEdit?.call();
+                        } else if (value == 'delete') {
+                          widget.onDelete?.call();
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit, size: 18),
+                              SizedBox(width: 8),
+                              Text('编辑'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete, size: 18, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('删除', style: TextStyle(color: Colors.red)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          // 信息区域
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 标题
+                  Text(
+                    widget.isLoadingBilibiliData
+                        ? '获取中...'
+                        : widget.video.displayName,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const Spacer(),
+                  // 作者信息行：头像 + 名称 + 时间
+                  Row(
+                    children: [
+                      // 作者头像
+                      ClipOval(
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: DiskCachedImage(
+                            imageUrl: widget.video.displayFace ?? '',
+                            fit: BoxFit.cover,
+                            placeholder: Container(
+                              color: _bilibiliBlue.withValues(alpha: 0.2),
+                              child: Icon(
+                                Icons.person,
+                                size: 16,
+                                color: _bilibiliBlue.withValues(alpha: 0.7),
+                              ),
+                            ),
+                            errorWidget: Container(
+                              color: _bilibiliBlue.withValues(alpha: 0.2),
+                              child: Icon(
+                                Icons.person,
+                                size: 16,
+                                color: _bilibiliBlue.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // 作者名称
+                      Expanded(
+                        child: Text(
+                          widget.isLoadingBilibiliData
+                              ? '获取中...'
+                              : widget.video.ownerName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                        ),
+                      ),
+                      // 后端时间
+                      Text(
+                        _formatDateTime(widget.video.createdAt),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? Colors.white38 : Colors.black38,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
   }
 
   String _formatNumber(int number) {

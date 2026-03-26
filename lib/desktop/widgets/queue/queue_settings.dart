@@ -42,22 +42,23 @@ class QueueSettings extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     // 判断是否为 CSGO 服务器
     final isCsgoServer = ServerItemUtils.isCsgoServer(gameType);
-    
+
     // 判断是否显示捐助者选项（只在 ze_ 和 zm_ 开头的地图显示，且非自定义服务器）
-    final shouldShowDonatorOption = !isCustomServer && _shouldShowDonatorOption(mapName);
-    
+    final shouldShowDonatorOption =
+        !isCustomServer && _shouldShowDonatorOption(mapName);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark 
+        color: isDark
             ? Colors.white.withValues(alpha: 0.05)
             : Colors.black.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark 
+          color: isDark
               ? Colors.white.withValues(alpha: 0.1)
               : Colors.black.withValues(alpha: 0.05),
         ),
@@ -68,11 +69,7 @@ class QueueSettings extends StatelessWidget {
           // 标题
           Row(
             children: [
-              Icon(
-                MdiIcons.cog,
-                size: 18,
-                color: theme.colorScheme.primary,
-              ),
+              Icon(MdiIcons.cog, size: 18, color: theme.colorScheme.primary),
               const SizedBox(width: 8),
               Text(
                 '挤服设置',
@@ -85,20 +82,20 @@ class QueueSettings extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // 目标人数设置
           _buildTargetPlayersSlider(context, isDark),
           const SizedBox(height: 16),
-          
+
           // 线程数量设置
           _buildThreadCountSlider(context, isDark),
-          
+
           // 捐助者选项（只在 ze_ 和 zm_ 地图显示，放在自动重试上边）
           if (shouldShowDonatorOption) ...[
             const SizedBox(height: 16),
             _buildDonatorSwitch(context, isDark),
           ],
-          
+
           // 自动重试开关（CSGO 服务器不显示）
           if (!isCsgoServer) ...[
             const SizedBox(height: 16),
@@ -118,7 +115,7 @@ class QueueSettings extends StatelessWidget {
 
   Widget _buildTargetPlayersSlider(BuildContext context, bool isDark) {
     final theme = Theme.of(context);
-    
+
     // 根据捐助者状态决定最大值
     // 自定义服务器不受捐助者限制，默认就是 maxPlayers - 1
     int effectiveMaxPlayers;
@@ -130,9 +127,9 @@ class QueueSettings extends StatelessWidget {
       final serverMax = (maxPlayers > 1 ? maxPlayers : 64) - 1;
       effectiveMaxPlayers = serverMax < 59 ? serverMax : 59;
     }
-    
+
     final effectiveTargetPlayers = targetPlayers.clamp(1, effectiveMaxPlayers);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -185,9 +182,11 @@ class QueueSettings extends StatelessWidget {
             min: 1,
             max: effectiveMaxPlayers.toDouble(),
             divisions: effectiveMaxPlayers - 1,
-            onChanged: disabled ? null : (value) {
-              onTargetPlayersChanged?.call(value.toInt());
-            },
+            onChanged: disabled
+                ? null
+                : (value) {
+                    onTargetPlayersChanged?.call(value.toInt());
+                  },
           ),
         ),
         Row(
@@ -215,7 +214,7 @@ class QueueSettings extends StatelessWidget {
 
   Widget _buildDonatorSwitch(BuildContext context, bool isDark) {
     final theme = Theme.of(context);
-    
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -235,7 +234,9 @@ class QueueSettings extends StatelessWidget {
                       '捐助者',
                       style: TextStyle(
                         fontSize: 13,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.8,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -281,7 +282,9 @@ class QueueSettings extends StatelessWidget {
                         child: Icon(
                           MdiIcons.helpCircleOutline,
                           size: 18,
-                          color: theme.colorScheme.primary.withValues(alpha: 0.7),
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.7,
+                          ),
                         ),
                       ),
                     ),
@@ -291,10 +294,7 @@ class QueueSettings extends StatelessWidget {
             ],
           ),
         ),
-        Switch(
-          value: isDonator,
-          onChanged: disabled ? null : onDonatorChanged,
-        ),
+        Switch(value: isDonator, onChanged: disabled ? null : onDonatorChanged),
       ],
     );
   }
@@ -302,7 +302,7 @@ class QueueSettings extends StatelessWidget {
   Widget _buildThreadCountSlider(BuildContext context, bool isDark) {
     final theme = Theme.of(context);
     final effectiveThreadCount = threadCount.clamp(3, 6);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -355,9 +355,11 @@ class QueueSettings extends StatelessWidget {
             min: 3,
             max: 6,
             divisions: 3,
-            onChanged: disabled ? null : (value) {
-              onThreadCountChanged?.call(value.toInt());
-            },
+            onChanged: disabled
+                ? null
+                : (value) {
+                    onThreadCountChanged?.call(value.toInt());
+                  },
           ),
         ),
         Row(
@@ -386,7 +388,7 @@ class QueueSettings extends StatelessWidget {
   Widget _buildAutoRetrySwitch(BuildContext context, bool isDark) {
     final theme = Theme.of(context);
     final canEnableAutoRetry = isGameRunning;
-    
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -409,7 +411,9 @@ class QueueSettings extends StatelessWidget {
                           '自动重试',
                           style: TextStyle(
                             fontSize: 13,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.8,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -431,42 +435,58 @@ class QueueSettings extends StatelessWidget {
                                 text: '开了这个，没进去的话会自动继续挤\n\n',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: isDark ? Colors.white70 : Colors.black54,
+                                  color: isDark
+                                      ? Colors.white70
+                                      : Colors.black54,
                                 ),
                               ),
                               TextSpan(
                                 text: '● ',
-                                style: TextStyle(color: Colors.green.shade400, fontSize: 12),
+                                style: TextStyle(
+                                  color: Colors.green.shade400,
+                                  fontSize: 12,
+                                ),
                               ),
                               TextSpan(
                                 text: '能看到连接、加载、进游戏的状态\n',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: isDark ? Colors.white70 : Colors.black54,
+                                  color: isDark
+                                      ? Colors.white70
+                                      : Colors.black54,
                                 ),
                               ),
                               TextSpan(
                                 text: '● ',
-                                style: TextStyle(color: Colors.orange.shade400, fontSize: 12),
+                                style: TextStyle(
+                                  color: Colors.orange.shade400,
+                                  fontSize: 12,
+                                ),
                               ),
                               TextSpan(
                                 text: '满了或者没连上会自动再试\n\n',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: isDark ? Colors.white70 : Colors.black54,
+                                  color: isDark
+                                      ? Colors.white70
+                                      : Colors.black54,
                                 ),
                               ),
                               TextSpan(
                                 text: '需要用 BakaBox 启动游戏才行',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                  color: isDark
+                                      ? Colors.grey.shade400
+                                      : Colors.grey.shade600,
                                 ),
                               ),
                             ],
                           ),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                            color: isDark
+                                ? const Color(0xFF1E293B)
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(8),
                             boxShadow: [
                               BoxShadow(
@@ -484,7 +504,9 @@ class QueueSettings extends StatelessWidget {
                             child: Icon(
                               MdiIcons.helpCircleOutline,
                               size: 18,
-                              color: theme.colorScheme.primary.withValues(alpha: 0.7),
+                              color: theme.colorScheme.primary.withValues(
+                                alpha: 0.7,
+                              ),
                             ),
                           ),
                         ),
@@ -495,7 +517,9 @@ class QueueSettings extends StatelessWidget {
                         '需要使用启动器启动游戏',
                         style: TextStyle(
                           fontSize: 11,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.5,
+                          ),
                         ),
                       ),
                   ],
@@ -506,7 +530,9 @@ class QueueSettings extends StatelessWidget {
         ),
         Switch(
           value: enableAutoRetry,
-          onChanged: (disabled || !canEnableAutoRetry) ? null : onAutoRetryChanged,
+          onChanged: (disabled || !canEnableAutoRetry)
+              ? null
+              : onAutoRetryChanged,
         ),
       ],
     );

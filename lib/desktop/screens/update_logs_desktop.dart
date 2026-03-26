@@ -75,13 +75,13 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
     context.read<UpdateLogBloc>().add(const UpdateLogFetch());
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF3F4F6),
+      backgroundColor: isDark
+          ? const Color(0xFF0F172A)
+          : const Color(0xFFF3F4F6),
       body: PageLayout(
         title: '更新日志',
         subtitle: '查看最新更新和改动',
@@ -162,11 +162,12 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return BlocBuilder<SettingsBloc, SettingsState>(
       buildWhen: (previous, current) =>
-          previous.updateLogNotificationEnabled != current.updateLogNotificationEnabled,
+          previous.updateLogNotificationEnabled !=
+          current.updateLogNotificationEnabled,
       builder: (context, settingsState) {
         final isEnabled = settingsState.updateLogNotificationEnabled;
         final updateLogColor = const Color(0xFF3B82F6); // 蓝色主题
-        
+
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -174,15 +175,15 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
             color: isEnabled
                 ? updateLogColor.withValues(alpha: 0.12)
                 : (isDark
-                    ? Colors.white.withValues(alpha: 0.04)
-                    : Colors.black.withValues(alpha: 0.03)),
+                      ? Colors.white.withValues(alpha: 0.04)
+                      : Colors.black.withValues(alpha: 0.03)),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isEnabled
                   ? updateLogColor.withValues(alpha: 0.3)
                   : (isDark
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : Colors.black.withValues(alpha: 0.06)),
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.black.withValues(alpha: 0.06)),
               width: 1,
             ),
           ),
@@ -228,9 +229,11 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
                     },
                     activeThumbColor: Colors.white,
                     activeTrackColor: updateLogColor,
-                    inactiveThumbColor: isDark ? Colors.white54 : Colors.grey.shade400,
-                    inactiveTrackColor: isDark 
-                        ? Colors.white.withValues(alpha: 0.15) 
+                    inactiveThumbColor: isDark
+                        ? Colors.white54
+                        : Colors.grey.shade400,
+                    inactiveTrackColor: isDark
+                        ? Colors.white.withValues(alpha: 0.15)
                         : Colors.black.withValues(alpha: 0.12),
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
@@ -305,18 +308,25 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
   Widget _buildLoadingSkeleton() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final shimmerColor = isDark ? const Color(0xFF334155) : Colors.grey.shade200;
+    final shimmerColor = isDark
+        ? const Color(0xFF334155)
+        : Colors.grey.shade200;
     final borderColor = isDark ? const Color(0xFF334155) : Colors.grey.shade200;
-    
+
     return ListView.builder(
       padding: const EdgeInsets.all(20),
       itemCount: 4,
-      itemBuilder: (context, index) => _buildSkeletonItem(cardColor, shimmerColor, borderColor),
+      itemBuilder: (context, index) =>
+          _buildSkeletonItem(cardColor, shimmerColor, borderColor),
     );
   }
 
   /// 骨架屏项
-  Widget _buildSkeletonItem(Color cardColor, Color shimmerColor, Color borderColor) {
+  Widget _buildSkeletonItem(
+    Color cardColor,
+    Color shimmerColor,
+    Color borderColor,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -396,12 +406,20 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(MdiIcons.alertCircleOutline, size: 48, color: Colors.grey.shade400),
+          Icon(
+            MdiIcons.alertCircleOutline,
+            size: 48,
+            color: Colors.grey.shade400,
+          ),
           const SizedBox(height: 16),
-          Text(error, style: const TextStyle(color: Color(0xFFEF4444), fontSize: 16)),
+          Text(
+            error,
+            style: const TextStyle(color: Color(0xFFEF4444), fontSize: 16),
+          ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () => context.read<UpdateLogBloc>().add(const UpdateLogFetch()),
+            onPressed: () =>
+                context.read<UpdateLogBloc>().add(const UpdateLogFetch()),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0080FF),
               foregroundColor: Colors.white,
@@ -434,7 +452,8 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
           ElevatedButton(
             onPressed: isSearching
                 ? _clearSearch
-                : () => context.read<UpdateLogBloc>().add(const UpdateLogFetch()),
+                : () =>
+                      context.read<UpdateLogBloc>().add(const UpdateLogFetch()),
             child: Text(isSearching ? '清除搜索条件' : '刷新数据'),
           ),
         ],
@@ -465,7 +484,9 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
             return TweenAnimationBuilder<double>(
               key: ValueKey(log.updateTime),
               tween: Tween(begin: 0.0, end: 1.0),
-              duration: Duration(milliseconds: 200 + (index * 50).clamp(0, 300)),
+              duration: Duration(
+                milliseconds: 200 + (index * 50).clamp(0, 300),
+              ),
               curve: Curves.easeOut,
               builder: (context, value, child) {
                 return Opacity(
@@ -518,7 +539,9 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
             Container(
               height: 3,
               decoration: const BoxDecoration(
-                gradient: LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)]),
+                gradient: LinearGradient(
+                  colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+                ),
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(11),
                   topRight: Radius.circular(11),
@@ -536,7 +559,9 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
                 // 分隔线
                 Container(
                   height: 1,
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFF3F4F6),
                 ),
                 const SizedBox(height: 14),
                 // 内容
@@ -575,18 +600,30 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             gradient: isLatest
-                ? const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)])
-                : const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]),
+                ? const LinearGradient(
+                    colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+                  )
+                : const LinearGradient(
+                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                  ),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(MdiIcons.clockOutline, size: 13, color: Colors.white.withValues(alpha: 0.9)),
+              Icon(
+                MdiIcons.clockOutline,
+                size: 13,
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
               const SizedBox(width: 5),
               Text(
                 Formatters.formatDate(log.updateTime),
-                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
@@ -602,14 +639,16 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
             ),
             child: const Text(
               '最新',
-              style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
       ],
     );
   }
-
-
 
   /// 日志内容 - 渲染 HTML，支持搜索关键字高亮
   Widget _buildLogContent(SteamWorkChangeLog log) {
@@ -624,13 +663,13 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
         ),
       );
     }
-    
+
     // 如果有搜索关键字，对内容进行高亮处理
     final keyword = _searchController.text.trim();
-    final processedHtml = keyword.isNotEmpty 
+    final processedHtml = keyword.isNotEmpty
         ? _highlightKeyword(htmlContent, keyword)
         : htmlContent;
-    
+
     return Html(
       data: processedHtml,
       style: {
@@ -641,9 +680,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
           lineHeight: const LineHeight(1.7),
           color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF374151),
         ),
-        'p': Style(
-          margin: Margins.only(bottom: 12),
-        ),
+        'p': Style(margin: Margins.only(bottom: 12)),
         'h1': Style(
           fontSize: FontSize(18),
           fontWeight: FontWeight.w600,
@@ -687,14 +724,18 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
           textDecoration: TextDecoration.none,
         ),
         'code': Style(
-          backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
+          backgroundColor: isDark
+              ? const Color(0xFF334155)
+              : const Color(0xFFF3F4F6),
           color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFE74C3C),
           padding: HtmlPaddings.symmetric(horizontal: 6, vertical: 2),
           fontFamily: 'Consolas, Monaco, monospace',
           fontSize: FontSize(13),
         ),
         'pre': Style(
-          backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF8F9FA),
+          backgroundColor: isDark
+              ? const Color(0xFF334155)
+              : const Color(0xFFF8F9FA),
           padding: HtmlPaddings.all(16),
           margin: Margins.symmetric(vertical: 12),
         ),
@@ -719,24 +760,24 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
       },
     );
   }
-  
+
   /// 高亮搜索关键字
   /// 只处理 HTML 标签外的文本内容，避免破坏 HTML 结构
   String _highlightKeyword(String html, String keyword) {
     if (keyword.isEmpty) return html;
-    
+
     // 转义正则特殊字符
     final escapedKeyword = RegExp.escape(keyword);
-    
+
     // 使用正则匹配，但排除 HTML 标签内的内容
     // 匹配策略：找到所有不在 < > 之间的文本，对其中的关键字进行高亮
     final result = StringBuffer();
     var lastEnd = 0;
-    
+
     // 匹配 HTML 标签
     final tagRegex = RegExp(r'<[^>]*>');
     final matches = tagRegex.allMatches(html);
-    
+
     for (final match in matches) {
       // 处理标签之前的文本
       if (match.start > lastEnd) {
@@ -747,16 +788,16 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
       result.write(match.group(0));
       lastEnd = match.end;
     }
-    
+
     // 处理最后一个标签之后的文本
     if (lastEnd < html.length) {
       final textAfter = html.substring(lastEnd);
       result.write(_highlightText(textAfter, escapedKeyword));
     }
-    
+
     return result.toString();
   }
-  
+
   /// 对纯文本进行关键字高亮
   String _highlightText(String text, String escapedKeyword) {
     final regex = RegExp(escapedKeyword, caseSensitive: false);
@@ -778,7 +819,10 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
               const SizedBox(
                 width: 18,
                 height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0080FF)),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color(0xFF0080FF),
+                ),
               ),
               const SizedBox(width: 10),
               Text(

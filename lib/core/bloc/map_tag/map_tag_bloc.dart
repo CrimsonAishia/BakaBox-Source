@@ -38,10 +38,7 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
 
     try {
       final tags = await _api.getTagList();
-      emit(state.copyWith(
-        tagList: tags,
-        isLoadingTagList: false,
-      ));
+      emit(state.copyWith(tagList: tags, isLoadingTagList: false));
     } catch (e) {
       emit(state.copyWith(error: _getErrorMessage(e), isLoadingTagList: false));
       LogService.e('加载全局标签列表失败', e);
@@ -53,24 +50,30 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
     LoadMapTagList event,
     Emitter<MapTagState> emit,
   ) async {
-    emit(state.copyWith(
-      isLoadingMapTagVotes: true,
-      clearError: true,
-      currentMapName: event.mapName,
-    ));
+    emit(
+      state.copyWith(
+        isLoadingMapTagVotes: true,
+        clearError: true,
+        currentMapName: event.mapName,
+      ),
+    );
 
     try {
       final response = await _api.getMapTagList(event.mapName);
       if (response != null) {
-        emit(state.copyWith(
-          mapTagVotes: response.items,
-          isLoadingMapTagVotes: false,
-        ));
+        emit(
+          state.copyWith(
+            mapTagVotes: response.items,
+            isLoadingMapTagVotes: false,
+          ),
+        );
       } else {
         emit(state.copyWith(isLoadingMapTagVotes: false));
       }
     } catch (e) {
-      emit(state.copyWith(error: _getErrorMessage(e), isLoadingMapTagVotes: false));
+      emit(
+        state.copyWith(error: _getErrorMessage(e), isLoadingMapTagVotes: false),
+      );
       LogService.e('加载地图标签投票列表失败', e);
     }
   }
@@ -93,12 +96,11 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
       // 合并并按创建时间降序排列
       final allUserTags = [...pendingTags, ...rejectedTags]
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      emit(state.copyWith(
-        userTags: allUserTags,
-        isLoadingUserTags: false,
-      ));
+      emit(state.copyWith(userTags: allUserTags, isLoadingUserTags: false));
     } catch (e) {
-      emit(state.copyWith(error: _getErrorMessage(e), isLoadingUserTags: false));
+      emit(
+        state.copyWith(error: _getErrorMessage(e), isLoadingUserTags: false),
+      );
       LogService.e('加载用户标签列表失败', e);
     }
   }
@@ -121,7 +123,9 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
       if (response != null && response.success) {
         // 更新地图标签投票列表
         final updatedVotes = List<MapTagVoteSimple>.from(state.mapTagVotes);
-        final existingIndex = updatedVotes.indexWhere((v) => v.tagId == event.tagId);
+        final existingIndex = updatedVotes.indexWhere(
+          (v) => v.tagId == event.tagId,
+        );
 
         if (existingIndex >= 0) {
           updatedVotes[existingIndex] = response.mapTagVote;
@@ -132,10 +136,7 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
         // 按投票数降序排列
         updatedVotes.sort((a, b) => b.voteCount.compareTo(a.voteCount));
 
-        emit(state.copyWith(
-          mapTagVotes: updatedVotes,
-          isVoting: false,
-        ));
+        emit(state.copyWith(mapTagVotes: updatedVotes, isVoting: false));
       } else {
         emit(state.copyWith(isVoting: false));
       }
@@ -146,21 +147,19 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
   }
 
   /// 更新标签
-  Future<void> _onUpdateTag(
-    UpdateTag event,
-    Emitter<MapTagState> emit,
-  ) async {
+  Future<void> _onUpdateTag(UpdateTag event, Emitter<MapTagState> emit) async {
     emit(state.copyWith(isSubmitting: true, clearError: true));
 
     try {
-      final success = await _api.updateTag(event.tagId, event.name, color: event.color);
+      final success = await _api.updateTag(
+        event.tagId,
+        event.name,
+        color: event.color,
+      );
       if (success) {
         // 刷新用户标签列表
         add(const LoadUserTags());
-        emit(state.copyWith(
-          isSubmitting: false,
-          submitSuccess: true,
-        ));
+        emit(state.copyWith(isSubmitting: false, submitSuccess: true));
       } else {
         emit(state.copyWith(isSubmitting: false));
       }
@@ -171,22 +170,23 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
   }
 
   /// 删除标签
-  Future<void> _onDeleteTag(
-    DeleteTag event,
-    Emitter<MapTagState> emit,
-  ) async {
+  Future<void> _onDeleteTag(DeleteTag event, Emitter<MapTagState> emit) async {
     emit(state.copyWith(isSubmitting: true, clearError: true));
 
     try {
       final success = await _api.deleteTag(event.tagId);
       if (success) {
         // 从用户标签列表中移除
-        final updatedUserTags = state.userTags.where((t) => t.id != event.tagId).toList();
-        emit(state.copyWith(
-          userTags: updatedUserTags,
-          isSubmitting: false,
-          deleteSuccess: true,
-        ));
+        final updatedUserTags = state.userTags
+            .where((t) => t.id != event.tagId)
+            .toList();
+        emit(
+          state.copyWith(
+            userTags: updatedUserTags,
+            isSubmitting: false,
+            deleteSuccess: true,
+          ),
+        );
       } else {
         emit(state.copyWith(isSubmitting: false));
       }
@@ -197,22 +197,20 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
   }
 
   /// 提交新标签
-  Future<void> _onSubmitTag(
-    SubmitTag event,
-    Emitter<MapTagState> emit,
-  ) async {
+  Future<void> _onSubmitTag(SubmitTag event, Emitter<MapTagState> emit) async {
     emit(state.copyWith(isSubmitting: true, clearError: true));
 
     try {
       // 仅当勾选"审核通过自动投票"时才传 mapName
       final mapName = event.autoVote ? state.currentMapName : null;
-      final tag = await _api.submitTag(event.name, mapName: mapName, color: event.color);
+      final tag = await _api.submitTag(
+        event.name,
+        mapName: mapName,
+        color: event.color,
+      );
       if (tag != null) {
         // 将新标签添加到列表（但可能还在审核中，不显示在全局列表）
-        emit(state.copyWith(
-          isSubmitting: false,
-          submitSuccess: true,
-        ));
+        emit(state.copyWith(isSubmitting: false, submitSuccess: true));
       } else {
         emit(state.copyWith(isSubmitting: false));
       }
@@ -249,10 +247,7 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
   }
 
   /// 清除错误
-  void _onClearError(
-    ClearTagError event,
-    Emitter<MapTagState> emit,
-  ) {
+  void _onClearError(ClearTagError event, Emitter<MapTagState> emit) {
     emit(state.copyWith(clearError: true));
   }
 }

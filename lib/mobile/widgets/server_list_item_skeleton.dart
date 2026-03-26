@@ -19,8 +19,12 @@ class ServerListItemSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final baseColor = isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0);
-    final highlightColor = isDark ? const Color(0xFF4A5568) : const Color(0xFFF7FAFC);
+    final baseColor = isDark
+        ? const Color(0xFF2D3748)
+        : const Color(0xFFE2E8F0);
+    final highlightColor = isDark
+        ? const Color(0xFF4A5568)
+        : const Color(0xFFF7FAFC);
 
     Widget skeleton = Opacity(
       opacity: opacity,
@@ -30,7 +34,10 @@ class ServerListItemSkeleton extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.grey.withValues(alpha: 0.3), width: 1.0),
+            side: BorderSide(
+              color: Colors.grey.withValues(alpha: 0.3),
+              width: 1.0,
+            ),
           ),
           child: SizedBox(
             height: 170,

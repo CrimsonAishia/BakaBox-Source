@@ -51,11 +51,11 @@ class _NotificationPanelState extends State<NotificationPanel>
 
   void _onScroll() {
     if (!_notificationScrollController.hasClients) return;
-    
+
     final position = _notificationScrollController.position;
     final maxScroll = position.maxScrollExtent;
     final currentScroll = position.pixels;
-    
+
     // 当滚动到距离底部 200px 时触发加载更多
     if (maxScroll - currentScroll <= 200) {
       final bloc = context.read<NotificationBloc>();
@@ -533,8 +533,7 @@ class _NotificationPanelState extends State<NotificationPanel>
                 controller: _notificationScrollController,
                 padding: const EdgeInsets.only(bottom: 12),
                 itemCount:
-                    state.notifications.length +
-                    (state.isLoadingMore ? 1 : 0),
+                    state.notifications.length + (state.isLoadingMore ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index == state.notifications.length) {
                     return _buildLoadingMore();

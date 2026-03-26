@@ -14,15 +14,12 @@ import 'settings_buttons.dart';
 class CacheSettings extends StatelessWidget {
   final SettingsState settingsState;
 
-  const CacheSettings({
-    super.key,
-    required this.settingsState,
-  });
+  const CacheSettings({super.key, required this.settingsState});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // 监听需要重启的状态
     if (settingsState.needsRestart) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -33,10 +30,7 @@ class CacheSettings extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SettingsGroupTitle(
-          title: '缓存管理',
-          icon: MdiIcons.database,
-        ),
+        SettingsGroupTitle(title: '缓存管理', icon: MdiIcons.database),
         _buildCacheInfoGrid(context),
         const SizedBox(height: 15),
         Container(
@@ -46,7 +40,9 @@ class CacheSettings extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             border: Border(
               left: BorderSide(
-                color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF3B82F6),
+                color: isDark
+                    ? const Color(0xFF60A5FA)
+                    : const Color(0xFF3B82F6),
                 width: 4,
               ),
             ),
@@ -73,10 +69,17 @@ class CacheSettings extends StatelessWidget {
       iconColor: const Color(0xFF0080FF),
       label: '缓存大小',
       value: settingsState.isLoadingCacheDetails
-          ? const Text('计算中...', style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)))
+          ? const Text(
+              '计算中...',
+              style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+            )
           : Text(
               totalSize,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF0080FF)),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF0080FF),
+              ),
             ),
       action: Row(
         mainAxisSize: MainAxisSize.min,
@@ -84,14 +87,17 @@ class CacheSettings extends StatelessWidget {
           SettingsOutlinedButton(
             onPressed: settingsState.isLoadingCacheDetails
                 ? null
-                : () => context.read<SettingsBloc>().add(SettingsLoadCacheDetails()),
+                : () => context.read<SettingsBloc>().add(
+                    SettingsLoadCacheDetails(),
+                  ),
             label: '刷新',
             icon: MdiIcons.refresh,
             isLoading: settingsState.isLoadingCacheDetails,
           ),
           const SizedBox(width: 8),
           SettingsDangerButton(
-            onPressed: settingsState.isLoading || settingsState.isLoadingCacheDetails
+            onPressed:
+                settingsState.isLoading || settingsState.isLoadingCacheDetails
                 ? null
                 : () => _openSelectiveCacheDialog(context),
             label: '清理缓存',
@@ -108,7 +114,9 @@ class CacheSettings extends StatelessWidget {
       context,
       cacheDetails: settingsState.cacheDetails,
       onConfirm: (selectedTypes) {
-        context.read<SettingsBloc>().add(SettingsClearSelectedCache(selectedTypes));
+        context.read<SettingsBloc>().add(
+          SettingsClearSelectedCache(selectedTypes),
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('已清除 ${selectedTypes.length} 种缓存'),
@@ -183,7 +191,9 @@ class _CacheInfoItem extends StatelessWidget {
               : [const Color(0xFFFAFBFC), const Color(0xFFF8FAFC)],
         ),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.02),
@@ -198,10 +208,16 @@ class _CacheInfoItem extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: (iconColor ?? const Color(0xFF0080FF)).withValues(alpha: 0.1),
+                color: (iconColor ?? const Color(0xFF0080FF)).withValues(
+                  alpha: 0.1,
+                ),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, size: 20, color: iconColor ?? const Color(0xFF0080FF)),
+              child: Icon(
+                icon,
+                size: 20,
+                color: iconColor ?? const Color(0xFF0080FF),
+              ),
             ),
             const SizedBox(width: 16),
           ],

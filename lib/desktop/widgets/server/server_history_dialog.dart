@@ -24,7 +24,7 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
   final ServerApi _serverApi = ServerApi();
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
-  
+
   // 搜索防抖定时器
   Timer? _searchDebounceTimer;
 
@@ -241,10 +241,10 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
   void _onSearchChanged(String value) {
     // 取消之前的定时器
     _searchDebounceTimer?.cancel();
-    
+
     // 立即更新UI显示清空按钮
     setState(() {});
-    
+
     // 500ms 后执行搜索
     _searchDebounceTimer = Timer(const Duration(milliseconds: 500), () {
       _handleSearch();
@@ -1146,8 +1146,13 @@ class _HistoryCardState extends State<_HistoryCard> {
                     top: 12,
                     right: 12,
                     child: widget.hasFinalScore
-                        ? _buildScoreBadge(widget.finalCtScore!, widget.finalTScore!)
-                        : (widget.hasTrendData ? const _StaticDot() : const SizedBox.shrink()),
+                        ? _buildScoreBadge(
+                            widget.finalCtScore!,
+                            widget.finalTScore!,
+                          )
+                        : (widget.hasTrendData
+                              ? const _StaticDot()
+                              : const SizedBox.shrink()),
                   ),
                 ],
               ),
@@ -1161,8 +1166,9 @@ class _HistoryCardState extends State<_HistoryCard> {
   /// 构建比分徽章
   Widget _buildScoreBadge(int ctScore, int tScore) {
     // 判断是否为僵尸模式地图
-    final isZombieMap = widget.mapName.startsWith('ze_') || widget.mapName.startsWith('zm_');
-    
+    final isZombieMap =
+        widget.mapName.startsWith('ze_') || widget.mapName.startsWith('zm_');
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -1180,7 +1186,9 @@ class _HistoryCardState extends State<_HistoryCard> {
           Text(
             '$ctScore',
             style: TextStyle(
-              color: isZombieMap ? const Color(0xFF4ADE80) : const Color(0xFF93C5FD), // 人类绿色 / CT蓝色
+              color: isZombieMap
+                  ? const Color(0xFF4ADE80)
+                  : const Color(0xFF93C5FD), // 人类绿色 / CT蓝色
               fontSize: 13,
               fontWeight: FontWeight.w700,
             ),
@@ -1200,7 +1208,9 @@ class _HistoryCardState extends State<_HistoryCard> {
           Text(
             '$tScore',
             style: TextStyle(
-              color: isZombieMap ? const Color(0xFFF87171) : const Color(0xFFFCD34D), // 僵尸红色 / T黄色
+              color: isZombieMap
+                  ? const Color(0xFFF87171)
+                  : const Color(0xFFFCD34D), // 僵尸红色 / T黄色
               fontSize: 13,
               fontWeight: FontWeight.w700,
             ),

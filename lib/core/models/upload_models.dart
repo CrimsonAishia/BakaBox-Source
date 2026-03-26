@@ -24,7 +24,7 @@ class UploadResult extends Equatable {
 
   factory UploadResult.fromJson(Map<String, dynamic> json) =>
       _$UploadResultFromJson(json);
-  
+
   Map<String, dynamic> toJson() => _$UploadResultToJson(this);
 
   @override
@@ -32,9 +32,9 @@ class UploadResult extends Equatable {
 }
 
 /// Response from initializing a multipart upload
-/// 
+///
 /// API: POST /files/multipart
-/// 
+///
 /// 响应字段:
 /// - uploadId: 上传ID，后续操作需要
 /// - fileKey: 文件Key
@@ -59,7 +59,7 @@ class InitUploadResponse extends Equatable {
 
   factory InitUploadResponse.fromJson(Map<String, dynamic> json) =>
       _$InitUploadResponseFromJson(json);
-  
+
   Map<String, dynamic> toJson() => _$InitUploadResponseToJson(this);
 
   @override
@@ -67,7 +67,7 @@ class InitUploadResponse extends Equatable {
 }
 
 /// Response from uploading a single part
-/// 
+///
 /// API: PUT /files/multipart/:uploadId/parts/:partNumber
 @JsonSerializable()
 class PartUploadResponse extends Equatable {
@@ -77,7 +77,7 @@ class PartUploadResponse extends Equatable {
 
   factory PartUploadResponse.fromJson(Map<String, dynamic> json) =>
       _$PartUploadResponseFromJson(json);
-  
+
   Map<String, dynamic> toJson() => _$PartUploadResponseToJson(this);
 
   @override
@@ -85,21 +85,18 @@ class PartUploadResponse extends Equatable {
 }
 
 /// Response from completing a multipart upload
-/// 
+///
 /// API: POST /files/multipart/:uploadId/complete
 @JsonSerializable()
 class CompleteUploadResponse extends Equatable {
   final int fileId;
   final String url;
 
-  const CompleteUploadResponse({
-    required this.fileId,
-    required this.url,
-  });
+  const CompleteUploadResponse({required this.fileId, required this.url});
 
   factory CompleteUploadResponse.fromJson(Map<String, dynamic> json) =>
       _$CompleteUploadResponseFromJson(json);
-  
+
   Map<String, dynamic> toJson() => _$CompleteUploadResponseToJson(this);
 
   @override
@@ -144,24 +141,17 @@ class UploadProgress extends Equatable {
 
   @override
   List<Object?> get props => [
-        fileName,
-        totalBytes,
-        uploadedBytes,
-        progress,
-        status,
-        error,
-      ];
+    fileName,
+    totalBytes,
+    uploadedBytes,
+    progress,
+    status,
+    error,
+  ];
 }
 
 /// Upload status enumeration
-enum UploadStatus {
-  pending,
-  hashing,
-  uploading,
-  completed,
-  failed,
-  cancelled,
-}
+enum UploadStatus { pending, hashing, uploading, completed, failed, cancelled }
 
 /// 已上传图片信息
 class UploadedImage {

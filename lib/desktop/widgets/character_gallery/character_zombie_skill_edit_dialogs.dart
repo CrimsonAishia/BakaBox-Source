@@ -10,7 +10,7 @@ import 'preview_type_selector.dart';
 enum ZombieFieldType {
   number, // 数字（冷却）
   damage, // 伤害（允许范围如 50-80）
-  text,   // 文本（范围、特殊效果、描述）
+  text, // 文本（范围、特殊效果、描述）
 }
 
 /// 确保只有一个小数点的格式化器
@@ -199,11 +199,13 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
                           ),
                           const SizedBox(height: 16),
                           PreviewTypeSelector(
-                            initialType: widget.existingEdit?.previewType
-                                ?? _previewTypeToString(widget.skill.previewType),
+                            initialType:
+                                widget.existingEdit?.previewType ??
+                                _previewTypeToString(widget.skill.previewType),
                             initialFileId: widget.existingEdit?.previewFileId,
-                            initialVideoUrl: widget.existingEdit?.previewVideoUrl
-                                ?? widget.skill.previewVideoUrl,
+                            initialVideoUrl:
+                                widget.existingEdit?.previewVideoUrl ??
+                                widget.skill.previewVideoUrl,
                             currentImageUrl: widget.skill.previewImageUrl,
                             onChanged: (data) => _previewData = data,
                           ),

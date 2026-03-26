@@ -13,7 +13,7 @@ import 'notification_window_launcher.dart';
 import 'preview_window_launcher.dart';
 
 /// 桌面端窗口启动分发器
-/// 
+///
 /// 负责判断窗口类型并分发到对应的启动器
 class DesktopWindowLauncher {
   DesktopWindowLauncher._();
@@ -41,9 +41,13 @@ class DesktopWindowLauncher {
 
     if (isMainWindow) {
       await MainWindowLauncher.launch(controller);
-    } else if (PositionPreviewConfig.isPositionPreviewWindow(controller.arguments)) {
+    } else if (PositionPreviewConfig.isPositionPreviewWindow(
+      controller.arguments,
+    )) {
       await PreviewWindowLauncher.launch(controller);
-    } else if (NotificationData.isSingleNotificationWindow(controller.arguments)) {
+    } else if (NotificationData.isSingleNotificationWindow(
+      controller.arguments,
+    )) {
       await NotificationWindowLauncher.launch(controller);
     } else {
       final config = FloatingWindowConfig.fromArguments(controller.arguments);

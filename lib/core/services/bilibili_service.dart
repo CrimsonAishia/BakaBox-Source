@@ -15,18 +15,15 @@ class BilibiliService {
 
   /// 直播间信息缓存
   /// Key: roomId, Value: { data: BilibiliRoomInfo, timestamp: int }
-  static final Map<String, _CacheEntry<BilibiliRoomInfo>> _roomInfoCache =
-      {};
+  static final Map<String, _CacheEntry<BilibiliRoomInfo>> _roomInfoCache = {};
 
   /// 视频信息缓存
   /// Key: bvid, Value: { data: BilibiliVideoInfo, timestamp: int }
-  static final Map<String, _CacheEntry<BilibiliVideoInfo>> _videoInfoCache =
-      {};
+  static final Map<String, _CacheEntry<BilibiliVideoInfo>> _videoInfoCache = {};
 
   /// 用户信息缓存
   /// Key: mid, Value: { data: BilibiliUserInfo, timestamp: int }
-  static final Map<String, _CacheEntry<BilibiliUserInfo>> _userInfoCache =
-      {};
+  static final Map<String, _CacheEntry<BilibiliUserInfo>> _userInfoCache = {};
 
   /// 直播状态缓存（UID -> 直播状态）
   /// Key: uid, Value: { data: BilibiliLiveStatus, timestamp: int }
@@ -92,8 +89,10 @@ class BilibiliService {
   ///
   /// [bypassCache] 为 true 时强制从API获取最新数据
   /// 返回: 直播间详细信息，包含直播状态、人气值等
-  Future<BilibiliRoomInfo?> getRoomInfo(String roomId,
-      {bool bypassCache = false}) async {
+  Future<BilibiliRoomInfo?> getRoomInfo(
+    String roomId, {
+    bool bypassCache = false,
+  }) async {
     // 先检查是否是短号，如果是短号则转换为真实room_id
     final realRoomId = await _resolveRealRoomId(roomId);
     if (realRoomId == null) {
@@ -291,10 +290,7 @@ class BilibiliService {
             Uri.parse(
               'https://api.live.bilibili.com/room/v1/Room/get_status_info_by_uids',
             ),
-            headers: {
-              ..._headers,
-              'Content-Type': 'application/json',
-            },
+            headers: {..._headers, 'Content-Type': 'application/json'},
             body: jsonEncode({'uids': uidsToFetch}),
           )
           .timeout(const Duration(seconds: 10));
@@ -371,7 +367,8 @@ class BilibiliService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['code'] == 0 && data['data'] != null) {
-          final byRoomIds = data['data']['by_room_ids'] as Map<String, dynamic>?;
+          final byRoomIds =
+              data['data']['by_room_ids'] as Map<String, dynamic>?;
           if (byRoomIds != null) {
             for (final entry in byRoomIds.entries) {
               final roomInfo = entry.value as Map<String, dynamic>;
@@ -404,8 +401,10 @@ class BilibiliService {
   ///
   /// [bypassCache] 为 true 时强制从API获取最新数据
   /// 返回: 视频详细信息，包含播放量、点赞数等
-  Future<BilibiliVideoInfo?> getVideoInfo(String bvid,
-      {bool bypassCache = false}) async {
+  Future<BilibiliVideoInfo?> getVideoInfo(
+    String bvid, {
+    bool bypassCache = false,
+  }) async {
     // 检查缓存
     if (!bypassCache) {
       final cached = _videoInfoCache[bvid];
@@ -447,8 +446,10 @@ class BilibiliService {
   ///
   /// [bypassCache] 为 true 时强制从API获取最新数据
   /// 返回: 用户详细信息，包含粉丝数等
-  Future<BilibiliUserInfo?> getUserInfo(String mid,
-      {bool bypassCache = false}) async {
+  Future<BilibiliUserInfo?> getUserInfo(
+    String mid, {
+    bool bypassCache = false,
+  }) async {
     // 检查缓存
     if (!bypassCache) {
       final cached = _userInfoCache[mid];

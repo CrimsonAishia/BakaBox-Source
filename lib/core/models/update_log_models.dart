@@ -8,9 +8,14 @@ class Pagination {
   final int pageSize;
   final String orderBy;
 
-  Pagination({required this.pageIndex, required this.pageSize, required this.orderBy});
+  Pagination({
+    required this.pageIndex,
+    required this.pageSize,
+    required this.orderBy,
+  });
 
-  factory Pagination.fromJson(Map<String, dynamic> json) => _$PaginationFromJson(json);
+  factory Pagination.fromJson(Map<String, dynamic> json) =>
+      _$PaginationFromJson(json);
   Map<String, dynamic> toJson() => _$PaginationToJson(this);
 }
 
@@ -20,9 +25,14 @@ class SteamWorkChangeLogRequest {
   final String content;
   final String id;
 
-  SteamWorkChangeLogRequest({required this.pagination, required this.content, required this.id});
+  SteamWorkChangeLogRequest({
+    required this.pagination,
+    required this.content,
+    required this.id,
+  });
 
-  factory SteamWorkChangeLogRequest.fromJson(Map<String, dynamic> json) => _$SteamWorkChangeLogRequestFromJson(json);
+  factory SteamWorkChangeLogRequest.fromJson(Map<String, dynamic> json) =>
+      _$SteamWorkChangeLogRequestFromJson(json);
   Map<String, dynamic> toJson() => _$SteamWorkChangeLogRequestToJson(this);
 }
 
@@ -35,11 +45,15 @@ class SteamWorkChangeLog {
   final int workshopItemId;
 
   SteamWorkChangeLog({
-    required this.updateTime, required this.content, required this.rawHtml,
-    required this.createdAt, required this.workshopItemId,
+    required this.updateTime,
+    required this.content,
+    required this.rawHtml,
+    required this.createdAt,
+    required this.workshopItemId,
   });
 
-  factory SteamWorkChangeLog.fromJson(Map<String, dynamic> json) => _$SteamWorkChangeLogFromJson(json);
+  factory SteamWorkChangeLog.fromJson(Map<String, dynamic> json) =>
+      _$SteamWorkChangeLogFromJson(json);
   Map<String, dynamic> toJson() => _$SteamWorkChangeLogToJson(this);
 }
 
@@ -51,6 +65,7 @@ class SteamWorkChangeLogResponse {
 
   SteamWorkChangeLogResponse({required this.total, required this.items});
 
-  factory SteamWorkChangeLogResponse.fromJson(Map<String, dynamic> json) => _$SteamWorkChangeLogResponseFromJson(json);
+  factory SteamWorkChangeLogResponse.fromJson(Map<String, dynamic> json) =>
+      _$SteamWorkChangeLogResponseFromJson(json);
   Map<String, dynamic> toJson() => _$SteamWorkChangeLogResponseToJson(this);
 }

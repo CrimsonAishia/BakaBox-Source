@@ -65,7 +65,8 @@ class WeaponModelHanafudaCard extends StatefulWidget {
   }
 
   @override
-  State<WeaponModelHanafudaCard> createState() => _WeaponModelHanafudaCardState();
+  State<WeaponModelHanafudaCard> createState() =>
+      _WeaponModelHanafudaCardState();
 }
 
 class _WeaponModelHanafudaCardState extends State<WeaponModelHanafudaCard> {
@@ -104,9 +105,13 @@ class _WeaponModelHanafudaCardState extends State<WeaponModelHanafudaCard> {
             boxShadow: [
               BoxShadow(
                 color: widget.isSelected
-                    ? CharacterGalleryTheme.getGold(context).withValues(alpha: 0.4)
+                    ? CharacterGalleryTheme.getGold(
+                        context,
+                      ).withValues(alpha: 0.4)
                     : (_isHovered
-                          ? CharacterGalleryTheme.getVermillion(context).withValues(alpha: 0.3)
+                          ? CharacterGalleryTheme.getVermillion(
+                              context,
+                            ).withValues(alpha: 0.3)
                           : shadowColor),
                 blurRadius: isHighlighted ? 12 : 6,
                 offset: Offset(0, _isHovered ? 8 : 4),
@@ -121,7 +126,9 @@ class _WeaponModelHanafudaCardState extends State<WeaponModelHanafudaCard> {
                 height: 8,
                 decoration: BoxDecoration(
                   color: CharacterGalleryTheme.getVermillion(context),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(6),
+                  ),
                 ),
               ),
               // 图片
@@ -130,18 +137,28 @@ class _WeaponModelHanafudaCardState extends State<WeaponModelHanafudaCard> {
                   margin: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: CharacterGalleryTheme.getGold(context).withValues(alpha: _isHovered ? 0.8 : 0.5),
+                      color: CharacterGalleryTheme.getGold(
+                        context,
+                      ).withValues(alpha: _isHovered ? 0.8 : 0.5),
                     ),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(3),
-                    child: widget.thumbnailUrl != null && widget.thumbnailUrl!.isNotEmpty
+                    child:
+                        widget.thumbnailUrl != null &&
+                            widget.thumbnailUrl!.isNotEmpty
                         ? DiskCachedImage(
                             imageUrl: widget.thumbnailUrl!,
                             fit: BoxFit.cover,
-                            placeholder: _buildPlaceholder(washiColor, scrollBrown),
-                            errorWidget: _buildErrorWidget(washiColor, scrollBrown),
+                            placeholder: _buildPlaceholder(
+                              washiColor,
+                              scrollBrown,
+                            ),
+                            errorWidget: _buildErrorWidget(
+                              washiColor,
+                              scrollBrown,
+                            ),
                           )
                         : _buildErrorWidget(washiColor, scrollBrown),
                   ),
@@ -166,7 +183,8 @@ class _WeaponModelHanafudaCardState extends State<WeaponModelHanafudaCard> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     // 角色名称（如果有）
-                    if (widget.characterName != null && widget.characterName!.isNotEmpty) ...[
+                    if (widget.characterName != null &&
+                        widget.characterName!.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
                         widget.characterName!,

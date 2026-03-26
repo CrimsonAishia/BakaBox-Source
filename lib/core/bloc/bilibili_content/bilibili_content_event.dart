@@ -15,7 +15,11 @@ class BilibiliContentFetchRequested extends BilibiliContentEvent {
   final int? tabIndex;
   final int? pageIndex;
 
-  const BilibiliContentFetchRequested({this.refresh = false, this.tabIndex, this.pageIndex});
+  const BilibiliContentFetchRequested({
+    this.refresh = false,
+    this.tabIndex,
+    this.pageIndex,
+  });
 
   @override
   List<Object?> get props => [refresh, tabIndex, pageIndex];

@@ -50,7 +50,9 @@ class SettingsGroupTitle extends StatelessWidget {
                     shadows: hasGlow
                         ? [
                             Shadow(
-                              color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                              color: const Color(
+                                0xFF0080FF,
+                              ).withValues(alpha: 0.3),
                               blurRadius: 8,
                             ),
                           ]

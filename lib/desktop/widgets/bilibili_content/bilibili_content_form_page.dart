@@ -9,18 +9,25 @@ import '../../../core/widgets/disk_cached_image.dart';
 class BilibiliContentFormPage extends StatefulWidget {
   /// 编辑模式: 'liveRoom' = 直播间, 'video' = 视频
   final String editMode;
+
   /// 是否为编辑模式（true=编辑已有，false=新增）
   final bool isEditing;
+
   /// 如果是编辑视频，传入视频ID
   final String? editingVideoId;
+
   /// 直播间数据（编辑时使用）
   final LiveRoom? liveRoom;
+
   /// 视频数据（编辑时使用）
   final BilibiliVideo? video;
+
   /// 关闭表单回调
   final VoidCallback onClose;
+
   /// 取消编辑回调
   final VoidCallback onCancel;
+
   /// 提交成功回调
   final VoidCallback onSubmitSuccess;
 
@@ -37,7 +44,8 @@ class BilibiliContentFormPage extends StatefulWidget {
   });
 
   @override
-  State<BilibiliContentFormPage> createState() => _BilibiliContentFormPageState();
+  State<BilibiliContentFormPage> createState() =>
+      _BilibiliContentFormPageState();
 }
 
 class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
@@ -169,7 +177,10 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
           );
         }
 
-        final roomInfo = await BilibiliService().getRoomInfo(roomId, bypassCache: true);
+        final roomInfo = await BilibiliService().getRoomInfo(
+          roomId,
+          bypassCache: true,
+        );
         if (roomInfo == null) {
           setState(() {
             _validationError = '无法获取直播间信息，请检查ID是否正确';
@@ -181,7 +192,9 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
         // 获取主播头像
         String? ownerFace;
         if (roomInfo.userId != null) {
-          final userInfo = await BilibiliService().getUserInfo(roomInfo.userId!);
+          final userInfo = await BilibiliService().getUserInfo(
+            roomInfo.userId!,
+          );
           ownerFace = userInfo?.face;
         }
 
@@ -211,7 +224,10 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
           );
         }
 
-        final videoInfo = await BilibiliService().getVideoInfo(bvid, bypassCache: true);
+        final videoInfo = await BilibiliService().getVideoInfo(
+          bvid,
+          bypassCache: true,
+        );
         if (videoInfo == null) {
           setState(() {
             _validationError = '无法获取视频信息，请检查BV号是否正确';
@@ -279,8 +295,12 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
         final roomId = BilibiliService.extractRoomId(newRoomId);
 
         // 如果房间ID变化了，使用新获取的 ownerUid 和 ownerName
-        final ownerUid = roomIdChanged ? _fetchedOwnerUid : currentRoom.ownerUid;
-        final ownerName = roomIdChanged ? _fetchedOwnerName : currentRoom.ownerName;
+        final ownerUid = roomIdChanged
+            ? _fetchedOwnerUid
+            : currentRoom.ownerUid;
+        final ownerName = roomIdChanged
+            ? _fetchedOwnerName
+            : currentRoom.ownerName;
 
         bloc.add(
           BilibiliContentUpdateRequested(
@@ -304,7 +324,9 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
         }
         final newBvid = _contentIdController.text.trim();
         final bvidChanged = newBvid != currentVideo.bvid;
-        final newOwnerFace = bvidChanged ? _fetchedOwnerFace : currentVideo.ownerFace;
+        final newOwnerFace = bvidChanged
+            ? _fetchedOwnerFace
+            : currentVideo.ownerFace;
 
         bloc.add(
           BilibiliContentUpdateRequested(
@@ -326,7 +348,9 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
       bloc.add(
         BilibiliContentAddRequested(
           contentId: contentId,
-          contentType: _isLiveRoom ? BilibiliContentType.liveRoom : BilibiliContentType.video,
+          contentType: _isLiveRoom
+              ? BilibiliContentType.liveRoom
+              : BilibiliContentType.video,
           coverUrl: _fetchedCoverUrl,
           title: _fetchedTitle,
           ownerFace: _isLiveRoom ? null : _fetchedOwnerFace,
@@ -364,9 +388,13 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
 
   Widget _buildFormContent(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final washiColor = isDark ? const Color(0xFF2A2520) : const Color(0xFFF5F0E6);
+    final washiColor = isDark
+        ? const Color(0xFF2A2520)
+        : const Color(0xFFF5F0E6);
     final inkColor = isDark ? const Color(0xFFE8E0D8) : const Color(0xFF2C1810);
-    final scrollBrown = isDark ? const Color(0xFFB8956A) : const Color(0xFF8B4513);
+    final scrollBrown = isDark
+        ? const Color(0xFFB8956A)
+        : const Color(0xFF8B4513);
     final accentColor = _isLiveRoom ? _bilibiliPink : _bilibiliBlue;
 
     return ClipRRect(
@@ -390,11 +418,28 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildInputSection(inkColor, scrollBrown, accentColor, isDark),
+                      _buildInputSection(
+                        inkColor,
+                        scrollBrown,
+                        accentColor,
+                        isDark,
+                      ),
                       const SizedBox(height: 16),
-                      if (!_isLiveRoom) _buildCategorySelector(inkColor, scrollBrown, accentColor, isDark),
+                      if (!_isLiveRoom)
+                        _buildCategorySelector(
+                          inkColor,
+                          scrollBrown,
+                          accentColor,
+                          isDark,
+                        ),
                       if (!_isLiveRoom) const SizedBox(height: 16),
-                      _buildPreviewSection(washiColor, inkColor, scrollBrown, accentColor, isDark),
+                      _buildPreviewSection(
+                        washiColor,
+                        inkColor,
+                        scrollBrown,
+                        accentColor,
+                        isDark,
+                      ),
                     ],
                   ),
                 ),
@@ -406,7 +451,11 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
     );
   }
 
-  Widget _buildFormHeader(Color inkColor, Color scrollBrown, Color accentColor) {
+  Widget _buildFormHeader(
+    Color inkColor,
+    Color scrollBrown,
+    Color accentColor,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -477,7 +526,9 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
           // 保存按钮
           _buildPrimaryButton(
             label: _isSubmitting ? '提交中' : '保存',
-            onTap: (_isSubmitting || _isFetchingFromBiliBili) ? null : _submitForm,
+            onTap: (_isSubmitting || _isFetchingFromBiliBili)
+                ? null
+                : _submitForm,
             isLoading: _isSubmitting,
             accentColor: accentColor,
           ),
@@ -529,7 +580,9 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
                       ? [_bilibiliPink, _bilibiliPink.withValues(alpha: 0.85)]
                       : [_bilibiliBlueLight, accentColor],
                 ),
-          color: isDisabled ? Colors.grey[400] : (isLoading ? accentColor.withValues(alpha: 0.8) : null),
+          color: isDisabled
+              ? Colors.grey[400]
+              : (isLoading ? accentColor.withValues(alpha: 0.8) : null),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -561,11 +614,22 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
     );
   }
 
-  Widget _buildInputSection(Color inkColor, Color scrollBrown, Color accentColor, bool isDark) {
+  Widget _buildInputSection(
+    Color inkColor,
+    Color scrollBrown,
+    Color accentColor,
+    bool isDark,
+  ) {
     final inputBg = isDark ? const Color(0xFF3D3632) : Colors.white;
 
     if (widget.isEditing) {
-      return _buildEditingInfoCard(inkColor, scrollBrown, accentColor, inputBg, isDark);
+      return _buildEditingInfoCard(
+        inkColor,
+        scrollBrown,
+        accentColor,
+        inputBg,
+        isDark,
+      );
     }
 
     return Container(
@@ -618,18 +682,32 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
             focusNode: _focusNode,
             style: TextStyle(fontSize: 14, color: inkColor),
             decoration: InputDecoration(
-              hintText: _isLiveRoom ? '例如: live.bilibili.com/123456' : '例如: BV1xx411c7mD',
-              hintStyle: TextStyle(color: inkColor.withValues(alpha: 0.35), fontSize: 13),
+              hintText: _isLiveRoom
+                  ? '例如: live.bilibili.com/123456'
+                  : '例如: BV1xx411c7mD',
+              hintStyle: TextStyle(
+                color: inkColor.withValues(alpha: 0.35),
+                fontSize: 13,
+              ),
               filled: true,
-              fillColor: isDark ? const Color(0xFF2A2520) : const Color(0xFFFAF8F5),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              fillColor: isDark
+                  ? const Color(0xFF2A2520)
+                  : const Color(0xFFFAF8F5),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: scrollBrown.withValues(alpha: 0.2)),
+                borderSide: BorderSide(
+                  color: scrollBrown.withValues(alpha: 0.2),
+                ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: scrollBrown.withValues(alpha: 0.2)),
+                borderSide: BorderSide(
+                  color: scrollBrown.withValues(alpha: 0.2),
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -691,7 +769,11 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
                 ),
                 child: Text(
                   '编辑中',
-                  style: TextStyle(fontSize: 10, color: accentColor, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: accentColor,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
@@ -703,19 +785,32 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
                 child: TextFormField(
                   controller: _contentIdController,
                   focusNode: _focusNode,
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: accentColor),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: accentColor,
+                  ),
                   decoration: InputDecoration(
                     hintText: _isLiveRoom ? '直播间ID' : 'BV号',
-                    hintStyle: TextStyle(color: inkColor.withValues(alpha: 0.35)),
+                    hintStyle: TextStyle(
+                      color: inkColor.withValues(alpha: 0.35),
+                    ),
                     filled: true,
-                    fillColor: isDark ? const Color(0xFF2A2520) : const Color(0xFFFAF8F5),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    fillColor: isDark
+                        ? const Color(0xFF2A2520)
+                        : const Color(0xFFFAF8F5),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: scrollBrown.withValues(alpha: 0.2)),
+                      borderSide: BorderSide(
+                        color: scrollBrown.withValues(alpha: 0.2),
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -734,7 +829,9 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
                   decoration: BoxDecoration(
                     color: accentColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: accentColor.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: accentColor.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: _isFetchingFromBiliBili
                       ? const SizedBox(
@@ -793,7 +890,8 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
     required bool isDark,
   }) {
     final hasTitle = _fetchedTitle != null;
-    final hasAuthor = _fetchedOwnerName != null && _fetchedOwnerName!.isNotEmpty;
+    final hasAuthor =
+        _fetchedOwnerName != null && _fetchedOwnerName!.isNotEmpty;
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -812,13 +910,19 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
               const SizedBox(width: 6),
               Text(
                 '标题',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: inkColor),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: inkColor,
+                ),
               ),
               const Spacer(),
               Icon(
                 hasTitle ? Icons.check_circle : Icons.pending,
                 size: 12,
-                color: hasTitle ? Colors.green : inkColor.withValues(alpha: 0.3),
+                color: hasTitle
+                    ? Colors.green
+                    : inkColor.withValues(alpha: 0.3),
               ),
             ],
           ),
@@ -841,13 +945,19 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
               const SizedBox(width: 6),
               Text(
                 '作者',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: inkColor),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: inkColor,
+                ),
               ),
               const Spacer(),
               Icon(
                 hasAuthor ? Icons.check_circle : Icons.pending,
                 size: 12,
-                color: hasAuthor ? Colors.green : inkColor.withValues(alpha: 0.3),
+                color: hasAuthor
+                    ? Colors.green
+                    : inkColor.withValues(alpha: 0.3),
               ),
             ],
           ),
@@ -866,7 +976,11 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Container(
                           color: accentColor.withValues(alpha: 0.2),
-                          child: Icon(Icons.person, size: 16, color: accentColor),
+                          child: Icon(
+                            Icons.person,
+                            size: 16,
+                            color: accentColor,
+                          ),
                         ),
                       ),
                     ),
@@ -897,9 +1011,9 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
               ],
             )
           else
-              Text(
-                '等待获取...',
-                style: TextStyle(
+            Text(
+              '等待获取...',
+              style: TextStyle(
                 fontSize: 11,
                 color: inkColor.withValues(alpha: 0.4),
               ),
@@ -932,11 +1046,7 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
             children: [
               Row(
                 children: [
-                  Icon(
-                    Icons.category,
-                    size: 18,
-                    color: accentColor,
-                  ),
+                  Icon(Icons.category, size: 18, color: accentColor),
                   const SizedBox(width: 8),
                   Text(
                     '视频分类',
@@ -1018,8 +1128,8 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
                 color: isSelected
                     ? accentColor.withValues(alpha: 0.15)
                     : (isDark
-                        ? Colors.white.withValues(alpha: 0.08)
-                        : Colors.black.withValues(alpha: 0.06)),
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : Colors.black.withValues(alpha: 0.06)),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isSelected
@@ -1032,7 +1142,9 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected ? accentColor : (isDark ? Colors.white70 : Colors.black87),
+                  color: isSelected
+                      ? accentColor
+                      : (isDark ? Colors.white70 : Colors.black87),
                 ),
               ),
             ),
@@ -1065,7 +1177,11 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
               const SizedBox(width: 6),
               Text(
                 '封面',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: inkColor),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: inkColor,
+                ),
               ),
             ],
           ),
@@ -1092,7 +1208,10 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
                           bottom: 4,
                           right: 4,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.black.withValues(alpha: 0.6),
                               borderRadius: BorderRadius.circular(4),
@@ -1100,11 +1219,18 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.check_circle, size: 10, color: Colors.white),
+                                const Icon(
+                                  Icons.check_circle,
+                                  size: 10,
+                                  color: Colors.white,
+                                ),
                                 const SizedBox(width: 3),
                                 Text(
                                   '已获取',
-                                  style: TextStyle(fontSize: 9, color: Colors.white),
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ],
                             ),
@@ -1116,11 +1242,18 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.image_outlined, size: 24, color: inkColor.withValues(alpha: 0.2)),
+                          Icon(
+                            Icons.image_outlined,
+                            size: 24,
+                            color: inkColor.withValues(alpha: 0.2),
+                          ),
                           const SizedBox(height: 4),
-              Text(
-                '等待获取...',
-                style: TextStyle(fontSize: 10, color: inkColor.withValues(alpha: 0.4)),
+                          Text(
+                            '等待获取...',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: inkColor.withValues(alpha: 0.4),
+                            ),
                           ),
                         ],
                       ),

@@ -4,7 +4,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'map_history_tab.dart';
 
 /// 地图历史记录对话框
-/// 
+///
 /// 显示地图的运行历史记录
 class MapHistoryDialog extends StatelessWidget {
   final String mapName;
@@ -24,10 +24,8 @@ class MapHistoryDialog extends StatelessWidget {
   }) {
     showDialog(
       context: context,
-      builder: (context) => MapHistoryDialog(
-        mapName: mapName,
-        mapLabel: mapLabel,
-      ),
+      builder: (context) =>
+          MapHistoryDialog(mapName: mapName, mapLabel: mapLabel),
     );
   }
 
@@ -58,8 +56,12 @@ class MapHistoryDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                color: isDark
+                    ? const Color(0xFF0F172A)
+                    : const Color(0xFFF8FAFC),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
                 border: Border(
                   bottom: BorderSide(
                     color: isDark
@@ -85,7 +87,9 @@ class MapHistoryDialog extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : const Color(0xFF111827),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF111827),
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -140,11 +144,9 @@ class MapHistoryDialog extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // 历史记录内容
-            Expanded(
-              child: MapHistoryTab(mapName: mapName),
-            ),
+            Expanded(child: MapHistoryTab(mapName: mapName)),
           ],
         ),
       ),

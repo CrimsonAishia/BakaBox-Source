@@ -183,11 +183,7 @@ class _PreviewImageUploadItemState extends State<PreviewImageUploadItem>
     required String label,
     required VoidCallback onTap,
   }) {
-    return _HoverButton(
-      icon: icon,
-      label: label,
-      onTap: onTap,
-    );
+    return _HoverButton(icon: icon, label: label, onTap: onTap);
   }
 
   Widget _buildContent(
@@ -407,7 +403,7 @@ class _PreviewImageUploadItemState extends State<PreviewImageUploadItem>
       }
 
       final reader = await clipboard.read();
-      
+
       // 尝试读取 PNG 格式
       if (!reader.canProvide(Formats.png)) {
         if (mounted) {
@@ -435,7 +431,11 @@ class _PreviewImageUploadItemState extends State<PreviewImageUploadItem>
           await tempFile.writeAsBytes(imageData);
 
           if (mounted) {
-            await _cropAndUploadImage(tempFile, deleteTempFile: true, tempDir: tempDir);
+            await _cropAndUploadImage(
+              tempFile,
+              deleteTempFile: true,
+              tempDir: tempDir,
+            );
           }
         } catch (e) {
           LogService.e('从剪贴板导入图片失败: ${widget.label}', e);
@@ -639,43 +639,57 @@ class PreviewImagesUploadWidgetState extends State<PreviewImagesUploadWidget>
   Future<void> _loadUrlsFromFileIds() async {
     if (widget.thumbnailFileId != null) {
       try {
-        final url = await ImageUrlService.instance.getSignedUrlById(widget.thumbnailFileId!);
+        final url = await ImageUrlService.instance.getSignedUrlById(
+          widget.thumbnailFileId!,
+        );
         if (mounted) setState(() => _thumbnailUrlFromFileId = url);
       } catch (_) {}
     }
     if (widget.frontFileId != null) {
       try {
-        final url = await ImageUrlService.instance.getSignedUrlById(widget.frontFileId!);
+        final url = await ImageUrlService.instance.getSignedUrlById(
+          widget.frontFileId!,
+        );
         if (mounted) setState(() => _frontUrlFromFileId = url);
       } catch (_) {}
     }
     if (widget.leftFileId != null) {
       try {
-        final url = await ImageUrlService.instance.getSignedUrlById(widget.leftFileId!);
+        final url = await ImageUrlService.instance.getSignedUrlById(
+          widget.leftFileId!,
+        );
         if (mounted) setState(() => _leftUrlFromFileId = url);
       } catch (_) {}
     }
     if (widget.rightFileId != null) {
       try {
-        final url = await ImageUrlService.instance.getSignedUrlById(widget.rightFileId!);
+        final url = await ImageUrlService.instance.getSignedUrlById(
+          widget.rightFileId!,
+        );
         if (mounted) setState(() => _rightUrlFromFileId = url);
       } catch (_) {}
     }
     if (widget.backFileId != null) {
       try {
-        final url = await ImageUrlService.instance.getSignedUrlById(widget.backFileId!);
+        final url = await ImageUrlService.instance.getSignedUrlById(
+          widget.backFileId!,
+        );
         if (mounted) setState(() => _backUrlFromFileId = url);
       } catch (_) {}
     }
     if (widget.handFileId != null) {
       try {
-        final url = await ImageUrlService.instance.getSignedUrlById(widget.handFileId!);
+        final url = await ImageUrlService.instance.getSignedUrlById(
+          widget.handFileId!,
+        );
         if (mounted) setState(() => _handUrlFromFileId = url);
       } catch (_) {}
     }
     if (widget.legFileId != null) {
       try {
-        final url = await ImageUrlService.instance.getSignedUrlById(widget.legFileId!);
+        final url = await ImageUrlService.instance.getSignedUrlById(
+          widget.legFileId!,
+        );
         if (mounted) setState(() => _legUrlFromFileId = url);
       } catch (_) {}
     }
@@ -1018,12 +1032,7 @@ class _ThumbnailUploadItemState extends State<_ThumbnailUploadItem>
     required String label,
     required VoidCallback onTap,
   }) {
-    return _HoverButton(
-      icon: icon,
-      label: label,
-      onTap: onTap,
-      large: true,
-    );
+    return _HoverButton(icon: icon, label: label, onTap: onTap, large: true);
   }
 
   Widget _buildContent(
@@ -1251,7 +1260,7 @@ class _ThumbnailUploadItemState extends State<_ThumbnailUploadItem>
       }
 
       final reader = await clipboard.read();
-      
+
       // 尝试读取 PNG 格式
       if (!reader.canProvide(Formats.png)) {
         if (mounted) {
@@ -1279,7 +1288,11 @@ class _ThumbnailUploadItemState extends State<_ThumbnailUploadItem>
           await tempFile.writeAsBytes(imageData);
 
           if (mounted) {
-            await _cropAndUploadImage(tempFile, deleteTempFile: true, tempDir: tempDir);
+            await _cropAndUploadImage(
+              tempFile,
+              deleteTempFile: true,
+              tempDir: tempDir,
+            );
           }
         } catch (e) {
           LogService.e('从剪贴板导入缩略图失败', e);
@@ -1430,7 +1443,10 @@ class _HoverButtonState extends State<_HoverButton> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
+          padding: EdgeInsets.symmetric(
+            horizontal: hPadding,
+            vertical: vPadding,
+          ),
           decoration: BoxDecoration(
             color: _isHovered
                 ? Colors.white.withValues(alpha: 0.35)

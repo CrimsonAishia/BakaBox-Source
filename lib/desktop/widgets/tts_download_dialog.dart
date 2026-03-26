@@ -304,7 +304,10 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
                 if (isFailed && state.error != null) ...[
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.redAccent.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
@@ -399,7 +402,8 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
           Tooltip(
             message: hasAcceleration ? '从 GitHub 直接下载' : '下载模型',
             child: _HoverButton(
-              onPressed: state.ttsDownloadStatus == TtsDownloadStatus.downloading
+              onPressed:
+                  state.ttsDownloadStatus == TtsDownloadStatus.downloading
                   ? null
                   : () {
                       setState(() => _downloadingModelId = model.id);
@@ -514,20 +518,20 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
     if (confirm == true && mounted) {
       // 设置删除中状态，触发淡出动画
       setState(() => _deletingModelId = model.id);
-      
+
       // 等待动画完成
       await Future.delayed(const Duration(milliseconds: 250));
-      
+
       if (!mounted) return;
-      
+
       // 通过 Bloc 事件执行删除（会自动处理 TTS 开关状态）
       context.read<MapSubscriptionBloc>().add(
         MapSubscriptionDeleteTtsModel(modelId: model.id),
       );
-      
+
       if (mounted) {
         setState(() => _deletingModelId = null);
-        
+
         // 显示删除成功提示
         ToastUtils.showSuccess(context, '已删除 ${model.name}');
       }

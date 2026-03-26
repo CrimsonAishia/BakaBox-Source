@@ -12,11 +12,11 @@ class FloatingWindowColors {
   static const Color failed = Color(0xFFEF4444);
   static const Color serverFull = Color(0xFFF59E0B);
   static const Color paused = Color(0xFF6B7280);
-  
+
   // 背景色
   static const Color background = Color(0xF21E293B); // 0.95 opacity
   static const Color backgroundDark = Color(0xFF0F172A);
-  
+
   /// 根据状态获取颜色
   static Color fromState(FloatingWindowState state) {
     if (state.isIdle) return idle;
@@ -30,15 +30,20 @@ class FloatingWindowColors {
     if (state.isPaused) return paused;
     return idle;
   }
-  
+
   /// 线程状态颜色
   static Color threadColor(String status) {
     switch (status) {
-      case 'idle': return Colors.white.withValues(alpha: 0.3);
-      case 'requesting': return connecting;
-      case 'success': return success;
-      case 'failed': return failed;
-      default: return Colors.white.withValues(alpha: 0.3);
+      case 'idle':
+        return Colors.white.withValues(alpha: 0.3);
+      case 'requesting':
+        return connecting;
+      case 'success':
+        return success;
+      case 'failed':
+        return failed;
+      default:
+        return Colors.white.withValues(alpha: 0.3);
     }
   }
 }

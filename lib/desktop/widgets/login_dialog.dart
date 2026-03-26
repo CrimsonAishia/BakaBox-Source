@@ -55,10 +55,9 @@ class _LoginDialogState extends State<LoginDialog> {
       return;
     }
 
-    context.read<AuthBloc>().add(AuthLoginRequested(
-          username: username,
-          password: password,
-        ));
+    context.read<AuthBloc>().add(
+      AuthLoginRequested(username: username, password: password),
+    );
   }
 
   void _openRegister() {
@@ -66,7 +65,11 @@ class _LoginDialogState extends State<LoginDialog> {
   }
 
   void _openForgotPassword() {
-    launchUrl(Uri.parse('https://bbs.zombieden.cn/member.php?mod=logging&action=login&viewlostpw=1'));
+    launchUrl(
+      Uri.parse(
+        'https://bbs.zombieden.cn/member.php?mod=logging&action=login&viewlostpw=1',
+      ),
+    );
   }
 
   void _openQQLogin(BuildContext context) {
@@ -77,14 +80,22 @@ class _LoginDialogState extends State<LoginDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Slate 配色
-    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white; // slate-800
-    final inputBgColor = isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9); // slate-700 / slate-100
+    final bgColor = isDark
+        ? const Color(0xFF1E293B)
+        : Colors.white; // slate-800
+    final inputBgColor = isDark
+        ? const Color(0xFF334155)
+        : const Color(0xFFF1F5F9); // slate-700 / slate-100
     final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
-    final secondaryTextColor = isDark ? Colors.white54 : const Color(0xFF6B7280);
-    final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08);
-    
+    final secondaryTextColor = isDark
+        ? Colors.white54
+        : const Color(0xFF6B7280);
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.black.withValues(alpha: 0.08);
+
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state.status == AuthStatus.authenticated) {
@@ -102,8 +113,9 @@ class _LoginDialogState extends State<LoginDialog> {
       builder: (context, state) {
         return Dialog(
           backgroundColor: bgColor,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Container(
             width: 360,
             padding: const EdgeInsets.all(24),
@@ -144,12 +156,19 @@ class _LoginDialogState extends State<LoginDialog> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.security, color: Color(0xFF0080FF), size: 18),
+                      const Icon(
+                        Icons.security,
+                        color: Color(0xFF0080FF),
+                        size: 18,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           '您的密码仅用于验证身份，不会被保存',
-                          style: TextStyle(color: secondaryTextColor, fontSize: 12),
+                          style: TextStyle(
+                            color: secondaryTextColor,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ],
@@ -247,8 +266,9 @@ class _LoginDialogState extends State<LoginDialog> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      disabledBackgroundColor:
-                          const Color(0xFF0080FF).withValues(alpha: 0.5),
+                      disabledBackgroundColor: const Color(
+                        0xFF0080FF,
+                      ).withValues(alpha: 0.5),
                     ),
                     child: _isLoading
                         ? const SizedBox(
@@ -271,7 +291,13 @@ class _LoginDialogState extends State<LoginDialog> {
                       Expanded(child: Divider(color: borderColor)),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text('或', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
+                        child: Text(
+                          '或',
+                          style: TextStyle(
+                            color: secondaryTextColor,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                       Expanded(child: Divider(color: borderColor)),
                     ],
@@ -280,14 +306,20 @@ class _LoginDialogState extends State<LoginDialog> {
                   SizedBox(
                     height: 44,
                     child: OutlinedButton.icon(
-                      onPressed: _isLoading ? null : () => _openQQLogin(context),
+                      onPressed: _isLoading
+                          ? null
+                          : () => _openQQLogin(context),
                       icon: Image.asset(
                         'assets/icons/qq.png',
                         width: 20,
                         height: 20,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.chat_bubble, size: 20),
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.chat_bubble, size: 20),
                       ),
-                      label: const Text('QQ 登录', style: TextStyle(fontSize: 16)),
+                      label: const Text(
+                        'QQ 登录',
+                        style: TextStyle(fontSize: 16),
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: textColor,
                         side: BorderSide(color: borderColor),

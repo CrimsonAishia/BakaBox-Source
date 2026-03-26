@@ -9,6 +9,7 @@ import 'character_gallery_theme.dart';
 /// 用于在上传前对图片进行裁剪（支持固定比例或自由比例）
 class ImageCropDialog extends StatefulWidget {
   final File imageFile;
+
   /// 裁剪比例，null 表示自由比例
   final double? aspectRatio;
   final String title;
@@ -94,9 +95,9 @@ class _ImageCropDialogState extends State<ImageCropDialog> {
         } catch (e) {
           if (mounted) {
             setState(() => _isCropping = false);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('图片处理失败: $e')),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('图片处理失败: $e')));
           }
         }
       case CropFailure():
@@ -347,9 +348,7 @@ class _ImageCropDialogState extends State<ImageCropDialog> {
             interactive: false, // 禁用图片拖动和缩放
             fixCropRect: false, // 允许拖动裁剪框
             overlayBuilder: (context, rect) => SizedBox.expand(
-              child: CustomPaint(
-                painter: _CropGridPainter(),
-              ),
+              child: CustomPaint(painter: _CropGridPainter()),
             ),
           ),
           // 处理中遮罩
@@ -390,9 +389,7 @@ class _ImageCropDialogState extends State<ImageCropDialog> {
 
   Widget _buildFooter(Color scrollBrown, Color vermillion, Color inkColor) {
     final hasFixedRatio = widget.aspectRatio != null;
-    final hintText = hasFixedRatio
-        ? '拖动选框调整区域，图片将以正方形保存'
-        : '拖动选框调整裁剪区域';
+    final hintText = hasFixedRatio ? '拖动选框调整区域，图片将以正方形保存' : '拖动选框调整裁剪区域';
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
@@ -477,12 +474,18 @@ class _CropGridPainter extends CustomPainter {
     // 竖线
     canvas.drawLine(Offset(thirdW, 0), Offset(thirdW, size.height), paint);
     canvas.drawLine(
-        Offset(thirdW * 2, 0), Offset(thirdW * 2, size.height), paint);
+      Offset(thirdW * 2, 0),
+      Offset(thirdW * 2, size.height),
+      paint,
+    );
 
     // 横线
     canvas.drawLine(Offset(0, thirdH), Offset(size.width, thirdH), paint);
     canvas.drawLine(
-        Offset(0, thirdH * 2), Offset(size.width, thirdH * 2), paint);
+      Offset(0, thirdH * 2),
+      Offset(size.width, thirdH * 2),
+      paint,
+    );
   }
 
   @override

@@ -33,9 +33,9 @@ class _UserLoginBoxState extends State<UserLoginBox> {
       listener: (context, state) {
         // 首次构建时，如果已登录，触发状态检查
         if (!_initialized && state.isAuthenticated) {
-          context
-              .read<DailyTaskBloc>()
-              .add(const DailyTaskCheckStatusRequested());
+          context.read<DailyTaskBloc>().add(
+            const DailyTaskCheckStatusRequested(),
+          );
           _wasAuthenticated = true;
           _initialized = true;
           return;
@@ -44,9 +44,9 @@ class _UserLoginBoxState extends State<UserLoginBox> {
 
         // 登录成功时触发每日任务状态检查
         if (state.isAuthenticated && !_wasAuthenticated) {
-          context
-              .read<DailyTaskBloc>()
-              .add(const DailyTaskCheckStatusRequested());
+          context.read<DailyTaskBloc>().add(
+            const DailyTaskCheckStatusRequested(),
+          );
         }
         // 登出时重置每日任务状态
         if (!state.isAuthenticated && _wasAuthenticated) {
@@ -63,9 +63,9 @@ class _UserLoginBoxState extends State<UserLoginBox> {
               setState(() => _isExpanded = !_isExpanded);
               // 展开时触发状态检查（懒加载，检测跨天）
               if (_isExpanded) {
-                context
-                    .read<DailyTaskBloc>()
-                    .add(const DailyTaskCheckStatusRequested());
+                context.read<DailyTaskBloc>().add(
+                  const DailyTaskCheckStatusRequested(),
+                );
               }
             },
           );
@@ -216,8 +216,11 @@ class _LoggedInView extends StatelessWidget {
                         ? NetworkImage(userInfo.avatar)
                         : null,
                     child: userInfo.avatar.isEmpty
-                        ? Icon(Icons.person,
-                            size: 24, color: _getSecondaryTextColor(isDark))
+                        ? Icon(
+                            Icons.person,
+                            size: 24,
+                            color: _getSecondaryTextColor(isDark),
+                          )
                         : null,
                   ),
                   const SizedBox(width: 12),
@@ -298,10 +301,7 @@ class _ExpandedContent extends StatelessWidget {
 
           // Steam ID
           if (userInfo.steamId != null)
-            _SteamRow(
-              steamId: userInfo.steamId!,
-              steamUrl: userInfo.steamUrl,
-            ),
+            _SteamRow(steamId: userInfo.steamId!, steamUrl: userInfo.steamUrl),
 
           // 积分
           if (userInfo.credits != null)
@@ -356,8 +356,10 @@ class _ExpandedContent extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-        title: Text('解除关联',
-            style: TextStyle(color: _getPrimaryTextColor(isDark))),
+        title: Text(
+          '解除关联',
+          style: TextStyle(color: _getPrimaryTextColor(isDark)),
+        ),
         content: Text(
           '确定要解除论坛账户关联吗？',
           style: TextStyle(color: _getSecondaryTextColor(isDark)),
@@ -453,8 +455,10 @@ class _InfoRow extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             '$label:',
-            style:
-                TextStyle(color: _getSecondaryTextColor(isDark), fontSize: 12),
+            style: TextStyle(
+              color: _getSecondaryTextColor(isDark),
+              fontSize: 12,
+            ),
           ),
           const Spacer(),
           Text(
@@ -498,9 +502,7 @@ class _ActionButton extends StatelessWidget {
           foregroundColor: color,
           side: BorderSide(color: color.withValues(alpha: 0.3)),
           padding: const EdgeInsets.symmetric(horizontal: 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(6),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         ),
       ),
     );
@@ -574,18 +576,16 @@ class _CheckInButton extends StatelessWidget {
     return SizedBox(
       height: 32,
       child: OutlinedButton.icon(
-        onPressed: () => context
-            .read<DailyTaskBloc>()
-            .add(const DailyTaskCheckInRequested()),
+        onPressed: () => context.read<DailyTaskBloc>().add(
+          const DailyTaskCheckInRequested(),
+        ),
         icon: const Icon(Icons.check_circle_outline, size: 14),
         label: const Text('签到', style: TextStyle(fontSize: 11)),
         style: OutlinedButton.styleFrom(
           foregroundColor: color,
           side: BorderSide(color: color.withValues(alpha: 0.3)),
           padding: const EdgeInsets.symmetric(horizontal: 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(6),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         ),
       ),
     );
@@ -665,9 +665,7 @@ class _ShakeButton extends StatelessWidget {
           foregroundColor: color,
           side: BorderSide(color: color.withValues(alpha: 0.3)),
           padding: const EdgeInsets.symmetric(horizontal: 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(6),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         ),
       ),
     );

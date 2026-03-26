@@ -64,10 +64,12 @@ class _FloatingProgressBarState extends State<FloatingProgressBar>
   @override
   Widget build(BuildContext context) {
     final color = FloatingWindowColors.fromState(widget.state);
-    
+
     // 判断是否应该显示倒计时进度条
-    final showCountdown = (widget.state.isTerminal || widget.state.isPaused) && widget.isCountdownActive;
-    
+    final showCountdown =
+        (widget.state.isTerminal || widget.state.isPaused) &&
+        widget.isCountdownActive;
+
     return Container(
       height: 3,
       width: double.infinity,
@@ -104,7 +106,7 @@ class _FloatingProgressBarState extends State<FloatingProgressBar>
     final progress = widget.totalCountdownSeconds > 0
         ? widget.countdownSeconds / widget.totalCountdownSeconds
         : 0.0;
-    
+
     return TweenAnimationBuilder<double>(
       // 每次 countdownSeconds 变化时，key 变化，重新开始动画
       key: ValueKey(widget.countdownSeconds),
@@ -121,7 +123,9 @@ class _FloatingProgressBarState extends State<FloatingProgressBar>
           child: Container(
             decoration: BoxDecoration(
               color: color,
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(12),
+              ),
             ),
           ),
         );
@@ -135,10 +139,7 @@ class _IndeterminateProgressPainter extends CustomPainter {
   final Color color;
   final double progress;
 
-  _IndeterminateProgressPainter({
-    required this.color,
-    required this.progress,
-  });
+  _IndeterminateProgressPainter({required this.color, required this.progress});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -149,7 +150,7 @@ class _IndeterminateProgressPainter extends CustomPainter {
     // 绘制移动的光条
     final barWidth = size.width * 0.3;
     final startX = (size.width + barWidth) * progress - barWidth;
-    
+
     // 创建渐变效果
     final gradient = LinearGradient(
       colors: [
@@ -160,10 +161,10 @@ class _IndeterminateProgressPainter extends CustomPainter {
       ],
       stops: const [0.0, 0.3, 0.7, 1.0],
     );
-    
+
     final rect = Rect.fromLTWH(startX, 0, barWidth, size.height);
     paint.shader = gradient.createShader(rect);
-    
+
     canvas.drawRect(rect, paint);
   }
 

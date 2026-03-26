@@ -147,8 +147,9 @@ class ContributionValidationUtils {
     }
 
     if (fileSize >= maxBackgroundImageSize) {
-      final sizeMB =
-          (maxBackgroundImageSize / (1024 * 1024)).toStringAsFixed(0);
+      final sizeMB = (maxBackgroundImageSize / (1024 * 1024)).toStringAsFixed(
+        0,
+      );
       return ContributionValidationResult(
         isValid: false,
         errorMessage: '图片大小超过限制（最大 ${sizeMB}MB）',

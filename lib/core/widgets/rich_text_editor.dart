@@ -13,7 +13,7 @@ import '../utils/toast_utils.dart';
 import 'image_viewer_dialog.dart';
 
 /// 富文本编辑器组件（基于 flutter_quill）
-/// 
+///
 /// 图片处理方式（类似 GitHub）：
 /// - 图片上传后显示在编辑器下方的附件区域
 /// - 编辑器中不嵌入图片，只保存 fileId 引用
@@ -51,13 +51,13 @@ class RichTextEditor extends StatefulWidget {
 class RichTextEditorState extends State<RichTextEditor> {
   final FileUploadService _uploadService = FileUploadService();
   final DraftService _draftService = DraftService();
-  
+
   /// 已上传的图片列表（存储 fileId 引用格式）
   final List<UploadedImage> _uploadedImages = [];
-  
+
   final FocusNode _focusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
-  
+
   bool _isUploading = false;
   String? _uploadingFileName;
 
@@ -77,11 +77,11 @@ class RichTextEditorState extends State<RichTextEditor> {
     super.initState();
     widget.controller.addListener(_onTextChanged);
   }
-  
+
   void _onTextChanged() {
     if (mounted) setState(() {});
   }
-  
+
   String _getPlainText() => widget.controller.document.toPlainText();
   int _getTextLength() => _getPlainText().trim().length;
 
@@ -98,7 +98,7 @@ class RichTextEditorState extends State<RichTextEditor> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -117,13 +117,17 @@ class RichTextEditorState extends State<RichTextEditor> {
     final isNearLimit = count > (widget.maxLength * 0.9); // 90% 时警告
     final imageCount = _uploadedImages.length;
     final isImageLimit = imageCount >= widget.maxImages;
-    
+
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
-        border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE5E7EB)),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.1)
+              : const Color(0xFFE5E7EB),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -159,13 +163,15 @@ class RichTextEditorState extends State<RichTextEditor> {
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: _uploadedImages.length,
-                            separatorBuilder: (_, __) => const SizedBox(width: 6),
-                            itemBuilder: (context, index) => _ImageAttachmentItem(
-                              image: _uploadedImages[index],
-                              isDark: isDark,
-                              onTap: () => _previewImage(index),
-                              onDelete: () => _removeImage(index),
-                            ),
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(width: 6),
+                            itemBuilder: (context, index) =>
+                                _ImageAttachmentItem(
+                                  image: _uploadedImages[index],
+                                  isDark: isDark,
+                                  onTap: () => _previewImage(index),
+                                  onDelete: () => _removeImage(index),
+                                ),
                           ),
                         ),
                     ],
@@ -179,15 +185,15 @@ class RichTextEditorState extends State<RichTextEditor> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildStatusChip(
-                    icon: Icons.image_rounded, 
-                    text: '$imageCount/${widget.maxImages}', 
-                    isWarning: isImageLimit, 
+                    icon: Icons.image_rounded,
+                    text: '$imageCount/${widget.maxImages}',
+                    isWarning: isImageLimit,
                     isDark: isDark,
                   ),
                   const SizedBox(height: 4),
                   _buildStatusChip(
-                    icon: null, 
-                    text: '$count/${widget.maxLength}', 
+                    icon: null,
+                    text: '$count/${widget.maxLength}',
                     isError: isOverLimit,
                     isWarning: !isOverLimit && isNearLimit,
                     isDark: isDark,
@@ -203,10 +209,7 @@ class RichTextEditorState extends State<RichTextEditor> {
 
   /// 添加图片按钮（带 hover 效果）
   Widget _buildAddImageButton(bool isDark) {
-    return _AddImageButton(
-      isDark: isDark,
-      onTap: _handleImageUpload,
-    );
+    return _AddImageButton(isDark: isDark, onTap: _handleImageUpload);
   }
 
   /// 预览图片
@@ -234,33 +237,57 @@ class RichTextEditorState extends State<RichTextEditor> {
     _notifyImagesChanged();
     _showSuccess('图片已删除');
   }
-  
-  Widget _buildStatusChip({IconData? icon, required String text, bool isWarning = false, bool isError = false, required bool isDark}) {
+
+  Widget _buildStatusChip({
+    IconData? icon,
+    required String text,
+    bool isWarning = false,
+    bool isError = false,
+    required bool isDark,
+  }) {
     Color bgColor, textColor;
-    
+
     if (isError) {
-      bgColor = isDark ? const Color(0xFFDC2626).withValues(alpha: 0.15) : const Color(0xFFFEE2E2);
+      bgColor = isDark
+          ? const Color(0xFFDC2626).withValues(alpha: 0.15)
+          : const Color(0xFFFEE2E2);
       textColor = const Color(0xFFDC2626);
     } else if (isWarning) {
-      bgColor = isDark ? const Color(0xFFF59E0B).withValues(alpha: 0.15) : const Color(0xFFFEF3C7);
+      bgColor = isDark
+          ? const Color(0xFFF59E0B).withValues(alpha: 0.15)
+          : const Color(0xFFFEF3C7);
       textColor = const Color(0xFFF59E0B);
     } else {
-      bgColor = isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF3F4F6);
+      bgColor = isDark
+          ? Colors.white.withValues(alpha: 0.05)
+          : const Color(0xFFF3F4F6);
       textColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF6B7280);
     }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: bgColor, 
+        color: bgColor,
         borderRadius: BorderRadius.circular(6),
-        border: isError ? Border.all(color: const Color(0xFFDC2626).withValues(alpha: 0.3)) : null,
+        border: isError
+            ? Border.all(color: const Color(0xFFDC2626).withValues(alpha: 0.3))
+            : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[Icon(icon, size: 14, color: textColor), const SizedBox(width: 6)],
-          Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textColor)),
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: textColor),
+            const SizedBox(width: 6),
+          ],
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+            ),
+          ),
         ],
       ),
     );
@@ -269,74 +296,180 @@ class RichTextEditorState extends State<RichTextEditor> {
   Widget _buildToolbar(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-        border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE5E7EB)),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.1)
+              : const Color(0xFFE5E7EB),
+        ),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _buildToolbarButton(icon: Icons.format_bold_rounded, tooltip: '粗体', attribute: Attribute.bold, isDark: isDark),
-            _buildToolbarButton(icon: Icons.format_italic_rounded, tooltip: '斜体', attribute: Attribute.italic, isDark: isDark),
+            _buildToolbarButton(
+              icon: Icons.format_bold_rounded,
+              tooltip: '粗体',
+              attribute: Attribute.bold,
+              isDark: isDark,
+            ),
+            _buildToolbarButton(
+              icon: Icons.format_italic_rounded,
+              tooltip: '斜体',
+              attribute: Attribute.italic,
+              isDark: isDark,
+            ),
             if (!widget.compactMode) ...[
-              _buildToolbarButton(icon: Icons.format_underline_rounded, tooltip: '下划线', attribute: Attribute.underline, isDark: isDark),
-              _buildToolbarButton(icon: Icons.format_strikethrough_rounded, tooltip: '删除线', attribute: Attribute.strikeThrough, isDark: isDark),
+              _buildToolbarButton(
+                icon: Icons.format_underline_rounded,
+                tooltip: '下划线',
+                attribute: Attribute.underline,
+                isDark: isDark,
+              ),
+              _buildToolbarButton(
+                icon: Icons.format_strikethrough_rounded,
+                tooltip: '删除线',
+                attribute: Attribute.strikeThrough,
+                isDark: isDark,
+              ),
             ],
             _buildDivider(isDark),
-            QuillToolbarSelectHeaderStyleDropdownButton(controller: widget.controller, options: QuillToolbarSelectHeaderStyleDropdownButtonOptions(iconSize: 16, iconTheme: _getIconTheme(isDark))),
+            QuillToolbarSelectHeaderStyleDropdownButton(
+              controller: widget.controller,
+              options: QuillToolbarSelectHeaderStyleDropdownButtonOptions(
+                iconSize: 16,
+                iconTheme: _getIconTheme(isDark),
+              ),
+            ),
             _buildDivider(isDark),
-            _buildToolbarButton(icon: Icons.format_list_bulleted_rounded, tooltip: '无序列表', attribute: Attribute.ul, isDark: isDark),
-            _buildToolbarButton(icon: Icons.format_list_numbered_rounded, tooltip: '有序列表', attribute: Attribute.ol, isDark: isDark),
+            _buildToolbarButton(
+              icon: Icons.format_list_bulleted_rounded,
+              tooltip: '无序列表',
+              attribute: Attribute.ul,
+              isDark: isDark,
+            ),
+            _buildToolbarButton(
+              icon: Icons.format_list_numbered_rounded,
+              tooltip: '有序列表',
+              attribute: Attribute.ol,
+              isDark: isDark,
+            ),
             if (!widget.compactMode) ...[
               _buildDivider(isDark),
-              _buildToolbarButton(icon: Icons.format_quote_rounded, tooltip: '引用', attribute: Attribute.blockQuote, isDark: isDark),
-              _buildToolbarButton(icon: Icons.code_rounded, tooltip: '代码块', attribute: Attribute.codeBlock, isDark: isDark),
+              _buildToolbarButton(
+                icon: Icons.format_quote_rounded,
+                tooltip: '引用',
+                attribute: Attribute.blockQuote,
+                isDark: isDark,
+              ),
+              _buildToolbarButton(
+                icon: Icons.code_rounded,
+                tooltip: '代码块',
+                attribute: Attribute.codeBlock,
+                isDark: isDark,
+              ),
               _buildDivider(isDark),
-              QuillToolbarLinkStyleButton(controller: widget.controller, options: QuillToolbarLinkStyleButtonOptions(iconSize: 16, iconTheme: _getIconTheme(isDark))),
+              QuillToolbarLinkStyleButton(
+                controller: widget.controller,
+                options: QuillToolbarLinkStyleButtonOptions(
+                  iconSize: 16,
+                  iconTheme: _getIconTheme(isDark),
+                ),
+              ),
               _buildDivider(isDark),
-              QuillToolbarHistoryButton(controller: widget.controller, isUndo: true, options: QuillToolbarHistoryButtonOptions(iconSize: 16, iconTheme: _getIconTheme(isDark))),
-              QuillToolbarHistoryButton(controller: widget.controller, isUndo: false, options: QuillToolbarHistoryButtonOptions(iconSize: 16, iconTheme: _getIconTheme(isDark))),
+              QuillToolbarHistoryButton(
+                controller: widget.controller,
+                isUndo: true,
+                options: QuillToolbarHistoryButtonOptions(
+                  iconSize: 16,
+                  iconTheme: _getIconTheme(isDark),
+                ),
+              ),
+              QuillToolbarHistoryButton(
+                controller: widget.controller,
+                isUndo: false,
+                options: QuillToolbarHistoryButtonOptions(
+                  iconSize: 16,
+                  iconTheme: _getIconTheme(isDark),
+                ),
+              ),
             ],
           ],
         ),
       ),
     );
   }
-  
-  Widget _buildToolbarButton({required IconData icon, required String tooltip, required Attribute attribute, required bool isDark}) {
+
+  Widget _buildToolbarButton({
+    required IconData icon,
+    required String tooltip,
+    required Attribute attribute,
+    required bool isDark,
+  }) {
     return QuillToolbarToggleStyleButton(
       controller: widget.controller,
       attribute: attribute,
-      options: QuillToolbarToggleStyleButtonOptions(iconData: icon, tooltip: tooltip, iconSize: 16, iconTheme: _getIconTheme(isDark), iconButtonFactor: 1.2),
+      options: QuillToolbarToggleStyleButtonOptions(
+        iconData: icon,
+        tooltip: tooltip,
+        iconSize: 16,
+        iconTheme: _getIconTheme(isDark),
+        iconButtonFactor: 1.2,
+      ),
     );
   }
 
   QuillIconTheme _getIconTheme(bool isDark) {
     return QuillIconTheme(
-      iconButtonUnselectedData: IconButtonData(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-      iconButtonSelectedData: IconButtonData(color: Colors.white, style: ButtonStyle(backgroundColor: WidgetStateProperty.all(const Color(0xFF0080FF)), shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))))),
+      iconButtonUnselectedData: IconButtonData(
+        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+      ),
+      iconButtonSelectedData: IconButtonData(
+        color: Colors.white,
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.all(const Color(0xFF0080FF)),
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          ),
+        ),
+      ),
     );
   }
 
   Widget _buildDivider(bool isDark) {
-    return Container(width: 1, height: 18, margin: const EdgeInsets.symmetric(horizontal: 4), color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE5E7EB));
+    return Container(
+      width: 1,
+      height: 18,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      color: isDark
+          ? Colors.white.withValues(alpha: 0.1)
+          : const Color(0xFFE5E7EB),
+    );
   }
 
   Widget _buildEditor(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         border: Border(
-          left: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE5E7EB)),
-          right: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE5E7EB)),
+          left: BorderSide(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : const Color(0xFFE5E7EB),
+          ),
+          right: BorderSide(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : const Color(0xFFE5E7EB),
+          ),
         ),
       ),
       child: QuillEditor.basic(
@@ -351,40 +484,133 @@ class RichTextEditorState extends State<RichTextEditor> {
           minHeight: widget.minHeight ?? 200,
           customStyles: DefaultStyles(
             paragraph: DefaultTextBlockStyle(
-              TextStyle(fontSize: 15, height: 1.7, color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF374151)),
-              HorizontalSpacing.zero, const VerticalSpacing(6, 0), VerticalSpacing.zero, null,
+              TextStyle(
+                fontSize: 15,
+                height: 1.7,
+                color: isDark
+                    ? const Color(0xFFE2E8F0)
+                    : const Color(0xFF374151),
+              ),
+              HorizontalSpacing.zero,
+              const VerticalSpacing(6, 0),
+              VerticalSpacing.zero,
+              null,
             ),
             placeHolder: DefaultTextBlockStyle(
-              TextStyle(fontSize: 15, height: 1.7, color: isDark ? const Color(0xFF64748B) : const Color(0xFF9CA3AF)),
-              HorizontalSpacing.zero, VerticalSpacing.zero, VerticalSpacing.zero, null,
+              TextStyle(
+                fontSize: 15,
+                height: 1.7,
+                color: isDark
+                    ? const Color(0xFF64748B)
+                    : const Color(0xFF9CA3AF),
+              ),
+              HorizontalSpacing.zero,
+              VerticalSpacing.zero,
+              VerticalSpacing.zero,
+              null,
             ),
             h1: DefaultTextBlockStyle(
-              TextStyle(fontSize: 24, fontWeight: FontWeight.bold, height: 1.5, color: isDark ? Colors.white : const Color(0xFF1F2937)),
-              HorizontalSpacing.zero, const VerticalSpacing(16, 8), VerticalSpacing.zero, null,
+              TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                height: 1.5,
+                color: isDark ? Colors.white : const Color(0xFF1F2937),
+              ),
+              HorizontalSpacing.zero,
+              const VerticalSpacing(16, 8),
+              VerticalSpacing.zero,
+              null,
             ),
             h2: DefaultTextBlockStyle(
-              TextStyle(fontSize: 20, fontWeight: FontWeight.w600, height: 1.5, color: isDark ? Colors.white : const Color(0xFF1F2937)),
-              HorizontalSpacing.zero, const VerticalSpacing(12, 6), VerticalSpacing.zero, null,
+              TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                height: 1.5,
+                color: isDark ? Colors.white : const Color(0xFF1F2937),
+              ),
+              HorizontalSpacing.zero,
+              const VerticalSpacing(12, 6),
+              VerticalSpacing.zero,
+              null,
             ),
             h3: DefaultTextBlockStyle(
-              TextStyle(fontSize: 18, fontWeight: FontWeight.w600, height: 1.5, color: isDark ? Colors.white : const Color(0xFF1F2937)),
-              HorizontalSpacing.zero, const VerticalSpacing(10, 4), VerticalSpacing.zero, null,
+              TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                height: 1.5,
+                color: isDark ? Colors.white : const Color(0xFF1F2937),
+              ),
+              HorizontalSpacing.zero,
+              const VerticalSpacing(10, 4),
+              VerticalSpacing.zero,
+              null,
             ),
             quote: DefaultTextBlockStyle(
-              TextStyle(fontSize: 15, height: 1.6, fontStyle: FontStyle.italic, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF6B7280)),
-              HorizontalSpacing.zero, const VerticalSpacing(8, 8), VerticalSpacing.zero,
-              BoxDecoration(border: Border(left: BorderSide(color: const Color(0xFF0080FF).withValues(alpha: 0.5), width: 3))),
+              TextStyle(
+                fontSize: 15,
+                height: 1.6,
+                fontStyle: FontStyle.italic,
+                color: isDark
+                    ? const Color(0xFF94A3B8)
+                    : const Color(0xFF6B7280),
+              ),
+              HorizontalSpacing.zero,
+              const VerticalSpacing(8, 8),
+              VerticalSpacing.zero,
+              BoxDecoration(
+                border: Border(
+                  left: BorderSide(
+                    color: const Color(0xFF0080FF).withValues(alpha: 0.5),
+                    width: 3,
+                  ),
+                ),
+              ),
             ),
             code: DefaultTextBlockStyle(
-              TextStyle(fontSize: 13, fontFamily: 'Consolas, Monaco, monospace', color: isDark ? const Color(0xFFE879F9) : const Color(0xFFDC2626), backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6)),
-              HorizontalSpacing.zero, const VerticalSpacing(8, 8), VerticalSpacing.zero,
-              BoxDecoration(color: isDark ? const Color(0xFF334155) : const Color(0xFFF9FAFB), borderRadius: BorderRadius.circular(8), border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE5E7EB))),
+              TextStyle(
+                fontSize: 13,
+                fontFamily: 'Consolas, Monaco, monospace',
+                color: isDark
+                    ? const Color(0xFFE879F9)
+                    : const Color(0xFFDC2626),
+                backgroundColor: isDark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFF3F4F6),
+              ),
+              HorizontalSpacing.zero,
+              const VerticalSpacing(8, 8),
+              VerticalSpacing.zero,
+              BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : const Color(0xFFE5E7EB),
+                ),
+              ),
             ),
             lists: DefaultListBlockStyle(
-              TextStyle(fontSize: 15, height: 1.7, color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF374151)),
-              HorizontalSpacing.zero, const VerticalSpacing(4, 4), VerticalSpacing.zero, null, null,
+              TextStyle(
+                fontSize: 15,
+                height: 1.7,
+                color: isDark
+                    ? const Color(0xFFE2E8F0)
+                    : const Color(0xFF374151),
+              ),
+              HorizontalSpacing.zero,
+              const VerticalSpacing(4, 4),
+              VerticalSpacing.zero,
+              null,
+              null,
             ),
-            link: TextStyle(color: const Color(0xFF0080FF), decoration: TextDecoration.underline, decorationColor: const Color(0xFF0080FF).withValues(alpha: 0.5)),
+            link: TextStyle(
+              color: const Color(0xFF0080FF),
+              decoration: TextDecoration.underline,
+              decorationColor: const Color(0xFF0080FF).withValues(alpha: 0.5),
+            ),
           ),
         ),
       ),
@@ -396,19 +622,22 @@ class RichTextEditorState extends State<RichTextEditor> {
       _showWarning('请等待当前上传完成');
       return;
     }
-    
+
     if (_uploadedImages.length >= widget.maxImages) {
       _showError('图片数量已达上限（最多 ${widget.maxImages} 张）');
       return;
     }
 
     try {
-      final result = await FilePicker.platform.pickFiles(type: FileType.image, allowMultiple: false);
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
       if (result == null || result.files.isEmpty) return;
 
       final file = File(result.files.first.path!);
       final validation = FileValidationUtils.validateFile(file);
-      
+
       if (!validation.isValid) {
         _showError(validation.errorMessage ?? '文件验证失败');
         return;
@@ -456,14 +685,14 @@ class RichTextEditorState extends State<RichTextEditor> {
       _showSuccess('图片上传成功');
     } catch (e) {
       LogService.e('上传失败', e);
-      
+
       if (mounted) {
         setState(() {
           _isUploading = false;
           _uploadingFileName = null;
         });
       }
-      
+
       _showError('上传失败: ${_getErrorMessage(e)}');
     }
   }
@@ -471,11 +700,25 @@ class RichTextEditorState extends State<RichTextEditor> {
   String _getErrorMessage(dynamic error) {
     if (error is FileValidationException) return error.message;
     final errorStr = error.toString();
-    if (errorStr.contains('SocketException') || errorStr.contains('NetworkException') || errorStr.contains('Connection')) return '网络连接失败，请检查网络设置';
-    if (errorStr.contains('TimeoutException') || errorStr.contains('timeout')) return '请求超时，请稍后重试';
-    if (errorStr.contains('401') || errorStr.contains('Unauthorized')) return '未授权，请先登录';
-    if (errorStr.contains('403') || errorStr.contains('Forbidden')) return '没有上传权限';
-    if (errorStr.contains('500') || errorStr.contains('502') || errorStr.contains('503')) return '服务器错误，请稍后重试';
+    if (errorStr.contains('SocketException') ||
+        errorStr.contains('NetworkException') ||
+        errorStr.contains('Connection')) {
+      return '网络连接失败，请检查网络设置';
+    }
+    if (errorStr.contains('TimeoutException') || errorStr.contains('timeout')) {
+      return '请求超时，请稍后重试';
+    }
+    if (errorStr.contains('401') || errorStr.contains('Unauthorized')) {
+      return '未授权，请先登录';
+    }
+    if (errorStr.contains('403') || errorStr.contains('Forbidden')) {
+      return '没有上传权限';
+    }
+    if (errorStr.contains('500') ||
+        errorStr.contains('502') ||
+        errorStr.contains('503')) {
+      return '服务器错误，请稍后重试';
+    }
     return errorStr;
   }
 
@@ -542,7 +785,12 @@ class _ImageAttachmentItemState extends State<_ImageAttachmentItem> {
     setState(() => _isLoading = true);
     try {
       final url = await ImageUrlService.instance.getSignedUrl(widget.image.url);
-      if (mounted) setState(() { _signedUrl = url; _isLoading = false; });
+      if (mounted) {
+        setState(() {
+          _signedUrl = url;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       LogService.d('加载图片签名URL失败: $e');
       if (mounted) setState(() => _isLoading = false);
@@ -551,10 +799,12 @@ class _ImageAttachmentItemState extends State<_ImageAttachmentItem> {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = _isHovering 
-        ? const Color(0xFF0080FF) 
-        : (widget.isDark ? Colors.white.withValues(alpha: 0.2) : const Color(0xFFD1D5DB));
-    
+    final borderColor = _isHovering
+        ? const Color(0xFF0080FF)
+        : (widget.isDark
+              ? Colors.white.withValues(alpha: 0.2)
+              : const Color(0xFFD1D5DB));
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
@@ -572,13 +822,15 @@ class _ImageAttachmentItemState extends State<_ImageAttachmentItem> {
               width: _isHovering ? 2 : 1,
               strokeAlign: BorderSide.strokeAlignInside,
             ),
-            boxShadow: _isHovering ? [
-              BoxShadow(
-                color: const Color(0xFF0080FF).withValues(alpha: 0.15),
-                blurRadius: 8,
-                spreadRadius: 0,
-              ),
-            ] : null,
+            boxShadow: _isHovering
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+                      blurRadius: 8,
+                      spreadRadius: 0,
+                    ),
+                  ]
+                : null,
           ),
           child: Stack(
             children: [
@@ -587,18 +839,29 @@ class _ImageAttachmentItemState extends State<_ImageAttachmentItem> {
                 borderRadius: BorderRadius.circular(7),
                 child: _isLoading
                     ? Container(
-                        color: widget.isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
-                        child: const Center(child: SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0080FF)))),
+                        color: widget.isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFF3F4F6),
+                        child: const Center(
+                          child: SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Color(0xFF0080FF),
+                            ),
+                          ),
+                        ),
                       )
                     : _signedUrl != null
-                        ? Image.network(
-                            _signedUrl!, 
-                            fit: BoxFit.cover,
-                            width: 48,
-                            height: 48,
-                            errorBuilder: (_, __, ___) => _buildErrorPlaceholder(),
-                          )
-                        : _buildErrorPlaceholder(),
+                    ? Image.network(
+                        _signedUrl!,
+                        fit: BoxFit.cover,
+                        width: 48,
+                        height: 48,
+                        errorBuilder: (_, __, ___) => _buildErrorPlaceholder(),
+                      )
+                    : _buildErrorPlaceholder(),
               ),
               // Hover 遮罩
               if (_isHovering)
@@ -609,7 +872,11 @@ class _ImageAttachmentItemState extends State<_ImageAttachmentItem> {
                       color: Colors.black.withValues(alpha: 0.3),
                     ),
                     child: const Center(
-                      child: Icon(Icons.zoom_in_rounded, size: 16, color: Colors.white),
+                      child: Icon(
+                        Icons.zoom_in_rounded,
+                        size: 16,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
@@ -632,7 +899,11 @@ class _ImageAttachmentItemState extends State<_ImageAttachmentItem> {
                           ),
                         ],
                       ),
-                      child: const Icon(Icons.close_rounded, size: 10, color: Colors.white),
+                      child: const Icon(
+                        Icons.close_rounded,
+                        size: 10,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
@@ -646,7 +917,13 @@ class _ImageAttachmentItemState extends State<_ImageAttachmentItem> {
   Widget _buildErrorPlaceholder() {
     return Container(
       color: widget.isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
-      child: Icon(Icons.broken_image_rounded, size: 16, color: widget.isDark ? const Color(0xFF64748B) : const Color(0xFF9CA3AF)),
+      child: Icon(
+        Icons.broken_image_rounded,
+        size: 16,
+        color: widget.isDark
+            ? const Color(0xFF64748B)
+            : const Color(0xFF9CA3AF),
+      ),
     );
   }
 }
@@ -656,10 +933,7 @@ class _AddImageButton extends StatefulWidget {
   final bool isDark;
   final VoidCallback onTap;
 
-  const _AddImageButton({
-    required this.isDark,
-    required this.onTap,
-  });
+  const _AddImageButton({required this.isDark, required this.onTap});
 
   @override
   State<_AddImageButton> createState() => _AddImageButtonState();
@@ -670,12 +944,18 @@ class _AddImageButtonState extends State<_AddImageButton> {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = _isHovering 
-        ? const Color(0xFF0080FF) 
-        : (widget.isDark ? Colors.white.withValues(alpha: 0.2) : const Color(0xFFD1D5DB));
+    final borderColor = _isHovering
+        ? const Color(0xFF0080FF)
+        : (widget.isDark
+              ? Colors.white.withValues(alpha: 0.2)
+              : const Color(0xFFD1D5DB));
     final bgColor = _isHovering
-        ? (widget.isDark ? const Color(0xFF0080FF).withValues(alpha: 0.1) : const Color(0xFFEFF6FF))
-        : (widget.isDark ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF9FAFB));
+        ? (widget.isDark
+              ? const Color(0xFF0080FF).withValues(alpha: 0.1)
+              : const Color(0xFFEFF6FF))
+        : (widget.isDark
+              ? Colors.white.withValues(alpha: 0.03)
+              : const Color(0xFFF9FAFB));
     final iconColor = _isHovering
         ? const Color(0xFF0080FF)
         : (widget.isDark ? const Color(0xFF94A3B8) : const Color(0xFF9CA3AF));
@@ -694,13 +974,25 @@ class _AddImageButtonState extends State<_AddImageButton> {
             height: 48,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: borderColor, width: _isHovering ? 2 : 1),
+              border: Border.all(
+                color: borderColor,
+                width: _isHovering ? 2 : 1,
+              ),
               color: bgColor,
-              boxShadow: _isHovering ? [
-                BoxShadow(color: const Color(0xFF0080FF).withValues(alpha: 0.15), blurRadius: 8),
-              ] : null,
+              boxShadow: _isHovering
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+                        blurRadius: 8,
+                      ),
+                    ]
+                  : null,
             ),
-            child: Icon(Icons.add_photo_alternate_outlined, size: 20, color: iconColor),
+            child: Icon(
+              Icons.add_photo_alternate_outlined,
+              size: 20,
+              color: iconColor,
+            ),
           ),
         ),
       ),
@@ -713,10 +1005,7 @@ class _UploadingImageItem extends StatelessWidget {
   final String fileName;
   final bool isDark;
 
-  const _UploadingImageItem({
-    required this.fileName,
-    required this.isDark,
-  });
+  const _UploadingImageItem({required this.fileName, required this.isDark});
 
   @override
   Widget build(BuildContext context) {

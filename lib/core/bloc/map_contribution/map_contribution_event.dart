@@ -42,10 +42,7 @@ class SubmitNameContribution extends MapContributionEvent {
   final String mapName;
   final String name;
 
-  const SubmitNameContribution({
-    required this.mapName,
-    required this.name,
-  });
+  const SubmitNameContribution({required this.mapName, required this.name});
 
   @override
   List<Object?> get props => [mapName, name];
@@ -91,10 +88,7 @@ class UpdateNameContribution extends MapContributionEvent {
   final int id;
   final String name;
 
-  const UpdateNameContribution({
-    required this.id,
-    required this.name,
-  });
+  const UpdateNameContribution({required this.id, required this.name});
 
   @override
   List<Object?> get props => [id, name];
@@ -105,10 +99,7 @@ class UpdateBackgroundContribution extends MapContributionEvent {
   final int id;
   final int fileId;
 
-  const UpdateBackgroundContribution({
-    required this.id,
-    required this.fileId,
-  });
+  const UpdateBackgroundContribution({required this.id, required this.fileId});
 
   @override
   List<Object?> get props => [id, fileId];

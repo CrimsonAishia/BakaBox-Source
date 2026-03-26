@@ -60,7 +60,9 @@ class DetailVoteButtons extends StatelessWidget {
             isActive: voteType == KeyConfigVoteType.down,
             isDownVote: true,
             disabled: isOwner,
-            onTap: isOwner ? null : () => _handleVote(context, KeyConfigVoteType.down),
+            onTap: isOwner
+                ? null
+                : () => _handleVote(context, KeyConfigVoteType.down),
           ),
           const SizedBox(width: 2),
           Text(
@@ -70,7 +72,9 @@ class DetailVoteButtons extends StatelessWidget {
               fontWeight: FontWeight.w600,
               color: voteType == KeyConfigVoteType.down
                   ? const Color(0xFFef4444)
-                  : (isOwner ? (isDark ? Colors.white24 : Colors.grey[400]) : (isDark ? Colors.white54 : Colors.grey[600])),
+                  : (isOwner
+                        ? (isDark ? Colors.white24 : Colors.grey[400])
+                        : (isDark ? Colors.white54 : Colors.grey[600])),
             ),
           ),
           const SizedBox(width: 4),
@@ -85,11 +89,10 @@ class DetailVoteButtons extends StatelessWidget {
       _showLoginPrompt(context);
       return;
     }
-    
-    context.read<KeyBindingBloc>().add(KeyBindingVote(
-      configId: config.id,
-      voteType: voteType,
-    ));
+
+    context.read<KeyBindingBloc>().add(
+      KeyBindingVote(configId: config.id, voteType: voteType),
+    );
   }
 
   void _showLoginPrompt(BuildContext context) {
@@ -99,7 +102,11 @@ class DetailVoteButtons extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Row(
           children: [
-            Icon(MdiIcons.accountLockOutline, color: const Color(0xFF0080FF), size: 24),
+            Icon(
+              MdiIcons.accountLockOutline,
+              color: const Color(0xFF0080FF),
+              size: 24,
+            ),
             const SizedBox(width: 10),
             const Text('需要登录', style: TextStyle(fontSize: 16)),
           ],
@@ -142,15 +149,15 @@ class VoteButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = isDownVote ? const Color(0xFFef4444) : const Color(0xFF10b981);
+    final activeColor = isDownVote
+        ? const Color(0xFFef4444)
+        : const Color(0xFF10b981);
     final bgColor = Colors.grey[200]!;
     final normalColor = Colors.grey[500]!;
     final disabledColor = Colors.grey[300]!;
 
     return Tooltip(
-      message: disabled
-          ? '不能对自己的配置投反对票'
-          : (isDownVote ? '反对' : '赞成'),
+      message: disabled ? '不能对自己的配置投反对票' : (isDownVote ? '反对' : '赞成'),
       child: Material(
         color: isActive ? activeColor : Colors.transparent,
         borderRadius: BorderRadius.circular(14),
@@ -158,7 +165,9 @@ class VoteButton extends StatelessWidget {
           onTap: disabled ? null : onTap,
           borderRadius: BorderRadius.circular(14),
           hoverColor: disabled ? Colors.transparent : bgColor,
-          mouseCursor: disabled ? SystemMouseCursors.forbidden : SystemMouseCursors.click,
+          mouseCursor: disabled
+              ? SystemMouseCursors.forbidden
+              : SystemMouseCursors.click,
           child: Container(
             width: 28,
             height: 28,

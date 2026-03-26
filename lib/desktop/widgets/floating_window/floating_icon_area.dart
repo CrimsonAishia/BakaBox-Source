@@ -32,8 +32,10 @@ class _FloatingIconAreaState extends State<FloatingIconArea>
       vsync: this,
       duration: const Duration(milliseconds: 400),
     );
-    _bounceAnimation = FloatingWindowAnimations.createBounceAnimation(_bounceController);
-    
+    _bounceAnimation = FloatingWindowAnimations.createBounceAnimation(
+      _bounceController,
+    );
+
     _updateAnimation();
   }
 
@@ -42,7 +44,7 @@ class _FloatingIconAreaState extends State<FloatingIconArea>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.state.state != widget.state.state) {
       _updateAnimation();
-      
+
       // 成功时播放弹跳动画
       if (widget.state.isSuccess) {
         _bounceController.forward().then((_) => _bounceController.reverse());
@@ -59,11 +61,11 @@ class _FloatingIconAreaState extends State<FloatingIconArea>
   }
 
   bool _isLoadingState(FloatingWindowState state) {
-    return state.isIdle || 
-           state.isLaunching || 
-           state.isConnecting || 
-           state.isLoading || 
-           state.isQueueing;
+    return state.isIdle ||
+        state.isLaunching ||
+        state.isConnecting ||
+        state.isLoading ||
+        state.isQueueing;
   }
 
   @override
@@ -83,9 +85,7 @@ class _FloatingIconAreaState extends State<FloatingIconArea>
       child: Center(
         child: AnimatedSwitcher(
           duration: FloatingWindowAnimations.iconCrossfadeDuration,
-          child: isLoading
-              ? _buildLoadingIcon(color)
-              : _buildStaticIcon(color),
+          child: isLoading ? _buildLoadingIcon(color) : _buildStaticIcon(color),
         ),
       ),
     );
@@ -134,11 +134,7 @@ class _FloatingIconAreaState extends State<FloatingIconArea>
           shape: BoxShape.circle,
           border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
         ),
-        child: Icon(
-          _getTerminalIcon(widget.state),
-          size: 26,
-          color: color,
-        ),
+        child: Icon(_getTerminalIcon(widget.state), size: 26, color: color),
       ),
     );
   }

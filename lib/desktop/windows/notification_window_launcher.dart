@@ -15,8 +15,15 @@ class NotificationWindowLauncher {
     final windowId = controller.windowId;
 
     // 从参数解析通知数据、位置、Y偏移量、主窗口ID和通知位置
-    final (notification, position, yOffset, mainWindowId, notificationPosition) =
-        NotificationData.fromArguments(controller.arguments);
+    final (
+      notification,
+      position,
+      yOffset,
+      mainWindowId,
+      notificationPosition,
+    ) = NotificationData.fromArguments(
+      controller.arguments,
+    );
 
     // 创建状态通知器
     final stateNotifier = SingleNotificationStateNotifier(
@@ -39,12 +46,14 @@ class NotificationWindowLauncher {
       notification.id,
     );
 
-    runApp(SingleNotificationWindowApp(
-      windowId: windowId,
-      stateNotifier: stateNotifier,
-      mainWindowController: mainWindowController,
-      notificationId: notification.id,
-    ));
+    runApp(
+      SingleNotificationWindowApp(
+        windowId: windowId,
+        stateNotifier: stateNotifier,
+        mainWindowController: mainWindowController,
+        notificationId: notification.id,
+      ),
+    );
   }
 
   /// 设置窗口方法处理器
@@ -62,10 +71,13 @@ class NotificationWindowLauncher {
           // 通知主窗口此通知已关闭
           if (mainWindowController != null) {
             try {
-              await mainWindowController.invokeMethod(
-                  'notificationClosed', {'id': notificationId});
+              await mainWindowController.invokeMethod('notificationClosed', {
+                'id': notificationId,
+              });
             } catch (e) {
-              debugPrint('[SingleNotification] Failed to notify main window: $e');
+              debugPrint(
+                '[SingleNotification] Failed to notify main window: $e',
+              );
             }
           }
           await windowManager.close();
@@ -78,8 +90,9 @@ class NotificationWindowLauncher {
           return true;
         case 'updateNotification':
           final args = call.arguments as Map<dynamic, dynamic>;
-          final updatedNotification =
-              NotificationData.fromMap(Map<String, dynamic>.from(args));
+          final updatedNotification = NotificationData.fromMap(
+            Map<String, dynamic>.from(args),
+          );
           stateNotifier.updateNotification(updatedNotification);
           return 'ok';
         case 'updatePosition':

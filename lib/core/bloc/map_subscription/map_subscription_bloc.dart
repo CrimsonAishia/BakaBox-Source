@@ -98,7 +98,7 @@ class MapSubscriptionBloc
       final apiCategories = await _serverApi.getServerList();
       // 获取自定义分类
       final customCategories = await CustomServerService.loadCustomCategories();
-      
+
       // 合并所有分类名称
       final allCategories = [...customCategories, ...apiCategories];
       final categoryNames = allCategories
@@ -106,10 +106,12 @@ class MapSubscriptionBloc
           .map((c) => c.modelName!)
           .toSet()
           .toList();
-      emit(state.copyWith(
-        availableCategories: categoryNames,
-        isLoadingCategories: false,
-      ));
+      emit(
+        state.copyWith(
+          availableCategories: categoryNames,
+          isLoadingCategories: false,
+        ),
+      );
     } catch (e) {
       LogService.e('[MapSubscriptionBloc] 加载分类失败', e);
       emit(state.copyWith(isLoadingCategories: false));
@@ -166,7 +168,10 @@ class MapSubscriptionBloc
     Emitter<MapSubscriptionState> emit,
   ) async {
     try {
-      await _service.updateSubscriptionScope(event.mapName, event.categoryNames);
+      await _service.updateSubscriptionScope(
+        event.mapName,
+        event.categoryNames,
+      );
       emit(state.copyWith(subscriptions: _service.subscriptions));
     } catch (e) {
       LogService.e('[MapSubscriptionBloc] 更新订阅分类范围失败', e);
@@ -178,7 +183,10 @@ class MapSubscriptionBloc
     Emitter<MapSubscriptionState> emit,
   ) async {
     try {
-      await _service.updateSubscriptionServers(event.mapName, event.serverAddresses);
+      await _service.updateSubscriptionServers(
+        event.mapName,
+        event.serverAddresses,
+      );
       emit(state.copyWith(subscriptions: _service.subscriptions));
     } catch (e) {
       LogService.e('[MapSubscriptionBloc] 更新订阅服务器范围失败', e);
@@ -192,10 +200,7 @@ class MapSubscriptionBloc
     emit(state.copyWith(isLoadingServers: true));
     try {
       final servers = await _service.getAvailableServers();
-      emit(state.copyWith(
-        availableServers: servers,
-        isLoadingServers: false,
-      ));
+      emit(state.copyWith(availableServers: servers, isLoadingServers: false));
     } catch (e) {
       LogService.e('[MapSubscriptionBloc] 加载服务器列表失败', e);
       emit(state.copyWith(isLoadingServers: false));
@@ -244,13 +249,15 @@ class MapSubscriptionBloc
   ) async {
     final query = event.query.trim();
     if (query.isEmpty) {
-      emit(state.copyWith(
-        searchResults: [],
-        isSearching: false,
-        searchTotalCount: 0,
-        searchPageIndex: 1,
-        hasMoreSearchResults: false,
-      ));
+      emit(
+        state.copyWith(
+          searchResults: [],
+          isSearching: false,
+          searchTotalCount: 0,
+          searchPageIndex: 1,
+          hasMoreSearchResults: false,
+        ),
+      );
       return;
     }
 
@@ -277,7 +284,10 @@ class MapSubscriptionBloc
     try {
       final response = await _mapApi.getAllMaps(
         MapListRequest(
-          pagination: PaginationParams(pageIndex: pageIndex, pageSize: pageSize),
+          pagination: PaginationParams(
+            pageIndex: pageIndex,
+            pageSize: pageSize,
+          ),
           mapName: query,
         ),
       );
@@ -305,21 +315,18 @@ class MapSubscriptionBloc
       // 计算是否还有更多
       final hasMore = results.length < total;
 
-      emit(state.copyWith(
-        searchResults: results,
-        isSearching: false,
-        searchTotalCount: total,
-        searchPageIndex: pageIndex,
-        hasMoreSearchResults: hasMore,
-      ));
-    } catch (e) {
-      LogService.e('[MapSubscriptionBloc] 搜索地图失败', e);
       emit(
         state.copyWith(
+          searchResults: results,
           isSearching: false,
-          error: '搜索失败: $e',
+          searchTotalCount: total,
+          searchPageIndex: pageIndex,
+          hasMoreSearchResults: hasMore,
         ),
       );
+    } catch (e) {
+      LogService.e('[MapSubscriptionBloc] 搜索地图失败', e);
+      emit(state.copyWith(isSearching: false, error: '搜索失败: $e'));
     }
   }
 
@@ -370,13 +377,13 @@ class MapSubscriptionBloc
     Emitter<MapSubscriptionState> emit,
   ) async {
     await _ttsService.deleteModel(modelId: event.modelId);
-    
+
     // 如果删除后没有任何已下载的模型，自动关闭 TTS 开关
     final hasAnyModel = _ttsService.isModelDownloaded;
     if (!hasAnyModel && state.isTtsEnabled) {
       await _service.setTtsEnabled(false);
     }
-    
+
     emit(
       state.copyWith(
         isTtsModelDownloaded: hasAnyModel,
@@ -454,7 +461,13 @@ class MapSubscriptionBloc
     MapSubscriptionTestTts event,
     Emitter<MapSubscriptionState> emit,
   ) async {
-    emit(state.copyWith(isTtsTesting: true, ttsTestingPhase: 'generating', error: null));
+    emit(
+      state.copyWith(
+        isTtsTesting: true,
+        ttsTestingPhase: 'generating',
+        error: null,
+      ),
+    );
     try {
       await Future.microtask(() {});
       await _ttsService.testSpeakWithCallback(

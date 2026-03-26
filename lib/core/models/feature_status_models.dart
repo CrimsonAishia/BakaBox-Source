@@ -5,8 +5,8 @@ part 'feature_status_models.g.dart';
 
 /// 功能类型枚举
 enum FeatureType {
-  keyConfig,      // 按键绑定
-  issue,          // Issue 反馈
+  keyConfig, // 按键绑定
+  issue, // Issue 反馈
   mapContribution, // 地图贡献
 }
 
@@ -43,10 +43,7 @@ class FeatureStatus extends Equatable {
   final bool enabled;
   final String message;
 
-  const FeatureStatus({
-    required this.enabled,
-    this.message = '',
-  });
+  const FeatureStatus({required this.enabled, this.message = ''});
 
   factory FeatureStatus.fromJson(Map<String, dynamic> json) =>
       _$FeatureStatusFromJson(json);

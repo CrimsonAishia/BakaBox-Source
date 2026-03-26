@@ -4,7 +4,7 @@ import '../../../core/models/map_contribution_models.dart';
 import 'contribution_item.dart';
 
 /// 地图详情面板
-/// 
+///
 /// 显示选中地图的详细贡献列表
 class MapDetailPanel extends StatelessWidget {
   final MapContributionGroup? selectedGroup;
@@ -104,7 +104,7 @@ class MapDetailPanel extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // 贡献列表
           Expanded(
             child: items.isEmpty
@@ -112,7 +112,8 @@ class MapDetailPanel extends StatelessWidget {
                 : ListView.separated(
                     padding: const EdgeInsets.all(20),
                     itemCount: items.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final contribution = items[index];
                       return ContributionItem(
@@ -198,9 +199,7 @@ class MapDetailPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -45,9 +45,7 @@ class _UserCenterDialogContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
-      child: BilibiliUserCenterPage(
-        onClose: () => Navigator.of(context).pop(),
-      ),
+      child: BilibiliUserCenterPage(onClose: () => Navigator.of(context).pop()),
     );
   }
 }

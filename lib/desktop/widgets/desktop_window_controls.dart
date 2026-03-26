@@ -7,7 +7,7 @@ import '../../core/core.dart';
 import 'notification/notification_panel.dart';
 
 /// 桌面端自定义窗口控制按钮组件
-/// 
+///
 /// 提供窗口最小化和关闭功能：
 /// - 消息中心按钮：显示公告和通知
 /// - 最小化按钮：将窗口最小化到任务栏 (Requirements 8.1)
@@ -61,9 +61,7 @@ class _DesktopWindowControlsState extends State<DesktopWindowControls> {
             right: 16,
             child: Material(
               color: Colors.transparent,
-              child: NotificationPanel(
-                onClose: _hideNotificationPanel,
-              ),
+              child: NotificationPanel(onClose: _hideNotificationPanel),
             ),
           ),
         ],
@@ -96,7 +94,7 @@ class _DesktopWindowControlsState extends State<DesktopWindowControls> {
     return Container(
       height: 36,
       decoration: BoxDecoration(
-        color: isDark 
+        color: isDark
             ? Colors.black.withValues(alpha: 0.3)
             : Colors.white.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(12),
@@ -120,8 +118,9 @@ class _DesktopWindowControlsState extends State<DesktopWindowControls> {
             builder: (context, announcementState) {
               return BlocBuilder<NotificationBloc, NotificationState>(
                 builder: (context, notificationState) {
-                  final totalUnread = announcementState.unreadCount + 
-                                      notificationState.unreadCount;
+                  final totalUnread =
+                      announcementState.unreadCount +
+                      notificationState.unreadCount;
                   return _MessageCenterButton(
                     key: _bellKey,
                     unreadCount: totalUnread,
@@ -136,7 +135,7 @@ class _DesktopWindowControlsState extends State<DesktopWindowControls> {
           Container(
             width: 1,
             height: 20,
-            color: isDark 
+            color: isDark
                 ? Colors.white.withValues(alpha: 0.1)
                 : Colors.black.withValues(alpha: 0.1),
           ),
@@ -176,7 +175,7 @@ class _MessageCenterButton extends StatefulWidget {
   State<_MessageCenterButton> createState() => _MessageCenterButtonState();
 }
 
-class _MessageCenterButtonState extends State<_MessageCenterButton> 
+class _MessageCenterButtonState extends State<_MessageCenterButton>
     with SingleTickerProviderStateMixin {
   bool _isHovered = false;
   late AnimationController _pulseController;
@@ -193,7 +192,7 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.5).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-    
+
     _lastUnreadCount = widget.unreadCount;
     if (widget.unreadCount > 0) {
       _pulseController.repeat(reverse: true);
@@ -203,7 +202,7 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
   @override
   void didUpdateWidget(_MessageCenterButton oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // 未读数增加时触发动画
     if (widget.unreadCount > _lastUnreadCount) {
       _pulseController.repeat(reverse: true);
@@ -223,7 +222,7 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
   @override
   Widget build(BuildContext context) {
     final hasUnread = widget.unreadCount > 0;
-    
+
     return Tooltip(
       message: hasUnread ? '${widget.unreadCount} 条未读消息' : '消息中心',
       child: MouseRegion(
@@ -236,10 +235,12 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
             width: 44,
             height: 36,
             decoration: BoxDecoration(
-              color: _isHovered 
-                  ? (hasUnread 
-                      ? const Color(0xFF0080FF).withValues(alpha: 0.15)
-                      : (widget.isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.05)))
+              color: _isHovered
+                  ? (hasUnread
+                        ? const Color(0xFF0080FF).withValues(alpha: 0.15)
+                        : (widget.isDark
+                              ? Colors.white12
+                              : Colors.black.withValues(alpha: 0.05)))
                   : Colors.transparent,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(11),
@@ -250,11 +251,15 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
               alignment: Alignment.center,
               children: [
                 Icon(
-                  hasUnread ? Icons.notifications_active : Icons.notifications_outlined,
+                  hasUnread
+                      ? Icons.notifications_active
+                      : Icons.notifications_outlined,
                   size: 16,
-                  color: hasUnread 
+                  color: hasUnread
                       ? const Color(0xFF0080FF)
-                      : (widget.isDark ? Colors.white70 : const Color(0xFF6B7280)),
+                      : (widget.isDark
+                            ? Colors.white70
+                            : const Color(0xFF6B7280)),
                 ),
                 if (hasUnread)
                   Positioned(
@@ -263,7 +268,8 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
                     child: AnimatedBuilder(
                       animation: _pulseAnimation,
                       builder: (context, child) {
-                        final opacity = 1.0 - (_pulseAnimation.value - 1.0) / 0.5;
+                        final opacity =
+                            1.0 - (_pulseAnimation.value - 1.0) / 0.5;
                         return Stack(
                           alignment: Alignment.center,
                           children: [
@@ -286,20 +292,30 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
                         );
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF44336),
                           borderRadius: BorderRadius.circular(8),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFF44336).withValues(alpha: 0.5),
+                              color: const Color(
+                                0xFFF44336,
+                              ).withValues(alpha: 0.5),
                               blurRadius: 4,
                             ),
                           ],
                         ),
-                        constraints: const BoxConstraints(minWidth: 16, minHeight: 14),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 14,
+                        ),
                         child: Text(
-                          widget.unreadCount > 9 ? '9+' : '${widget.unreadCount}',
+                          widget.unreadCount > 9
+                              ? '9+'
+                              : '${widget.unreadCount}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 9,
@@ -346,15 +362,17 @@ class _WindowControlButtonState extends State<_WindowControlButton> {
   Widget build(BuildContext context) {
     Color buttonColor;
     Color iconColor;
-    
+
     if (widget.isCloseButton) {
       buttonColor = _isHovered ? const Color(0xFFE81123) : Colors.transparent;
-      iconColor = _isHovered 
-          ? Colors.white 
+      iconColor = _isHovered
+          ? Colors.white
           : (widget.isDark ? Colors.white70 : const Color(0xFF6B7280));
     } else {
-      buttonColor = _isHovered 
-          ? (widget.isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.05))
+      buttonColor = _isHovered
+          ? (widget.isDark
+                ? Colors.white12
+                : Colors.black.withValues(alpha: 0.05))
           : Colors.transparent;
       iconColor = widget.isDark ? Colors.white70 : const Color(0xFF6B7280);
     }
@@ -372,7 +390,7 @@ class _WindowControlButtonState extends State<_WindowControlButton> {
             height: 36,
             decoration: BoxDecoration(
               color: buttonColor,
-              borderRadius: widget.isCloseButton 
+              borderRadius: widget.isCloseButton
                   ? const BorderRadius.only(
                       topRight: Radius.circular(11),
                       bottomRight: Radius.circular(11),

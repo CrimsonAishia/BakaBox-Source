@@ -1,24 +1,21 @@
 import 'package:flutter/material.dart';
 
 /// 通用滚动指示器
-/// 
+///
 /// 用于显示列表可以向上或向下滚动的视觉提示
 class CommonScrollIndicator extends StatelessWidget {
   final bool isTop;
   final Color? color;
 
-  const CommonScrollIndicator({
-    super.key,
-    required this.isTop,
-    this.color,
-  });
+  const CommonScrollIndicator({super.key, required this.isTop, this.color});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final indicatorColor = color ?? (isDark ? Colors.white : const Color(0xFF6B7280));
+    final indicatorColor =
+        color ?? (isDark ? Colors.white : const Color(0xFF6B7280));
     final bgColor = isDark ? const Color(0xFF1E1E2E) : Colors.white;
-    
+
     return IgnorePointer(
       child: Container(
         height: 40,

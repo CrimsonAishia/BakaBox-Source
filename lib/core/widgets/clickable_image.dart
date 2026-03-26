@@ -5,7 +5,7 @@ import 'disk_cached_image.dart';
 import 'image_viewer_dialog.dart';
 
 /// 可点击的图片组件
-/// 
+///
 /// 支持：
 /// - 点击放大查看
 /// - Hover 效果（边框高亮、遮罩、放大图标）
@@ -61,12 +61,18 @@ class _ClickableImageState extends State<ClickableImage> {
     try {
       final url = await ImageUrlService.instance.getSignedUrl(widget.imageUrl);
       if (mounted) {
-        setState(() { _signedUrl = url; _isLoading = false; });
+        setState(() {
+          _signedUrl = url;
+          _isLoading = false;
+        });
       }
     } catch (e) {
       LogService.d('加载图片签名URL失败: $e');
       if (mounted) {
-        setState(() { _signedUrl = widget.imageUrl; _isLoading = false; });
+        setState(() {
+          _signedUrl = widget.imageUrl;
+          _isLoading = false;
+        });
       }
     }
   }
@@ -74,14 +80,16 @@ class _ClickableImageState extends State<ClickableImage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     if (_isLoading) {
       return _buildLoadingPlaceholder(isDark);
     }
 
-    final borderColor = _isHovering 
-        ? const Color(0xFF0080FF) 
-        : (isDark ? Colors.white.withValues(alpha: 0.15) : const Color(0xFFE5E7EB));
+    final borderColor = _isHovering
+        ? const Color(0xFF0080FF)
+        : (isDark
+              ? Colors.white.withValues(alpha: 0.15)
+              : const Color(0xFFE5E7EB));
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
@@ -95,16 +103,15 @@ class _ClickableImageState extends State<ClickableImage> {
           height: widget.height,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(widget.borderRadius),
-            border: Border.all(
-              color: borderColor,
-              width: _isHovering ? 2 : 1,
-            ),
-            boxShadow: _isHovering ? [
-              BoxShadow(
-                color: const Color(0xFF0080FF).withValues(alpha: 0.15),
-                blurRadius: 8,
-              ),
-            ] : null,
+            border: Border.all(color: borderColor, width: _isHovering ? 2 : 1),
+            boxShadow: _isHovering
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+                      blurRadius: 8,
+                    ),
+                  ]
+                : null,
           ),
           child: Stack(
             children: [
@@ -124,11 +131,17 @@ class _ClickableImageState extends State<ClickableImage> {
                 Positioned.fill(
                   child: Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(widget.borderRadius - 1),
+                      borderRadius: BorderRadius.circular(
+                        widget.borderRadius - 1,
+                      ),
                       color: Colors.black.withValues(alpha: 0.3),
                     ),
                     child: const Center(
-                      child: Icon(Icons.zoom_in_rounded, size: 24, color: Colors.white),
+                      child: Icon(
+                        Icons.zoom_in_rounded,
+                        size: 24,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
@@ -146,10 +159,21 @@ class _ClickableImageState extends State<ClickableImage> {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(widget.borderRadius),
-        border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE5E7EB)),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.1)
+              : const Color(0xFFE5E7EB),
+        ),
       ),
       child: const Center(
-        child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0080FF))),
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Color(0xFF0080FF),
+          ),
+        ),
       ),
     );
   }
@@ -165,9 +189,19 @@ class _ClickableImageState extends State<ClickableImage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.broken_image_rounded, size: 24, color: isDark ? const Color(0xFF64748B) : const Color(0xFF9CA3AF)),
+          Icon(
+            Icons.broken_image_rounded,
+            size: 24,
+            color: isDark ? const Color(0xFF64748B) : const Color(0xFF9CA3AF),
+          ),
           const SizedBox(height: 4),
-          Text('加载失败', style: TextStyle(fontSize: 10, color: isDark ? const Color(0xFF64748B) : const Color(0xFF9CA3AF))),
+          Text(
+            '加载失败',
+            style: TextStyle(
+              fontSize: 10,
+              color: isDark ? const Color(0xFF64748B) : const Color(0xFF9CA3AF),
+            ),
+          ),
         ],
       ),
     );
@@ -179,7 +213,11 @@ class _ClickableImageState extends State<ClickableImage> {
     final signedUrls = await ImageUrlService.instance.getSignedUrls(urls);
     final resolvedUrls = urls.map((url) => signedUrls[url] ?? url).toList();
     if (context.mounted) {
-      ImageViewerDialog.show(context, imageUrls: resolvedUrls, initialIndex: index);
+      ImageViewerDialog.show(
+        context,
+        imageUrls: resolvedUrls,
+        initialIndex: index,
+      );
     }
   }
 }

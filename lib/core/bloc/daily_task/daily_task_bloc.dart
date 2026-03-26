@@ -90,7 +90,7 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
 
     // 检查是否跨天
     final isCrossDay = lastCheckDate != null && lastCheckDate != todayDate;
-    
+
     if (isCrossDay) {
       LogService.d('[DailyTask] 检测到跨天：$lastCheckDate -> $todayDate');
       await _clearLocalCache();
@@ -123,36 +123,44 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
       final checkInResult = results[0] as CheckInStatusResult;
       final shakeResult = results[1] as ShakeStatusResult;
 
-      LogService.d('[DailyTask] 服务器返回：hasCheckedIn=${checkInResult.hasCheckedIn}, canShake=${shakeResult.canShake}, hasShaked=${shakeResult.alreadyShaked}');
+      LogService.d(
+        '[DailyTask] 服务器返回：hasCheckedIn=${checkInResult.hasCheckedIn}, canShake=${shakeResult.canShake}, hasShaked=${shakeResult.alreadyShaked}',
+      );
 
       // 读取今日奖励缓存
       final checkInReward = await _getTodayCheckInReward();
       final shakeReward = await _getTodayShakeReward();
 
-      LogService.d('[DailyTask] 本地缓存：checkInReward=$checkInReward, shakeReward=$shakeReward');
+      LogService.d(
+        '[DailyTask] 本地缓存：checkInReward=$checkInReward, shakeReward=$shakeReward',
+      );
 
       // 摇一摇奖励逻辑：
       // 1. 如果本地有缓存 → 使用缓存
       // 2. 如果本地没有缓存但已摇过 → 使用服务器返回的金额并保存
       // 3. 如果未摇过 → 不显示金额（即使服务器返回了预设金额）
       int? finalShakeReward = shakeReward;
-      if (shakeReward == null && shakeResult.alreadyShaked && shakeResult.rewardAmount != null) {
+      if (shakeReward == null &&
+          shakeResult.alreadyShaked &&
+          shakeResult.rewardAmount != null) {
         // 已摇过但本地没有缓存，使用服务器返回的金额并保存
         finalShakeReward = shakeResult.rewardAmount;
         await _saveShakeReward(finalShakeReward!);
         LogService.d('[DailyTask] 已摇过但无缓存，保存服务器返回的奖励：$finalShakeReward');
       }
 
-      emit(state.copyWith(
-        isCheckingStatus: false,
-        hasCheckedIn: checkInResult.hasCheckedIn,
-        checkInRewardAmount: checkInReward,
-        clearCheckInReward: checkInReward == null,
-        canShake: shakeResult.canShake,
-        hasShaked: shakeResult.alreadyShaked,
-        shakeRewardAmount: finalShakeReward,
-        clearShakeReward: finalShakeReward == null,
-      ));
+      emit(
+        state.copyWith(
+          isCheckingStatus: false,
+          hasCheckedIn: checkInResult.hasCheckedIn,
+          checkInRewardAmount: checkInReward,
+          clearCheckInReward: checkInReward == null,
+          canShake: shakeResult.canShake,
+          hasShaked: shakeResult.alreadyShaked,
+          shakeRewardAmount: finalShakeReward,
+          clearShakeReward: finalShakeReward == null,
+        ),
+      );
 
       // 更新检查日期（确保成功后才更新）
       await StorageUtils.setString(_keyLastCheckDate, todayDate);
@@ -175,13 +183,15 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
     try {
       // 记录签到时的日期
       final checkInDate = _getTodayDate();
-      
+
       final result = await _authService.checkIn(mood: event.mood);
 
       // 签到成功后，检查是否跨天了
       final currentDate = _getTodayDate();
       if (checkInDate != currentDate) {
-        LogService.w('[DailyTask] 签到过程中检测到跨天（$checkInDate -> $currentDate），忽略本次结果');
+        LogService.w(
+          '[DailyTask] 签到过程中检测到跨天（$checkInDate -> $currentDate），忽略本次结果',
+        );
         emit(state.copyWith(isCheckingIn: false));
         // 不触发状态检查，避免覆盖用户正在查看的状态
         // 用户下次展开列表时会自动检测跨天
@@ -193,11 +203,13 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
         await _saveCheckInReward(result.rewardAmount!);
       }
 
-      emit(state.copyWith(
-        isCheckingIn: false,
-        hasCheckedIn: result.success || result.alreadyCheckedIn,
-        checkInRewardAmount: result.rewardAmount,
-      ));
+      emit(
+        state.copyWith(
+          isCheckingIn: false,
+          hasCheckedIn: result.success || result.alreadyCheckedIn,
+          checkInRewardAmount: result.rewardAmount,
+        ),
+      );
 
       LogService.i('[DailyTask] 签到成功，奖励：${result.rewardAmount}');
     } catch (e) {
@@ -214,9 +226,11 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
       // 使用 lastCheckDate 来判断是否跨天（而不是 shakeRewardDate）
       final lastCheckDate = StorageUtils.getString(_keyLastCheckDate);
       final currentDate = _getTodayDate();
-      
+
       if (lastCheckDate != null && lastCheckDate != currentDate) {
-        LogService.w('[DailyTask] 摇一摇过程中检测到跨天（$lastCheckDate -> $currentDate），忽略本次结果');
+        LogService.w(
+          '[DailyTask] 摇一摇过程中检测到跨天（$lastCheckDate -> $currentDate），忽略本次结果',
+        );
         // 不触发状态检查，避免覆盖用户正在查看的状态
         // 用户下次展开列表时会自动检测跨天
         return;
@@ -227,11 +241,13 @@ class DailyTaskBloc extends Bloc<DailyTaskEvent, DailyTaskState> {
         await _saveShakeReward(event.rewardAmount!);
       }
 
-      emit(state.copyWith(
-        canShake: false,
-        hasShaked: true,
-        shakeRewardAmount: event.rewardAmount,
-      ));
+      emit(
+        state.copyWith(
+          canShake: false,
+          hasShaked: true,
+          shakeRewardAmount: event.rewardAmount,
+        ),
+      );
 
       LogService.i('[DailyTask] 摇一摇成功，奖励：${event.rewardAmount}');
     }

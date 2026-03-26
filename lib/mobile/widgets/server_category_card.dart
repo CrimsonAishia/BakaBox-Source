@@ -20,17 +20,19 @@ class ServerCategoryCard extends StatefulWidget {
 class _ServerCategoryCardState extends State<ServerCategoryCard> {
   @override
   Widget build(BuildContext context) {
-    final categoryColor = CategoryUtils.getCategoryColor(widget.category.modelName);
-    
+    final categoryColor = CategoryUtils.getCategoryColor(
+      widget.category.modelName,
+    );
+
     return BlocBuilder<ServerBloc, ServerState>(
       builder: (context, state) {
-        final onlineCount = widget.category.modelName != null 
+        final onlineCount = widget.category.modelName != null
             ? state.getCategoryOnlineCount(widget.category.modelName!)
             : 0;
-        final isLoading = widget.category.modelName != null 
+        final isLoading = widget.category.modelName != null
             ? state.isCategoryLoading(widget.category.modelName!)
             : false;
-        
+
         return Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
@@ -60,8 +62,12 @@ class _ServerCategoryCardState extends State<ServerCategoryCard> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
-                        Theme.of(context).colorScheme.surface.withValues(alpha: 0.85),
+                        Theme.of(
+                          context,
+                        ).colorScheme.surface.withValues(alpha: 0.95),
+                        Theme.of(
+                          context,
+                        ).colorScheme.surface.withValues(alpha: 0.85),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(20),
@@ -98,20 +104,23 @@ class _ServerCategoryCardState extends State<ServerCategoryCard> {
                             ],
                           ),
                           child: Icon(
-                            CategoryUtils.getCategoryIcon(widget.category.modelName),
+                            CategoryUtils.getCategoryIcon(
+                              widget.category.modelName,
+                            ),
                             size: 32,
                             color: Colors.white,
                           ),
                         ),
                         const SizedBox(height: 16),
-                        
+
                         // 分类名称
                         Text(
                           widget.category.modelName ?? '未知分类',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                           textAlign: TextAlign.center,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -120,14 +129,17 @@ class _ServerCategoryCardState extends State<ServerCategoryCard> {
 
                         // 在线人数
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: onlineCount == 0 
+                            color: onlineCount == 0
                                 ? Colors.grey.withValues(alpha: 0.1)
                                 : categoryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: onlineCount == 0 
+                              color: onlineCount == 0
                                   ? Colors.grey.withValues(alpha: 0.3)
                                   : categoryColor.withValues(alpha: 0.3),
                               width: 1,
@@ -139,7 +151,7 @@ class _ServerCategoryCardState extends State<ServerCategoryCard> {
                               Icon(
                                 Icons.people,
                                 size: 16,
-                                color: onlineCount == 0 
+                                color: onlineCount == 0
                                     ? Colors.grey.withValues(alpha: 0.6)
                                     : categoryColor.withValues(alpha: 0.8),
                               ),
@@ -149,14 +161,17 @@ class _ServerCategoryCardState extends State<ServerCategoryCard> {
                                 suffix: ' 在线',
                                 isLoading: isLoading && onlineCount == 0,
                                 loadingText: '加载中',
-                                textStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: (isLoading && onlineCount == 0) 
-                                      ? Colors.grey.withValues(alpha: 0.6)
-                                      : onlineCount == 0 
+                                textStyle: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: (isLoading && onlineCount == 0)
                                           ? Colors.grey.withValues(alpha: 0.6)
-                                          : categoryColor.withValues(alpha: 0.8),
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                          : onlineCount == 0
+                                          ? Colors.grey.withValues(alpha: 0.6)
+                                          : categoryColor.withValues(
+                                              alpha: 0.8,
+                                            ),
+                                      fontWeight: FontWeight.w600,
+                                    ),
                               ),
                             ],
                           ),
@@ -165,7 +180,10 @@ class _ServerCategoryCardState extends State<ServerCategoryCard> {
 
                         // 服务器数量
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: categoryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
@@ -177,14 +195,21 @@ class _ServerCategoryCardState extends State<ServerCategoryCard> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.dns, size: 16, color: categoryColor.withValues(alpha: 0.8)),
+                              Icon(
+                                Icons.dns,
+                                size: 16,
+                                color: categoryColor.withValues(alpha: 0.8),
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 '${widget.category.serverList.length} 服务器',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: categoryColor.withValues(alpha: 0.8),
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: categoryColor.withValues(
+                                        alpha: 0.8,
+                                      ),
+                                      fontWeight: FontWeight.w600,
+                                    ),
                               ),
                             ],
                           ),

@@ -14,7 +14,7 @@ enum AuditStatus {
   @JsonValue('approved')
   approved,
   @JsonValue('rejected')
-  rejected;
+  rejected,
 }
 
 /// 标签
@@ -22,14 +22,17 @@ enum AuditStatus {
 class MapTag extends Equatable {
   final int id;
   final String name;
+
   /// 标签颜色，十六进制格式如 #FF5733
   final String? color;
+
   /// 贡献者信息
   final ContributorInfo? contributor;
   @ServerTimeConverter()
   final DateTime createdAt;
   @ServerTimeConverter()
   final DateTime updatedAt;
+
   /// 审核状态
   /// 外部获取的全局标签（getTagList）此字段为 null
   final AuditStatus? auditStatus;
@@ -71,12 +74,19 @@ class MapTag extends Equatable {
   /// 是否是用户自己的标签
   bool get isUserTag => auditStatus != null;
 
-  factory MapTag.fromJson(Map<String, dynamic> json) =>
-      _$MapTagFromJson(json);
+  factory MapTag.fromJson(Map<String, dynamic> json) => _$MapTagFromJson(json);
   Map<String, dynamic> toJson() => _$MapTagToJson(this);
 
   @override
-  List<Object?> get props => [id, name, color, contributor, createdAt, updatedAt, auditStatus];
+  List<Object?> get props => [
+    id,
+    name,
+    color,
+    contributor,
+    createdAt,
+    updatedAt,
+    auditStatus,
+  ];
 }
 
 /// 地图标签投票记录（GET /api/stub 接口专用）
@@ -88,12 +98,16 @@ class MapTagVoteSimple extends Equatable {
   final int tagId;
   final String tagName;
   final int voteCount;
+
   /// 赞成票数
   final int upCount;
+
   /// 反对票数
   final int downCount;
+
   /// 当前用户是否投了赞成票
   final bool? hasUpvoted;
+
   /// 当前用户是否投了反对票
   final bool? hasDownvoted;
 
@@ -141,7 +155,17 @@ class MapTagVoteSimple extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, mapName, tagId, tagName, voteCount, upCount, downCount, hasUpvoted, hasDownvoted];
+  List<Object?> get props => [
+    id,
+    mapName,
+    tagId,
+    tagName,
+    voteCount,
+    upCount,
+    downCount,
+    hasUpvoted,
+    hasDownvoted,
+  ];
 }
 
 /// 地图标签投票列表响应（GET /api/stub 接口专用）
@@ -150,10 +174,7 @@ class MapTagListSimpleResponse extends Equatable {
   final String mapName;
   final List<MapTagVoteSimple> items;
 
-  const MapTagListSimpleResponse({
-    required this.mapName,
-    required this.items,
-  });
+  const MapTagListSimpleResponse({required this.mapName, required this.items});
 
   factory MapTagListSimpleResponse.fromJson(Map<String, dynamic> json) =>
       _$MapTagListSimpleResponseFromJson(json);
@@ -188,13 +209,11 @@ class TagVoteResponse extends Equatable {
 @JsonSerializable()
 class MapTagSimple extends Equatable {
   final String name;
+
   /// 标签颜色，十六进制格式如 #FF5733
   final String? color;
 
-  const MapTagSimple({
-    required this.name,
-    this.color,
-  });
+  const MapTagSimple({required this.name, this.color});
 
   /// 将十六进制颜色字符串转换为 Color
   Color? get colorValue {

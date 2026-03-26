@@ -11,30 +11,32 @@ import 'queue_users_state.dart';
 ///
 /// 管理用户列表、连接状态和动画触发
 /// 订阅 QueueUsersService 事件流，将服务事件转换为 Bloc 事件
-/// 
+///
 /// 独立于窗口生命周期，窗口关闭后状态保持
 class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
   // 单例模式
   static QueueUsersBloc? _instance;
-  
+
   /// 获取单例实例
   static QueueUsersBloc get instance {
-    _instance ??= QueueUsersBloc._internal(service: QueueUsersServiceImpl.instance);
+    _instance ??= QueueUsersBloc._internal(
+      service: QueueUsersServiceImpl.instance,
+    );
     return _instance!;
   }
-  
+
   final QueueUsersService _service;
   StreamSubscription<QueueUsersServiceEvent>? _serviceSubscription;
-  
+
   /// 待发送的 join 信息（连接成功后自动发送）
   QueueUsersJoin? _pendingJoin;
-  
+
   /// 最后一次成功发送的 join 信息（用于重连时自动重发）
   QueueUsersJoin? _lastJoin;
 
   QueueUsersBloc._internal({required QueueUsersService service})
-      : _service = service,
-        super(QueueUsersState.initial()) {
+    : _service = service,
+      super(QueueUsersState.initial()) {
     // 注册事件处理器
     on<QueueUsersConnect>(_onConnect);
     on<QueueUsersDisconnect>(_onDisconnect);
@@ -54,7 +56,7 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
     // 订阅服务事件流
     _subscribeToService();
   }
-  
+
   /// 兼容旧的构造方式（不推荐使用，仅用于测试）
   @Deprecated('Use QueueUsersBloc.instance instead')
   factory QueueUsersBloc({required QueueUsersService service}) {
@@ -93,10 +95,7 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
   ) async {
     LogService.d('[QueueUsersBloc] 连接到服务器: ${event.serverAddress}');
 
-    emit(state.copyWith(
-      isConnecting: true,
-      clearError: true,
-    ));
+    emit(state.copyWith(isConnecting: true, clearError: true));
 
     await _service.connect(event.serverAddress);
   }
@@ -115,32 +114,31 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
 
     await _service.disconnect();
 
-    emit(state.copyWith(
-      isConnected: false,
-      isConnecting: false,
-      users: const [],
-      clearJoinedUserId: true,
-      clearLeftUserId: true,
-      clearSuccessUserId: true,
-    ));
+    emit(
+      state.copyWith(
+        isConnected: false,
+        isConnecting: false,
+        users: const [],
+        clearJoinedUserId: true,
+        clearLeftUserId: true,
+        clearSuccessUserId: true,
+      ),
+    );
   }
 
   /// 处理用户开始挤服事件
   /// 服务器会在 sync 消息中返回当前用户（isSelf=true），不需要客户端手动添加
-  void _onJoin(
-    QueueUsersJoin event,
-    Emitter<QueueUsersState> emit,
-  ) {
+  void _onJoin(QueueUsersJoin event, Emitter<QueueUsersState> emit) {
     // 保存 join 信息，用于重连时自动重发
     _lastJoin = event;
-    
+
     // 如果还没连接，保存 join 信息，等连接成功后再发送
     if (!state.isConnected) {
       LogService.d('[QueueUsersBloc] 未连接，保存 join 信息等待连接');
       _pendingJoin = event;
       return;
     }
-    
+
     LogService.d('[QueueUsersBloc] 发送 join, nickname: ${event.nickname}');
     _service.sendJoin(nickname: event.nickname);
     // 服务器会通过 sync 消息返回更新后的用户列表（包括自己）
@@ -148,10 +146,7 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
 
   /// 处理用户停止挤服事件
   /// 服务器会通过 sync 消息更新用户列表
-  void _onLeave(
-    QueueUsersLeave event,
-    Emitter<QueueUsersState> emit,
-  ) {
+  void _onLeave(QueueUsersLeave event, Emitter<QueueUsersState> emit) {
     LogService.d('[QueueUsersBloc] 发送 leave');
     _service.sendLeave();
     // 清除 lastJoin，停止挤服后不再自动重发
@@ -161,10 +156,7 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
   }
 
   /// 处理用户挤服成功事件
-  void _onSuccess(
-    QueueUsersSuccess event,
-    Emitter<QueueUsersState> emit,
-  ) {
+  void _onSuccess(QueueUsersSuccess event, Emitter<QueueUsersState> emit) {
     LogService.d('[QueueUsersBloc] 发送 success');
     _service.sendSuccess();
     // 挤服成功后清除 lastJoin，不再自动重发
@@ -178,16 +170,15 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
 
   /// 处理全量同步事件
   /// 服务器会返回所有用户（包括自己，isSelf=true）
-  void _onSynced(
-    QueueUsersSynced event,
-    Emitter<QueueUsersState> emit,
-  ) {
+  void _onSynced(QueueUsersSynced event, Emitter<QueueUsersState> emit) {
     LogService.d('[QueueUsersBloc] 同步用户列表: ${event.users.length} 人');
-    
+
     // 检测新加入的用户（在新列表中但不在旧列表中）
     final oldUserIds = state.users.map((u) => u.uniqueId).toSet();
-    final newUsers = event.users.where((u) => !oldUserIds.contains(u.uniqueId)).toList();
-    
+    final newUsers = event.users
+        .where((u) => !oldUserIds.contains(u.uniqueId))
+        .toList();
+
     // 如果有新用户加入，设置 joinedUserId 触发动画
     // 注意：首次同步时所有用户都是"新"的，但不应该触发加入动画
     // 只有在已有用户列表的情况下，新增的用户才触发动画
@@ -197,25 +188,28 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
       joinedUserId = newUsers.first.uniqueId;
       LogService.d('[QueueUsersBloc] 检测到新用户加入: $joinedUserId');
     }
-    
-    emit(state.copyWith(
-      users: event.users,
-      joinedUserId: joinedUserId,
-      // sync 事件时清除其他动画触发标记，避免残留
-      clearJoinedUserId: joinedUserId == null,
-      clearLeftUserId: true,
-      clearSuccessUserId: true,
-    ));
+
+    emit(
+      state.copyWith(
+        users: event.users,
+        joinedUserId: joinedUserId,
+        // sync 事件时清除其他动画触发标记，避免残留
+        clearJoinedUserId: joinedUserId == null,
+        clearLeftUserId: true,
+        clearSuccessUserId: true,
+      ),
+    );
   }
 
   /// 处理用户加入事件
-  void _onUserJoined(
-    QueueUserJoined event,
-    Emitter<QueueUsersState> emit,
-  ) {
+  void _onUserJoined(QueueUserJoined event, Emitter<QueueUsersState> emit) {
     final user = event.user;
-    LogService.d('[QueueUsersBloc] 收到用户加入事件: ${user.uniqueId}, nickname: ${user.nickname}');
-    LogService.d('[QueueUsersBloc] 当前用户列表: ${state.users.map((u) => u.uniqueId).toList()}');
+    LogService.d(
+      '[QueueUsersBloc] 收到用户加入事件: ${user.uniqueId}, nickname: ${user.nickname}',
+    );
+    LogService.d(
+      '[QueueUsersBloc] 当前用户列表: ${state.users.map((u) => u.uniqueId).toList()}',
+    );
 
     // 检查用户是否已存在（避免重复添加）
     final existingIndex = state.users.indexWhere(
@@ -229,31 +223,34 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
 
     // 添加用户到列表，并设置动画触发标记
     final updatedUsers = [...state.users, user];
-    LogService.d('[QueueUsersBloc] 添加用户后列表: ${updatedUsers.map((u) => u.uniqueId).toList()}');
+    LogService.d(
+      '[QueueUsersBloc] 添加用户后列表: ${updatedUsers.map((u) => u.uniqueId).toList()}',
+    );
 
-    emit(state.copyWith(
-      users: updatedUsers,
-      joinedUserId: user.uniqueId,
-      clearLeftUserId: true,
-      clearSuccessUserId: true,
-    ));
+    emit(
+      state.copyWith(
+        users: updatedUsers,
+        joinedUserId: user.uniqueId,
+        clearLeftUserId: true,
+        clearSuccessUserId: true,
+      ),
+    );
   }
 
   /// 处理用户离开事件
-  void _onUserLeft(
-    QueueUserLeft event,
-    Emitter<QueueUsersState> emit,
-  ) {
+  void _onUserLeft(QueueUserLeft event, Emitter<QueueUsersState> emit) {
     final userId = event.odId.isNotEmpty ? event.odId : event.visitorId;
     LogService.d('[QueueUsersBloc] 用户离开: $userId');
 
     // 先找到要离开的用户（在移除之前保存其信息）
-    final leavingUser = state.users.where((u) => u.uniqueId == userId).firstOrNull;
+    final leavingUser = state.users
+        .where((u) => u.uniqueId == userId)
+        .firstOrNull;
 
     // 从列表中移除用户
-    final updatedUsers = state.users.where(
-      (u) => u.uniqueId != userId,
-    ).toList();
+    final updatedUsers = state.users
+        .where((u) => u.uniqueId != userId)
+        .toList();
 
     // 如果用户不在列表中，忽略
     if (updatedUsers.length == state.users.length) {
@@ -261,13 +258,15 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
       return;
     }
 
-    emit(state.copyWith(
-      users: updatedUsers,
-      leftUserId: userId,
-      leftUser: leavingUser,
-      clearJoinedUserId: true,
-      clearSuccessUserId: true,
-    ));
+    emit(
+      state.copyWith(
+        users: updatedUsers,
+        leftUserId: userId,
+        leftUser: leavingUser,
+        clearJoinedUserId: true,
+        clearSuccessUserId: true,
+      ),
+    );
   }
 
   /// 处理用户成功事件
@@ -279,32 +278,32 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
     LogService.d('[QueueUsersBloc] 用户成功: $userId');
 
     // 先找到成功的用户（在移除之前保存其信息）
-    final successfulUser = state.users.where((u) => u.uniqueId == userId).firstOrNull;
+    final successfulUser = state.users
+        .where((u) => u.uniqueId == userId)
+        .firstOrNull;
 
     // 从用户列表中移除成功的用户
-    final updatedUsers = state.users.where((u) => u.uniqueId != userId).toList();
-    
+    final updatedUsers = state.users
+        .where((u) => u.uniqueId != userId)
+        .toList();
+
     // 设置成功动画触发标记
-    emit(state.copyWith(
-      users: updatedUsers,
-      successUserId: userId,
-      successUser: successfulUser,
-      clearJoinedUserId: true,
-      clearLeftUserId: true,
-    ));
+    emit(
+      state.copyWith(
+        users: updatedUsers,
+        successUserId: userId,
+        successUser: successfulUser,
+        clearJoinedUserId: true,
+        clearLeftUserId: true,
+      ),
+    );
   }
 
   /// 处理错误事件
-  void _onError(
-    QueueUsersError event,
-    Emitter<QueueUsersState> emit,
-  ) {
+  void _onError(QueueUsersError event, Emitter<QueueUsersState> emit) {
     LogService.e('[QueueUsersBloc] 错误: ${event.error}');
 
-    emit(state.copyWith(
-      error: event.error,
-      isConnecting: false,
-    ));
+    emit(state.copyWith(error: event.error, isConnecting: false));
   }
 
   /// 处理连接状态变化事件
@@ -314,11 +313,8 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
   ) {
     LogService.d('[QueueUsersBloc] 连接状态变化: ${event.isConnected}');
 
-    emit(state.copyWith(
-      isConnected: event.isConnected,
-      isConnecting: false,
-    ));
-    
+    emit(state.copyWith(isConnected: event.isConnected, isConnecting: false));
+
     // 连接成功后，如果有待发送的 join，立即发送
     if (event.isConnected && _pendingJoin != null) {
       LogService.d('[QueueUsersBloc] 连接成功，发送待处理的 join');
@@ -336,11 +332,13 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
     QueueUsersClearAnimationTriggers event,
     Emitter<QueueUsersState> emit,
   ) {
-    emit(state.copyWith(
-      clearJoinedUserId: true,
-      clearLeftUserId: true,
-      clearSuccessUserId: true,
-    ));
+    emit(
+      state.copyWith(
+        clearJoinedUserId: true,
+        clearLeftUserId: true,
+        clearSuccessUserId: true,
+      ),
+    );
   }
 
   // ============================================================================
@@ -348,7 +346,7 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
   // ============================================================================
 
   /// 清除动画触发标记
-  /// 
+  ///
   /// UI 层在消费动画触发标记后应调用此方法清除标记
   void clearAnimationTriggers() {
     add(const QueueUsersClearAnimationTriggers());

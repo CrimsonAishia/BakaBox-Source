@@ -82,7 +82,8 @@ class SchedulerService {
     _tasks[task.id] = entry;
 
     LogService.d(
-        '[Scheduler] 注册任务: ${task.name} (${task.id}), 间隔=${task.interval.inSeconds}秒');
+      '[Scheduler] 注册任务: ${task.name} (${task.id}), 间隔=${task.interval.inSeconds}秒',
+    );
 
     // 立即执行一次
     if (task.runImmediately) {

@@ -116,7 +116,9 @@ class FloatingWindowService {
       final windowId = controller.windowId;
       _activeWindows[windowId] = config;
 
-      LogService.d('Floating window created: id=$windowId, type=${config.type}');
+      LogService.d(
+        'Floating window created: id=$windowId, type=${config.type}',
+      );
       return windowId;
     } catch (e, stack) {
       LogService.e('Create floating window error: $e\n$stack');
@@ -128,12 +130,13 @@ class FloatingWindowService {
   FloatingWindowConfig _addPositionToConfig(FloatingWindowConfig config) {
     try {
       // 从存储中读取浮窗位置设置
-      final positionIndex = StorageUtils.getInt('floating_window_position') ?? 8; // 默认右下角
-      
+      final positionIndex =
+          StorageUtils.getInt('floating_window_position') ?? 8; // 默认右下角
+
       // 将位置信息添加到 extra 中
       final extra = Map<String, dynamic>.from(config.extra ?? {});
       extra['floatingWindowPosition'] = positionIndex;
-      
+
       return FloatingWindowConfig(
         type: config.type,
         serverAddress: config.serverAddress,
@@ -141,7 +144,9 @@ class FloatingWindowService {
         extra: extra,
       );
     } catch (e) {
-      LogService.w('Failed to read floating window position, using default: $e');
+      LogService.w(
+        'Failed to read floating window position, using default: $e',
+      );
       return config;
     }
   }
@@ -151,7 +156,7 @@ class FloatingWindowService {
   Future<bool> closeWindow(String windowId) async {
     _activeWindows.remove(windowId);
     LogService.d('Window removed from tracking: $windowId');
-    
+
     // 发送关闭命令给窗口
     try {
       final controller = WindowController.fromWindowId(windowId);
@@ -161,7 +166,7 @@ class FloatingWindowService {
       // 窗口可能已经关闭，忽略错误
       LogService.d('Window may already be closed: $windowId, error: $e');
     }
-    
+
     return true;
   }
 
@@ -178,7 +183,7 @@ class FloatingWindowService {
   Future<void> closeAllWindows() async {
     final ids = List<String>.from(_activeWindows.keys);
     _activeWindows.clear(); // 立即清空列表
-    
+
     // 并行发送关闭命令，不等待响应
     for (final id in ids) {
       try {
@@ -252,14 +257,18 @@ class FloatingWindowService {
 
       await controller.invokeMethod('updateState', args);
 
-      LogService.d('IPC state update sent to window $windowId: $state, message: $message');
+      LogService.d(
+        'IPC state update sent to window $windowId: $state, message: $message',
+      );
       return true;
     } catch (e) {
       LogService.e('IPC send state update error', e);
       // 如果是通道未注册错误，说明窗口已关闭，从活跃列表中移除
       if (e.toString().contains('CHANNEL_UNREGISTERED')) {
         _activeWindows.remove(windowId);
-        LogService.w('Window $windowId channel unregistered, removed from active windows');
+        LogService.w(
+          'Window $windowId channel unregistered, removed from active windows',
+        );
       }
       return false;
     }

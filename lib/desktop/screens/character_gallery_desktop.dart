@@ -437,7 +437,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
 
                 final character = state.characters[index];
                 // 卡片选中状态：已加载完成的角色 或 正在加载中的角色
-                final isSelected = state.selectedCharacter?.id == character.id ||
+                final isSelected =
+                    state.selectedCharacter?.id == character.id ||
                     state.loadingCharacterId == character.id;
                 return HanafudaCard(
                   character: character,
@@ -501,21 +502,22 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           // 否则显示刀枪模详情
           return _buildWeaponModelDetailPanel(state);
         }
-        
+
         // 角色图鉴视图：优先判断 loading 状态
         if (state.detailLoadState == LoadState.loading) {
           return const DetailPanelSkeleton();
         }
-        
+
         // 如果有选中的刀枪模（从角色详情的专属装备点击过来），显示刀枪模详情
-        if (state.selectedWeaponModelId != null && state.selectedCharacter == null) {
+        if (state.selectedWeaponModelId != null &&
+            state.selectedCharacter == null) {
           // 刀枪模详情加载中显示骨架屏
           if (state.weaponDetailLoadState == LoadState.loading) {
             return const WeaponModelDetailSkeleton();
           }
           return _buildWeaponModelDetailPanel(state);
         }
-        
+
         // 没有选中角色时显示提示
         if (state.selectedCharacter == null) {
           return _buildSelectHint();
@@ -547,25 +549,25 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   /// 刀枪模详情面板（和角色详情一样的布局）
   Widget _buildWeaponModelDetailPanel(CharacterGalleryState state) {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
-    
+
     // 没有选中刀枪模时显示提示
     if (state.selectedWeaponModelId == null) {
       return _buildWeaponModelSelectHint(state);
     }
-    
+
     // 加载中显示骨架屏
     if (state.weaponDetailLoadState == LoadState.loading) {
       return const WeaponModelDetailSkeleton();
     }
-    
+
     // 获取选中的刀枪模
     final knife = state.selectedKnifeModel;
     final gun = state.selectedGunModel;
-    
+
     if (knife == null && gun == null) {
       return _buildWeaponModelSelectHint(state);
     }
-    
+
     final name = knife?.name ?? gun?.name ?? '';
     final characterId = knife?.characterId ?? gun?.characterId;
     final characterName = knife?.characterName ?? gun?.characterName;
@@ -591,10 +593,12 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               _buildWeaponNameSection(name, acquisition),
               const SizedBox(height: 16),
               // 专属角色区域（参照人物详情中专属刀模/枪模的布局）
-              if (characterId != null && characterName != null && characterName.isNotEmpty)
+              if (characterId != null &&
+                  characterName != null &&
+                  characterName.isNotEmpty)
                 _buildExclusiveCharacterSection(
-                  characterId, 
-                  characterName, 
+                  characterId,
+                  characterName,
                   state.weaponCharacterThumbnailUrl,
                   state.weaponCharacterAcquisition,
                   state.weaponCharacterLoadState,
@@ -705,7 +709,11 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   }
 
   /// 刀枪模图片查看器
-  void _showWeaponImageViewer(String imageUrl, WeaponModelPreview? preview, String name) {
+  void _showWeaponImageViewer(
+    String imageUrl,
+    WeaponModelPreview? preview,
+    String name,
+  ) {
     if (imageUrl.isEmpty) return;
 
     final allImages = <String>[];
@@ -764,8 +772,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
 
   /// 专属角色区域（参照人物详情中专属刀模/枪模的布局）
   Widget _buildExclusiveCharacterSection(
-    int characterId, 
-    String characterName, 
+    int characterId,
+    String characterName,
     String? characterThumbnailUrl,
     AcquisitionInfo? characterAcquisition,
     LoadState loadState,
@@ -804,7 +812,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final isKnife = state.weaponModelTab == 0;
-    
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1071,10 +1079,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 color: CharacterGalleryTheme.getVermillion(context),
               ),
               const SizedBox(height: 16),
-              Text(
-                '加载数据...',
-                style: TextStyle(color: inkColor, fontSize: 14),
-              ),
+              Text('加载数据...', style: TextStyle(color: inkColor, fontSize: 14)),
             ],
           ),
         ),
@@ -1083,17 +1088,20 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
 
     try {
       final api = CharacterApi();
-      
+
       // 确定有效的 subModelId
-      final effectiveSubModelId = subModel.id > 0 
-          ? subModel.id 
+      final effectiveSubModelId = subModel.id > 0
+          ? subModel.id
           : character.subModels?.firstOrNull?.id;
-      
+
       // 并行获取最新的角色详情、子模型详情和符卡数据
       final futures = await Future.wait([
         api.getCharacterDetail(character.id),
-        effectiveSubModelId != null ? api.getSubModelDetail(character.id, effectiveSubModelId) : Future.value(null),
-        character.category == CharacterCategory.touhou && effectiveSubModelId != null
+        effectiveSubModelId != null
+            ? api.getSubModelDetail(character.id, effectiveSubModelId)
+            : Future.value(null),
+        character.category == CharacterCategory.touhou &&
+                effectiveSubModelId != null
             ? api.getSpellCards(character.id, subModelId: effectiveSubModelId)
             : Future.value(null),
       ]);
@@ -1103,7 +1111,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
 
       final latestCharacter = futures[0] as CharacterModel?;
       final latestSubModel = futures[1] as CharacterSubModel?;
-      final latestSpellCards = futures[2] as Map<SpellCardType, List<SpellCard>>?;
+      final latestSpellCards =
+          futures[2] as Map<SpellCardType, List<SpellCard>>?;
 
       if (latestCharacter == null) {
         ToastUtils.showError(context, '获取角色数据失败');
@@ -1113,7 +1122,11 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       // 使用最新数据，如果子模型获取失败则使用传入的数据
       final finalSubModel = latestSubModel ?? subModel;
       final List<SpellCard> finalSpellCards = latestSpellCards != null
-          ? <SpellCard>[...latestSpellCards[SpellCardType.normal] ?? [], ...latestSpellCards[SpellCardType.ultimate] ?? [], ...latestSpellCards[SpellCardType.passive] ?? []]
+          ? <SpellCard>[
+              ...latestSpellCards[SpellCardType.normal] ?? [],
+              ...latestSpellCards[SpellCardType.ultimate] ?? [],
+              ...latestSpellCards[SpellCardType.passive] ?? [],
+            ]
           : spellCards;
 
       showDialog(
@@ -1533,7 +1546,9 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                                 : [
                                     Shadow(color: Colors.white, blurRadius: 3),
                                     Shadow(
-                                      color: Colors.white.withValues(alpha: 0.8),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.8,
+                                      ),
                                       blurRadius: 6,
                                     ),
                                   ],
@@ -1550,7 +1565,10 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                               shadows: isDark
                                   ? null
                                   : [
-                                      Shadow(color: Colors.white, blurRadius: 4),
+                                      Shadow(
+                                        color: Colors.white,
+                                        blurRadius: 4,
+                                      ),
                                       Shadow(
                                         color: Colors.white.withValues(
                                           alpha: 0.9,
@@ -1882,7 +1900,9 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                                 : [
                                     Shadow(color: Colors.white, blurRadius: 3),
                                     Shadow(
-                                      color: Colors.white.withValues(alpha: 0.8),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.8,
+                                      ),
                                       blurRadius: 6,
                                     ),
                                   ],
@@ -1899,7 +1919,10 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                               shadows: isDark
                                   ? null
                                   : [
-                                      Shadow(color: Colors.white, blurRadius: 4),
+                                      Shadow(
+                                        color: Colors.white,
+                                        blurRadius: 4,
+                                      ),
                                       Shadow(
                                         color: Colors.white.withValues(
                                           alpha: 0.9,
@@ -2074,9 +2097,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         ),
         Container(height: 1, color: scrollBrown.withValues(alpha: 0.2)),
         // 列表内容
-        Expanded(
-          child: _buildWeaponModelListContent(state),
-        ),
+        Expanded(child: _buildWeaponModelListContent(state)),
       ],
     );
   }
@@ -2107,13 +2128,17 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               Icon(
                 icon,
                 size: 14,
-                color: isSelected ? Colors.white : inkColor.withValues(alpha: 0.7),
+                color: isSelected
+                    ? Colors.white
+                    : inkColor.withValues(alpha: 0.7),
               ),
               const SizedBox(width: 6),
               Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : inkColor.withValues(alpha: 0.7),
+                  color: isSelected
+                      ? Colors.white
+                      : inkColor.withValues(alpha: 0.7),
                   fontSize: 12,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 ),
@@ -2131,9 +2156,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     final vermillion = CharacterGalleryTheme.getVermillion(context);
 
     if (state.allWeaponModelsLoadState == LoadState.loading) {
-      return Center(
-        child: CircularProgressIndicator(color: vermillion),
-      );
+      return Center(child: CircularProgressIndicator(color: vermillion));
     }
 
     if (state.allWeaponModelsLoadState == LoadState.failure) {
@@ -2181,7 +2204,9 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       itemBuilder: (context, index) {
         if (state.weaponModelTab == 0) {
           final knife = items[index] as KnifeModel;
-          final isSelected = state.selectedWeaponModelId == knife.id && state.selectedWeaponIsKnife;
+          final isSelected =
+              state.selectedWeaponModelId == knife.id &&
+              state.selectedWeaponIsKnife;
           return WeaponModelHanafudaCard.fromKnifeModel(
             model: knife,
             isSelected: isSelected,
@@ -2191,7 +2216,9 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           );
         } else {
           final gun = items[index] as GunModel;
-          final isSelected = state.selectedWeaponModelId == gun.id && !state.selectedWeaponIsKnife;
+          final isSelected =
+              state.selectedWeaponModelId == gun.id &&
+              !state.selectedWeaponIsKnife;
           return WeaponModelHanafudaCard.fromGunModel(
             model: gun,
             isSelected: isSelected,
@@ -2255,10 +2282,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
     return Container(
       padding: const EdgeInsets.all(20),
       child: Center(
-        child: CircularProgressIndicator(
-          color: scrollBrown,
-          strokeWidth: 2,
-        ),
+        child: CircularProgressIndicator(color: scrollBrown, strokeWidth: 2),
       ),
     );
   }
@@ -2276,7 +2300,10 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
             child: SubModelCard.fromKnifeModel(
               model: knife,
               onTap: () => context.read<CharacterGalleryBloc>().add(
-                LoadWeaponModelDetailInCharacterView(id: knife.id, isKnife: true),
+                LoadWeaponModelDetailInCharacterView(
+                  id: knife.id,
+                  isKnife: true,
+                ),
               ),
             ),
           );
@@ -2287,7 +2314,10 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
             child: SubModelCard.fromGunModel(
               model: gun,
               onTap: () => context.read<CharacterGalleryBloc>().add(
-                LoadWeaponModelDetailInCharacterView(id: gun.id, isKnife: false),
+                LoadWeaponModelDetailInCharacterView(
+                  id: gun.id,
+                  isKnife: false,
+                ),
               ),
             ),
           );
@@ -3161,20 +3191,23 @@ class _SubModelScrollableListState extends State<_SubModelScrollableList> {
   /// 滚动到选中的子模型位置
   void _scrollToSelectedItem() {
     if (!_scrollController.hasClients) return;
-    
+
     final selectedIndex = widget.subModels.indexWhere(
-      (s) => s.id == widget.selectedSubModelId || 
-             (widget.selectedSubModelId == null && s.isDefault),
+      (s) =>
+          s.id == widget.selectedSubModelId ||
+          (widget.selectedSubModelId == null && s.isDefault),
     );
-    
+
     if (selectedIndex <= 0) return; // 第一个不需要滚动
-    
+
     // 计算目标偏移量，让选中项尽量居中显示
     final itemOffset = selectedIndex * (_itemWidth + _itemSpacing);
     final viewportWidth = _scrollController.position.viewportDimension;
-    final targetOffset = (itemOffset - (viewportWidth - _itemWidth) / 2)
-        .clamp(0.0, _scrollController.position.maxScrollExtent);
-    
+    final targetOffset = (itemOffset - (viewportWidth - _itemWidth) / 2).clamp(
+      0.0,
+      _scrollController.position.maxScrollExtent,
+    );
+
     _scrollController.animateTo(
       targetOffset,
       duration: const Duration(milliseconds: 300),
@@ -3561,7 +3594,8 @@ class _ExclusiveCharacterCard extends StatefulWidget {
   });
 
   @override
-  State<_ExclusiveCharacterCard> createState() => _ExclusiveCharacterCardState();
+  State<_ExclusiveCharacterCard> createState() =>
+      _ExclusiveCharacterCardState();
 }
 
 class _ExclusiveCharacterCardState extends State<_ExclusiveCharacterCard> {
@@ -3574,7 +3608,9 @@ class _ExclusiveCharacterCardState extends State<_ExclusiveCharacterCard> {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final cardBg = CharacterGalleryTheme.getOverlayColor(context, alpha: 0.5);
 
-    final borderColor = _isHovered ? scrollBrown : scrollBrown.withValues(alpha: 0.4);
+    final borderColor = _isHovered
+        ? scrollBrown
+        : scrollBrown.withValues(alpha: 0.4);
     final borderWidth = _isHovered ? 1.5 : 1.0;
     final elevation = _isHovered ? 2.0 : 0.0;
 
@@ -3618,30 +3654,33 @@ class _ExclusiveCharacterCardState extends State<_ExclusiveCharacterCard> {
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: CharacterGalleryTheme.getVermillion(context),
+                                color: CharacterGalleryTheme.getVermillion(
+                                  context,
+                                ),
                               ),
                             ),
                           ),
                         )
-                      : widget.characterThumbnailUrl != null && widget.characterThumbnailUrl!.isNotEmpty
-                          ? DiskCachedImage(
-                              imageUrl: widget.characterThumbnailUrl!,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: double.infinity,
-                            )
-                          : Container(
-                              color: scrollBrown.withValues(alpha: 0.1),
-                              child: Center(
-                                child: Icon(
-                                  Icons.person_rounded,
-                                  color: _isHovered 
-                                      ? CharacterGalleryTheme.getVermillion(context)
-                                      : scrollBrown.withValues(alpha: 0.4),
-                                  size: 32,
-                                ),
-                              ),
+                      : widget.characterThumbnailUrl != null &&
+                            widget.characterThumbnailUrl!.isNotEmpty
+                      ? DiskCachedImage(
+                          imageUrl: widget.characterThumbnailUrl!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                        )
+                      : Container(
+                          color: scrollBrown.withValues(alpha: 0.1),
+                          child: Center(
+                            child: Icon(
+                              Icons.person_rounded,
+                              color: _isHovered
+                                  ? CharacterGalleryTheme.getVermillion(context)
+                                  : scrollBrown.withValues(alpha: 0.4),
+                              size: 32,
                             ),
+                          ),
+                        ),
                 ),
               ),
               // 名称和获取途径
@@ -3699,7 +3738,10 @@ class _CharacterAcquisitionTag extends StatelessWidget {
   Widget build(BuildContext context) {
     final inkColor = CharacterGalleryTheme.getInkColor(context);
 
-    final (text, color) = acquisition == null || acquisition!.type == AcquisitionType.unknown
+    final (
+      text,
+      color,
+    ) = acquisition == null || acquisition!.type == AcquisitionType.unknown
         ? ('未知', inkColor.withValues(alpha: 0.5))
         : switch (acquisition!.type) {
             AcquisitionType.gold => (
@@ -3714,18 +3756,11 @@ class _CharacterAcquisitionTag extends StatelessWidget {
               acquisition!.customSource ?? '特殊',
               CharacterGalleryTheme.getCustomSourceColor(context),
             ),
-            AcquisitionType.unknown => (
-              '未知',
-              inkColor.withValues(alpha: 0.5),
-            ),
+            AcquisitionType.unknown => ('未知', inkColor.withValues(alpha: 0.5)),
           };
     return Text(
       text,
-      style: TextStyle(
-        color: color,
-        fontSize: 9,
-        fontWeight: FontWeight.w500,
-      ),
+      style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w500),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       textAlign: TextAlign.center,

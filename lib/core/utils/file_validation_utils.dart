@@ -1,7 +1,7 @@
 import 'dart:io';
 
 /// 文件验证工具类
-/// 
+///
 /// 提供文件类型、大小、数量验证功能
 class FileValidationUtils {
   /// 允许的图片文件扩展名（不区分大小写）
@@ -23,9 +23,9 @@ class FileValidationUtils {
   static const int maxImagesForComment = 5;
 
   /// 验证文件类型
-  /// 
+  ///
   /// 检查文件扩展名是否在允许的图片类型列表中
-  /// 
+  ///
   /// 返回:
   /// - [ValidationResult]: 包含验证结果和错误消息
   static ValidationResult validateFileType(File file) {
@@ -43,9 +43,9 @@ class FileValidationUtils {
   }
 
   /// 验证文件大小
-  /// 
+  ///
   /// 检查文件大小是否超过限制
-  /// 
+  ///
   /// 返回:
   /// - [ValidationResult]: 包含验证结果和错误消息
   static ValidationResult validateFileSize(File file) {
@@ -60,26 +60,26 @@ class FileValidationUtils {
     }
 
     if (fileSize == 0) {
-      return ValidationResult(
-        isValid: false,
-        errorMessage: '文件为空，请选择有效的文件',
-      );
+      return ValidationResult(isValid: false, errorMessage: '文件为空，请选择有效的文件');
     }
 
     return ValidationResult(isValid: true);
   }
 
   /// 验证图片数量
-  /// 
+  ///
   /// 检查已上传的图片数量是否超过限制
-  /// 
+  ///
   /// 参数:
   /// - [currentCount]: 当前已上传的图片数量
   /// - [isIssue]: 是否为 Issue（true=Issue, false=评论）
-  /// 
+  ///
   /// 返回:
   /// - [ValidationResult]: 包含验证结果和错误消息
-  static ValidationResult validateImageCount(int currentCount, {required bool isIssue}) {
+  static ValidationResult validateImageCount(
+    int currentCount, {
+    required bool isIssue,
+  }) {
     final maxCount = isIssue ? maxImagesForIssue : maxImagesForComment;
     final context = isIssue ? 'Issue' : '评论';
 
@@ -94,9 +94,9 @@ class FileValidationUtils {
   }
 
   /// 验证文件（综合验证）
-  /// 
+  ///
   /// 同时验证文件类型和大小
-  /// 
+  ///
   /// 返回:
   /// - [ValidationResult]: 包含验证结果和错误消息
   static ValidationResult validateFile(File file) {
@@ -116,7 +116,7 @@ class FileValidationUtils {
   }
 
   /// 格式化文件大小
-  /// 
+  ///
   /// 将字节数转换为人类可读的格式
   static String formatFileSize(int bytes) {
     if (bytes < 1024) {
@@ -129,7 +129,7 @@ class FileValidationUtils {
   }
 
   /// 获取文件扩展名
-  /// 
+  ///
   /// 从文件路径中提取扩展名（小写）
   static String getFileExtension(String filePath) {
     final fileName = filePath.split('/').last.split('\\').last;
@@ -146,10 +146,7 @@ class ValidationResult {
   final bool isValid;
   final String? errorMessage;
 
-  const ValidationResult({
-    required this.isValid,
-    this.errorMessage,
-  });
+  const ValidationResult({required this.isValid, this.errorMessage});
 
   @override
   String toString() {

@@ -8,11 +8,7 @@ class GsiConfig {
   final int port;
   final String token;
 
-  const GsiConfig({
-    this.enabled = false,
-    this.port = 59595,
-    this.token = '',
-  });
+  const GsiConfig({this.enabled = false, this.port = 59595, this.token = ''});
 
   GsiConfig copyWith({bool? enabled, int? port, String? token}) {
     return GsiConfig(
@@ -61,7 +57,8 @@ class GsiGameState {
   bool get isInMenu => player?.activity == 'menu';
 
   /// 玩家是否在游戏中（playing 或有 map 数据）
-  bool get isPlaying => player?.activity == 'playing' || (map != null && !isInMenu);
+  bool get isPlaying =>
+      player?.activity == 'playing' || (map != null && !isInMenu);
 
   /// 玩家是否在输入文字（聊天框等）
   bool get isTextInput => player?.activity == 'textinput';
@@ -81,7 +78,13 @@ class GsiProvider {
   final String? steamId;
   final int? timestamp;
 
-  GsiProvider({this.name, this.appId, this.version, this.steamId, this.timestamp});
+  GsiProvider({
+    this.name,
+    this.appId,
+    this.version,
+    this.steamId,
+    this.timestamp,
+  });
 
   factory GsiProvider.fromJson(Map<String, dynamic> json) =>
       _$GsiProviderFromJson(json);
@@ -140,7 +143,8 @@ class GsiTeam {
     this.matchesWonThisSeries,
   });
 
-  factory GsiTeam.fromJson(Map<String, dynamic> json) => _$GsiTeamFromJson(json);
+  factory GsiTeam.fromJson(Map<String, dynamic> json) =>
+      _$GsiTeamFromJson(json);
   Map<String, dynamic> toJson() => _$GsiTeamToJson(this);
 }
 
@@ -154,10 +158,10 @@ class GsiRound {
 
   GsiRound({this.phase, this.winTeam, this.bomb});
 
-  factory GsiRound.fromJson(Map<String, dynamic> json) => _$GsiRoundFromJson(json);
+  factory GsiRound.fromJson(Map<String, dynamic> json) =>
+      _$GsiRoundFromJson(json);
   Map<String, dynamic> toJson() => _$GsiRoundToJson(this);
 }
-
 
 /// 当前玩家信息
 @JsonSerializable()
@@ -314,7 +318,8 @@ class GsiBomb {
 
   GsiBomb({this.state, this.position, this.player, this.countdown});
 
-  factory GsiBomb.fromJson(Map<String, dynamic> json) => _$GsiBombFromJson(json);
+  factory GsiBomb.fromJson(Map<String, dynamic> json) =>
+      _$GsiBombFromJson(json);
   Map<String, dynamic> toJson() => _$GsiBombToJson(this);
 }
 
@@ -339,7 +344,8 @@ class GsiAuth {
 
   GsiAuth({this.token});
 
-  factory GsiAuth.fromJson(Map<String, dynamic> json) => _$GsiAuthFromJson(json);
+  factory GsiAuth.fromJson(Map<String, dynamic> json) =>
+      _$GsiAuthFromJson(json);
   Map<String, dynamic> toJson() => _$GsiAuthToJson(this);
 }
 

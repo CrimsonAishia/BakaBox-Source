@@ -18,11 +18,13 @@ class KeyPlaceholderParser {
       final label = match.group(1)!;
       if (!seen.contains(label)) {
         seen.add(label);
-        placeholders.add(KeyPlaceholder(
-          label: label,
-          startIndex: match.start,
-          endIndex: match.end,
-        ));
+        placeholders.add(
+          KeyPlaceholder(
+            label: label,
+            startIndex: match.start,
+            endIndex: match.end,
+          ),
+        );
       }
     }
 
@@ -39,7 +41,11 @@ class KeyPlaceholderParser {
   /// [script] 配置脚本
   /// [keyBindings] 按键映射，key 为标签名，value 为按键值
   /// [showLabelOnMissing] 未绑定时是否显示标签名，默认为 true
-  static String replace(String script, Map<String, String> keyBindings, {bool showLabelOnMissing = true}) {
+  static String replace(
+    String script,
+    Map<String, String> keyBindings, {
+    bool showLabelOnMissing = true,
+  }) {
     return script.replaceAllMapped(placeholderPattern, (match) {
       final label = match.group(1)!;
       final key = keyBindings[label];
@@ -64,11 +70,17 @@ class KeyPlaceholderParser {
   }
 
   /// 获取缺失的按键绑定标签
-  static List<String> getMissingBindings(String script, Map<String, String> keyBindings) {
+  static List<String> getMissingBindings(
+    String script,
+    Map<String, String> keyBindings,
+  ) {
     final labels = getUniqueLabels(script);
-    return labels.where((label) => 
-      !keyBindings.containsKey(label) || keyBindings[label]!.isEmpty
-    ).toList();
+    return labels
+        .where(
+          (label) =>
+              !keyBindings.containsKey(label) || keyBindings[label]!.isEmpty,
+        )
+        .toList();
   }
 
   /// 检查脚本是否包含占位符
@@ -101,7 +113,8 @@ class KeyPlaceholder {
   });
 
   @override
-  String toString() => 'KeyPlaceholder(label: $label, start: $startIndex, end: $endIndex)';
+  String toString() =>
+      'KeyPlaceholder(label: $label, start: $startIndex, end: $endIndex)';
 
   @override
   bool operator ==(Object other) {

@@ -23,7 +23,7 @@ class ToastUtils {
   /// 设置 hover 状态（带防抖动）
   static void _setHoverState(bool isHovered) {
     _hoverDebounceTimer?.cancel();
-    
+
     if (isHovered) {
       // 立即展开，无延迟
       _hoverNotifier.value = true;
@@ -41,13 +41,18 @@ class ToastUtils {
     final calculatedSeconds = (charCount / _charsPerSecond).ceil();
     // 长文本需要额外时间用于滚动展示
     final scrollBonus = charCount > 30 ? 3 : 0;
-    final finalSeconds = (calculatedSeconds + scrollBonus)
-        .clamp(_minDurationSeconds, _maxDurationSeconds);
+    final finalSeconds = (calculatedSeconds + scrollBonus).clamp(
+      _minDurationSeconds,
+      _maxDurationSeconds,
+    );
     return Duration(seconds: finalSeconds);
   }
 
-  static void showSuccess(BuildContext context, String message,
-      {Duration? duration}) {
+  static void showSuccess(
+    BuildContext context,
+    String message, {
+    Duration? duration,
+  }) {
     _showToast(
       context,
       message,
@@ -58,8 +63,11 @@ class ToastUtils {
     );
   }
 
-  static void showError(BuildContext context, String message,
-      {Duration? duration}) {
+  static void showError(
+    BuildContext context,
+    String message, {
+    Duration? duration,
+  }) {
     _showToast(
       context,
       message,
@@ -70,8 +78,11 @@ class ToastUtils {
     );
   }
 
-  static void showWarning(BuildContext context, String message,
-      {Duration? duration}) {
+  static void showWarning(
+    BuildContext context,
+    String message, {
+    Duration? duration,
+  }) {
     _showToast(
       context,
       message,
@@ -82,8 +93,11 @@ class ToastUtils {
     );
   }
 
-  static void showInfo(BuildContext context, String message,
-      {Duration? duration}) {
+  static void showInfo(
+    BuildContext context,
+    String message, {
+    Duration? duration,
+  }) {
     _showToast(
       context,
       message,
@@ -121,7 +135,7 @@ class ToastUtils {
   ) {
     // 检查 context 是否有效
     if (!context.mounted) return;
-    
+
     final overlay = Overlay.maybeOf(context);
     if (overlay == null) return;
 
@@ -165,9 +179,9 @@ class ToastUtils {
       toastEntry.dispose();
       return;
     }
-    
+
     _toastQueue.add(toastEntry);
-    
+
     try {
       overlay.insert(overlayEntry);
     } catch (e) {
@@ -176,16 +190,16 @@ class ToastUtils {
       toastEntry.dispose();
       return;
     }
-    
+
     _updateAllToasts();
   }
-  
+
   /// 清理所有 toast（用于应用退出或重置）
   static void clearAll() {
     _hoverDebounceTimer?.cancel();
     _hoverDebounceTimer = null;
     _hoverNotifier.value = false;
-    
+
     final entries = List<_ToastEntry>.from(_toastQueue);
     for (final entry in entries) {
       _removeToast(entry);
@@ -196,10 +210,10 @@ class ToastUtils {
   static void _dismissWithAnimation(_ToastEntry entry) {
     // 检查 entry 是否还在队列中
     if (!_toastQueue.contains(entry)) return;
-    
+
     // 标记为正在消失（防止重复触发）
     if (entry.dismissNotifier.value) return;
-    
+
     entry.dismissNotifier.value = true;
     // 等待动画完成后移除（动画时长 250ms）
     Future.delayed(const Duration(milliseconds: 300), () {
@@ -213,25 +227,25 @@ class ToastUtils {
   static void _removeToast(_ToastEntry entry) {
     // 防止重复移除
     if (!_toastQueue.contains(entry)) return;
-    
+
     // 取消定时器
     entry.timer.cancel();
-    
+
     // 安全移除 OverlayEntry
     try {
       entry.overlayEntry.remove();
     } catch (e) {
       // 忽略已移除的 OverlayEntry 错误
     }
-    
+
     // 从队列中移除
     _toastQueue.remove(entry);
-    
+
     // 清理 ValueNotifier（防止内存泄漏）
     entry.indexNotifier.dispose();
     entry.totalNotifier.dispose();
     entry.dismissNotifier.dispose();
-    
+
     _updateAllToasts();
   }
 
@@ -239,7 +253,7 @@ class ToastUtils {
     // 创建快照，防止迭代过程中队列被修改
     final entries = List<_ToastEntry>.from(_toastQueue);
     final total = entries.length;
-    
+
     for (int i = 0; i < total; i++) {
       // 再次检查 entry 是否还在队列中
       if (_toastQueue.contains(entries[i])) {
@@ -264,7 +278,7 @@ class _ToastEntry {
     required this.totalNotifier,
     required this.dismissNotifier,
   });
-  
+
   /// 清理资源（防止内存泄漏）
   void dispose() {
     timer.cancel();
@@ -327,12 +341,13 @@ class _ToastWidgetState extends State<_ToastWidget>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.3, 0.0),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
-    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0.3, 0.0), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
     _animationController.forward();
 
     // 监听自动消失
@@ -348,7 +363,7 @@ class _ToastWidgetState extends State<_ToastWidget>
     if (_isDisposed || !mounted) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_isDisposed || !mounted) return;
-      if (_scrollController.hasClients && 
+      if (_scrollController.hasClients &&
           _scrollController.position.maxScrollExtent > 0) {
         _needsScroll = true;
         _startAutoScroll();
@@ -363,32 +378,42 @@ class _ToastWidgetState extends State<_ToastWidget>
       if (_isDisposed || !mounted || !_scrollController.hasClients) return;
       final maxScroll = _scrollController.position.maxScrollExtent;
       if (maxScroll <= 0) return;
-      
+
       // 滚动到末尾 - 降低速度，每像素50ms
-      _scrollController.animateTo(
-        maxScroll,
-        duration: Duration(milliseconds: (maxScroll * 50).toInt().clamp(1500, 8000)),
-        curve: Curves.easeInOut,
-      ).then((_) {
-        if (_isDisposed || !mounted) return;
-        // 等待后滚动回开头
-        Future.delayed(const Duration(milliseconds: 1500), () {
-          if (_isDisposed || !mounted || !_scrollController.hasClients) return;
-          _scrollController.animateTo(
-            0,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          ).then((_) {
-            // 循环滚动
+      _scrollController
+          .animateTo(
+            maxScroll,
+            duration: Duration(
+              milliseconds: (maxScroll * 50).toInt().clamp(1500, 8000),
+            ),
+            curve: Curves.easeInOut,
+          )
+          .then((_) {
             if (_isDisposed || !mounted) return;
-            _startAutoScroll();
-          }).catchError((_) {
+            // 等待后滚动回开头
+            Future.delayed(const Duration(milliseconds: 1500), () {
+              if (_isDisposed || !mounted || !_scrollController.hasClients) {
+                return;
+              }
+              _scrollController
+                  .animateTo(
+                    0,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                  )
+                  .then((_) {
+                    // 循环滚动
+                    if (_isDisposed || !mounted) return;
+                    _startAutoScroll();
+                  })
+                  .catchError((_) {
+                    // 忽略滚动异常
+                  });
+            });
+          })
+          .catchError((_) {
             // 忽略滚动异常
           });
-        });
-      }).catchError((_) {
-        // 忽略滚动异常
-      });
     });
   }
 
@@ -407,42 +432,42 @@ class _ToastWidgetState extends State<_ToastWidget>
   @override
   void dispose() {
     _isDisposed = true;
-    
+
     // 移除监听器
     widget.dismissNotifier.removeListener(_onDismissTriggered);
-    
+
     // 取消所有定时器
     _scrollTimer?.cancel();
     _scrollTimer = null;
-    
+
     // 停止动画控制器
     if (_animationController.isAnimating) {
       _animationController.stop();
     }
-    
+
     // 释放资源
     _scrollController.dispose();
     _animationController.dispose();
-    
+
     super.dispose();
   }
 
   void _dismiss() async {
     if (_isDisposed || _isDismissing) return;
     _isDismissing = true;
-    
+
     if (!mounted) {
       widget.onRemove();
       return;
     }
-    
+
     try {
       // 检查动画状态，避免重复触发
       if (_animationController.status != AnimationStatus.reverse &&
           _animationController.status != AnimationStatus.dismissed) {
         await _animationController.reverse();
       }
-      
+
       if (!_isDisposed && mounted) {
         widget.onRemove();
       }
@@ -472,22 +497,26 @@ class _ToastWidgetState extends State<_ToastWidget>
               builder: (context, total, child) {
                 // 反转索引：最新的 toast 在最上面（reverseIndex = 0）
                 final reverseIndex = total - 1 - index;
-                
+
                 // 计算位置
                 final screenHeight = MediaQuery.of(context).size.height;
                 final double baseTop =
                     MediaQuery.of(context).padding.top + (isDesktop ? 60 : 20);
-                
+
                 double stackedTop;
                 double hoverAreaHeight = 0; // hover 区域高度
-                
+
                 if (isHovered) {
                   // 展开：每个 toast 完整显示，有间距
-                  stackedTop = baseTop + (reverseIndex * (_toastHeight + ToastUtils._gapExpanded));
-                  
+                  stackedTop =
+                      baseTop +
+                      (reverseIndex * (_toastHeight + ToastUtils._gapExpanded));
+
                   // 计算整个 hover 区域的高度（包含所有 toast 和间距）
-                  hoverAreaHeight = total * _toastHeight + (total - 1) * ToastUtils._gapExpanded;
-                  
+                  hoverAreaHeight =
+                      total * _toastHeight +
+                      (total - 1) * ToastUtils._gapExpanded;
+
                   // 防止超出屏幕底部
                   final maxTop = screenHeight - _toastHeight - 20;
                   if (stackedTop > maxTop) {
@@ -495,16 +524,23 @@ class _ToastWidgetState extends State<_ToastWidget>
                   }
                 } else {
                   // 收起：只露出一小部分
-                  stackedTop = baseTop + (reverseIndex * ToastUtils._gapCollapsed);
+                  stackedTop =
+                      baseTop + (reverseIndex * ToastUtils._gapCollapsed);
                 }
 
                 // 缩放和透明度
                 final double scale = isHovered
                     ? 1.0
-                    : (1.0 - reverseIndex * ToastUtils._scaleStep).clamp(0.9, 1.0);
+                    : (1.0 - reverseIndex * ToastUtils._scaleStep).clamp(
+                        0.9,
+                        1.0,
+                      );
                 final double opacity = isHovered
                     ? 1.0
-                    : (1.0 - reverseIndex * ToastUtils._opacityStep).clamp(0.4, 1.0);
+                    : (1.0 - reverseIndex * ToastUtils._opacityStep).clamp(
+                        0.4,
+                        1.0,
+                      );
 
                 // 只在第一个 toast（最上层）添加整体 hover 区域
                 final shouldAddHoverArea = isHovered && reverseIndex == 0;
@@ -521,9 +557,7 @@ class _ToastWidgetState extends State<_ToastWidget>
                         child: MouseRegion(
                           onEnter: (_) => widget.onHover(true),
                           onExit: (_) => widget.onHover(false),
-                          child: Container(
-                            color: Colors.transparent,
-                          ),
+                          child: Container(color: Colors.transparent),
                         ),
                       ),
                     // Toast 本身
@@ -598,12 +632,16 @@ class _ToastWidgetState extends State<_ToastWidget>
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: _isHovering ? 0.18 : 0.12),
+                  color: Colors.black.withValues(
+                    alpha: _isHovering ? 0.18 : 0.12,
+                  ),
                   blurRadius: _isHovering ? 20 : 16,
                   offset: Offset(0, _isHovering ? 8 : 6),
                 ),
                 BoxShadow(
-                  color: widget.backgroundColor.withValues(alpha: _isHovering ? 0.4 : 0.3),
+                  color: widget.backgroundColor.withValues(
+                    alpha: _isHovering ? 0.4 : 0.3,
+                  ),
                   blurRadius: _isHovering ? 12 : 8,
                   offset: const Offset(0, 2),
                 ),
@@ -618,8 +656,7 @@ class _ToastWidgetState extends State<_ToastWidget>
                       color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child:
-                        Icon(widget.icon, color: widget.textColor, size: 18),
+                    child: Icon(widget.icon, color: widget.textColor, size: 18),
                   ),
                   const SizedBox(width: 12),
                 ],
@@ -666,7 +703,8 @@ class _ToastWidgetState extends State<_ToastWidget>
                       child: Icon(
                         Icons.close,
                         color: widget.textColor.withValues(
-                            alpha: _isCloseHovering ? 1.0 : 0.6),
+                          alpha: _isCloseHovering ? 1.0 : 0.6,
+                        ),
                         size: 16,
                       ),
                     ),

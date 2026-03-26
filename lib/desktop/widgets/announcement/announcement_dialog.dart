@@ -24,7 +24,10 @@ class AnnouncementDialog extends StatefulWidget {
   }
 
   /// 显示单条公告详情
-  static Future<void> showDetail(BuildContext context, AnnouncementItem announcement) {
+  static Future<void> showDetail(
+    BuildContext context,
+    AnnouncementItem announcement,
+  ) {
     return showDialog(
       context: context,
       builder: (context) => AnnouncementDialog(initialDetail: announcement),
@@ -43,7 +46,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
   void initState() {
     super.initState();
     _viewingDetail = widget.initialDetail;
-    
+
     // 如果已有公告数据，使用刷新而不是重新获取，避免重置已读状态
     final bloc = context.read<AnnouncementBloc>();
     if (bloc.state.announcements.isEmpty) {
@@ -51,7 +54,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
     } else {
       bloc.add(AnnouncementRefresh(silent: true));
     }
-    
+
     if (widget.initialDetail != null) {
       bloc.add(AnnouncementFetchDetail(widget.initialDetail!.id));
     }
@@ -67,8 +70,8 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
       child: Container(
         width: _viewingDetail != null ? 600 : 480,
         height: _viewingDetail != null ? 520 : null,
-        constraints: _viewingDetail != null 
-            ? null 
+        constraints: _viewingDetail != null
+            ? null
             : const BoxConstraints(maxHeight: 540),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1E293B) : Colors.white,
@@ -140,7 +143,9 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                           : '暂无未读',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? Colors.white54 : const Color(0xFF9CA3AF),
+                        color: isDark
+                            ? Colors.white54
+                            : const Color(0xFF9CA3AF),
                       ),
                     );
                   },
@@ -247,8 +252,8 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                       color: isSelected
                           ? Colors.white.withValues(alpha: 0.2)
                           : (isDark
-                              ? Colors.white.withValues(alpha: 0.1)
-                              : const Color(0xFFE5E7EB)),
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : const Color(0xFFE5E7EB)),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -258,7 +263,9 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                         fontWeight: FontWeight.w600,
                         color: isSelected
                             ? Colors.white
-                            : (isDark ? Colors.white54 : const Color(0xFF9CA3AF)),
+                            : (isDark
+                                  ? Colors.white54
+                                  : const Color(0xFF9CA3AF)),
                       ),
                     ),
                   ),
@@ -305,7 +312,11 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
     );
   }
 
-  Widget _buildAnnouncementItem(AnnouncementItem item, bool isRead, bool isDark) {
+  Widget _buildAnnouncementItem(
+    AnnouncementItem item,
+    bool isRead,
+    bool isDark,
+  ) {
     final typeColor = _getTypeColor(item.type);
 
     return _HoverableItem(
@@ -348,7 +359,10 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                       ),
                     if (item.isSticky)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
                         margin: const EdgeInsets.only(right: 6),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFF9800).withValues(alpha: 0.1),
@@ -368,8 +382,12 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                         item.title,
                         style: TextStyle(
                           fontSize: 13,
-                          fontWeight: isRead ? FontWeight.w500 : FontWeight.w600,
-                          color: isDark ? Colors.white : const Color(0xFF1F2937),
+                          fontWeight: isRead
+                              ? FontWeight.w500
+                              : FontWeight.w600,
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1F2937),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -424,7 +442,9 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
               padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
               decoration: BoxDecoration(
                 color: typeColor.withValues(alpha: 0.05),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12),
+                ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -447,7 +467,10 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                           children: [
                             if (detail.isSticky)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 2,
+                                ),
                                 margin: const EdgeInsets.only(right: 6),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFFF9800),
@@ -455,18 +478,29 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                                 ),
                                 child: const Text(
                                   '置顶',
-                                  style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.w600),
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: typeColor,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 typeInfo.label,
-                                style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.w600),
+                                style: const TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],
@@ -477,7 +511,9 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : const Color(0xFF1F2937),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1F2937),
                           ),
                         ),
                       ],
@@ -491,7 +527,10 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                       color: isDark ? Colors.white54 : const Color(0xFF9CA3AF),
                     ),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
                   ),
                 ],
               ),
@@ -499,7 +538,9 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
             // 内容
             Flexible(
               child: state.isLoadingDetail
-                  ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : SingleChildScrollView(
                       padding: const EdgeInsets.all(20),
                       child: MarkdownBody(
@@ -518,24 +559,40 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
               decoration: BoxDecoration(
                 border: Border(
                   top: BorderSide(
-                    color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE5E7EB),
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : const Color(0xFFE5E7EB),
                   ),
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.access_time, size: 14, color: isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                  Icon(
+                    Icons.access_time,
+                    size: 14,
+                    color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     AnnouncementUtils.formatRelativeTime(detail.createdAt),
-                    style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                    ),
                   ),
                   const SizedBox(width: 16),
-                  Icon(Icons.visibility_outlined, size: 14, color: isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                  Icon(
+                    Icons.visibility_outlined,
+                    size: 14,
+                    color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     '${detail.readCount} 次阅读',
-                    style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                    ),
                   ),
                   const Spacer(),
                   // 只有从列表进入详情时才显示返回按钮
@@ -546,11 +603,18 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                         onTap: () => setState(() => _viewingDetail = null),
                         child: Row(
                           children: [
-                            Icon(Icons.arrow_back, size: 14, color: const Color(0xFF0080FF)),
+                            Icon(
+                              Icons.arrow_back,
+                              size: 14,
+                              color: const Color(0xFF0080FF),
+                            ),
                             const SizedBox(width: 4),
                             const Text(
                               '返回列表',
-                              style: TextStyle(fontSize: 12, color: Color(0xFF0080FF)),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF0080FF),
+                              ),
                             ),
                           ],
                         ),
@@ -654,7 +718,9 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
         color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF374151),
       ),
       code: TextStyle(
-        backgroundColor: isDark ? const Color(0xFF374151) : const Color(0xFFF3F4F6),
+        backgroundColor: isDark
+            ? const Color(0xFF374151)
+            : const Color(0xFFF3F4F6),
         color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFDC2626),
         fontFamily: 'Consolas, Monaco, monospace',
         fontSize: 13,
@@ -713,20 +779,20 @@ class _HoverableItemState extends State<_HoverableItem> {
           decoration: BoxDecoration(
             color: widget.isRead
                 ? (_isHovered
-                    ? (widget.isDark
-                        ? Colors.white.withValues(alpha: 0.05)
-                        : const Color(0xFFF9FAFB))
-                    : Colors.transparent)
+                      ? (widget.isDark
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : const Color(0xFFF9FAFB))
+                      : Colors.transparent)
                 : widget.typeColor.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: _isHovered
                   ? (widget.isDark
-                      ? Colors.white.withValues(alpha: 0.15)
-                      : const Color(0xFFE5E7EB))
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : const Color(0xFFE5E7EB))
                   : (widget.isRead
-                      ? Colors.transparent
-                      : widget.typeColor.withValues(alpha: 0.2)),
+                        ? Colors.transparent
+                        : widget.typeColor.withValues(alpha: 0.2)),
             ),
           ),
           child: widget.child,

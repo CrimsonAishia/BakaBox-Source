@@ -179,7 +179,9 @@ class _BilibiliUserCenterPageState extends State<BilibiliUserCenterPage> {
   }
 
   void _confirmDelete(String id, BilibiliContentType contentType) {
-    final contentTypeName = contentType == BilibiliContentType.video ? '视频' : '专栏';
+    final contentTypeName = contentType == BilibiliContentType.video
+        ? '视频'
+        : '专栏';
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -420,7 +422,9 @@ class _BilibiliUserCenterPageState extends State<BilibiliUserCenterPage> {
                                         )
                                       : () => _openLiveRoomForm(),
                                   onEdit: myLiveRoom != null
-                                      ? () => _openLiveRoomForm(liveRoom: myLiveRoom)
+                                      ? () => _openLiveRoomForm(
+                                          liveRoom: myLiveRoom,
+                                        )
                                       : null,
                                   onToggleEnabled: myLiveRoom != null
                                       ? _toggleLiveRoomEnabled
@@ -433,7 +437,8 @@ class _BilibiliUserCenterPageState extends State<BilibiliUserCenterPage> {
                                   title: '我的视频',
                                   videos: myVideos,
                                   onAdd: () => _openVideoForm(),
-                                  onEdit: (video) => _openVideoForm(video: video),
+                                  onEdit: (video) =>
+                                      _openVideoForm(video: video),
                                   inkColor: inkColor,
                                   scrollBrown: scrollBrown,
                                 ),
@@ -1234,7 +1239,10 @@ class _BilibiliUserCenterPageState extends State<BilibiliUserCenterPage> {
                     children: [
                       if (video.category != null && video.category!.isNotEmpty)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: _bilibiliBlue.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(4),

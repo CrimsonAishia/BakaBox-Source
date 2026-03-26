@@ -73,9 +73,7 @@ class ServerAddressMappingService {
       }
 
       _isLoaded = true;
-      LogService.d(
-        '[AddressMapping] 地址映射加载完成，共 ${_ipToDomainCache.length} 条',
-      );
+      LogService.d('[AddressMapping] 地址映射加载完成，共 ${_ipToDomainCache.length} 条');
     } catch (e) {
       LogService.e('[AddressMapping] 加载服务器地址映射失败', e);
     } finally {

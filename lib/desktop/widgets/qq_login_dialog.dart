@@ -49,19 +49,19 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
   @override
   void dispose() {
     _isDisposed = true;
-    
+
     // 取消定时器
     _loadingTimer?.cancel();
     _loadingTimer = null;
-    
+
     // 取消 URL 订阅
     _urlSubscription?.cancel();
     _urlSubscription = null;
-    
+
     // 释放 WebView 控制器
     _webViewController?.dispose();
     _webViewController = null;
-    
+
     super.dispose();
   }
 
@@ -77,39 +77,38 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
       // 监听 URL 变化事件 - 保存订阅引用以便取消
       _urlSubscription = _webViewController!.url.listen((url) {
         if (!mounted || _loginDetected || _isDisposed) return;
-        
+
         LogService.d('[QQLogin] URL 变化: $url');
-        
+
         // 1. 检测是否离开了初始登录页面（跳转到 QQ 登录）
-        if (!_hasLeftInitialPage && 
+        if (!_hasLeftInitialPage &&
             (url.contains('graph.qq.com') || url.contains('ptlogin2.qq.com'))) {
           _hasLeftInitialPage = true;
           LogService.d('[QQLogin] 用户开始 QQ 登录流程');
         }
-        
+
         // 2. 检测 QQ 登录后的回调页面
         // 包括两种情况:
         //   - connect.php (登录成功)
         //   - member.php?mod=connect (未绑定账号)
-        if (_hasLeftInitialPage && 
-            url.contains('bbs.zombieden.cn') && 
+        if (_hasLeftInitialPage &&
+            url.contains('bbs.zombieden.cn') &&
             !url.contains('op=init') &&
-            !url.contains('graph.qq.com') && 
+            !url.contains('graph.qq.com') &&
             !url.contains('ptlogin2.qq.com') &&
-            (url.contains('connect.php') || 
-             (url.contains('member.php') && url.contains('mod=connect')))) {
-          
+            (url.contains('connect.php') ||
+                (url.contains('member.php') && url.contains('mod=connect')))) {
           // 第一时间进入 loading 状态，遮住 WebView
           if (!_isExtracting) {
             LogService.d('[QQLogin] 检测到登录回调，立即显示 loading');
             _isExtracting = true;
             _loginDetected = true;
-            
+
             // 立即触发 UI 更新
             if (mounted) {
               setState(() {});
             }
-            
+
             // 然后异步执行登录检查
             _checkLoginStatus();
           }
@@ -147,7 +146,7 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
     try {
       // 等待页面加载完成（增加等待时间）
       await Future.delayed(const Duration(milliseconds: 2500));
-      
+
       if (_isDisposed || !mounted) return;
 
       // 检查页面内容和 URL
@@ -197,50 +196,54 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
       if (result != null) {
         final resultStr = result.toString();
         LogService.d('[QQLogin] 页面检测结果: $resultStr');
-        
+
         // 解析结果
         final hasBindAccount = resultStr.contains('"hasBindAccount":true');
         final hasBindSuccess = resultStr.contains('"hasBindSuccess":true');
-        final isMemberConnectPage = resultStr.contains('"isMemberConnectPage":true');
+        final isMemberConnectPage = resultStr.contains(
+          '"isMemberConnectPage":true',
+        );
         final hasLogout = resultStr.contains('"hasLogout":true');
         final isPageLoaded = resultStr.contains('"isPageLoaded":true');
-        
+
         // 检查是否显示"绑定成功"提示，此时页面还会跳转，需要等待
         if (hasBindSuccess) {
           LogService.d('[QQLogin] 检测到绑定成功提示，等待页面跳转...');
           await Future.delayed(const Duration(milliseconds: 3000));
-          
+
           if (_isDisposed || !mounted) return;
-          
+
           // 跳转后重新检测
           _checkLoginStatus();
           return;
         }
-        
+
         // 检查页面是否加载完整（如果未加载完整，再等待一次）
         if (!isPageLoaded) {
           LogService.w('[QQLogin] 页面未完全加载，等待重试...');
           await Future.delayed(const Duration(milliseconds: 2000));
-          
+
           if (_isDisposed || !mounted) return;
-          
+
           // 重新检测
-          final retryResult = await _webViewController!.executeScript(checkScript);
+          final retryResult = await _webViewController!.executeScript(
+            checkScript,
+          );
           if (retryResult != null) {
             final retryStr = retryResult.toString();
             LogService.d('[QQLogin] 重试检测结果: $retryStr');
-            
+
             // 重试时也检查绑定成功
             if (retryStr.contains('"hasBindSuccess":true')) {
               LogService.d('[QQLogin] 重试时检测到绑定成功提示，等待页面跳转...');
               await Future.delayed(const Duration(milliseconds: 3000));
-              
+
               if (_isDisposed || !mounted) return;
-              
+
               _checkLoginStatus();
               return;
             }
-            
+
             final retryLoaded = retryStr.contains('"isPageLoaded":true');
             if (!retryLoaded) {
               // 仍然未加载完整，但如果有 logout 链接说明已登录
@@ -249,7 +252,7 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
                 await _extractCookiesAndLogin();
                 return;
               }
-              
+
               if (mounted && !_isDisposed) {
                 setState(() {
                   _isExtracting = false;
@@ -262,7 +265,7 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
             }
           }
         }
-        
+
         // 优先检查是否是绑定页面（最明确的特征）
         if (hasBindAccount) {
           // QQ 未绑定论坛账号（有明确的绑定元素）
@@ -314,35 +317,34 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
 
     try {
       // 使用 CDP 获取所有 Cookie（包括 HttpOnly）
-      final cookieJson = await _webViewController!.getCookiesForUrl('https://bbs.zombieden.cn/');
-      
+      final cookieJson = await _webViewController!.getCookiesForUrl(
+        'https://bbs.zombieden.cn/',
+      );
+
       if (cookieJson == null || cookieJson.isEmpty) {
         throw Exception('无法获取 Cookie');
       }
-      
+
       final cookieData = jsonDecode(cookieJson) as Map<String, dynamic>;
       final cookies = cookieData['cookies'] as List<dynamic>? ?? [];
-      
+
       final forumCookies = <Map<String, String>>[];
       bool hasAuthCookie = false;
-      
+
       for (final cookie in cookies) {
         final cookieMap = cookie as Map<String, dynamic>;
         final name = cookieMap['name'] as String? ?? '';
         final value = cookieMap['value'] as String? ?? '';
-        
+
         if (name.isNotEmpty && value.isNotEmpty) {
-          forumCookies.add({
-            'name': name,
-            'value': value,
-          });
-          
+          forumCookies.add({'name': name, 'value': value});
+
           if (name == 'auth' || name.endsWith('_auth')) {
             hasAuthCookie = true;
           }
         }
       }
-      
+
       if (forumCookies.isEmpty || !hasAuthCookie) {
         throw Exception('Cookie 无效，缺少 auth Cookie');
       }
@@ -351,11 +353,11 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
       if (mounted && !_isDisposed) {
         // 监听 AuthBloc 状态变化
         final authBloc = context.read<AuthBloc>();
-        
+
         // 创建一个 Completer 来等待登录完成
         final completer = Completer<bool>();
         late final StreamSubscription subscription;
-        
+
         subscription = authBloc.stream.listen((state) {
           if (state.isAuthenticated) {
             // 登录成功
@@ -371,10 +373,10 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
             }
           }
         });
-        
+
         // 触发登录事件
         authBloc.add(AuthQQLoginRequested(cookies: forumCookies));
-        
+
         // 等待登录完成（最多等待 10 秒）
         final success = await completer.future.timeout(
           const Duration(seconds: 10),
@@ -383,12 +385,12 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
             return false;
           },
         );
-        
+
         if (!mounted || _isDisposed) {
           subscription.cancel();
           return;
         }
-        
+
         if (success) {
           ToastUtils.showSuccess(context, 'QQ 登录成功');
           Navigator.of(context).pop();
@@ -413,7 +415,9 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
-    final secondaryTextColor = isDark ? Colors.white54 : const Color(0xFF6B7280);
+    final secondaryTextColor = isDark
+        ? Colors.white54
+        : const Color(0xFF6B7280);
 
     return Dialog(
       backgroundColor: bgColor,
@@ -506,12 +510,18 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                color: isDark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFF1F5F9),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline, color: Color(0xFF0080FF), size: 18),
+                  const Icon(
+                    Icons.info_outline,
+                    color: Color(0xFF0080FF),
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(

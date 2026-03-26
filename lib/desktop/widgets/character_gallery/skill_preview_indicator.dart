@@ -201,7 +201,12 @@ class _SkillPreviewIndicatorState extends State<SkillPreviewIndicator>
     if (widget.previewVideoUrl == null || widget.previewVideoUrl!.isEmpty) {
       return;
     }
-    if (!VideoEmbedDialog.canEmbed(widget.previewVideoUrl!, videoUrlSource: widget.videoUrlSource)) return;
+    if (!VideoEmbedDialog.canEmbed(
+      widget.previewVideoUrl!,
+      videoUrlSource: widget.videoUrlSource,
+    )) {
+      return;
+    }
     // 重置状态
     _resetTooltipState();
     showDialog(
@@ -232,7 +237,10 @@ class _SkillPreviewIndicatorState extends State<SkillPreviewIndicator>
             widget.previewType == PreviewType.video) &&
         widget.previewVideoUrl != null &&
         widget.previewVideoUrl!.isNotEmpty) {
-      final info = _getPlatformInfo(widget.previewVideoUrl!, widget.videoUrlSource);
+      final info = _getPlatformInfo(
+        widget.previewVideoUrl!,
+        widget.videoUrlSource,
+      );
       return MouseRegion(
         onEnter: (_) => _onTooltipHoverChanged(true),
         onExit: (_) => _onTooltipHoverChanged(false),
@@ -303,86 +311,86 @@ class _SkillPreviewIndicatorState extends State<SkillPreviewIndicator>
           ),
           // 右上角指示器图标（默认显示，hover 时高亮）
           Positioned(
-              top: 6,
-              right: 6,
-              child: JustTheTooltip(
-                controller: _tooltipController,
-                isModal: true,
-                preferredDirection: AxisDirection.up,
-                tailLength: 8,
-                tailBaseWidth: 14,
-                offset: 4,
-                borderRadius: BorderRadius.circular(8),
-                backgroundColor: Colors.grey.shade900,
-                barrierDismissible: true,
-                content: _buildTooltipContent(),
-                child: AnimatedBuilder(
-                  animation: _pulseAnimation,
-                  builder: (context, child) {
-                    return Transform.scale(
-                      scale: _isLoading ? _pulseAnimation.value : 1.0,
-                      child: child,
-                    );
-                  },
-                  child: SizedBox(
-                    width: 32,
-                    height: 32,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // 背景圆（hover 时高亮）
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _isHovered
-                                ? Colors.black.withValues(alpha: 0.7)
-                                : Colors.black.withValues(alpha: 0.4),
-                            boxShadow: _isHovered
-                                ? [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.4),
-                                      blurRadius: 6,
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Icon(
-                            _icon,
-                            size: 16,
-                            color: _isHovered
-                                ? Colors.white
-                                : Colors.white.withValues(alpha: 0.6),
-                          ),
+            top: 6,
+            right: 6,
+            child: JustTheTooltip(
+              controller: _tooltipController,
+              isModal: true,
+              preferredDirection: AxisDirection.up,
+              tailLength: 8,
+              tailBaseWidth: 14,
+              offset: 4,
+              borderRadius: BorderRadius.circular(8),
+              backgroundColor: Colors.grey.shade900,
+              barrierDismissible: true,
+              content: _buildTooltipContent(),
+              child: AnimatedBuilder(
+                animation: _pulseAnimation,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _isLoading ? _pulseAnimation.value : 1.0,
+                    child: child,
+                  );
+                },
+                child: SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // 背景圆（hover 时高亮）
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _isHovered
+                              ? Colors.black.withValues(alpha: 0.7)
+                              : Colors.black.withValues(alpha: 0.4),
+                          boxShadow: _isHovered
+                              ? [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.4),
+                                    blurRadius: 6,
+                                  ),
+                                ]
+                              : null,
                         ),
-                        // Loading 环（hover 时显示）
-                        if (_isLoading)
-                          AnimatedBuilder(
-                            animation: _loadingController,
-                            builder: (context, child) {
-                              return Transform.rotate(
-                                angle: _loadingController.value * 2 * 3.14159,
-                                child: child,
-                              );
-                            },
-                            child: SizedBox(
-                              width: 32,
-                              height: 32,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                value: null,
-                                color: Colors.white.withValues(alpha: 0.7),
-                              ),
+                        child: Icon(
+                          _icon,
+                          size: 16,
+                          color: _isHovered
+                              ? Colors.white
+                              : Colors.white.withValues(alpha: 0.6),
+                        ),
+                      ),
+                      // Loading 环（hover 时显示）
+                      if (_isLoading)
+                        AnimatedBuilder(
+                          animation: _loadingController,
+                          builder: (context, child) {
+                            return Transform.rotate(
+                              angle: _loadingController.value * 2 * 3.14159,
+                              child: child,
+                            );
+                          },
+                          child: SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              value: null,
+                              color: Colors.white.withValues(alpha: 0.7),
                             ),
                           ),
-                      ],
-                    ),
+                        ),
+                    ],
                   ),
                 ),
               ),
             ),
+          ),
         ],
       ),
     );
@@ -394,10 +402,7 @@ class _ImageTooltipContent extends StatefulWidget {
   final String imageUrl;
   final VoidCallback onTap;
 
-  const _ImageTooltipContent({
-    required this.imageUrl,
-    required this.onTap,
-  });
+  const _ImageTooltipContent({required this.imageUrl, required this.onTap});
 
   @override
   State<_ImageTooltipContent> createState() => _ImageTooltipContentState();
@@ -427,8 +432,10 @@ class _ImageTooltipContentState extends State<_ImageTooltipContent> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                constraints:
-                    const BoxConstraints(maxWidth: 260, maxHeight: 160),
+                constraints: const BoxConstraints(
+                  maxWidth: 260,
+                  maxHeight: 160,
+                ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: Image.network(
@@ -449,8 +456,12 @@ class _ImageTooltipContentState extends State<_ImageTooltipContent> {
                         width: 100,
                         height: 60,
                         child: Center(
-                            child: Icon(Icons.broken_image,
-                                size: 24, color: Colors.white54)),
+                          child: Icon(
+                            Icons.broken_image,
+                            size: 24,
+                            color: Colors.white54,
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -463,16 +474,18 @@ class _ImageTooltipContentState extends State<_ImageTooltipContent> {
                   Icon(
                     Icons.zoom_in,
                     size: 12,
-                    color:
-                        Colors.white.withValues(alpha: _isHovered ? 0.9 : 0.5),
+                    color: Colors.white.withValues(
+                      alpha: _isHovered ? 0.9 : 0.5,
+                    ),
                   ),
                   const SizedBox(width: 4),
                   Text(
                     '点击查看大图',
                     style: TextStyle(
                       fontSize: 11,
-                      color: Colors.white
-                          .withValues(alpha: _isHovered ? 0.9 : 0.7),
+                      color: Colors.white.withValues(
+                        alpha: _isHovered ? 0.9 : 0.7,
+                      ),
                     ),
                   ),
                 ],
@@ -570,9 +583,13 @@ class _VideoTooltipContentState extends State<_VideoTooltipContent> {
 
   Future<String?> _fetchBilibiliCover(String bvid) async {
     try {
-      final response = await http.get(
-        Uri.parse('https://api.bilibili.com/x/web-interface/view?bvid=$bvid'),
-      ).timeout(const Duration(seconds: 3));
+      final response = await http
+          .get(
+            Uri.parse(
+              'https://api.bilibili.com/x/web-interface/view?bvid=$bvid',
+            ),
+          )
+          .timeout(const Duration(seconds: 3));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['code'] == 0) {
@@ -630,8 +647,9 @@ class _VideoTooltipContentState extends State<_VideoTooltipContent> {
                       // 半透明遮罩
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 150),
-                        color: Colors.black
-                            .withValues(alpha: _isHovered ? 0.3 : 0.4),
+                        color: Colors.black.withValues(
+                          alpha: _isHovered ? 0.3 : 0.4,
+                        ),
                       ),
                       // 播放按钮
                       Center(
@@ -640,8 +658,9 @@ class _VideoTooltipContentState extends State<_VideoTooltipContent> {
                           width: _isHovered ? 56 : 48,
                           height: _isHovered ? 56 : 48,
                           decoration: BoxDecoration(
-                            color: widget.platformColor
-                                .withValues(alpha: _isHovered ? 0.95 : 0.85),
+                            color: widget.platformColor.withValues(
+                              alpha: _isHovered ? 0.95 : 0.85,
+                            ),
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
@@ -663,7 +682,9 @@ class _VideoTooltipContentState extends State<_VideoTooltipContent> {
                         bottom: 6,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.black.withValues(alpha: 0.7),
                             borderRadius: BorderRadius.circular(4),
@@ -753,7 +774,10 @@ class _VideoPlatformInfo {
 }
 
 /// 根据 URL 识别视频平台
-_VideoPlatformInfo _getPlatformInfo(String url, VideoUrlSource? videoUrlSource) {
+_VideoPlatformInfo _getPlatformInfo(
+  String url,
+  VideoUrlSource? videoUrlSource,
+) {
   // B站直链解析后的视频
   if (videoUrlSource == VideoUrlSource.bilibiliParsed) {
     return const _VideoPlatformInfo(
@@ -765,10 +789,7 @@ _VideoPlatformInfo _getPlatformInfo(String url, VideoUrlSource? videoUrlSource) 
   final lowerUrl = url.toLowerCase();
 
   if (lowerUrl.contains('bilibili.com') || lowerUrl.contains('b23.tv')) {
-    return const _VideoPlatformInfo(
-      name: 'Bilibili',
-      color: Color(0xFFFB7299),
-    );
+    return const _VideoPlatformInfo(name: 'Bilibili', color: Color(0xFFFB7299));
   }
 
   final path = lowerUrl.split('?').first;
@@ -776,18 +797,11 @@ _VideoPlatformInfo _getPlatformInfo(String url, VideoUrlSource? videoUrlSource) 
       path.endsWith('.webm') ||
       path.endsWith('.ogg') ||
       path.endsWith('.mov')) {
-    return const _VideoPlatformInfo(
-      name: '视频直链',
-      color: Color(0xFF4A90D9),
-    );
+    return const _VideoPlatformInfo(name: '视频直链', color: Color(0xFF4A90D9));
   }
 
-  return const _VideoPlatformInfo(
-    name: '视频',
-    color: Color(0xFF607D8B),
-  );
+  return const _VideoPlatformInfo(name: '视频', color: Color(0xFF607D8B));
 }
-
 
 /// 技能预览图片查看器对话框
 class SkillPreviewImageDialog extends StatefulWidget {
@@ -801,7 +815,8 @@ class SkillPreviewImageDialog extends StatefulWidget {
   });
 
   @override
-  State<SkillPreviewImageDialog> createState() => _SkillPreviewImageDialogState();
+  State<SkillPreviewImageDialog> createState() =>
+      _SkillPreviewImageDialogState();
 }
 
 class _SkillPreviewImageDialogState extends State<SkillPreviewImageDialog>
@@ -820,9 +835,10 @@ class _SkillPreviewImageDialogState extends State<SkillPreviewImageDialog>
     _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _animController.forward();
   }
 
@@ -848,10 +864,7 @@ class _SkillPreviewImageDialogState extends State<SkillPreviewImageDialog>
       builder: (context, child) {
         return Opacity(
           opacity: _fadeAnimation.value,
-          child: Transform.scale(
-            scale: _scaleAnimation.value,
-            child: child,
-          ),
+          child: Transform.scale(scale: _scaleAnimation.value, child: child),
         );
       },
       child: Dialog(
@@ -879,10 +892,15 @@ class _SkillPreviewImageDialogState extends State<SkillPreviewImageDialog>
               children: [
                 // 标题栏
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: inkColor.withValues(alpha: isDark ? 0.3 : 0.9),
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -913,10 +931,14 @@ class _SkillPreviewImageDialogState extends State<SkillPreviewImageDialog>
                     constraints: const BoxConstraints(minHeight: 200),
                     decoration: BoxDecoration(
                       color: isDark ? Colors.black : const Color(0xFFF5F5F5),
-                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+                      borderRadius: const BorderRadius.vertical(
+                        bottom: Radius.circular(12),
+                      ),
                     ),
                     child: ClipRRect(
-                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+                      borderRadius: const BorderRadius.vertical(
+                        bottom: Radius.circular(12),
+                      ),
                       child: InteractiveViewer(
                         minScale: 0.5,
                         maxScale: 4.0,
@@ -935,8 +957,11 @@ class _SkillPreviewImageDialogState extends State<SkillPreviewImageDialog>
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.broken_image_outlined,
-                                      size: 48, color: Colors.grey.shade400),
+                                  Icon(
+                                    Icons.broken_image_outlined,
+                                    size: 48,
+                                    color: Colors.grey.shade400,
+                                  ),
                                   const SizedBox(height: 8),
                                   Text(
                                     '图片加载失败',

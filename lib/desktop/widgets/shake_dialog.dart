@@ -78,7 +78,7 @@ class _ShakeDialogState extends State<ShakeDialog>
           _resultMessage = result.rewardAmount != null
               ? '今日已获得 ${result.rewardAmount} 僵尸币'
               : '今日已摇过，明天再来吧';
-          
+
           // 显示已获得的奖励金额
           if (_rewardAmount != null) {
             final digits = _splitIntoDigits(_rewardAmount!);
@@ -92,9 +92,11 @@ class _ShakeDialogState extends State<ShakeDialog>
       // 更新 DailyTaskBloc 状态
       if (result.alreadyShaked && mounted) {
         context.read<DailyTaskBloc>().add(
-              DailyTaskShakeCompleted(
-                  success: true, rewardAmount: result.rewardAmount),
-            );
+          DailyTaskShakeCompleted(
+            success: true,
+            rewardAmount: result.rewardAmount,
+          ),
+        );
       }
     } catch (e) {
       LogService.e('检查摇一摇状态失败', e);
@@ -121,7 +123,7 @@ class _ShakeDialogState extends State<ShakeDialog>
 
     try {
       final result = await AuthService.instance.doShake();
-      
+
       if (!mounted) return;
 
       if (result.success) {
@@ -140,29 +142,28 @@ class _ShakeDialogState extends State<ShakeDialog>
 
         // 更新 DailyTaskBloc 状态
         context.read<DailyTaskBloc>().add(
-              DailyTaskShakeCompleted(
-                  success: true, rewardAmount: _rewardAmount),
-            );
+          DailyTaskShakeCompleted(success: true, rewardAmount: _rewardAmount),
+        );
       } else {
         await _stopSlotAnimation();
-        
+
         if (!mounted) return;
-        
+
         setState(() {
           _isShaking = false;
           _resultMessage = result.message;
         });
-        
+
         ToastUtils.showError(context, result.message);
       }
     } catch (e) {
       LogService.e('摇一摇执行失败', e);
       if (!mounted) return;
-      
+
       await _stopSlotAnimation();
-      
+
       if (!mounted) return;
-      
+
       setState(() {
         _isShaking = false;
         _resultMessage = '摇一摇失败，请重试';
@@ -241,7 +242,9 @@ class _ShakeDialogState extends State<ShakeDialog>
                   animation: _digitControllers[index],
                   builder: (context, child) {
                     return _buildScrollingNumbers(
-                        _digitControllers[index], textColor);
+                      _digitControllers[index],
+                      textColor,
+                    );
                   },
                 ),
               )
@@ -261,7 +264,9 @@ class _ShakeDialogState extends State<ShakeDialog>
 
   /// 构建滚动的数字列表
   Widget _buildScrollingNumbers(
-      AnimationController controller, Color textColor) {
+    AnimationController controller,
+    Color textColor,
+  ) {
     // 计算滚动偏移量（更快的滚动速度）
     final offset = controller.value * 10 * 80; // 10个数字，每个高度80
 
@@ -304,8 +309,9 @@ class _ShakeDialogState extends State<ShakeDialog>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
-    final secondaryTextColor =
-        isDark ? Colors.white54 : const Color(0xFF6B7280);
+    final secondaryTextColor = isDark
+        ? Colors.white54
+        : const Color(0xFF6B7280);
 
     return Dialog(
       backgroundColor: bgColor,
@@ -353,11 +359,7 @@ class _ShakeDialogState extends State<ShakeDialog>
                 children: List.generate(3, (index) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: _buildSlotDigit(
-                      index,
-                      isDark,
-                      textColor,
-                    ),
+                    child: _buildSlotDigit(index, isDark, textColor),
                   );
                 }),
               ),
@@ -365,28 +367,35 @@ class _ShakeDialogState extends State<ShakeDialog>
             const SizedBox(height: 24),
             if (_resultMessage != null)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: _rewardAmount != null
                       ? Colors.amber.withValues(alpha: 0.1)
                       : (isDark
-                          ? const Color(0xFF334155)
-                          : const Color(0xFFF1F5F9)),
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFF1F5F9)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (_rewardAmount != null)
-                      const Icon(Icons.monetization_on,
-                          color: Colors.amber, size: 20),
+                      const Icon(
+                        Icons.monetization_on,
+                        color: Colors.amber,
+                        size: 20,
+                      ),
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
                         _resultMessage!,
                         style: TextStyle(
-                          color: _rewardAmount != null ? Colors.amber : textColor,
+                          color: _rewardAmount != null
+                              ? Colors.amber
+                              : textColor,
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
                         ),
@@ -403,8 +412,10 @@ class _ShakeDialogState extends State<ShakeDialog>
                   children: [
                     const CircularProgressIndicator(color: Color(0xFF0080FF)),
                     const SizedBox(height: 12),
-                    Text('正在加载...',
-                        style: TextStyle(color: secondaryTextColor)),
+                    Text(
+                      '正在加载...',
+                      style: TextStyle(color: secondaryTextColor),
+                    ),
                   ],
                 ),
               ),
@@ -415,8 +426,8 @@ class _ShakeDialogState extends State<ShakeDialog>
               child: ElevatedButton.icon(
                 onPressed:
                     _isLoading || _isShaking || _alreadyShaked || _hasResult
-                        ? null
-                        : _doShake,
+                    ? null
+                    : _doShake,
                 icon: _isShaking
                     ? const SizedBox(
                         width: 20,
@@ -426,12 +437,16 @@ class _ShakeDialogState extends State<ShakeDialog>
                           color: Colors.white,
                         ),
                       )
-                    : Icon(_alreadyShaked || _hasResult
-                        ? Icons.check
-                        : Icons.vibration),
-                label: Text(_isShaking
-                    ? '摇奖中...'
-                    : (_alreadyShaked || _hasResult ? '已完成' : '摇一摇')),
+                    : Icon(
+                        _alreadyShaked || _hasResult
+                            ? Icons.check
+                            : Icons.vibration,
+                      ),
+                label: Text(
+                  _isShaking
+                      ? '摇奖中...'
+                      : (_alreadyShaked || _hasResult ? '已完成' : '摇一摇'),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _alreadyShaked || _hasResult
                       ? Colors.green
@@ -457,7 +472,9 @@ class _ShakeDialogState extends State<ShakeDialog>
                 icon: const Icon(Icons.open_in_browser, size: 16),
                 label: const Text('打开页面'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                  foregroundColor: isDark
+                      ? Colors.white70
+                      : const Color(0xFF6B7280),
                   side: BorderSide(
                     color: (isDark ? Colors.white70 : const Color(0xFF6B7280))
                         .withValues(alpha: 0.3),
@@ -481,7 +498,8 @@ class _ShakeDialogState extends State<ShakeDialog>
 
   /// 在浏览器中打开摇摇乐页面
   Future<void> _openInBrowser() async {
-    const url = 'https://bbs.zombieden.cn/plugin.php?id=yinxingfei_zzza:yinxingfei_zzza_hall';
+    const url =
+        'https://bbs.zombieden.cn/plugin.php?id=yinxingfei_zzza:yinxingfei_zzza_hall';
     try {
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {

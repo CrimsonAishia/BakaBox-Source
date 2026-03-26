@@ -28,7 +28,8 @@ class UserInfo extends Equatable {
     this.userGroup,
   });
 
-  factory UserInfo.fromJson(Map<String, dynamic> json) => _$UserInfoFromJson(json);
+  factory UserInfo.fromJson(Map<String, dynamic> json) =>
+      _$UserInfoFromJson(json);
   Map<String, dynamic> toJson() => _$UserInfoToJson(this);
 
   UserInfo copyWith({
@@ -57,16 +58,16 @@ class UserInfo extends Equatable {
 
   @override
   List<Object?> get props => [
-        username,
-        uid,
-        avatar,
-        steamId,
-        steamUrl,
-        steamProfileId,
-        credits,
-        zombieCoins,
-        userGroup,
-      ];
+    username,
+    uid,
+    avatar,
+    steamId,
+    steamUrl,
+    steamProfileId,
+    credits,
+    zombieCoins,
+    userGroup,
+  ];
 }
 
 /// 后端用户信息
@@ -95,6 +96,13 @@ class BackendUserInfo extends Equatable {
   Map<String, dynamic> toJson() => _$BackendUserInfoToJson(this);
 
   @override
-  List<Object?> get props =>
-      [id, username, nickname, avatar, zedboxUid, steamId, steamProfileId];
+  List<Object?> get props => [
+    id,
+    username,
+    nickname,
+    avatar,
+    zedboxUid,
+    steamId,
+    steamProfileId,
+  ];
 }

@@ -3,11 +3,8 @@ import 'package:flutter/material.dart';
 /// 编辑自定义分类对话框
 class EditCategoryDialog extends StatefulWidget {
   final String currentName;
-  
-  const EditCategoryDialog({
-    super.key,
-    required this.currentName,
-  });
+
+  const EditCategoryDialog({super.key, required this.currentName});
 
   @override
   State<EditCategoryDialog> createState() => _EditCategoryDialogState();
@@ -34,9 +31,15 @@ class _EditCategoryDialogState extends State<EditCategoryDialog> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
-    final secondaryTextColor = isDark ? Colors.white54 : const Color(0xFF6B7280);
-    final inputBgColor = isDark ? const Color(0xFF334155) : const Color(0xFFF9FAFB);
-    final borderColor = isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB);
+    final secondaryTextColor = isDark
+        ? Colors.white54
+        : const Color(0xFF6B7280);
+    final inputBgColor = isDark
+        ? const Color(0xFF334155)
+        : const Color(0xFFF9FAFB);
+    final borderColor = isDark
+        ? const Color(0xFF475569)
+        : const Color(0xFFE5E7EB);
 
     return AlertDialog(
       backgroundColor: bgColor,
@@ -60,7 +63,9 @@ class _EditCategoryDialogState extends State<EditCategoryDialog> {
                 labelText: '分类名称',
                 labelStyle: TextStyle(color: secondaryTextColor),
                 hintText: '例如：我的服务器',
-                hintStyle: TextStyle(color: secondaryTextColor.withValues(alpha: 0.6)),
+                hintStyle: TextStyle(
+                  color: secondaryTextColor.withValues(alpha: 0.6),
+                ),
                 filled: true,
                 fillColor: inputBgColor,
                 border: OutlineInputBorder(
@@ -75,7 +80,10 @@ class _EditCategoryDialogState extends State<EditCategoryDialog> {
                   borderRadius: BorderRadius.circular(8),
                   borderSide: const BorderSide(color: Color(0xFF0080FF)),
                 ),
-                prefixIcon: Icon(Icons.edit_outlined, color: secondaryTextColor),
+                prefixIcon: Icon(
+                  Icons.edit_outlined,
+                  color: secondaryTextColor,
+                ),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {

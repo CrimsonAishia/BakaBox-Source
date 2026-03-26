@@ -35,14 +35,19 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
     super.initState();
     _searchScrollController.addListener(_onSearchScroll);
     _searchScrollController.addListener(_updateScrollIndicators);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollIndicators());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _updateScrollIndicators(),
+    );
   }
 
   @override
   void didUpdateWidget(AddSubscriptionView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.state.searchResults.length != widget.state.searchResults.length) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollIndicators());
+    if (oldWidget.state.searchResults.length !=
+        widget.state.searchResults.length) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _updateScrollIndicators(),
+      );
     }
   }
 
@@ -75,11 +80,11 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
       final state = widget.state;
       if (!state.isSearching && state.hasMoreSearchResults) {
         context.read<MapSubscriptionBloc>().add(
-              MapSubscriptionSearchMaps(
-                query: _searchController.text,
-                loadMore: true,
-              ),
-            );
+          MapSubscriptionSearchMaps(
+            query: _searchController.text,
+            loadMore: true,
+          ),
+        );
       }
     }
   }
@@ -88,8 +93,8 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 400), () {
       context.read<MapSubscriptionBloc>().add(
-            MapSubscriptionSearchMaps(query: query),
-          );
+        MapSubscriptionSearchMaps(query: query),
+      );
     });
   }
 
@@ -169,8 +174,8 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
                       _searchController.clear();
                     });
                     context.read<MapSubscriptionBloc>().add(
-                          const MapSubscriptionSearchMaps(query: ''),
-                        );
+                      const MapSubscriptionSearchMaps(query: ''),
+                    );
                   },
                 )
               : null,
@@ -178,7 +183,10 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
           fillColor: isDark
               ? Colors.white.withValues(alpha: 0.05)
               : const Color(0xFFF3F4F6),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide.none,
@@ -189,10 +197,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(
-              color: Color(0xFF6366F1),
-              width: 1.5,
-            ),
+            borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
           ),
         ),
       ),
@@ -291,8 +296,13 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
             children: [
               ListView.builder(
                 controller: _searchScrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                itemCount: state.searchResults.length + (state.hasMoreSearchResults ? 1 : 0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                itemCount:
+                    state.searchResults.length +
+                    (state.hasMoreSearchResults ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index >= state.searchResults.length) {
                     return Padding(
@@ -310,27 +320,29 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
                             : TextButton(
                                 onPressed: () {
                                   context.read<MapSubscriptionBloc>().add(
-                                        MapSubscriptionSearchMaps(
-                                          query: _searchController.text,
-                                          loadMore: true,
-                                        ),
-                                      );
+                                    MapSubscriptionSearchMaps(
+                                      query: _searchController.text,
+                                      loadMore: true,
+                                    ),
+                                  );
                                 },
                                 child: Text(
                                   '加载更多',
                                   style: TextStyle(
                                     fontSize: 13,
-                                color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                                    color: isDark
+                                        ? Colors.white54
+                                        : const Color(0xFF6B7280),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                  ),
-                );
-              }
-              final result = state.searchResults[index];
-              return _buildSearchResultTile(isDark, result);
-            },
-          ),
+                      ),
+                    );
+                  }
+                  final result = state.searchResults[index];
+                  return _buildSearchResultTile(isDark, result);
+                },
+              ),
               if (_canScrollUp)
                 const Positioned(
                   top: 0,
@@ -355,7 +367,9 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
   Widget _buildSearchResultTile(bool isDark, MapSearchResult result) {
     final hasBackground = result.mapBackground != null;
     return MapSubscriptionCard(
-      displayName: result.mapLabel.isNotEmpty ? result.mapLabel : result.mapName,
+      displayName: result.mapLabel.isNotEmpty
+          ? result.mapLabel
+          : result.mapName,
       mapName: result.mapName,
       mapBackground: result.mapBackground,
       isSubscribed: result.isSubscribed,
@@ -363,10 +377,10 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
       onTap: result.isSubscribed
           ? null
           : () => _showAddSubscriptionDialog(
-                mapName: result.mapName,
-                mapLabel: result.mapLabel,
-                mapBackground: result.mapBackground,
-              ),
+              mapName: result.mapName,
+              mapLabel: result.mapLabel,
+              mapBackground: result.mapBackground,
+            ),
       trailing: result.isSubscribed
           ? _buildSubscribedTrailing(context, hasBackground, result)
           : _buildUnsubscribedTrailing(context, hasBackground, result),
@@ -374,7 +388,11 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
   }
 
   /// 未订阅状态的 trailing（编辑按钮 + 订阅按钮）
-  Widget _buildUnsubscribedTrailing(BuildContext context, bool hasBackground, MapSearchResult result) {
+  Widget _buildUnsubscribedTrailing(
+    BuildContext context,
+    bool hasBackground,
+    MapSearchResult result,
+  ) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -415,7 +433,11 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
   }
 
   /// 已订阅状态的 trailing（编辑按钮 + 已订阅标签）
-  Widget _buildSubscribedTrailing(BuildContext context, bool hasBackground, MapSearchResult result) {
+  Widget _buildSubscribedTrailing(
+    BuildContext context,
+    bool hasBackground,
+    MapSearchResult result,
+  ) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -604,25 +626,25 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             style: TextButton.styleFrom(
-              foregroundColor: isDark ? Colors.white54 : const Color(0xFF6B7280),
+              foregroundColor: isDark
+                  ? Colors.white54
+                  : const Color(0xFF6B7280),
             ),
             child: const Text('取消'),
           ),
           ElevatedButton(
             onPressed: () {
               context.read<MapSubscriptionBloc>().add(
-                    MapSubscriptionAdd(
-                      mapName: mapName,
-                      mapLabel: mapLabel,
-                      mapBackground: mapBackground,
-                    ),
-                  );
+                MapSubscriptionAdd(
+                  mapName: mapName,
+                  mapLabel: mapLabel,
+                  mapBackground: mapBackground,
+                ),
+              );
               if (_searchController.text.isNotEmpty) {
                 context.read<MapSubscriptionBloc>().add(
-                      MapSubscriptionSearchMaps(
-                        query: _searchController.text,
-                      ),
-                    );
+                  MapSubscriptionSearchMaps(query: _searchController.text),
+                );
               }
               Navigator.of(ctx).pop();
             },

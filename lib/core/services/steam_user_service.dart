@@ -3,7 +3,7 @@ import 'dart:io';
 import '../utils/log_service.dart';
 
 /// Steam 用户信息服务
-/// 
+///
 /// 从 Windows 注册表获取当前登录用户的 SteamID3，
 /// 然后从 userdata/localconfig.vdf 读取 PersonaName
 class SteamUserService {
@@ -44,11 +44,12 @@ class SteamUserService {
     if (!Platform.isWindows) return null;
 
     try {
-      final result = await Process.run(
-        'reg',
-        ['query', r'HKCU\Software\Valve\Steam', '/v', 'SteamPath'],
-        runInShell: true,
-      );
+      final result = await Process.run('reg', [
+        'query',
+        r'HKCU\Software\Valve\Steam',
+        '/v',
+        'SteamPath',
+      ], runInShell: true);
 
       if (result.exitCode != 0) return null;
 
@@ -78,17 +79,19 @@ class SteamUserService {
 
     try {
       // 读取注册表 ActiveUser (SteamID3)
-      final result = await Process.run(
-        'reg',
-        ['query', r'HKCU\Software\Valve\Steam\ActiveProcess', '/v', 'ActiveUser'],
-        runInShell: true,
-      );
+      final result = await Process.run('reg', [
+        'query',
+        r'HKCU\Software\Valve\Steam\ActiveProcess',
+        '/v',
+        'ActiveUser',
+      ], runInShell: true);
 
       if (result.exitCode != 0) return null;
 
       // 解析：ActiveUser    REG_DWORD    0x12345678
-      final match = RegExp(r'ActiveUser\s+REG_DWORD\s+0x([0-9a-fA-F]+)')
-          .firstMatch(result.stdout.toString());
+      final match = RegExp(
+        r'ActiveUser\s+REG_DWORD\s+0x([0-9a-fA-F]+)',
+      ).firstMatch(result.stdout.toString());
       if (match == null) return null;
 
       final steamId3 = int.parse(match.group(1)!, radix: 16);
@@ -98,12 +101,15 @@ class SteamUserService {
       String? steamPath = await _getSteamPathFromRegistry();
       if (steamPath == null) return null;
 
-      final configPath = '$steamPath\\userdata\\$steamId3\\config\\localconfig.vdf';
+      final configPath =
+          '$steamPath\\userdata\\$steamId3\\config\\localconfig.vdf';
       final file = File(configPath);
       if (!await file.exists()) return null;
 
       final content = await file.readAsString();
-      final nameMatch = RegExp(r'"PersonaName"\s+"([^"]*)"').firstMatch(content);
+      final nameMatch = RegExp(
+        r'"PersonaName"\s+"([^"]*)"',
+      ).firstMatch(content);
       return nameMatch?.group(1);
     } catch (e) {
       LogService.e('[SteamUserService] 获取用户名失败', e);
@@ -112,7 +118,7 @@ class SteamUserService {
   }
 
   /// 获取当前登录的Steam用户ID（仅Windows）
-  /// 
+  ///
   /// 返回 SteamID3 格式的用户ID（纯数字字符串）
   Future<String?> getCurrentSteamUserId() async {
     // 检查缓存
@@ -125,16 +131,18 @@ class SteamUserService {
     if (!Platform.isWindows) return null;
 
     try {
-      final result = await Process.run(
-        'reg',
-        ['query', r'HKCU\Software\Valve\Steam\ActiveProcess', '/v', 'ActiveUser'],
-        runInShell: true,
-      );
+      final result = await Process.run('reg', [
+        'query',
+        r'HKCU\Software\Valve\Steam\ActiveProcess',
+        '/v',
+        'ActiveUser',
+      ], runInShell: true);
 
       if (result.exitCode != 0) return null;
 
-      final match = RegExp(r'ActiveUser\s+REG_DWORD\s+0x([0-9a-fA-F]+)')
-          .firstMatch(result.stdout.toString());
+      final match = RegExp(
+        r'ActiveUser\s+REG_DWORD\s+0x([0-9a-fA-F]+)',
+      ).firstMatch(result.stdout.toString());
       if (match == null) return null;
 
       final steamId3 = int.parse(match.group(1)!, radix: 16);

@@ -25,6 +25,7 @@ class LoadMapTagList extends MapTagEvent {
 /// 投票/取消投票
 class ToggleTagVote extends MapTagEvent {
   final int tagId;
+
   /// 投票类型: 'up' 或 'down'
   final String? voteType;
 
@@ -37,8 +38,10 @@ class ToggleTagVote extends MapTagEvent {
 /// 提交新标签
 class SubmitTag extends MapTagEvent {
   final String name;
+
   /// 标签颜色，十六进制格式如 #FF5733
   final String? color;
+
   /// 审核通过后自动为该地图投一票
   final bool autoVote;
 
@@ -72,6 +75,7 @@ class RefreshUserTags extends MapTagEvent {
 class UpdateTag extends MapTagEvent {
   final int tagId;
   final String name;
+
   /// 标签颜色，十六进制格式如 #FF5733
   final String? color;
 

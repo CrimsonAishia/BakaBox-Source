@@ -11,7 +11,7 @@ class MapRuntimeUtils {
   /// 返回热身时间（秒），如果地图不需要热身则返回 null
   static int? getWarmupDuration(String? mapName) {
     if (mapName == null || mapName.isEmpty) return null;
-    
+
     final lowerMapName = mapName.toLowerCase();
     for (final config in MapWarmupConstants.configs) {
       if (lowerMapName.startsWith(config.prefix)) {
@@ -43,9 +43,12 @@ class MapRuntimeUtils {
   /// [mapRuntime] 原始运行时间数据
   /// [fetchedAt] 获取时间戳（毫秒）
   /// 返回当前实际运行时间（秒）
-  static int calculateCurrentRuntime(MapRuntimeData? mapRuntime, int? fetchedAt) {
+  static int calculateCurrentRuntime(
+    MapRuntimeData? mapRuntime,
+    int? fetchedAt,
+  ) {
     if (mapRuntime == null || fetchedAt == null) return 0;
-    
+
     final elapsed = (DateTime.now().millisecondsSinceEpoch - fetchedAt) ~/ 1000;
     return mapRuntime.currentRuntime + elapsed;
   }
@@ -62,7 +65,7 @@ class MapRuntimeUtils {
       if (isLoading) return '';
       return '加载中...';
     }
-    
+
     final currentRuntime = calculateCurrentRuntime(mapRuntime, fetchedAt);
     if (currentRuntime <= 0) return '0秒';
     return formatRuntime(currentRuntime);
@@ -76,14 +79,14 @@ class MapRuntimeUtils {
     bool hasError = false,
   }) {
     if (mapRuntime == null || hasError) return false;
-    
+
     final warmupDuration = getWarmupDuration(mapName);
     if (warmupDuration == null) return false;
-    
-    final currentRuntime = fetchedAt != null 
+
+    final currentRuntime = fetchedAt != null
         ? calculateCurrentRuntime(mapRuntime, fetchedAt)
         : mapRuntime.currentRuntime;
-    
+
     return currentRuntime <= warmupDuration;
   }
 
@@ -94,14 +97,14 @@ class MapRuntimeUtils {
     String? mapName,
   }) {
     if (mapRuntime == null) return 0;
-    
+
     final warmupDuration = getWarmupDuration(mapName);
     if (warmupDuration == null) return 0;
-    
-    final currentRuntime = fetchedAt != null 
+
+    final currentRuntime = fetchedAt != null
         ? calculateCurrentRuntime(mapRuntime, fetchedAt)
         : mapRuntime.currentRuntime;
-    
+
     if (currentRuntime > warmupDuration) return 0;
     return (warmupDuration - currentRuntime).clamp(0, warmupDuration);
   }
@@ -112,15 +115,19 @@ class MapRuntimeUtils {
     int? fetchedAt,
     String? mapName,
   }) {
-    final remaining = getWarmupTimeRemaining(mapRuntime, fetchedAt: fetchedAt, mapName: mapName);
+    final remaining = getWarmupTimeRemaining(
+      mapRuntime,
+      fetchedAt: fetchedAt,
+      mapName: mapName,
+    );
     if (remaining <= 0) return '';
     return '热身 $remaining秒';
   }
 
   /// 判断是否应该获取地图运行时间
   static bool shouldFetchMapRuntime(ExtendedServerItem server) {
-    final hasMap = server.serverData?.map != null && 
-                   server.serverData!.map!.isNotEmpty;
+    final hasMap =
+        server.serverData?.map != null && server.serverData!.map!.isNotEmpty;
     final noRuntime = server.mapRuntime == null;
     final noError = !server.mapRuntimeError;
     final notFetching = !server.mapRuntimeFetching;

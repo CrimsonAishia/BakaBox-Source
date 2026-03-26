@@ -72,7 +72,9 @@ class AppDirectoryService {
 
   static void _checkInitialized() {
     if (!_initialized) {
-      throw StateError('AppDirectoryService not initialized. Call init() first.');
+      throw StateError(
+        'AppDirectoryService not initialized. Call init() first.',
+      );
     }
   }
 

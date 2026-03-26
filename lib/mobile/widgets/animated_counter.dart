@@ -20,7 +20,8 @@ class AnimatedCounter extends StatefulWidget {
   State<AnimatedCounter> createState() => _AnimatedCounterState();
 }
 
-class _AnimatedCounterState extends State<AnimatedCounter> with SingleTickerProviderStateMixin {
+class _AnimatedCounterState extends State<AnimatedCounter>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
   int _previousCount = 0;
@@ -36,10 +37,7 @@ class _AnimatedCounterState extends State<AnimatedCounter> with SingleTickerProv
     _animation = Tween<double>(
       begin: _previousCount.toDouble(),
       end: widget.count.toDouble(),
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
   }
 
   @override
@@ -47,13 +45,13 @@ class _AnimatedCounterState extends State<AnimatedCounter> with SingleTickerProv
     super.didUpdateWidget(oldWidget);
     if (oldWidget.count != widget.count) {
       _previousCount = oldWidget.count;
-      _animation = Tween<double>(
-        begin: _previousCount.toDouble(),
-        end: widget.count.toDouble(),
-      ).animate(CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutCubic,
-      ));
+      _animation =
+          Tween<double>(
+            begin: _previousCount.toDouble(),
+            end: widget.count.toDouble(),
+          ).animate(
+            CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+          );
       _controller.forward(from: 0);
     }
   }

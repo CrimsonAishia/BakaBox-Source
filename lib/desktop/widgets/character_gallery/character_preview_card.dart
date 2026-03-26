@@ -7,11 +7,7 @@ class PreviewImageCard extends StatefulWidget {
   final String? imageUrl;
   final VoidCallback? onTap;
 
-  const PreviewImageCard({
-    super.key,
-    this.imageUrl,
-    this.onTap,
-  });
+  const PreviewImageCard({super.key, this.imageUrl, this.onTap});
 
   @override
   State<PreviewImageCard> createState() => _PreviewImageCardState();
@@ -21,7 +17,8 @@ class _PreviewImageCardState extends State<PreviewImageCard> {
   bool _isHovered = false;
 
   /// 是否有有效的图片URL
-  bool get _hasValidImage => widget.imageUrl != null && widget.imageUrl!.isNotEmpty;
+  bool get _hasValidImage =>
+      widget.imageUrl != null && widget.imageUrl!.isNotEmpty;
 
   /// 是否可点击（有有效图片且有点击回调）
   bool get _isClickable => _hasValidImage && widget.onTap != null;
@@ -32,7 +29,9 @@ class _PreviewImageCardState extends State<PreviewImageCard> {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
 
     return MouseRegion(
-      cursor: _isClickable ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      cursor: _isClickable
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
@@ -43,14 +42,18 @@ class _PreviewImageCardState extends State<PreviewImageCard> {
             border: Border.all(
               color: _isHovered && _isClickable
                   ? CharacterGalleryTheme.getGold(context)
-                  : CharacterGalleryTheme.getGold(context).withValues(alpha: 0.5),
+                  : CharacterGalleryTheme.getGold(
+                      context,
+                    ).withValues(alpha: 0.5),
               width: 3,
             ),
             borderRadius: BorderRadius.circular(8),
             boxShadow: _isHovered && _isClickable
                 ? [
                     BoxShadow(
-                      color: CharacterGalleryTheme.getGold(context).withValues(alpha: 0.3),
+                      color: CharacterGalleryTheme.getGold(
+                        context,
+                      ).withValues(alpha: 0.3),
                       blurRadius: 12,
                       spreadRadius: 2,
                     ),
@@ -71,11 +74,16 @@ class _PreviewImageCardState extends State<PreviewImageCard> {
                             color: washiColor,
                             child: Center(
                               child: CircularProgressIndicator(
-                                color: CharacterGalleryTheme.getVermillion(context),
+                                color: CharacterGalleryTheme.getVermillion(
+                                  context,
+                                ),
                               ),
                             ),
                           ),
-                          errorWidget: _buildPlaceholder(washiColor, scrollBrown),
+                          errorWidget: _buildPlaceholder(
+                            washiColor,
+                            scrollBrown,
+                          ),
                         )
                       : _buildPlaceholder(washiColor, scrollBrown),
                 ),
@@ -165,7 +173,9 @@ class PreviewPositionButton extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: isSelected ? CharacterGalleryTheme.getVermillion(context) : Colors.transparent,
+          color: isSelected
+              ? CharacterGalleryTheme.getVermillion(context)
+              : Colors.transparent,
           border: Border.all(
             color: isSelected
                 ? CharacterGalleryTheme.getVermillion(context)

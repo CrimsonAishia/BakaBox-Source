@@ -34,32 +34,29 @@ class _AnimatedPlayerCountState extends State<AnimatedPlayerCount>
     _previousCurrent = widget.currentPlayers;
     _currentMax = widget.maxPlayers;
     _previousMax = widget.maxPlayers;
-    
+
     _controller = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    
+
     _animation = Tween<double>(
       begin: 0.0,
       end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
   void didUpdateWidget(AnimatedPlayerCount oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
-    if (oldWidget.currentPlayers != widget.currentPlayers || 
+
+    if (oldWidget.currentPlayers != widget.currentPlayers ||
         oldWidget.maxPlayers != widget.maxPlayers) {
       _previousCurrent = _currentCurrent;
       _currentCurrent = widget.currentPlayers;
       _previousMax = _currentMax;
       _currentMax = widget.maxPlayers;
-      
+
       _controller.reset();
       _controller.forward();
     }
@@ -76,24 +73,20 @@ class _AnimatedPlayerCountState extends State<AnimatedPlayerCount>
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          Icons.person,
-          size: 16,
-          color: widget.iconColor,
-        ),
+        Icon(Icons.person, size: 16, color: widget.iconColor),
         const SizedBox(width: 6),
         AnimatedBuilder(
           animation: _animation,
           builder: (context, child) {
-            final displayCurrent = (_previousCurrent + 
-                (_currentCurrent - _previousCurrent) * _animation.value).round();
-            final displayMax = (_previousMax + 
-                (_currentMax - _previousMax) * _animation.value).round();
-            
-            return Text(
-              '$displayCurrent/$displayMax',
-              style: widget.textStyle,
-            );
+            final displayCurrent =
+                (_previousCurrent +
+                        (_currentCurrent - _previousCurrent) * _animation.value)
+                    .round();
+            final displayMax =
+                (_previousMax + (_currentMax - _previousMax) * _animation.value)
+                    .round();
+
+            return Text('$displayCurrent/$displayMax', style: widget.textStyle);
           },
         ),
       ],

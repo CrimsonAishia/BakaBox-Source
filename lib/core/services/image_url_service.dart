@@ -13,16 +13,16 @@ class _CacheEntry {
 }
 
 /// 图片URL服务
-/// 
+///
 /// 管理 fileId 到签名URL的映射
 /// - 缓存URL，避免重复请求
 /// - 自动处理URL过期（提前10分钟刷新）
-/// 
+///
 /// 使用方式：
 /// ```dart
 /// // 存储时使用 fileId 格式: "file:123"
 /// final imageRef = "file:$fileId";
-/// 
+///
 /// // 显示时获取签名URL
 /// final signedUrl = await ImageUrlService.instance.getSignedUrl(imageRef);
 /// ```
@@ -31,10 +31,10 @@ class ImageUrlService {
   ImageUrlService._();
 
   final FileUploadApi _api = FileUploadApi();
-  
+
   /// URL缓存 (fileId -> CacheEntry)
   final Map<int, _CacheEntry> _cache = {};
-  
+
   /// 缓存有效期（50分钟，比实际1小时提前10分钟）
   static const Duration _cacheDuration = Duration(minutes: 50);
 
@@ -55,7 +55,7 @@ class ImageUrlService {
   }
 
   /// 获取签名URL
-  /// 
+  ///
   /// [ref] 可以是：
   /// - fileId引用格式: "file:123"
   /// - 普通URL: 直接返回
@@ -86,10 +86,10 @@ class ImageUrlService {
     try {
       final response = await _api.getFileUrl(fileId);
       final url = response.url;
-      
+
       // 缓存
       _cache[fileId] = _CacheEntry(url, DateTime.now().add(_cacheDuration));
-      
+
       return url;
     } catch (e) {
       LogService.e('获取签名URL失败: $fileId', e);
@@ -104,7 +104,7 @@ class ImageUrlService {
   /// 批量获取签名URL
   Future<Map<String, String>> getSignedUrls(List<String> refs) async {
     final result = <String, String>{};
-    
+
     for (final ref in refs) {
       try {
         result[ref] = await getSignedUrl(ref);
@@ -113,7 +113,7 @@ class ImageUrlService {
         result[ref] = ref;
       }
     }
-    
+
     return result;
   }
 

@@ -29,7 +29,9 @@ class SettingsItem extends StatelessWidget {
         ),
       ),
       child: Row(
-        crossAxisAlignment: alignTop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+        crossAxisAlignment: alignTop
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.center,
         children: [
           SizedBox(
             width: 200,
@@ -54,7 +56,9 @@ class SettingsItem extends StatelessWidget {
                       description!,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? Colors.white60 : const Color(0xFF666666),
+                        color: isDark
+                            ? Colors.white60
+                            : const Color(0xFF666666),
                       ),
                     ),
                   ),

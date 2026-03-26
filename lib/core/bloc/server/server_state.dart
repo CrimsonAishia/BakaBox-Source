@@ -3,9 +3,9 @@ import '../../models/server_models.dart';
 
 /// 加载阶段枚举
 enum LoadingPhase {
-  idle,           // 空闲状态
-  loadingA2S,    // 正在获取 A2S 数据
-  completed,     // A2S 加载完成（可以隐藏遮罩）
+  idle, // 空闲状态
+  loadingA2S, // 正在获取 A2S 数据
+  completed, // A2S 加载完成（可以隐藏遮罩）
 }
 
 class ServerState extends Equatable {
@@ -84,14 +84,18 @@ class ServerState extends Equatable {
       isLoading: isLoading ?? this.isLoading,
       error: error,
       successMessage: successMessage,
-      selectedCategory: clearSelectedCategory ? null : (selectedCategory ?? this.selectedCategory),
+      selectedCategory: clearSelectedCategory
+          ? null
+          : (selectedCategory ?? this.selectedCategory),
       servers: servers ?? this.servers,
       isLoadingServers: isLoadingServers ?? this.isLoadingServers,
       isPaused: isPaused ?? this.isPaused,
       categoryOnlineCounts: categoryOnlineCounts ?? this.categoryOnlineCounts,
       loadingCategories: loadingCategories ?? this.loadingCategories,
-      isLoadingOnlineCounts: isLoadingOnlineCounts ?? this.isLoadingOnlineCounts,
-      hasEverLoadedOnlineCounts: hasEverLoadedOnlineCounts ?? this.hasEverLoadedOnlineCounts,
+      isLoadingOnlineCounts:
+          isLoadingOnlineCounts ?? this.isLoadingOnlineCounts,
+      hasEverLoadedOnlineCounts:
+          hasEverLoadedOnlineCounts ?? this.hasEverLoadedOnlineCounts,
       countdownResetKey: countdownResetKey ?? this.countdownResetKey,
       isCountdownActive: isCountdownActive ?? this.isCountdownActive,
       refreshingMaps: refreshingMaps ?? this.refreshingMaps,
@@ -104,11 +108,14 @@ class ServerState extends Equatable {
     );
   }
 
-  bool isCategoryLoading(String categoryName) => loadingCategories.contains(categoryName);
-  int getCategoryOnlineCount(String categoryName) => categoryOnlineCounts[categoryName] ?? 0;
-  bool hasCategoryOnlineCount(String categoryName) => categoryOnlineCounts.containsKey(categoryName);
+  bool isCategoryLoading(String categoryName) =>
+      loadingCategories.contains(categoryName);
+  int getCategoryOnlineCount(String categoryName) =>
+      categoryOnlineCounts[categoryName] ?? 0;
+  bool hasCategoryOnlineCount(String categoryName) =>
+      categoryOnlineCounts.containsKey(categoryName);
   bool isMapRefreshing(String address) => refreshingMaps.contains(address);
-  
+
   /// 获取当前 tab 下的分类列表
   List<ServerCategory> get filteredCategories {
     if (selectedTabIndex == 0) {
@@ -122,10 +129,26 @@ class ServerState extends Equatable {
 
   @override
   List<Object?> get props => [
-    serverCategories, isLoading, error, successMessage, selectedCategory, servers,
-    isLoadingServers, isPaused, categoryOnlineCounts, loadingCategories,
-    isLoadingOnlineCounts, hasEverLoadedOnlineCounts, countdownResetKey,
-    isCountdownActive, refreshingMaps, selectedTabIndex, needCsgoLegacy, needManualLaunch,
-    lastRefreshTime, loadingPhase, loadingStartTime,
+    serverCategories,
+    isLoading,
+    error,
+    successMessage,
+    selectedCategory,
+    servers,
+    isLoadingServers,
+    isPaused,
+    categoryOnlineCounts,
+    loadingCategories,
+    isLoadingOnlineCounts,
+    hasEverLoadedOnlineCounts,
+    countdownResetKey,
+    isCountdownActive,
+    refreshingMaps,
+    selectedTabIndex,
+    needCsgoLegacy,
+    needManualLaunch,
+    lastRefreshTime,
+    loadingPhase,
+    loadingStartTime,
   ];
 }

@@ -47,7 +47,9 @@ class ServerItemUtils {
   }
 
   static String getServerAddress(ExtendedServerItem server) {
-    return server.serverItem.address ?? server.serverItem.serverAddress ?? '未知地址';
+    return server.serverItem.address ??
+        server.serverItem.serverAddress ??
+        '未知地址';
   }
 
   static bool hasServerData(ExtendedServerItem server) {
@@ -101,7 +103,7 @@ class ServerItemUtils {
   }
 
   /// 判断是否为 CSGO 服务器
-  /// 
+  ///
   /// 根据 gameType 字段判断：
   /// - 如果包含 "csgo" 或 "cs:go"（不区分大小写），返回 true
   /// - 否则返回 false（默认为 CS2）
@@ -109,7 +111,7 @@ class ServerItemUtils {
     if (gameType == null || gameType.isEmpty) {
       return false;
     }
-    
+
     final lowerGameType = gameType.toLowerCase();
     return lowerGameType.contains('csgo') || lowerGameType.contains('cs:go');
   }

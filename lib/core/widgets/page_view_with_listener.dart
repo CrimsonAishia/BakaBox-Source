@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 
 /// 页面生命周期状态
-enum PageLifecycleState {
-  active,
-  inactive,
-}
+enum PageLifecycleState { active, inactive }
 
 /// 页面生命周期回调接口
 abstract class PageLifecycleAware {
@@ -34,8 +31,8 @@ class PageStateProvider extends InheritedWidget {
   @override
   bool updateShouldNotify(PageStateProvider oldWidget) {
     return oldWidget.currentPageIndex != currentPageIndex ||
-           oldWidget.pageState != pageState ||
-           oldWidget.pageIndex != pageIndex;
+        oldWidget.pageState != pageState ||
+        oldWidget.pageIndex != pageIndex;
   }
 }
 
@@ -77,7 +74,7 @@ class PageViewWithListener extends StatefulWidget {
 class _PageViewWithListenerState extends State<PageViewWithListener> {
   late PageController _pageController;
   int _currentPageIndex = 0;
-  
+
   @override
   void initState() {
     super.initState();
@@ -119,8 +116,8 @@ class _PageViewWithListenerState extends State<PageViewWithListener> {
       itemBuilder: (context, index) {
         return PageStateProvider(
           currentPageIndex: _currentPageIndex,
-          pageState: _currentPageIndex == index 
-              ? PageLifecycleState.active 
+          pageState: _currentPageIndex == index
+              ? PageLifecycleState.active
               : PageLifecycleState.inactive,
           pageIndex: index,
           child: widget.children[index],
@@ -131,24 +128,24 @@ class _PageViewWithListenerState extends State<PageViewWithListener> {
 }
 
 /// 页面生命周期Mixin
-mixin PageLifecycleMixin<T extends StatefulWidget> on State<T> 
+mixin PageLifecycleMixin<T extends StatefulWidget> on State<T>
     implements PageLifecycleAware {
   bool _isPageActive = false;
   PageLifecycleState? _lastState;
-  
+
   bool get isPageActive => _isPageActive;
-  
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
+
     final pageProvider = PageStateProvider.of(context);
     if (pageProvider != null) {
       final currentState = pageProvider.pageState;
-      
+
       if (_lastState != currentState) {
         _lastState = currentState;
-        
+
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             switch (currentState) {
@@ -164,7 +161,7 @@ mixin PageLifecycleMixin<T extends StatefulWidget> on State<T>
       }
     }
   }
-  
+
   @override
   void onPageActive() {
     if (!_isPageActive) {
@@ -172,7 +169,7 @@ mixin PageLifecycleMixin<T extends StatefulWidget> on State<T>
       onPageBecameActive();
     }
   }
-  
+
   @override
   void onPageInactive() {
     if (_isPageActive) {
@@ -180,7 +177,7 @@ mixin PageLifecycleMixin<T extends StatefulWidget> on State<T>
       onPageBecameInactive();
     }
   }
-  
+
   void onPageBecameActive() {}
   void onPageBecameInactive() {}
 }

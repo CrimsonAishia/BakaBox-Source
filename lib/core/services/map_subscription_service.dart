@@ -227,7 +227,9 @@ class MapSubscriptionService {
 
   /// 更新单个订阅的分类范围
   Future<void> updateSubscriptionScope(
-      String mapName, List<String> categoryNames) async {
+    String mapName,
+    List<String> categoryNames,
+  ) async {
     final index = _subscriptions.indexWhere((s) => s.mapName == mapName);
     if (index == -1) {
       LogService.w('[MapSubscription] 订阅不存在: $mapName');
@@ -247,7 +249,9 @@ class MapSubscriptionService {
 
   /// 更新单个订阅的服务器范围
   Future<void> updateSubscriptionServers(
-      String mapName, List<String> serverAddresses) async {
+    String mapName,
+    List<String> serverAddresses,
+  ) async {
     final index = _subscriptions.indexWhere((s) => s.mapName == mapName);
     if (index == -1) {
       LogService.w('[MapSubscription] 订阅不存在: $mapName');
@@ -380,7 +384,7 @@ class MapSubscriptionService {
   }
 
   /// 合并自定义分类和 API 分类
-  /// 
+  ///
   /// 同名但不同来源的分类视为独立分类，不会合并
   /// - 自定义分类：isCustom=true
   /// - API 分类：isCustom=false（可能继承原有的 isCustom 标记）
@@ -418,12 +422,14 @@ class MapSubscriptionService {
       }
 
       // 添加分类（即使同名也作为独立分类，添加后缀区分显示）
-      categories.add(ServerCategory(
-        modelName: cat.modelName,
-        category: cat.category,
-        serverList: dedupedServers,
-        isCustom: false,
-      ));
+      categories.add(
+        ServerCategory(
+          modelName: cat.modelName,
+          category: cat.category,
+          serverList: dedupedServers,
+          isCustom: false,
+        ),
+      );
     }
 
     return categories;
@@ -436,10 +442,12 @@ class MapSubscriptionService {
     if (tasks.isEmpty) return [];
 
     final results = <_ServerQueryResult>[];
-    
+
     for (var i = 0; i < tasks.length; i += _maxConcurrency) {
       final chunk = tasks.skip(i).take(_maxConcurrency);
-      final chunkResults = await Future.wait(chunk.map((task) => _querySingleServer(task)));
+      final chunkResults = await Future.wait(
+        chunk.map((task) => _querySingleServer(task)),
+      );
       results.addAll(chunkResults.where((r) => r.result != null));
     }
 
@@ -454,16 +462,9 @@ class MapSubscriptionService {
         task.port,
         timeout: _serverQueryTimeout,
       );
-      return _ServerQueryResult(
-        task: task,
-        result: info,
-      );
+      return _ServerQueryResult(task: task, result: info);
     } catch (e) {
-      return _ServerQueryResult(
-        task: task,
-        result: null,
-        error: e.toString(),
-      );
+      return _ServerQueryResult(task: task, result: null, error: e.toString());
     }
   }
 
@@ -528,14 +529,16 @@ class MapSubscriptionService {
             initialServerName = apiHostName ?? '';
           }
 
-          queryTasks.add(_ServerQueryTask(
-            serverAddress: serverAddress,
-            ip: ip,
-            port: port,
-            categoryName: categoryName,
-            serverName: initialServerName,
-            isCustomServer: server.isCustom,
-          ));
+          queryTasks.add(
+            _ServerQueryTask(
+              serverAddress: serverAddress,
+              ip: ip,
+              port: port,
+              categoryName: categoryName,
+              serverName: initialServerName,
+              isCustomServer: server.isCustom,
+            ),
+          );
         }
       }
 
@@ -576,14 +579,17 @@ class MapSubscriptionService {
 
         // 首次扫描：预记录已订阅地图的冷却时间
         if (initialScan) {
-          final matchingSubscription = _subscriptions.cast<MapSubscription?>().firstWhere(
-            (s) => s!.mapName.toLowerCase() == currentMap.toLowerCase(),
-            orElse: () => null,
-          );
+          final matchingSubscription = _subscriptions
+              .cast<MapSubscription?>()
+              .firstWhere(
+                (s) => s!.mapName.toLowerCase() == currentMap.toLowerCase(),
+                orElse: () => null,
+              );
 
           if (matchingSubscription != null) {
             final cooldownKey = '${currentMap}_${task.serverAddress}';
-            _notificationCooldown[cooldownKey] = DateTime.now().millisecondsSinceEpoch;
+            _notificationCooldown[cooldownKey] =
+                DateTime.now().millisecondsSinceEpoch;
             LogService.d(
               '[MapSubscription] 首次扫描发现订阅地图: ${matchingSubscription.mapName} @ ${task.serverAddress}，已预记录冷却时间',
             );
@@ -688,13 +694,16 @@ class MapSubscriptionService {
         final lastNotify = DateTime.fromMillisecondsSinceEpoch(lastNotifyMs);
         final elapsed = DateTime.now().difference(lastNotify).inSeconds;
         if (elapsed < _cooldownSeconds) {
-          LogService.d('[MapSubscription] 冷却中，跳过通知: $cooldownKey (${_cooldownSeconds - elapsed}s 剩余)');
+          LogService.d(
+            '[MapSubscription] 冷却中，跳过通知: $cooldownKey (${_cooldownSeconds - elapsed}s 剩余)',
+          );
           continue;
         }
       }
 
       // 记录冷却
-      _notificationCooldown[cooldownKey] = DateTime.now().millisecondsSinceEpoch;
+      _notificationCooldown[cooldownKey] =
+          DateTime.now().millisecondsSinceEpoch;
 
       LogService.i(
         '[MapSubscription] 命中订阅: ${subscription.displayName} @ $serverName ($categoryName)',
@@ -723,7 +732,8 @@ class MapSubscriptionService {
   }) async {
     // 通知窗口
     if (_isNotificationEnabled) {
-      final id = 'mapsub_${subscription.mapName}_${DateTime.now().millisecondsSinceEpoch}';
+      final id =
+          'mapsub_${subscription.mapName}_${DateTime.now().millisecondsSinceEpoch}';
       final displayName = subscription.displayName;
 
       await _notificationService.show(
@@ -804,7 +814,9 @@ class MapSubscriptionService {
   Future<void> _loadPersistentData() async {
     // 加载冷却时间
     try {
-      final cooldownData = StorageUtils.getString(_storageKeyNotificationCooldown);
+      final cooldownData = StorageUtils.getString(
+        _storageKeyNotificationCooldown,
+      );
       if (cooldownData != null && cooldownData.isNotEmpty) {
         final Map<String, dynamic> decoded = jsonDecode(cooldownData);
         _notificationCooldown.clear();
@@ -818,7 +830,9 @@ class MapSubscriptionService {
             }
           }
         }
-        LogService.d('[MapSubscription] 加载冷却记录: ${_notificationCooldown.length} 条');
+        LogService.d(
+          '[MapSubscription] 加载冷却记录: ${_notificationCooldown.length} 条',
+        );
       }
     } catch (e) {
       LogService.e('[MapSubscription] 加载冷却记录失败', e);
@@ -903,9 +917,5 @@ class _ServerQueryResult {
   final SourceServerInfo? result;
   final String? error;
 
-  _ServerQueryResult({
-    required this.task,
-    required this.result,
-    this.error,
-  });
+  _ServerQueryResult({required this.task, required this.result, this.error});
 }

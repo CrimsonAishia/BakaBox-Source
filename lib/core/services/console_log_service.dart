@@ -1150,7 +1150,7 @@ class ConsoleLogService {
     // 例如：Disconnection during connection phase. Sign-on state: 2 (SIGNONSTATE_CONNECTED). Disconnect reason: NETWORK_DISCONNECT_REQUEST_HOSTSTATE_IDLE
     if (_regexDisconnectionDuringConnection.hasMatch(line)) {
       // 检查具体的断开原因
-        if (line.contains('NETWORK_DISCONNECT_TIMEDOUT')) {
+      if (line.contains('NETWORK_DISCONNECT_TIMEDOUT')) {
         // 超时是真正的连接失败
         LogService.d('[ConsoleLog] 检测到连接阶段断开 (TIMEDOUT)');
         _connectTimedOut = true;
@@ -1347,14 +1347,22 @@ class ConsoleLogService {
 
     // 检查服务器满员
     if (_regexServerFull.hasMatch(line)) {
-      _updateConnectionState(GameState.serverFull, serverAddress: '', rawLine: line);
+      _updateConnectionState(
+        GameState.serverFull,
+        serverAddress: '',
+        rawLine: line,
+      );
       return;
     }
 
     // 检查用户主动断开连接（优先级高于普通断开检测）
     if (_regexUserDisconnect.hasMatch(line)) {
       LogService.d('[ConsoleLog] 检测到用户主动断开连接');
-      _updateConnectionState(GameState.mainMenu, serverAddress: '', rawLine: line);
+      _updateConnectionState(
+        GameState.mainMenu,
+        serverAddress: '',
+        rawLine: line,
+      );
       // 重置连接追踪状态
       _targetServer = '';
       _isLoopbackFallback = false;
@@ -1370,7 +1378,11 @@ class ConsoleLogService {
       final currentState = _currentState.state;
       if (currentState == GameState.inGame) {
         LogService.d('[ConsoleLog] 检测到回到主菜单');
-        _updateConnectionState(GameState.mainMenu, serverAddress: '', rawLine: line);
+        _updateConnectionState(
+          GameState.mainMenu,
+          serverAddress: '',
+          rawLine: line,
+        );
         // 重置连接追踪状态
         _targetServer = '';
         _isLoopbackFallback = false;
@@ -1422,7 +1434,11 @@ class ConsoleLogService {
           !line.contains('LOOPDEACTIVATE')) {
         final currentState = _currentState.state;
         if (currentState == GameState.connecting) {
-          _updateConnectionState(GameState.failed, serverAddress: '', rawLine: line);
+          _updateConnectionState(
+            GameState.failed,
+            serverAddress: '',
+            rawLine: line,
+          );
         }
       }
       return;
@@ -1443,7 +1459,11 @@ class ConsoleLogService {
         // 已在上面处理
         final currentState = _currentState.state;
         if (currentState == GameState.inGame) {
-          _updateConnectionState(GameState.mainMenu, serverAddress: '', rawLine: line);
+          _updateConnectionState(
+            GameState.mainMenu,
+            serverAddress: '',
+            rawLine: line,
+          );
         }
       }
       return;

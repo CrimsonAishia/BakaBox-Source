@@ -233,9 +233,7 @@ class _SubModelCardState extends State<SubModelCard> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 2),
-                    _SubModelAcquisitionTag(
-                      acquisition: widget.acquisition,
-                    ),
+                    _SubModelAcquisitionTag(acquisition: widget.acquisition),
                   ],
                 ),
               ),

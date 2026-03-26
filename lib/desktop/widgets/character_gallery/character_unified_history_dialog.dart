@@ -1188,8 +1188,9 @@ class _FileIdImageState extends State<_FileIdImage> {
 
   Future<void> _loadUrl() async {
     try {
-      final url =
-          await ImageUrlService.instance.getSignedUrlById(widget.fileId);
+      final url = await ImageUrlService.instance.getSignedUrlById(
+        widget.fileId,
+      );
       if (mounted) {
         setState(() {
           _url = url;

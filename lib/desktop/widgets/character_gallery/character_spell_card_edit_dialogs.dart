@@ -159,11 +159,13 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
                           ),
                           const SizedBox(height: 16),
                           PreviewTypeSelector(
-                            initialType: widget.existingEdit?.previewType
-                                ?? _previewTypeToString(widget.card.previewType),
+                            initialType:
+                                widget.existingEdit?.previewType ??
+                                _previewTypeToString(widget.card.previewType),
                             initialFileId: widget.existingEdit?.previewFileId,
-                            initialVideoUrl: widget.existingEdit?.previewVideoUrl
-                                ?? widget.card.previewVideoUrl,
+                            initialVideoUrl:
+                                widget.existingEdit?.previewVideoUrl ??
+                                widget.card.previewVideoUrl,
                             currentImageUrl: widget.card.previewImageUrl,
                             onChanged: (data) => _previewData = data,
                           ),

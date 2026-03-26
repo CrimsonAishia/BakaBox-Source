@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 
 /// 页面布局组件
-/// 
+///
 /// 提供统一的页面布局结构：
 /// - 页面头部：标题 + 副标题 + 操作区域
 /// - 页面内容区域
-/// 
+///
 /// 所有桌面端页面都应使用此组件作为基础布局
 class PageLayout extends StatefulWidget {
   /// 页面标题
   final String title;
-  
+
   /// 页面副标题（可选）
   final String? subtitle;
-  
+
   /// 头部右侧操作区域（可选）
   final Widget? headerActions;
-  
+
   /// 页面内容
   final Widget child;
 
@@ -136,10 +136,7 @@ class _PageLayoutState extends State<PageLayout> {
     final textPainter = TextPainter(
       text: TextSpan(
         text: widget.title,
-        style: const TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.w700,
-        ),
+        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
       ),
       textDirection: TextDirection.ltr,
     )..layout();

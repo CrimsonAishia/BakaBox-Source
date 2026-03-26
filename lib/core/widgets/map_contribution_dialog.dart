@@ -62,14 +62,10 @@ class MapContributionDialog extends StatefulWidget {
           BlocProvider(create: (context) => MapContributionBloc()),
           BlocProvider(create: (context) => MapTagBloc()),
         ],
-        child: MapContributionDialog(
-          mapName: mapName,
-          mapLabel: mapLabel,
-        ),
+        child: MapContributionDialog(mapName: mapName, mapLabel: mapLabel),
       ),
     );
   }
-
 
   @override
   State<MapContributionDialog> createState() => _MapContributionDialogState();
@@ -81,12 +77,12 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   final _nameController = TextEditingController();
   final _nameFocusNode = FocusNode();
   final _scrollController = ScrollController();
-  
+
   // 图片上传状态
   File? _selectedImage;
   bool _isUploadingImage = false;
   double _uploadProgress = 0.0;
-  
+
   // 滚动指示器状态
   bool _canScrollUp = false;
   bool _canScrollDown = false;
@@ -198,19 +194,19 @@ class _MapContributionDialogState extends State<MapContributionDialog>
 
   void _loadContributions(ContributionType type) {
     if (type == ContributionType.name) {
-      context.read<MapContributionBloc>().add(LoadNameContributions(
-        mapName: widget.mapName,
-      ));
+      context.read<MapContributionBloc>().add(
+        LoadNameContributions(mapName: widget.mapName),
+      );
     } else {
-      context.read<MapContributionBloc>().add(LoadBackgroundContributions(
-        mapName: widget.mapName,
-      ));
+      context.read<MapContributionBloc>().add(
+        LoadBackgroundContributions(mapName: widget.mapName),
+      );
     }
   }
 
-  ContributionType get _currentType =>
-      _tabController.index == 0 ? ContributionType.name : ContributionType.background;
-
+  ContributionType get _currentType => _tabController.index == 0
+      ? ContributionType.name
+      : ContributionType.background;
 
   @override
   Widget build(BuildContext context) {
@@ -239,20 +235,28 @@ class _MapContributionDialogState extends State<MapContributionDialog>
 
   /// 构建头部
   Widget _buildHeader(Color textColor, bool isDark) {
-    final secondaryTextColor = isDark ? Colors.white54 : const Color(0xFF6B7280);
+    final secondaryTextColor = isDark
+        ? Colors.white54
+        : const Color(0xFF6B7280);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 20, 16, 12),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.08),
           ),
         ),
       ),
       child: Row(
         children: [
-          Icon(MdiIcons.pencilOutline, color: const Color(0xFF0080FF), size: 24),
+          Icon(
+            MdiIcons.pencilOutline,
+            color: const Color(0xFF0080FF),
+            size: 24,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -320,14 +324,15 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     ToastUtils.showSuccess(context, '已复制: ${widget.mapName}');
   }
 
-
   /// 构建 Tab 栏
   Widget _buildTabBar(bool isDark) {
     return Container(
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.08),
           ),
         ),
       ),
@@ -352,7 +357,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     final hintText = isNameTab
         ? '票数最高的名称将作为该地图的中文名显示，1小时内生效'
         : '票数最高的图片将作为该地图的背景显示，1小时内生效';
-    
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -391,7 +396,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       listener: (context, state) {
         if (state.error != null) {
           ToastUtils.showError(context, state.error!);
-          context.read<MapContributionBloc>().add(const ClearContributionError());
+          context.read<MapContributionBloc>().add(
+            const ClearContributionError(),
+          );
         }
         if (state.submitSuccess) {
           ToastUtils.showSuccess(context, '提交成功');
@@ -407,9 +414,15 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         }
 
         final isNameTab = _currentType == ContributionType.name;
-        final isLoading = isNameTab ? state.isLoadingNames : state.isLoadingBackgrounds;
-        final isEmpty = isNameTab ? state.isNamesEmpty : state.isBackgroundsEmpty;
-        final contributions = isNameTab ? state.nameContributions : state.backgroundContributions;
+        final isLoading = isNameTab
+            ? state.isLoadingNames
+            : state.isLoadingBackgrounds;
+        final isEmpty = isNameTab
+            ? state.isNamesEmpty
+            : state.isBackgroundsEmpty;
+        final contributions = isNameTab
+            ? state.nameContributions
+            : state.backgroundContributions;
 
         if (isLoading) {
           return const Center(
@@ -439,7 +452,10 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                             top: 0,
                             left: 0,
                             right: 0,
-                            child: _buildScrollIndicator(isTop: true, isDark: isDark),
+                            child: _buildScrollIndicator(
+                              isTop: true,
+                              isDark: isDark,
+                            ),
                           ),
                         // 底部滚动指示器
                         if (_canScrollDown)
@@ -447,7 +463,10 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                             bottom: 0,
                             left: 0,
                             right: 0,
-                            child: _buildScrollIndicator(isTop: false, isDark: isDark),
+                            child: _buildScrollIndicator(
+                              isTop: false,
+                              isDark: isDark,
+                            ),
                           ),
                       ],
                     ),
@@ -488,9 +507,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
             // 搜索栏
             _buildTagSearchBar(isDark),
             // 标签列表
-            Expanded(
-              child: _buildTagList(state, isDark),
-            ),
+            Expanded(child: _buildTagList(state, isDark)),
             // 提交区域
             _buildTagSubmitArea(state, isDark),
           ],
@@ -532,7 +549,10 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                   },
                 )
               : null,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 8,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(20),
             borderSide: BorderSide(
@@ -550,7 +570,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
             borderSide: const BorderSide(color: Color(0xFF0080FF)),
           ),
           filled: true,
-          fillColor: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.grey[100],
+          fillColor: isDark
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.grey[100],
         ),
       ),
     );
@@ -572,7 +594,8 @@ class _MapContributionDialogState extends State<MapContributionDialog>
           .toList();
     }
 
-    final hasNoTags = filteredUserTags.isEmpty &&
+    final hasNoTags =
+        filteredUserTags.isEmpty &&
         filteredTagList.isEmpty &&
         !state.isLoadingTagList &&
         !state.isLoadingUserTags;
@@ -600,7 +623,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
               query.isNotEmpty ? '试试其他关键词吧' : '成为第一个贡献者吧！',
               style: TextStyle(
                 fontSize: 14,
-                color: isDark ? Colors.white38 : const Color(0xFF6B7280).withValues(alpha: 0.7),
+                color: isDark
+                    ? Colors.white38
+                    : const Color(0xFF6B7280).withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -696,7 +721,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   /// 处理标签投票
   void _handleTagVote(MapTag tag, String voteType) {
     if (!_checkLogin()) return;
-    context.read<MapTagBloc>().add(ToggleTagVote(tagId: tag.id, voteType: voteType));
+    context.read<MapTagBloc>().add(
+      ToggleTagVote(tagId: tag.id, voteType: voteType),
+    );
   }
 
   /// 显示编辑标签对话框
@@ -711,7 +738,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           title: Text(
             '修改标签',
             style: TextStyle(
@@ -728,16 +757,26 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                   controller: controller,
                   autofocus: true,
                   maxLength: 50,
-                  style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1F2937)),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : const Color(0xFF1F2937),
+                  ),
                   decoration: InputDecoration(
                     labelText: '标签名称',
-                    labelStyle: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF6B7280)),
+                    labelStyle: TextStyle(
+                      color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    ),
                     hintText: '输入标签名称',
-                    hintStyle: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF6B7280)),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    hintStyle: TextStyle(
+                      color: isDark ? Colors.white38 : const Color(0xFF6B7280),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.black12),
+                      borderSide: BorderSide(
+                        color: isDark ? Colors.white24 : Colors.black12,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -769,7 +808,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
               onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(
                 '取消',
-                style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF6B7280)),
+                style: TextStyle(
+                  color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                ),
               ),
             ),
             ElevatedButton(
@@ -780,7 +821,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                   return;
                 }
                 Navigator.of(dialogContext).pop();
-                mapTagBloc.add(UpdateTag(tagId: tag.id, name: newName, color: selectedColor));
+                mapTagBloc.add(
+                  UpdateTag(tagId: tag.id, name: newName, color: selectedColor),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0080FF),
@@ -823,20 +866,26 @@ class _MapContributionDialogState extends State<MapContributionDialog>
             const SizedBox(width: 12),
             Text(
               '确认删除',
-              style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1F2937)),
+              style: TextStyle(
+                color: isDark ? Colors.white : const Color(0xFF1F2937),
+              ),
             ),
           ],
         ),
         content: Text(
           '确定要删除标签 "${tag.name}" 吗？删除后无法恢复。',
-          style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF374151)),
+          style: TextStyle(
+            color: isDark ? Colors.white70 : const Color(0xFF374151),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(
               '取消',
-              style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF6B7280)),
+              style: TextStyle(
+                color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+              ),
             ),
           ),
           ElevatedButton(
@@ -862,31 +911,37 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
-            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.08),
           ),
         ),
       ),
       child: Column(
         children: [
-                // 添加标签按钮
-                SizedBox(
-                  height: 44,
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: state.isSubmitting ? null : _showAddTagDialog,
-                    icon: Icon(MdiIcons.tagPlusOutline, size: 18),
-                    label: const Text(
-                      '添加标签',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0080FF),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      disabledBackgroundColor: const Color(0xFF0080FF).withValues(alpha: 0.5),
-                    ),
-                  ),
+          // 添加标签按钮
+          SizedBox(
+            height: 44,
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: state.isSubmitting ? null : _showAddTagDialog,
+              icon: Icon(MdiIcons.tagPlusOutline, size: 18),
+              label: const Text(
+                '添加标签',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0080FF),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
+                disabledBackgroundColor: const Color(
+                  0xFF0080FF,
+                ).withValues(alpha: 0.5),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -905,7 +960,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           title: Text(
             '添加标签',
             style: TextStyle(
@@ -922,16 +979,26 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                   controller: controller,
                   autofocus: true,
                   maxLength: 50,
-                  style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1F2937)),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : const Color(0xFF1F2937),
+                  ),
                   decoration: InputDecoration(
                     labelText: '标签名称',
-                    labelStyle: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF6B7280)),
+                    labelStyle: TextStyle(
+                      color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    ),
                     hintText: '输入标签名称',
-                    hintStyle: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF6B7280)),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    hintStyle: TextStyle(
+                      color: isDark ? Colors.white38 : const Color(0xFF6B7280),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.black12),
+                      borderSide: BorderSide(
+                        color: isDark ? Colors.white24 : Colors.black12,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -952,7 +1019,8 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                 const SizedBox(height: 8),
                 TagColorPicker(
                   selectedColor: selectedColor,
-                  onColorChanged: (color) => setDialogState(() => selectedColor = color),
+                  onColorChanged: (color) =>
+                      setDialogState(() => selectedColor = color),
                 ),
                 const SizedBox(height: 16),
                 // 审核通过自动投票选项
@@ -963,7 +1031,8 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                       height: 24,
                       child: Checkbox(
                         value: autoVote,
-                        onChanged: (value) => setDialogState(() => autoVote = value ?? false),
+                        onChanged: (value) =>
+                            setDialogState(() => autoVote = value ?? false),
                         activeColor: const Color(0xFF0080FF),
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         visualDensity: VisualDensity.compact,
@@ -977,7 +1046,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                           '审核通过自动为该地图投票',
                           style: TextStyle(
                             fontSize: 13,
-                            color: isDark ? Colors.white70 : const Color(0xFF374151),
+                            color: isDark
+                                ? Colors.white70
+                                : const Color(0xFF374151),
                           ),
                         ),
                       ),
@@ -992,7 +1063,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
               onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(
                 '取消',
-                style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF6B7280)),
+                style: TextStyle(
+                  color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                ),
               ),
             ),
             ElevatedButton(
@@ -1003,7 +1076,13 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                   return;
                 }
                 Navigator.of(dialogContext).pop();
-                mapTagBloc.add(SubmitTag(name: name, color: selectedColor, autoVote: autoVote));
+                mapTagBloc.add(
+                  SubmitTag(
+                    name: name,
+                    color: selectedColor,
+                    autoVote: autoVote,
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0080FF),
@@ -1017,12 +1096,12 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     );
   }
 
-
-
   /// 构建空状态
   /// Requirements: 5.3
   Widget _buildEmptyState(bool isDark) {
-    final secondaryTextColor = isDark ? Colors.white54 : const Color(0xFF6B7280);
+    final secondaryTextColor = isDark
+        ? Colors.white54
+        : const Color(0xFF6B7280);
     final isNameTab = _currentType == ContributionType.name;
 
     return Center(
@@ -1037,10 +1116,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
           const SizedBox(height: 16),
           Text(
             isNameTab ? '暂无中文名称贡献' : '暂无背景图片贡献',
-            style: TextStyle(
-              fontSize: 16,
-              color: secondaryTextColor,
-            ),
+            style: TextStyle(fontSize: 16, color: secondaryTextColor),
           ),
           const SizedBox(height: 8),
           Text(
@@ -1057,7 +1133,10 @@ class _MapContributionDialogState extends State<MapContributionDialog>
 
   /// 构建贡献列表
   /// Requirements: 5.1
-  Widget _buildContributionList(List<MapContribution> contributions, bool isDark) {
+  Widget _buildContributionList(
+    List<MapContribution> contributions,
+    bool isDark,
+  ) {
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1072,10 +1151,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
           builder: (context, value, child) {
             return Transform.scale(
               scale: 0.8 + 0.2 * value,
-              child: Opacity(
-                opacity: value.clamp(0.0, 1.0),
-                child: child,
-              ),
+              child: Opacity(opacity: value.clamp(0.0, 1.0), child: child),
             );
           },
           child: _buildContributionItem(contribution, index, isDark),
@@ -1113,20 +1189,25 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     );
   }
 
-
   /// 构建贡献项
   /// Requirements: 4.2, 5.2, 6.2, 6.3
-  Widget _buildContributionItem(MapContribution contribution, int index, bool isDark) {
+  Widget _buildContributionItem(
+    MapContribution contribution,
+    int index,
+    bool isDark,
+  ) {
     final isNameType = contribution.type == ContributionType.name;
     final isFirst = index == 0;
     final showAuditStatusBar = !contribution.isApproved;
-    final canEdit = contribution.isOwner && (contribution.isRejected || contribution.isPending);
-    
+    final canEdit =
+        contribution.isOwner &&
+        (contribution.isRejected || contribution.isPending);
+
     // 确定边框颜色
     final Color borderColor;
     if (showAuditStatusBar) {
       // 有审核状态：使用状态颜色
-      borderColor = contribution.isPending 
+      borderColor = contribution.isPending
           ? const Color(0xFFF59E0B).withValues(alpha: 0.4)
           : const Color(0xFFEF4444).withValues(alpha: 0.4);
     } else if (isFirst) {
@@ -1134,18 +1215,20 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       borderColor = const Color(0xFF0080FF).withValues(alpha: 0.5);
     } else {
       // 普通状态：灰色边框
-      borderColor = isDark 
-          ? Colors.white.withValues(alpha: 0.1) 
+      borderColor = isDark
+          ? Colors.white.withValues(alpha: 0.1)
           : Colors.black.withValues(alpha: 0.08);
     }
-    
+
     // 根据审核状态确定文字颜色（审核状态下使用白色以提高对比度）
     final Color textColor;
     final Color secondaryTextColor;
     if (showAuditStatusBar) {
       // 审核状态：使用白色/深色以提高对比度
       textColor = isDark ? Colors.white : const Color(0xFF1F2937);
-      secondaryTextColor = isDark ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF374151);
+      secondaryTextColor = isDark
+          ? Colors.white.withValues(alpha: 0.9)
+          : const Color(0xFF374151);
     } else {
       // 正常状态：使用原有颜色
       textColor = isDark ? Colors.white : const Color(0xFF1F2937);
@@ -1172,10 +1255,16 @@ class _MapContributionDialogState extends State<MapContributionDialog>
           decoration: BoxDecoration(
             color: isFirst
                 ? const Color(0xFF0080FF).withValues(alpha: 0.1)
-                : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02)),
+                : (isDark
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.black.withValues(alpha: 0.02)),
             borderRadius: BorderRadius.only(
-              topLeft: showAuditStatusBar ? Radius.zero : const Radius.circular(10),
-              topRight: showAuditStatusBar ? Radius.zero : const Radius.circular(10),
+              topLeft: showAuditStatusBar
+                  ? Radius.zero
+                  : const Radius.circular(10),
+              topRight: showAuditStatusBar
+                  ? Radius.zero
+                  : const Radius.circular(10),
               bottomLeft: const Radius.circular(10),
               bottomRight: const Radius.circular(10),
             ),
@@ -1186,10 +1275,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                     right: BorderSide(color: borderColor, width: 1),
                     bottom: BorderSide(color: borderColor, width: 1),
                   )
-                : Border.all(
-                    color: borderColor,
-                    width: isFirst ? 1.5 : 1,
-                  ),
+                : Border.all(color: borderColor, width: isFirst ? 1.5 : 1),
             boxShadow: isFirst
                 ? [
                     BoxShadow(
@@ -1216,7 +1302,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                           contribution.content,
                           style: TextStyle(
                             fontSize: 16,
-                            fontWeight: isFirst ? FontWeight.w600 : FontWeight.w500,
+                            fontWeight: isFirst
+                                ? FontWeight.w600
+                                : FontWeight.w500,
                             color: textColor,
                           ),
                           maxLines: 2,
@@ -1226,7 +1314,10 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                     : Align(
                         alignment: Alignment.centerLeft,
                         child: _buildImagePreview(
-                            contribution.backgroundImageRef ?? contribution.content, isDark),
+                          contribution.backgroundImageRef ??
+                              contribution.content,
+                          isDark,
+                        ),
                       ),
               ),
               const SizedBox(width: 12),
@@ -1243,14 +1334,24 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   }
 
   /// 构建审核状态条（顶部）
-  Widget _buildAuditStatusBar(MapContribution contribution, bool isDark, bool canEdit) {
+  Widget _buildAuditStatusBar(
+    MapContribution contribution,
+    bool isDark,
+    bool canEdit,
+  ) {
     final isPending = contribution.isPending;
-    final statusColor = isPending ? const Color(0xFFF59E0B) : const Color(0xFFEF4444);
-    final statusIcon = isPending ? MdiIcons.clockOutline : MdiIcons.alertCircleOutline;
+    final statusColor = isPending
+        ? const Color(0xFFF59E0B)
+        : const Color(0xFFEF4444);
+    final statusIcon = isPending
+        ? MdiIcons.clockOutline
+        : MdiIcons.alertCircleOutline;
     final statusText = isPending ? '审核中' : '审核失败';
     final statusMessage = isPending
         ? '等待管理员审核'
-        : (contribution.auditRemark.isNotEmpty ? contribution.auditRemark : '未通过审核');
+        : (contribution.auditRemark.isNotEmpty
+              ? contribution.auditRemark
+              : '未通过审核');
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 0),
@@ -1261,18 +1362,11 @@ class _MapContributionDialogState extends State<MapContributionDialog>
           topLeft: Radius.circular(10),
           topRight: Radius.circular(10),
         ),
-        border: Border.all(
-          color: statusColor.withValues(alpha: 0.4),
-          width: 1,
-        ),
+        border: Border.all(color: statusColor.withValues(alpha: 0.4), width: 1),
       ),
       child: Row(
         children: [
-          Icon(
-            statusIcon,
-            size: 16,
-            color: statusColor,
-          ),
+          Icon(statusIcon, size: 16, color: statusColor),
           const SizedBox(width: 8),
           Text(
             statusText,
@@ -1310,7 +1404,10 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                   onTap: () => _showEditDialog(contribution),
                   borderRadius: BorderRadius.circular(6),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1345,7 +1442,10 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                   onTap: () => _showDeleteConfirmDialog(contribution),
                   borderRadius: BorderRadius.circular(6),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1376,18 +1476,17 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   }
 
   /// 构建贡献者信息
-  Widget _buildContributorInfo(MapContribution contribution, Color secondaryTextColor) {
+  Widget _buildContributorInfo(
+    MapContribution contribution,
+    Color secondaryTextColor,
+  ) {
     // 系统数据显示"系统"标识
     if (contribution.isSystem) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(
-            MdiIcons.steam,
-            size: 16,
-            color: secondaryTextColor,
-          ),
+          Icon(MdiIcons.steam, size: 16, color: secondaryTextColor),
           const SizedBox(width: 4),
           Text(
             'Steam',
@@ -1396,13 +1495,13 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         ],
       );
     }
-    
+
     // 用户贡献显示头像和用户名
     final contributor = contribution.contributor;
     if (contributor == null) {
       return const SizedBox.shrink();
     }
-    
+
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 120),
       child: Row(
@@ -1431,7 +1530,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   /// 显示编辑对话框
   void _showEditDialog(MapContribution contribution) {
     final isNameType = contribution.type == ContributionType.name;
-    
+
     if (isNameType) {
       _showEditNameDialog(contribution);
     } else {
@@ -1483,13 +1582,13 @@ class _MapContributionDialogState extends State<MapContributionDialog>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isDark 
-                      ? Colors.white.withValues(alpha: 0.05) 
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.05)
                       : Colors.black.withValues(alpha: 0.03),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isDark 
-                        ? Colors.white.withValues(alpha: 0.1) 
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.1)
                         : Colors.black.withValues(alpha: 0.08),
                   ),
                 ),
@@ -1506,7 +1605,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                         contribution.content,
                         style: TextStyle(
                           fontSize: 14,
-                          color: isDark ? Colors.white : const Color(0xFF1F2937),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1F2937),
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -1520,19 +1621,20 @@ class _MapContributionDialogState extends State<MapContributionDialog>
               Container(
                 height: 120,
                 decoration: BoxDecoration(
-                  color: isDark 
-                      ? Colors.white.withValues(alpha: 0.05) 
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.05)
                       : Colors.black.withValues(alpha: 0.03),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isDark 
-                        ? Colors.white.withValues(alpha: 0.1) 
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.1)
                         : Colors.black.withValues(alpha: 0.08),
                   ),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: _ContributionImage(
-                  imageRef: contribution.backgroundImageRef ?? contribution.content,
+                  imageRef:
+                      contribution.backgroundImageRef ?? contribution.content,
                   fit: BoxFit.cover,
                 ),
               ),
@@ -1577,7 +1679,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   /// 处理删除操作
   void _handleDelete(MapContribution contribution) {
     final isNameType = contribution.type == ContributionType.name;
-    
+
     if (isNameType) {
       context.read<MapContributionBloc>().add(
         DeleteNameContribution(id: contribution.id),
@@ -1593,7 +1695,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   void _showEditNameDialog(MapContribution contribution) {
     final controller = TextEditingController(text: contribution.content);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     showDialog(
       context: context,
       builder: (dialogContext) => Dialog(
@@ -1640,7 +1742,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                           '拒绝原因: ${contribution.auditRemark}',
                           style: TextStyle(
                             fontSize: 13,
-                            color: isDark ? Colors.white70 : const Color(0xFF374151),
+                            color: isDark
+                                ? Colors.white70
+                                : const Color(0xFF374151),
                           ),
                         ),
                       ),
@@ -1687,7 +1791,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                     child: Text(
                       '取消',
                       style: TextStyle(
-                        color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                        color: isDark
+                            ? Colors.white54
+                            : const Color(0xFF6B7280),
                       ),
                     ),
                   ),
@@ -1704,15 +1810,20 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                         return;
                       }
                       Navigator.of(dialogContext).pop();
-                      context.read<MapContributionBloc>().add(UpdateNameContribution(
-                        id: contribution.id,
-                        name: newName,
-                      ));
+                      context.read<MapContributionBloc>().add(
+                        UpdateNameContribution(
+                          id: contribution.id,
+                          name: newName,
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0080FF),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
                     ),
                     child: const Text('提交'),
                   ),
@@ -1730,7 +1841,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     File? selectedImage;
     bool isHovered = false;
-    
+
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -1769,7 +1880,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                           '拒绝原因: ${contribution.auditRemark}',
                           style: TextStyle(
                             fontSize: 13,
-                            color: isDark ? Colors.white70 : const Color(0xFF374151),
+                            color: isDark
+                                ? Colors.white70
+                                : const Color(0xFF374151),
                           ),
                         ),
                       ),
@@ -1792,7 +1905,10 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                     if (!context.mounted) return;
                     if (result != null && result.files.single.path != null) {
                       final file = File(result.files.single.path!);
-                      final validation = ContributionValidationUtils.validateBackgroundImage(file);
+                      final validation =
+                          ContributionValidationUtils.validateBackgroundImage(
+                            file,
+                          );
                       if (!validation.isValid) {
                         if (!context.mounted) return;
                         ToastUtils.showError(context, validation.errorMessage!);
@@ -1807,8 +1923,12 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                     height: 160,
                     decoration: BoxDecoration(
                       color: isHovered
-                          ? (isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.08))
-                          : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05)),
+                          ? (isDark
+                                ? Colors.white.withValues(alpha: 0.15)
+                                : Colors.black.withValues(alpha: 0.08))
+                          : (isDark
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : Colors.black.withValues(alpha: 0.05)),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: isHovered
@@ -1838,7 +1958,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                                   size: 40,
                                   color: isHovered
                                       ? const Color(0xFF0080FF)
-                                      : (isDark ? Colors.white38 : Colors.black26),
+                                      : (isDark
+                                            ? Colors.white38
+                                            : Colors.black26),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -1847,7 +1969,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                                 style: TextStyle(
                                   color: isHovered
                                       ? const Color(0xFF0080FF)
-                                      : (isDark ? Colors.white54 : const Color(0xFF6B7280)),
+                                      : (isDark
+                                            ? Colors.white54
+                                            : const Color(0xFF6B7280)),
                                 ),
                               ),
                             ],
@@ -1872,12 +1996,17 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                   ? null
                   : () async {
                       Navigator.of(dialogContext).pop();
-                      await _uploadAndUpdateBackground(contribution.id, selectedImage!);
+                      await _uploadAndUpdateBackground(
+                        contribution.id,
+                        selectedImage!,
+                      );
                     },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0080FF),
                 foregroundColor: Colors.white,
-                disabledBackgroundColor: const Color(0xFF0080FF).withValues(alpha: 0.5),
+                disabledBackgroundColor: const Color(
+                  0xFF0080FF,
+                ).withValues(alpha: 0.5),
               ),
               child: const Text('提交'),
             ),
@@ -1888,7 +2017,10 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   }
 
   /// 上传并更新背景贡献
-  Future<void> _uploadAndUpdateBackground(int contributionId, File imageFile) async {
+  Future<void> _uploadAndUpdateBackground(
+    int contributionId,
+    File imageFile,
+  ) async {
     // 显示上传进度
     showDialog(
       context: context,
@@ -1914,10 +2046,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       if (!mounted) return;
       Navigator.of(context).pop(); // 关闭进度对话框
 
-      context.read<MapContributionBloc>().add(UpdateBackgroundContribution(
-        id: contributionId,
-        fileId: result.fileId,
-      ));
+      context.read<MapContributionBloc>().add(
+        UpdateBackgroundContribution(id: contributionId, fileId: result.fileId),
+      );
     } catch (e) {
       LogService.e('上传背景图片失败', e);
       if (!mounted) return;
@@ -1926,12 +2057,11 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     }
   }
 
-
   /// 构建排名标识
   Widget _buildRankBadge(int index, bool isDark) {
     Color badgeColor;
     IconData? icon;
-    
+
     if (index == 0) {
       badgeColor = const Color(0xFFFFD700); // 金色皇冠
       icon = MdiIcons.crown;
@@ -1953,15 +2083,14 @@ class _MapContributionDialogState extends State<MapContributionDialog>
             ? LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFFFFD700),
-                  const Color(0xFFFFA500),
-                ],
+                colors: [const Color(0xFFFFD700), const Color(0xFFFFA500)],
               )
             : null,
         color: index == 0 ? null : badgeColor.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(6),
-        border: index == 0 ? null : Border.all(color: badgeColor.withValues(alpha: 0.4)),
+        border: index == 0
+            ? null
+            : Border.all(color: badgeColor.withValues(alpha: 0.4)),
         boxShadow: index == 0
             ? [
                 BoxShadow(
@@ -1989,9 +2118,12 @@ class _MapContributionDialogState extends State<MapContributionDialog>
 
   /// 构建贡献者头像
   /// Requirements: 4.2, 5.2
-  Widget _buildContributorAvatar(ContributorInfo contributor, {double size = 36}) {
+  Widget _buildContributorAvatar(
+    ContributorInfo contributor, {
+    double size = 36,
+  }) {
     final avatarUrl = contributor.avatar;
-    
+
     return Container(
       width: size,
       height: size,
@@ -2010,7 +2142,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
           : _buildDefaultAvatar(contributor.username, size),
     );
   }
-
 
   /// 构建默认头像
   Widget _buildDefaultAvatar(String username, [double size = 36]) {
@@ -2081,7 +2212,10 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         child: Stack(
           children: [
             Center(
-              child: _ContributionImage(imageRef: imageUrl, fit: BoxFit.contain),
+              child: _ContributionImage(
+                imageRef: imageUrl,
+                fit: BoxFit.contain,
+              ),
             ),
             Positioned(
               top: 16,
@@ -2097,7 +2231,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     );
   }
 
-
   /// 构建投票按钮组（赞成/反对）
   /// Requirements: 3.1, 4.2, 5.2
   /// 系统数据（isSystem=true）不可投票
@@ -2110,7 +2243,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     final isSystem = contribution.isSystem;
     final isApproved = contribution.isApproved;
     final secondaryColor = isDark ? Colors.white70 : const Color(0xFF6B7280);
-    final bgColor = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05);
+    final bgColor = isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.black.withValues(alpha: 0.05);
 
     // 系统数据或未审核通过的贡献：显示禁用状态的投票按钮
     final isDisabled = isSystem || !isApproved;
@@ -2120,10 +2255,14 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       children: [
         // 赞成按钮
         _buildSingleVoteButton(
-          icon: voteType == VoteType.up ? MdiIcons.thumbUp : MdiIcons.thumbUpOutline,
+          icon: voteType == VoteType.up
+              ? MdiIcons.thumbUp
+              : MdiIcons.thumbUpOutline,
           isActive: voteType == VoteType.up,
           count: upCount,
-          onTap: isDisabled ? null : () => _handleVote(contribution, VoteType.up),
+          onTap: isDisabled
+              ? null
+              : () => _handleVote(contribution, VoteType.up),
           isDark: isDark,
           bgColor: bgColor,
           secondaryColor: secondaryColor,
@@ -2132,10 +2271,14 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         const SizedBox(width: 8),
         // 反对按钮（自己的贡献或禁用状态不能踩）
         _buildSingleVoteButton(
-          icon: voteType == VoteType.down ? MdiIcons.thumbDown : MdiIcons.thumbDownOutline,
+          icon: voteType == VoteType.down
+              ? MdiIcons.thumbDown
+              : MdiIcons.thumbDownOutline,
           isActive: voteType == VoteType.down,
           count: downCount,
-          onTap: (isOwner || isDisabled) ? null : () => _handleVote(contribution, VoteType.down),
+          onTap: (isOwner || isDisabled)
+              ? null
+              : () => _handleVote(contribution, VoteType.down),
           isDark: isDark,
           bgColor: bgColor,
           secondaryColor: secondaryColor,
@@ -2158,8 +2301,10 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     bool isDownVote = false,
     bool disabled = false,
   }) {
-    final activeColor = isDownVote ? const Color(0xFFEF4444) : const Color(0xFF0080FF);
-    
+    final activeColor = isDownVote
+        ? const Color(0xFFEF4444)
+        : const Color(0xFF0080FF);
+
     // 确定图标和文字颜色
     final Color contentColor;
     if (isActive) {
@@ -2172,7 +2317,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       // 未激活且可用：使用正常灰色
       contentColor = secondaryColor;
     }
-    
+
     return Material(
       color: isActive ? activeColor : bgColor,
       borderRadius: BorderRadius.circular(6),
@@ -2184,11 +2329,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size: 16,
-                color: contentColor,
-              ),
+              Icon(icon, size: 16, color: contentColor),
               const SizedBox(width: 4),
               Text(
                 '$count',
@@ -2205,7 +2346,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     );
   }
 
-
   /// 构建提交区域
   Widget _buildSubmitArea(bool isDark) {
     // 标签 Tab 不使用这个提交区域
@@ -2213,9 +2353,13 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       return const SizedBox.shrink();
     }
 
-    final inputBgColor = isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9);
+    final inputBgColor = isDark
+        ? const Color(0xFF334155)
+        : const Color(0xFFF1F5F9);
     final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
-    final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08);
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.black.withValues(alpha: 0.08);
     final isNameTab = _currentType == ContributionType.name;
 
     return BlocBuilder<MapContributionBloc, MapContributionState>(
@@ -2229,7 +2373,12 @@ class _MapContributionDialogState extends State<MapContributionDialog>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (isNameTab)
-                _buildNameInput(inputBgColor, textColor, borderColor, state.isSubmitting)
+                _buildNameInput(
+                  inputBgColor,
+                  textColor,
+                  borderColor,
+                  state.isSubmitting,
+                )
               else
                 _buildImageInput(inputBgColor, isDark, state.isSubmitting),
               const SizedBox(height: 12),
@@ -2242,9 +2391,16 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   }
 
   /// 构建名称输入框（带实时验证）
-  Widget _buildNameInput(Color inputBgColor, Color textColor, Color borderColor, bool isSubmitting) {
+  Widget _buildNameInput(
+    Color inputBgColor,
+    Color textColor,
+    Color borderColor,
+    bool isSubmitting,
+  ) {
     // 实时验证
-    final validationError = ContributionValidationUtils.validateNameRealtime(_nameController.text);
+    final validationError = ContributionValidationUtils.validateNameRealtime(
+      _nameController.text,
+    );
     final hasError = validationError != null;
     final errorColor = const Color(0xFFEF4444);
 
@@ -2261,7 +2417,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
             hintText: '输入地图中文名称',
             hintStyle: TextStyle(color: textColor.withValues(alpha: 0.5)),
             filled: true,
-            fillColor: hasError ? errorColor.withValues(alpha: 0.05) : inputBgColor,
+            fillColor: hasError
+                ? errorColor.withValues(alpha: 0.05)
+                : inputBgColor,
             counterText: '',
             prefixIcon: Icon(
               MdiIcons.textBoxOutline,
@@ -2269,7 +2427,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: hasError ? errorColor : borderColor),
+              borderSide: BorderSide(
+                color: hasError ? errorColor : borderColor,
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
@@ -2285,7 +2445,10 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                 width: hasError ? 1.5 : 1.0,
               ),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
           ),
           onSubmitted: (_) => _handleSubmit(),
         ),
@@ -2308,7 +2471,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     );
   }
 
-
   /// 构建图片输入区域
   Widget _buildImageInput(Color inputBgColor, bool isDark, bool isSubmitting) {
     final textColor = isDark ? Colors.white70 : const Color(0xFF6B7280);
@@ -2319,7 +2481,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         color: inputBgColor,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.black.withValues(alpha: 0.08),
         ),
       ),
       child: _selectedImage != null
@@ -2331,11 +2495,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      MdiIcons.imagePlusOutline,
-                      size: 24,
-                      color: textColor,
-                    ),
+                    Icon(MdiIcons.imagePlusOutline, size: 24, color: textColor),
                     const SizedBox(width: 12),
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -2348,7 +2508,10 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                         const SizedBox(height: 2),
                         Text(
                           'JPG、PNG、WebP、GIF，最大 5MB',
-                          style: TextStyle(color: textColor.withValues(alpha: 0.7), fontSize: 11),
+                          style: TextStyle(
+                            color: textColor.withValues(alpha: 0.7),
+                            fontSize: 11,
+                          ),
                         ),
                       ],
                     ),
@@ -2366,11 +2529,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         Center(
           child: ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: Image.file(
-              _selectedImage!,
-              height: 72,
-              fit: BoxFit.cover,
-            ),
+            child: Image.file(_selectedImage!, height: 72, fit: BoxFit.cover),
           ),
         ),
         if (_isUploadingImage)
@@ -2390,7 +2549,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                       child: CircularProgressIndicator(
                         value: _uploadProgress > 0 ? _uploadProgress : null,
                         strokeWidth: 3,
-                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Colors.white,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -2424,7 +2585,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     );
   }
 
-
   /// 构建提交按钮
   Widget _buildSubmitButton(bool isSubmitting) {
     final isNameTab = _currentType == ContributionType.name;
@@ -2435,12 +2595,18 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     return SizedBox(
       height: 44,
       child: ElevatedButton(
-        onPressed: (isSubmitting || _isUploadingImage || !canSubmit) ? null : _handleSubmit,
+        onPressed: (isSubmitting || _isUploadingImage || !canSubmit)
+            ? null
+            : _handleSubmit,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF0080FF),
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          disabledBackgroundColor: const Color(0xFF0080FF).withValues(alpha: 0.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          disabledBackgroundColor: const Color(
+            0xFF0080FF,
+          ).withValues(alpha: 0.5),
         ),
         child: isSubmitting || _isUploadingImage
             ? const SizedBox(
@@ -2477,7 +2643,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     final authState = context.read<AuthBloc>().state;
     final userInfo = authState.userInfo;
     if (userInfo == null) return false;
-    
+
     final credits = int.tryParse(userInfo.credits ?? '0') ?? 0;
     if (credits < CreditConstants.minCredits) {
       _showCreditsPrompt(credits);
@@ -2492,10 +2658,12 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       context: context,
       builder: (context) => AlertDialog(
         title: Text(CreditConstants.insufficientCreditsTitle),
-        content: Text(CreditConstants.getMapContributionCreditsMessage(
-          CreditConstants.minCredits,
-          currentCredits,
-        )),
+        content: Text(
+          CreditConstants.getMapContributionCreditsMessage(
+            CreditConstants.minCredits,
+            currentCredits,
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -2534,13 +2702,14 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     );
   }
 
-
   /// 处理投票
   /// Requirements: 3.1, 3.2, 3.3, 3.4
   void _handleVote(MapContribution contribution, VoteType voteType) {
     if (!_checkLogin()) return;
-    
-    context.read<MapContributionBloc>().add(ToggleVote(contribution.id, voteType));
+
+    context.read<MapContributionBloc>().add(
+      ToggleVote(contribution.id, voteType),
+    );
   }
 
   /// 选择图片
@@ -2556,9 +2725,11 @@ class _MapContributionDialogState extends State<MapContributionDialog>
 
       if (result != null && result.files.single.path != null) {
         final file = File(result.files.single.path!);
-        
+
         // 验证图片
-        final validation = ContributionValidationUtils.validateBackgroundImage(file);
+        final validation = ContributionValidationUtils.validateBackgroundImage(
+          file,
+        );
         if (!validation.isValid) {
           if (mounted) {
             ToastUtils.showError(context, validation.errorMessage!);
@@ -2591,12 +2762,11 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     }
   }
 
-
   /// 提交名称贡献
   /// Requirements: 1.2, 1.3, 1.4
   Future<void> _submitName() async {
     final name = _nameController.text.trim();
-    
+
     // 验证名称
     final validation = ContributionValidationUtils.validateName(name);
     if (!validation.isValid) {
@@ -2604,10 +2774,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       return;
     }
 
-    context.read<MapContributionBloc>().add(SubmitNameContribution(
-      mapName: widget.mapName,
-      name: name,
-    ));
+    context.read<MapContributionBloc>().add(
+      SubmitNameContribution(mapName: widget.mapName, name: name),
+    );
 
     // 清空输入
     _nameController.clear();
@@ -2637,10 +2806,12 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       if (!mounted) return;
 
       // 提交贡献（使用 fileId）
-      context.read<MapContributionBloc>().add(SubmitBackgroundContribution(
-        mapName: widget.mapName,
-        fileId: result.fileId,
-      ));
+      context.read<MapContributionBloc>().add(
+        SubmitBackgroundContribution(
+          mapName: widget.mapName,
+          fileId: result.fileId,
+        ),
+      );
 
       // 清空状态
       setState(() {
@@ -2661,14 +2832,11 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   }
 }
 
-
 /// Hover 缩放效果组件
 class _HoverScaleWidget extends StatefulWidget {
   final Widget child;
 
-  const _HoverScaleWidget({
-    required this.child,
-  });
+  const _HoverScaleWidget({required this.child});
 
   @override
   State<_HoverScaleWidget> createState() => _HoverScaleWidgetState();
@@ -2719,17 +2887,14 @@ class _HoverOverlayState extends State<_HoverOverlay> {
 }
 
 /// 贡献图片组件
-/// 
+///
 /// 支持 fileId 引用格式（file:xxx）和普通 URL
 /// 自动获取签名 URL 并缓存
 class _ContributionImage extends StatefulWidget {
   final String imageRef;
   final BoxFit fit;
 
-  const _ContributionImage({
-    required this.imageRef,
-    this.fit = BoxFit.cover,
-  });
+  const _ContributionImage({required this.imageRef, this.fit = BoxFit.cover});
 
   @override
   State<_ContributionImage> createState() => _ContributionImageState();
@@ -2763,7 +2928,7 @@ class _ContributionImageState extends State<_ContributionImage> {
 
   Future<void> _loadSignedUrl() async {
     if (_disposed) return;
-    
+
     if (mounted) {
       setState(() {
         _isLoading = true;
@@ -2849,7 +3014,8 @@ class _TagGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dialogState = context.findAncestorStateOfType<_MapContributionDialogState>();
+    final dialogState = context
+        .findAncestorStateOfType<_MapContributionDialogState>();
     if (dialogState == null) {
       return const SizedBox.shrink();
     }
@@ -2873,10 +3039,7 @@ class _TagGrid extends StatelessWidget {
           builder: (context, value, child) {
             return Transform.scale(
               scale: 0.5 + 0.5 * value,
-              child: Opacity(
-                opacity: value.clamp(0.0, 1.0),
-                child: child,
-              ),
+              child: Opacity(opacity: value.clamp(0.0, 1.0), child: child),
             );
           },
           child: _AnimatedTagChip(
@@ -3006,12 +3169,18 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip> {
       badgeTextColor = textColor;
       borderColor = statusBorderColor != Colors.transparent
           ? statusBorderColor
-          : (luminance > 0.5 ? tagColor.withValues(alpha: 0.6) : tagColor.withValues(alpha: 0.8));
+          : (luminance > 0.5
+                ? tagColor.withValues(alpha: 0.6)
+                : tagColor.withValues(alpha: 0.8));
     } else {
       // 无自定义颜色：背景不变，边框表示状态（isPending/isRejected/hasVoted 共用样式）
-      backgroundColor = isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100]!;
+      backgroundColor = isDark
+          ? Colors.white.withValues(alpha: 0.05)
+          : Colors.grey[100]!;
       textColor = isDark ? Colors.white : Colors.black87;
-      badgeBgColor = isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey[200]!;
+      badgeBgColor = isDark
+          ? Colors.white.withValues(alpha: 0.1)
+          : Colors.grey[200]!;
       badgeTextColor = isDark ? Colors.white70 : Colors.grey[600]!;
       borderColor = statusBorderColor;
     }
@@ -3020,82 +3189,79 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip> {
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeOut,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: borderColor,
-            width: 4,
-          ),
-          boxShadow: isHovered
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF0080FF).withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor, width: 4),
+        boxShadow: isHovered
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 65),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              tag.name,
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
+                height: 1.2,
+              ),
+            ),
+            // 审核中的标签不显示投票数（已拒绝的也没有投票）
+            if (!tag.isPending && !tag.isRejected) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: badgeBgColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$voteCount',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: badgeTextColor,
+                    height: 1.2,
                   ),
-                ]
-              : null,
-        ),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 65),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                tag.name,
-                style: TextStyle(
-                  color: textColor,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 13,
-                  height: 1.2,
                 ),
               ),
-              // 审核中的标签不显示投票数（已拒绝的也没有投票）
-              if (!tag.isPending && !tag.isRejected) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: badgeBgColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '$voteCount',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: badgeTextColor,
-                      height: 1.2,
-                    ),
-                  ),
-                ),
-              ],
-              // 审核状态标签
-              if (tag.isUserTag && !tag.isApproved) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: badgeBgColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    tag.isPending ? '审核中' : '已拒绝',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: badgeTextColor,
-                      height: 1.2,
-                    ),
-                  ),
-                ),
-              ],
             ],
-          ),
+            // 审核状态标签
+            if (tag.isUserTag && !tag.isApproved) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: badgeBgColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  tag.isPending ? '审核中' : '已拒绝',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: badgeTextColor,
+                    height: 1.2,
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
+      ),
     );
   }
 
@@ -3118,7 +3284,9 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: (tagColor ?? const Color(0xFF0080FF)).withValues(alpha: 0.4),
+                  color: (tagColor ?? const Color(0xFF0080FF)).withValues(
+                    alpha: 0.4,
+                  ),
                   blurRadius: 12,
                   spreadRadius: 1,
                 ),
@@ -3197,7 +3365,9 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip> {
     required bool isUpvote,
     required VoidCallback? onTap,
   }) {
-    final activeColor = isUpvote ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    final activeColor = isUpvote
+        ? const Color(0xFF10B981)
+        : const Color(0xFFEF4444);
     final bgColor = Colors.white.withValues(alpha: 0.15);
     final iconColor = Colors.white;
 

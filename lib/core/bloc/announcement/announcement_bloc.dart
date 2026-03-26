@@ -23,9 +23,9 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
   AnnouncementBloc({
     AnnouncementApi? announcementApi,
     AnnouncementReadService? readService,
-  })  : _announcementApi = announcementApi ?? AnnouncementApi(),
-        _readService = readService ?? AnnouncementReadService(),
-        super(const AnnouncementState()) {
+  }) : _announcementApi = announcementApi ?? AnnouncementApi(),
+       _readService = readService ?? AnnouncementReadService(),
+       super(const AnnouncementState()) {
     on<AnnouncementFetch>(_onFetch);
     on<AnnouncementRefresh>(_onRefresh);
     on<AnnouncementMarkAsRead>(_onMarkAsRead);
@@ -34,21 +34,23 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
     on<AnnouncementStopAutoRefresh>(_onStopAutoRefresh);
     on<AnnouncementFetchDetail>(_onFetchDetail);
   }
-  
+
   /// 启动自动刷新
   void _startAutoRefresh() {
     _stopAutoRefresh();
-    _scheduler.register(ScheduledTask(
-      id: _taskId,
-      name: '公告自动刷新',
-      interval: Intervals.thirtyMinutes,
-      callback: () async {
-        if (!state.isLoading) {
-          LogService.d('公告自动刷新触发');
-          add(AnnouncementRefresh(silent: true));
-        }
-      },
-    ));
+    _scheduler.register(
+      ScheduledTask(
+        id: _taskId,
+        name: '公告自动刷新',
+        interval: Intervals.thirtyMinutes,
+        callback: () async {
+          if (!state.isLoading) {
+            LogService.d('公告自动刷新触发');
+            add(AnnouncementRefresh(silent: true));
+          }
+        },
+      ),
+    );
     LogService.d('公告自动刷新已启动，间隔: 30 分钟');
   }
 
@@ -56,7 +58,7 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
   void _stopAutoRefresh() {
     _scheduler.cancel(_taskId);
   }
-  
+
   /// 处理启动自动刷新事件
   void _onStartAutoRefresh(
     AnnouncementStartAutoRefresh event,
@@ -64,7 +66,7 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
   ) {
     _startAutoRefresh();
   }
-  
+
   /// 处理停止自动刷新事件
   void _onStopAutoRefresh(
     AnnouncementStopAutoRefresh event,
@@ -73,7 +75,7 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
     _stopAutoRefresh();
     LogService.i('公告自动刷新已停止');
   }
-  
+
   @override
   Future<void> close() {
     _stopAutoRefresh();
@@ -110,19 +112,18 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
       // 获取已读状态
       final readIds = await _readService.getReadIds();
 
-      emit(state.copyWith(
-        announcements: announcements,
-        readIds: readIds,
-        isLoading: false,
-      ));
+      emit(
+        state.copyWith(
+          announcements: announcements,
+          readIds: readIds,
+          isLoading: false,
+        ),
+      );
 
       LogService.d('成功获取 ${announcements.length} 条公告');
     } catch (e) {
       LogService.e('获取公告列表失败: $e', e);
-      emit(state.copyWith(
-        isLoading: false,
-        error: '获取公告失败，请稍后重试',
-      ));
+      emit(state.copyWith(isLoading: false, error: '获取公告失败，请稍后重试'));
     }
   }
 
@@ -159,21 +160,20 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
       // 重新加载已读状态，确保与本地存储同步
       final readIds = await _readService.getReadIds();
 
-      emit(state.copyWith(
-        announcements: announcements,
-        readIds: readIds,
-        isLoading: false,
-      ));
+      emit(
+        state.copyWith(
+          announcements: announcements,
+          readIds: readIds,
+          isLoading: false,
+        ),
+      );
 
       LogService.d('成功刷新公告列表，共 ${announcements.length} 条');
     } catch (e) {
       LogService.e('刷新公告列表失败: $e', e);
       // 静默刷新时不显示错误
       if (!event.silent) {
-        emit(state.copyWith(
-          isLoading: false,
-          error: '刷新公告失败，请稍后重试',
-        ));
+        emit(state.copyWith(isLoading: false, error: '刷新公告失败，请稍后重试'));
       }
     }
   }
@@ -222,26 +222,19 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
     try {
       LogService.d('开始获取公告详情, id: ${event.announcementId}');
 
-      final detail = await _announcementApi.getAnnouncementDetail(event.announcementId);
+      final detail = await _announcementApi.getAnnouncementDetail(
+        event.announcementId,
+      );
 
       if (detail != null) {
-        emit(state.copyWith(
-          currentDetail: detail,
-          isLoadingDetail: false,
-        ));
+        emit(state.copyWith(currentDetail: detail, isLoadingDetail: false));
         LogService.d('成功获取公告详情: ${detail.title}');
       } else {
-        emit(state.copyWith(
-          isLoadingDetail: false,
-          error: '公告不存在或已被删除',
-        ));
+        emit(state.copyWith(isLoadingDetail: false, error: '公告不存在或已被删除'));
       }
     } catch (e) {
       LogService.e('获取公告详情失败: $e', e);
-      emit(state.copyWith(
-        isLoadingDetail: false,
-        error: '获取公告详情失败，请稍后重试',
-      ));
+      emit(state.copyWith(isLoadingDetail: false, error: '获取公告详情失败，请稍后重试'));
     }
   }
 }

@@ -50,9 +50,7 @@ class MapSubscriptionRemove extends MapSubscriptionEvent {
 class MapSubscriptionUpdateScope extends MapSubscriptionEvent {
   final List<String> categoryNames;
 
-  const MapSubscriptionUpdateScope({
-    required this.categoryNames,
-  });
+  const MapSubscriptionUpdateScope({required this.categoryNames});
 
   @override
   List<Object?> get props => [categoryNames];
@@ -126,10 +124,7 @@ class MapSubscriptionSearchMaps extends MapSubscriptionEvent {
   final String query;
   final bool loadMore;
 
-  const MapSubscriptionSearchMaps({
-    required this.query,
-    this.loadMore = false,
-  });
+  const MapSubscriptionSearchMaps({required this.query, this.loadMore = false});
 
   @override
   List<Object?> get props => [query, loadMore];
@@ -138,6 +133,7 @@ class MapSubscriptionSearchMaps extends MapSubscriptionEvent {
 /// 下载 TTS 模型（支持指定模型ID）
 class MapSubscriptionDownloadTtsModel extends MapSubscriptionEvent {
   final String? modelId;
+
   /// 是否使用加速下载地址（国内镜像）
   final bool useAcceleration;
 

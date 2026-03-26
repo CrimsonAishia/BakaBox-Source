@@ -6,7 +6,7 @@ import '../bloc/feature_status/feature_status_state.dart';
 import '../models/feature_status_models.dart';
 
 /// 功能门控组件
-/// 
+///
 /// 根据功能状态决定是否显示子组件或禁用提示
 class FeatureGate extends StatelessWidget {
   final FeatureType feature;
@@ -28,15 +28,17 @@ class FeatureGate extends StatelessWidget {
       builder: (context, state) {
         // 如果状态还在加载中，显示子组件但禁用交互（通过透明遮罩）
         // 如果已加载完成，根据实际状态判断
-        final shouldShowDisabled = state.loadState == FeatureStatusLoadState.loaded &&
+        final shouldShowDisabled =
+            state.loadState == FeatureStatusLoadState.loaded &&
             !state.status.getStatus(feature).enabled;
-        
+
         if (shouldShowDisabled) {
           // 功能禁用时显示禁用组件或默认提示
           final featureStatus = state.status.getStatus(feature);
-          return disabledWidget ?? _buildDefaultDisabledWidget(context, state, featureStatus);
+          return disabledWidget ??
+              _buildDefaultDisabledWidget(context, state, featureStatus);
         }
-        
+
         // 其他情况（loading、initial、loaded+enabled）都显示子组件
         return child;
       },
@@ -51,7 +53,7 @@ class FeatureGate extends StatelessWidget {
     if (!showDisabledMessage) {
       return const SizedBox.shrink();
     }
-    
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final message = featureStatus.message.isNotEmpty
         ? featureStatus.message
@@ -115,7 +117,9 @@ class FeatureGate extends StatelessWidget {
                     child: Text(
                       message,
                       style: TextStyle(
-                        color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                        color: isDark
+                            ? Colors.white70
+                            : const Color(0xFF6B7280),
                         fontSize: 14,
                       ),
                       textAlign: TextAlign.center,
@@ -134,18 +138,18 @@ class FeatureGate extends StatelessWidget {
 /// 功能状态检查工具类
 class FeatureStatusChecker {
   /// 检查功能是否启用
-  /// 
+  ///
   /// 注意：如果功能状态还在加载中或加载失败，返回 false（安全优先）
   /// 只有明确加载成功且功能启用时才返回 true
   static bool isEnabled(BuildContext context, FeatureType feature) {
     try {
       final state = context.read<FeatureStatusBloc>().state;
-      
+
       // 只有加载成功时才检查实际状态
       if (state.loadState == FeatureStatusLoadState.loaded) {
         return state.status.getStatus(feature).enabled;
       }
-      
+
       // 其他情况（initial、loading、error）都返回 false
       return false;
     } catch (e) {
@@ -155,12 +159,12 @@ class FeatureStatusChecker {
   }
 
   /// 获取功能禁用提示信息
-  /// 
+  ///
   /// 根据不同的加载状态返回不同的提示信息
   static String getDisabledMessage(BuildContext context, FeatureType feature) {
     try {
       final state = context.read<FeatureStatusBloc>().state;
-      
+
       // 根据加载状态返回不同提示
       switch (state.loadState) {
         case FeatureStatusLoadState.initial:

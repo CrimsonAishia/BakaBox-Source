@@ -17,10 +17,10 @@ class KeyBindingTool extends StatefulWidget {
 
 class _KeyBindingToolState extends State<KeyBindingTool> {
   final _searchCtrl = TextEditingController();
-  
+
   // 右侧面板模式: 0=配置详情, 1=autoexec, 2=发布, 3=编辑
   int _rightMode = 0;
-  
+
   // 正在编辑的配置（模式3时使用）
   dynamic _editingConfig;
 
@@ -45,9 +45,11 @@ class _KeyBindingToolState extends State<KeyBindingTool> {
   Widget build(BuildContext context) {
     return BlocListener<KeyBindingBloc, KeyBindingState>(
       listenWhen: (previous, current) {
-        final successChanged = previous.successMessage != current.successMessage && 
+        final successChanged =
+            previous.successMessage != current.successMessage &&
             current.successMessage?.isNotEmpty == true;
-        final errorChanged = previous.error != current.error && 
+        final errorChanged =
+            previous.error != current.error &&
             current.error?.isNotEmpty == true;
         return successChanged || errorChanged;
       },

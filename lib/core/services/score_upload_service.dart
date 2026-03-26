@@ -166,23 +166,22 @@ class ScoreUploadService {
     if (state.state == GameState.inGame && state.serverAddress.isNotEmpty) {
       // 检查是否切换了服务器
       final isNewServer = _currentServerAddress != state.serverAddress;
-      
+
       // 设置当前服务器 IP 地址
       _currentServerAddress = state.serverAddress;
 
       // 检查是否为已知服务器（有 IP 到域名映射）
       if (_addressMapping.hasMapping(state.serverAddress)) {
-        _currentServerDomainAddress =
-            _addressMapping.getDomainAddress(state.serverAddress);
+        _currentServerDomainAddress = _addressMapping.getDomainAddress(
+          state.serverAddress,
+        );
         LogService.d(
           '[ScoreUpload] 已知服务器: ${state.serverAddress} -> $_currentServerDomainAddress',
         );
       } else {
         // 未知服务器，不支持上传
         _currentServerDomainAddress = null;
-        LogService.d(
-          '[ScoreUpload] 未知服务器，跳过比分上传: ${state.serverAddress}',
-        );
+        LogService.d('[ScoreUpload] 未知服务器，跳过比分上传: ${state.serverAddress}');
       }
 
       // 切换服务器时重置比分状态
@@ -223,7 +222,7 @@ class ScoreUploadService {
   /// - 比分不是 0:0（热身阶段）
   /// - 距离上次上传 >= 3 秒（防抖）
   /// - 当前在游戏中且有服务器地址
-  /// 
+  ///
   /// 心跳机制：
   /// - 距离上次上传超过 5 分钟时，重新发送当前比分作为心跳
   /// - 保持数据有效性，避免后端标记为 unknown
@@ -239,14 +238,20 @@ class ScoreUploadService {
     // 场景2: 同名地图但比分回落（A地图5:3 → 换图 → A地图0:0）
     final ctScore = map?.teamCt?.score ?? 0;
     final tScore = map?.teamT?.score ?? 0;
-    final bool isMapNameChanged = map?.name != null && map!.name != _lastMapName;
-    final bool isScoreReset = _lastCtScore != null && _lastTScore != null &&
+    final bool isMapNameChanged =
+        map?.name != null && map!.name != _lastMapName;
+    final bool isScoreReset =
+        _lastCtScore != null &&
+        _lastTScore != null &&
         (ctScore + tScore) < (_lastCtScore! + _lastTScore!) &&
-        ctScore == 0 && tScore == 0;
+        ctScore == 0 &&
+        tScore == 0;
 
     if (isMapNameChanged || isScoreReset) {
       final reason = isMapNameChanged ? '地图变化' : '比分重置（同图换局）';
-      LogService.d('[ScoreUpload] $reason: $_lastMapName -> ${map?.name}，重置比分记录');
+      LogService.d(
+        '[ScoreUpload] $reason: $_lastMapName -> ${map?.name}，重置比分记录',
+      );
       _lastMapName = map?.name;
       _lastCtScore = null;
       _lastTScore = null;
@@ -302,7 +307,11 @@ class ScoreUploadService {
       _gameoverUploaded = true; // 标记已发送 gameover 上传
     }
     // 检查是否需要发送心跳（距离上次上传超过 5 分钟）
-    else if (_shouldSendHeartbeat(ctScore: ctScore, tScore: tScore, mapName: mapName)) {
+    else if (_shouldSendHeartbeat(
+      ctScore: ctScore,
+      tScore: tScore,
+      mapName: mapName,
+    )) {
       LogService.d('[ScoreUpload] 触发心跳上传');
       _uploadScore(
         ctScore: ctScore,
@@ -320,7 +329,7 @@ class ScoreUploadService {
   }
 
   /// 判断是否需要发送心跳
-  /// 
+  ///
   /// 心跳条件：
   /// 1. 在游戏中且有服务器地址
   /// 2. 有有效比分（非 0:0）
@@ -351,7 +360,7 @@ class ScoreUploadService {
     if (_lastUploadTime == null) {
       return false;
     }
-    
+
     final elapsed = DateTime.now().difference(_lastUploadTime!);
     return elapsed >= _heartbeatInterval;
   }

@@ -11,20 +11,20 @@ import '../utils/file_validation_utils.dart';
 /// 用于流式 MD5 计算的累加器
 class _DigestAccumulator implements Sink<Digest> {
   Digest? _digest;
-  
+
   Digest get digest => _digest!;
-  
+
   @override
   void add(Digest data) {
     _digest = data;
   }
-  
+
   @override
   void close() {}
 }
 
 /// 文件上传服务
-/// 
+///
 /// 提供文件上传功能，包括：
 /// - MD5 计算
 /// - 分片上传
@@ -34,36 +34,36 @@ class _DigestAccumulator implements Sink<Digest> {
 class FileUploadService {
   /// 分片大小（5MB）
   static const int chunkSize = 5 * 1024 * 1024;
-  
+
   /// 分类名称
   static const String categoryName = 'bakabox_issues';
-  
+
   /// 最大重试次数
   static const int maxRetries = 3;
-  
+
   /// 重试延迟（指数退避）
   static const Duration initialRetryDelay = Duration(seconds: 1);
-  
+
   /// 最大并发上传数
   static const int maxConcurrentUploads = 3;
 
   final FileUploadApi _api = FileUploadApi();
-  
+
   /// 上传队列
   final List<_UploadTask> _uploadQueue = [];
-  
+
   /// 当前正在上传的任务数
   int _activeUploads = 0;
-  
+
   /// 是否正在处理队列
   bool _isProcessingQueue = false;
 
   /// 上传图片文件
-  /// 
+  ///
   /// 参数:
   /// - [file]: 要上传的文件
   /// - [onProgress]: 进度回调（可选）
-  /// 
+  ///
   /// 返回:
   /// - [UploadResult]: 上传结果，包含文件 URL 等信息
   Future<UploadResult> uploadImage(
@@ -89,7 +89,7 @@ class FileUploadService {
 
     // 添加到队列
     _uploadQueue.add(task);
-    
+
     // 开始处理队列
     _processQueue();
 
@@ -106,7 +106,7 @@ class FileUploadService {
       while (_uploadQueue.isNotEmpty && _activeUploads < maxConcurrentUploads) {
         final task = _uploadQueue.removeAt(0);
         _activeUploads++;
-        
+
         // 异步执行上传任务
         _executeUploadTask(task).then((_) {
           _activeUploads--;
@@ -122,13 +122,15 @@ class FileUploadService {
   Future<void> _executeUploadTask(_UploadTask task) async {
     try {
       // 更新状态：计算哈希
-      task.updateProgress(UploadProgress(
-        fileName: task.fileName,
-        totalBytes: task.fileSize,
-        uploadedBytes: 0,
-        progress: 0.0,
-        status: UploadStatus.hashing,
-      ));
+      task.updateProgress(
+        UploadProgress(
+          fileName: task.fileName,
+          totalBytes: task.fileSize,
+          uploadedBytes: 0,
+          progress: 0.0,
+          status: UploadStatus.hashing,
+        ),
+      );
 
       // 计算 MD5
       final fileMD5 = await calculateMD5(task.file);
@@ -144,34 +146,40 @@ class FileUploadService {
       // 如果文件已存在（秒传）
       if (initResponse.isExists) {
         LogService.i('文件已存在，使用秒传: ${initResponse.url}');
-        
-        task.updateProgress(UploadProgress(
-          fileName: task.fileName,
-          totalBytes: task.fileSize,
-          uploadedBytes: task.fileSize,
-          progress: 1.0,
-          status: UploadStatus.completed,
-        ));
 
-        task.completer.complete(UploadResult(
-          fileId: initResponse.fileId,
-          url: initResponse.url,
-          cdnUrl: initResponse.url,
-          fileName: task.fileName,
-          fileSize: task.fileSize,
-          fileMD5: fileMD5,
-        ));
+        task.updateProgress(
+          UploadProgress(
+            fileName: task.fileName,
+            totalBytes: task.fileSize,
+            uploadedBytes: task.fileSize,
+            progress: 1.0,
+            status: UploadStatus.completed,
+          ),
+        );
+
+        task.completer.complete(
+          UploadResult(
+            fileId: initResponse.fileId,
+            url: initResponse.url,
+            cdnUrl: initResponse.url,
+            fileName: task.fileName,
+            fileSize: task.fileSize,
+            fileMD5: fileMD5,
+          ),
+        );
         return;
       }
 
       // 更新状态：上传中
-      task.updateProgress(UploadProgress(
-        fileName: task.fileName,
-        totalBytes: task.fileSize,
-        uploadedBytes: 0,
-        progress: 0.0,
-        status: UploadStatus.uploading,
-      ));
+      task.updateProgress(
+        UploadProgress(
+          fileName: task.fileName,
+          totalBytes: task.fileSize,
+          uploadedBytes: 0,
+          progress: 0.0,
+          status: UploadStatus.uploading,
+        ),
+      );
 
       // 执行分片上传
       await _uploadChunks(
@@ -189,45 +197,51 @@ class FileUploadService {
       );
 
       // 更新状态：完成
-      task.updateProgress(UploadProgress(
-        fileName: task.fileName,
-        totalBytes: task.fileSize,
-        uploadedBytes: task.fileSize,
-        progress: 1.0,
-        status: UploadStatus.completed,
-      ));
+      task.updateProgress(
+        UploadProgress(
+          fileName: task.fileName,
+          totalBytes: task.fileSize,
+          uploadedBytes: task.fileSize,
+          progress: 1.0,
+          status: UploadStatus.completed,
+        ),
+      );
 
-      task.completer.complete(UploadResult(
-        fileId: completeResponse.fileId,
-        url: completeResponse.url,
-        cdnUrl: completeResponse.url,
-        fileName: task.fileName,
-        fileSize: task.fileSize,
-        fileMD5: fileMD5,
-      ));
+      task.completer.complete(
+        UploadResult(
+          fileId: completeResponse.fileId,
+          url: completeResponse.url,
+          cdnUrl: completeResponse.url,
+          fileName: task.fileName,
+          fileSize: task.fileSize,
+          fileMD5: fileMD5,
+        ),
+      );
     } catch (e) {
       LogService.e('上传失败: ${task.fileName}', e);
-      
-      task.updateProgress(UploadProgress(
-        fileName: task.fileName,
-        totalBytes: task.fileSize,
-        uploadedBytes: 0,
-        progress: 0.0,
-        status: UploadStatus.failed,
-        error: e.toString(),
-      ));
+
+      task.updateProgress(
+        UploadProgress(
+          fileName: task.fileName,
+          totalBytes: task.fileSize,
+          uploadedBytes: 0,
+          progress: 0.0,
+          status: UploadStatus.failed,
+          error: e.toString(),
+        ),
+      );
 
       task.completer.completeError(e);
     }
   }
 
   /// 计算文件 MD5
-  /// 
+  ///
   /// 使用流式读取 + isolate 避免阻塞 UI 线程
-  /// 
+  ///
   /// 参数:
   /// - [file]: 要计算 MD5 的文件
-  /// 
+  ///
   /// 返回:
   /// - MD5 哈希值（十六进制字符串）
   Future<String> calculateMD5(File file) async {
@@ -239,18 +253,18 @@ class FileUploadService {
       rethrow;
     }
   }
-  
+
   /// 在隔离线程中计算 MD5（同步读取，compute 不支持 async）
   static String _calculateMD5InIsolate(String filePath) {
     final file = File(filePath);
     final output = _DigestAccumulator();
     final input = md5.startChunkedConversion(output);
-    
+
     // 同步读取文件
     final bytes = file.readAsBytesSync();
     input.add(bytes);
     input.close();
-    
+
     return output.digest.toString();
   }
 
@@ -265,7 +279,9 @@ class FileUploadService {
     final fileSize = task.fileSize;
     final totalChunks = (fileSize / chunkSize).ceil();
 
-    LogService.i('开始分片上传: $totalChunks 个分片, 文件大小: ${(fileSize / 1024 / 1024).toStringAsFixed(2)}MB');
+    LogService.i(
+      '开始分片上传: $totalChunks 个分片, 文件大小: ${(fileSize / 1024 / 1024).toStringAsFixed(2)}MB',
+    );
 
     // 如果只有一个分片，直接上传
     if (totalChunks == 1) {
@@ -277,63 +293,68 @@ class FileUploadService {
         data: chunkData,
       );
 
-      task.updateProgress(UploadProgress(
-        fileName: task.fileName,
-        totalBytes: fileSize,
-        uploadedBytes: fileSize,
-        progress: 1.0,
-        status: UploadStatus.uploading,
-      ));
+      task.updateProgress(
+        UploadProgress(
+          fileName: task.fileName,
+          totalBytes: fileSize,
+          uploadedBytes: fileSize,
+          progress: 1.0,
+          status: UploadStatus.uploading,
+        ),
+      );
       return;
     }
 
     // 多分片并发上传（最多 3 个并发）
     final List<Future<void>> uploadFutures = [];
     int uploadedBytes = 0;
-    
+
     for (int i = 0; i < totalChunks; i++) {
       final start = i * chunkSize;
       final end = (start + chunkSize < fileSize) ? start + chunkSize : fileSize;
       final partNumber = i + 1;
 
       // 创建上传任务
-      final uploadFuture = _uploadChunkPart(
-        file: file,
-        start: start,
-        end: end,
-        uploadId: uploadId,
-        partNumber: partNumber,
-        fileKey: fileKey,
-      ).then((_) {
-        uploadedBytes = end;
-        final progress = uploadedBytes / fileSize;
-        
-        task.updateProgress(UploadProgress(
-          fileName: task.fileName,
-          totalBytes: fileSize,
-          uploadedBytes: uploadedBytes,
-          progress: progress,
-          status: UploadStatus.uploading,
-        ));
+      final uploadFuture =
+          _uploadChunkPart(
+            file: file,
+            start: start,
+            end: end,
+            uploadId: uploadId,
+            partNumber: partNumber,
+            fileKey: fileKey,
+          ).then((_) {
+            uploadedBytes = end;
+            final progress = uploadedBytes / fileSize;
 
-        LogService.i('分片 $partNumber/$totalChunks 上传完成');
-      });
-      
+            task.updateProgress(
+              UploadProgress(
+                fileName: task.fileName,
+                totalBytes: fileSize,
+                uploadedBytes: uploadedBytes,
+                progress: progress,
+                status: UploadStatus.uploading,
+              ),
+            );
+
+            LogService.i('分片 $partNumber/$totalChunks 上传完成');
+          });
+
       uploadFutures.add(uploadFuture);
-      
+
       // 每 3 个分片等待一次（控制并发数）
       if (uploadFutures.length >= maxConcurrentUploads) {
         await Future.wait(uploadFutures);
         uploadFutures.clear();
       }
     }
-    
+
     // 等待剩余的上传任务完成
     if (uploadFutures.isNotEmpty) {
       await Future.wait(uploadFutures);
     }
   }
-  
+
   /// 上传单个分片
   Future<void> _uploadChunkPart({
     required File file,
@@ -345,7 +366,7 @@ class FileUploadService {
   }) async {
     // 读取分片数据
     final chunkData = await _readChunk(file, start, end);
-    
+
     // 上传分片（带重试）
     await _uploadPartWithRetry(
       uploadId: uploadId,
@@ -421,7 +442,7 @@ class FileUploadService {
   }
 
   /// 重试操作
-  /// 
+  ///
   /// 使用指数退避策略重试操作
   Future<T> _retryOperation<T>(
     Future<T> Function() operation, {
@@ -435,15 +456,17 @@ class FileUploadService {
         return await operation();
       } catch (e) {
         attempt++;
-        
+
         if (attempt >= maxRetries) {
           LogService.e('$operationName 失败，已达到最大重试次数', e);
           rethrow;
         }
 
-        LogService.w('$operationName 失败，${delay.inSeconds}秒后重试 ($attempt/$maxRetries)');
+        LogService.w(
+          '$operationName 失败，${delay.inSeconds}秒后重试 ($attempt/$maxRetries)',
+        );
         await Future.delayed(delay);
-        
+
         // 指数退避
         delay *= 2;
       }
@@ -456,10 +479,7 @@ class FileUploadService {
     required String fileKey,
   }) async {
     try {
-      await _api.cancelMultipart(
-        uploadId: uploadId,
-        fileKey: fileKey,
-      );
+      await _api.cancelMultipart(uploadId: uploadId, fileKey: fileKey);
     } catch (e) {
       LogService.e('取消上传失败', e);
     }
@@ -539,6 +559,6 @@ class _UploadTask {
 class FileValidationException implements AppException {
   @override
   final String message;
-  
+
   FileValidationException(this.message);
 }

@@ -36,7 +36,8 @@ class LiveRoomCard extends StatefulWidget {
   State<LiveRoomCard> createState() => _LiveRoomCardState();
 }
 
-class _LiveRoomCardState extends State<LiveRoomCard> with SingleTickerProviderStateMixin {
+class _LiveRoomCardState extends State<LiveRoomCard>
+    with SingleTickerProviderStateMixin {
   bool _isHovered = false;
   late AnimationController _animationController;
   late Animation<double> _bar1Animation;
@@ -131,321 +132,326 @@ class _LiveRoomCardState extends State<LiveRoomCard> with SingleTickerProviderSt
       onTap: () {
         // 先调用点击回调（增加点击数），再打开链接
         widget.onTap?.call();
-        final url = Uri.parse('https://live.bilibili.com/${widget.room.roomId}');
+        final url = Uri.parse(
+          'https://live.bilibili.com/${widget.room.roomId}',
+        );
         launchUrl(url);
       },
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 封面区域 - 固定高度，宽度自适应
-            SizedBox(
-              height: 157,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // 封面图
-                  DiskCachedImage(
-                    imageUrl: widget.coverUrl ?? '',
-                    fit: BoxFit.cover,
-                    placeholder: Container(
-                      color: isDark
-                          ? Colors.grey.shade800
-                          : Colors.grey.shade200,
-                      child: const Center(child: CircularProgressIndicator()),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 封面区域 - 固定高度，宽度自适应
+          SizedBox(
+            height: 157,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // 封面图
+                DiskCachedImage(
+                  imageUrl: widget.coverUrl ?? '',
+                  fit: BoxFit.cover,
+                  placeholder: Container(
+                    color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                    child: const Center(child: CircularProgressIndicator()),
+                  ),
+                  errorWidget: Container(
+                    color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                    child: const Icon(
+                      Icons.live_tv,
+                      size: 48,
+                      color: Colors.grey,
                     ),
-                    errorWidget: Container(
-                      color: isDark
-                          ? Colors.grey.shade800
-                          : Colors.grey.shade200,
-                      child: const Icon(
-                        Icons.live_tv,
-                        size: 48,
-                        color: Colors.grey,
+                  ),
+                ),
+                // 刷新状态动画
+                if (widget.isRefreshing)
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                  // 刷新状态动画
-                  if (widget.isRefreshing)
-                    Positioned.fill(
+                // B站数据加载状态
+                if (widget.isLoadingBilibiliData && !widget.isRefreshing)
+                  Positioned.fill(
+                    child: AnimatedOpacity(
+                      opacity: 1.0,
+                      duration: const Duration(milliseconds: 200),
                       child: Container(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        child: Center(
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.6),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        color: Colors.black.withValues(alpha: 0.15),
+                        child: const Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white70,
                               ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  // B站数据加载状态
-                  if (widget.isLoadingBilibiliData && !widget.isRefreshing)
-                    Positioned.fill(
-                      child: AnimatedOpacity(
-                        opacity: 1.0,
-                        duration: const Duration(milliseconds: 200),
-                        child: Container(
-                          color: Colors.black.withValues(alpha: 0.15),
-                          child: const Center(
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
-                              ),
-                            ),
-                          ),
-                        ),
+                  ),
+                // 底部渐变遮罩
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 50,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.6),
+                        ],
                       ),
                     ),
-                  // 底部渐变遮罩
+                  ),
+                ),
+                // 直播状态标签
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: widget.room.isLive ? Colors.red : _bilibiliBlue,
+                      borderRadius: BorderRadius.circular(4),
+                      boxShadow: [
+                        BoxShadow(
+                          color:
+                              (widget.room.isLive ? Colors.red : _bilibiliBlue)
+                                  .withValues(alpha: 0.4),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (widget.room.isLive)
+                          AnimatedBuilder(
+                            animation: _animationController,
+                            builder: (context, child) {
+                              return SizedBox(
+                                width: 10,
+                                height: 10,
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    _buildBar(_bar1Animation.value, 8),
+                                    _buildBar(_bar2Animation.value, 6),
+                                    _buildBar(_bar3Animation.value, 10),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        if (widget.room.isLive) const SizedBox(width: 3),
+                        Text(
+                          widget.room.isLive ? 'LIVE' : '休息中~',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // 直播中的观众数（左下角）
+                if (widget.room.isLive)
                   Positioned(
                     bottom: 0,
                     left: 0,
-                    right: 0,
-                    height: 50,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.6),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  // 直播状态标签
-                  Positioned(
-                    top: 8,
-                    left: 8,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: widget.room.isLive ? Colors.red : _bilibiliBlue,
+                        color: Colors.black.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(4),
-                        boxShadow: [
-                          BoxShadow(
-                            color: (widget.room.isLive ? Colors.red : _bilibiliBlue)
-                                .withValues(alpha: 0.4),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (widget.room.isLive)
-                            AnimatedBuilder(
-                              animation: _animationController,
-                              builder: (context, child) {
-                                return SizedBox(
-                                  width: 10,
-                                  height: 10,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      _buildBar(_bar1Animation.value, 8),
-                                      _buildBar(_bar2Animation.value, 6),
-                                      _buildBar(_bar3Animation.value, 10),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          if (widget.room.isLive)
-                            const SizedBox(width: 3),
+                          const Icon(
+                            Icons.visibility,
+                            size: 12,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 4),
                           Text(
-                            widget.room.isLive ? 'LIVE' : '休息中~',
+                            _formatNumber(widget.room.viewCount),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 11,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  // 直播中的观众数（左下角）
-                  if (widget.room.isLive)
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.visibility,
-                              size: 12,
+                // 粉丝数/关注数（右下角）
+                if (widget.room.followerCount > 0)
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.pink.shade400.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.favorite,
+                            size: 12,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _formatNumber(widget.room.followerCount),
+                            style: const TextStyle(
                               color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _formatNumber(widget.room.viewCount),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                  // 粉丝数/关注数（右下角）
-                  if (widget.room.followerCount > 0)
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.pink.shade400.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.favorite,
-                              size: 12,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _formatNumber(widget.room.followerCount),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
+                  ),
+              ],
+            ),
+          ),
+          // 信息区域
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: isDark
+                    ? const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                      )
+                    : const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Colors.white, Color(0xFFF8FAFC)],
+                      ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 标题
+                  Text(
+                    widget.isLoadingBilibiliData
+                        ? '获取中...'
+                        : (widget.title ?? widget.room.ownerName),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                      height: 1.3,
+                    ),
+                  ),
+                  const Spacer(),
+                  // 主播信息行：头像 + 名称
+                  Row(
+                    children: [
+                      // 主播头像
+                      ClipOval(
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: DiskCachedImage(
+                            imageUrl: widget.room.displayFace ?? '',
+                            fit: BoxFit.cover,
+                            placeholder: Container(
+                              color: _bilibiliBlue.withValues(alpha: 0.2),
+                              child: Icon(
+                                Icons.person,
+                                size: 16,
+                                color: _bilibiliBlue.withValues(alpha: 0.7),
                               ),
                             ),
-                          ],
+                            errorWidget: Container(
+                              color: _bilibiliBlue.withValues(alpha: 0.2),
+                              child: Icon(
+                                Icons.person,
+                                size: 16,
+                                color: _bilibiliBlue.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      // 主播名称
+                      Expanded(
+                        child: Text(
+                          widget.isLoadingBilibiliData
+                              ? '获取中...'
+                              : widget.room.ownerName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
-            // 信息区域
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  gradient: isDark
-                      ? const LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
-                        )
-                      : const LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Colors.white, Color(0xFFF8FAFC)],
-                        ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 标题
-                    Text(
-                      widget.isLoadingBilibiliData
-                          ? '获取中...'
-                          : (widget.title ?? widget.room.ownerName),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: isDark ? Colors.white : const Color(0xFF1E293B),
-                        height: 1.3,
-                      ),
-                    ),
-                    const Spacer(),
-                    // 主播信息行：头像 + 名称
-                    Row(
-                      children: [
-                        // 主播头像
-                        ClipOval(
-                          child: SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: DiskCachedImage(
-                              imageUrl: widget.room.displayFace ?? '',
-                              fit: BoxFit.cover,
-                              placeholder: Container(
-                                color: _bilibiliBlue.withValues(alpha: 0.2),
-                                child: Icon(
-                                  Icons.person,
-                                  size: 16,
-                                  color: _bilibiliBlue.withValues(alpha: 0.7),
-                                ),
-                              ),
-                              errorWidget: Container(
-                                color: _bilibiliBlue.withValues(alpha: 0.2),
-                                child: Icon(
-                                  Icons.person,
-                                  size: 16,
-                                  color: _bilibiliBlue.withValues(alpha: 0.7),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        // 主播名称
-                        Expanded(
-                          child: Text(
-                            widget.isLoadingBilibiliData ? '获取中...' : widget.room.ownerName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: isDark ? Colors.white70 : Colors.black54,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
   }
 
   String _formatNumber(int number) {

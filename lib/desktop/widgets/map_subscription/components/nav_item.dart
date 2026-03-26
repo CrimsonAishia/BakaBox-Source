@@ -26,11 +26,7 @@ class NavItem extends StatefulWidget {
   final NavItemData data;
   final bool isDark;
 
-  const NavItem({
-    super.key,
-    required this.data,
-    required this.isDark,
-  });
+  const NavItem({super.key, required this.data, required this.isDark});
 
   @override
   State<NavItem> createState() => _NavItemState();
@@ -55,13 +51,13 @@ class _NavItemState extends State<NavItem> {
           decoration: BoxDecoration(
             color: isSelected
                 ? (isDark
-                    ? const Color(0xFF6366F1).withValues(alpha: 0.2)
-                    : const Color(0xFF6366F1).withValues(alpha: 0.1))
+                      ? const Color(0xFF6366F1).withValues(alpha: 0.2)
+                      : const Color(0xFF6366F1).withValues(alpha: 0.1))
                 : (_isHovered
-                    ? (isDark
-                        ? Colors.white.withValues(alpha: 0.05)
-                        : Colors.black.withValues(alpha: 0.03))
-                    : Colors.transparent),
+                      ? (isDark
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : Colors.black.withValues(alpha: 0.03))
+                      : Colors.transparent),
             borderRadius: BorderRadius.circular(8),
             border: isSelected
                 ? Border.all(
@@ -76,7 +72,10 @@ class _NavItemState extends State<NavItem> {
               onTap: data.onTap,
               borderRadius: BorderRadius.circular(8),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 child: Row(
                   children: [
                     Icon(
@@ -92,23 +91,30 @@ class _NavItemState extends State<NavItem> {
                         data.label,
                         style: TextStyle(
                           fontSize: 13,
-                          fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                          fontWeight: isSelected
+                              ? FontWeight.w500
+                              : FontWeight.normal,
                           color: isSelected
                               ? const Color(0xFF6366F1)
-                              : (isDark ? Colors.white70 : const Color(0xFF374151)),
+                              : (isDark
+                                    ? Colors.white70
+                                    : const Color(0xFF374151)),
                         ),
                       ),
                     ),
                     // 徽章或状态图标
                     if (data.badge != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: isSelected
                               ? const Color(0xFF6366F1).withValues(alpha: 0.2)
                               : (isDark
-                                  ? Colors.white.withValues(alpha: 0.1)
-                                  : const Color(0xFFE5E7EB)),
+                                    ? Colors.white.withValues(alpha: 0.1)
+                                    : const Color(0xFFE5E7EB)),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
@@ -118,7 +124,9 @@ class _NavItemState extends State<NavItem> {
                             fontWeight: FontWeight.w500,
                             color: isSelected
                                 ? const Color(0xFF6366F1)
-                                : (isDark ? Colors.white54 : const Color(0xFF6B7280)),
+                                : (isDark
+                                      ? Colors.white54
+                                      : const Color(0xFF6B7280)),
                           ),
                         ),
                       )
@@ -126,7 +134,8 @@ class _NavItemState extends State<NavItem> {
                       Icon(
                         data.statusIcon,
                         size: 14,
-                        color: data.statusColor ??
+                        color:
+                            data.statusColor ??
                             (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
                       ),
                   ],

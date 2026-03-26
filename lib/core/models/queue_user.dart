@@ -52,12 +52,12 @@ class QueueUser extends Equatable {
 
   @override
   List<Object?> get props => [
-        odId,
-        visitorId,
-        nickname,
-        avatarUrl,
-        isAnonymous,
-        isSelf,
-        joinedAt,
-      ];
+    odId,
+    visitorId,
+    nickname,
+    avatarUrl,
+    isAnonymous,
+    isSelf,
+    joinedAt,
+  ];
 }

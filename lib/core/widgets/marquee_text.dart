@@ -5,11 +5,7 @@ class MarqueeText extends StatefulWidget {
   final String text;
   final TextStyle style;
 
-  const MarqueeText({
-    super.key,
-    required this.text,
-    required this.style,
-  });
+  const MarqueeText({super.key, required this.text, required this.style});
 
   @override
   State<MarqueeText> createState() => _MarqueeTextState();
@@ -67,8 +63,9 @@ class _MarqueeTextState extends State<MarqueeText>
       // 滚动到末尾
       await _scrollController.animateTo(
         maxScroll,
-        duration:
-            Duration(milliseconds: (maxScroll * 30).toInt().clamp(1000, 5000)),
+        duration: Duration(
+          milliseconds: (maxScroll * 30).toInt().clamp(1000, 5000),
+        ),
         curve: Curves.linear,
       );
 
@@ -95,11 +92,7 @@ class _MarqueeTextState extends State<MarqueeText>
       controller: _scrollController,
       scrollDirection: Axis.horizontal,
       physics: const NeverScrollableScrollPhysics(),
-      child: Text(
-        widget.text,
-        style: widget.style,
-        maxLines: 1,
-      ),
+      child: Text(widget.text, style: widget.style, maxLines: 1),
     );
   }
 }

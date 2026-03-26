@@ -670,7 +670,9 @@ class _EditSpellCardDialogState extends State<EditSpellCardDialog> {
                       label: '冷却时间(秒)',
                       controller: _cooldownController,
                       hint: '60',
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
                         _SingleDecimalPointFormatter(),
@@ -684,7 +686,9 @@ class _EditSpellCardDialogState extends State<EditSpellCardDialog> {
                       controller: _damageController,
                       hint: '150-300',
                       inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[\d\-~\/.\s]')),
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'[\d\-~\/.\s]'),
+                        ),
                       ],
                     ),
                   ),
@@ -695,7 +699,9 @@ class _EditSpellCardDialogState extends State<EditSpellCardDialog> {
                 label: widget.type == 'ultimate' ? '消耗B点' : '消耗P点',
                 controller: _costController,
                 hint: widget.type == 'ultimate' ? '100' : '50',
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
                   _SingleDecimalPointFormatter(),
@@ -852,7 +858,9 @@ class _EditZombieSkillDialogState extends State<EditZombieSkillDialog> {
                       label: '冷却时间(秒)',
                       controller: _cooldownController,
                       hint: '15',
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
                         _SingleDecimalPointFormatter(),
@@ -866,7 +874,9 @@ class _EditZombieSkillDialogState extends State<EditZombieSkillDialog> {
                       controller: _damageController,
                       hint: '50-80',
                       inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[\d\-~\/.\s]')),
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'[\d\-~\/.\s]'),
+                        ),
                       ],
                     ),
                   ),
@@ -1266,7 +1276,9 @@ class _AddSpellCardDialogState extends State<AddSpellCardDialog> {
                       label: '冷却时间(秒)',
                       controller: _cooldownController,
                       hint: '60',
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
                         _SingleDecimalPointFormatter(),
@@ -1280,7 +1292,9 @@ class _AddSpellCardDialogState extends State<AddSpellCardDialog> {
                       controller: _damageController,
                       hint: '150-300',
                       inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[\d\-~\/.\s]')),
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'[\d\-~\/.\s]'),
+                        ),
                       ],
                     ),
                   ),
@@ -1291,7 +1305,9 @@ class _AddSpellCardDialogState extends State<AddSpellCardDialog> {
                 label: _selectedType == 'ultimate' ? '消耗B点' : '消耗P点',
                 controller: _costController,
                 hint: _selectedType == 'ultimate' ? '100' : '50',
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
                   _SingleDecimalPointFormatter(),
@@ -1498,7 +1514,9 @@ class _AddZombieSkillDialogState extends State<AddZombieSkillDialog> {
                       label: '冷却时间(秒)',
                       controller: _cooldownController,
                       hint: '15',
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
                         _SingleDecimalPointFormatter(),
@@ -1512,7 +1530,9 @@ class _AddZombieSkillDialogState extends State<AddZombieSkillDialog> {
                       controller: _damageController,
                       hint: '50-80',
                       inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[\d\-~\/.\s]')),
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'[\d\-~\/.\s]'),
+                        ),
                       ],
                     ),
                   ),

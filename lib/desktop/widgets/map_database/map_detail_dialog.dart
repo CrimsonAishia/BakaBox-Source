@@ -6,7 +6,7 @@ import 'contribution_item.dart';
 import 'map_history_tab.dart';
 
 /// 地图详情对话框
-/// 
+///
 /// 显示地图的详细贡献列表和运行历史
 class MapDetailDialog extends StatefulWidget {
   final MapInfo mapInfo;
@@ -19,7 +19,7 @@ class MapDetailDialog extends StatefulWidget {
     this.contributions,
     this.isMyContribution = false,
   });
-  
+
   /// 从 MapContributionGroup 创建对话框（用于"我的贡献" Tab）
   factory MapDetailDialog.fromGroup({
     required MapContributionGroup group,
@@ -36,7 +36,8 @@ class MapDetailDialog extends StatefulWidget {
   State<MapDetailDialog> createState() => _MapDetailDialogState();
 }
 
-class _MapDetailDialogState extends State<MapDetailDialog> with SingleTickerProviderStateMixin {
+class _MapDetailDialogState extends State<MapDetailDialog>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -79,8 +80,12 @@ class _MapDetailDialogState extends State<MapDetailDialog> with SingleTickerProv
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                color: isDark
+                    ? const Color(0xFF0F172A)
+                    : const Color(0xFFF8FAFC),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
                 border: Border(
                   bottom: BorderSide(
                     color: isDark
@@ -100,7 +105,9 @@ class _MapDetailDialogState extends State<MapDetailDialog> with SingleTickerProv
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : const Color(0xFF111827),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF111827),
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -156,7 +163,7 @@ class _MapDetailDialogState extends State<MapDetailDialog> with SingleTickerProv
                 ],
               ),
             ),
-            
+
             // Tab 栏
             Container(
               decoration: BoxDecoration(
@@ -200,7 +207,7 @@ class _MapDetailDialogState extends State<MapDetailDialog> with SingleTickerProv
                 ],
               ),
             ),
-            
+
             // Tab 内容
             Expanded(
               child: TabBarView(
@@ -212,7 +219,8 @@ class _MapDetailDialogState extends State<MapDetailDialog> with SingleTickerProv
                       : ListView.separated(
                           padding: const EdgeInsets.all(24),
                           itemCount: items.length,
-                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final contribution = items[index];
                             return ContributionItem(
@@ -265,9 +273,7 @@ class _MapDetailDialogState extends State<MapDetailDialog> with SingleTickerProv
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -60,8 +60,8 @@ class _ColorOptionButtonState extends State<_ColorOptionButton> {
               color: widget.isSelected
                   ? Colors.blue
                   : _isHovered
-                      ? Colors.blue.withValues(alpha: 0.7)
-                      : Colors.grey,
+                  ? Colors.blue.withValues(alpha: 0.7)
+                  : Colors.grey,
               width: widget.isSelected ? 3 : 1,
             ),
             boxShadow: widget.isSelected
@@ -73,13 +73,13 @@ class _ColorOptionButtonState extends State<_ColorOptionButton> {
                     ),
                   ]
                 : _isHovered
-                    ? [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          blurRadius: 4,
-                        ),
-                      ]
-                    : null,
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 4,
+                    ),
+                  ]
+                : null,
           ),
         ),
       ),
@@ -203,7 +203,9 @@ class _CustomColorButtonState extends State<_CustomColorButton> {
             ),
             shape: BoxShape.circle,
             border: Border.all(
-              color: _isHovered ? Colors.white : Colors.white.withValues(alpha: 0.8),
+              color: _isHovered
+                  ? Colors.white
+                  : Colors.white.withValues(alpha: 0.8),
               width: _isHovered ? 3 : 2,
             ),
             boxShadow: [
@@ -321,9 +323,9 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
                 const SizedBox(width: 12),
                 Text(
                   '选择颜色',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),

@@ -15,7 +15,8 @@ class DailyStat {
     required this.avgPlayers,
   });
 
-  factory DailyStat.fromJson(Map<String, dynamic> json) => _$DailyStatFromJson(json);
+  factory DailyStat.fromJson(Map<String, dynamic> json) =>
+      _$DailyStatFromJson(json);
   Map<String, dynamic> toJson() => _$DailyStatToJson(this);
 }
 
@@ -27,7 +28,8 @@ class HourlyStat {
 
   HourlyStat({required this.hour, required this.avgPlayers});
 
-  factory HourlyStat.fromJson(Map<String, dynamic> json) => _$HourlyStatFromJson(json);
+  factory HourlyStat.fromJson(Map<String, dynamic> json) =>
+      _$HourlyStatFromJson(json);
   Map<String, dynamic> toJson() => _$HourlyStatToJson(this);
 }
 
@@ -44,7 +46,8 @@ class TopServer {
     required this.avgPlayers,
   });
 
-  factory TopServer.fromJson(Map<String, dynamic> json) => _$TopServerFromJson(json);
+  factory TopServer.fromJson(Map<String, dynamic> json) =>
+      _$TopServerFromJson(json);
   Map<String, dynamic> toJson() => _$TopServerToJson(this);
 }
 
@@ -106,14 +109,14 @@ class ServerStatsResponse {
 
   /// 空数据
   factory ServerStatsResponse.empty() => ServerStatsResponse(
-        dailyStats: [],
-        hourlyStats: [],
-        topServers: [],
-        topMaps: [],
-        peakHour: 0,
-        todayMax: 0,
-        todayAvg: 0,
-        weeklyMax: 0,
-        weeklyAvg: 0,
-      );
+    dailyStats: [],
+    hourlyStats: [],
+    topServers: [],
+    topMaps: [],
+    peakHour: 0,
+    todayMax: 0,
+    todayAvg: 0,
+    weeklyMax: 0,
+    weeklyAvg: 0,
+  );
 }

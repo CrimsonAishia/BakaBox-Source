@@ -92,7 +92,9 @@ class LeftPanel extends StatelessWidget {
           ),
           BlocBuilder<KeyBindingBloc, KeyBindingState>(
             builder: (context, state) {
-              final isLoading = state.showMyConfigs ? state.isLoadingMyConfigs : state.isLoading;
+              final isLoading = state.showMyConfigs
+                  ? state.isLoadingMyConfigs
+                  : state.isLoading;
               return Tooltip(
                 message: '刷新配置列表',
                 child: common.IconButton(
@@ -100,11 +102,17 @@ class LeftPanel extends StatelessWidget {
                   loading: isLoading,
                   onTap: () {
                     if (state.showMyConfigs) {
-                      context.read<KeyBindingBloc>().add(const KeyBindingLoadMyConfigs(showSuccessMessage: true));
+                      context.read<KeyBindingBloc>().add(
+                        const KeyBindingLoadMyConfigs(showSuccessMessage: true),
+                      );
                     } else {
-                      context.read<KeyBindingBloc>().add(const KeyBindingLoadConfigs(showSuccessMessage: true));
+                      context.read<KeyBindingBloc>().add(
+                        const KeyBindingLoadConfigs(showSuccessMessage: true),
+                      );
                     }
-                    context.read<KeyBindingBloc>().add(KeyBindingLoadCategories());
+                    context.read<KeyBindingBloc>().add(
+                      KeyBindingLoadCategories(),
+                    );
                   },
                 ),
               );
@@ -156,9 +164,9 @@ class LeftPanel extends StatelessWidget {
                       onChanged: (v) => context.read<KeyBindingBloc>().add(
                         KeyBindingSetCategoryFilter(v),
                       ),
-                      onMyConfigsChanged: (v) => context.read<KeyBindingBloc>().add(
-                        KeyBindingSetShowMyConfigs(v),
-                      ),
+                      onMyConfigsChanged: (v) => context
+                          .read<KeyBindingBloc>()
+                          .add(KeyBindingSetShowMyConfigs(v)),
                     ),
                   ),
                 ),
@@ -168,22 +176,28 @@ class LeftPanel extends StatelessWidget {
           Expanded(
             child: BlocBuilder<KeyBindingBloc, KeyBindingState>(
               builder: (context, state) {
-                final isLoading = state.showMyConfigs ? state.isLoadingMyConfigs : state.isLoading;
-                final configs = state.showMyConfigs ? state.filteredMyConfigs : state.filteredConfigs;
-                
+                final isLoading = state.showMyConfigs
+                    ? state.isLoadingMyConfigs
+                    : state.isLoading;
+                final configs = state.showMyConfigs
+                    ? state.filteredMyConfigs
+                    : state.filteredConfigs;
+
                 if (isLoading && configs.isEmpty) {
                   return const Center(
                     child: CircularProgressIndicator(strokeWidth: 2),
                   );
                 }
-                
+
                 if (configs.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          state.showMyConfigs ? MdiIcons.packageVariantRemove : MdiIcons.packageVariant,
+                          state.showMyConfigs
+                              ? MdiIcons.packageVariantRemove
+                              : MdiIcons.packageVariant,
                           size: 40,
                           color: isDark ? Colors.white24 : Colors.grey[300],
                         ),
@@ -199,7 +213,7 @@ class LeftPanel extends StatelessWidget {
                     ),
                   );
                 }
-                
+
                 return ListView.builder(
                   padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                   itemCount: configs.length,
@@ -207,14 +221,16 @@ class LeftPanel extends StatelessWidget {
                     final cfg = configs[i];
                     final selected = state.selectedConfig?.id == cfg.id;
                     final applied = state.isConfigApplied(cfg.configId);
-                    
+
                     return ConfigCard(
                       config: cfg,
                       selected: selected,
                       applied: applied,
                       showAuditStatus: true,
                       onTap: () {
-                        context.read<KeyBindingBloc>().add(KeyBindingSelectConfig(cfg));
+                        context.read<KeyBindingBloc>().add(
+                          KeyBindingSelectConfig(cfg),
+                        );
                         onConfigTap();
                       },
                     );

@@ -9,7 +9,7 @@ class CharacterGalleryBloc
     extends Bloc<CharacterGalleryEvent, CharacterGalleryState> {
   final CharacterApi _api = CharacterApi();
   static const int _pageSize = 20;
-  
+
   // 用于取消过期的详情加载请求
   int _currentDetailRequestId = 0;
 
@@ -40,7 +40,9 @@ class CharacterGalleryBloc
     on<ChangeWeaponPreviewPosition>(_onChangeWeaponPreviewPosition);
     on<NavigateToWeaponModel>(_onNavigateToWeaponModel);
     on<LoadCharacterDetailInWeaponView>(_onLoadCharacterDetailInWeaponView);
-    on<LoadWeaponModelDetailInCharacterView>(_onLoadWeaponModelDetailInCharacterView);
+    on<LoadWeaponModelDetailInCharacterView>(
+      _onLoadWeaponModelDetailInCharacterView,
+    );
   }
 
   Future<void> _onLoadCharacters(
@@ -155,7 +157,7 @@ class CharacterGalleryBloc
   ) async {
     // 递增请求 ID，用于取消过期请求
     final requestId = ++_currentDetailRequestId;
-    
+
     emit(
       state.copyWith(
         detailLoadState: LoadState.loading,
@@ -397,10 +399,12 @@ class CharacterGalleryBloc
   ) {
     // 切换分类时退出符卡评级视图和刀枪图鉴视图
     if (state.showSpellCardTierView || state.showWeaponModelView) {
-      emit(state.copyWith(
-        showSpellCardTierView: false,
-        showWeaponModelView: false,
-      ));
+      emit(
+        state.copyWith(
+          showSpellCardTierView: false,
+          showWeaponModelView: false,
+        ),
+      );
     }
     add(
       LoadCharacters(
@@ -428,10 +432,12 @@ class CharacterGalleryBloc
 
     // 如果当前是刀枪图鉴视图，搜索刀枪
     if (state.showWeaponModelView) {
-      add(LoadAllWeaponModels(
-        keyword: event.keyword.isEmpty ? null : event.keyword,
-        tabIndex: state.weaponModelTab,
-      ));
+      add(
+        LoadAllWeaponModels(
+          keyword: event.keyword.isEmpty ? null : event.keyword,
+          tabIndex: state.weaponModelTab,
+        ),
+      );
       return;
     }
 
@@ -969,59 +975,71 @@ class CharacterGalleryBloc
     Emitter<CharacterGalleryState> emit,
   ) async {
     final tabIndex = event.tabIndex ?? state.weaponModelTab;
-    
-    emit(state.copyWith(
-      showWeaponModelView: true,
-      showSpellCardTierView: false,
-      allWeaponModelsLoadState: LoadState.loading,
-      weaponModelTab: tabIndex,
-      weaponModelKeyword: event.keyword,
-      clearWeaponModelKeyword: event.keyword == null,
-      clearCategory: true,
-      clearSelectedCharacter: true,
-      clearSelectedSpellCardId: true, // 清除选中的符卡
-      clearSelectedWeaponModel: true, // 清除选中的刀枪模，避免搜索后右侧显示不在列表中的项
-      clearWeaponCharacter: true,
-    ));
+
+    emit(
+      state.copyWith(
+        showWeaponModelView: true,
+        showSpellCardTierView: false,
+        allWeaponModelsLoadState: LoadState.loading,
+        weaponModelTab: tabIndex,
+        weaponModelKeyword: event.keyword,
+        clearWeaponModelKeyword: event.keyword == null,
+        clearCategory: true,
+        clearSelectedCharacter: true,
+        clearSelectedSpellCardId: true, // 清除选中的符卡
+        clearSelectedWeaponModel: true, // 清除选中的刀枪模，避免搜索后右侧显示不在列表中的项
+        clearWeaponCharacter: true,
+      ),
+    );
 
     try {
       if (tabIndex == 0) {
         // 加载刀模
         final response = await _api.getAllKnifeModels(keyword: event.keyword);
         if (response != null) {
-          emit(state.copyWith(
-            allWeaponModelsLoadState: LoadState.success,
-            allKnifeModels: response.items,
-            allKnifeTotalCount: response.totalCount,
-          ));
+          emit(
+            state.copyWith(
+              allWeaponModelsLoadState: LoadState.success,
+              allKnifeModels: response.items,
+              allKnifeTotalCount: response.totalCount,
+            ),
+          );
         } else {
-          emit(state.copyWith(
-            allWeaponModelsLoadState: LoadState.failure,
-            error: '获取刀模列表失败',
-          ));
+          emit(
+            state.copyWith(
+              allWeaponModelsLoadState: LoadState.failure,
+              error: '获取刀模列表失败',
+            ),
+          );
         }
       } else {
         // 加载枪模
         final response = await _api.getAllGunModels(keyword: event.keyword);
         if (response != null) {
-          emit(state.copyWith(
-            allWeaponModelsLoadState: LoadState.success,
-            allGunModels: response.items,
-            allGunTotalCount: response.totalCount,
-          ));
+          emit(
+            state.copyWith(
+              allWeaponModelsLoadState: LoadState.success,
+              allGunModels: response.items,
+              allGunTotalCount: response.totalCount,
+            ),
+          );
         } else {
-          emit(state.copyWith(
-            allWeaponModelsLoadState: LoadState.failure,
-            error: '获取枪模列表失败',
-          ));
+          emit(
+            state.copyWith(
+              allWeaponModelsLoadState: LoadState.failure,
+              error: '获取枪模列表失败',
+            ),
+          );
         }
       }
     } catch (e) {
       LogService.e('加载刀枪图鉴失败: $e', e);
-      emit(state.copyWith(
-        allWeaponModelsLoadState: LoadState.failure,
-        error: '加载失败，请稍后重试',
-      ));
+      emit(
+        state.copyWith(
+          allWeaponModelsLoadState: LoadState.failure,
+          error: '加载失败，请稍后重试',
+        ),
+      );
     }
   }
 
@@ -1031,13 +1049,13 @@ class CharacterGalleryBloc
   ) {
     if (event.tabIndex == state.weaponModelTab) return;
     // 切换标签页时清除选中状态并重新加载对应列表
-    emit(state.copyWith(
-      clearSelectedWeaponModel: true,
-    ));
-    add(LoadAllWeaponModels(
-      keyword: state.weaponModelKeyword,
-      tabIndex: event.tabIndex,
-    ));
+    emit(state.copyWith(clearSelectedWeaponModel: true));
+    add(
+      LoadAllWeaponModels(
+        keyword: state.weaponModelKeyword,
+        tabIndex: event.tabIndex,
+      ),
+    );
   }
 
   Future<void> _onSelectWeaponModel(
@@ -1045,14 +1063,16 @@ class CharacterGalleryBloc
     Emitter<CharacterGalleryState> emit,
   ) async {
     // 先设置加载状态，清除之前的角色信息和选中的角色详情
-    emit(state.copyWith(
-      selectedWeaponModelId: event.id,
-      selectedWeaponIsKnife: event.isKnife,
-      weaponDetailLoadState: LoadState.loading,
-      weaponPreviewPosition: 0, // 重置预览位置
-      clearWeaponCharacter: true,
-      clearSelectedCharacter: true, // 清除角色详情，以便显示刀枪模详情
-    ));
+    emit(
+      state.copyWith(
+        selectedWeaponModelId: event.id,
+        selectedWeaponIsKnife: event.isKnife,
+        weaponDetailLoadState: LoadState.loading,
+        weaponPreviewPosition: 0, // 重置预览位置
+        clearWeaponCharacter: true,
+        clearSelectedCharacter: true, // 清除角色详情，以便显示刀枪模详情
+      ),
+    );
 
     try {
       // 调用详情 API 获取完整数据
@@ -1076,10 +1096,12 @@ class CharacterGalleryBloc
       }
 
       // 更新详情数据
-      emit(state.copyWith(
-        selectedKnifeModelDetail: knifeDetail,
-        selectedGunModelDetail: gunDetail,
-      ));
+      emit(
+        state.copyWith(
+          selectedKnifeModelDetail: knifeDetail,
+          selectedGunModelDetail: gunDetail,
+        ),
+      );
 
       // 如果有专属角色，获取角色信息
       if (characterId != null) {
@@ -1092,24 +1114,31 @@ class CharacterGalleryBloc
               (s) => s.isDefault,
               orElse: () => character.subModels!.first,
             );
-            emit(state.copyWith(
-              weaponDetailLoadState: LoadState.success,
-              weaponCharacterLoadState: LoadState.success,
-              weaponCharacterThumbnailUrl: defaultSubModel?.thumbnailUrl ?? character.thumbnailUrl,
-              weaponCharacterAcquisition: character.acquisition,
-            ));
+            emit(
+              state.copyWith(
+                weaponDetailLoadState: LoadState.success,
+                weaponCharacterLoadState: LoadState.success,
+                weaponCharacterThumbnailUrl:
+                    defaultSubModel?.thumbnailUrl ?? character.thumbnailUrl,
+                weaponCharacterAcquisition: character.acquisition,
+              ),
+            );
           } else {
-            emit(state.copyWith(
-              weaponDetailLoadState: LoadState.success,
-              weaponCharacterLoadState: LoadState.failure,
-            ));
+            emit(
+              state.copyWith(
+                weaponDetailLoadState: LoadState.success,
+                weaponCharacterLoadState: LoadState.failure,
+              ),
+            );
           }
         } catch (e) {
           LogService.e('获取刀枪模专属角色信息失败: $e', e);
-          emit(state.copyWith(
-            weaponDetailLoadState: LoadState.success,
-            weaponCharacterLoadState: LoadState.failure,
-          ));
+          emit(
+            state.copyWith(
+              weaponDetailLoadState: LoadState.success,
+              weaponCharacterLoadState: LoadState.failure,
+            ),
+          );
         }
       } else {
         // 没有专属角色
@@ -1117,10 +1146,12 @@ class CharacterGalleryBloc
       }
     } catch (e) {
       LogService.e('获取刀枪模详情失败: $e', e);
-      emit(state.copyWith(
-        weaponDetailLoadState: LoadState.failure,
-        error: '获取详情失败',
-      ));
+      emit(
+        state.copyWith(
+          weaponDetailLoadState: LoadState.failure,
+          error: '获取详情失败',
+        ),
+      );
     }
   }
 
@@ -1144,56 +1175,68 @@ class CharacterGalleryBloc
   ) async {
     // 切换到刀枪图鉴视图，并选中指定的刀枪模
     final tabIndex = event.isKnife ? 0 : 1;
-    
-    emit(state.copyWith(
-      showWeaponModelView: true,
-      showSpellCardTierView: false,
-      allWeaponModelsLoadState: LoadState.loading,
-      weaponModelTab: tabIndex,
-      clearWeaponModelKeyword: true,
-      clearCategory: true,
-      clearSelectedCharacter: true,
-      selectedWeaponModelId: event.id,
-      selectedWeaponIsKnife: event.isKnife,
-      weaponPreviewPosition: 0,
-    ));
+
+    emit(
+      state.copyWith(
+        showWeaponModelView: true,
+        showSpellCardTierView: false,
+        allWeaponModelsLoadState: LoadState.loading,
+        weaponModelTab: tabIndex,
+        clearWeaponModelKeyword: true,
+        clearCategory: true,
+        clearSelectedCharacter: true,
+        selectedWeaponModelId: event.id,
+        selectedWeaponIsKnife: event.isKnife,
+        weaponPreviewPosition: 0,
+      ),
+    );
 
     try {
       if (event.isKnife) {
         final response = await _api.getAllKnifeModels();
         if (response != null) {
-          emit(state.copyWith(
-            allWeaponModelsLoadState: LoadState.success,
-            allKnifeModels: response.items,
-            allKnifeTotalCount: response.totalCount,
-          ));
+          emit(
+            state.copyWith(
+              allWeaponModelsLoadState: LoadState.success,
+              allKnifeModels: response.items,
+              allKnifeTotalCount: response.totalCount,
+            ),
+          );
         } else {
-          emit(state.copyWith(
-            allWeaponModelsLoadState: LoadState.failure,
-            error: '获取刀模列表失败',
-          ));
+          emit(
+            state.copyWith(
+              allWeaponModelsLoadState: LoadState.failure,
+              error: '获取刀模列表失败',
+            ),
+          );
         }
       } else {
         final response = await _api.getAllGunModels();
         if (response != null) {
-          emit(state.copyWith(
-            allWeaponModelsLoadState: LoadState.success,
-            allGunModels: response.items,
-            allGunTotalCount: response.totalCount,
-          ));
+          emit(
+            state.copyWith(
+              allWeaponModelsLoadState: LoadState.success,
+              allGunModels: response.items,
+              allGunTotalCount: response.totalCount,
+            ),
+          );
         } else {
-          emit(state.copyWith(
-            allWeaponModelsLoadState: LoadState.failure,
-            error: '获取枪模列表失败',
-          ));
+          emit(
+            state.copyWith(
+              allWeaponModelsLoadState: LoadState.failure,
+              error: '获取枪模列表失败',
+            ),
+          );
         }
       }
     } catch (e) {
       LogService.e('加载刀枪图鉴失败: $e', e);
-      emit(state.copyWith(
-        allWeaponModelsLoadState: LoadState.failure,
-        error: '加载失败，请稍后重试',
-      ));
+      emit(
+        state.copyWith(
+          allWeaponModelsLoadState: LoadState.failure,
+          error: '加载失败，请稍后重试',
+        ),
+      );
     }
   }
 
@@ -1203,20 +1246,22 @@ class CharacterGalleryBloc
     Emitter<CharacterGalleryState> emit,
   ) async {
     // 清除选中的刀枪模，开始加载角色详情
-    emit(state.copyWith(
-      detailLoadState: LoadState.loading,
-      loadingCharacterId: event.characterId,
-      previewPosition: 0,
-      clearSelectedCharacter: true,
-      clearSelectedSubModel: true,
-      clearSelectedWeaponModel: true,
-      clearWeaponCharacter: true,
-      spellCards: [],
-      spellCardsLoadState: LoadState.initial,
-      clearPendingRequest: true,
-      // 保持刀枪图鉴视图不变
-      // showWeaponModelView 不改变
-    ));
+    emit(
+      state.copyWith(
+        detailLoadState: LoadState.loading,
+        loadingCharacterId: event.characterId,
+        previewPosition: 0,
+        clearSelectedCharacter: true,
+        clearSelectedSubModel: true,
+        clearSelectedWeaponModel: true,
+        clearWeaponCharacter: true,
+        spellCards: [],
+        spellCardsLoadState: LoadState.initial,
+        clearPendingRequest: true,
+        // 保持刀枪图鉴视图不变
+        // showWeaponModelView 不改变
+      ),
+    );
 
     try {
       final results = await Future.wait([
@@ -1238,11 +1283,13 @@ class CharacterGalleryBloc
           defaultSubModelId = defaultSubModel.id;
         }
 
-        emit(state.copyWith(
-          detailLoadState: LoadState.success,
-          selectedCharacter: character,
-          selectedSubModelId: defaultSubModelId,
-        ));
+        emit(
+          state.copyWith(
+            detailLoadState: LoadState.success,
+            selectedCharacter: character,
+            selectedSubModelId: defaultSubModelId,
+          ),
+        );
 
         // 检查待审核状态
         if (defaultSubModelId != null) {
@@ -1251,26 +1298,26 @@ class CharacterGalleryBloc
 
         if (character.category == CharacterCategory.touhou &&
             defaultSubModelId != null) {
-          add(LoadSpellCards(
-            characterId: character.id,
-            subModelId: defaultSubModelId,
-          ));
+          add(
+            LoadSpellCards(
+              characterId: character.id,
+              subModelId: defaultSubModelId,
+            ),
+          );
         }
 
         // 加载角色专属刀模/枪模
         add(LoadCharacterWeaponModels(character.id));
       } else {
-        emit(state.copyWith(
-          detailLoadState: LoadState.failure,
-          error: '获取角色详情失败',
-        ));
+        emit(
+          state.copyWith(detailLoadState: LoadState.failure, error: '获取角色详情失败'),
+        );
       }
     } catch (e) {
       LogService.e('加载角色详情失败: $e', e);
-      emit(state.copyWith(
-        detailLoadState: LoadState.failure,
-        error: '加载失败，请稍后重试',
-      ));
+      emit(
+        state.copyWith(detailLoadState: LoadState.failure, error: '加载失败，请稍后重试'),
+      );
     }
   }
 
@@ -1280,20 +1327,22 @@ class CharacterGalleryBloc
     Emitter<CharacterGalleryState> emit,
   ) async {
     // 清除选中的角色，开始加载刀枪模详情
-    emit(state.copyWith(
-      selectedWeaponModelId: event.id,
-      selectedWeaponIsKnife: event.isKnife,
-      weaponDetailLoadState: LoadState.loading,
-      weaponPreviewPosition: 0,
-      clearSelectedCharacter: true,
-      clearSelectedSubModel: true,
-      clearWeaponCharacter: true,
-      spellCards: [],
-      spellCardsLoadState: LoadState.initial,
-      clearPendingRequest: true,
-      // 保持角色图鉴视图不变
-      // showWeaponModelView 不改变
-    ));
+    emit(
+      state.copyWith(
+        selectedWeaponModelId: event.id,
+        selectedWeaponIsKnife: event.isKnife,
+        weaponDetailLoadState: LoadState.loading,
+        weaponPreviewPosition: 0,
+        clearSelectedCharacter: true,
+        clearSelectedSubModel: true,
+        clearWeaponCharacter: true,
+        spellCards: [],
+        spellCardsLoadState: LoadState.initial,
+        clearPendingRequest: true,
+        // 保持角色图鉴视图不变
+        // showWeaponModelView 不改变
+      ),
+    );
 
     try {
       // 调用详情 API 获取完整数据
@@ -1317,10 +1366,12 @@ class CharacterGalleryBloc
       }
 
       // 更新详情数据
-      emit(state.copyWith(
-        selectedKnifeModelDetail: knifeDetail,
-        selectedGunModelDetail: gunDetail,
-      ));
+      emit(
+        state.copyWith(
+          selectedKnifeModelDetail: knifeDetail,
+          selectedGunModelDetail: gunDetail,
+        ),
+      );
 
       // 如果有专属角色，获取角色信息
       if (characterId != null) {
@@ -1332,34 +1383,43 @@ class CharacterGalleryBloc
               (s) => s.isDefault,
               orElse: () => character.subModels!.first,
             );
-            emit(state.copyWith(
-              weaponDetailLoadState: LoadState.success,
-              weaponCharacterLoadState: LoadState.success,
-              weaponCharacterThumbnailUrl: defaultSubModel?.thumbnailUrl ?? character.thumbnailUrl,
-              weaponCharacterAcquisition: character.acquisition,
-            ));
+            emit(
+              state.copyWith(
+                weaponDetailLoadState: LoadState.success,
+                weaponCharacterLoadState: LoadState.success,
+                weaponCharacterThumbnailUrl:
+                    defaultSubModel?.thumbnailUrl ?? character.thumbnailUrl,
+                weaponCharacterAcquisition: character.acquisition,
+              ),
+            );
           } else {
-            emit(state.copyWith(
-              weaponDetailLoadState: LoadState.success,
-              weaponCharacterLoadState: LoadState.failure,
-            ));
+            emit(
+              state.copyWith(
+                weaponDetailLoadState: LoadState.success,
+                weaponCharacterLoadState: LoadState.failure,
+              ),
+            );
           }
         } catch (e) {
           LogService.e('获取刀枪模专属角色信息失败: $e', e);
-          emit(state.copyWith(
-            weaponDetailLoadState: LoadState.success,
-            weaponCharacterLoadState: LoadState.failure,
-          ));
+          emit(
+            state.copyWith(
+              weaponDetailLoadState: LoadState.success,
+              weaponCharacterLoadState: LoadState.failure,
+            ),
+          );
         }
       } else {
         emit(state.copyWith(weaponDetailLoadState: LoadState.success));
       }
     } catch (e) {
       LogService.e('加载刀枪模详情失败: $e', e);
-      emit(state.copyWith(
-        weaponDetailLoadState: LoadState.failure,
-        error: '加载失败，请稍后重试',
-      ));
+      emit(
+        state.copyWith(
+          weaponDetailLoadState: LoadState.failure,
+          error: '加载失败，请稍后重试',
+        ),
+      );
     }
   }
 }

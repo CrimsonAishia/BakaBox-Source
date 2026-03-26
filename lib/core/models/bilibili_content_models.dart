@@ -123,7 +123,6 @@ class BilibiliVideo {
   final DateTime createdAt;
   final DateTime? updatedAt;
 
-
   // 审核相关字段
   final String? auditStatus;
   final String? auditRemark;
@@ -253,10 +252,7 @@ class VideoCategory {
   final int id;
   final String name;
 
-  const VideoCategory({
-    required this.id,
-    required this.name,
-  });
+  const VideoCategory({required this.id, required this.name});
 
   factory VideoCategory.fromJson(Map<String, dynamic> json) =>
       _$VideoCategoryFromJson(json);

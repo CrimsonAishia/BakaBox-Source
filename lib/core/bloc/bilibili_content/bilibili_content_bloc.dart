@@ -26,7 +26,9 @@ class BilibiliContentBloc
     on<BilibiliContentRoomStatusUpdated>(_onRoomStatusUpdated);
     on<BilibiliContentSearchChanged>(_onSearch);
     on<BilibiliContentVideoAuditFilterChanged>(_onVideoAuditFilterChanged);
-    on<BilibiliContentVideoCategoryFilterChanged>(_onVideoCategoryFilterChanged);
+    on<BilibiliContentVideoCategoryFilterChanged>(
+      _onVideoCategoryFilterChanged,
+    );
     on<BilibiliContentIncreaseLiveRoomViewRequested>(_onIncreaseLiveRoomView);
     on<BilibiliContentIncreaseVideoViewRequested>(_onIncreaseVideoView);
     on<BilibiliContentClearOperationResult>(_onClearOperationResult);
@@ -85,7 +87,7 @@ class BilibiliContentBloc
         if (liveRooms.isNotEmpty) {
           _refreshRoomInfoFromBilibili(liveRooms, bypassCache: isForceRefresh);
         }
-        
+
         // 立即标记B站数据加载完成，让UI不显示加载状态
         // 数据会在后台异步更新后通过事件回调更新
         emit(state.copyWith(isLoadingBilibiliData: false));
@@ -117,7 +119,7 @@ class BilibiliContentBloc
         if (videos.isNotEmpty) {
           _refreshVideoInfoFromBilibili(videos, bypassCache: isForceRefresh);
         }
-        
+
         // 立即标记B站数据加载完成，让UI不显示加载状态
         // 数据会在后台异步更新后通过事件回调更新
         emit(state.copyWith(isLoadingBilibiliData: false));
@@ -135,7 +137,10 @@ class BilibiliContentBloc
   }
 
   /// 从B站API获取直播间详细信息（标题、封面、头像、粉丝数、直播状态、观看人数）
-  Future<void> _refreshRoomInfoFromBilibili(List<LiveRoom> rooms, {bool bypassCache = false}) async {
+  Future<void> _refreshRoomInfoFromBilibili(
+    List<LiveRoom> rooms, {
+    bool bypassCache = false,
+  }) async {
     if (rooms.isEmpty) return;
 
     try {
@@ -143,13 +148,19 @@ class BilibiliContentBloc
       final uids = rooms.map((r) => r.ownerUid).toList();
 
       // 使用新的 UID 批量接口获取直播状态
-      final liveStatusMap = await _bilibiliService.getLiveStatusByUids(uids, bypassCache: bypassCache);
+      final liveStatusMap = await _bilibiliService.getLiveStatusByUids(
+        uids,
+        bypassCache: bypassCache,
+      );
 
       // 收集所有 UID，批量获取用户信息（头像和粉丝数）
       // 注意：批量直播状态接口不返回头像，需要单独获取
       final userInfoMap = <String, BilibiliUserInfo>{};
       for (final uid in uids) {
-        final userInfo = await _bilibiliService.getUserInfo(uid, bypassCache: bypassCache);
+        final userInfo = await _bilibiliService.getUserInfo(
+          uid,
+          bypassCache: bypassCache,
+        );
         if (userInfo != null) {
           userInfoMap[uid] = userInfo;
         }
@@ -179,7 +190,10 @@ class BilibiliContentBloc
   }
 
   /// 从B站API获取视频详细信息（播放量、点赞数等）
-  Future<void> _refreshVideoInfoFromBilibili(List<BilibiliVideo> videos, {bool bypassCache = false}) async {
+  Future<void> _refreshVideoInfoFromBilibili(
+    List<BilibiliVideo> videos, {
+    bool bypassCache = false,
+  }) async {
     if (videos.isEmpty) return;
 
     try {
@@ -187,7 +201,10 @@ class BilibiliContentBloc
 
       // 逐个获取视频信息（B站API没有批量接口）
       for (final video in videos) {
-        final videoInfo = await _bilibiliService.getVideoInfo(video.bvid, bypassCache: bypassCache);
+        final videoInfo = await _bilibiliService.getVideoInfo(
+          video.bvid,
+          bypassCache: bypassCache,
+        );
         if (videoInfo != null) {
           updatedVideos.add(
             video.copyWith(
@@ -302,14 +319,17 @@ class BilibiliContentBloc
 
     // 切换到视频Tab时，重置分类和排序到默认状态
     if (event.tabIndex == 1) {
-      final shouldReset = state.videoCategoryFilter != null || state.videoSort != 'view_count';
+      final shouldReset =
+          state.videoCategoryFilter != null || state.videoSort != 'view_count';
       if (shouldReset || shouldResetPage) {
-        emit(state.copyWith(
-          currentTabIndex: event.tabIndex,
-          currentPage: 1,
-          clearVideoCategoryFilter: shouldReset,
-          videoSort: 'view_count',
-        ));
+        emit(
+          state.copyWith(
+            currentTabIndex: event.tabIndex,
+            currentPage: 1,
+            clearVideoCategoryFilter: shouldReset,
+            videoSort: 'view_count',
+          ),
+        );
       } else {
         emit(state.copyWith(currentTabIndex: event.tabIndex, currentPage: 1));
       }
@@ -628,13 +648,19 @@ class BilibiliContentBloc
 
       // 使用新的 UID 批量接口获取直播状态（更高效，减少请求次数）
       // 手动刷新时强制获取最新数据
-      final liveStatusMap = await _bilibiliService.getLiveStatusByUids(uids, bypassCache: true);
+      final liveStatusMap = await _bilibiliService.getLiveStatusByUids(
+        uids,
+        bypassCache: true,
+      );
 
       // 收集所有 UID，批量获取用户信息（头像和粉丝数）
       // 注意：批量直播状态接口不返回头像，需要单独获取
       final userInfoMap = <String, BilibiliUserInfo>{};
       for (final uid in uids) {
-        final userInfo = await _bilibiliService.getUserInfo(uid, bypassCache: true);
+        final userInfo = await _bilibiliService.getUserInfo(
+          uid,
+          bypassCache: true,
+        );
         if (userInfo != null) {
           userInfoMap[uid] = userInfo;
         }

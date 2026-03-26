@@ -14,10 +14,7 @@ import 'settings_buttons.dart';
 class AboutSettings extends StatelessWidget {
   final SettingsState settingsState;
 
-  const AboutSettings({
-    super.key,
-    required this.settingsState,
-  });
+  const AboutSettings({super.key, required this.settingsState});
 
   @override
   Widget build(BuildContext context) {
@@ -25,10 +22,7 @@ class AboutSettings extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SettingsGroupTitle(
-          title: '关于',
-          icon: MdiIcons.informationOutline,
-        ),
+        SettingsGroupTitle(title: '关于', icon: MdiIcons.informationOutline),
         _buildUpdateInfoGrid(context),
         const SizedBox(height: 15),
         Container(
@@ -38,7 +32,9 @@ class AboutSettings extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             border: Border(
               left: BorderSide(
-                color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0EA5E9),
+                color: isDark
+                    ? const Color(0xFF38BDF8)
+                    : const Color(0xFF0EA5E9),
                 width: 4,
               ),
             ),
@@ -65,7 +61,8 @@ class AboutSettings extends StatelessWidget {
               icon: MdiIcons.tagOutline,
               iconColor: const Color(0xFF0080FF),
               label: '当前版本',
-              value: Text('v${settingsState.appVersion}',
+              value: Text(
+                'v${settingsState.appVersion}',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -73,7 +70,9 @@ class AboutSettings extends StatelessWidget {
                 ),
               ),
               action: SettingsPrimaryButton(
-                onPressed: updateState.isChecking ? null : () => _checkForUpdates(context),
+                onPressed: updateState.isChecking
+                    ? null
+                    : () => _checkForUpdates(context),
                 label: updateState.isChecking ? '检查中...' : '检查更新',
                 icon: MdiIcons.refresh,
                 isLoading: updateState.isChecking,
@@ -87,21 +86,34 @@ class AboutSettings extends StatelessWidget {
                 children: [
                   ClipOval(
                     child: DiskCachedImage(
-                      imageUrl: 'https://bbs.zombieden.cn/uc_server/data/avatar/000/04/21/47_avatar_middle.jpg',
+                      imageUrl:
+                          'https://bbs.zombieden.cn/uc_server/data/avatar/000/04/21/47_avatar_middle.jpg',
                       width: 42,
                       height: 42,
                       fit: BoxFit.cover,
                       placeholder: Container(
                         width: 42,
                         height: 42,
-                        color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB),
-                        child: const Icon(Icons.person, size: 20, color: Colors.grey),
+                        color: isDark
+                            ? const Color(0xFF475569)
+                            : const Color(0xFFE5E7EB),
+                        child: const Icon(
+                          Icons.person,
+                          size: 20,
+                          color: Colors.grey,
+                        ),
                       ),
                       errorWidget: Container(
                         width: 42,
                         height: 42,
-                        color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB),
-                        child: const Icon(Icons.person, size: 20, color: Colors.grey),
+                        color: isDark
+                            ? const Color(0xFF475569)
+                            : const Color(0xFFE5E7EB),
+                        child: const Icon(
+                          Icons.person,
+                          size: 20,
+                          color: Colors.grey,
+                        ),
                       ),
                     ),
                   ),
@@ -173,7 +185,9 @@ class _UpdateInfoItem extends StatelessWidget {
               : [const Color(0xFFFAFBFC), const Color(0xFFF8FAFC)],
         ),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.02),
@@ -188,10 +202,16 @@ class _UpdateInfoItem extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: (iconColor ?? const Color(0xFF0080FF)).withValues(alpha: 0.1),
+                color: (iconColor ?? const Color(0xFF0080FF)).withValues(
+                  alpha: 0.1,
+                ),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, size: 20, color: iconColor ?? const Color(0xFF0080FF)),
+              child: Icon(
+                icon,
+                size: 20,
+                color: iconColor ?? const Color(0xFF0080FF),
+              ),
             ),
             const SizedBox(width: 16),
           ],

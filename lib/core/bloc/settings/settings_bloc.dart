@@ -29,8 +29,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   static const String _keyLaunchOptions = 'launch_options';
   static const String _keyNotificationPosition = 'notification_position';
   static const String _keyFloatingWindowPosition = 'floating_window_position';
-  static const String _keyWarmupNotificationEnabled = 'warmup_notification_enabled';
-  static const String _keyUpdateLogNotificationEnabled = 'update_log_notification_enabled';
+  static const String _keyWarmupNotificationEnabled =
+      'warmup_notification_enabled';
+  static const String _keyUpdateLogNotificationEnabled =
+      'update_log_notification_enabled';
 
   final AudioService _audioService = AudioService();
   final GamePathService _gamePathService = GamePathService();
@@ -69,7 +71,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     // 热身通知开关事件
     on<SettingsSetWarmupNotificationEnabled>(_onSetWarmupNotificationEnabled);
     // 更新日志通知开关事件
-    on<SettingsSetUpdateLogNotificationEnabled>(_onSetUpdateLogNotificationEnabled);
+    on<SettingsSetUpdateLogNotificationEnabled>(
+      _onSetUpdateLogNotificationEnabled,
+    );
   }
 
   Future<void> _onInit(SettingsInit event, Emitter<SettingsState> emit) async {
@@ -88,10 +92,12 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   Future<void> _loadAppInfo(Emitter<SettingsState> emit) async {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
-      emit(state.copyWith(
-        appVersion: packageInfo.version,
-        buildNumber: packageInfo.buildNumber,
-      ));
+      emit(
+        state.copyWith(
+          appVersion: packageInfo.version,
+          buildNumber: packageInfo.buildNumber,
+        ),
+      );
     } catch (e) {
       LogService.e('加载应用信息失败', e);
     }
@@ -100,29 +106,45 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   Future<void> _loadPreferences(Emitter<SettingsState> emit) async {
     try {
       final themeModeIndex = StorageUtils.getInt('theme_mode') ?? 0;
-      final notificationPositionIndex = StorageUtils.getInt(_keyNotificationPosition) ?? NotificationPositionType.topRight.index;
-      final floatingWindowPositionIndex = StorageUtils.getInt(_keyFloatingWindowPosition) ?? NotificationPositionType.bottomRight.index;
-      final warmupNotificationEnabled = StorageUtils.getBool(_keyWarmupNotificationEnabled, defaultValue: true);
-      final updateLogNotificationEnabled = StorageUtils.getBool(_keyUpdateLogNotificationEnabled, defaultValue: true);
-      final notificationPosition = NotificationPositionType.values[notificationPositionIndex];
-      final floatingWindowPosition = NotificationPositionType.values[floatingWindowPositionIndex];
-      
+      final notificationPositionIndex =
+          StorageUtils.getInt(_keyNotificationPosition) ??
+          NotificationPositionType.topRight.index;
+      final floatingWindowPositionIndex =
+          StorageUtils.getInt(_keyFloatingWindowPosition) ??
+          NotificationPositionType.bottomRight.index;
+      final warmupNotificationEnabled = StorageUtils.getBool(
+        _keyWarmupNotificationEnabled,
+        defaultValue: true,
+      );
+      final updateLogNotificationEnabled = StorageUtils.getBool(
+        _keyUpdateLogNotificationEnabled,
+        defaultValue: true,
+      );
+      final notificationPosition =
+          NotificationPositionType.values[notificationPositionIndex];
+      final floatingWindowPosition =
+          NotificationPositionType.values[floatingWindowPositionIndex];
+
       // 同步通知位置到 NotificationWindowService
       if (PlatformUtils.isDesktopPlatform) {
-        NotificationWindowService().setNotificationPosition(notificationPosition);
+        NotificationWindowService().setNotificationPosition(
+          notificationPosition,
+        );
         // 同步热身通知开关到 WarmupMonitorService
         WarmupMonitorService().setEnabled(warmupNotificationEnabled);
         // 同步更新日志通知开关到 UpdateLogMonitorService
         UpdateLogMonitorService().setEnabled(updateLogNotificationEnabled);
       }
-      
-      emit(state.copyWith(
-        themeMode: ThemeMode.values[themeModeIndex],
-        notificationPosition: notificationPosition,
-        floatingWindowPosition: floatingWindowPosition,
-        warmupNotificationEnabled: warmupNotificationEnabled,
-        updateLogNotificationEnabled: updateLogNotificationEnabled,
-      ));
+
+      emit(
+        state.copyWith(
+          themeMode: ThemeMode.values[themeModeIndex],
+          notificationPosition: notificationPosition,
+          floatingWindowPosition: floatingWindowPosition,
+          warmupNotificationEnabled: warmupNotificationEnabled,
+          updateLogNotificationEnabled: updateLogNotificationEnabled,
+        ),
+      );
     } catch (e) {
       LogService.e('加载偏好设置失败', e);
     }
@@ -134,20 +156,24 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       final steamPath = StorageUtils.getString(_keySteamPath);
       final platformStr = StorageUtils.getString(_keyLaunchPlatform);
       final launchOptions = StorageUtils.getStringList(_keyLaunchOptions);
-      
+
       LaunchPlatformType platform = LaunchPlatformType.worldwide;
       if (platformStr == 'perfect') {
         platform = LaunchPlatformType.perfect;
       }
-      
-      emit(state.copyWith(
-        gamePath: gamePath,
-        steamPath: steamPath,
-        launchPlatform: platform,
-        launchOptions: launchOptions,
-      ));
-      
-      LogService.d('游戏设置已加载: gamePath=$gamePath, steamPath=$steamPath, platform=$platformStr');
+
+      emit(
+        state.copyWith(
+          gamePath: gamePath,
+          steamPath: steamPath,
+          launchPlatform: platform,
+          launchOptions: launchOptions,
+        ),
+      );
+
+      LogService.d(
+        '游戏设置已加载: gamePath=$gamePath, steamPath=$steamPath, platform=$platformStr',
+      );
     } catch (e) {
       LogService.e('加载游戏设置失败', e);
     }
@@ -156,7 +182,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   Future<void> _calculateCacheSize(Emitter<SettingsState> emit) async {
     try {
       int totalSize = 0;
-      
+
       if (PlatformUtils.isDesktopPlatform) {
         // 桌面端：使用 AppDirectoryService 的缓存目录
         final cacheDir = Directory(AppDirectoryService.cachePath);
@@ -166,7 +192,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         final cacheDir = await getTemporaryDirectory();
         totalSize = await _calculateDirectorySize(cacheDir);
       }
-      
+
       emit(state.copyWith(cacheSize: _formatBytes(totalSize)));
     } catch (e) {
       emit(state.copyWith(cacheSize: '无法计算'));
@@ -178,7 +204,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     int size = 0;
     try {
       if (directory.existsSync()) {
-        await for (var entity in directory.list(recursive: true, followLinks: false)) {
+        await for (var entity in directory.list(
+          recursive: true,
+          followLinks: false,
+        )) {
           try {
             if (entity is File) {
               size += await entity.length();
@@ -203,7 +232,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     return '${(bytes / (1 << (i * 10))).toStringAsFixed(1)} ${suffixes[i]}';
   }
 
-  Future<void> _onSetThemeMode(SettingsSetThemeMode event, Emitter<SettingsState> emit) async {
+  Future<void> _onSetThemeMode(
+    SettingsSetThemeMode event,
+    Emitter<SettingsState> emit,
+  ) async {
     try {
       emit(state.copyWith(themeMode: event.themeMode));
       await StorageUtils.setInt('theme_mode', event.themeMode.index);
@@ -213,13 +245,22 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  Future<void> _onToggleDarkMode(SettingsToggleDarkMode event, Emitter<SettingsState> emit) async {
+  Future<void> _onToggleDarkMode(
+    SettingsToggleDarkMode event,
+    Emitter<SettingsState> emit,
+  ) async {
     try {
       ThemeMode newMode;
       switch (state.themeMode) {
-        case ThemeMode.system: newMode = ThemeMode.light; break;
-        case ThemeMode.light: newMode = ThemeMode.dark; break;
-        case ThemeMode.dark: newMode = ThemeMode.system; break;
+        case ThemeMode.system:
+          newMode = ThemeMode.light;
+          break;
+        case ThemeMode.light:
+          newMode = ThemeMode.dark;
+          break;
+        case ThemeMode.dark:
+          newMode = ThemeMode.system;
+          break;
       }
       emit(state.copyWith(themeMode: newMode));
       await StorageUtils.setInt('theme_mode', newMode.index);
@@ -229,12 +270,15 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  Future<void> _onClearCache(SettingsClearCache event, Emitter<SettingsState> emit) async {
+  Future<void> _onClearCache(
+    SettingsClearCache event,
+    Emitter<SettingsState> emit,
+  ) async {
     emit(state.copyWith(isLoading: true));
     try {
       // 清理磁盘图片缓存
       await DiskImageCacheService.instance.clearCache();
-      
+
       // 根据平台选择缓存目录
       Directory cacheDir;
       if (PlatformUtils.isDesktopPlatform) {
@@ -242,7 +286,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       } else {
         cacheDir = await getTemporaryDirectory();
       }
-      
+
       if (cacheDir.existsSync()) {
         await for (var entity in cacheDir.list()) {
           try {
@@ -256,25 +300,30 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
           }
         }
       }
-      
+
       // 清理服务器列表缓存
       await CacheService.clearServerListCache();
-      
+
       // 清理地图信息缓存
       await CacheService.clearMapInfoCache();
       final serverApi = ServerApi();
       serverApi.clearMapInfoCache();
-      
+
       // 清理存储中的缓存数据
-      final keysToRemove = StorageUtils.getKeys().where((key) => 
-        (key.contains('cache') || key.contains('temp')) &&
-        !key.contains('theme') && !key.contains('path') && 
-        !key.contains('platform') && !key.contains('options')
-      ).toList();
+      final keysToRemove = StorageUtils.getKeys()
+          .where(
+            (key) =>
+                (key.contains('cache') || key.contains('temp')) &&
+                !key.contains('theme') &&
+                !key.contains('path') &&
+                !key.contains('platform') &&
+                !key.contains('options'),
+          )
+          .toList();
       for (final key in keysToRemove) {
         await StorageUtils.remove(key);
       }
-      
+
       await _calculateCacheSize(emit);
       LogService.d('缓存清理完成');
     } catch (e) {
@@ -284,11 +333,17 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  Future<void> _onRefreshCacheSize(SettingsRefreshCacheSize event, Emitter<SettingsState> emit) async {
+  Future<void> _onRefreshCacheSize(
+    SettingsRefreshCacheSize event,
+    Emitter<SettingsState> emit,
+  ) async {
     await _calculateCacheSize(emit);
   }
 
-  Future<void> _onCheckForUpdates(SettingsCheckForUpdates event, Emitter<SettingsState> emit) async {
+  Future<void> _onCheckForUpdates(
+    SettingsCheckForUpdates event,
+    Emitter<SettingsState> emit,
+  ) async {
     emit(state.copyWith(isCheckingUpdate: true));
     try {
       LogService.d('开始检查更新');
@@ -300,7 +355,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  Future<void> _onExportLogs(SettingsExportLogs event, Emitter<SettingsState> emit) async {
+  Future<void> _onExportLogs(
+    SettingsExportLogs event,
+    Emitter<SettingsState> emit,
+  ) async {
     emit(state.copyWith(isLoading: true));
     try {
       final logDir = await LogService.getLogDirectory();
@@ -318,133 +376,176 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   // ==================== 游戏设置事件处理 ====================
 
-  Future<void> _onSetGamePath(SettingsSetGamePath event, Emitter<SettingsState> emit) async {
+  Future<void> _onSetGamePath(
+    SettingsSetGamePath event,
+    Emitter<SettingsState> emit,
+  ) async {
     try {
       // 使用 GamePathService 验证路径
-      final validationResult = await _gamePathService.validateGamePath(event.path);
+      final validationResult = await _gamePathService.validateGamePath(
+        event.path,
+      );
       if (!validationResult.isValid) {
-        emit(state.copyWith(
-          gamePathError: validationResult.error,
-        ));
+        emit(state.copyWith(gamePathError: validationResult.error));
         LogService.w('游戏路径验证失败: ${validationResult.error}');
         return;
       }
-      
+
       await StorageUtils.setString(_keyGamePath, event.path);
-      emit(state.copyWith(
-        gamePath: event.path,
-        gamePathError: null,
-      ));
-      
+      emit(state.copyWith(gamePath: event.path, gamePathError: null));
+
       // 同步到 GameLauncherService
       await GameLauncherService().setGamePath(event.path);
       LogService.d('游戏路径已设置: ${event.path}');
     } catch (e) {
       LogService.e('设置游戏路径失败', e);
-      emit(state.copyWith(gamePathError: ErrorUtils.getErrorMessage(e, defaultMessage: '设置游戏路径失败')));
+      emit(
+        state.copyWith(
+          gamePathError: ErrorUtils.getErrorMessage(
+            e,
+            defaultMessage: '设置游戏路径失败',
+          ),
+        ),
+      );
     }
   }
 
-  Future<void> _onSetSteamPath(SettingsSetSteamPath event, Emitter<SettingsState> emit) async {
+  Future<void> _onSetSteamPath(
+    SettingsSetSteamPath event,
+    Emitter<SettingsState> emit,
+  ) async {
     try {
       // 使用 GamePathService 验证路径
-      final validationResult = await _gamePathService.validateSteamPath(event.path);
+      final validationResult = await _gamePathService.validateSteamPath(
+        event.path,
+      );
       if (!validationResult.isValid) {
-        emit(state.copyWith(
-          steamPathError: validationResult.error,
-        ));
+        emit(state.copyWith(steamPathError: validationResult.error));
         LogService.w('Steam路径验证失败: ${validationResult.error}');
         return;
       }
-      
+
       await StorageUtils.setString(_keySteamPath, event.path);
-      emit(state.copyWith(
-        steamPath: event.path,
-        steamPathError: null,
-      ));
-      
+      emit(state.copyWith(steamPath: event.path, steamPathError: null));
+
       // 同步到 GameLauncherService
       await GameLauncherService().setSteamPath(event.path);
       LogService.d('Steam路径已设置: ${event.path}');
     } catch (e) {
       LogService.e('设置Steam路径失败', e);
-      emit(state.copyWith(steamPathError: ErrorUtils.getErrorMessage(e, defaultMessage: '设置Steam路径失败')));
+      emit(
+        state.copyWith(
+          steamPathError: ErrorUtils.getErrorMessage(
+            e,
+            defaultMessage: '设置Steam路径失败',
+          ),
+        ),
+      );
     }
   }
 
-  Future<void> _onDetectGamePath(SettingsDetectGamePath event, Emitter<SettingsState> emit) async {
+  Future<void> _onDetectGamePath(
+    SettingsDetectGamePath event,
+    Emitter<SettingsState> emit,
+  ) async {
     emit(state.copyWith(isDetectingPath: true, gamePathError: null));
     try {
       // 使用 GameLauncherService 的智能检测（基于注册表和进程）
       final gamePath = await _gameLauncherService.detectGamePath();
       if (gamePath != null) {
         await StorageUtils.setString(_keyGamePath, gamePath);
-        emit(state.copyWith(
-          gamePath: gamePath, 
-          isDetectingPath: false,
-          gamePathError: null,
-        ));
-        
+        emit(
+          state.copyWith(
+            gamePath: gamePath,
+            isDetectingPath: false,
+            gamePathError: null,
+          ),
+        );
+
         // 同步到 GameLauncherService
         await _gameLauncherService.setGamePath(gamePath);
         LogService.d('自动检测到游戏路径: $gamePath');
       } else {
-        emit(state.copyWith(
-          isDetectingPath: false,
-          gamePathError: '未能自动检测到游戏路径，请手动选择',
-        ));
+        emit(
+          state.copyWith(
+            isDetectingPath: false,
+            gamePathError: '未能自动检测到游戏路径，请手动选择',
+          ),
+        );
         LogService.w('未能自动检测到游戏路径');
       }
     } catch (e) {
-      emit(state.copyWith(
-        isDetectingPath: false,
-        gamePathError: ErrorUtils.getErrorMessage(e, defaultMessage: '检测游戏路径失败'),
-      ));
+      emit(
+        state.copyWith(
+          isDetectingPath: false,
+          gamePathError: ErrorUtils.getErrorMessage(
+            e,
+            defaultMessage: '检测游戏路径失败',
+          ),
+        ),
+      );
       LogService.e('检测游戏路径失败', e);
     }
   }
 
-  Future<void> _onDetectSteamPath(SettingsDetectSteamPath event, Emitter<SettingsState> emit) async {
+  Future<void> _onDetectSteamPath(
+    SettingsDetectSteamPath event,
+    Emitter<SettingsState> emit,
+  ) async {
     emit(state.copyWith(isDetectingPath: true, steamPathError: null));
     try {
       // 使用 GameLauncherService 的智能检测（基于注册表和进程）
       final steamPath = await _gameLauncherService.detectSteamPath();
       if (steamPath != null) {
         await StorageUtils.setString(_keySteamPath, steamPath);
-        emit(state.copyWith(
-          steamPath: steamPath, 
-          isDetectingPath: false,
-          steamPathError: null,
-        ));
-        
+        emit(
+          state.copyWith(
+            steamPath: steamPath,
+            isDetectingPath: false,
+            steamPathError: null,
+          ),
+        );
+
         // 同步到 GameLauncherService
         await _gameLauncherService.setSteamPath(steamPath);
         LogService.d('自动检测到Steam路径: $steamPath');
       } else {
-        emit(state.copyWith(
-          isDetectingPath: false,
-          steamPathError: '未能自动检测到Steam路径，请手动选择',
-        ));
+        emit(
+          state.copyWith(
+            isDetectingPath: false,
+            steamPathError: '未能自动检测到Steam路径，请手动选择',
+          ),
+        );
         LogService.w('未能自动检测到Steam路径');
       }
     } catch (e) {
-      emit(state.copyWith(
-        isDetectingPath: false,
-        steamPathError: ErrorUtils.getErrorMessage(e, defaultMessage: '检测Steam路径失败'),
-      ));
+      emit(
+        state.copyWith(
+          isDetectingPath: false,
+          steamPathError: ErrorUtils.getErrorMessage(
+            e,
+            defaultMessage: '检测Steam路径失败',
+          ),
+        ),
+      );
       LogService.e('检测Steam路径失败', e);
     }
   }
 
-  Future<void> _onSetLaunchPlatform(SettingsSetLaunchPlatform event, Emitter<SettingsState> emit) async {
+  Future<void> _onSetLaunchPlatform(
+    SettingsSetLaunchPlatform event,
+    Emitter<SettingsState> emit,
+  ) async {
     try {
-      final platformStr = event.platform == LaunchPlatformType.perfect ? 'perfect' : 'worldwide';
+      final platformStr = event.platform == LaunchPlatformType.perfect
+          ? 'perfect'
+          : 'worldwide';
       await StorageUtils.setString(_keyLaunchPlatform, platformStr);
       emit(state.copyWith(launchPlatform: event.platform));
-      
+
       // 同步到 GameLauncherService
-      final launchPlatform = event.platform == LaunchPlatformType.perfect 
-          ? LaunchPlatform.perfect 
+      final launchPlatform = event.platform == LaunchPlatformType.perfect
+          ? LaunchPlatform.perfect
           : LaunchPlatform.worldwide;
       await GameLauncherService().setLaunchPlatform(launchPlatform);
       LogService.d('启动平台已设置: $platformStr');
@@ -453,11 +554,14 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  Future<void> _onSetLaunchOptions(SettingsSetLaunchOptions event, Emitter<SettingsState> emit) async {
+  Future<void> _onSetLaunchOptions(
+    SettingsSetLaunchOptions event,
+    Emitter<SettingsState> emit,
+  ) async {
     try {
       await StorageUtils.setStringList(_keyLaunchOptions, event.options);
       emit(state.copyWith(launchOptions: event.options));
-      
+
       // 同步到 GameLauncherService
       await GameLauncherService().setLaunchOptions(event.options);
       LogService.d('启动选项已设置: ${event.options.join(" ")}');
@@ -466,15 +570,18 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  Future<void> _onAddLaunchOption(SettingsAddLaunchOption event, Emitter<SettingsState> emit) async {
+  Future<void> _onAddLaunchOption(
+    SettingsAddLaunchOption event,
+    Emitter<SettingsState> emit,
+  ) async {
     try {
       final newOptions = List<String>.from(state.launchOptions);
       if (!newOptions.contains(event.option)) {
         newOptions.add(event.option);
-        
+
         await StorageUtils.setStringList(_keyLaunchOptions, newOptions);
         emit(state.copyWith(launchOptions: newOptions));
-        
+
         // 同步到 GameLauncherService
         await GameLauncherService().setLaunchOptions(newOptions);
         LogService.d('添加启动选项: ${event.option}');
@@ -484,14 +591,17 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  Future<void> _onRemoveLaunchOption(SettingsRemoveLaunchOption event, Emitter<SettingsState> emit) async {
+  Future<void> _onRemoveLaunchOption(
+    SettingsRemoveLaunchOption event,
+    Emitter<SettingsState> emit,
+  ) async {
     try {
       final newOptions = List<String>.from(state.launchOptions);
       newOptions.remove(event.option);
-      
+
       await StorageUtils.setStringList(_keyLaunchOptions, newOptions);
       emit(state.copyWith(launchOptions: newOptions));
-      
+
       // 同步到 GameLauncherService
       await GameLauncherService().setLaunchOptions(newOptions);
       LogService.d('移除启动选项: ${event.option}');
@@ -500,26 +610,26 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  Future<void> _onClearGamePath(SettingsClearGamePath event, Emitter<SettingsState> emit) async {
+  Future<void> _onClearGamePath(
+    SettingsClearGamePath event,
+    Emitter<SettingsState> emit,
+  ) async {
     try {
       await StorageUtils.remove(_keyGamePath);
-      emit(state.copyWith(
-        gamePath: '',
-        gamePathError: null,
-      ));
+      emit(state.copyWith(gamePath: '', gamePathError: null));
       LogService.d('游戏路径已清除');
     } catch (e) {
       LogService.e('清除游戏路径失败', e);
     }
   }
 
-  Future<void> _onClearSteamPath(SettingsClearSteamPath event, Emitter<SettingsState> emit) async {
+  Future<void> _onClearSteamPath(
+    SettingsClearSteamPath event,
+    Emitter<SettingsState> emit,
+  ) async {
     try {
       await StorageUtils.remove(_keySteamPath);
-      emit(state.copyWith(
-        steamPath: '',
-        steamPathError: null,
-      ));
+      emit(state.copyWith(steamPath: '', steamPathError: null));
       LogService.d('Steam路径已清除');
     } catch (e) {
       LogService.e('清除Steam路径失败', e);
@@ -538,7 +648,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  Future<void> _onSetAudioVolume(SettingsSetAudioVolume event, Emitter<SettingsState> emit) async {
+  Future<void> _onSetAudioVolume(
+    SettingsSetAudioVolume event,
+    Emitter<SettingsState> emit,
+  ) async {
     try {
       await _audioService.setVolume(event.volume);
       emit(state.copyWith(audioVolume: event.volume));
@@ -548,7 +661,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  Future<void> _onTestAudio(SettingsTestAudio event, Emitter<SettingsState> emit) async {
+  Future<void> _onTestAudio(
+    SettingsTestAudio event,
+    Emitter<SettingsState> emit,
+  ) async {
     try {
       await _audioService.testSound();
       LogService.d('测试音效播放');
@@ -559,14 +675,19 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   // ==================== 详细缓存管理事件处理 ====================
 
-  Future<void> _onLoadCacheDetails(SettingsLoadCacheDetails event, Emitter<SettingsState> emit) async {
+  Future<void> _onLoadCacheDetails(
+    SettingsLoadCacheDetails event,
+    Emitter<SettingsState> emit,
+  ) async {
     emit(state.copyWith(isLoadingCacheDetails: true));
     try {
       final cacheDetails = await _calculateDetailedCacheInfo();
-      emit(state.copyWith(
-        cacheDetails: cacheDetails,
-        isLoadingCacheDetails: false,
-      ));
+      emit(
+        state.copyWith(
+          cacheDetails: cacheDetails,
+          isLoadingCacheDetails: false,
+        ),
+      );
       LogService.d('缓存详情已加载，共 ${cacheDetails.length} 个类别');
     } catch (e) {
       LogService.e('加载缓存详情失败', e);
@@ -574,7 +695,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  Future<void> _onClearCacheByType(SettingsClearCacheByType event, Emitter<SettingsState> emit) async {
+  Future<void> _onClearCacheByType(
+    SettingsClearCacheByType event,
+    Emitter<SettingsState> emit,
+  ) async {
     // 更新状态显示正在清理
     final updatedDetails = state.cacheDetails.map((item) {
       if (item.type == event.cacheType) {
@@ -586,12 +710,12 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
     try {
       await _clearCacheByType(event.cacheType);
-      
+
       // 重新计算缓存大小
       final newCacheDetails = await _calculateDetailedCacheInfo();
       await _calculateCacheSize(emit);
       emit(state.copyWith(cacheDetails: newCacheDetails));
-      
+
       LogService.d('已清除缓存类型: ${event.cacheType.name}');
     } catch (e) {
       LogService.e('清除缓存失败', e);
@@ -606,22 +730,22 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  Future<void> _onClearAllCache(SettingsClearAllCache event, Emitter<SettingsState> emit) async {
+  Future<void> _onClearAllCache(
+    SettingsClearAllCache event,
+    Emitter<SettingsState> emit,
+  ) async {
     emit(state.copyWith(isLoading: true));
     try {
       // 清除所有类型的缓存
       for (final cacheType in CacheType.values) {
         await _clearCacheByType(cacheType);
       }
-      
+
       // 重新计算缓存大小
       final newCacheDetails = await _calculateDetailedCacheInfo();
       await _calculateCacheSize(emit);
-      emit(state.copyWith(
-        cacheDetails: newCacheDetails,
-        isLoading: false,
-      ));
-      
+      emit(state.copyWith(cacheDetails: newCacheDetails, isLoading: false));
+
       LogService.d('所有缓存已清除');
     } catch (e) {
       LogService.e('清除所有缓存失败', e);
@@ -629,27 +753,34 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
-  Future<void> _onClearSelectedCache(SettingsClearSelectedCache event, Emitter<SettingsState> emit) async {
+  Future<void> _onClearSelectedCache(
+    SettingsClearSelectedCache event,
+    Emitter<SettingsState> emit,
+  ) async {
     emit(state.copyWith(isLoading: true));
     try {
       // 检查是否包含应用数据清理
       final bool clearedAppData = event.cacheTypes.contains(CacheType.appData);
-      
+
       // 清除选中类型的缓存
       for (final cacheType in event.cacheTypes) {
         await _clearCacheByType(cacheType);
       }
-      
+
       // 重新计算缓存大小
       final newCacheDetails = await _calculateDetailedCacheInfo();
       await _calculateCacheSize(emit);
-      emit(state.copyWith(
-        cacheDetails: newCacheDetails,
-        isLoading: false,
-        needsRestart: clearedAppData, // 如果清理了应用数据，标记需要重启
-      ));
-      
-      LogService.d('已清除选中的 ${event.cacheTypes.length} 种缓存${clearedAppData ? '，需要重启应用' : ''}');
+      emit(
+        state.copyWith(
+          cacheDetails: newCacheDetails,
+          isLoading: false,
+          needsRestart: clearedAppData, // 如果清理了应用数据，标记需要重启
+        ),
+      );
+
+      LogService.d(
+        '已清除选中的 ${event.cacheTypes.length} 种缓存${clearedAppData ? '，需要重启应用' : ''}',
+      );
     } catch (e) {
       LogService.e('清除选中缓存失败', e);
       emit(state.copyWith(isLoading: false));
@@ -671,19 +802,21 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       } else {
         final tempDir = await getTemporaryDirectory();
         cacheFilesSize = await _calculateDirectorySize(tempDir);
-        
+
         final appDir = await getApplicationSupportDirectory();
         final imageCacheDir = Directory('${appDir.path}/image_cache');
         if (await imageCacheDir.exists()) {
           cacheFilesSize += await _calculateDirectorySize(imageCacheDir);
         }
       }
-      details.add(CacheItemInfo(
-        type: CacheType.cacheFiles,
-        name: '图片缓存',
-        description: '临时文件和图片缓存',
-        sizeInBytes: cacheFilesSize,
-      ));
+      details.add(
+        CacheItemInfo(
+          type: CacheType.cacheFiles,
+          name: '图片缓存',
+          description: '临时文件和图片缓存',
+          sizeInBytes: cacheFilesSize,
+        ),
+      );
 
       // 2. 服务器相关数据（列表、地图信息、自定义服务器、监控列表）
       int serverDataSize = 0;
@@ -691,22 +824,28 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       if (cachedServerList != null) serverDataSize += cachedServerList.length;
       final cachedMapInfo = StorageUtils.getString('cached_map_info');
       if (cachedMapInfo != null) serverDataSize += cachedMapInfo.length;
-      final customServerCategories = StorageUtils.getString('custom_server_categories');
-      if (customServerCategories != null) serverDataSize += customServerCategories.length;
+      final customServerCategories = StorageUtils.getString(
+        'custom_server_categories',
+      );
+      if (customServerCategories != null) {
+        serverDataSize += customServerCategories.length;
+      }
       final monitoredData = StorageUtils.getStringList('monitored_servers');
       for (final item in monitoredData) {
         serverDataSize += item.length;
       }
-      details.add(CacheItemInfo(
-        type: CacheType.serverData,
-        name: '服务器数据',
-        description: '服务器列表、地图、自定义配置等',
-        sizeInBytes: serverDataSize,
-      ));
+      details.add(
+        CacheItemInfo(
+          type: CacheType.serverData,
+          name: '服务器数据',
+          description: '服务器列表、地图、自定义配置等',
+          sizeInBytes: serverDataSize,
+        ),
+      );
 
       // 3. 应用数据（草稿、已读状态、应用配置等）
       int appDataSize = 0;
-      
+
       // 草稿内容（使用 draft_content_ 前缀）
       final draftKeys = StorageUtils.getKeys()
           .where((key) => key.startsWith('draft_content_'))
@@ -715,29 +854,35 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         final value = StorageUtils.getString(key);
         if (value != null) appDataSize += value.length;
       }
-      
+
       // 草稿时间戳（使用 draft_ts_ 前缀，int 类型）
       final draftTimestampKeys = StorageUtils.getKeys()
           .where((key) => key.startsWith('draft_ts_'))
           .toList();
       appDataSize += draftTimestampKeys.length * 8; // 每个 int 约 8 字节
-      
+
       // 已读状态
-      final announcementReadIds = StorageUtils.getString('announcement_read_ids');
-      if (announcementReadIds != null) appDataSize += announcementReadIds.length;
-      
+      final announcementReadIds = StorageUtils.getString(
+        'announcement_read_ids',
+      );
+      if (announcementReadIds != null) {
+        appDataSize += announcementReadIds.length;
+      }
+
       // 应用配置存储
       final storageDir = Directory('${AppDirectoryService.basePath}/storage');
       if (await storageDir.exists()) {
         appDataSize += await _calculateDirectorySize(storageDir);
       }
-      
-      details.add(CacheItemInfo(
-        type: CacheType.appData,
-        name: '应用数据',
-        description: '草稿、已读状态、游戏路径、主题等（清理后需重新设置）',
-        sizeInBytes: appDataSize,
-      ));
+
+      details.add(
+        CacheItemInfo(
+          type: CacheType.appData,
+          name: '应用数据',
+          description: '草稿、已读状态、游戏路径、主题等（清理后需重新设置）',
+          sizeInBytes: appDataSize,
+        ),
+      );
 
       // 4. 日志文件
       int logsSize = 0;
@@ -745,13 +890,14 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       if (await logsDir.exists()) {
         logsSize = await _calculateDirectorySize(logsDir);
       }
-      details.add(CacheItemInfo(
-        type: CacheType.logs,
-        name: '日志文件',
-        description: '应用运行日志',
-        sizeInBytes: logsSize,
-      ));
-
+      details.add(
+        CacheItemInfo(
+          type: CacheType.logs,
+          name: '日志文件',
+          description: '应用运行日志',
+          sizeInBytes: logsSize,
+        ),
+      );
     } catch (e) {
       LogService.e('计算详细缓存信息失败', e);
     }
@@ -822,10 +968,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         }
         final announcementService = AnnouncementReadService();
         await announcementService.clearReadStatus();
-        
+
         // 彻底清空应用配置
         await StorageUtils.clear();
-        
+
         // 压缩数据库释放空间
         await StorageUtils.compact();
         LogService.d('应用数据已彻底清空并压缩');
@@ -839,14 +985,17 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   // ==================== 通知位置设置事件处理 ====================
 
-  Future<void> _onSetNotificationPosition(SettingsSetNotificationPosition event, Emitter<SettingsState> emit) async {
+  Future<void> _onSetNotificationPosition(
+    SettingsSetNotificationPosition event,
+    Emitter<SettingsState> emit,
+  ) async {
     try {
       await StorageUtils.setInt(_keyNotificationPosition, event.position.index);
       emit(state.copyWith(notificationPosition: event.position));
-      
+
       // 同步到 NotificationWindowService
       NotificationWindowService().setNotificationPosition(event.position);
-      
+
       LogService.d('通知位置已设置: ${event.position.displayName}');
     } catch (e) {
       LogService.e('设置通知位置失败', e);
@@ -855,11 +1004,17 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   // ==================== 浮窗位置设置事件处理 ====================
 
-  Future<void> _onSetFloatingWindowPosition(SettingsSetFloatingWindowPosition event, Emitter<SettingsState> emit) async {
+  Future<void> _onSetFloatingWindowPosition(
+    SettingsSetFloatingWindowPosition event,
+    Emitter<SettingsState> emit,
+  ) async {
     try {
-      await StorageUtils.setInt(_keyFloatingWindowPosition, event.position.index);
+      await StorageUtils.setInt(
+        _keyFloatingWindowPosition,
+        event.position.index,
+      );
       emit(state.copyWith(floatingWindowPosition: event.position));
-      
+
       LogService.d('浮窗位置已设置: ${event.position.displayName}');
     } catch (e) {
       LogService.e('设置浮窗位置失败', e);
@@ -868,14 +1023,17 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   // ==================== 热身通知开关事件处理 ====================
 
-  Future<void> _onSetWarmupNotificationEnabled(SettingsSetWarmupNotificationEnabled event, Emitter<SettingsState> emit) async {
+  Future<void> _onSetWarmupNotificationEnabled(
+    SettingsSetWarmupNotificationEnabled event,
+    Emitter<SettingsState> emit,
+  ) async {
     try {
       await StorageUtils.setBool(_keyWarmupNotificationEnabled, event.enabled);
       emit(state.copyWith(warmupNotificationEnabled: event.enabled));
-      
+
       // 同步到 WarmupMonitorService
       WarmupMonitorService().setEnabled(event.enabled);
-      
+
       LogService.d('热身通知已${event.enabled ? '启用' : '禁用'}');
     } catch (e) {
       LogService.e('设置热身通知开关失败', e);
@@ -884,14 +1042,20 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   // ==================== 更新日志通知开关事件处理 ====================
 
-  Future<void> _onSetUpdateLogNotificationEnabled(SettingsSetUpdateLogNotificationEnabled event, Emitter<SettingsState> emit) async {
+  Future<void> _onSetUpdateLogNotificationEnabled(
+    SettingsSetUpdateLogNotificationEnabled event,
+    Emitter<SettingsState> emit,
+  ) async {
     try {
-      await StorageUtils.setBool(_keyUpdateLogNotificationEnabled, event.enabled);
+      await StorageUtils.setBool(
+        _keyUpdateLogNotificationEnabled,
+        event.enabled,
+      );
       emit(state.copyWith(updateLogNotificationEnabled: event.enabled));
-      
+
       // 同步到 UpdateLogMonitorService
       UpdateLogMonitorService().setEnabled(event.enabled);
-      
+
       LogService.d('更新日志通知已${event.enabled ? '启用' : '禁用'}');
     } catch (e) {
       LogService.e('设置更新日志通知开关失败', e);

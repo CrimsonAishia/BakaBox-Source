@@ -20,7 +20,8 @@ class MobileHomeScreen extends StatefulWidget {
   State<MobileHomeScreen> createState() => _MobileHomeScreenState();
 }
 
-class _MobileHomeScreenState extends State<MobileHomeScreen> with TickerProviderStateMixin {
+class _MobileHomeScreenState extends State<MobileHomeScreen>
+    with TickerProviderStateMixin {
   int _currentIndex = 0;
   late PageController _pageController;
   late AnimationController _navigationAnimationController;
@@ -80,11 +81,13 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with TickerProvider
       HapticFeedback.lightImpact();
       _isAnimating = true;
       setState(() => _currentIndex = index);
-      _pageController.animateToPage(
-        index,
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeInOutCubic,
-      ).then((_) => _isAnimating = false);
+      _pageController
+          .animateToPage(
+            index,
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeInOutCubic,
+          )
+          .then((_) => _isAnimating = false);
     }
   }
 
@@ -104,7 +107,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with TickerProvider
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -126,50 +129,60 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> with TickerProvider
           physics: const BouncingScrollPhysics(),
           children: _screens,
         ),
-        bottomNavigationBar: CurvedNavigationBar(
-          index: _currentIndex,
-          height: 60.0,
-          items: _navigationItems.map((item) {
-            final isSelected = _currentIndex == _navigationItems.indexOf(item);
-            return SizedBox(
-              width: 40,
-              height: 40,
-              child: Icon(
-                isSelected ? item.selectedIcon : item.icon,
-                size: 28,
-                color: isSelected 
-                  ? Colors.white
-                  : isDark 
-                    ? Colors.white.withValues(alpha: 0.7)
-                    : Colors.black.withValues(alpha: 0.6),
-              ),
-            );
-          }).toList(),
-          color: isDark 
-            ? const Color(0xFF1E293B).withValues(alpha: 0.95)
-            : Colors.white.withValues(alpha: 0.95),
-          buttonBackgroundColor: _navigationItems[_currentIndex].activeColor,
-          backgroundColor: isDark 
-            ? const Color(0xFF0F172A).withValues(alpha: 0.95)
-            : const Color(0xFFE9EEF8).withValues(alpha: 0.95),
-          animationCurve: Curves.easeInOutCubic,
-          animationDuration: const Duration(milliseconds: 350),
-          onTap: (index) {
-            if (_currentIndex != index && !_isAnimating) {
-              HapticFeedback.lightImpact();
-              _isAnimating = true;
-              setState(() => _currentIndex = index);
-              _pageController.animateToPage(
-                index,
-                duration: const Duration(milliseconds: 350),
-                curve: Curves.easeInOutCubic,
-              ).then((_) => _isAnimating = false);
-            }
-          },
-        )
-          .animate()
-          .slideY(begin: 1.0, end: 0.0, duration: 600.ms, curve: Curves.easeOutCubic)
-          .fadeIn(duration: 400.ms, delay: 200.ms),
+        bottomNavigationBar:
+            CurvedNavigationBar(
+                  index: _currentIndex,
+                  height: 60.0,
+                  items: _navigationItems.map((item) {
+                    final isSelected =
+                        _currentIndex == _navigationItems.indexOf(item);
+                    return SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: Icon(
+                        isSelected ? item.selectedIcon : item.icon,
+                        size: 28,
+                        color: isSelected
+                            ? Colors.white
+                            : isDark
+                            ? Colors.white.withValues(alpha: 0.7)
+                            : Colors.black.withValues(alpha: 0.6),
+                      ),
+                    );
+                  }).toList(),
+                  color: isDark
+                      ? const Color(0xFF1E293B).withValues(alpha: 0.95)
+                      : Colors.white.withValues(alpha: 0.95),
+                  buttonBackgroundColor:
+                      _navigationItems[_currentIndex].activeColor,
+                  backgroundColor: isDark
+                      ? const Color(0xFF0F172A).withValues(alpha: 0.95)
+                      : const Color(0xFFE9EEF8).withValues(alpha: 0.95),
+                  animationCurve: Curves.easeInOutCubic,
+                  animationDuration: const Duration(milliseconds: 350),
+                  onTap: (index) {
+                    if (_currentIndex != index && !_isAnimating) {
+                      HapticFeedback.lightImpact();
+                      _isAnimating = true;
+                      setState(() => _currentIndex = index);
+                      _pageController
+                          .animateToPage(
+                            index,
+                            duration: const Duration(milliseconds: 350),
+                            curve: Curves.easeInOutCubic,
+                          )
+                          .then((_) => _isAnimating = false);
+                    }
+                  },
+                )
+                .animate()
+                .slideY(
+                  begin: 1.0,
+                  end: 0.0,
+                  duration: 600.ms,
+                  curve: Curves.easeOutCubic,
+                )
+                .fadeIn(duration: 400.ms, delay: 200.ms),
       ),
     );
   }

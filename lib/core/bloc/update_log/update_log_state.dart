@@ -3,11 +3,11 @@ import '../../models/update_log_models.dart';
 
 class UpdateLogState extends Equatable {
   final List<SteamWorkChangeLog> logs;
-  final bool isLoading;      // 首次加载或搜索中
-  final bool isLoadingMore;  // 加载更多中
+  final bool isLoading; // 首次加载或搜索中
+  final bool isLoadingMore; // 加载更多中
   final bool hasMore;
   final int totalCount;
-  final String keyword;      // 当前搜索关键字
+  final String keyword; // 当前搜索关键字
   final String? error;
 
   const UpdateLogState({
@@ -42,5 +42,13 @@ class UpdateLogState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [logs, isLoading, isLoadingMore, hasMore, totalCount, keyword, error];
+  List<Object?> get props => [
+    logs,
+    isLoading,
+    isLoadingMore,
+    hasMore,
+    totalCount,
+    keyword,
+    error,
+  ];
 }

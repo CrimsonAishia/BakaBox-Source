@@ -32,17 +32,17 @@ class _QueueFloatingCardState extends State<QueueFloatingCard>
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(1.0, 0.0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.elasticOut,
-      reverseCurve: Curves.easeInCubic,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(1.0, 0.0), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.elasticOut,
+            reverseCurve: Curves.easeInCubic,
+          ),
+        );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-        parent: _animationController, 
+        parent: _animationController,
         curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
       ),
     );
@@ -165,10 +165,7 @@ class _QueueFloatingCardState extends State<QueueFloatingCard>
               offset: const Offset(0, 2),
             ),
           ],
-          border: Border.all(
-            color: const Color(0xFF334155),
-            width: 1,
-          ),
+          border: Border.all(color: const Color(0xFF334155), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -197,11 +194,7 @@ class _QueueFloatingCardState extends State<QueueFloatingCard>
               ),
             ),
             const SizedBox(width: 4),
-            Icon(
-              MdiIcons.chevronUp,
-              size: 16,
-              color: Colors.white70,
-            ),
+            Icon(MdiIcons.chevronUp, size: 16, color: Colors.white70),
           ],
         ),
       ),
@@ -214,7 +207,10 @@ class _QueueFloatingCardState extends State<QueueFloatingCard>
     final players = state.serverInfo?.players ?? 0;
     final maxPlayers = state.serverInfo?.maxPlayers ?? 0;
     final targetPlayers = state.queueConfig.targetPlayers;
-    final playerColor = PlayerCountUtils.getPlayerCountColor(players, maxPlayers);
+    final playerColor = PlayerCountUtils.getPlayerCountColor(
+      players,
+      maxPlayers,
+    );
 
     return Container(
       width: 280,
@@ -229,10 +225,7 @@ class _QueueFloatingCardState extends State<QueueFloatingCard>
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(
-          color: const Color(0xFF334155),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFF334155), width: 1),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -301,10 +294,7 @@ class _QueueFloatingCardState extends State<QueueFloatingCard>
           // 服务器名称
           Text(
             serverName,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

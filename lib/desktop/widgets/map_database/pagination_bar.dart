@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// 分页器组件
-/// 
+///
 /// 显示页码按钮和上一页/下一页按钮
 class PaginationBar extends StatelessWidget {
   final int currentPage;
@@ -39,7 +39,7 @@ class PaginationBar extends StatelessWidget {
           // 左侧占位，保持分页按钮居中
           if (totalItems != null && pageSize != null)
             Expanded(child: Container()),
-          
+
           // 中间：分页按钮
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -53,10 +53,10 @@ class PaginationBar extends StatelessWidget {
                 isDark: isDark,
               ),
               const SizedBox(width: 8),
-              
+
               // 页码按钮
               ..._buildPageButtons(context, isDark),
-              
+
               const SizedBox(width: 8),
               // 下一页按钮
               _buildNavigationButton(
@@ -68,7 +68,7 @@ class PaginationBar extends StatelessWidget {
               ),
             ],
           ),
-          
+
           // 右侧：显示条数信息
           if (totalItems != null && pageSize != null)
             Expanded(
@@ -96,20 +96,22 @@ class PaginationBar extends StatelessWidget {
 
     for (int i = 0; i < pages.length; i++) {
       final page = pages[i];
-      
+
       if (page == -1) {
         // 省略号
         buttons.add(_buildEllipsis(isDark));
       } else {
         // 页码按钮
-        buttons.add(_buildPageButton(
-          context,
-          page: page,
-          isActive: page == currentPage,
-          isDark: isDark,
-        ));
+        buttons.add(
+          _buildPageButton(
+            context,
+            page: page,
+            isActive: page == currentPage,
+            isDark: isDark,
+          ),
+        );
       }
-      
+
       if (i < pages.length - 1) {
         buttons.add(const SizedBox(width: 4));
       }
@@ -145,7 +147,11 @@ class PaginationBar extends StatelessWidget {
     } else {
       // 在中间
       pages.add(-1); // 省略号
-      for (int i = currentPage - halfVisible; i <= currentPage + halfVisible; i++) {
+      for (
+        int i = currentPage - halfVisible;
+        i <= currentPage + halfVisible;
+        i++
+      ) {
         pages.add(i);
       }
       pages.add(-1); // 省略号
@@ -172,26 +178,30 @@ class PaginationBar extends StatelessWidget {
           decoration: BoxDecoration(
             color: enabled
                 ? (isDark
-                    ? Colors.white.withValues(alpha: 0.05)
-                    : Colors.black.withValues(alpha: 0.03))
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.black.withValues(alpha: 0.03))
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: enabled
                   ? (isDark
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : Colors.black.withValues(alpha: 0.1))
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.black.withValues(alpha: 0.1))
                   : (isDark
-                      ? Colors.white.withValues(alpha: 0.05)
-                      : Colors.black.withValues(alpha: 0.05)),
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : Colors.black.withValues(alpha: 0.05)),
             ),
           ),
           child: Icon(
             icon,
             size: 20,
             color: enabled
-                ? (isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black.withValues(alpha: 0.7))
-                : (isDark ? Colors.white.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.2)),
+                ? (isDark
+                      ? Colors.white.withValues(alpha: 0.7)
+                      : Colors.black.withValues(alpha: 0.7))
+                : (isDark
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : Colors.black.withValues(alpha: 0.2)),
           ),
         ),
       ),
@@ -256,7 +266,9 @@ class _PageButtonState extends State<_PageButton> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      cursor: widget.isActive ? SystemMouseCursors.basic : SystemMouseCursors.click,
+      cursor: widget.isActive
+          ? SystemMouseCursors.basic
+          : SystemMouseCursors.click,
       child: GestureDetector(
         onTap: widget.isActive ? null : widget.onTap,
         child: AnimatedContainer(
@@ -267,23 +279,23 @@ class _PageButtonState extends State<_PageButton> {
             color: widget.isActive
                 ? const Color(0xFF0080FF)
                 : _isHovered
-                    ? (widget.isDark
-                        ? Colors.white.withValues(alpha: 0.08)
-                        : Colors.black.withValues(alpha: 0.05))
-                    : (widget.isDark
-                        ? Colors.white.withValues(alpha: 0.05)
-                        : Colors.black.withValues(alpha: 0.03)),
+                ? (widget.isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : Colors.black.withValues(alpha: 0.05))
+                : (widget.isDark
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.black.withValues(alpha: 0.03)),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: widget.isActive
                   ? const Color(0xFF0080FF)
                   : _isHovered
-                      ? (widget.isDark
-                          ? Colors.white.withValues(alpha: 0.15)
-                          : Colors.black.withValues(alpha: 0.15))
-                      : (widget.isDark
-                          ? Colors.white.withValues(alpha: 0.1)
-                          : Colors.black.withValues(alpha: 0.1)),
+                  ? (widget.isDark
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : Colors.black.withValues(alpha: 0.15))
+                  : (widget.isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.black.withValues(alpha: 0.1)),
               width: widget.isActive ? 1.5 : 1,
             ),
           ),
@@ -296,8 +308,8 @@ class _PageButtonState extends State<_PageButton> {
                 color: widget.isActive
                     ? Colors.white
                     : (widget.isDark
-                        ? Colors.white.withValues(alpha: 0.7)
-                        : Colors.black.withValues(alpha: 0.7)),
+                          ? Colors.white.withValues(alpha: 0.7)
+                          : Colors.black.withValues(alpha: 0.7)),
               ),
             ),
           ),

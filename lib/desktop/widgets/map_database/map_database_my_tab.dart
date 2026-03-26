@@ -13,7 +13,7 @@ import 'pagination_bar.dart';
 class MapDatabaseMyTab extends StatelessWidget {
   final int currentPage;
   final ValueChanged<int> onPageChanged;
-  
+
   const MapDatabaseMyTab({
     super.key,
     required this.currentPage,
@@ -31,9 +31,7 @@ class MapDatabaseMyTab extends StatelessWidget {
         return BlocBuilder<MapContributionBloc, MapContributionState>(
           builder: (context, state) {
             if (state.isLoadingMyMaps && state.myMapGroups.isEmpty) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
+              return const Center(child: CircularProgressIndicator());
             }
 
             if (state.isMyMapsEmpty) {
@@ -50,26 +48,35 @@ class MapDatabaseMyTab extends StatelessWidget {
                       child: LayoutBuilder(
                         builder: (context, constraints) {
                           // 根据宽度计算列数
-                          final crossAxisCount = _calculateCrossAxisCount(constraints.maxWidth);
-                          
+                          final crossAxisCount = _calculateCrossAxisCount(
+                            constraints.maxWidth,
+                          );
+
                           return GridView.builder(
-                            key: PageStorageKey('map_database_my_grid_page_$currentPage'),
+                            key: PageStorageKey(
+                              'map_database_my_grid_page_$currentPage',
+                            ),
                             padding: const EdgeInsets.all(20),
                             physics: const NeverScrollableScrollPhysics(),
                             shrinkWrap: true,
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: crossAxisCount,
-                              childAspectRatio: 3.0,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
-                            ),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: crossAxisCount,
+                                  childAspectRatio: 3.0,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                ),
                             itemCount: state.myMapGroups.length,
                             itemBuilder: (context, index) {
                               final group = state.myMapGroups[index];
                               // 安全地获取第一个 item 的 id，如果为空则使用 mapName
-                              final itemId = group.items.isNotEmpty ? group.items.first.id : 'empty';
+                              final itemId = group.items.isNotEmpty
+                                  ? group.items.first.id
+                                  : 'empty';
                               return MapGroupCard(
-                                key: ValueKey('group_${group.mapInfo.mapName}_${itemId}_page_$currentPage'),
+                                key: ValueKey(
+                                  'group_${group.mapInfo.mapName}_${itemId}_page_$currentPage',
+                                ),
                                 group: group,
                                 showAuditStatus: true,
                                 onTap: () {
@@ -85,7 +92,7 @@ class MapDatabaseMyTab extends StatelessWidget {
                         },
                       ),
                     ),
-                    
+
                     // 分页器
                     PaginationBar(
                       currentPage: currentPage,
@@ -96,7 +103,7 @@ class MapDatabaseMyTab extends StatelessWidget {
                     ),
                   ],
                 ),
-                
+
                 // Loading 覆盖层（切换分页时显示）
                 if (state.isLoadingMyMaps && state.myMapGroups.isNotEmpty)
                   _buildLoadingOverlay(context),
@@ -198,7 +205,7 @@ class MapDatabaseMyTab extends StatelessWidget {
   Widget _buildLoadingOverlay(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Positioned.fill(
       child: Container(
         color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.6),
@@ -225,10 +232,7 @@ class MapDatabaseMyTab extends StatelessWidget {
                   child: CircularProgressIndicator(strokeWidth: 3),
                 ),
                 SizedBox(height: 12),
-                Text(
-                  '加载中...',
-                  style: TextStyle(fontSize: 14),
-                ),
+                Text('加载中...', style: TextStyle(fontSize: 14)),
               ],
             ),
           ),

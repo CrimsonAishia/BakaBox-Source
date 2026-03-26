@@ -107,7 +107,9 @@ class GamePathService {
       }
     } else {
       // macOS / Linux
-      final cfgDir = Directory('$path${Platform.pathSeparator}game${Platform.pathSeparator}csgo${Platform.pathSeparator}cfg');
+      final cfgDir = Directory(
+        '$path${Platform.pathSeparator}game${Platform.pathSeparator}csgo${Platform.pathSeparator}cfg',
+      );
       if (!await cfgDir.exists()) {
         return const PathValidationResult(
           isValid: false,
@@ -171,5 +173,4 @@ class GamePathService {
     }
     return '$gamePath${Platform.pathSeparator}game${Platform.pathSeparator}csgo${Platform.pathSeparator}cfg';
   }
-
 }

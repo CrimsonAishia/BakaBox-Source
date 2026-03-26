@@ -936,7 +936,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
               (sum, s) => sum + (s.serverData?.players ?? 0),
             );
             if (!emit.isDone) {
-              final latestCounts = Map<String, int>.from(state.categoryOnlineCounts);
+              final latestCounts = Map<String, int>.from(
+                state.categoryOnlineCounts,
+              );
               latestCounts[categoryName] = totalOnline;
               emit(state.copyWith(categoryOnlineCounts: latestCounts));
             }
@@ -958,18 +960,20 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       // 缓存所有服务器的人数结果
       final serverPlayers = <String, int>{};
       final addressList = pendingAddresses.toList();
-      
+
       // 并发控制：分批请求（20 个一批），一方面防并发爆 UDP 端口，另一方面实现全局极速刷新
       const batchSize = 20;
       for (int i = 0; i < addressList.length; i += batchSize) {
-        final end = (i + batchSize < addressList.length) ? i + batchSize : addressList.length;
+        final end = (i + batchSize < addressList.length)
+            ? i + batchSize
+            : addressList.length;
         final batch = addressList.sublist(i, end);
-        
+
         final futures = batch.map((address) async {
           final count = await _fetchSingleServerPlayerCount(address);
           serverPlayers[address] = count;
         });
-        
+
         await Future.wait(futures);
       }
 
@@ -985,11 +989,13 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           }
           latestCounts[categoryName] = totalPlayers;
         }
-        
-        emit(state.copyWith(
-          categoryOnlineCounts: latestCounts,
-          isLoadingOnlineCounts: false,
-        ));
+
+        emit(
+          state.copyWith(
+            categoryOnlineCounts: latestCounts,
+            isLoadingOnlineCounts: false,
+          ),
+        );
       }
     } catch (e) {
       LogService.e('批量更新分类在线人数失败: $e', e);
@@ -1007,7 +1013,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   Future<int> _fetchSingleServerPlayerCount(String address) async {
     final parts = address.split(':');
     if (parts.length != 2) return 0;
-    
+
     final ip = parts[0];
     final port = int.parse(parts[1]);
 
@@ -1025,7 +1031,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       } catch (e) {
         // 捕获异常，准备重试
       }
-      
+
       if (retry < _singleServerMaxRetries - 1) {
         // 还有重试机会，等待后再试（应对网络抖动）
         await Future.delayed(
@@ -1033,7 +1039,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         );
       }
     }
-    
+
     return 0;
   }
 

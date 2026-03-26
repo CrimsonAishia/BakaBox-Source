@@ -76,47 +76,56 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
   }
 
   void _showTooltip(int index, Offset localPosition) {
-    if (_sortedData == null || index < 0 || index >= _sortedData!.length) return;
-    
+    if (_sortedData == null || index < 0 || index >= _sortedData!.length) {
+      return;
+    }
+
     _removeOverlay();
-    
+
     final info = _sortedData![index];
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // 获取图表在屏幕上的位置
-    final RenderBox? renderBox = _chartKey.currentContext?.findRenderObject() as RenderBox?;
+    final RenderBox? renderBox =
+        _chartKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
-    
+
     final chartPosition = renderBox.localToGlobal(Offset.zero);
     final chartSize = renderBox.size;
-    
+
     // 计算 tooltip 位置
     final tooltipWidth = 160.0;
     final tooltipHeight = 52.0;
-    
+
     // 计算数据点在图表中的位置
     final data = _sortedData!;
     final yAxisMax = _yAxisMax ?? 10.0;
     final chartPadding = 8.0;
     final leftTitleWidth = 35.0;
     final bottomTitleHeight = 40.0;
-    
+
     final chartAreaWidth = chartSize.width - chartPadding * 2 - leftTitleWidth;
-    final chartAreaHeight = chartSize.height - chartPadding * 2 - bottomTitleHeight;
-    
+    final chartAreaHeight =
+        chartSize.height - chartPadding * 2 - bottomTitleHeight;
+
     final xRatio = data.length > 1 ? index / (data.length - 1) : 0.5;
     final yRatio = info.playerCount / yAxisMax;
-    
-    final pointX = chartPosition.dx + chartPadding + leftTitleWidth + chartAreaWidth * xRatio;
-    final pointY = chartPosition.dy + chartPadding + chartAreaHeight * (1 - yRatio);
-    
+
+    final pointX =
+        chartPosition.dx +
+        chartPadding +
+        leftTitleWidth +
+        chartAreaWidth * xRatio;
+    final pointY =
+        chartPosition.dy + chartPadding + chartAreaHeight * (1 - yRatio);
+
     // 决定 tooltip 显示在上方还是下方
     final screenHeight = MediaQuery.of(context).size.height;
     final showBelow = pointY < tooltipHeight + 20;
-    
+
     double tooltipX = pointX - tooltipWidth / 2;
     double tooltipY = showBelow ? pointY + 20 : pointY - tooltipHeight - 12;
-    
+
     // 确保 tooltip 不超出屏幕边界
     final screenWidth = MediaQuery.of(context).size.width;
     if (tooltipX < 8) tooltipX = 8;
@@ -127,7 +136,7 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
     if (tooltipY + tooltipHeight > screenHeight - 8) {
       tooltipY = screenHeight - tooltipHeight - 8;
     }
-    
+
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
         left: tooltipX,
@@ -181,7 +190,7 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
         ),
       ),
     );
-    
+
     Overlay.of(context).insert(_overlayEntry!);
   }
 

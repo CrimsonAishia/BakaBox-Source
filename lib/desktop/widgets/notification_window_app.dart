@@ -20,10 +20,11 @@ class SingleNotificationStateNotifier extends ChangeNotifier {
   final NotificationPositionType _notificationPosition;
 
   SingleNotificationStateNotifier(
-    this._notification, 
+    this._notification,
     this._position, {
     double? yOffset,
-    NotificationPositionType notificationPosition = NotificationPositionType.topRight,
+    NotificationPositionType notificationPosition =
+        NotificationPositionType.topRight,
   }) : _yOffset = yOffset,
        _notificationPosition = notificationPosition;
 
@@ -127,13 +128,10 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
       vsync: this,
       duration: const Duration(milliseconds: 250),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(1.0, 0.0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.easeOutCubic,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(1.0, 0.0), end: Offset.zero).animate(
+          CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
+        );
 
     widget.stateNotifier.addListener(_onStateChanged);
     _initWindow();
@@ -150,7 +148,8 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
   void _onStateChanged() {
     if (_initialized) {
       debugPrint(
-          '[SingleNotificationWindow] State changed, position: ${widget.stateNotifier.position}');
+        '[SingleNotificationWindow] State changed, position: ${widget.stateNotifier.position}',
+      );
       // 位置变化时更新窗口位置
       _updateWindowPosition();
     }
@@ -167,7 +166,9 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
       final size = Size(_windowWidth, _windowHeight);
       final position = _calculateWindowPosition(screenWidth, screenHeight);
 
-      debugPrint('[SingleNotificationWindow] Init window at position ${widget.stateNotifier.position}, x=${position.dx}, y=${position.dy}');
+      debugPrint(
+        '[SingleNotificationWindow] Init window at position ${widget.stateNotifier.position}, x=${position.dx}, y=${position.dy}',
+      );
 
       // 不传递 options，手动设置所有属性
       await windowManager.waitUntilReadyToShow(null, () async {
@@ -205,15 +206,15 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
   Offset _calculateWindowPosition(double screenWidth, double screenHeight) {
     final notificationPosition = widget.stateNotifier.notificationPosition;
     final yOffset = widget.stateNotifier.yOffset ?? _topPadding;
-    
+
     // 任务栏高度估算
     const taskbarHeight = 48.0;
     final availableHeight = screenHeight - taskbarHeight;
     final centerY = (availableHeight - _windowHeight) / 2;
-    
+
     double x;
     double y;
-    
+
     switch (notificationPosition) {
       case NotificationPositionType.topLeft:
         x = 0;
@@ -252,7 +253,7 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
         y = screenHeight - _windowHeight - taskbarHeight - yOffset;
         break;
     }
-    
+
     return Offset(x, y);
   }
 
@@ -264,7 +265,8 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
       final screenHeight = screenInfo['screenHeight']!;
       final position = _calculateWindowPosition(screenWidth, screenHeight);
       debugPrint(
-          '[SingleNotificationWindow] Updating position to x=${position.dx}, y=${position.dy} (position=${widget.stateNotifier.position})');
+        '[SingleNotificationWindow] Updating position to x=${position.dx}, y=${position.dy} (position=${widget.stateNotifier.position})',
+      );
       await windowManager.setPosition(position);
     } catch (e) {
       debugPrint('[SingleNotificationWindow] Update position error: $e');
@@ -351,11 +353,14 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
     // 通过 IPC 通知主窗口此通知已关闭
     if (widget.mainWindowController != null) {
       try {
-        await widget.mainWindowController!.invokeMethod(
-            'notificationClosed', {'id': widget.notificationId});
+        await widget.mainWindowController!.invokeMethod('notificationClosed', {
+          'id': widget.notificationId,
+        });
         debugPrint('[SingleNotificationWindow] Notified main window of close');
       } catch (e) {
-        debugPrint('[SingleNotificationWindow] Failed to notify main window: $e');
+        debugPrint(
+          '[SingleNotificationWindow] Failed to notify main window: $e',
+        );
       }
     }
     // 关闭窗口
@@ -446,16 +451,17 @@ class _NotificationCardState extends State<_NotificationCard> {
     final notification = widget.notification;
     final isWarmup = notification.type == NotificationType.warmup;
     final isMapChange = notification.type == NotificationType.mapChange;
-    final isMapSubscription = notification.type == NotificationType.mapSubscription;
+    final isMapSubscription =
+        notification.type == NotificationType.mapSubscription;
     final isUpdateLog = notification.type == NotificationType.updateLog;
 
     final borderColor = isWarmup
         ? const Color(0xFFFF9800)
         : isMapChange || isMapSubscription
-            ? const Color(0xFF4CAF50)
-            : isUpdateLog
-                ? const Color(0xFFF59E0B)
-                : const Color(0xFF0080FF);
+        ? const Color(0xFF4CAF50)
+        : isUpdateLog
+        ? const Color(0xFFF59E0B)
+        : const Color(0xFF0080FF);
 
     return MouseRegion(
       onEnter: (_) {
@@ -483,7 +489,7 @@ class _NotificationCardState extends State<_NotificationCard> {
                     color: borderColor.withValues(alpha: 0.3),
                     blurRadius: 8,
                     spreadRadius: 1,
-                  )
+                  ),
                 ]
               : null,
         ),
@@ -502,7 +508,8 @@ class _NotificationCardState extends State<_NotificationCard> {
                         if (notification.mapName != null ||
                             notification.mapBackground != null)
                           Positioned.fill(
-                              child: _buildMapBackground(notification)),
+                            child: _buildMapBackground(notification),
+                          ),
                         // 渐变遮罩
                         Positioned.fill(
                           child: Container(
@@ -511,8 +518,12 @@ class _NotificationCardState extends State<_NotificationCard> {
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
                                 colors: [
-                                  const Color(0xFF1E293B).withValues(alpha: 0.75),
-                                  const Color(0xFF1E293B).withValues(alpha: 0.45),
+                                  const Color(
+                                    0xFF1E293B,
+                                  ).withValues(alpha: 0.75),
+                                  const Color(
+                                    0xFF1E293B,
+                                  ).withValues(alpha: 0.45),
                                 ],
                               ),
                             ),
@@ -521,7 +532,9 @@ class _NotificationCardState extends State<_NotificationCard> {
                         // 内容
                         Padding(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -541,20 +554,27 @@ class _NotificationCardState extends State<_NotificationCard> {
                                         fontWeight: FontWeight.w600,
                                         shadows: [
                                           Shadow(
-                                            color: Colors.black.withValues(alpha: 0.8),
+                                            color: Colors.black.withValues(
+                                              alpha: 0.8,
+                                            ),
                                             offset: const Offset(0, 1),
                                             blurRadius: 3,
                                           ),
                                         ],
                                       ),
                                     ),
-                                  if (!isMapChange && !isMapSubscription && notification.serverName != null)
+                                  if (!isMapChange &&
+                                      !isMapSubscription &&
+                                      notification.serverName != null)
                                     const SizedBox(width: 6),
                                   if (notification.serverName != null)
                                     Expanded(
                                       child: _ServerNameText(
                                         serverName: notification.serverName!,
-                                        categoryName: notification.extraData?['categoryName'] as String?,
+                                        categoryName:
+                                            notification
+                                                    .extraData?['categoryName']
+                                                as String?,
                                       ),
                                     )
                                   else
@@ -567,7 +587,10 @@ class _NotificationCardState extends State<_NotificationCard> {
                                 child: isUpdateLog
                                     ? _buildUpdateLogContent(notification)
                                     : _buildMessageWidget(
-                                        notification, isWarmup, isMapChange || isMapSubscription),
+                                        notification,
+                                        isWarmup,
+                                        isMapChange || isMapSubscription,
+                                      ),
                               ),
                             ],
                           ),
@@ -618,7 +641,10 @@ class _NotificationCardState extends State<_NotificationCard> {
   }
 
   Widget _buildMessageWidget(
-      NotificationData notification, bool isWarmup, bool showPlayers) {
+    NotificationData notification,
+    bool isWarmup,
+    bool showPlayers,
+  ) {
     final textStyle = TextStyle(
       color: isWarmup ? const Color(0xFFFFE082) : Colors.white,
       fontSize: 15,
@@ -655,10 +681,7 @@ class _NotificationCardState extends State<_NotificationCard> {
     return Row(
       children: [
         Expanded(
-          child: _MarqueeText(
-            text: notification.message,
-            style: textStyle,
-          ),
+          child: _MarqueeText(text: notification.message, style: textStyle),
         ),
         if (hasPlayers)
           Container(
@@ -716,9 +739,7 @@ class _NotificationCardState extends State<_NotificationCard> {
 
   /// 构建更新日志内容 - 使用HTML解析和垂直跑马灯
   Widget _buildUpdateLogContent(NotificationData notification) {
-    return _VerticalMarqueeHtml(
-      htmlContent: notification.message,
-    );
+    return _VerticalMarqueeHtml(htmlContent: notification.message);
   }
 
   Widget _buildMapBackground(NotificationData notification) {
@@ -727,7 +748,9 @@ class _NotificationCardState extends State<_NotificationCard> {
       mapUrl: notification.mapBackground,
     );
 
-    debugPrint('[NotificationCard] Building map background - mapName: ${notification.mapName}, mapBackground: ${notification.mapBackground}, resolved: $mapUrl');
+    debugPrint(
+      '[NotificationCard] Building map background - mapName: ${notification.mapName}, mapBackground: ${notification.mapBackground}, resolved: $mapUrl',
+    );
 
     // 网络图片：使用 DiskCachedImage，下载失败时显示默认背景
     if (mapUrl.startsWith('http://') || mapUrl.startsWith('https://')) {
@@ -774,7 +797,8 @@ class _NotificationCardState extends State<_NotificationCard> {
           TweenAnimationBuilder<double>(
             key: ValueKey(widget.countdownSeconds),
             tween: Tween(
-              begin: (widget.countdownSeconds + 1) / widget.totalCountdownSeconds,
+              begin:
+                  (widget.countdownSeconds + 1) / widget.totalCountdownSeconds,
               end: progress,
             ),
             duration: const Duration(milliseconds: 1000),
@@ -798,10 +822,7 @@ class _ServerNameText extends StatefulWidget {
   final String serverName;
   final String? categoryName;
 
-  const _ServerNameText({
-    required this.serverName,
-    this.categoryName,
-  });
+  const _ServerNameText({required this.serverName, this.categoryName});
 
   @override
   State<_ServerNameText> createState() => _ServerNameTextState();
@@ -841,8 +862,9 @@ class _ServerNameTextState extends State<_ServerNameText>
       if (!mounted || _animationStarted) return;
 
       final textBox = _textKey.currentContext?.findRenderObject() as RenderBox?;
-      final containerBox = _containerKey.currentContext?.findRenderObject() as RenderBox?;
-      
+      final containerBox =
+          _containerKey.currentContext?.findRenderObject() as RenderBox?;
+
       if (textBox == null || containerBox == null) return;
 
       final textWidth = textBox.size.width;
@@ -873,7 +895,10 @@ class _ServerNameTextState extends State<_ServerNameText>
   void _onAnimationUpdate() {
     if (_scrollController.hasClients) {
       final maxScroll = _scrollController.position.maxScrollExtent;
-      final targetScroll = (_animationController.value * _scrollDistance).clamp(0.0, maxScroll);
+      final targetScroll = (_animationController.value * _scrollDistance).clamp(
+        0.0,
+        maxScroll,
+      );
       _scrollController.jumpTo(targetScroll);
     }
   }
@@ -948,16 +973,12 @@ class _ServerNameTextState extends State<_ServerNameText>
   }
 }
 
-
 /// 跑马灯文本组件 - 当文本超出宽度时自动滚动
 class _MarqueeText extends StatefulWidget {
   final String text;
   final TextStyle style;
 
-  const _MarqueeText({
-    required this.text,
-    required this.style,
-  });
+  const _MarqueeText({required this.text, required this.style});
 
   @override
   State<_MarqueeText> createState() => _MarqueeTextState();
@@ -993,15 +1014,14 @@ class _MarqueeTextState extends State<_MarqueeText>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      final textBox =
-          _textKey.currentContext?.findRenderObject() as RenderBox?;
+      final textBox = _textKey.currentContext?.findRenderObject() as RenderBox?;
       final containerBox =
           _containerKey.currentContext?.findRenderObject() as RenderBox?;
       if (textBox == null || containerBox == null) return;
 
       final textWidth = textBox.size.width;
       final containerWidth = containerBox.size.width;
-      
+
       // 文本宽度不超过容器宽度，不需要滚动
       if (textWidth <= containerWidth) return;
 
@@ -1032,7 +1052,10 @@ class _MarqueeTextState extends State<_MarqueeText>
   void _onAnimationUpdate() {
     if (_scrollController.hasClients) {
       final maxScroll = _scrollController.position.maxScrollExtent;
-      final targetScroll = (_animationController.value * _scrollDistance).clamp(0.0, maxScroll);
+      final targetScroll = (_animationController.value * _scrollDistance).clamp(
+        0.0,
+        maxScroll,
+      );
       _scrollController.jumpTo(targetScroll);
     }
   }
@@ -1082,9 +1105,7 @@ class _MarqueeTextState extends State<_MarqueeText>
 class _VerticalMarqueeHtml extends StatefulWidget {
   final String htmlContent;
 
-  const _VerticalMarqueeHtml({
-    required this.htmlContent,
-  });
+  const _VerticalMarqueeHtml({required this.htmlContent});
 
   @override
   State<_VerticalMarqueeHtml> createState() => _VerticalMarqueeHtmlState();
@@ -1128,7 +1149,9 @@ class _VerticalMarqueeHtmlState extends State<_VerticalMarqueeHtml>
 
     // 等待下一帧确保布局完成
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scrollController.hasClients || _animationStarted) return;
+      if (!mounted || !_scrollController.hasClients || _animationStarted) {
+        return;
+      }
 
       final maxScroll = _scrollController.position.maxScrollExtent;
       if (maxScroll <= 0) return;
@@ -1158,7 +1181,10 @@ class _VerticalMarqueeHtmlState extends State<_VerticalMarqueeHtml>
   void _onAnimationUpdate() {
     if (_scrollController.hasClients) {
       final maxScroll = _scrollController.position.maxScrollExtent;
-      final targetScroll = (_animationController.value * _scrollDistance).clamp(0.0, maxScroll);
+      final targetScroll = (_animationController.value * _scrollDistance).clamp(
+        0.0,
+        maxScroll,
+      );
       _scrollController.jumpTo(targetScroll);
     }
   }
@@ -1194,9 +1220,7 @@ class _VerticalMarqueeHtmlState extends State<_VerticalMarqueeHtml>
               lineHeight: const LineHeight(1.4),
               color: Colors.white,
             ),
-            'p': Style(
-              margin: Margins.only(bottom: 6),
-            ),
+            'p': Style(margin: Margins.only(bottom: 6)),
             'ul': Style(
               margin: Margins.only(top: 4, bottom: 4),
               padding: HtmlPaddings.only(left: 16),

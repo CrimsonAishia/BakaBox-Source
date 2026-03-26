@@ -72,19 +72,27 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
 
   Color _getCacheTypeColor(CacheType type) {
     switch (type) {
-      case CacheType.cacheFiles: return Colors.blue;
-      case CacheType.serverData: return Colors.green;
-      case CacheType.appData: return Colors.purple;
-      case CacheType.logs: return Colors.amber;
+      case CacheType.cacheFiles:
+        return Colors.blue;
+      case CacheType.serverData:
+        return Colors.green;
+      case CacheType.appData:
+        return Colors.purple;
+      case CacheType.logs:
+        return Colors.amber;
     }
   }
 
   IconData _getCacheTypeIcon(CacheType type) {
     switch (type) {
-      case CacheType.cacheFiles: return MdiIcons.imageOutline;
-      case CacheType.serverData: return MdiIcons.serverNetwork;
-      case CacheType.appData: return MdiIcons.databaseOutline;
-      case CacheType.logs: return MdiIcons.textBoxOutline;
+      case CacheType.cacheFiles:
+        return MdiIcons.imageOutline;
+      case CacheType.serverData:
+        return MdiIcons.serverNetwork;
+      case CacheType.appData:
+        return MdiIcons.databaseOutline;
+      case CacheType.logs:
+        return MdiIcons.textBoxOutline;
     }
   }
 
@@ -97,9 +105,15 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final totalSize = widget.cacheDetails.fold(0, (sum, item) => sum + item.sizeInBytes);
-    final isAllSelected = _availableCacheItems.isNotEmpty &&
-        _availableCacheItems.every((item) => _selectedTypes.contains(item.type));
+    final totalSize = widget.cacheDetails.fold(
+      0,
+      (sum, item) => sum + item.sizeInBytes,
+    );
+    final isAllSelected =
+        _availableCacheItems.isNotEmpty &&
+        _availableCacheItems.every(
+          (item) => _selectedTypes.contains(item.type),
+        );
 
     return AlertDialog(
       titlePadding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
@@ -116,7 +130,10 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
             child: Icon(MdiIcons.deleteOutline, color: Colors.red, size: 20),
           ),
           const SizedBox(width: 10),
-          const Text('清理缓存', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          const Text(
+            '清理缓存',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
           const Spacer(),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -124,8 +141,10 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Text('总计 ${_formatBytes(totalSize)}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+            child: Text(
+              '总计 ${_formatBytes(totalSize)}',
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
           ),
         ],
       ),
@@ -144,14 +163,21 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
             if (_selectedTypes.isNotEmpty) ...[
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Row(
                   children: [
-                    Icon(MdiIcons.informationOutline, size: 16, color: Colors.orange[700]),
+                    Icon(
+                      MdiIcons.informationOutline,
+                      size: 16,
+                      color: Colors.orange[700],
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       '已选择 ${_selectedTypes.length} 项，共 ${_formatBytes(_selectedTotalSize)}',
@@ -170,7 +196,9 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
           child: const Text('取消'),
         ),
         ElevatedButton(
-          onPressed: _isClearing || _selectedTypes.isEmpty ? null : _handleConfirm,
+          onPressed: _isClearing || _selectedTypes.isEmpty
+              ? null
+              : _handleConfirm,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.red,
             foregroundColor: Colors.white,
@@ -178,8 +206,12 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
           ),
           child: _isClearing
               ? const SizedBox(
-                  width: 16, height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 )
               : Text(_selectedTypes.isEmpty ? '请选择' : '清理选中项'),
         ),
@@ -207,7 +239,8 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
         child: Row(
           children: [
             SizedBox(
-              width: 20, height: 20,
+              width: 20,
+              height: 20,
               child: Checkbox(
                 value: isAllSelected,
                 tristate: true,
@@ -216,10 +249,16 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
               ),
             ),
             const SizedBox(width: 10),
-            const Text('全选', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            const Text(
+              '全选',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            ),
             if (_availableCacheItems.isEmpty) ...[
               const Spacer(),
-              Text('无可清理的缓存', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+              Text(
+                '无可清理的缓存',
+                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              ),
             ],
           ],
         ),
@@ -241,19 +280,26 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
           margin: const EdgeInsets.only(bottom: 6),
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected ? color.withValues(alpha: 0.08) : Colors.transparent,
+            color: isSelected
+                ? color.withValues(alpha: 0.08)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
-              color: isSelected ? color.withValues(alpha: 0.4) : Colors.transparent,
+              color: isSelected
+                  ? color.withValues(alpha: 0.4)
+                  : Colors.transparent,
             ),
           ),
           child: Row(
             children: [
               SizedBox(
-                width: 20, height: 20,
+                width: 20,
+                height: 20,
                 child: Checkbox(
                   value: isSelected,
-                  onChanged: hasData ? (v) => _toggleCacheType(item.type) : null,
+                  onChanged: hasData
+                      ? (v) => _toggleCacheType(item.type)
+                      : null,
                   activeColor: color,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
@@ -265,22 +311,29 @@ class _SelectiveCacheDialogState extends State<SelectiveCacheDialog> {
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(5),
                 ),
-                child: Icon(_getCacheTypeIcon(item.type), color: color, size: 16),
+                child: Icon(
+                  _getCacheTypeIcon(item.type),
+                  color: color,
+                  size: 16,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(item.name, style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: isSelected ? color : null,
-                    )),
-                    Text(item.description, style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey[500],
-                    )),
+                    Text(
+                      item.name,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: isSelected ? color : null,
+                      ),
+                    ),
+                    Text(
+                      item.description,
+                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                    ),
                   ],
                 ),
               ),

@@ -29,11 +29,13 @@ class FloatingWindowLauncher {
     // 设置 IPC 处理器
     await _setupMethodHandler(controller, stateNotifier);
 
-    runApp(FloatingWindowApp(
-      config: config,
-      windowId: windowId,
-      stateNotifier: stateNotifier,
-    ));
+    runApp(
+      FloatingWindowApp(
+        config: config,
+        windowId: windowId,
+        stateNotifier: stateNotifier,
+      ),
+    );
   }
 
   /// 设置窗口方法处理器

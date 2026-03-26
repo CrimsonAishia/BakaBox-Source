@@ -43,8 +43,8 @@ class _ToolbarButtonState extends State<ToolbarButton> {
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
-                color: widget.active 
-                    ? const Color(0xFF0080FF) 
+                color: widget.active
+                    ? const Color(0xFF0080FF)
                     : Colors.transparent,
                 width: 2,
               ),
@@ -54,13 +54,13 @@ class _ToolbarButtonState extends State<ToolbarButton> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                widget.icon, 
-                size: 16, 
-                color: widget.active 
+                widget.icon,
+                size: 16,
+                color: widget.active
                     ? const Color(0xFF0080FF)
-                    : (_hovered 
-                        ? (isDark ? Colors.white : Colors.grey[800])
-                        : (isDark ? Colors.white60 : Colors.grey[600])),
+                    : (_hovered
+                          ? (isDark ? Colors.white : Colors.grey[800])
+                          : (isDark ? Colors.white60 : Colors.grey[600])),
               ),
               const SizedBox(width: 6),
               Text(
@@ -68,11 +68,11 @@ class _ToolbarButtonState extends State<ToolbarButton> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: widget.active ? FontWeight.w600 : FontWeight.w500,
-                  color: widget.active 
+                  color: widget.active
                       ? const Color(0xFF0080FF)
-                      : (_hovered 
-                          ? (isDark ? Colors.white : Colors.grey[800])
-                          : (isDark ? Colors.white60 : Colors.grey[600])),
+                      : (_hovered
+                            ? (isDark ? Colors.white : Colors.grey[800])
+                            : (isDark ? Colors.white60 : Colors.grey[600])),
                 ),
               ),
               if (widget.badge) ...[
@@ -112,11 +112,21 @@ class SearchField extends StatelessWidget {
       height: 36,
       child: TextField(
         controller: controller,
-        style: TextStyle(fontSize: 12, color: isDark ? Colors.white : const Color(0xFF1a1a2e)),
+        style: TextStyle(
+          fontSize: 12,
+          color: isDark ? Colors.white : const Color(0xFF1a1a2e),
+        ),
         decoration: InputDecoration(
           hintText: '搜索...',
-          hintStyle: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.grey[400]),
-          prefixIcon: Icon(Icons.search, size: 18, color: isDark ? Colors.white38 : Colors.grey[400]),
+          hintStyle: TextStyle(
+            fontSize: 12,
+            color: isDark ? Colors.white38 : Colors.grey[400],
+          ),
+          prefixIcon: Icon(
+            Icons.search,
+            size: 18,
+            color: isDark ? Colors.white38 : Colors.grey[400],
+          ),
           filled: true,
           fillColor: isDark ? const Color(0xFF334155) : Colors.grey[100],
           contentPadding: const EdgeInsets.symmetric(vertical: 0),
@@ -160,18 +170,20 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     String displayName;
     if (widget.showMyConfigs) {
       displayName = '我的';
     } else {
-      final selectedCategory = widget.categories.cast<CategoryItem?>().firstWhere(
-        (c) => c?.id == widget.selectedCategoryId,
-        orElse: () => null,
-      );
+      final selectedCategory = widget.categories
+          .cast<CategoryItem?>()
+          .firstWhere(
+            (c) => c?.id == widget.selectedCategoryId,
+            orElse: () => null,
+          );
       displayName = selectedCategory?.name ?? '全部';
     }
-    
+
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
@@ -192,7 +204,11 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
                 if (!widget.showMyConfigs && widget.selectedCategoryId == null)
                   const Padding(
                     padding: EdgeInsets.only(right: 8),
-                    child: Icon(Icons.check, size: 16, color: Color(0xFF0080FF)),
+                    child: Icon(
+                      Icons.check,
+                      size: 16,
+                      color: Color(0xFF0080FF),
+                    ),
                   ),
                 const Text('全部'),
               ],
@@ -212,7 +228,11 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
                   if (widget.showMyConfigs)
                     const Padding(
                       padding: EdgeInsets.only(right: 8),
-                      child: Icon(Icons.check, size: 16, color: Color(0xFF0080FF)),
+                      child: Icon(
+                        Icons.check,
+                        size: 16,
+                        color: Color(0xFF0080FF),
+                      ),
                     ),
                   const Text('我的'),
                 ],
@@ -220,25 +240,32 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
             ),
           const PopupMenuDivider(),
           // 分类选项
-          ...widget.categories.map((c) => PopupMenuItem(
-            value: c.id,
-            onTap: () {
-              Future.delayed(Duration.zero, () {
-                widget.onMyConfigsChanged?.call(false);
-                widget.onChanged(c.id);
-              });
-            },
-            child: Row(
-              children: [
-                if (!widget.showMyConfigs && widget.selectedCategoryId == c.id)
-                  const Padding(
-                    padding: EdgeInsets.only(right: 8),
-                    child: Icon(Icons.check, size: 16, color: Color(0xFF0080FF)),
-                  ),
-                Text(c.name),
-              ],
+          ...widget.categories.map(
+            (c) => PopupMenuItem(
+              value: c.id,
+              onTap: () {
+                Future.delayed(Duration.zero, () {
+                  widget.onMyConfigsChanged?.call(false);
+                  widget.onChanged(c.id);
+                });
+              },
+              child: Row(
+                children: [
+                  if (!widget.showMyConfigs &&
+                      widget.selectedCategoryId == c.id)
+                    const Padding(
+                      padding: EdgeInsets.only(right: 8),
+                      child: Icon(
+                        Icons.check,
+                        size: 16,
+                        color: Color(0xFF0080FF),
+                      ),
+                    ),
+                  Text(c.name),
+                ],
+              ),
             ),
-          )),
+          ),
         ],
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
@@ -247,12 +274,14 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
           decoration: BoxDecoration(
             color: widget.showMyConfigs
                 ? const Color(0xFF0080FF).withValues(alpha: 0.1)
-                : (_hovered 
-                    ? (isDark ? const Color(0xFF475569) : Colors.grey[200]) 
-                    : (isDark ? const Color(0xFF334155) : Colors.grey[100])),
+                : (_hovered
+                      ? (isDark ? const Color(0xFF475569) : Colors.grey[200])
+                      : (isDark ? const Color(0xFF334155) : Colors.grey[100])),
             borderRadius: BorderRadius.circular(20),
             border: widget.showMyConfigs
-                ? Border.all(color: const Color(0xFF0080FF).withValues(alpha: 0.3))
+                ? Border.all(
+                    color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                  )
                 : null,
           ),
           child: Row(
@@ -262,8 +291,10 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
                 displayName,
                 style: TextStyle(
                   fontSize: 12,
-                  fontWeight: widget.showMyConfigs ? FontWeight.w600 : FontWeight.normal,
-                  color: widget.showMyConfigs 
+                  fontWeight: widget.showMyConfigs
+                      ? FontWeight.w600
+                      : FontWeight.normal,
+                  color: widget.showMyConfigs
                       ? const Color(0xFF0080FF)
                       : (isDark ? Colors.white70 : Colors.grey[700]),
                 ),
@@ -272,7 +303,7 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
               Icon(
                 Icons.arrow_drop_down,
                 size: 18,
-                color: widget.showMyConfigs 
+                color: widget.showMyConfigs
                     ? const Color(0xFF0080FF)
                     : (isDark ? Colors.white54 : Colors.grey[600]),
               ),

@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import '../services/disk_image_cache_service.dart';
 
 /// 磁盘缓存图片组件
-/// 
+///
 /// 使用 [DiskImageCacheService] 从磁盘加载图片，
 /// 如果图片未缓存则自动下载并保存到磁盘。
-/// 
+///
 /// 与 [CachedNetworkImage] 不同，此组件不使用内存缓存，
 /// 所有图片都从磁盘读取，以减少内存占用。
-/// 
+///
 /// 内存优化：
 /// - 使用 gaplessPlayback 避免图片切换时的闪烁
 /// - 在 dispose 时清理 _cachedFile 引用
@@ -17,39 +17,39 @@ import '../services/disk_image_cache_service.dart';
 class DiskCachedImage extends StatefulWidget {
   /// 图片 URL
   final String imageUrl;
-  
+
   /// 图片填充方式
   final BoxFit? fit;
-  
+
   /// 图片宽度
   final double? width;
-  
+
   /// 图片高度
   final double? height;
-  
+
   /// 加载中占位组件
   final Widget? placeholder;
-  
+
   /// 加载失败占位组件
   final Widget? errorWidget;
-  
+
   /// 图片对齐方式
   final Alignment alignment;
-  
+
   /// 图片颜色混合
   final Color? color;
-  
+
   /// 图片颜色混合模式
   final BlendMode? colorBlendMode;
-  
+
   /// 解码缓存宽度（限制图片解码尺寸以节省内存）
   /// 设置后图片会以此宽度解码，而非原图宽度
   final int? cacheWidth;
-  
+
   /// 解码缓存高度（限制图片解码尺寸以节省内存）
   /// 设置后图片会以此高度解码，而非原图高度
   final int? cacheHeight;
-  
+
   /// 加载失败时显示的本地资源图片路径
   /// 例如：'assets/images/default-map-bg.jpg'
   final String? fallbackAsset;
@@ -85,7 +85,7 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
     super.initState();
     _loadImage();
   }
-  
+
   @override
   void didUpdateWidget(DiskCachedImage oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -93,7 +93,7 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
       _loadImage();
     }
   }
-  
+
   @override
   void dispose() {
     // 清理文件引用，帮助 GC 回收
@@ -101,13 +101,13 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
     _lastUrl = null;
     super.dispose();
   }
-  
+
   Future<void> _loadImage() async {
     // 如果 URL 没变且已加载，不重复加载
     if (widget.imageUrl == _lastUrl && _cachedFile != null && !_hasError) {
       return;
     }
-    
+
     if (widget.imageUrl.isEmpty) {
       setState(() {
         _isLoading = false;
@@ -115,7 +115,7 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
       });
       return;
     }
-    
+
     _lastUrl = widget.imageUrl;
 
     setState(() {
@@ -127,7 +127,7 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
     // 使用异步方法获取图片，每次都会验证缓存文件是否有效
     // 如果缓存图片无效（空图片或损坏），会自动删除并重新下载
     final file = await DiskImageCacheService.instance.getImage(widget.imageUrl);
-    
+
     if (mounted) {
       setState(() {
         _cachedFile = file;
@@ -163,17 +163,16 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
       errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
     );
   }
-  
+
   Widget _buildPlaceholder() {
-    return widget.placeholder ?? SizedBox(
-      width: widget.width,
-      height: widget.height,
-      child: const Center(
-        child: CircularProgressIndicator(strokeWidth: 2),
-      ),
-    );
+    return widget.placeholder ??
+        SizedBox(
+          width: widget.width,
+          height: widget.height,
+          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        );
   }
-  
+
   Widget _buildErrorWidget() {
     // 如果设置了 fallbackAsset，显示本地资源图片
     if (widget.fallbackAsset != null) {
@@ -187,19 +186,18 @@ class _DiskCachedImageState extends State<DiskCachedImage> {
         colorBlendMode: widget.colorBlendMode,
         cacheWidth: widget.cacheWidth,
         cacheHeight: widget.cacheHeight,
-        errorBuilder: (context, error, stackTrace) => _buildDefaultErrorWidget(),
+        errorBuilder: (context, error, stackTrace) =>
+            _buildDefaultErrorWidget(),
       );
     }
     return widget.errorWidget ?? _buildDefaultErrorWidget();
   }
-  
+
   Widget _buildDefaultErrorWidget() {
     return SizedBox(
       width: widget.width,
       height: widget.height,
-      child: const Center(
-        child: Icon(Icons.broken_image, color: Colors.grey),
-      ),
+      child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
     );
   }
 }

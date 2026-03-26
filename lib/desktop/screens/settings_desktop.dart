@@ -32,7 +32,9 @@ class _SettingsDesktopState extends State<SettingsDesktop> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF3F4F6),
+      backgroundColor: isDark
+          ? const Color(0xFF0F172A)
+          : const Color(0xFFF3F4F6),
       body: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {
           return PageLayout(
@@ -44,8 +46,6 @@ class _SettingsDesktopState extends State<SettingsDesktop> {
       ),
     );
   }
-
-
 
   Widget _buildSettingsContent(SettingsState settingsState) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

@@ -19,10 +19,7 @@ import 'settings_item.dart';
 class NotificationSettings extends StatelessWidget {
   final SettingsState settingsState;
 
-  const NotificationSettings({
-    super.key,
-    required this.settingsState,
-  });
+  const NotificationSettings({super.key, required this.settingsState});
 
   @override
   Widget build(BuildContext context) {
@@ -51,9 +48,7 @@ class NotificationSettings extends StatelessWidget {
 class _NotificationPositionEditorWrapper extends StatefulWidget {
   final SettingsState settingsState;
 
-  const _NotificationPositionEditorWrapper({
-    required this.settingsState,
-  });
+  const _NotificationPositionEditorWrapper({required this.settingsState});
 
   @override
   State<_NotificationPositionEditorWrapper> createState() =>
@@ -73,9 +68,10 @@ class _NotificationPositionEditorWrapperState
   static const double _notificationSpacing = 8.0;
   static const int _maxNotifications = 5;
   // 通知区域总高度 = 5张卡片 + 4个间距
-  static const double _notificationTopPadding = 5.0; // 与 notification_window_service.dart 一致
-  static const double _notificationTotalHeight = _notificationCardHeight *
-          _maxNotifications +
+  static const double _notificationTopPadding =
+      5.0; // 与 notification_window_service.dart 一致
+  static const double _notificationTotalHeight =
+      _notificationCardHeight * _maxNotifications +
       _notificationSpacing * (_maxNotifications - 1);
 
   // 浮窗尺寸（与 floating_window_service.dart 一致）
@@ -241,10 +237,14 @@ class _NotificationPositionEditorWrapperState
         return Offset(0, _notificationTopPadding);
       case NotificationPositionType.topCenter:
         return Offset(
-            (screenWidth - _notificationWidth) / 2, _notificationTopPadding);
+          (screenWidth - _notificationWidth) / 2,
+          _notificationTopPadding,
+        );
       case NotificationPositionType.topRight:
         return Offset(
-            screenWidth - _notificationWidth, _notificationTopPadding);
+          screenWidth - _notificationWidth,
+          _notificationTopPadding,
+        );
       case NotificationPositionType.centerLeft:
         return Offset(0, centerY);
       case NotificationPositionType.center:
@@ -253,13 +253,19 @@ class _NotificationPositionEditorWrapperState
         return Offset(screenWidth - _notificationWidth, centerY);
       case NotificationPositionType.bottomLeft:
         return Offset(
-            0, availableHeight - _notificationTotalHeight - _notificationTopPadding);
+          0,
+          availableHeight - _notificationTotalHeight - _notificationTopPadding,
+        );
       case NotificationPositionType.bottomCenter:
-        return Offset((screenWidth - _notificationWidth) / 2,
-            availableHeight - _notificationTotalHeight - _notificationTopPadding);
+        return Offset(
+          (screenWidth - _notificationWidth) / 2,
+          availableHeight - _notificationTotalHeight - _notificationTopPadding,
+        );
       case NotificationPositionType.bottomRight:
-        return Offset(screenWidth - _notificationWidth,
-            availableHeight - _notificationTotalHeight - _notificationTopPadding);
+        return Offset(
+          screenWidth - _notificationWidth,
+          availableHeight - _notificationTotalHeight - _notificationTopPadding,
+        );
     }
   }
 
@@ -279,7 +285,9 @@ class _NotificationPositionEditorWrapperState
         return Offset((screenWidth - _floatingWidth) / 2, _floatingPadding);
       case NotificationPositionType.topRight:
         return Offset(
-            screenWidth - _floatingWidth - _floatingPadding, _floatingPadding);
+          screenWidth - _floatingWidth - _floatingPadding,
+          _floatingPadding,
+        );
       case NotificationPositionType.centerLeft:
         return Offset(_floatingPadding, centerY);
       case NotificationPositionType.center:
@@ -288,13 +296,19 @@ class _NotificationPositionEditorWrapperState
         return Offset(screenWidth - _floatingWidth - _floatingPadding, centerY);
       case NotificationPositionType.bottomLeft:
         return Offset(
-            _floatingPadding, availableHeight - _floatingHeight - _floatingPadding);
+          _floatingPadding,
+          availableHeight - _floatingHeight - _floatingPadding,
+        );
       case NotificationPositionType.bottomCenter:
-        return Offset((screenWidth - _floatingWidth) / 2,
-            availableHeight - _floatingHeight - _floatingPadding);
+        return Offset(
+          (screenWidth - _floatingWidth) / 2,
+          availableHeight - _floatingHeight - _floatingPadding,
+        );
       case NotificationPositionType.bottomRight:
-        return Offset(screenWidth - _floatingWidth - _floatingPadding,
-            availableHeight - _floatingHeight - _floatingPadding);
+        return Offset(
+          screenWidth - _floatingWidth - _floatingPadding,
+          availableHeight - _floatingHeight - _floatingPadding,
+        );
     }
   }
 
@@ -304,23 +318,25 @@ class _NotificationPositionEditorWrapperState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         NotificationPositionEditor(
-          initialNotificationPosition:
-              _convertToEditorPosition(widget.settingsState.notificationPosition),
-          initialFloatingPosition:
-              _convertToEditorPosition(widget.settingsState.floatingWindowPosition),
+          initialNotificationPosition: _convertToEditorPosition(
+            widget.settingsState.notificationPosition,
+          ),
+          initialFloatingPosition: _convertToEditorPosition(
+            widget.settingsState.floatingWindowPosition,
+          ),
           onNotificationPositionChanged: (position) {
             final statePosition = _convertToStatePosition(position);
             context.read<SettingsBloc>().add(
-                  SettingsSetNotificationPosition(statePosition),
-                );
+              SettingsSetNotificationPosition(statePosition),
+            );
             // 如果预览窗口打开，移动到新位置
             _updateNotificationPreviewPosition(statePosition);
           },
           onFloatingPositionChanged: (position) {
             final statePosition = _convertToStatePosition(position);
             context.read<SettingsBloc>().add(
-                  SettingsSetFloatingWindowPosition(statePosition),
-                );
+              SettingsSetFloatingWindowPosition(statePosition),
+            );
             // 如果预览窗口打开，移动到新位置
             _updateFloatingPreviewPosition(statePosition);
           },
@@ -334,17 +350,25 @@ class _NotificationPositionEditorWrapperState
   }
 
   /// 更新通知预览窗口位置
-  Future<void> _updateNotificationPreviewPosition(NotificationPositionType position) async {
+  Future<void> _updateNotificationPreviewPosition(
+    NotificationPositionType position,
+  ) async {
     if (_notificationPreviewWindowId == null) return;
-    
+
     try {
       final screenInfo = await windowManager.getPrimaryScreenSize();
       final screenWidth = screenInfo['screenWidth']!;
       final screenHeight = screenInfo['screenHeight']!;
-      
-      final newPosition = _calculateNotificationPosition(position, screenWidth, screenHeight);
-      
-      final controller = WindowController.fromWindowId(_notificationPreviewWindowId!);
+
+      final newPosition = _calculateNotificationPosition(
+        position,
+        screenWidth,
+        screenHeight,
+      );
+
+      final controller = WindowController.fromWindowId(
+        _notificationPreviewWindowId!,
+      );
       await controller.invokeMethod('updatePosition', {
         'x': newPosition.dx,
         'y': newPosition.dy,
@@ -355,17 +379,25 @@ class _NotificationPositionEditorWrapperState
   }
 
   /// 更新浮窗预览窗口位置
-  Future<void> _updateFloatingPreviewPosition(NotificationPositionType position) async {
+  Future<void> _updateFloatingPreviewPosition(
+    NotificationPositionType position,
+  ) async {
     if (_floatingPreviewWindowId == null) return;
-    
+
     try {
       final screenInfo = await windowManager.getPrimaryScreenSize();
       final screenWidth = screenInfo['screenWidth']!;
       final screenHeight = screenInfo['screenHeight']!;
-      
-      final newPosition = _calculateFloatingPosition(position, screenWidth, screenHeight);
-      
-      final controller = WindowController.fromWindowId(_floatingPreviewWindowId!);
+
+      final newPosition = _calculateFloatingPosition(
+        position,
+        screenWidth,
+        screenHeight,
+      );
+
+      final controller = WindowController.fromWindowId(
+        _floatingPreviewWindowId!,
+      );
       await controller.invokeMethod('updatePosition', {
         'x': newPosition.dx,
         'y': newPosition.dy,
@@ -375,7 +407,9 @@ class _NotificationPositionEditorWrapperState
     }
   }
 
-  WindowPositionType _convertToEditorPosition(NotificationPositionType position) {
+  WindowPositionType _convertToEditorPosition(
+    NotificationPositionType position,
+  ) {
     switch (position) {
       case NotificationPositionType.topLeft:
         return WindowPositionType.topLeft;
@@ -398,7 +432,9 @@ class _NotificationPositionEditorWrapperState
     }
   }
 
-  NotificationPositionType _convertToStatePosition(WindowPositionType position) {
+  NotificationPositionType _convertToStatePosition(
+    WindowPositionType position,
+  ) {
     switch (position) {
       case WindowPositionType.topLeft:
         return NotificationPositionType.topLeft;

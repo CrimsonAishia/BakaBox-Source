@@ -15,10 +15,7 @@ enum PlayerSortOption { name, score, time }
 class ServerDetailDialog extends StatefulWidget {
   final ExtendedServerItem server;
 
-  const ServerDetailDialog({
-    super.key,
-    required this.server,
-  });
+  const ServerDetailDialog({super.key, required this.server});
 
   @override
   State<ServerDetailDialog> createState() => _ServerDetailDialogState();
@@ -32,17 +29,17 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
   String? _playerError;
   ServerDetailInfo? _serverDetail;
   int? _pingLatency;
-  
+
   // 玩家列表控制
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _playerScrollController = ScrollController();
   String _searchQuery = '';
   PlayerSortOption _sortOption = PlayerSortOption.name;
-  
+
   // 滚动指示器状态
   bool _canScrollUp = false;
   bool _canScrollDown = false;
-  
+
   // 自动刷新
   Timer? _refreshTimer;
   static const int _refreshInterval = 10; // 10秒刷新一次玩家列表
@@ -68,7 +65,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
     _serverDetail = null;
     super.dispose();
   }
-  
+
   /// 关闭 Dialog 前的清理
   void _handleClose() {
     _serverDetail = null;
@@ -90,23 +87,21 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
     }
   }
 
-
   /// 启动自动刷新
   void _startAutoRefresh() {
-    _refreshTimer = Timer.periodic(
-      const Duration(seconds: _refreshInterval),
-      (_) {
-        if (mounted) {
-          _fetchPlayerList();
-        }
-      },
-    );
+    _refreshTimer = Timer.periodic(const Duration(seconds: _refreshInterval), (
+      _,
+    ) {
+      if (mounted) {
+        _fetchPlayerList();
+      }
+    });
   }
 
   /// 获取服务器详情
   Future<void> _fetchServerDetail() async {
     if (!mounted) return;
-    
+
     setState(() {
       _isLoading = true;
       _error = null;
@@ -154,7 +149,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
   /// 获取玩家列表（使用 A2S 协议直接查询）
   Future<void> _fetchPlayerList() async {
     if (!mounted) return;
-    
+
     setState(() {
       _isLoadingPlayers = true;
       _playerError = null;
@@ -197,27 +192,40 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
       }
 
       // 使用 SourceServerService 直接获取玩家列表
-      final players = await SourceServerService.getServerPlayers(ip, port, timeout: 5000);
-      
+      final players = await SourceServerService.getServerPlayers(
+        ip,
+        port,
+        timeout: 5000,
+      );
+
       if (!mounted) return;
-      
+
       if (players.isNotEmpty) {
         // 转换为 PlayerInfo 列表
-        final playerList = players.asMap().entries.map((entry) => PlayerInfo(
-          index: entry.key,
-          name: entry.value.name,
-          score: entry.value.score,
-          duration: entry.value.duration.toInt(),
-        )).toList();
-        
+        final playerList = players
+            .asMap()
+            .entries
+            .map(
+              (entry) => PlayerInfo(
+                index: entry.key,
+                name: entry.value.name,
+                score: entry.value.score,
+                duration: entry.value.duration.toInt(),
+              ),
+            )
+            .toList();
+
         setState(() {
           _serverDetail = ServerDetailInfo(
-            serverInfo: _serverDetail?.serverInfo ?? widget.server.serverData ?? ServerInfo(
-              hostName: '未知服务器',
-              map: '未知地图',
-              players: players.length,
-              maxPlayers: 0,
-            ),
+            serverInfo:
+                _serverDetail?.serverInfo ??
+                widget.server.serverData ??
+                ServerInfo(
+                  hostName: '未知服务器',
+                  map: '未知地图',
+                  players: players.length,
+                  maxPlayers: 0,
+                ),
             playerList: playerList,
           );
           _isLoadingPlayers = false;
@@ -233,12 +241,15 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
         } else if (playerCount == 0) {
           setState(() {
             _serverDetail = ServerDetailInfo(
-              serverInfo: _serverDetail?.serverInfo ?? widget.server.serverData ?? ServerInfo(
-                hostName: '未知服务器',
-                map: '未知地图',
-                players: 0,
-                maxPlayers: 0,
-              ),
+              serverInfo:
+                  _serverDetail?.serverInfo ??
+                  widget.server.serverData ??
+                  ServerInfo(
+                    hostName: '未知服务器',
+                    map: '未知地图',
+                    players: 0,
+                    maxPlayers: 0,
+                  ),
               playerList: [],
             );
             _isLoadingPlayers = false;
@@ -288,7 +299,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
   String _formatGameTime(int seconds) {
     final hours = seconds ~/ 3600;
     final minutes = (seconds % 3600) ~/ 60;
-    
+
     if (hours > 0) {
       return '$hours小时$minutes分钟';
     }
@@ -303,7 +314,6 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
     if (ping < 150) return const Color(0xFFFF9800);
     return const Color(0xFFF44336);
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -349,7 +359,9 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
           // 渐变遮罩
           Container(
             decoration: BoxDecoration(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -388,7 +400,9 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             )
                           : const Icon(Icons.refresh, color: Colors.white),
@@ -409,10 +423,12 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
                   children: [
                     _buildInfoChip(MdiIcons.map, _getFormattedMapName(mapName)),
                     const SizedBox(width: 12),
-                    _buildInfoChip(MdiIcons.ip, widget.server.serverItem.address ?? '未知'),
+                    _buildInfoChip(
+                      MdiIcons.ip,
+                      widget.server.serverItem.address ?? '未知',
+                    ),
                     const SizedBox(width: 12),
-                    if (_pingLatency != null)
-                      _buildPingChip(_pingLatency!),
+                    if (_pingLatency != null) _buildPingChip(_pingLatency!),
                   ],
                 ),
               ],
@@ -435,10 +451,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
       children: [
         Icon(icon, size: 14, color: Colors.white70),
         const SizedBox(width: 4),
-        Text(
-          text,
-          style: const TextStyle(color: Colors.white70, fontSize: 12),
-        ),
+        Text(text, style: const TextStyle(color: Colors.white70, fontSize: 12)),
       ],
     );
   }
@@ -460,13 +473,16 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
           const SizedBox(width: 4),
           Text(
             '${ping}ms',
-            style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
     );
   }
-
 
   /// 构建内容区域
   Widget _buildContent() {
@@ -518,7 +534,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
   /// 构建玩家列表头部
   Widget _buildPlayerListHeader() {
     final playerCount = _serverDetail?.playerList.length ?? 0;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -530,7 +546,11 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
         children: [
           Row(
             children: [
-              Icon(MdiIcons.accountGroup, color: const Color(0xFF0080FF), size: 20),
+              Icon(
+                MdiIcons.accountGroup,
+                color: const Color(0xFF0080FF),
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Text(
                 '玩家列表 ($playerCount)',
@@ -553,14 +573,20 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
                     decoration: InputDecoration(
                       hintText: '搜索玩家...',
                       prefixIcon: const Icon(Icons.search, size: 18),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+                        borderSide: BorderSide(
+                          color: Colors.grey.withValues(alpha: 0.3),
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+                        borderSide: BorderSide(
+                          color: Colors.grey.withValues(alpha: 0.3),
+                        ),
                       ),
                     ),
                     onChanged: (value) {
@@ -586,9 +612,18 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
                   child: DropdownButton<PlayerSortOption>(
                     value: _sortOption,
                     items: const [
-                      DropdownMenuItem(value: PlayerSortOption.name, child: Text('按名称')),
-                      DropdownMenuItem(value: PlayerSortOption.score, child: Text('按得分')),
-                      DropdownMenuItem(value: PlayerSortOption.time, child: Text('按时长')),
+                      DropdownMenuItem(
+                        value: PlayerSortOption.name,
+                        child: Text('按名称'),
+                      ),
+                      DropdownMenuItem(
+                        value: PlayerSortOption.score,
+                        child: Text('按得分'),
+                      ),
+                      DropdownMenuItem(
+                        value: PlayerSortOption.time,
+                        child: Text('按时长'),
+                      ),
                     ],
                     onChanged: (value) {
                       if (value != null && mounted) {
@@ -613,7 +648,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateScrollIndicators();
     });
-    
+
     // 玩家加载错误提示
     if (_playerError != null && (_serverDetail?.playerList.isEmpty ?? true)) {
       return Center(
@@ -655,7 +690,10 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
             children: [
               Icon(MdiIcons.accountSearch, size: 48, color: Colors.grey),
               const SizedBox(height: 16),
-              const Text('没有找到匹配的玩家', style: TextStyle(color: Color(0xFF6B7280))),
+              const Text(
+                '没有找到匹配的玩家',
+                style: TextStyle(color: Color(0xFF6B7280)),
+              ),
             ],
           ),
         );
@@ -742,8 +780,8 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
       child: Container(
         height: 40,
         decoration: BoxDecoration(
-          borderRadius: isTop 
-              ? null 
+          borderRadius: isTop
+              ? null
               : const BorderRadius.vertical(bottom: Radius.circular(16)),
           gradient: LinearGradient(
             begin: isTop ? Alignment.topCenter : Alignment.bottomCenter,
@@ -773,8 +811,8 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: index.isEven 
-            ? Colors.grey.withValues(alpha: 0.05) 
+        color: index.isEven
+            ? Colors.grey.withValues(alpha: 0.05)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
       ),

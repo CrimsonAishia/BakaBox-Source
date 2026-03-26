@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'disk_cached_image.dart';
 
 /// 图片查看器对话框
-/// 
+///
 /// 支持：
 /// - 点击放大查看
 /// - 多图切换
@@ -12,7 +12,7 @@ import 'disk_cached_image.dart';
 class ImageViewerDialog extends StatefulWidget {
   /// 图片URL列表
   final List<String> imageUrls;
-  
+
   /// 初始显示的图片索引
   final int initialIndex;
 
@@ -31,10 +31,8 @@ class ImageViewerDialog extends StatefulWidget {
     return showDialog(
       context: context,
       barrierColor: Colors.black87,
-      builder: (context) => ImageViewerDialog(
-        imageUrls: imageUrls,
-        initialIndex: initialIndex,
-      ),
+      builder: (context) =>
+          ImageViewerDialog(imageUrls: imageUrls, initialIndex: initialIndex),
     );
   }
 
@@ -163,7 +161,10 @@ class _ImageViewerDialogState extends State<ImageViewerDialog> {
               right: 0,
               child: Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black54,
                     borderRadius: BorderRadius.circular(20),
@@ -184,7 +185,11 @@ class _ImageViewerDialogState extends State<ImageViewerDialog> {
               child: Center(
                 child: IconButton(
                   onPressed: _goToPrevious,
-                  icon: const Icon(Icons.chevron_left, color: Colors.white, size: 40),
+                  icon: const Icon(
+                    Icons.chevron_left,
+                    color: Colors.white,
+                    size: 40,
+                  ),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.black38,
                     padding: const EdgeInsets.all(8),
@@ -193,7 +198,8 @@ class _ImageViewerDialogState extends State<ImageViewerDialog> {
               ),
             ),
           // 右箭头
-          if (widget.imageUrls.length > 1 && _currentIndex < widget.imageUrls.length - 1)
+          if (widget.imageUrls.length > 1 &&
+              _currentIndex < widget.imageUrls.length - 1)
             Positioned(
               right: 16,
               top: 0,
@@ -201,7 +207,11 @@ class _ImageViewerDialogState extends State<ImageViewerDialog> {
               child: Center(
                 child: IconButton(
                   onPressed: _goToNext,
-                  icon: const Icon(Icons.chevron_right, color: Colors.white, size: 40),
+                  icon: const Icon(
+                    Icons.chevron_right,
+                    color: Colors.white,
+                    size: 40,
+                  ),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.black38,
                     padding: const EdgeInsets.all(8),

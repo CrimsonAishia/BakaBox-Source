@@ -16,10 +16,12 @@ class CharacterImageViewerDialog extends StatefulWidget {
   });
 
   @override
-  State<CharacterImageViewerDialog> createState() => _CharacterImageViewerDialogState();
+  State<CharacterImageViewerDialog> createState() =>
+      _CharacterImageViewerDialogState();
 }
 
-class _CharacterImageViewerDialogState extends State<CharacterImageViewerDialog> {
+class _CharacterImageViewerDialogState
+    extends State<CharacterImageViewerDialog> {
   late int _currentIndex;
   late PageController _pageController;
 
@@ -57,10 +59,17 @@ class _CharacterImageViewerDialogState extends State<CharacterImageViewerDialog>
                 children: [
                   // 标题栏
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
-                      color: CharacterGalleryTheme.getInkColor(context).withValues(alpha: 0.9),
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                      color: CharacterGalleryTheme.getInkColor(
+                        context,
+                      ).withValues(alpha: 0.9),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(8),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -96,8 +105,9 @@ class _CharacterImageViewerDialogState extends State<CharacterImageViewerDialog>
                     child: Container(
                       decoration: BoxDecoration(
                         color: CharacterGalleryTheme.getWashiColor(context),
-                        borderRadius:
-                            const BorderRadius.vertical(bottom: Radius.circular(8)),
+                        borderRadius: const BorderRadius.vertical(
+                          bottom: Radius.circular(8),
+                        ),
                       ),
                       child: widget.images.length == 1
                           ? _buildSingleImage()
@@ -128,7 +138,9 @@ class _CharacterImageViewerDialogState extends State<CharacterImageViewerDialog>
               child: Center(
                 child: _NavButton(
                   icon: Icons.chevron_right,
-                  onTap: _currentIndex < widget.images.length - 1 ? _nextImage : null,
+                  onTap: _currentIndex < widget.images.length - 1
+                      ? _nextImage
+                      : null,
                 ),
               ),
             ),
@@ -228,20 +240,25 @@ class _NavButtonState extends State<_NavButton> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: isEnabled
-                ? (_isHovered ? buttonBg : buttonBg.withValues(alpha: isDark ? 0.9 : 0.8))
+                ? (_isHovered
+                      ? buttonBg
+                      : buttonBg.withValues(alpha: isDark ? 0.9 : 0.8))
                 : buttonBg.withValues(alpha: 0.3),
             shape: BoxShape.circle,
             boxShadow: isEnabled && _isHovered
-                ? [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.2), blurRadius: 8)]
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.2),
+                      blurRadius: 8,
+                    ),
+                  ]
                 : null,
           ),
           child: Icon(
             widget.icon,
             size: 32,
             color: isEnabled
-                ? (_isHovered
-                    ? CharacterGalleryTheme.vermillion
-                    : inkColor)
+                ? (_isHovered ? CharacterGalleryTheme.vermillion : inkColor)
                 : Colors.grey,
           ),
         ),
