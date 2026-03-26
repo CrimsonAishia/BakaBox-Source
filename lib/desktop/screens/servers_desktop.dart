@@ -784,8 +784,6 @@ class _ServersDesktopState extends State<ServersDesktop> {
       builder: (context, state) {
         final canAddServer = state.selectedCategory?.isCustom == true;
         final categoryName = state.selectedCategory?.modelName ?? '';
-        // 刷新组件独立判断：仅在分类加载中时显示刷新状态（不再等待服务器数据加载完成）
-        final isRefreshing = state.isCategoryLoading(categoryName);
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(15, 4, 15, 5),
@@ -963,9 +961,10 @@ class _ServersDesktopState extends State<ServersDesktop> {
                 ),
                 const SizedBox(width: 8),
                 CompactRefreshProgress(
-                  key: ValueKey('refresh_$categoryName'),
+                  key: ValueKey(
+                    'refresh_${categoryName}_${state.countdownResetKey}',
+                  ),
                   refreshInterval: _kRefreshInterval,
-                  isRefreshing: isRefreshing,
                   onRefresh: () => _handleRefresh(state),
                   onForceRefresh: () => _handleForceRefresh(),
                 ),
