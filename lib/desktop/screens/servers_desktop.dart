@@ -509,7 +509,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          padding: const EdgeInsets.fromLTRB(15, 60, 15, 0),
+          padding: const EdgeInsets.fromLTRB(15, 50, 15, 0),
           child: _buildMainContent(),
         ),
       ),
@@ -788,7 +788,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
         final isRefreshing = state.isCategoryLoading(categoryName);
 
         return Padding(
-          padding: const EdgeInsets.all(15),
+          padding: const EdgeInsets.fromLTRB(15, 4, 15, 5),
           child: Row(
             children: [
               // 服务器标题
@@ -1185,7 +1185,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
         : null;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 13),
+      padding: const EdgeInsets.only(bottom: 8),
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: showSkeleton
@@ -1402,7 +1402,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
     return BlocBuilder<ServerBloc, ServerState>(
       builder: (context, state) {
         return Container(
-          padding: const EdgeInsets.fromLTRB(15, 15, 15, 10),
+          padding: const EdgeInsets.fromLTRB(15, 5, 15, 10),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
