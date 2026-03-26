@@ -126,6 +126,14 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
 
   void _initializeData() {
     final state = context.read<ServerBloc>().state;
+    final defaultCategoryNames = state.serverCategories
+        .where((c) => c.modelName != null && !c.isCustom)
+        .map((c) => c.modelName!)
+        .toSet();
+    final fallbackCategoryNames = state.serverCategories
+        .where((c) => c.modelName != null)
+        .map((c) => c.modelName!)
+        .toSet();
 
     // 从存储中恢复选中的分类
     final savedCategories = _loadSavedCategories(state);
@@ -148,12 +156,23 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
           _loadNewCategory(categoryName);
         }
       }
-    } else if (state.selectedCategory?.modelName != null) {
-      // 没有保存的分类，使用当前选中的分类
-      _selectedCategories = {state.selectedCategory!.modelName!};
-      _categoryServersMap[state.selectedCategory!.modelName!] = List.from(
-        state.servers,
-      );
+    } else {
+      // 首次进入默认全选非自定义分类；若不存在则回退到全部分类
+      _selectedCategories = defaultCategoryNames.isNotEmpty
+          ? defaultCategoryNames
+          : fallbackCategoryNames;
+
+      if (state.selectedCategory?.modelName != null) {
+        _categoryServersMap[state.selectedCategory!.modelName!] = List.from(
+          state.servers,
+        );
+      }
+
+      for (final categoryName in _selectedCategories) {
+        if (!_categoryServersMap.containsKey(categoryName)) {
+          _loadNewCategory(categoryName);
+        }
+      }
     }
 
     setState(() {});
@@ -1709,14 +1728,17 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     final selectedCount = _selectedCategories.length;
     final totalCount = categories.length;
     final isFiltered = selectedCount < totalCount;
+    final accentColor = isFiltered
+        ? const Color(0xFF3B82F6)
+        : (isDark ? Colors.white70 : const Color(0xFF4B5563));
 
     return Tooltip(
-      message: '筛选分类',
+      message: '点击这里切换分类显示',
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () => _showFilterDialog(isDark, categories),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(10),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             decoration: BoxDecoration(
@@ -1725,7 +1747,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                   : (isDark
                         ? Colors.white.withValues(alpha: 0.06)
                         : Colors.black.withValues(alpha: 0.04)),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: isFiltered
                     ? const Color(0xFF3B82F6).withValues(alpha: 0.4)
@@ -1737,26 +1759,36 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.tune_rounded,
-                  size: 16,
-                  color: isFiltered
-                      ? const Color(0xFF3B82F6)
-                      : (isDark ? Colors.white60 : const Color(0xFF6B7280)),
-                ),
+                Icon(Icons.arrow_right_alt_rounded, size: 18, color: accentColor),
+                const SizedBox(width: 2),
+                Icon(Icons.tune_rounded, size: 16, color: accentColor),
                 const SizedBox(width: 6),
-                Text(
-                  isFiltered ? '$selectedCount / $totalCount 分类' : '全部分类',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: isFiltered
-                        ? const Color(0xFF3B82F6)
-                        : (isDark ? Colors.white60 : const Color(0xFF6B7280)),
-                  ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isFiltered ? '$selectedCount / $totalCount 分类' : '全部分类',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: accentColor,
+                      ),
+                    ),
+                    Text(
+                      '点击切换显示分类',
+                      style: TextStyle(
+                        fontSize: 10,
+                        height: 1.1,
+                        color: isDark
+                            ? Colors.white38
+                            : const Color(0xFF9CA3AF),
+                      ),
+                    ),
+                  ],
                 ),
                 if (isFiltered) ...[
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 6),
                   Container(
                     width: 6,
                     height: 6,
@@ -1766,6 +1798,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                     ),
                   ),
                 ],
+                const SizedBox(width: 4),
+                Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: accentColor),
               ],
             ),
           ),
@@ -1829,15 +1863,29 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                             color: Color(0xFF3B82F6),
                           ),
                           const SizedBox(width: 8),
-                          Text(
-                            '筛选分类',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? Colors.white
-                                  : const Color(0xFF1F2937),
-                            ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '筛选分类',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF1F2937),
+                                ),
+                              ),
+                              Text(
+                                '默认全选，可按需取消不想看的分类',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDark
+                                      ? Colors.white38
+                                      : const Color(0xFF9CA3AF),
+                                ),
+                              ),
+                            ],
                           ),
                           const Spacer(),
                           // 全选/取消全选
