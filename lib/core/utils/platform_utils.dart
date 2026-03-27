@@ -1,7 +1,8 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'platform_info_stub.dart'
+    if (dart.library.io) 'platform_info_io.dart' as platform_info;
 import 'store_detection_utils.dart';
 
 /// 平台工具类 - 提供全局的平台检测功能
@@ -12,11 +13,12 @@ class PlatformUtils {
   static const double tabletBreakpoint = 600.0;
 
   static bool get isWeb => kIsWeb;
-  static bool get isMobile => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
-  static bool get isAndroid => !kIsWeb && Platform.isAndroid;
-  static bool get isIOS => !kIsWeb && Platform.isIOS;
-  static bool get isWindows => !kIsWeb && Platform.isWindows;
-  static bool get isDesktopPlatform => !kIsWeb && Platform.isWindows;
+  static bool get isMobile =>
+      !kIsWeb && (platform_info.isAndroid || platform_info.isIOS);
+  static bool get isAndroid => !kIsWeb && platform_info.isAndroid;
+  static bool get isIOS => !kIsWeb && platform_info.isIOS;
+  static bool get isWindows => !kIsWeb && platform_info.isWindows;
+  static bool get isDesktopPlatform => !kIsWeb && platform_info.isWindows;
 
   /// 检测是否从 Microsoft Store 安装（同步版本）
   ///
@@ -50,7 +52,7 @@ class PlatformUtils {
 
   static String get platformName {
     if (kIsWeb) return 'web';
-    return Platform.operatingSystem;
+    return platform_info.getOperatingSystem();
   }
 
   static Map<String, dynamic> getPlatformInfo(BuildContext? context) {

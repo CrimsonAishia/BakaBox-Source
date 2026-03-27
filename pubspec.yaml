@@ -104,6 +104,7 @@ dependencies:
   just_the_tooltip: ^0.0.12
   flex_color_picker: ^3.7.2
   tray_manager: ^0.5.2
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:
