@@ -1696,6 +1696,7 @@ class _MarqueeTextState extends State<_MarqueeText> {
   ScrollController? _scrollController;
   bool _needsScroll = false;
   bool _isScrolling = false;
+  double _measuredOverflowWidth = 0;
 
   @override
   void initState() {
@@ -1727,14 +1728,37 @@ class _MarqueeTextState extends State<_MarqueeText> {
     super.dispose();
   }
 
+  double _measureOverflowWidth(BuildContext context) {
+    final renderObject = context.findRenderObject();
+    final viewportWidth = renderObject is RenderBox ? renderObject.size.width : 0.0;
+    if (viewportWidth <= 0) return 0;
+
+    final textPainter = TextPainter(
+      text: TextSpan(text: widget.text, style: widget.style),
+      maxLines: 1,
+      textDirection: Directionality.of(context),
+    )..layout();
+
+    return (textPainter.width - viewportWidth).clamp(0.0, double.infinity);
+  }
+
   void _checkOverflow() {
     if (!mounted || _scrollController == null) return;
     if (!_scrollController!.hasClients) return;
 
+    final measuredOverflowWidth = _measureOverflowWidth(context);
     final maxScroll = _scrollController!.position.maxScrollExtent;
-    final needsScroll = maxScroll > 0;
-    if (needsScroll != _needsScroll) {
-      setState(() => _needsScroll = needsScroll);
+    final targetOverflowWidth = measuredOverflowWidth > maxScroll
+        ? measuredOverflowWidth
+        : maxScroll;
+    final needsScroll = targetOverflowWidth > 0;
+
+    if (needsScroll != _needsScroll ||
+        (targetOverflowWidth - _measuredOverflowWidth).abs() > 0.5) {
+      setState(() {
+        _needsScroll = needsScroll;
+        _measuredOverflowWidth = targetOverflowWidth;
+      });
     }
     if (_needsScroll && !_isScrolling) {
       _startScrolling();
@@ -1750,14 +1774,17 @@ class _MarqueeTextState extends State<_MarqueeText> {
       if (!mounted || !_needsScroll || _scrollController == null) break;
 
       final maxScroll = _scrollController!.position.maxScrollExtent;
-      if (maxScroll <= 0) break;
+      final targetOffset = _measuredOverflowWidth > maxScroll
+          ? _measuredOverflowWidth
+          : maxScroll;
+      if (targetOffset <= 0) break;
 
       // 滚动到末尾
       try {
         await _scrollController!.animateTo(
-          maxScroll,
+          targetOffset,
           duration: Duration(
-            milliseconds: (maxScroll * 30).toInt().clamp(1000, 5000),
+            milliseconds: (targetOffset * 30).toInt().clamp(1000, 5000),
           ),
           curve: Curves.linear,
         );
@@ -1801,11 +1828,19 @@ class _MarqueeTextState extends State<_MarqueeText> {
         overflow: TextOverflow.ellipsis,
       );
     }
-    return SingleChildScrollView(
-      controller: _scrollController,
-      scrollDirection: Axis.horizontal,
-      physics: const NeverScrollableScrollPhysics(),
-      child: Text(widget.text, style: widget.style, maxLines: 1),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
+        return SingleChildScrollView(
+          controller: _scrollController,
+          scrollDirection: Axis.horizontal,
+          physics: const NeverScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: constraints.maxWidth),
+            child: Text(widget.text, style: widget.style, maxLines: 1),
+          ),
+        );
+      },
     );
   }
 }

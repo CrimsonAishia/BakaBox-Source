@@ -424,6 +424,8 @@ class _AutoScrollingTextState extends State<_AutoScrollingText>
   bool _needsScrolling = false;
   Timer? _forwardDelayTimer;
   Timer? _reverseDelayTimer;
+  double _measuredOverflowWidth = 0;
+  bool _statusListenerAttached = false;
 
   @override
   void initState() {
@@ -447,6 +449,11 @@ class _AutoScrollingTextState extends State<_AutoScrollingText>
       _reverseDelayTimer?.cancel();
       _animationController.stop();
       _animationController.reset();
+      if (_scrollController.hasClients) {
+        try {
+          _scrollController.jumpTo(0);
+        } catch (_) {}
+      }
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _checkIfScrollingNeeded();
@@ -459,14 +466,18 @@ class _AutoScrollingTextState extends State<_AutoScrollingText>
 
     final textPainter = TextPainter(
       text: TextSpan(text: widget.text, style: widget.style),
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
+      maxLines: 1,
+      textDirection: Directionality.of(context),
+    )..layout();
 
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox != null) {
       final availableWidth = renderBox.size.width;
-      _needsScrolling = textPainter.width > availableWidth;
+      _measuredOverflowWidth = (textPainter.width - availableWidth).clamp(
+        0.0,
+        double.infinity,
+      );
+      _needsScrolling = _measuredOverflowWidth > 0;
 
       if (_needsScrolling) {
         _startScrolling();
@@ -476,22 +487,9 @@ class _AutoScrollingTextState extends State<_AutoScrollingText>
     }
   }
 
-  void _startScrolling() {
-    if (!_needsScrolling || !mounted) return;
-    if (!_scrollController.hasClients) return;
-
-    final maxScrollExtent = _scrollController.position.maxScrollExtent;
-    if (maxScrollExtent <= 0) return;
-
-    _animation = Tween<double>(begin: 0.0, end: maxScrollExtent).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.linear),
-    );
-
-    _animation.addListener(() {
-      if (_scrollController.hasClients) {
-        _scrollController.jumpTo(_animation.value);
-      }
-    });
+  void _attachStatusListener() {
+    if (_statusListenerAttached) return;
+    _statusListenerAttached = true;
 
     _animationController.addStatusListener((status) {
       if (!mounted) return;
@@ -512,7 +510,29 @@ class _AutoScrollingTextState extends State<_AutoScrollingText>
         });
       }
     });
+  }
 
+  void _startScrolling() {
+    if (!_needsScrolling || !mounted) return;
+    if (!_scrollController.hasClients) return;
+
+    final maxScrollExtent = _scrollController.position.maxScrollExtent;
+    final targetOffset = _measuredOverflowWidth > maxScrollExtent
+        ? _measuredOverflowWidth
+        : maxScrollExtent;
+    if (targetOffset <= 0) return;
+
+    _animation = Tween<double>(begin: 0.0, end: targetOffset).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.linear),
+    );
+
+    _animation.addListener(() {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(_animation.value.clamp(0.0, targetOffset));
+      }
+    });
+
+    _attachStatusListener();
     _animationController.forward();
   }
 
@@ -527,11 +547,24 @@ class _AutoScrollingTextState extends State<_AutoScrollingText>
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      controller: _scrollController,
-      scrollDirection: Axis.horizontal,
-      physics: const NeverScrollableScrollPhysics(),
-      child: Text(widget.text, style: widget.style, maxLines: 1),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _checkIfScrollingNeeded();
+          }
+        });
+
+        return SingleChildScrollView(
+          controller: _scrollController,
+          scrollDirection: Axis.horizontal,
+          physics: const NeverScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: constraints.maxWidth),
+            child: Text(widget.text, style: widget.style, maxLines: 1),
+          ),
+        );
+      },
     );
   }
 }
