@@ -466,41 +466,35 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
     return Scrollbar(
       controller: _scrollController,
       thumbVisibility: true,
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
-        child: ListView.builder(
-          key: ValueKey('${state.keyword}_${state.logs.length}'),
-          controller: _scrollController,
-          padding: const EdgeInsets.all(20),
-          itemCount: state.logs.length + 1,
-          itemBuilder: (context, index) {
-            if (index >= state.logs.length) {
-              return _buildBottomIndicator(state);
-            }
-            final log = state.logs[index];
-            final isLatest = index == 0 && _searchController.text.isEmpty;
-            return TweenAnimationBuilder<double>(
-              key: ValueKey(log.updateTime),
-              tween: Tween(begin: 0.0, end: 1.0),
-              duration: Duration(
-                milliseconds: 200 + (index * 50).clamp(0, 300),
-              ),
-              curve: Curves.easeOut,
-              builder: (context, value, child) {
-                return Opacity(
-                  opacity: value,
-                  child: Transform.translate(
-                    offset: Offset(0, 20 * (1 - value)),
-                    child: child,
-                  ),
-                );
-              },
-              child: _buildLogItem(log, index, isLatest),
-            );
-          },
-        ),
+      child: ListView.builder(
+        controller: _scrollController,
+        padding: const EdgeInsets.all(20),
+        itemCount: state.logs.length + 1,
+        itemBuilder: (context, index) {
+          if (index >= state.logs.length) {
+            return _buildBottomIndicator(state);
+          }
+          final log = state.logs[index];
+          final isLatest = index == 0 && _searchController.text.isEmpty;
+          return TweenAnimationBuilder<double>(
+            key: ValueKey(log.updateTime),
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: Duration(
+              milliseconds: 200 + (index * 50).clamp(0, 300),
+            ),
+            curve: Curves.easeOut,
+            builder: (context, value, child) {
+              return Opacity(
+                opacity: value,
+                child: Transform.translate(
+                  offset: Offset(0, 20 * (1 - value)),
+                  child: child,
+                ),
+              );
+            },
+            child: _buildLogItem(log, index, isLatest),
+          );
+        },
       ),
     );
   }
