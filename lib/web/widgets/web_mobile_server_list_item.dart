@@ -6,15 +6,30 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../models/web_server_list_models.dart';
 import '../widgets/web_map_background.dart';
 
-class WebMobileServerListItem extends StatelessWidget {
+class WebMobileServerListItem extends StatefulWidget {
   final WebServerItem server;
   final VoidCallback? onTap;
+  /// 由父级页面提供的缓存地图背景 Widget（可选）
+  final Widget? mapBackground;
 
   const WebMobileServerListItem({
     super.key,
     required this.server,
     this.onTap,
+    this.mapBackground,
   });
+
+  @override
+  State<WebMobileServerListItem> createState() => _WebMobileServerListItemState();
+}
+
+class _WebMobileServerListItemState extends State<WebMobileServerListItem> {
+  // 本地缓存作为 fallback（当父级未提供 mapBackground 时使用）
+  Widget? _cachedMapBackground;
+  String? _cachedMapName;
+  String? _cachedMapImageUrl;
+
+  WebServerItem get server => widget.server;
 
   String get _serverName {
     return server.name.isNotEmpty ? server.name : '未知服务器';
@@ -42,6 +57,38 @@ class WebMobileServerListItem extends StatelessWidget {
     return '';
   }
 
+  /// 去掉 URL 中的查询参数，只保留基础路径用于比较
+  /// 避免鉴权参数（token、签名等）每次变化导致误判为地图变更
+  static String? _stripQueryParams(String? url) {
+    if (url == null || url.isEmpty) return url;
+    final uri = Uri.tryParse(url);
+    if (uri == null) return url;
+    return uri.replace(query: '', fragment: '').toString().replaceAll('?', '').replaceAll('#', '');
+  }
+
+  /// 获取缓存的地图背景组件
+  /// 优先使用父级提供的缓存（不受 ListView virtualization 影响），
+  /// 否则回退到本地缓存
+  Widget _getMapBackground() {
+    // 优先使用父级页面提供的缓存 Widget
+    if (widget.mapBackground != null) {
+      return widget.mapBackground!;
+    }
+    // Fallback: 本地缓存
+    final currentBaseUrl = _stripQueryParams(server.mapImageUrl);
+    if (_cachedMapBackground == null ||
+        _cachedMapName != server.mapName ||
+        _cachedMapImageUrl != currentBaseUrl) {
+      _cachedMapName = server.mapName;
+      _cachedMapImageUrl = currentBaseUrl;
+      _cachedMapBackground = WebMapBackground.fromMap(
+        mapName: server.mapName,
+        mapUrl: server.mapImageUrl,
+      );
+    }
+    return _cachedMapBackground!;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -51,7 +98,7 @@ class WebMobileServerListItem extends StatelessWidget {
         side: BorderSide(color: Colors.grey.withValues(alpha: 0.3), width: 1.0),
       ),
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
         borderRadius: BorderRadius.circular(12),
         child: SizedBox(
           height: 170,
@@ -70,10 +117,7 @@ class WebMobileServerListItem extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               child: Stack(
                 children: [
-                  WebMapBackground.fromMap(
-                    mapName: server.mapName,
-                    mapUrl: server.mapImageUrl,
-                  ),
+                  _getMapBackground(),
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
