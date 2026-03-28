@@ -31,14 +31,20 @@ class _WebServerListPageState extends State<WebServerListPage> {
   StreamSubscription<WebServerListWsEvent>? _wsSubscription;
   bool _isCompactMode = false;
   bool _isConnected = false;
+  bool _hasReceivedFirstSnapshot = false;
   String? _connectionMessage;
   Timer? _refreshProgressTimer;
   int _refreshCountdown = _kRefreshIntervalSeconds;
+
+  /// 页面级地图背景缓存，key 为服务器 id，value 为缓存的地图背景 Widget
+  /// 避免 ListView.builder 虚拟化销毁卡片后缓存丢失
+  final Map<String, _CachedMapBg> _mapBackgroundCache = {};
 
   @override
   void initState() {
     super.initState();
     _data = widget.initialData ?? WebServerListData.empty();
+    _hasReceivedFirstSnapshot = widget.initialData != null && widget.initialData!.categories.isNotEmpty;
     _selectedCategories = _data.categories.map((e) => e.name).toSet();
     _wsAdapter = WebServerListWsAdapter();
     _wsSubscription = _wsAdapter.events.listen(_handleWsEvent);
@@ -74,6 +80,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
       case WebServerListSnapshotEvent(:final data):
         setState(() {
           _data = data;
+          _hasReceivedFirstSnapshot = true;
           _connectionMessage = null;
           _syncSelectedCategories();
         });
@@ -632,7 +639,45 @@ class _WebServerListPageState extends State<WebServerListPage> {
     );
   }
 
+  /// 去掉 URL 中的查询参数，只保留基础路径用于比较
+  static String? _stripQueryParams(String? url) {
+    if (url == null || url.isEmpty) return url;
+    final uri = Uri.tryParse(url);
+    if (uri == null) return url;
+    return uri.replace(query: '', fragment: '').toString().replaceAll('?', '').replaceAll('#', '');
+  }
+
+  /// 获取页面级缓存的地图背景 Widget
+  /// 即使卡片被 ListView.builder 虚拟化销毁，缓存仍保留在页面 State 中
+  Widget getMapBackground(WebServerItem server) {
+    final serverId = server.id;
+    final currentBaseUrl = _stripQueryParams(server.mapImageUrl);
+    final cached = _mapBackgroundCache[serverId];
+
+    if (cached != null &&
+        cached.mapName == server.mapName &&
+        cached.baseUrl == currentBaseUrl) {
+      return cached.widget;
+    }
+
+    final bg = WebMapBackground.fromMap(
+      mapName: server.mapName,
+      mapUrl: server.mapImageUrl,
+    );
+    _mapBackgroundCache[serverId] = _CachedMapBg(
+      mapName: server.mapName,
+      baseUrl: currentBaseUrl,
+      widget: bg,
+    );
+    return bg;
+  }
+
   Widget _buildServerList(bool isDark) {
+    // 尚未收到第一次快照时，显示全屏 loading 骨架屏
+    if (!_hasReceivedFirstSnapshot) {
+      return _buildLoadingList();
+    }
+
     final categoryServers = _getSelectedCategoryServers();
 
     if (categoryServers.isEmpty) {
@@ -762,8 +807,13 @@ class _WebServerListPageState extends State<WebServerListPage> {
               runSpacing: spacing,
               children: servers.map((server) {
                 return ConstrainedBox(
+                  key: ValueKey('grid_${server.id}'),
                   constraints: const BoxConstraints(maxWidth: maxCardWidth),
-                  child: _WebImmersiveServerCard(server: server),
+                  child: _WebImmersiveServerCard(
+                    key: ValueKey('card_${server.id}'),
+                    server: server,
+                    mapBackground: getMapBackground(server),
+                  ),
                 );
               }).toList(),
             ),
@@ -774,40 +824,66 @@ class _WebServerListPageState extends State<WebServerListPage> {
   }
 
   Widget _buildLoadingList() {
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: const [
-        Padding(
-          padding: EdgeInsets.only(bottom: 16),
-          child: Row(
-            children: [
-              Expanded(child: _WebServerCardSkeleton()),
-              SizedBox(width: 16),
-              Expanded(child: _WebServerCardSkeleton()),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobileLayout = constraints.maxWidth < 600;
+
+        return ListView(
+          padding: EdgeInsets.all(isMobileLayout ? 12 : 24),
+          children: [
+            // 加载提示文字
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation(
+                        isDark ? Colors.white54 : const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    '正在连接服务器，获取数据中...',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // 骨架屏卡片
+            if (isMobileLayout) ...[
+              for (var i = 0; i < 4; i++)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: _WebServerCardSkeleton(),
+                ),
+            ] else ...[
+              for (var i = 0; i < 3; i++)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 16),
+                  child: Row(
+                    children: [
+                      Expanded(child: _WebServerCardSkeleton()),
+                      SizedBox(width: 16),
+                      Expanded(child: _WebServerCardSkeleton()),
+                    ],
+                  ),
+                ),
             ],
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.only(bottom: 16),
-          child: Row(
-            children: [
-              Expanded(child: _WebServerCardSkeleton()),
-              SizedBox(width: 16),
-              Expanded(child: _WebServerCardSkeleton()),
-            ],
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.only(bottom: 16),
-          child: Row(
-            children: [
-              Expanded(child: _WebServerCardSkeleton()),
-              SizedBox(width: 16),
-              Expanded(child: _WebServerCardSkeleton()),
-            ],
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 
@@ -1399,7 +1475,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
         _buildCompactActionButton(
           icon: Icons.play_arrow_rounded,
           color: const Color(0xFF0080FF),
-          onTap: () => _copyConnectCommand(server),
+          onTap: () => _connectToServer(server),
         ),
         const SizedBox(width: 6),
         _buildCompactActionButton(
@@ -1435,20 +1511,12 @@ class _WebServerListPageState extends State<WebServerListPage> {
     );
   }
 
-  void _copyConnectCommand(WebServerItem server) {
+  void _connectToServer(WebServerItem server) async {
     final address = server.address;
     if (address == null || address.isEmpty) return;
-    Clipboard.setData(ClipboardData(text: 'connect $address'));
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(
-          content: Text('已复制连接命令'),
-          duration: Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          width: 200,
-        ),
-      );
+
+    final uri = Uri.parse('steam://run/730//+connect $address');
+    await launchUrl(uri);
   }
 
   void _copyAddress(WebServerItem server) {
@@ -1517,7 +1585,11 @@ class _WebServerListPageState extends State<WebServerListPage> {
         else
           Column(
             children: item.servers
-                .map((server) => WebMobileServerListItem(server: server))
+                .map((server) => WebMobileServerListItem(
+                      key: ValueKey('mobile_${server.id}'),
+                      server: server,
+                      mapBackground: getMapBackground(server),
+                    ))
                 .toList(),
           ),
         const SizedBox(height: 12),
@@ -1552,6 +1624,19 @@ class _WebServerListPageState extends State<WebServerListPage> {
   }
 }
 
+/// 地图背景缓存数据
+class _CachedMapBg {
+  final String? mapName;
+  final String? baseUrl;
+  final Widget widget;
+
+  const _CachedMapBg({
+    required this.mapName,
+    required this.baseUrl,
+    required this.widget,
+  });
+}
+
 class _WebCategoryServers {
   final WebServerCategory category;
   final List<WebServerItem> servers;
@@ -1570,8 +1655,14 @@ class _WebCategoryServers {
 
 class _WebImmersiveServerCard extends StatefulWidget {
   final WebServerItem server;
+  /// 由父级页面提供的缓存地图背景 Widget
+  final Widget mapBackground;
 
-  const _WebImmersiveServerCard({required this.server});
+  const _WebImmersiveServerCard({
+    super.key,
+    required this.server,
+    required this.mapBackground,
+  });
 
   @override
   State<_WebImmersiveServerCard> createState() => _WebImmersiveServerCardState();
@@ -1653,10 +1744,7 @@ class _WebImmersiveServerCardState extends State<_WebImmersiveServerCard> {
           child: Stack(
             children: [
               Positioned.fill(
-                child: WebMapBackground.fromMap(
-                  mapName: server.mapName,
-                  mapUrl: server.mapImageUrl,
-                ),
+                child: widget.mapBackground,
               ),
               Positioned.fill(
                 child: Container(
@@ -2374,19 +2462,61 @@ class _StatusDot extends StatelessWidget {
   }
 }
 
-class _WebServerCardSkeleton extends StatelessWidget {
+class _WebServerCardSkeleton extends StatefulWidget {
   const _WebServerCardSkeleton();
 
   @override
+  State<_WebServerCardSkeleton> createState() => _WebServerCardSkeletonState();
+}
+
+class _WebServerCardSkeletonState extends State<_WebServerCardSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 140,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        gradient: const LinearGradient(
-          colors: [Color(0xFFE5E7EB), Color(0xFFF3F4F6), Color(0xFFE5E7EB)],
-        ),
-      ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Container(
+          height: 140,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            gradient: LinearGradient(
+              begin: Alignment(-1.0 + 2.0 * _controller.value, 0),
+              end: Alignment(-1.0 + 2.0 * _controller.value + 1.0, 0),
+              colors: isDark
+                  ? const [
+                      Color(0xFF1E293B),
+                      Color(0xFF334155),
+                      Color(0xFF1E293B),
+                    ]
+                  : const [
+                      Color(0xFFE5E7EB),
+                      Color(0xFFF3F4F6),
+                      Color(0xFFE5E7EB),
+                    ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
