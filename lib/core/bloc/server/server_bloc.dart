@@ -1067,7 +1067,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         timeout: _serverQueryTimeout,
       );
     } catch (e) {
-      LogService.e('获取服务器信息失败 ($address): $e', e);
+      // LogService.e('获取服务器信息失败 ($address): $e', e);
       return null;
     }
   }

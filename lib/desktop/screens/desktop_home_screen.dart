@@ -18,6 +18,7 @@ import 'tools_screen.dart';
 import 'settings_desktop.dart';
 import 'character_gallery_desktop.dart';
 import 'bilibili_content_screen.dart';
+import 'lobby_desktop.dart';
 import '../../core/services/game_status_service.dart';
 import '../../core/utils/storage_utils.dart';
 
@@ -48,6 +49,13 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
       icon: MdiIcons.server,
       selectedIcon: MdiIcons.serverNetwork,
       label: '服务器列表',
+      activeColor: const Color(0xFF0080FF),
+      inactiveColor: const Color(0xFF64748B),
+    ),
+    NavigationItem(
+      icon: MdiIcons.castle,
+      selectedIcon: MdiIcons.castle,
+      label: '大厅',
       activeColor: const Color(0xFF0080FF),
       inactiveColor: const Color(0xFF64748B),
     ),
@@ -91,14 +99,15 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
   /// 根据索引构建页面（使用全局 Bloc，页面切换不重新创建）
   Widget _buildScreen(int index) {
     return switch (index) {
-      0 => WelcomeScreen(onNavigateToServers: () => _onIndexChanged(1)),
+      0 => WelcomeScreen(onNavigateToServers: () => _onIndexChanged(2)),
       1 => const ServersDesktop(),
-      2 => const CharacterGalleryDesktop(),
-      3 => const BilibiliContentScreen(),
-      4 => const UpdateLogsDesktop(),
-      5 => const ToolsScreen(),
-      6 => const SettingsDesktop(),
-      7 => const IssuesDesktop(),
+      2 => const LobbyDesktop(),
+      3 => const CharacterGalleryDesktop(),
+      4 => const BilibiliContentScreen(),
+      5 => const UpdateLogsDesktop(),
+      6 => const ToolsScreen(),
+      7 => const SettingsDesktop(),
+      8 => const IssuesDesktop(),
       _ => const SizedBox.shrink(),
     };
   }
@@ -112,8 +121,10 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
     );
     _contentAnimationController.forward();
 
-    // 初始化时获取公告数据并启动自动刷新
+    // 应用启动时立即连接大厅 WebSocket
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      LobbyWsService.instance.initialize();
+
       final bloc = context.read<AnnouncementBloc>();
       bloc.add(AnnouncementFetch());
       bloc.add(AnnouncementStartAutoRefresh());
@@ -222,8 +233,8 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
                   currentIndex: _currentIndex,
                   onIndexChanged: _onIndexChanged,
                   items: _navigationItems,
-                  onFeedbackTap: () => _onIndexChanged(7),
-                  isFeedbackSelected: _currentIndex == 7,
+                  onFeedbackTap: () => _onIndexChanged(8),
+                  isFeedbackSelected: _currentIndex == 8,
                 ),
                 Expanded(
                   child: AnimatedBuilder(

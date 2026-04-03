@@ -454,6 +454,7 @@ class _NotificationCardState extends State<_NotificationCard> {
     final isMapSubscription =
         notification.type == NotificationType.mapSubscription;
     final isUpdateLog = notification.type == NotificationType.updateLog;
+    final isBroadcast = notification.type == NotificationType.broadcast;
 
     final borderColor = isWarmup
         ? const Color(0xFFFF9800)
@@ -461,6 +462,8 @@ class _NotificationCardState extends State<_NotificationCard> {
         ? const Color(0xFF4CAF50)
         : isUpdateLog
         ? const Color(0xFFF59E0B)
+        : isBroadcast
+        ? const Color(0xFF7C3AED)
         : const Color(0xFF0080FF);
 
     return MouseRegion(
@@ -590,6 +593,7 @@ class _NotificationCardState extends State<_NotificationCard> {
                                         notification,
                                         isWarmup,
                                         isMapChange || isMapSubscription,
+                                        isBroadcast,
                                       ),
                               ),
                             ],
@@ -644,6 +648,7 @@ class _NotificationCardState extends State<_NotificationCard> {
     NotificationData notification,
     bool isWarmup,
     bool showPlayers,
+    bool isBroadcast,
   ) {
     final textStyle = TextStyle(
       color: isWarmup ? const Color(0xFFFFE082) : Colors.white,

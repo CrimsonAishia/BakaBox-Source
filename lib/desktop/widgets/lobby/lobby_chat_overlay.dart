@@ -1,0 +1,365 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+
+import '../../../core/bloc/lobby/lobby_bloc.dart';
+import '../../../core/models/lobby_models.dart';
+
+/// 大厅聊天输入覆盖层
+class LobbyChatOverlay extends StatelessWidget {
+  final LobbyState state;
+  final TextEditingController controller;
+  final FocusNode focusNode;
+
+  const LobbyChatOverlay({
+    super.key,
+    required this.state,
+    required this.controller,
+    required this.focusNode,
+  });
+
+  static final DateFormat _timeFormat = DateFormat('HH:mm');
+  static final DateFormat _dateTimeFormat = DateFormat('MM-dd HH:mm');
+
+  String _formatTime(DateTime timestamp) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final messageDay = DateTime(timestamp.year, timestamp.month, timestamp.day);
+    if (messageDay == today) {
+      return _timeFormat.format(timestamp);
+    }
+    return _dateTimeFormat.format(timestamp);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final recentMessages = state.messages.reversed.take(50).toList(growable: false);
+    return SizedBox(
+      width: 360,
+      child: Stack(
+        children: [
+          IgnorePointer(
+            ignoring: !state.isChatActive,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 360,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: state.isChatActive
+                    ? Colors.black.withValues(
+                        alpha: (state.chatOpacity + 0.18).clamp(0.0, 0.8),
+                      )
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+                border: state.isChatActive
+                    ? Border.all(color: Colors.white.withValues(alpha: 0.08))
+                    : null,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    state.isChatActive ? '大厅聊天（Enter 发送 / Esc 退出）' : '',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 128,
+                    child: ListView.separated(
+                      reverse: true,
+                      primary: false,
+                      itemCount: recentMessages.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final message = recentMessages[index];
+                        final isSystem = message.type == LobbyMessageType.system;
+                        final isBroadcast = message.type == LobbyMessageType.broadcast;
+                        final isAnonymous = message.isAnonymous;
+
+                        // 广播消息特殊样式：黄色加粗内容 + 动态底纹
+                        if (isBroadcast) {
+                          return _BroadcastMessageWidget(
+                            message: message,
+                            formatTime: _formatTime,
+                          );
+                        }
+
+                        return RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: '[${_formatTime(message.timestamp)}] ',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.75),
+                                  fontSize: 11,
+                                ),
+                              ),
+                              TextSpan(
+                                text: '${message.displayName}: ',
+                                style: TextStyle(
+                                  color: isSystem
+                                      ? const Color(0xFFFFB74D)  // 系统消息：橙色
+                                      : (isAnonymous
+                                          ? const Color(0xFFB0BEC5)  // 匿名用户：灰蓝色
+                                          : const Color(0xFF81D4FA)),  // 登录用户：浅蓝色
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              TextSpan(
+                                text: message.content,
+                                style: TextStyle(
+                                  color: isSystem
+                                      ? Colors.white.withValues(alpha: 0.85)
+                                      : Colors.white.withValues(alpha: 0.9),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  if (state.isChatActive) ...[
+                    const SizedBox(height: 10),
+                    Stack(
+                      children: [
+                        TextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          style: const TextStyle(color: Colors.white),
+                          maxLength: 50,
+                          readOnly: state.selfUser?.isAnonymous ?? false,
+                          enabled: state.chatCooldownSeconds <= 0,
+                          decoration: InputDecoration(
+                            counterText: '',
+                            hintText: state.selfUser?.isAnonymous ?? false
+                                ? '登录后即可参与聊天'
+                                : state.chatCooldownSeconds > 0
+                                    ? '${state.chatCooldownSeconds}秒后可发送'
+                                    : '输入消息',
+                            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+                            filled: true,
+                            fillColor: Colors.white.withValues(alpha: 0.08),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.12),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFF38BDF8), width: 1.5),
+                            ),
+                            disabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.08),
+                              ),
+                            ),
+                          ),
+                          onChanged: (value) =>
+                              context.read<LobbyBloc>().add(LobbyChatInputChanged(value)),
+                          onSubmitted: (_) =>
+                              context.read<LobbyBloc>().add(const LobbyChatSubmitted()),
+                        ),
+                        // 冷却动画覆盖层
+                        if (state.chatCooldownSeconds > 0)
+                          Positioned.fill(
+                            child: IgnorePointer(
+                              child: AnimatedOpacity(
+                                opacity: 1.0,
+                                duration: const Duration(milliseconds: 300),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: Colors.black.withValues(alpha: 0.3),
+                                  ),
+                                  child: Center(
+                                    child: _CooldownIndicator(seconds: state.chatCooldownSeconds),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ] else
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        '按 Enter 开始聊天',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 冷却倒计时动画组件
+class _CooldownIndicator extends StatelessWidget {
+  final int seconds;
+
+  const _CooldownIndicator({required this.seconds});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 1.0, end: 0.0),
+      duration: Duration(seconds: seconds),
+      builder: (context, value, child) {
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            // 圆形进度
+            SizedBox(
+              width: 28,
+              height: 28,
+              child: CircularProgressIndicator(
+                value: value,
+                strokeWidth: 2.5,
+                backgroundColor: Colors.white24,
+                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF60A5FA)),
+              ),
+            ),
+            // 倒计时数字
+            Text(
+              '$seconds',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// 广播消息特殊样式组件：黄色加粗内容 + 动态渐变底纹
+class _BroadcastMessageWidget extends StatefulWidget {
+  final LobbyMessage message;
+  final String Function(DateTime) formatTime;
+
+  const _BroadcastMessageWidget({
+    required this.message,
+    required this.formatTime,
+  });
+
+  @override
+  State<_BroadcastMessageWidget> createState() => _BroadcastMessageWidgetState();
+}
+
+class _BroadcastMessageWidgetState extends State<_BroadcastMessageWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                // 动态底纹：从深紫色到浅紫色再到深紫色
+                Color.lerp(const Color(0xFF4C1D95), const Color(0xFF7C3AED),
+                    0.5 + 0.5 * _offsetValue)!,
+                Color.lerp(const Color(0xFF7C3AED), const Color(0xFF4C1D95),
+                    _offsetValue)!,
+              ],
+              stops: [0.0, 1.0],
+            ),
+            border: Border.all(
+              color: Color.lerp(
+                const Color(0xFF7C3AED),
+                const Color(0xFFFBBF24),
+                _offsetValue,
+              )!.withValues(alpha: 0.6),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.campaign,
+                color: Color.lerp(
+                  const Color(0xFF7C3AED),
+                  const Color(0xFFFBBF24),
+                  _offsetValue,
+                ),
+                size: 16,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '${widget.message.displayName}: ',
+                        style: const TextStyle(
+                          color: Color(0xFFFBBF24),  // 黄色
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextSpan(
+                        text: widget.message.content,
+                        style: const TextStyle(
+                          color: Color(0xFFFBBF24),  // 黄色
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  double get _offsetValue => _controller.value;
+}
