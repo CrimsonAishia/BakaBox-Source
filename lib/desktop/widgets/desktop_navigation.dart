@@ -102,7 +102,7 @@ class DesktopNavigation extends StatelessWidget {
   /// - 点击时切换页面并高亮当前项
   Widget _buildNavigationItems(ThemeData theme, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
       child: ListView.builder(
         itemCount: items.length,
         itemBuilder: (context, index) {
@@ -236,7 +236,7 @@ class _NavigationItemWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-          margin: const EdgeInsets.only(bottom: 8),
+          margin: const EdgeInsets.only(bottom: 6),
           child: Material(
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(12),
