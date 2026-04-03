@@ -1,0 +1,1083 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../core/core.dart';
+import '../widgets/lobby/lobby_loading_screen.dart';
+import '../widgets/lobby/lobby_scene.dart';
+import '../widgets/lobby/lobby_chat_overlay.dart';
+import '../widgets/lobby/lobby_floating_actions.dart';
+import '../widgets/lobby/lobby_settings_panel.dart';
+import '../widgets/lobby/lobby_helper.dart';
+import '../widgets/lobby/lobby_broadcast_dialog.dart';
+import '../widgets/lobby/mosaic_reveal_effect.dart';
+import '../widgets/lobby/portal_confirm_dialog.dart';
+
+class LobbyDesktop extends StatefulWidget {
+  const LobbyDesktop({super.key});
+
+  @override
+  State<LobbyDesktop> createState() => _LobbyDesktopState();
+}
+
+class _LobbyDesktopState extends State<LobbyDesktop>
+    with TickerProviderStateMixin {
+  final TextEditingController _chatController = TextEditingController();
+  final FocusNode _chatFocusNode = FocusNode();
+  final FocusNode _sceneFocusNode = FocusNode();
+  bool _started = false;
+  int _transientNoticeId = 0;
+  Timer? _transientNoticeTimer;
+
+  /// 传送动画控制器
+  AnimationController? _teleportController;
+  Animation<double>? _teleportAnimation;
+
+  /// 玩家抽屉滑出动画控制器
+  late final AnimationController _playersDrawerController;
+  late final Animation<Offset> _playersDrawerSlideAnimation;
+  late final Animation<double> _playersDrawerFadeAnimation;
+
+  /// 是否显示传送动画（延迟消失）
+  bool _showTeleportOverlay = false;
+  Timer? _teleportHideTimer;
+
+  /// 目标地图配置
+  LobbyMapConfig? _targetMapConfig;
+
+  @override
+  void initState() {
+    super.initState();
+    _teleportController = AnimationController(
+      duration: const Duration(milliseconds: _teleportDurationMs),
+      vsync: this,
+    );
+    _teleportAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _teleportController!, curve: Curves.easeInOut),
+    );
+
+    _playersDrawerController = AnimationController(
+      duration: const Duration(milliseconds: 280),
+      vsync: this,
+    );
+    _playersDrawerSlideAnimation = Tween<Offset>(
+      begin: const Offset(1.0, 0.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _playersDrawerController,
+      curve: Curves.easeOutCubic,
+    ));
+    _playersDrawerFadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _playersDrawerController,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+    ));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final bloc = context.read<LobbyBloc>();
+
+    // 检查是否需要刷新大厅数据
+    if (bloc.state.pageStatus == LobbyPageStatus.ready) {
+      // 如果当前是 ready 状态，检查登录状态是否与大厅数据一致
+      if (!AuthService.instance.isLoggedIn && !bloc.state.isAnonymous) {
+        // 用户已登出但大厅仍显示登录身份，需要刷新
+        LogService.i('[LobbyDesktop] 检测到用户登出，刷新大厅数据');
+        _started = true; // 防止重复触发
+        bloc.add(const LobbyStarted());
+        return;
+      }
+    }
+
+    if (_started) return;
+
+    // 检查 Bloc 是否已经在处理中，避免热重载时重复初始化
+    if (bloc.state.pageStatus != LobbyPageStatus.idle) {
+      return;
+    }
+
+    _started = true;
+    bloc.add(const LobbyStarted());
+  }
+
+  @override
+  void dispose() {
+    _chatController.dispose();
+    _chatFocusNode.dispose();
+    _sceneFocusNode.dispose();
+    _teleportController?.removeStatusListener(_onTeleportAnimationStatus);
+    _teleportController?.dispose();
+    _playersDrawerController.dispose();
+    _transientNoticeTimer?.cancel();
+    _teleportHideTimer?.cancel();
+    super.dispose();
+  }
+
+  /// 上一次检测到的传送状态
+  bool? _lastTeleportingState;
+
+  /// 动画时长（毫秒）
+  static const int _teleportDurationMs = 3000;
+
+  /// 动画完成后额外显示时长（毫秒）
+  static const int _holdDurationMs = 1500;
+
+  /// 同步传送动画状态
+  void _syncTeleportAnimation(LobbyState state) {
+    // 检测 isTeleporting 状态变化
+    if (_lastTeleportingState == null) {
+      // 首次检测，根据当前状态初始化
+      _lastTeleportingState = state.isTeleporting;
+      if (state.isTeleporting) {
+        LogService.d('[LobbyDesktop] _syncTeleportAnimation: 首次检测到传送中，启动动画');
+        _showTeleportOverlay = true;
+        _teleportHideTimer?.cancel();
+        _targetMapConfig = _findTargetMapConfig(state);
+        _startTeleportAnimation();
+      }
+      return;
+    }
+
+    if (state.isTeleporting && !_lastTeleportingState!) {
+      // 开始传送
+      LogService.d('[LobbyDesktop] _syncTeleportAnimation: 检测到传送开始，启动动画');
+      _showTeleportOverlay = true;
+      _teleportHideTimer?.cancel();
+      _targetMapConfig = _findTargetMapConfig(state);
+      _startTeleportAnimation();
+      _lastTeleportingState = true;
+    } else if (!state.isTeleporting && _lastTeleportingState!) {
+      // 传送结束 - 取消隐藏定时器，重新计算隐藏时间
+      LogService.d('[LobbyDesktop] _syncTeleportAnimation: 检测到传送结束');
+      _lastTeleportingState = false;
+      _scheduleHideOverlay();
+    }
+  }
+
+  /// 启动传送动画
+  void _startTeleportAnimation() {
+    LogService.d('[LobbyDesktop] _startTeleportAnimation: 开始启动动画, controller=$_teleportController');
+    _teleportController?.removeStatusListener(_onTeleportAnimationStatus);
+    _teleportController?.addStatusListener(_onTeleportAnimationStatus);
+    final result = _teleportController?.forward(from: 0);
+    LogService.d('[LobbyDesktop] _startTeleportAnimation: forward() 返回 $result');
+  }
+
+  /// 调度隐藏覆盖层（在动画完成后延迟）
+  void _scheduleHideOverlay() {
+    _teleportHideTimer?.cancel();
+
+    // 计算动画剩余时间
+    final animationValue = _teleportController?.value ?? 0.0;
+    final remainingMs = ((1.0 - animationValue) * _teleportDurationMs).round();
+
+    // 等待动画完成 + 额外显示时间
+    final delayMs = remainingMs + _holdDurationMs;
+    LogService.d('[LobbyDesktop] 计划 ${delayMs}ms 后隐藏覆盖层（动画剩余 ${remainingMs}ms）');
+
+    _teleportHideTimer = Timer(Duration(milliseconds: delayMs), () {
+      if (mounted) {
+        _showTeleportOverlay = false;
+        _targetMapConfig = null;
+        _teleportController?.removeStatusListener(_onTeleportAnimationStatus);
+        _teleportController?.reset();
+        setState(() {});
+      }
+    });
+  }
+
+  /// 动画状态监听
+  void _onTeleportAnimationStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed) {
+      LogService.d('[LobbyDesktop] 传送动画播放完成');
+    } else if (status == AnimationStatus.dismissed) {
+      // 动画被重置
+    }
+  }
+
+  /// 查找目标地图配置
+  LobbyMapConfig? _findTargetMapConfig(LobbyState state) {
+    if (state.teleportTarget == null) return null;
+    final targetMapId = state.teleportTarget!.targetMapId;
+    // 从 assets.maps 中查找
+    return state.assets.getMapById(targetMapId);
+  }
+
+  /// 构建马赛克效果中的目标地图内容预览
+  Widget _buildMosaicTargetContent(LobbyMapConfig mapConfig) {
+    // 如果地图有背景URL，使用预览组件
+    if (mapConfig.backgroundUrl != null && mapConfig.backgroundUrl!.isNotEmpty) {
+      return _MosaicMapPreview(mapConfig: mapConfig);
+    }
+    // 否则显示占位背景
+    return _MosaicPlaceholderBackground(mapName: mapConfig.displayName);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return BlocConsumer<LobbyBloc, LobbyState>(
+      listenWhen: (previous, current) =>
+          previous.chatDraft != current.chatDraft ||
+          previous.isChatActive != current.isChatActive ||
+          previous.transientNotice != current.transientNotice ||
+          previous.isTeleporting != current.isTeleporting ||
+          previous.isPlayersPanelOpen != current.isPlayersPanelOpen ||
+          previous.isSettingsPanelOpen != current.isSettingsPanelOpen ||
+          previous.isBroadcastDialogOpen != current.isBroadcastDialogOpen ||
+          previous.nearbyPortal != current.nearbyPortal ||
+          previous.pendingPortal != current.pendingPortal ||
+          previous.isPortalHovered != current.isPortalHovered,
+      listener: (context, state) {
+        // 处理传送状态变化
+        _syncTeleportAnimation(state);
+
+        // 控制玩家抽屉动画
+        if (state.isPlayersPanelOpen) {
+          if (!_playersDrawerController.isCompleted) {
+            _playersDrawerController.forward();
+          }
+        } else {
+          if (_playersDrawerController.value > 0) {
+            _playersDrawerController.reverse();
+          }
+        }
+
+        if (_chatController.text != state.chatDraft) {
+          _chatController.value = TextEditingValue(
+            text: state.chatDraft,
+            selection: TextSelection.collapsed(offset: state.chatDraft.length),
+          );
+        }
+        if (state.isChatActive) {
+          _chatFocusNode.requestFocus();
+        } else {
+          _chatFocusNode.unfocus();
+          // 延迟到下一帧再请求 scene 焦点，避免同一 build 周期内焦点不稳定
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _sceneFocusNode.requestFocus();
+            }
+          });
+        }
+        // 每次 transientNotice 变化都重置定时器
+        if (state.transientNotice != null) {
+          final bloc = context.read<LobbyBloc>();
+          _transientNoticeId++; // 每次递增，确保新值
+          final currentNoticeId = _transientNoticeId;
+          // 取消之前的定时器
+          _transientNoticeTimer?.cancel();
+          _transientNoticeTimer = Timer(const Duration(seconds: 2), () {
+            if (mounted && currentNoticeId == _transientNoticeId) {
+              bloc.add(const LobbyTransientNoticeShown());
+            }
+          });
+        }
+      },
+      builder: (context, state) {
+        final pageStatus = state.pageStatus;
+
+        // Loading 阶段：显示加载界面
+        if (pageStatus == LobbyPageStatus.loading) {
+          return LobbyLoadingScreen(state: state);
+        }
+
+        // idle / error：显示空状态
+        if (pageStatus == LobbyPageStatus.error) {
+          return _LobbyErrorScreen(state: state);
+        }
+        if (pageStatus == LobbyPageStatus.idle) {
+          return _LobbyIdleScreen(state: state);
+        }
+
+        final mapConfig = state.mapConfig;
+        return Focus(
+          autofocus: true,
+          focusNode: _sceneFocusNode,
+          onKeyEvent: (node, event) {
+            if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+            // 面板打开时忽略键盘事件
+            if (state.isPlayersPanelOpen || state.isSettingsPanelOpen) {
+              return KeyEventResult.ignored;
+            }
+
+            if (event.logicalKey == LogicalKeyboardKey.enter) {
+              // 聊天栏已打开时，尝试发送消息
+              if (state.isChatActive) {
+                context.read<LobbyBloc>().add(const LobbyChatSubmitted());
+              } else {
+                // 直接打开聊天栏，让用户看到输入框的占位提示
+                context.read<LobbyBloc>().add(const LobbyChatModeChanged(true));
+              }
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.escape &&
+                state.isChatActive) {
+              context.read<LobbyBloc>().add(const LobbyChatModeChanged(false));
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(22),
+                bottomRight: Radius.circular(22),
+              ),
+              color: isDark ? const Color(0xFF0B1120) : const Color(0xFFDDE7F7),
+            ),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(22),
+                bottomRight: Radius.circular(22),
+              ),
+              child: Stack(
+                children: [
+                  // 地图场景
+                  Positioned.fill(
+                    child: mapConfig == null
+                        ? const SizedBox.shrink()
+                        : LobbyScene(
+                            mapConfig: mapConfig,
+                            state: state,
+                            sceneFocusNode: _sceneFocusNode,
+                          ),
+                  ),
+                  // 状态横幅
+                  Positioned(
+                    top: 20,
+                    left: 24,
+                    right: 24,
+                    child: IgnorePointer(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 250),
+                        child: state.transientNotice == null
+                            ? const SizedBox.shrink()
+                            : LobbyStatusBanner(
+                                key: ValueKey(state.transientNotice),
+                                message: state.transientNotice!,
+                                connectionStatus: state.connectionStatus,
+                              ),
+                      ),
+                    ),
+                  ),
+                  // 聊天输入
+                  Positioned(
+                    left: 24,
+                    bottom: 24,
+                    child: LobbyChatOverlay(
+                      state: state,
+                      controller: _chatController,
+                      focusNode: _chatFocusNode,
+                    ),
+                  ),
+                  // 浮动按钮
+                  Positioned(
+                    right: 24,
+                    bottom: 24,
+                    child: LobbyFloatingActions(state: state),
+                  ),
+                  // 点击背景关闭面板
+                  if (state.isPlayersPanelOpen || state.isSettingsPanelOpen)
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          context.read<LobbyBloc>().add(const LobbyPanelsDismissed());
+                          _sceneFocusNode.requestFocus();
+                        },
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                  // 玩家抽屉
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    width: 320,
+                    child: SlideTransition(
+                      position: _playersDrawerSlideAnimation,
+                      child: FadeTransition(
+                        opacity: _playersDrawerFadeAnimation,
+                        child: state.isPlayersPanelOpen
+                            ? _PlayersDrawer(
+                                state: state,
+                                onClose: () => context
+                                    .read<LobbyBloc>()
+                                    .add(const LobbyPanelsDismissed()),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+                  // 设置面板
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 90,
+                    child: Center(
+                      child: SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0, -0.2),
+                              end: Offset.zero,
+                            ).animate(animation),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: state.isSettingsPanelOpen
+                          ? LobbySettingsPanel(
+                              key: const ValueKey('settings'),
+                              state: state,
+                            )
+                          : SizedBox.shrink(key: const ValueKey('settings_empty')),
+                      ),
+                    ),
+                    ),
+                  ),
+                  // 传送动画层
+                  if (_showTeleportOverlay && _targetMapConfig != null)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        ignoring: true,
+                        child: ListenableBuilder(
+                          listenable: _teleportController ?? AlwaysStoppedAnimation(0.0),
+                          builder: (context, child) {
+                            final progress = _teleportAnimation?.value ?? 0.0;
+                            return MosaicRevealEffect(
+                              targetContent: _buildMosaicTargetContent(_targetMapConfig!),
+                              targetName: _targetMapConfig!.displayName,
+                              progress: progress,
+                              showTouhouDecoration: true,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  // 传送门询问对话框
+                  if (state.nearbyPortal != null && !state.isTeleporting)
+                    Positioned.fill(
+                      child: PortalConfirmDialog(
+                        portal: state.nearbyPortal!,
+                        onConfirm: () {
+                          context.read<LobbyBloc>().add(
+                            LobbyPortalConfirmRequested(state.nearbyPortal!.key),
+                          );
+                        },
+                        onCancel: () {
+                          context.read<LobbyBloc>().add(
+                            const LobbyPortalDialogDismissed(),
+                          );
+                        },
+                      ),
+                    ),
+                  // 广播发送弹窗
+                  if (state.isBroadcastDialogOpen)
+                    const LobbyBroadcastDialog(),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// 大厅空闲/未进入状态
+class _LobbyIdleScreen extends StatelessWidget {
+  final LobbyState state;
+
+  const _LobbyIdleScreen({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textSecondary = isDark ? Colors.white54 : const Color(0xFF475569);
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(22),
+          bottomRight: Radius.circular(22),
+        ),
+        color: isDark ? const Color(0xFF0B1120) : const Color(0xFFDDE7F7),
+      ),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 32),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.04)
+                : Colors.white.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.white.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.castle,
+                size: 64,
+                color: textSecondary.withValues(alpha: 0.3),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '大厅未初始化',
+                style: TextStyle(
+                  color: textSecondary,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 大厅错误状态
+class _LobbyErrorScreen extends StatelessWidget {
+  final LobbyState state;
+
+  const _LobbyErrorScreen({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textSecondary = isDark ? Colors.white54 : const Color(0xFF475569);
+    final errorColor = const Color(0xFFEF4444);
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(22),
+          bottomRight: Radius.circular(22),
+        ),
+        color: isDark ? const Color(0xFF0B1120) : const Color(0xFFDDE7F7),
+      ),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 32),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.04)
+                : Colors.white.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: errorColor.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: errorColor.withValues(alpha: 0.7),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '大厅加载失败',
+                style: TextStyle(
+                  color: errorColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (state.transientNotice != null)
+                Text(
+                  state.transientNotice!,
+                  style: TextStyle(
+                    color: textSecondary,
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              const SizedBox(height: 16),
+              TextButton.icon(
+                onPressed: () {
+                  context.read<LobbyBloc>().add(const LobbyStarted());
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('重试'),
+                style: TextButton.styleFrom(
+                  foregroundColor: errorColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 玩家抽屉
+class _PlayersDrawer extends StatelessWidget {
+  final LobbyState state;
+  final VoidCallback onClose;
+
+  const _PlayersDrawer({required this.state, required this.onClose});
+
+  List<LobbyUser> _getDisplayUsers() {
+    // 优先使用全服用户列表，如果没有则使用当前房间用户列表作为降级
+    final users = state.allOnlineUsers.isNotEmpty
+        ? state.allOnlineUsers
+        : state.users;
+    return users.where((user) => user.isOnline).toList()
+      ..sort((a, b) {
+        if (a.isSelf) return -1;
+        if (b.isSelf) return 1;
+        return a.displayName.compareTo(b.displayName);
+      });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final displayUsers = _getDisplayUsers();
+    // 优先使用全服人数，否则使用当前房间人数
+    final onlineCount = state.allOnlineUsers.isNotEmpty
+        ? state.totalOnlineCount
+        : state.onlineCount;
+    final isLoading = state.isLoadingAllOnlineUsers && state.allOnlineUsers.isEmpty;
+
+    return Row(
+      children: [
+        // 半透明背景遮罩（点击可关闭）
+        Expanded(
+          child: GestureDetector(
+            onTap: onClose,
+            behavior: HitTestBehavior.opaque,
+            child: Container(color: Colors.transparent),
+          ),
+        ),
+        // 抽屉主体
+        Container(
+          width: 320,
+          decoration: BoxDecoration(
+            color: isDark
+                ? const Color(0xFF0B1120).withValues(alpha: 0.96)
+                : const Color(0xFF1E293B).withValues(alpha: 0.96),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(16),
+              bottomLeft: Radius.circular(0),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.4),
+                blurRadius: 32,
+                offset: const Offset(-8, 0),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // 抽屉标题栏
+              _DrawerHeader(
+                title: '在线玩家',
+                onlineCount: onlineCount,
+              ),
+              const Divider(height: 1, color: Colors.white10),
+              // 玩家列表
+              Expanded(
+                child: isLoading
+                    ? const Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white54),
+                            ),
+                            SizedBox(height: 12),
+                            Text(
+                              '正在加载玩家列表...',
+                              style: TextStyle(
+                                color: Colors.white38,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : displayUsers.isEmpty
+                        ? const Center(
+                            child: Text(
+                              '暂无在线玩家',
+                              style: TextStyle(
+                                color: Colors.white38,
+                                fontSize: 14,
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            itemCount: displayUsers.length,
+                            itemBuilder: (context, index) {
+                              final user = displayUsers[index];
+                              return _PlayerListTile(user: user);
+                            },
+                          ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 抽屉标题栏
+class _DrawerHeader extends StatelessWidget {
+  final String title;
+  final int onlineCount;
+
+  const _DrawerHeader({
+    required this.title,
+    required this.onlineCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        children: [
+          // Steam 风格图标
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF1D9BF0), Color(0xFF0B66C2)],
+              ),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Icon(
+              Icons.group,
+              color: Colors.white,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$onlineCount 人在线',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 玩家列表项
+class _PlayerListTile extends StatelessWidget {
+  final LobbyUser user;
+
+  const _PlayerListTile({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: user.isSelf
+              ? const Color(0xFF1D9BF0).withValues(alpha: 0.4)
+              : Colors.white.withValues(alpha: 0.05),
+          width: 1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: user.isSelf ? null : () {
+            // TODO: 点击玩家可查看详情或发起互动
+          },
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                // 头像
+                _PlayerAvatar(user: user),
+                const SizedBox(width: 12),
+                // 名称和状态
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user.displayName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: user.isOnline
+                                  ? const Color(0xFF4ADE80)
+                                  : Colors.white24,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              user.statusText ?? '在线',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                fontSize: 11,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // 自己的标识
+                if (user.isSelf)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1D9BF0).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: const Color(0xFF1D9BF0).withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: const Text(
+                      '你',
+                      style: TextStyle(
+                        color: Color(0xFF1D9BF0),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  )
+                else
+                  Icon(
+                    Icons.chevron_right,
+                    color: Colors.white.withValues(alpha: 0.3),
+                    size: 18,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 玩家头像组件
+class _PlayerAvatar extends StatelessWidget {
+  final LobbyUser user;
+
+  const _PlayerAvatar({required this.user});
+
+  static const int _avatarSize = 64;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasAvatar = user.avatarUrl != null && user.avatarUrl!.isNotEmpty;
+
+    Widget avatar;
+    if (hasAvatar) {
+      avatar = ClipOval(
+        child: Image.network(
+          user.avatarUrl!,
+          width: 40,
+          height: 40,
+          cacheWidth: _avatarSize,
+          cacheHeight: _avatarSize,
+          fit: BoxFit.cover,
+          filterQuality: FilterQuality.medium,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildFallbackAvatar();
+          },
+        ),
+      );
+    } else {
+      avatar = _buildFallbackAvatar();
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: user.isSelf
+              ? const Color(0xFF1D9BF0)
+              : Colors.white.withValues(alpha: 0.1),
+          width: user.isSelf ? 2 : 1,
+        ),
+      ),
+      child: avatar,
+    );
+  }
+
+  Widget _buildFallbackAvatar() {
+    return CircleAvatar(
+      radius: 20,
+      backgroundColor: user.isSelf
+          ? const Color(0xFF1D9BF0).withValues(alpha: 0.3)
+          : Colors.white.withValues(alpha: 0.1),
+      child: const Icon(
+        Icons.person,
+        size: 22,
+        color: Colors.white54,
+      ),
+    );
+  }
+}
+
+/// 地图预览组件
+class _MosaicMapPreview extends StatelessWidget {
+  final LobbyMapConfig mapConfig;
+
+  const _MosaicMapPreview({required this.mapConfig});
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.network(
+      mapConfig.backgroundUrl!,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          color: const Color(0xFF1A1F2E),
+          child: Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                  : null,
+              strokeWidth: 2,
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.cyan),
+            ),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return _MosaicPlaceholderBackground(mapName: mapConfig.displayName);
+      },
+    );
+  }
+}
+
+/// 占位背景组件（当没有地图背景URL时显示）
+class _MosaicPlaceholderBackground extends StatelessWidget {
+  final String mapName;
+
+  const _MosaicPlaceholderBackground({required this.mapName});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF1A1F2E),
+            const Color(0xFF0F1624),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.map,
+              size: 80,
+              color: Colors.cyan.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              mapName,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.6),
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '地图预览',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.3),
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

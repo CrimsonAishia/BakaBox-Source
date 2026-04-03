@@ -16,6 +16,7 @@ enum NotificationType {
   updateLog, // 更新日志通知
   info, // 普通信息
   mapSubscription, // 地图订阅通知
+  broadcast, // 广播通知
 }
 
 /// 通知数据
@@ -492,6 +493,24 @@ class NotificationWindowService {
         message: content,
         serverName: updateTime,
         autoDismissSeconds: autoDismissSeconds,
+      ),
+    );
+  }
+
+  /// 显示广播通知
+  Future<void> showBroadcastNotification({
+    required String nickname,
+    required String content,
+  }) async {
+    final id = 'broadcast_${DateTime.now().millisecondsSinceEpoch}';
+    await show(
+      NotificationData(
+        id: id,
+        type: NotificationType.broadcast,
+        title: '广播',
+        message: content,
+        serverName: nickname,
+        autoDismissSeconds: 30,
       ),
     );
   }

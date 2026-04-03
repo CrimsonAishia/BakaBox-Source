@@ -6,15 +6,21 @@ import 'package:flutter/material.dart';
 class CommonScrollIndicator extends StatelessWidget {
   final bool isTop;
   final Color? color;
+  final Color? bgColor;
 
-  const CommonScrollIndicator({super.key, required this.isTop, this.color});
+  const CommonScrollIndicator({
+    super.key,
+    required this.isTop,
+    this.color,
+    this.bgColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final indicatorColor =
         color ?? (isDark ? Colors.white : const Color(0xFF6B7280));
-    final bgColor = isDark ? const Color(0xFF1E1E2E) : Colors.white;
+    final bg = bgColor ?? (isDark ? const Color(0xFF1E1E2E) : Colors.white);
 
     return IgnorePointer(
       child: Container(
@@ -24,9 +30,9 @@ class CommonScrollIndicator extends StatelessWidget {
             begin: isTop ? Alignment.topCenter : Alignment.bottomCenter,
             end: isTop ? Alignment.bottomCenter : Alignment.topCenter,
             colors: [
-              bgColor.withValues(alpha: 0.95),
-              bgColor.withValues(alpha: 0.7),
-              bgColor.withValues(alpha: 0),
+              bg.withValues(alpha: 0.95),
+              bg.withValues(alpha: 0.7),
+              bg.withValues(alpha: 0),
             ],
             stops: const [0.0, 0.5, 1.0],
           ),

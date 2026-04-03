@@ -84,6 +84,9 @@ export 'character_gallery/character_gallery_state.dart';
 // Map Subscription
 export 'map_subscription/map_subscription_bloc.dart';
 
+// Lobby
+export 'lobby/lobby_bloc.dart';
+
 // Bilibili Content
 export 'bilibili_content/bilibili_content_bloc.dart';
 export 'bilibili_content/bilibili_content_event.dart';

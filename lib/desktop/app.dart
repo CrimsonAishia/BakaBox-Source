@@ -80,6 +80,7 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
           create: (_) =>
               MapSubscriptionBloc()..add(const MapSubscriptionLoad()),
         ),
+        BlocProvider(create: (_) => LobbyBloc()),
       ],
       child: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {
@@ -198,6 +199,12 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
       MapChangeMonitorService().initialize();
       WarmupMonitorService().initialize();
       MapSubscriptionService().initialize();
+
+      // 初始化大厅素材 URL 缓存（需要在 LobbyWsService 之前初始化）
+      await LobbyAssetCacheService.instance.init();
+
+      // 初始化大厅占位服务
+      await LobbyWsService.instance.initialize();
 
       // 初始化更新日志监控服务
       UpdateLogMonitorService().initialize();

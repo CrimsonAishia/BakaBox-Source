@@ -40,6 +40,7 @@ export 'models/feature_status_models.dart';
 export 'models/character_models.dart';
 export 'models/map_subscription_models.dart';
 export 'models/bilibili_content_models.dart';
+export 'models/lobby_models.dart';
 
 // Bloc
 export 'bloc/bloc.dart';
@@ -64,6 +65,10 @@ export 'services/score_upload_service.dart';
 export 'services/tts_service.dart';
 export 'services/map_subscription_service.dart';
 export 'services/bilibili_service.dart';
+export 'services/lobby_ws_service.dart';
+export 'services/lobby_asset_cache_service.dart';
+export 'services/lobby_image_cache_service.dart';
+export 'services/lobby_map_loader_service.dart';
 
 // Utils
 export 'utils/announcement_utils.dart';
