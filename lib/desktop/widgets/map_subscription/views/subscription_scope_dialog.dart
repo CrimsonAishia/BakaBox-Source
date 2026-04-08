@@ -174,24 +174,19 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
     }
   }
 
-  /// 异步查询服务器真实名称（仅限没有备注名的自定义服务器）
+  /// 异步查询服务器真实名称（仅限没有备注名的服务器）
   Future<void> _queryServerNames() async {
     for (final category in _allCategories) {
       for (final server in category.serverList) {
         final address = server.address ?? server.serverAddress ?? '';
         if (address.isEmpty) continue;
 
-        // 非自定义服务器不进行查询
-        if (!server.isCustom) {
-          continue;
-        }
-
-        // 跳过有备注名的服务器
+        // 有备注名的服务器不进行查询
         if (server.nickname != null && server.nickname!.isNotEmpty) {
           continue;
         }
 
-        // 避免重复查询或者是已经有缓存的真实名称
+        // 避免重复查询或者已经有缓存的真实名称
         if (_serverRealNames.containsKey(address) ||
             _queryingServers.contains(address)) {
           continue;
@@ -199,7 +194,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
 
         _queryingServers.add(address);
 
-        // 异步查询
+        // 异步查询（所有没有备注名的服务器都查询，包括非自定义服务器）
         _fetchServerName(address);
       }
     }
@@ -243,15 +238,20 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
   String _getServerDisplayName(ServerItem server) {
     final address = server.address ?? server.serverAddress ?? '';
 
+    // 有备注名直接返回
+    if (server.nickname != null && server.nickname!.isNotEmpty) {
+      return server.nickname!;
+    }
+
     String? hostName;
-    if (server.isCustom) {
-      // 自定义服务器，没有备注名时使用 A2S 查到的真实名称
-      if ((server.nickname == null || server.nickname!.isEmpty) &&
-          _serverRealNames.containsKey(address)) {
-        hostName = _serverRealNames[address];
-      }
-    } else {
-      // 非自定义服务器，从 serverData 中获取映射名称
+
+    // 优先从缓存的 A2S 查询结果中获取名称（适用于所有服务器）
+    if (_serverRealNames.containsKey(address)) {
+      hostName = _serverRealNames[address];
+    }
+
+    // 非自定义服务器尝试从 serverData 中获取映射名称
+    if (hostName == null && !server.isCustom) {
       try {
         if (server.serverData != null) {
           hostName = ServerInfo.fromJson(server.serverData!).hostName;
@@ -259,7 +259,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
       } catch (_) {}
     }
 
-    return server.getDisplayName(hostName);
+    return hostName ?? address;
   }
 
   @override
