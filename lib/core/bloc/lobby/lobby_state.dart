@@ -5,9 +5,23 @@ enum LobbyConnectionStatus { disconnected, connecting, connected, reconnecting, 
 /// 大厅页面加载状态（区分进入页面的不同阶段）
 enum LobbyPageStatus { idle, loading, ready, error }
 
+/// 大厅 Loading 界面的加载阶段（用于显示具体进度）
+enum LobbyLoadingPhase {
+  /// 等待 WebSocket 连接建立
+  connecting,
+  /// 连接已建立，等待数据
+  waiting,
+  /// 正在加载素材数据
+  loadingAssets,
+  /// 素材加载完成，正在获取大厅状态
+  loadingSnapshot,
+}
+
 class LobbyState extends Equatable {
   final LobbyConnectionStatus connectionStatus;
   final LobbyPageStatus pageStatus;
+  /// Loading 界面的具体加载阶段
+  final LobbyLoadingPhase loadingPhase;
   final LobbyAssets assets;
   final List<LobbyUser> users;
   final List<LobbyMessage> messages;
@@ -57,6 +71,7 @@ class LobbyState extends Equatable {
   const LobbyState({
     required this.connectionStatus,
     required this.pageStatus,
+    required this.loadingPhase,
     required this.assets,
     required this.users,
     required this.messages,
@@ -94,6 +109,7 @@ class LobbyState extends Equatable {
     return const LobbyState(
       connectionStatus: LobbyConnectionStatus.disconnected,
       pageStatus: LobbyPageStatus.idle,
+      loadingPhase: LobbyLoadingPhase.connecting,
       assets: LobbyAssets(),
       users: <LobbyUser>[],
       messages: <LobbyMessage>[],
@@ -144,6 +160,7 @@ class LobbyState extends Equatable {
   LobbyState copyWith({
     LobbyConnectionStatus? connectionStatus,
     LobbyPageStatus? pageStatus,
+    LobbyLoadingPhase? loadingPhase,
     Object? assets = _stateSentinel,
     List<LobbyUser>? users,
     List<LobbyMessage>? messages,
@@ -184,6 +201,7 @@ class LobbyState extends Equatable {
     return LobbyState(
       connectionStatus: connectionStatus ?? this.connectionStatus,
       pageStatus: pageStatus ?? this.pageStatus,
+      loadingPhase: loadingPhase ?? this.loadingPhase,
       assets: identical(assets, _stateSentinel)
           ? this.assets
           : assets as LobbyAssets,
@@ -252,6 +270,7 @@ class LobbyState extends Equatable {
   List<Object?> get props => [
     connectionStatus,
     pageStatus,
+    loadingPhase,
     assets,
     users,
     messages,
