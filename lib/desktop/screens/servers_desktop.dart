@@ -1066,6 +1066,38 @@ class _ServersDesktopState extends State<ServersDesktop> {
     );
   }
 
+  /// 服务器在线状态排序（在线 > 加载中 > 离线）
+  /// - 在线服务器排在最前面（获取到数据的服务器，无论人数）
+  /// - 加载中的服务器排在中间，保持原始相对顺序
+  /// - 离线服务器排在最后（无法获取数据的服务器）
+  List<ExtendedServerItem> _sortServersByOnlineStatus(
+    List<ExtendedServerItem> servers,
+  ) {
+    // 分离三个状态
+    final onlineServers = <ExtendedServerItem>[];
+    final loadingServers = <ExtendedServerItem>[];
+    final offlineServers = <ExtendedServerItem>[];
+
+    for (final server in servers) {
+      final hasData = server.serverData != null;
+      final isLoading = server.isLoading;
+
+      if (hasData) {
+        // 在线服务器：获取到数据的服务器，无论玩家数量
+        onlineServers.add(server);
+      } else if (isLoading) {
+        // 加载中的服务器：正在等待响应
+        loadingServers.add(server);
+      } else {
+        // 离线服务器：没有数据且不在加载中（已超时或错误）
+        offlineServers.add(server);
+      }
+    }
+
+    // 合并：在线 + 加载中 + 离线
+    return [...onlineServers, ...loadingServers, ...offlineServers];
+  }
+
   /// 构建普通服务器列表（非自定义分类）
   Widget _buildNormalServerList(
     BuildContext context,
