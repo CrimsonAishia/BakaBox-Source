@@ -1,9 +1,11 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:window_manager/window_manager.dart';
-import 'dart:async';
 
 import '../bloc/settings/settings_state.dart';
 import '../services/floating_window_service.dart';
@@ -59,8 +61,12 @@ class ExitDialog extends StatefulWidget {
       await obsService.stop();
     }
     await FloatingWindowService().closeAllWindows();
+
+    // 先隐藏窗口，再销毁托盘，最后销毁窗口句柄
+    await windowManager.hide();
     await TrayService.instance.dispose();
     await windowManager.destroy();
+    exit(0);
   }
 }
 
