@@ -27,7 +27,6 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
   void initState() {
     super.initState();
 
-    // 脉冲动画：光环呼吸效果
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
@@ -36,7 +35,6 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    // 旋转动画：六边形轮廓缓慢旋转
     _rotateController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 8),
@@ -45,7 +43,6 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
       CurvedAnimation(parent: _rotateController, curve: Curves.linear),
     );
 
-    // 浮动动画：城堡图标微弱上下浮动
     _floatController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
@@ -63,13 +60,94 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
     super.dispose();
   }
 
+  /// 生成加载步骤列表
+  List<_LoadingStep> _buildSteps() {
+    final phase = widget.state.loadingPhase;
+    final connectionStatus = widget.state.connectionStatus;
+    final steps = <_LoadingStep>[];
+
+    // 步骤1：连接大厅
+    // 只有完全 connected 才算完成，reconnecting 需要重新连接
+    final isConnected = connectionStatus == LobbyConnectionStatus.connected;
+    final isReconnecting = connectionStatus == LobbyConnectionStatus.reconnecting;
+    steps.add(_LoadingStep(
+      icon: Icons.cloud_done_outlined,
+      label: '连接大厅',
+      status: isConnected
+          ? _StepStatus.done
+          : (isReconnecting || phase == LobbyLoadingPhase.connecting)
+              ? _StepStatus.loading
+              : _StepStatus.pending,
+    ));
+
+    // 步骤2：加载素材（根据当前阶段决定状态）
+    final hasAssets = _checkAssetsReady();
+    _StepStatus assetsStatus;
+    if (hasAssets) {
+      assetsStatus = _StepStatus.done;
+    } else if (phase == LobbyLoadingPhase.loadingAssets ||
+        phase == LobbyLoadingPhase.waiting) {
+      assetsStatus = _StepStatus.loading;
+    } else if (isReconnecting || phase == LobbyLoadingPhase.connecting) {
+      // 正在连接或重连中，素材步骤等待
+      assetsStatus = _StepStatus.pending;
+    } else {
+      // 如果已经进入后面阶段但 assets 还没好，标记为完成（可能是缓存加载的）
+      assetsStatus = _StepStatus.done;
+    }
+    steps.add(_LoadingStep(
+      icon: Icons.collections_outlined,
+      label: '加载素材',
+      status: assetsStatus,
+    ));
+
+    // 步骤3：获取大厅状态
+    final hasSnapshot = widget.state.selfUser != null;
+    _StepStatus snapshotStatus;
+    if (hasSnapshot) {
+      snapshotStatus = _StepStatus.done;
+    } else if (phase == LobbyLoadingPhase.loadingSnapshot) {
+      snapshotStatus = _StepStatus.loading;
+    } else if (isReconnecting || phase == LobbyLoadingPhase.connecting) {
+      // 正在连接或重连中，大厅状态步骤等待
+      snapshotStatus = _StepStatus.pending;
+    } else {
+      snapshotStatus = _StepStatus.pending;
+    }
+    steps.add(_LoadingStep(
+      icon: Icons.people_outline,
+      label: '获取大厅状态',
+      status: snapshotStatus,
+    ));
+
+    return steps;
+  }
+
+  /// 检查素材是否已准备好
+  bool _checkAssetsReady() {
+    final assets = widget.state.assets;
+    return assets.mapConfig != null || assets.sprites.isNotEmpty;
+  }
+
+  /// 计算进度
+  double _calculateProgress() {
+    final steps = _buildSteps();
+    final doneCount = steps.where((s) => s.status == _StepStatus.done).length;
+    final totalCount = steps.length;
+    if (doneCount == 0) return 0.0;
+    if (doneCount == totalCount) return 1.0;
+
+    // 平滑过渡：已完成步骤贡献 80%，最后一个进行中的贡献剩余 20%
+    return (doneCount - 1) / totalCount + (0.5 / totalCount);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final hasAssets = widget.state.assets.isReady;
-    final hasSnapshot = widget.state.selfUser != null;
+    final steps = _buildSteps();
+    final hasSnapshot = steps.last.status == _StepStatus.done;
 
     final textPrimary = isDark ? Colors.white : const Color(0xFF1E293B);
     final textSecondary = isDark ? Colors.white70 : const Color(0xFF475569);
@@ -100,7 +178,6 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 标题（带闪烁效果）
               AnimatedBuilder(
                 animation: _pulseAnimation,
                 builder: (context, child) {
@@ -121,7 +198,6 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
               ),
               const SizedBox(height: 28),
 
-              // 游戏风格进度环
               AnimatedBuilder(
                 animation: Listenable.merge([_pulseAnimation, _rotateAnimation]),
                 builder: (context, child) {
@@ -130,10 +206,9 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
                     height: 100,
                     child: CustomPaint(
                       painter: _GameStyleRingPainter(
-                        progress: _calculateProgress(hasAssets, hasSnapshot),
+                        progress: _calculateProgress(),
                         rotation: _rotateAnimation.value,
                         pulse: _pulseAnimation.value,
-                        hasAssets: hasAssets,
                         hasSnapshot: hasSnapshot,
                         ringBgColor: ringBgColor,
                       ),
@@ -154,31 +229,15 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
               const SizedBox(height: 28),
 
               // 步骤列表
-              _LoadingStepItem(
-                icon: Icons.cloud_done_outlined,
-                label: '连接大厅',
-                done: true,
-                textPrimary: textPrimary,
-                textSecondary: textSecondary,
-              ),
-              _LoadingStepItem(
-                icon: Icons.collections_outlined,
-                label: '加载素材',
-                done: hasAssets,
-                textPrimary: textPrimary,
-                textSecondary: textSecondary,
-              ),
-              _LoadingStepItem(
-                icon: Icons.people_outline,
-                label: '获取大厅状态',
-                done: hasSnapshot,
-                textPrimary: textPrimary,
-                textSecondary: textSecondary,
-              ),
+              for (final step in steps)
+                _LoadingStepItem(
+                  step: step,
+                  textPrimary: textPrimary,
+                  textSecondary: textSecondary,
+                ),
 
               const SizedBox(height: 20),
 
-              // 状态文字
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
                 child: Text(
@@ -196,46 +255,32 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
       ),
     );
   }
-
-  double _calculateProgress(bool hasAssets, bool hasSnapshot) {
-    // 使用更平滑的进度计算
-    // 连接: 0-15% (已完成的固定值)
-    // 素材: 15-55% (加载中逐渐增长)
-    // 快照: 55-100% (加载中逐渐增长)
-    if (hasSnapshot) return 1.0;
-    if (hasAssets) {
-      // 素材加载完成后，模拟快照加载过程
-      return 0.6 + 0.4 * _simulateSnapshotProgress();
-    }
-    // 素材加载中，模拟素材加载过程
-    return 0.15 + 0.4 * _simulateAssetsProgress();
-  }
-
-  double _simulateAssetsProgress() {
-    // 基于时间模拟素材加载进度（0-1）
-    // 假设素材加载需要约 2 秒
-    return 0.7; // 默认返回 70%，让进度看起来更平滑
-  }
-
-  double _simulateSnapshotProgress() {
-    // 基于时间模拟快照加载进度（0-1）
-    // 假设快照加载需要约 1 秒
-    return 0.85; // 默认返回 85%，让进度看起来更平滑
-  }
 }
+
+/// 加载步骤模型
+class _LoadingStep {
+  final IconData icon;
+  final String label;
+  final _StepStatus status;
+
+  const _LoadingStep({
+    required this.icon,
+    required this.label,
+    required this.status,
+  });
+}
+
+/// 步骤状态
+enum _StepStatus { pending, loading, done }
 
 /// 单个加载步骤项
 class _LoadingStepItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool done;
+  final _LoadingStep step;
   final Color textPrimary;
   final Color textSecondary;
 
   const _LoadingStepItem({
-    required this.icon,
-    required this.label,
-    required this.done,
+    required this.step,
     required this.textPrimary,
     required this.textSecondary,
   });
@@ -247,29 +292,17 @@ class _LoadingStepItem extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 400),
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: done
-                  ? const Color(0xFF22C55E).withValues(alpha: 0.2)
-                  : textSecondary.withValues(alpha: 0.08),
-            ),
-            child: Icon(
-              done ? Icons.check : icon,
-              color: done ? const Color(0xFF22C55E) : textSecondary,
-              size: 16,
-            ),
+          _StepIndicator(
+            status: step.status,
+            textSecondary: textSecondary,
           ),
           const SizedBox(width: 12),
           Text(
-            label,
+            step.label,
             style: TextStyle(
-              color: done ? textPrimary : textSecondary,
+              color: step.status == _StepStatus.done ? textPrimary : textSecondary,
               fontSize: 14,
-              fontWeight: done ? FontWeight.w600 : FontWeight.w400,
+              fontWeight: step.status == _StepStatus.done ? FontWeight.w600 : FontWeight.w400,
             ),
           ),
         ],
@@ -278,12 +311,73 @@ class _LoadingStepItem extends StatelessWidget {
   }
 }
 
-/// 游戏风格进度环画笔：六边形旋转轮廓 + 脉冲光环 + 渐变进度弧
+/// 步骤状态指示器
+class _StepIndicator extends StatelessWidget {
+  final _StepStatus status;
+  final Color textSecondary;
+
+  const _StepIndicator({
+    required this.status,
+    required this.textSecondary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: _getBackgroundColor(),
+      ),
+      child: _buildIcon(),
+    );
+  }
+
+  Color _getBackgroundColor() {
+    switch (status) {
+      case _StepStatus.done:
+        return const Color(0xFF22C55E).withValues(alpha: 0.2);
+      case _StepStatus.loading:
+        return const Color(0xFF38BDF8).withValues(alpha: 0.2);
+      case _StepStatus.pending:
+        return textSecondary.withValues(alpha: 0.08);
+    }
+  }
+
+  Widget _buildIcon() {
+    switch (status) {
+      case _StepStatus.done:
+        return const Icon(
+          Icons.check,
+          color: Color(0xFF22C55E),
+          size: 16,
+        );
+      case _StepStatus.loading:
+        return const SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
+          ),
+        );
+      case _StepStatus.pending:
+        return Icon(
+          Icons.circle_outlined,
+          color: textSecondary.withValues(alpha: 0.5),
+          size: 14,
+        );
+    }
+  }
+}
+
+/// 游戏风格进度环画笔
 class _GameStyleRingPainter extends CustomPainter {
   final double progress;
   final double rotation;
   final double pulse;
-  final bool hasAssets;
   final bool hasSnapshot;
   final Color ringBgColor;
 
@@ -291,7 +385,6 @@ class _GameStyleRingPainter extends CustomPainter {
     required this.progress,
     required this.rotation,
     required this.pulse,
-    required this.hasAssets,
     required this.hasSnapshot,
     required this.ringBgColor,
   });
@@ -308,7 +401,7 @@ class _GameStyleRingPainter extends CustomPainter {
       ..strokeWidth = 3;
     canvas.drawCircle(center, radius + 6 + pulse * 4, glowPaint);
 
-    // 绘制六边形轮廓（旋转）
+    // 绘制六边形轮廓
     _drawHexagonRing(canvas, center, radius);
 
     // 绘制背景圆环

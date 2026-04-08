@@ -182,6 +182,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         connectionStatus: _service.isConnected
             ? LobbyConnectionStatus.connected
             : LobbyConnectionStatus.connecting,
+        // 根据连接状态设置加载阶段
+        loadingPhase: _service.isConnected
+            ? LobbyLoadingPhase.loadingAssets
+            : LobbyLoadingPhase.connecting,
         transientNotice: '正在加载大厅数据...',
       ),
     );
@@ -248,6 +252,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     emit(
       state.copyWith(
         assets: assets,
+        // 更新加载阶段为等待 snapshot
+        loadingPhase: state.pageStatus == LobbyPageStatus.loading
+            ? LobbyLoadingPhase.loadingSnapshot
+            : state.loadingPhase,
         transientNotice: '素材已收到，正在加载大厅...',
       ),
     );
@@ -916,8 +924,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         break;
       case 'ws.closed':
         if (state.connectionStatus != LobbyConnectionStatus.connecting) {
+          // 断线时重置加载阶段，等待重连后重新开始
           emit(state.copyWith(
             connectionStatus: LobbyConnectionStatus.reconnecting,
+            loadingPhase: LobbyLoadingPhase.connecting,
             transientNotice: '大厅连接断开，正在尝试重连...',
           ));
         }
@@ -926,6 +936,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         if (state.connectionStatus != LobbyConnectionStatus.connecting) {
           emit(state.copyWith(
             connectionStatus: LobbyConnectionStatus.reconnecting,
+            loadingPhase: LobbyLoadingPhase.connecting,
             transientNotice: '大厅连接异常，正在尝试重连...',
           ));
         }
@@ -934,9 +945,23 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         _authAttemptedAfterConnect = false;
         if (state.connectionStatus != LobbyConnectionStatus.connected &&
             state.connectionStatus != LobbyConnectionStatus.connecting) {
+          // 构建更新参数
+          final updates = <String, dynamic>{
+            'connectionStatus': LobbyConnectionStatus.connected,
+            'transientNotice': '大厅重连成功，正在同步数据...',
+          };
+          // 如果正在 loading 阶段，更新加载阶段
+          if (state.pageStatus == LobbyPageStatus.loading) {
+            // 判断是否已收到 assets
+            final hasAssets = state.assets.mapConfig != null || state.assets.sprites.isNotEmpty;
+            updates['loadingPhase'] = hasAssets
+                ? LobbyLoadingPhase.loadingSnapshot
+                : LobbyLoadingPhase.waiting;
+          }
           emit(state.copyWith(
-            connectionStatus: LobbyConnectionStatus.connected,
-            transientNotice: '大厅重连成功，正在同步数据...',
+            connectionStatus: updates['connectionStatus'] as LobbyConnectionStatus,
+            loadingPhase: updates['loadingPhase'] as LobbyLoadingPhase?,
+            transientNotice: updates['transientNotice'] as String,
           ));
           // WebSocket 重连成功后，自动重发待发送的消息
           if (state.pendingMessages.isNotEmpty) {
