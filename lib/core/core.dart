@@ -89,6 +89,7 @@ export 'constants/app_constants.dart';
 export 'constants/fallback_data.dart';
 
 // Widgets
+export 'services/app_exit_service.dart';
 export 'widgets/exit_dialog.dart';
 export 'widgets/page_view_with_listener.dart';
 export 'widgets/navigation/app_navigation.dart';
