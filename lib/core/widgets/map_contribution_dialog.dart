@@ -188,8 +188,13 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   void _loadTagData() {
     context.read<MapTagBloc>()
       ..add(const LoadTagList())
-      ..add(LoadMapTagList(mapName: widget.mapName))
-      ..add(const LoadUserTags());
+      ..add(LoadMapTagList(mapName: widget.mapName));
+
+    // 只有登录用户才加载个人标签（pending/rejected 状态）
+    final authState = context.read<AuthBloc>().state;
+    if (authState.isAuthenticated) {
+      context.read<MapTagBloc>().add(const LoadUserTags());
+    }
   }
 
   void _loadContributions(ContributionType type) {
@@ -3020,43 +3025,46 @@ class _TagGrid extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: tags.asMap().entries.map((entry) {
-        final index = entry.key;
-        final tag = entry.value;
-        final mapVote = state.getMapTagVoteByTagId(tag.id);
-        final hasVoted = mapVote?.hasVoted ?? false;
-        final voteCount = mapVote?.voteCount ?? 0;
-        final isOwner = state.userTags.any((t) => t.id == tag.id);
+    return SizedBox(
+      width: double.infinity,
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: tags.asMap().entries.map((entry) {
+          final index = entry.key;
+          final tag = entry.value;
+          final mapVote = state.getMapTagVoteByTagId(tag.id);
+          final hasVoted = mapVote?.hasVoted ?? false;
+          final voteCount = mapVote?.voteCount ?? 0;
+          final isOwner = state.userTags.any((t) => t.id == tag.id);
 
-        return TweenAnimationBuilder<double>(
-          key: ValueKey('tag_${isUserSection ? 'user_' : ''}${tag.id}'),
-          tween: Tween(begin: 0.0, end: 1.0),
-          duration: Duration(milliseconds: 200 + index * 50),
-          curve: Curves.easeOutBack,
-          builder: (context, value, child) {
-            return Transform.scale(
-              scale: 0.5 + 0.5 * value,
-              child: Opacity(opacity: value.clamp(0.0, 1.0), child: child),
-            );
-          },
-          child: _AnimatedTagChip(
-            tag: tag,
-            hasVoted: hasVoted,
-            voteCount: voteCount,
-            isVoting: state.isVoting,
-            isDark: isDark,
-            isOwner: isOwner,
-            hasUpvoted: mapVote?.hasUpvoted ?? false,
-            hasDownvoted: mapVote?.hasDownvoted ?? false,
-            onVote: (voteType) => dialogState.handleTagVote(tag, voteType),
-            onEdit: () => dialogState.showEditTagDialog(tag),
-            onDelete: () => dialogState.showDeleteTagDialog(tag),
-          ),
-        );
-      }).toList(),
+          return TweenAnimationBuilder<double>(
+            key: ValueKey('tag_${isUserSection ? 'user_' : ''}${tag.id}'),
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: Duration(milliseconds: 200 + index * 50),
+            curve: Curves.easeOutBack,
+            builder: (context, value, child) {
+              return Transform.scale(
+                scale: 0.5 + 0.5 * value,
+                child: Opacity(opacity: value.clamp(0.0, 1.0), child: child),
+              );
+            },
+            child: _AnimatedTagChip(
+              tag: tag,
+              hasVoted: hasVoted,
+              voteCount: voteCount,
+              isVoting: state.isVoting,
+              isDark: isDark,
+              isOwner: isOwner,
+              hasUpvoted: mapVote?.hasUpvoted ?? false,
+              hasDownvoted: mapVote?.hasDownvoted ?? false,
+              onVote: (voteType) => dialogState.handleTagVote(tag, voteType),
+              onEdit: () => dialogState.showEditTagDialog(tag),
+              onDelete: () => dialogState.showDeleteTagDialog(tag),
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 }
