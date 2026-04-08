@@ -6,6 +6,7 @@ import 'package:window_manager/window_manager.dart';
 
 import '../constants/app_constants.dart';
 import '../utils/log_service.dart';
+import 'app_exit_service.dart';
 
 class TrayService with TrayListener {
   TrayService._();
@@ -88,8 +89,7 @@ class TrayService with TrayListener {
   }
 
   Future<void> _exitApplication() async {
-    await dispose();
-    await windowManager.close();
+    await AppExitService.instance.exitApplication();
   }
 
   @override
