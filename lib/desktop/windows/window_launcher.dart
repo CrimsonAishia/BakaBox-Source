@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 
 import '../../core/bootstrap/app_initializer.dart';
-import '../../core/bootstrap/single_instance_guard.dart';
+import '../../core/services/single_instance_service.dart';
 import '../../core/services/floating_window_service.dart';
 import '../../core/services/notification_window_service.dart';
 import '../widgets/position_preview_window.dart';
@@ -24,7 +24,7 @@ class DesktopWindowLauncher {
 
     // 主窗口需要单实例检查
     if (!isSubWindow) {
-      final canStart = await SingleInstanceGuard.check();
+      final canStart = await SingleInstanceService.instance.ensureSingleInstance(args);
       if (!canStart) {
         exit(0);
       }
