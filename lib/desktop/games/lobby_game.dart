@@ -58,6 +58,8 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
   final List<PortalComponent> _portalComponents = [];
   /// 当前悬停的传送门
   PortalComponent? _hoveredPortal;
+  /// 传送门更新锁，防止并发更新
+  bool _portalUpdateInProgress = false;
 
   /// 目标位置标记组件（显示红色叉号）
   TargetMarkerComponent? _targetMarker;
@@ -68,6 +70,10 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
   /// 世界根组件（包含所有游戏对象，相机对其生效）
   late final World _world;
   final Map<String, LobbyPlayerComponent> _playerComponents = {};
+
+  /// 待处理用户队列：用于确保用户添加/移除操作的顺序性
+  /// 避免异步操作导致的竞态条件
+  final Set<String> _pendingUserIds = {};
 
   LobbyMapConfig? _mapConfig;
   List<LobbySprite> _sprites = [];
@@ -128,20 +134,28 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
   Future<void> _updatePortalComponents() async {
     if (_mapConfig == null) return;
 
-    // 移除旧的传送门组件
-    for (final portal in _portalComponents) {
-      portal.removeFromParent();
-    }
-    _portalComponents.clear();
+    // 如果已经在更新中，跳过
+    if (_portalUpdateInProgress) return;
+    _portalUpdateInProgress = true;
 
-    // 创建新的传送门组件
-    for (final portalConfig in _mapConfig!.portals) {
-      final portalComponent = PortalComponent(
-        portal: portalConfig,
-        onClick: (clickPos) => _bloc.add(LobbyPortalClicked(clickPos)),
-      );
-      await _world.add(portalComponent);
-      _portalComponents.add(portalComponent);
+    try {
+      // 移除旧的传送门组件
+      for (final portal in _portalComponents) {
+        portal.removeFromParent();
+      }
+      _portalComponents.clear();
+
+      // 创建新的传送门组件
+      for (final portalConfig in _mapConfig!.portals) {
+        final portalComponent = PortalComponent(
+          portal: portalConfig,
+          onClick: (clickPos) => _bloc.add(LobbyPortalClicked(clickPos)),
+        );
+        await _world.add(portalComponent);
+        _portalComponents.add(portalComponent);
+      }
+    } finally {
+      _portalUpdateInProgress = false;
     }
   }
 
@@ -301,10 +315,13 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     // 移除离开的用户
     final currentUserIds = _playerComponents.keys.toSet();
     final newUserIds = newUsers.map((u) => u.userId).toSet();
+    final leavingUserIds = currentUserIds.difference(newUserIds);
 
-    for (final userId in currentUserIds.difference(newUserIds)) {
+    for (final userId in leavingUserIds) {
       final component = _playerComponents.remove(userId);
-      component?.removeFromParent();
+      if (component != null) {
+        component.removeFromParent();
+      }
     }
 
     // 添加或更新用户
@@ -312,49 +329,68 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
       if (_playerComponents.containsKey(user.userId)) {
         // 更新现有用户
         _playerComponents[user.userId]!.updateUser(user, _sprites);
-      } else {
-        // 添加新用户
+      } else if (!_pendingUserIds.contains(user.userId)) {
+        // 添加新用户（但不在待处理队列中）
         _addPlayerComponent(user);
       }
     }
   }
 
   Future<void> _addPlayerComponent(LobbyUser user) async {
-    LogService.d('[LobbyGame] _addPlayerComponent: userId=${user.userId} spriteId=${user.spriteId}');
-    // 优先查找用户 spriteId 对应的 sprite，其次找 default sprite，最后兜底
-    LobbySprite sprite;
-    try {
-      sprite = _sprites.firstWhere((s) => s.id == user.spriteId);
-    } catch (_) {
-      sprite = _sprites.where((s) => s.isDefault).firstOrNull ?? const LobbySprite(
-        id: 'sprite_01',
-        label: '默认角色',
-        accentColor: Color(0xFF60A5FA),
-      );
+    // 检测重复添加（既不在现有组件中，也不在待处理队列中）
+    if (_playerComponents.containsKey(user.userId) || _pendingUserIds.contains(user.userId)) {
+      return;
     }
 
-    final component = LobbyPlayerComponent(
-      user: user,
-      sprite: sprite,
-      showNameplate: _showNameplates,
-      showChatBubble: _showChatBubbles,
-      onArrived: _onPlayerArrived,
-      onDustEmitted: (position) {
-        // 扬尘需要生成在角色实际脚底，而不是组件锚点（锚点在状态文字区域底部）
-        // 所以需要在 Y 轴上补偿 statusTextAreaHeight
-        final dust = DustCloudComponent(
-          worldPosition: Vector2(
-            position.x,
-            position.y - LobbyPlayerComponent.statusTextAreaHeight,
-          ),
-        );
-        _world.add(dust);
-      },
-    );
+    // 将用户标记为待处理，避免在异步操作期间被重复添加
+    _pendingUserIds.add(user.userId);
 
-    await _world.add(component);
-    _playerComponents[user.userId] = component;
-    LogService.d('[LobbyGame] _addPlayerComponent 完成: total players=${_playerComponents.length}');
+    try {
+      // 优先查找用户 spriteId 对应的 sprite，其次找 default sprite，最后兜底
+      LobbySprite sprite;
+      try {
+        sprite = _sprites.firstWhere((s) => s.id == user.spriteId);
+      } catch (_) {
+        sprite = _sprites.where((s) => s.isDefault).firstOrNull ?? const LobbySprite(
+          id: 'sprite_01',
+          label: '默认角色',
+          accentColor: Color(0xFF60A5FA),
+        );
+      }
+
+      final component = LobbyPlayerComponent(
+        user: user,
+        sprite: sprite,
+        showNameplate: _showNameplates,
+        showChatBubble: _showChatBubbles,
+        onArrived: _onPlayerArrived,
+        onDustEmitted: (position) {
+          // 扬尘需要生成在角色实际脚底，而不是组件锚点（锚点在状态文字区域底部）
+          // 所以需要在 Y 轴上补偿 statusTextAreaHeight
+          final dust = DustCloudComponent(
+            worldPosition: Vector2(
+              position.x,
+              position.y - LobbyPlayerComponent.statusTextAreaHeight,
+            ),
+          );
+          _world.add(dust);
+        },
+      );
+
+      await _world.add(component);
+
+      // 关键：在组件添加到世界后，检查用户是否已经离开
+      // 这是解决"玩家离开后模型残留"问题的核心逻辑
+      final currentUserIds = _bloc.state.users.map((u) => u.userId).toSet();
+      if (!currentUserIds.contains(user.userId)) {
+        component.removeFromParent();
+        return;
+      }
+
+      _playerComponents[user.userId] = component;
+    } finally {
+      _pendingUserIds.remove(user.userId);
+    }
   }
 
   /// 角色到达目标时的回调
@@ -466,6 +502,11 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
   @override
   void onRemove() {
     _stateSubscription.cancel();
+    // 清理待处理队列中的所有用户
+    for (final userId in _pendingUserIds) {
+      _playerComponents.remove(userId);
+    }
+    _pendingUserIds.clear();
     super.onRemove();
   }
 }
@@ -482,6 +523,7 @@ class BackgroundComponent extends PositionComponent with HasGameReference<LobbyG
   final LobbyMapConfig _mapConfig;
   Vector2 _worldSize;
   bool _loaded = false;
+  bool _loading = false;
 
   // 组件销毁标志，用于防止图片加载完成后访问已销毁的组件
   bool _disposed = false;
@@ -492,35 +534,41 @@ class BackgroundComponent extends PositionComponent with HasGameReference<LobbyG
   }
 
   Future<void> _loadBackground() async {
-    if (_loaded) return;
-    _loaded = true;
+    if (_loaded || _loading) return;
+    _loading = true;
 
-    // 设置背景组件大小为世界尺寸
-    size = _worldSize;
+    try {
+      // 设置背景组件大小为世界尺寸
+      size = _worldSize;
 
-    // 加载背景（优先从本地缓存，fallback 到网络）
-    if (_mapConfig.backgroundUrl != null && _mapConfig.backgroundUrl!.isNotEmpty) {
-      try {
-        // 优先从本地缓存获取
-        final imageInfo = await _loadCachedOrNetworkImage(_mapConfig.backgroundUrl!);
-        if (imageInfo != null) {
-          final sprite = Sprite(imageInfo);
-          final bgComponent = SpriteComponent(
-            sprite: sprite,
-            size: _worldSize,
-          );
-          bgComponent.paint = Paint()..colorFilter = const ColorFilter.mode(
-            Color(0x3D000000),
-            BlendMode.darken,
-          );
-          await add(bgComponent);
-          return;
+      // 加载背景（优先从本地缓存，fallback 到网络）
+      if (_mapConfig.backgroundUrl != null && _mapConfig.backgroundUrl!.isNotEmpty) {
+        try {
+          // 优先从本地缓存获取
+          final imageInfo = await _loadCachedOrNetworkImage(_mapConfig.backgroundUrl!);
+          if (imageInfo != null && !_disposed) {
+            final sprite = Sprite(imageInfo);
+            final bgComponent = SpriteComponent(
+              sprite: sprite,
+              size: _worldSize,
+            );
+            bgComponent.paint = Paint()..colorFilter = const ColorFilter.mode(
+              Color(0x3D000000),
+              BlendMode.darken,
+            );
+            await add(bgComponent);
+            _loaded = true;
+            return;
+          }
+        } catch (_) {
+          // 加载失败，使用默认背景
         }
-      } catch (_) {
-        // 加载失败，使用默认背景
       }
+      await _addDefaultBackground();
+      _loaded = true;
+    } finally {
+      _loading = false;
     }
-    await _addDefaultBackground();
   }
 
   /// 优先从本地缓存加载图片，fallback 到网络
@@ -585,9 +633,10 @@ class BackgroundComponent extends PositionComponent with HasGameReference<LobbyG
   }
 
   void updateMapConfig(LobbyMapConfig mapConfig) {
-    // 重新加载背景
+    // 重置状态并重新加载
     children.toList().forEach((c) => c.removeFromParent());
     _loaded = false;
+    _loading = false;  // 重置加载状态，允许重新加载
     _loadBackground();
   }
 
