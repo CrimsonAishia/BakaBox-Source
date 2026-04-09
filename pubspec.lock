@@ -502,14 +502,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_alone:
-    dependency: "direct main"
-    description:
-      name: flutter_alone
-      sha256: "5a9188c48d6205ad0e9e630f0767c58ef896932cf304d4b4735d561abaa5ddad"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.2.4"
   flutter_animate:
     dependency: "direct main"
     description:
@@ -1716,6 +1708,14 @@ packages:
       url: "https://github.com/CrimsonAishia/window_manager.git"
     source: git
     version: "0.5.1"
+  windows_single_instance:
+    dependency: "direct main"
+    description:
+      name: windows_single_instance
+      sha256: "27ac7ef70a2930a42431d94263941c76884036f797c6d749d1ce5d9d386e66d9"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
   xdg_directories:
     dependency: transitive
     description:
