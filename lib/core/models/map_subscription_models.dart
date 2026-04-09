@@ -21,6 +21,12 @@ class MapSubscription extends Equatable {
   /// 创建时间
   final DateTime createdAt;
 
+  /// 地图信息缓存时间（用于判断是否过期需要刷新）
+  final DateTime? cachedAt;
+
+  /// 缓存有效期（默认1小时）
+  static const Duration cacheValidityDuration = Duration(hours: 1);
+
   const MapSubscription({
     required this.mapName,
     required this.mapLabel,
@@ -28,7 +34,13 @@ class MapSubscription extends Equatable {
     this.categoryNames = const [],
     this.serverAddresses = const [],
     required this.createdAt,
+    this.cachedAt,
   });
+
+  /// 是否缓存已过期（需要刷新地图信息）
+  bool get isCacheExpired =>
+      cachedAt == null ||
+      DateTime.now().difference(cachedAt!) > cacheValidityDuration;
 
   /// 从 JSON 创建
   factory MapSubscription.fromJson(Map<String, dynamic> json) {
@@ -49,18 +61,22 @@ class MapSubscription extends Equatable {
       createdAt:
           DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.now(),
+      cachedAt: json['cachedAt'] != null
+          ? DateTime.tryParse(json['cachedAt'] as String)
+          : null,
     );
   }
 
   /// 转为 JSON
   Map<String, dynamic> toJson() => {
-    'mapName': mapName,
-    'mapLabel': mapLabel,
-    'mapBackground': mapBackground,
-    'categoryNames': categoryNames,
-    'serverAddresses': serverAddresses,
-    'createdAt': createdAt.toIso8601String(),
-  };
+        'mapName': mapName,
+        'mapLabel': mapLabel,
+        'mapBackground': mapBackground,
+        'categoryNames': categoryNames,
+        'serverAddresses': serverAddresses,
+        'createdAt': createdAt.toIso8601String(),
+        'cachedAt': cachedAt?.toIso8601String(),
+      };
 
   /// 复制并修改
   MapSubscription copyWith({
@@ -70,6 +86,8 @@ class MapSubscription extends Equatable {
     List<String>? categoryNames,
     List<String>? serverAddresses,
     DateTime? createdAt,
+    DateTime? cachedAt,
+    bool clearCachedAt = false,
   }) {
     return MapSubscription(
       mapName: mapName ?? this.mapName,
@@ -78,6 +96,7 @@ class MapSubscription extends Equatable {
       categoryNames: categoryNames ?? this.categoryNames,
       serverAddresses: serverAddresses ?? this.serverAddresses,
       createdAt: createdAt ?? this.createdAt,
+      cachedAt: clearCachedAt ? null : (cachedAt ?? this.cachedAt),
     );
   }
 
@@ -101,11 +120,12 @@ class MapSubscription extends Equatable {
 
   @override
   List<Object?> get props => [
-    mapName,
-    mapLabel,
-    mapBackground,
-    categoryNames,
-    serverAddresses,
-    createdAt,
-  ];
+        mapName,
+        mapLabel,
+        mapBackground,
+        categoryNames,
+        serverAddresses,
+        createdAt,
+        cachedAt,
+      ];
 }

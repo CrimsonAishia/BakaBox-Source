@@ -39,6 +39,8 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
     final bloc = context.read<MapSubscriptionBloc>();
     bloc.add(const MapSubscriptionLoad());
     bloc.add(const MapSubscriptionLoadCategories());
+    // 刷新过期的订阅地图信息
+    bloc.add(const MapSubscriptionRefreshExpired());
   }
 
   @override

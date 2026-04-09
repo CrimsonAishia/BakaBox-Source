@@ -13,6 +13,11 @@ class MapSubscriptionLoad extends MapSubscriptionEvent {
   const MapSubscriptionLoad();
 }
 
+/// 刷新过期的订阅地图信息
+class MapSubscriptionRefreshExpired extends MapSubscriptionEvent {
+  const MapSubscriptionRefreshExpired();
+}
+
 /// 加载可用分类列表
 class MapSubscriptionLoadCategories extends MapSubscriptionEvent {
   const MapSubscriptionLoadCategories();
