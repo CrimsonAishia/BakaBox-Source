@@ -28,6 +28,7 @@ class MapSubscriptionBloc
 
   MapSubscriptionBloc() : super(const MapSubscriptionState()) {
     on<MapSubscriptionLoad>(_onLoad);
+    on<MapSubscriptionRefreshExpired>(_onRefreshExpired);
     on<MapSubscriptionLoadCategories>(_onLoadCategories);
     on<MapSubscriptionAdd>(_onAdd);
     on<MapSubscriptionRemove>(_onRemove);
@@ -88,6 +89,18 @@ class MapSubscriptionBloc
     }
   }
 
+  Future<void> _onRefreshExpired(
+    MapSubscriptionRefreshExpired event,
+    Emitter<MapSubscriptionState> emit,
+  ) async {
+    try {
+      await _service.refreshExpiredSubscriptions();
+      emit(state.copyWith(subscriptions: _service.subscriptions));
+    } catch (e) {
+      LogService.e('[MapSubscriptionBloc] 刷新过期订阅失败', e);
+    }
+  }
+
   Future<void> _onLoadCategories(
     MapSubscriptionLoadCategories event,
     Emitter<MapSubscriptionState> emit,
@@ -129,6 +142,7 @@ class MapSubscriptionBloc
         mapBackground: event.mapBackground,
         categoryNames: event.categoryNames,
         createdAt: DateTime.now(),
+        cachedAt: DateTime.now(),
       );
       await _service.addSubscription(subscription);
       emit(state.copyWith(subscriptions: _service.subscriptions));

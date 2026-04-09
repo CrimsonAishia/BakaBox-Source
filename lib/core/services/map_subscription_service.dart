@@ -269,6 +269,52 @@ class MapSubscriptionService {
     );
   }
 
+  /// 刷新所有过期的订阅地图信息
+  ///
+  /// 检查每个订阅的缓存是否过期，如果过期则从 API 获取最新信息并更新。
+  Future<void> refreshExpiredSubscriptions() async {
+    final expiredSubscriptions = _subscriptions
+        .where((s) => s.isCacheExpired)
+        .toList();
+
+    if (expiredSubscriptions.isEmpty) {
+      LogService.d('[MapSubscription] 没有过期的订阅需要刷新');
+      return;
+    }
+
+    LogService.d(
+      '[MapSubscription] 开始刷新 ${expiredSubscriptions.length} 个过期订阅',
+    );
+
+    int updatedCount = 0;
+    for (final sub in expiredSubscriptions) {
+      try {
+        final mapInfo = await _serverApi.getMapInfo(sub.mapName);
+        if (mapInfo != null) {
+          final index = _subscriptions.indexWhere(
+            (s) => s.mapName == sub.mapName,
+          );
+          if (index != -1) {
+            _subscriptions[index] = sub.copyWith(
+              mapLabel: mapInfo.mapLabel,
+              mapBackground: mapInfo.mapUrl,
+              cachedAt: DateTime.now(),
+            );
+            updatedCount++;
+          }
+        }
+      } catch (e) {
+        LogService.e('[MapSubscription] 刷新订阅地图信息失败: ${sub.mapName}', e);
+      }
+    }
+
+    if (updatedCount > 0) {
+      await _saveSubscriptions();
+      _notifyStateChange();
+      LogService.d('[MapSubscription] 刷新完成，更新了 $updatedCount 个订阅');
+    }
+  }
+
   /// 获取所有可用服务器列表
   Future<Map<String, String>> getAvailableServers() async {
     final categories = await _loadAndMergeCategories();
