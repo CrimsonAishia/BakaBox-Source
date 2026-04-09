@@ -61,7 +61,9 @@ class LobbySettingsPanel extends StatelessWidget {
                               : '登录后可关闭匿名')
                           : '公开身份展示给其他用户')),
               value: state.isAnonymous,
-              onChanged: (_isPending('anonymous') || state.anonymousSwitchCooldownSeconds > 0)
+              onChanged: (!AuthService.instance.isLoggedIn ||
+                      _isPending('anonymous') ||
+                      state.anonymousSwitchCooldownSeconds > 0)
                   ? null
                   : (value) => context.read<LobbyBloc>().add(LobbyAnonymousToggled(value)),
               isLoading: _isPending('anonymous') || state.anonymousSwitchCooldownSeconds > 0,
@@ -69,6 +71,7 @@ class LobbySettingsPanel extends StatelessWidget {
                   ? state.anonymousSwitchCooldownSeconds
                   : null,
               isPending: _isPending('anonymous'),
+              isLocked: !AuthService.instance.isLoggedIn,
             ),
             // 显示昵称
             _SettingsSwitchTile(
@@ -464,6 +467,7 @@ class _SettingsSwitchTile extends StatelessWidget {
   final bool isLoading;
   final int? loadingSeconds;
   final bool isPending;
+  final bool isLocked;
 
   const _SettingsSwitchTile({
     required this.title,
@@ -473,19 +477,22 @@ class _SettingsSwitchTile extends StatelessWidget {
     this.isLoading = false,
     this.loadingSeconds,
     this.isPending = false,
+    this.isLocked = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDisabled = isLoading || isLocked;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withValues(alpha: isLocked ? 0.02 : 0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: isLoading ? null : () => onChanged?.call(!value),
+          onTap: isDisabled ? null : () => onChanged?.call(!value),
           borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -500,8 +507,10 @@ class _SettingsSwitchTile extends StatelessWidget {
                     child: Switch(
                       value: value,
                       onChanged: onChanged,
-                      activeColor: Colors.white,
-                      activeTrackColor: const Color(0xFF22C55E),
+                      activeColor: isLocked ? Colors.white70 : Colors.white,
+                      activeTrackColor: isLocked
+                          ? Colors.white.withValues(alpha: 0.2)
+                          : const Color(0xFF22C55E),
                       inactiveThumbColor: Colors.white70,
                       inactiveTrackColor: Colors.white.withValues(alpha: 0.2),
                     ),
@@ -515,8 +524,8 @@ class _SettingsSwitchTile extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: isLocked ? Colors.white38 : Colors.white,
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
                         ),
@@ -526,7 +535,9 @@ class _SettingsSwitchTile extends StatelessWidget {
                         Text(
                           subtitle!,
                           style: TextStyle(
-                            color: isLoading ? Colors.orange : Colors.white54,
+                            color: isLoading
+                                ? Colors.orange
+                                : (isLocked ? Colors.white24 : Colors.white54),
                             fontSize: 11,
                           ),
                         ),
