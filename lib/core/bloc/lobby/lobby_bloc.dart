@@ -77,6 +77,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     on<LobbyPortalDialogShowed>(_onPortalDialogShowed);
     on<LobbyPortalDialogDismissed>(_onPortalDialogDismissed);
     on<LobbyOnlineStatsRequested>(_onOnlineStatsRequested);
+    on<LobbyNotificationExpired>(_onNotificationExpired);
     on<LobbyBroadcastNotificationsToggled>(_onBroadcastNotificationsToggled);
     on<_LobbySettingTimeout>(_onSettingTimeout);
     on<_LobbySettingsTimeoutCheck>(_onSettingsTimeoutCheck);
@@ -1145,16 +1146,26 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             ? user.spriteId
             : state.selectedSpriteId;
 
-        // 玩家加入时添加到聊天栏（自己加入时不显示系统消息）
-        final updatedMessages = isSelfUser
-            ? state.messages
-            : [...state.messages, _buildSystemMessage('${user.displayName} 进入大厅')];
+        // 构建玩家加入通知（自己加入时不显示通知）
+        final newNotification = isSelfUser
+            ? null
+            : PlayerNotification(
+                id: 'join_${DateTime.now().microsecondsSinceEpoch}',
+                type: PlayerNotificationType.join,
+                playerName: user.displayName,
+                createdAt: DateTime.now(),
+              );
+
+        // 更新通知列表（限制最多保留20条）
+        final updatedNotifications = newNotification != null
+            ? [...state.playerNotifications, newNotification].take(20).toList()
+            : state.playerNotifications;
 
         emit(
           state.copyWith(
             users: _upsertUser(state.users, user),
             selectedSpriteId: newSelectedSpriteId,
-            messages: updatedMessages,
+            playerNotifications: updatedNotifications,
           ),
         );
         break;
@@ -1169,23 +1180,38 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
         // 获取 targetMapId 判断是传送离开还是断线离开
         final targetMapId = event.event.payload['targetMapId']?.toString();
-        String systemMessage;
-        if (targetMapId != null && targetMapId.isNotEmpty) {
-          // 传送离开：获取目标地图名称
-          final targetMapName = state.assets.getMapById(targetMapId)?.displayName ?? targetMapId;
-          systemMessage = '${leavingUser?.displayName ?? '玩家'} 传送到 $targetMapName';
-        } else {
-          // 断线/正常离开
-          systemMessage = '${leavingUser?.displayName ?? '玩家'} 离开大厅';
+        PlayerNotification? newNotification;
+        if (leavingUser != null) {
+          if (targetMapId != null && targetMapId.isNotEmpty) {
+            // 传送离开：获取目标地图名称
+            final targetMapName = state.assets.getMapById(targetMapId)?.displayName ?? targetMapId;
+            newNotification = PlayerNotification(
+              id: 'teleport_${DateTime.now().microsecondsSinceEpoch}',
+              type: PlayerNotificationType.teleport,
+              playerName: leavingUser.displayName,
+              targetMapName: targetMapName,
+              createdAt: DateTime.now(),
+            );
+          } else {
+            // 断线/正常离开
+            newNotification = PlayerNotification(
+              id: 'leave_${DateTime.now().microsecondsSinceEpoch}',
+              type: PlayerNotificationType.leave,
+              playerName: leavingUser.displayName,
+              createdAt: DateTime.now(),
+            );
+          }
         }
+
+        // 更新通知列表（限制最多保留20条）
+        final updatedNotifications = newNotification != null
+            ? [...state.playerNotifications, newNotification].take(20).toList()
+            : state.playerNotifications;
 
         emit(
           state.copyWith(
             users: updatedUsers,
-            messages: [
-              ...state.messages,
-              if (leavingUser != null) _buildSystemMessage(systemMessage),
-            ],
+            playerNotifications: updatedNotifications,
           ),
         );
         break;
@@ -2460,6 +2486,18 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     ));
     _scheduleSettingsTimeoutCheck();
     await _service.setShowBroadcastNotifications(event.value);
+  }
+
+  /// 处理玩家通知过期（从显示队列中移除）
+  void _onNotificationExpired(
+    LobbyNotificationExpired event,
+    Emitter<LobbyState> emit,
+  ) {
+    final updatedNotifications = state.playerNotifications
+        .where((n) => n.id != event.notificationId)
+        .toList();
+
+    emit(state.copyWith(playerNotifications: updatedNotifications));
   }
 
   /// 安排设置选项超时检查

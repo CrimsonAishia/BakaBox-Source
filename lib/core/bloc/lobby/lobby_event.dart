@@ -132,6 +132,16 @@ class LobbyBubbleExpired extends LobbyEvent {
   const LobbyBubbleExpired();
 }
 
+/// 玩家通知过期（从显示队列中移除）
+class LobbyNotificationExpired extends LobbyEvent {
+  final String notificationId;
+
+  const LobbyNotificationExpired(this.notificationId);
+
+  @override
+  List<Object?> get props => [notificationId];
+}
+
 class LobbyWsEventReceived extends LobbyEvent {
   final LobbyWsEvent event;
 
