@@ -14,6 +14,7 @@ import '../widgets/lobby/lobby_helper.dart';
 import '../widgets/lobby/lobby_broadcast_dialog.dart';
 import '../widgets/lobby/mosaic_reveal_effect.dart';
 import '../widgets/lobby/portal_confirm_dialog.dart';
+import '../widgets/lobby/player_notification_overlay.dart';
 
 class LobbyDesktop extends StatefulWidget {
   const LobbyDesktop({super.key});
@@ -468,6 +469,18 @@ class _LobbyDesktopState extends State<LobbyDesktop>
                               progress: progress,
                               showTouhouDecoration: true,
                             );
+                          },
+                        ),
+                      ),
+                    ),
+                  // 玩家加入/离开通知
+                  if (state.playerNotifications.isNotEmpty)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: PlayerNotificationOverlay(
+                          notifications: state.playerNotifications,
+                          onNotificationExpire: (id) {
+                            context.read<LobbyBloc>().add(LobbyNotificationExpired(id));
                           },
                         ),
                       ),

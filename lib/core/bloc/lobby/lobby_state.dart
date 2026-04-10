@@ -17,6 +17,50 @@ enum LobbyLoadingPhase {
   loadingSnapshot,
 }
 
+/// 玩家通知类型
+enum PlayerNotificationType {
+  /// 玩家进入大厅
+  join,
+  /// 玩家离开大厅
+  leave,
+  /// 玩家传送到其他地图
+  teleport,
+}
+
+/// 玩家通知数据模型
+class PlayerNotification {
+  /// 通知唯一ID
+  final String id;
+  /// 通知类型
+  final PlayerNotificationType type;
+  /// 玩家显示名称
+  final String playerName;
+  /// 目标地图名称（传送类型使用）
+  final String? targetMapName;
+  /// 通知创建时间
+  final DateTime createdAt;
+
+  const PlayerNotification({
+    required this.id,
+    required this.type,
+    required this.playerName,
+    this.targetMapName,
+    required this.createdAt,
+  });
+
+  /// 生成描述文字
+  String get message {
+    switch (type) {
+      case PlayerNotificationType.join:
+        return '$playerName 进入了大厅';
+      case PlayerNotificationType.leave:
+        return '$playerName 离开了大厅';
+      case PlayerNotificationType.teleport:
+        return '$playerName 传送到了 ${targetMapName ?? "未知地图"}';
+    }
+  }
+}
+
 class LobbyState extends Equatable {
   final LobbyConnectionStatus connectionStatus;
   final LobbyPageStatus pageStatus;
@@ -67,6 +111,8 @@ class LobbyState extends Equatable {
   final Map<String, bool> pendingSettings;
   /// pending 状态的超时时间（key: 设置项名, value: 超时截止时间）
   final Map<String, DateTime> pendingSettingsTimeouts;
+  /// 玩家加入/离开通知列表
+  final List<PlayerNotification> playerNotifications;
 
   const LobbyState({
     required this.connectionStatus,
@@ -103,6 +149,7 @@ class LobbyState extends Equatable {
       this.pendingSettings = const {},
       this.pendingSettingsTimeouts = const {},
       this.anonymousSwitchCooldownSeconds = 0,
+      this.playerNotifications = const [],
   });
 
   factory LobbyState.initial() {
@@ -138,6 +185,7 @@ class LobbyState extends Equatable {
       pendingSettings: {},
       pendingSettingsTimeouts: {},
       anonymousSwitchCooldownSeconds: 0,
+      playerNotifications: [],
     );
   }
 
@@ -197,6 +245,7 @@ class LobbyState extends Equatable {
     Object? pendingSettings = _stateSentinel,
     Object? pendingSettingsTimeouts = _stateSentinel,
     int? anonymousSwitchCooldownSeconds,
+    Object? playerNotifications = _stateSentinel,
   }) {
     return LobbyState(
       connectionStatus: connectionStatus ?? this.connectionStatus,
@@ -263,6 +312,9 @@ class LobbyState extends Equatable {
           ? this.pendingSettingsTimeouts
           : pendingSettingsTimeouts as Map<String, DateTime>,
       anonymousSwitchCooldownSeconds: anonymousSwitchCooldownSeconds ?? this.anonymousSwitchCooldownSeconds,
+      playerNotifications: identical(playerNotifications, _stateSentinel)
+          ? this.playerNotifications
+          : playerNotifications as List<PlayerNotification>,
     );
   }
 
@@ -302,6 +354,7 @@ class LobbyState extends Equatable {
     pendingSettings,
     pendingSettingsTimeouts,
     anonymousSwitchCooldownSeconds,
+    playerNotifications,
   ];
 }
 
