@@ -1263,36 +1263,39 @@ class _ServersDesktopState extends State<ServersDesktop> {
     final showSkeleton = server.isLoading && server.serverData == null;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // 构建卡片内容
+    final Widget cardContent = showSkeleton
+        ? const ServerCardSkeleton()
+        : ServerCard(
+            key: ValueKey('card_${server.serverItem.address}'),
+            server: server,
+            categoryName: state.selectedCategory?.modelName,
+            // 保留 hover 效果，通过长按触发拖拽
+            onTap: () => _showServerDetails(server),
+            onDelete: () {
+              final categoryName = state.selectedCategory?.modelName;
+              final address =
+                  server.serverItem.address ??
+                  server.serverItem.serverAddress;
+              if (categoryName != null && address != null) {
+                context.read<ServerBloc>().add(
+                  ServerDeleteServer(
+                    categoryName: categoryName,
+                    serverAddress: address,
+                  ),
+                );
+              }
+            },
+          );
+
     return Padding(
       key: key,
       padding: const EdgeInsets.only(bottom: 15),
-      child: showSkeleton
-          ? const ServerCardSkeleton()
-          : _ReorderableCardWrapper(
-              index: index,
-              isDark: isDark,
-              child: ServerCard(
-                key: ValueKey('card_${server.serverItem.address}'),
-                server: server,
-                categoryName: state.selectedCategory?.modelName,
-                disableHoverEffect: true, // 排序模式下禁用悬浮效果
-                onTap: () => _showServerDetails(server),
-                onDelete: () {
-                  final categoryName = state.selectedCategory?.modelName;
-                  final address =
-                      server.serverItem.address ??
-                      server.serverItem.serverAddress;
-                  if (categoryName != null && address != null) {
-                    context.read<ServerBloc>().add(
-                      ServerDeleteServer(
-                        categoryName: categoryName,
-                        serverAddress: address,
-                      ),
-                    );
-                  }
-                },
-              ),
-            ),
+      // 使用自定义长按监听器，长按 500ms 后触发拖拽
+      child: _LongPressDraggableWrapper(
+        index: index,
+        child: cardContent,
+      ),
     );
   }
 
@@ -1859,25 +1862,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
   }
 }
 
-/// 可拖拽卡片包装器 - 支持整体长按拖拽和 hover 提示
-class _ReorderableCardWrapper extends StatefulWidget {
-  final int index;
-  final bool isDark;
-  final Widget child;
-
-  const _ReorderableCardWrapper({
-    required this.index,
-    required this.isDark,
-    required this.child,
-  });
-
-  @override
-  State<_ReorderableCardWrapper> createState() =>
-      _ReorderableCardWrapperState();
-}
-
-class _ReorderableCardWrapperState extends State<_ReorderableCardWrapper> {
-  bool _isHovered = false;
+/// 服务器设置对话框
+class _ServerSettingsDialog extends StatelessWidget {
+  const _ServerSettingsDialog();
 
   @override
   Widget build(BuildContext context) {
@@ -1949,6 +1936,87 @@ class _ReorderableCardWrapperState extends State<_ReorderableCardWrapper> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 自定义长按拖拽包装器 - 长按触发拖拽，不影响 hover
+///
+/// 使用 ReorderableDelayedDragStartListener 作为核心，长按后触发拖拽
+/// 同时播放视觉反馈动画（按下即显示，长按过程中持续）
+class _LongPressDraggableWrapper extends StatefulWidget {
+  final int index;
+  final Widget child;
+
+  const _LongPressDraggableWrapper({
+    required this.index,
+    required this.child,
+  });
+
+  @override
+  State<_LongPressDraggableWrapper> createState() => _LongPressDraggableWrapperState();
+}
+
+class _LongPressDraggableWrapperState extends State<_LongPressDraggableWrapper> {
+  // 是否正在长按（按下但未松开）
+  bool _isLongPressing = false;
+
+  // 开始长按
+  void _onPointerDown(PointerDownEvent event) {
+    if (event.buttons != 1) return;
+    _isLongPressing = true;
+    setState(() {});
+  }
+
+  // 结束长按
+  void _onPointerUp(PointerUpEvent event) {
+    _isLongPressing = false;
+    setState(() {});
+  }
+
+  // 取消长按
+  void _onPointerCancel(PointerCancelEvent event) {
+    _isLongPressing = false;
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      onPointerDown: _onPointerDown,
+      onPointerUp: _onPointerUp,
+      onPointerCancel: _onPointerCancel,
+      child: ReorderableDelayedDragStartListener(
+        index: widget.index,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 100),
+          curve: Curves.easeOut,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: _isLongPressing
+                ? Border.all(
+                    color: const Color(0xFF0080FF),
+                    width: 2,
+                  )
+                : null,
+            boxShadow: _isLongPressing
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF0080FF).withValues(alpha: 0.5),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ]
+                : null,
+          ),
+          child: AnimatedScale(
+            scale: _isLongPressing ? 1.02 : 1.0,
+            duration: const Duration(milliseconds: 100),
+            curve: Curves.easeOut,
+            child: widget.child,
+          ),
         ),
       ),
     );
