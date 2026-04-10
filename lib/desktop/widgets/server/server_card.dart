@@ -28,7 +28,6 @@ class ServerCard extends StatefulWidget {
   final String? categoryName; // 分类名称
   final VoidCallback? onTap;
   final VoidCallback? onDelete; // 删除回调（仅自定义服务器）
-  final bool disableHoverEffect; // 是否禁用悬浮效果（排序模式时用）
 
   const ServerCard({
     super.key,
@@ -36,7 +35,6 @@ class ServerCard extends StatefulWidget {
     this.categoryName,
     this.onTap,
     this.onDelete,
-    this.disableHoverEffect = false,
   });
 
   @override
@@ -242,9 +240,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   /// 处理卡片hover状态变化
   void _onCardHoverChanged(bool isHovered) {
     if (!mounted) return;
-
-    // 如果禁用了悬浮效果（排序模式），不响应 hover
-    if (widget.disableHoverEffect) return;
 
     if (_isHovered != isHovered) {
       setState(() => _isHovered = isHovered);
