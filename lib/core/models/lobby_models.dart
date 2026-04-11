@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
+import '../services/lobby_asset_cache_service.dart';
+
 /// 大厅角色朝向
 enum LobbyFacing { down, up, left, right }
 
@@ -533,10 +535,33 @@ class LobbyAssets extends Equatable {
   bool get isReady => (mapConfig != null || maps.isNotEmpty) && sprites.isNotEmpty;
 
   /// 根据 mapId 获取地图配置
+  ///
+  /// 返回的地图配置使用稳定的 backgroundUrl（从缓存获取，去掉鉴权参数）
+  /// 确保后续查询缓存时 URL 能正确匹配
   LobbyMapConfig? getMapById(String mapId) {
-    return maps.cast<LobbyMapConfig?>().firstWhere(
+    final map = maps.cast<LobbyMapConfig?>().firstWhere(
       (m) => m?.mapId == mapId,
       orElse: () => null,
+    );
+    if (map == null) return null;
+
+    // 使用 LobbyAssetCacheService 获取稳定的 URL（直接取缓存，不做比较）
+    final stableBackgroundUrl = LobbyAssetCacheService.instance.getBackgroundUrlByMapId(mapId);
+
+    // 如果缓存中没有稳定的 URL，使用原始 URL
+    if (stableBackgroundUrl == null || stableBackgroundUrl.isEmpty) {
+      return map;
+    }
+
+    // 返回使用稳定 URL 的地图配置
+    return LobbyMapConfig(
+      mapId: map.mapId,
+      displayName: map.displayName,
+      backgroundUrl: stableBackgroundUrl,
+      width: map.width,
+      height: map.height,
+      walkableAreas: map.walkableAreas,
+      portals: map.portals,
     );
   }
 

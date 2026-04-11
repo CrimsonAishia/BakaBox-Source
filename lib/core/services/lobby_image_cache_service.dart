@@ -348,29 +348,6 @@ class LobbyImageCacheService {
     }
   }
 
-  /// 清除指定 URL 的缓存
-  Future<void> clearCache(String url) async {
-    if (url.isEmpty) return;
-
-    // 清除内存缓存
-    _memoryCache.remove(url);
-
-    // 清除磁盘缓存
-    final fileName = _diskMapping[url];
-    if (fileName != null) {
-      try {
-        final file = File('${_getCacheDir()}${'/'}$fileName'.replaceAll('/', Platform.pathSeparator));
-        if (await file.exists()) {
-          await file.delete();
-        }
-      } catch (e) {
-        LogService.e('[LobbyImageCache] 删除磁盘缓存失败: $url', e);
-      }
-      _diskMapping.remove(url);
-      await _saveDiskMapping();
-    }
-  }
-
   /// 清除所有图片缓存
   Future<void> clearAll() async {
     // 清除内存缓存

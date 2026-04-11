@@ -108,12 +108,6 @@ class LobbyMapLoaderService {
     return state != null && state.isReady;
   }
 
-  /// 检查地图是否正在加载
-  bool isMapLoading(String mapId) {
-    final state = _stateCache[mapId];
-    return state != null && state.isLoading;
-  }
-
   /// 预加载地图
   ///
   /// 如果地图已在加载中或已加载，跳过。
@@ -128,7 +122,7 @@ class LobbyMapLoaderService {
     }
 
     // 如果正在加载，等待完成
-    if (isMapLoading(mapId) || _loadingMaps.contains(mapId)) {
+    if (_loadingMaps.contains(mapId)) {
       LogService.d('[LobbyMapLoader] 地图正在加载中: $mapId，等待完成');
       return await waitForMapReady(mapId).then((_) => true).timeout(
         _mapLoadTimeout,
@@ -254,13 +248,6 @@ class LobbyMapLoaderService {
     } catch (e) {
       LogService.e('[LobbyMapLoader] 等待地图加载异常: $mapId', e);
       return false;
-    }
-  }
-
-  /// 预加载多个地图
-  Future<void> preloadMaps(List<LobbyMapConfig> maps) async {
-    for (final map in maps) {
-      await preloadMap(map);
     }
   }
 
