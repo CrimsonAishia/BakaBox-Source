@@ -506,7 +506,7 @@ class LobbyPageInfo extends Equatable {
   });
 
   /// 是否还有更多页面
-  bool get hasMore => currentPage < totalPages - 1;
+  bool get hasMore => totalPages > 0 && currentPage < totalPages - 1;
 
   /// 是否需要分页（总用户数超过一页大小）
   bool get needsPagination => totalUsers > pageSize;

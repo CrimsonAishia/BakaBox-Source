@@ -302,12 +302,6 @@ class _LobbyDesktopState extends State<LobbyDesktop>
           }
         }
 
-        if (_chatController.text != state.chatDraft) {
-          _chatController.value = TextEditingValue(
-            text: state.chatDraft,
-            selection: TextSelection.collapsed(offset: state.chatDraft.length),
-          );
-        }
         if (state.isChatActive) {
           _chatFocusNode.requestFocus();
         } else {

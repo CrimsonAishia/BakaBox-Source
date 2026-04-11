@@ -65,147 +65,167 @@ class _LobbyBroadcastDialogState extends State<LobbyBroadcastDialog> {
         ? Colors.white.withValues(alpha: 0.4)
         : const Color(0xFF94A3B8);
 
-    return GestureDetector(
-      onTap: _onCancel,
-      child: Container(
-        color: Colors.black54,
-        child: Center(
-          child: GestureDetector(
-            onTap: () {},
-            child: Container(
-              width: 400,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 20,
-                    spreadRadius: 5,
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 标题
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.campaign,
-                          color: Colors.white,
-                          size: 24,
-                        ),
+    return BlocBuilder<LobbyBloc, LobbyState>(
+      buildWhen: (previous, current) =>
+          previous.broadcastCooldownSeconds != current.broadcastCooldownSeconds,
+      builder: (context, state) {
+        final isInCooldown = state.broadcastCooldownSeconds > 0;
+        final canSubmit = !isInCooldown && _controller.text.trim().isNotEmpty;
+
+        return GestureDetector(
+          onTap: _onCancel,
+          child: Container(
+            color: Colors.black54,
+            child: Center(
+              child: GestureDetector(
+                onTap: () {},
+                child: Container(
+                  width: 400,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 20,
+                        spreadRadius: 5,
                       ),
-                      const SizedBox(width: 12),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 标题
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.campaign,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            '全服广播',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
                       Text(
-                        '全服广播',
+                        isInCooldown
+                            ? '冷却中，请 ${state.broadcastCooldownSeconds} 秒后再试'
+                            : '发送的消息将广播给房间内所有在线玩家',
                         style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: textColor,
+                          fontSize: 13,
+                          color: isInCooldown
+                              ? const Color(0xFFEF4444)
+                              : secondaryTextColor,
                         ),
+                      ),
+                      const SizedBox(height: 20),
+                      // 输入框
+                      Container(
+                        decoration: BoxDecoration(
+                          color: inputBackgroundColor,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: inputBorderColor,
+                          ),
+                        ),
+                        child: TextField(
+                          controller: _controller,
+                          focusNode: _focusNode,
+                          maxLength: _maxLength,
+                          maxLines: 3,
+                          enabled: !isInCooldown,
+                          style: TextStyle(
+                            color: inputTextColor,
+                            fontSize: 15,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: isInCooldown
+                                ? '冷却中...'
+                                : '输入广播内容...',
+                            hintStyle: TextStyle(
+                              color: inputHintTextColor,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.all(16),
+                            counterStyle: TextStyle(
+                              color: inputCounterTextColor,
+                            ),
+                          ),
+                          onChanged: (_) => setState(() {}),
+                          onSubmitted: (_) => _onSubmit(),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // 按钮
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: _onCancel,
+                            style: TextButton.styleFrom(
+                              foregroundColor: secondaryTextColor,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                            ),
+                            child: const Text('取消'),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton(
+                            onPressed: canSubmit ? _onSubmit : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF6366F1),
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: isDark
+                                  ? Colors.white.withValues(alpha: 0.1)
+                                  : const Color(0xFFE2E8F0),
+                              disabledForegroundColor: isDark
+                                  ? Colors.white.withValues(alpha: 0.3)
+                                  : const Color(0xFF94A3B8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: Text(
+                              isInCooldown
+                                  ? '${state.broadcastCooldownSeconds}s 后可发送'
+                                  : '发送广播',
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '发送的消息将广播给房间内所有在线玩家',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: secondaryTextColor,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  // 输入框
-                  Container(
-                    decoration: BoxDecoration(
-                      color: inputBackgroundColor,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: inputBorderColor,
-                      ),
-                    ),
-                    child: TextField(
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      maxLength: _maxLength,
-                      maxLines: 3,
-                      style: TextStyle(
-                        color: inputTextColor,
-                        fontSize: 15,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: '输入广播内容...',
-                        hintStyle: TextStyle(
-                          color: inputHintTextColor,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.all(16),
-                        counterStyle: TextStyle(
-                          color: inputCounterTextColor,
-                        ),
-                      ),
-                      onChanged: (_) => setState(() {}),
-                      onSubmitted: (_) => _onSubmit(),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  // 按钮
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: _onCancel,
-                        style: TextButton.styleFrom(
-                          foregroundColor: secondaryTextColor,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
-                        ),
-                        child: const Text('取消'),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: _controller.text.trim().isNotEmpty ? _onSubmit : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6366F1),
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: isDark
-                              ? Colors.white.withValues(alpha: 0.1)
-                              : const Color(0xFFE2E8F0),
-                          disabledForegroundColor: isDark
-                              ? Colors.white.withValues(alpha: 0.3)
-                              : const Color(0xFF94A3B8),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text('发送广播'),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
