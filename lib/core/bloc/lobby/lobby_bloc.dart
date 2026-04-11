@@ -88,8 +88,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   static const Duration _moveDebounceInterval = Duration(milliseconds: 250);
   /// 聊天冷却时间（秒）
   static const int _chatCooldownDuration = 1;
-  /// 广播冷却时间（秒）
-  static const int _broadcastCooldownDuration = 300;
   /// 匿名切换冷却时间（秒）
   static const int _anonymousSwitchCooldownDuration = 3;
 
@@ -914,8 +912,19 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           ));
         } else {
           // force=false：降级为匿名用户，刷新数据
+          // 取消所有冷却计时器，保持状态干净
+          _chatCooldownTimer?.cancel();
+          _chatCooldownTimer = null;
+          _broadcastCooldownTimer?.cancel();
+          _broadcastCooldownTimer = null;
+          _anonymousSwitchCooldownTimer?.cancel();
+          _anonymousSwitchCooldownTimer = null;
+
           emit(state.copyWith(
             chatDraft: '', // 退出登录后清空聊天草稿
+            chatCooldownSeconds: 0,
+            broadcastCooldownSeconds: 0,
+            anonymousSwitchCooldownSeconds: 0,
             transientNotice: '已退出登录，保持匿名身份',
           ));
           if (_isLobbyEntered) {
@@ -1285,8 +1294,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         break;
       case 'chat.reject':
         // 获取最近一次发送的消息内容用于恢复
-        final lastPendingContent = state.pendingMessages.isNotEmpty
-            ? state.pendingMessages.values.last
+        // 使用 lastKey 获取插入顺序最后的消息
+        final lastKey = state.pendingMessages.isNotEmpty
+            ? state.pendingMessages.keys.last
+            : null;
+        final lastPendingContent = lastKey != null
+            ? state.pendingMessages[lastKey]
             : null;
 
         emit(
@@ -1298,7 +1311,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             chatDraft: lastPendingContent ?? state.chatDraft,
           ),
         );
-        // 自动触发重发（延迟 1 秒后）
         // 注意：这里不重发，因为不知道具体哪条被拒绝
         break;
       case 'profile.sprite.changed':
@@ -1357,15 +1369,19 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         // 匿名设置被拒绝，回退状态
         LogService.d('[LobbyBloc] 收到 profile.anonymous.change.reject: payload=${event.event.payload}');
         final updatedPending = Map<String, bool>.from(state.pendingSettings);
-        updatedPending.remove('anonymous');
+        final pendingValue = updatedPending.remove('anonymous');
         final updatedTimeouts = Map<String, DateTime>.from(state.pendingSettingsTimeouts);
         updatedTimeouts.remove('anonymous');
 
         final reason = event.event.payload['reason']?.toString() ?? '匿名模式设置失败';
+
+        // 从 pending 设置中获取被拒绝的操作值，回退到之前的值
+        // 例如：pending=true 表示尝试开启匿名被拒绝，则回退到 false
+        final revertedValue = pendingValue != null ? !pendingValue : state.isAnonymous;
         emit(state.copyWith(
-          isAnonymous: !state.isAnonymous,
+          isAnonymous: revertedValue,
           users: state.users
-              .map((user) => user.isSelf ? user.copyWith(isAnonymous: !state.isAnonymous) : user)
+              .map((user) => user.isSelf ? user.copyWith(isAnonymous: revertedValue) : user)
               .toList(growable: false),
           pendingSettings: updatedPending,
           pendingSettingsTimeouts: updatedTimeouts,
@@ -1496,36 +1512,44 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         final inCooldown = event.event.payload['inCooldown'] == true;
         final remainingMs = event.event.payload['remainingMs'] as int? ?? 0;
         if (inCooldown && remainingMs > 0) {
+          // 取消旧的冷却倒计时
+          _broadcastCooldownTimer?.cancel();
           // 服务器返回冷却中，设置剩余秒数并启动倒计时
           final remainingSeconds = (remainingMs / 1000).ceil();
           emit(state.copyWith(broadcastCooldownSeconds: remainingSeconds));
-          _broadcastCooldownTimer?.cancel();
           _broadcastCooldownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
             add(const _LobbyBroadcastCooldownTick());
           });
         } else {
           // 不在冷却中
+          _broadcastCooldownTimer?.cancel();
+          _broadcastCooldownTimer = null;
           emit(state.copyWith(broadcastCooldownSeconds: 0));
         }
         break;
       case 'broadcast.reject':
+        // 取消可能正在运行的冷却倒计时
+        _broadcastCooldownTimer?.cancel();
+        _broadcastCooldownTimer = null;
+
         final reason = event.event.payload['reason']?.toString() ?? '广播发送失败';
         final remainingMs = event.event.payload['remainingMs'] as int?;
 
-        // 如果服务器返回了剩余冷却时间，同步更新冷却状态
+        // 如果服务器返回了剩余冷却时间，设置冷却状态并启动倒计时
         if (remainingMs != null && remainingMs > 0) {
           final remainingSeconds = (remainingMs / 1000).ceil();
           emit(state.copyWith(
             transientNotice: reason,
             broadcastCooldownSeconds: remainingSeconds,
           ));
-          // 启动冷却倒计时
-          _broadcastCooldownTimer?.cancel();
           _broadcastCooldownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
             add(const _LobbyBroadcastCooldownTick());
           });
         } else {
-          emit(state.copyWith(transientNotice: reason));
+          emit(state.copyWith(
+            transientNotice: reason,
+            broadcastCooldownSeconds: 0,
+          ));
         }
         break;
       case 'online.count':
@@ -2298,23 +2322,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     // 关闭弹窗
     emit(state.copyWith(isBroadcastDialogOpen: false));
 
-    // 设置冷却状态
-    emit(state.copyWith(broadcastCooldownSeconds: _broadcastCooldownDuration));
-
     // 发送广播
     await _service.sendBroadcast(content);
-
-    // 启动冷却倒计时（只有在冷却时间大于0时才启动）
-    if (_broadcastCooldownDuration > 0) {
-      _startBroadcastCooldownTimer();
-    }
-  }
-
-  void _startBroadcastCooldownTimer() {
-    _broadcastCooldownTimer?.cancel();
-    _broadcastCooldownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      add(const _LobbyBroadcastCooldownTick());
-    });
   }
 
   void _onBroadcastCooldownTick(

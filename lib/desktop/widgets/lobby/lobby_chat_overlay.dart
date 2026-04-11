@@ -6,7 +6,7 @@ import '../../../core/bloc/lobby/lobby_bloc.dart';
 import '../../../core/models/lobby_models.dart';
 
 /// 大厅聊天输入覆盖层
-class LobbyChatOverlay extends StatelessWidget {
+class LobbyChatOverlay extends StatefulWidget {
   final LobbyState state;
   final TextEditingController controller;
   final FocusNode focusNode;
@@ -17,6 +17,40 @@ class LobbyChatOverlay extends StatelessWidget {
     required this.controller,
     required this.focusNode,
   });
+
+  @override
+  State<LobbyChatOverlay> createState() => _LobbyChatOverlayState();
+}
+
+class _LobbyChatOverlayState extends State<LobbyChatOverlay> {
+  /// 上一次同步时的 chatDraft 值，用于检测外部变化
+  String? _lastSyncedDraft;
+
+  @override
+  void initState() {
+    super.initState();
+    _lastSyncedDraft = widget.state.chatDraft;
+    widget.controller.text = widget.state.chatDraft;
+  }
+
+  @override
+  void didUpdateWidget(LobbyChatOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 当 chatDraft 在外部被更新（如 chat.reject 恢复草稿）且与 controller 文本不一致时，同步到 controller
+    // 不覆盖用户正在编辑的内容：只有当 controller 文本和当前 chatDraft 相同时才同步
+    // 这样可以避免覆盖用户正在输入的内容
+    if (widget.state.chatDraft != _lastSyncedDraft) {
+      final controllerText = widget.controller.text;
+      // 只有当 controller 内容与旧草稿一致（用户没有编辑）或为空时才同步
+      if (controllerText == _lastSyncedDraft || controllerText.isEmpty) {
+        widget.controller.text = widget.state.chatDraft;
+        widget.controller.selection = TextSelection.collapsed(
+          offset: widget.state.chatDraft.length,
+        );
+      }
+      _lastSyncedDraft = widget.state.chatDraft;
+    }
+  }
 
   static final DateFormat _timeFormat = DateFormat('HH:mm');
   static final DateFormat _dateTimeFormat = DateFormat('MM-dd HH:mm');
@@ -33,8 +67,8 @@ class LobbyChatOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final recentMessages = state.messages.reversed.take(50).toList(growable: false);
-    final isChatActive = state.isChatActive;
+    final recentMessages = widget.state.messages.reversed.take(50).toList(growable: false);
+    final isChatActive = widget.state.isChatActive;
 
     return SizedBox(
       width: 360,
@@ -45,7 +79,7 @@ class LobbyChatOverlay extends StatelessWidget {
         decoration: BoxDecoration(
           color: isChatActive
               ? Colors.black.withValues(
-                  alpha: (state.chatOpacity + 0.18).clamp(0.0, 0.8),
+                  alpha: (widget.state.chatOpacity + 0.18).clamp(0.0, 0.8),
                 )
               : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
@@ -134,18 +168,18 @@ class LobbyChatOverlay extends StatelessWidget {
               Stack(
                 children: [
                   TextField(
-                    controller: controller,
-                    focusNode: focusNode,
+                    controller: widget.controller,
+                    focusNode: widget.focusNode,
                     style: const TextStyle(color: Colors.white),
                     maxLength: 50,
-                    readOnly: state.selfUser?.isAnonymous ?? false,
-                    enabled: state.chatCooldownSeconds <= 0,
+                    readOnly: widget.state.selfUser?.isAnonymous ?? false,
+                    enabled: widget.state.chatCooldownSeconds <= 0,
                     decoration: InputDecoration(
                       counterText: '',
-                      hintText: state.selfUser?.isAnonymous ?? false
+                      hintText: widget.state.selfUser?.isAnonymous ?? false
                           ? '登录后即可参与聊天'
-                          : state.chatCooldownSeconds > 0
-                              ? '${state.chatCooldownSeconds}秒后可发送'
+                          : widget.state.chatCooldownSeconds > 0
+                              ? '${widget.state.chatCooldownSeconds}秒后可发送'
                               : '输入消息',
                       hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
                       filled: true,
@@ -173,7 +207,7 @@ class LobbyChatOverlay extends StatelessWidget {
                         context.read<LobbyBloc>().add(const LobbyChatSubmitted()),
                   ),
                   // 冷却动画覆盖层
-                  if (state.chatCooldownSeconds > 0)
+                  if (widget.state.chatCooldownSeconds > 0)
                     Positioned.fill(
                       child: IgnorePointer(
                         child: AnimatedOpacity(
@@ -185,7 +219,7 @@ class LobbyChatOverlay extends StatelessWidget {
                               color: Colors.black.withValues(alpha: 0.3),
                             ),
                             child: Center(
-                              child: _CooldownIndicator(seconds: state.chatCooldownSeconds),
+                              child: _CooldownIndicator(seconds: widget.state.chatCooldownSeconds),
                             ),
                           ),
                         ),
