@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1116,36 +1117,89 @@ class _PlayerAvatar extends StatelessWidget {
 }
 
 /// 地图预览组件
-class _MosaicMapPreview extends StatelessWidget {
+class _MosaicMapPreview extends StatefulWidget {
   final LobbyMapConfig mapConfig;
 
   const _MosaicMapPreview({required this.mapConfig});
 
   @override
+  State<_MosaicMapPreview> createState() => _MosaicMapPreviewState();
+}
+
+class _MosaicMapPreviewState extends State<_MosaicMapPreview> {
+  bool _imageLoaded = false;
+  bool _hasError = false;
+  Uint8List? _cachedImageBytes;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFromCache();
+  }
+
+  @override
+  void didUpdateWidget(_MosaicMapPreview oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.mapConfig.backgroundUrl != widget.mapConfig.backgroundUrl) {
+      _imageLoaded = false;
+      _hasError = false;
+      _cachedImageBytes = null;
+      _loadFromCache();
+    }
+  }
+
+  Future<void> _loadFromCache() async {
+    if (widget.mapConfig.backgroundUrl == null || widget.mapConfig.backgroundUrl!.isEmpty) {
+      return;
+    }
+
+    try {
+      // 直接从 LobbyImageCacheService 获取已缓存的图片数据
+      // 这样可以确保使用已经下载好的图片，而不是重新下载
+      final bytes = await LobbyImageCacheService.instance.getImage(widget.mapConfig.backgroundUrl!);
+
+      if (bytes != null && mounted) {
+        setState(() {
+          _cachedImageBytes = bytes;
+          _imageLoaded = true;
+        });
+        LogService.d('[MosaicMapPreview] 从 LobbyImageCacheService 加载图片成功');
+      } else if (mounted) {
+        // 缓存中没有，尝试用 Image.network 加载
+        setState(() {
+          _hasError = true;
+        });
+      }
+    } catch (e) {
+      LogService.w('[MosaicMapPreview] 从缓存加载图片失败: $e');
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Image.network(
-      mapConfig.backgroundUrl!,
+    if (_hasError) {
+      return _MosaicPlaceholderBackground(mapName: widget.mapConfig.displayName);
+    }
+
+    // 如果还没有加载完，先显示占位背景
+    if (!_imageLoaded || _cachedImageBytes == null) {
+      return _MosaicPlaceholderBackground(mapName: widget.mapConfig.displayName);
+    }
+
+    // 使用 MemoryImage 从已缓存的字节数据加载图片
+    return Image.memory(
+      _cachedImageBytes!,
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-        return Container(
-          color: const Color(0xFF1A1F2E),
-          child: Center(
-            child: CircularProgressIndicator(
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded /
-                        loadingProgress.expectedTotalBytes!
-                  : null,
-              strokeWidth: 2,
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.cyan),
-            ),
-          ),
-        );
-      },
       errorBuilder: (context, error, stackTrace) {
-        return _MosaicPlaceholderBackground(mapName: mapConfig.displayName);
+        LogService.w('[MosaicMapPreview] Image.memory 加载失败: $error');
+        return _MosaicPlaceholderBackground(mapName: widget.mapConfig.displayName);
       },
     );
   }
