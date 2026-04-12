@@ -507,7 +507,7 @@ class _SettingsSwitchTile extends StatelessWidget {
                     child: Switch(
                       value: value,
                       onChanged: onChanged,
-                      activeColor: isLocked ? Colors.white70 : Colors.white,
+                      activeThumbColor: isLocked ? Colors.white70 : Colors.white,
                       activeTrackColor: isLocked
                           ? Colors.white.withValues(alpha: 0.2)
                           : const Color(0xFF22C55E),
