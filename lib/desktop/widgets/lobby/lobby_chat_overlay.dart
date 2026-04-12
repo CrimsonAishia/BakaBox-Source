@@ -30,23 +30,32 @@ class _LobbyChatOverlayState extends State<LobbyChatOverlay> {
   void initState() {
     super.initState();
     _lastSyncedDraft = widget.state.chatDraft;
-    widget.controller.text = widget.state.chatDraft;
+    // 延迟到构建完成后再设置 controller 文本，避免在 build 阶段触发 notifyListeners
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.controller.text != widget.state.chatDraft) {
+        widget.controller.text = widget.state.chatDraft;
+      }
+    });
   }
 
   @override
   void didUpdateWidget(LobbyChatOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
     // 当 chatDraft 在外部被更新（如 chat.reject 恢复草稿）且与 controller 文本不一致时，同步到 controller
-    // 不覆盖用户正在编辑的内容：只有当 controller 文本和当前 chatDraft 相同时才同步
-    // 这样可以避免覆盖用户正在输入的内容
     if (widget.state.chatDraft != _lastSyncedDraft) {
       final controllerText = widget.controller.text;
       // 只有当 controller 内容与旧草稿一致（用户没有编辑）或为空时才同步
       if (controllerText == _lastSyncedDraft || controllerText.isEmpty) {
-        widget.controller.text = widget.state.chatDraft;
-        widget.controller.selection = TextSelection.collapsed(
-          offset: widget.state.chatDraft.length,
-        );
+        final draft = widget.state.chatDraft;
+        // 延迟到构建完成后再设置，避免在 build 阶段触发 notifyListeners
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && widget.controller.text != draft) {
+            widget.controller.text = draft;
+            widget.controller.selection = TextSelection.collapsed(
+              offset: draft.length,
+            );
+          }
+        });
       }
       _lastSyncedDraft = widget.state.chatDraft;
     }

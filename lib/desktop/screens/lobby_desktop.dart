@@ -266,8 +266,24 @@ class _LobbyDesktopState extends State<LobbyDesktop>
     final isDark = theme.brightness == Brightness.dark;
 
     return BlocConsumer<LobbyBloc, LobbyState>(
+      // 排除 chatDraft 变化引起的 rebuild，避免输入时整棵 widget 树重建导致焦点丢失
+      buildWhen: (previous, current) =>
+          previous.chatDraft == current.chatDraft &&
+          previous.chatCooldownSeconds == current.chatCooldownSeconds ||
+          previous.isChatActive != current.isChatActive ||
+          previous.pageStatus != current.pageStatus ||
+          previous.mapConfig != current.mapConfig ||
+          previous.users != current.users ||
+          previous.messages != current.messages ||
+          previous.connectionStatus != current.connectionStatus ||
+          previous.isPlayersPanelOpen != current.isPlayersPanelOpen ||
+          previous.isSettingsPanelOpen != current.isSettingsPanelOpen ||
+          previous.isBroadcastDialogOpen != current.isBroadcastDialogOpen ||
+          previous.nearbyPortal != current.nearbyPortal ||
+          previous.isTeleporting != current.isTeleporting ||
+          previous.playerNotifications != current.playerNotifications ||
+          previous.transientNotice != current.transientNotice,
       listenWhen: (previous, current) =>
-          previous.chatDraft != current.chatDraft ||
           previous.isChatActive != current.isChatActive ||
           previous.transientNotice != current.transientNotice ||
           previous.isTeleporting != current.isTeleporting ||
@@ -282,8 +298,8 @@ class _LobbyDesktopState extends State<LobbyDesktop>
         // 处理传送状态变化
         _syncTeleportAnimation(state);
 
-        // 当页面状态变为 ready 时，请求场景焦点
-        if (state.pageStatus == LobbyPageStatus.ready) {
+        // 当页面状态变为 ready 时，请求场景焦点（但聊天激活时不抢焦点）
+        if (state.pageStatus == LobbyPageStatus.ready && !state.isChatActive) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
               _sceneFocusNode.requestFocus();
@@ -303,7 +319,9 @@ class _LobbyDesktopState extends State<LobbyDesktop>
         }
 
         if (state.isChatActive) {
-          _chatFocusNode.requestFocus();
+          if (!_chatFocusNode.hasFocus) {
+            _chatFocusNode.requestFocus();
+          }
         } else {
           _chatFocusNode.unfocus();
           // 延迟到下一帧再请求 scene 焦点，避免同一 build 周期内焦点不稳定
@@ -490,13 +508,17 @@ class _LobbyDesktopState extends State<LobbyDesktop>
                         ),
                       ),
                     // 聊天输入（放在遮罩层上面，确保能接收点击事件）
+                    // 聊天未激活时开启 IgnorePointer 允许鼠标事件穿透到游戏场景
                     Positioned(
                       left: 24,
                       bottom: 24,
-                      child: LobbyChatOverlay(
-                        state: state,
-                        controller: _chatController,
-                        focusNode: _chatFocusNode,
+                      child: IgnorePointer(
+                        ignoring: !state.isChatActive,
+                        child: LobbyChatOverlay(
+                          state: state,
+                          controller: _chatController,
+                          focusNode: _chatFocusNode,
+                        ),
                       ),
                     ),
                     // 浮动按钮
