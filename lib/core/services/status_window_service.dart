@@ -1384,34 +1384,8 @@ class StatusWindowService {
       // 发送 queueing 状态而不是终态，避免触发浮窗倒计时关闭
       _updateWindow(state: 'queueing', message: retryMessage);
 
-      // 根据失败原因调整延迟时间
-      final retryDelay = reason.contains('服务器已满')
-          ? const Duration(milliseconds: 500)
-          : reason.contains('超时')
-          ? const Duration(seconds: 1)
-          : const Duration(milliseconds: 500);
-
-      // 延迟后重新开始挤服
-      Future.delayed(retryDelay, () {
-        // 再次检查状态，确保仍然需要重试
-        if (_state.type == OperationType.queueing &&
-            _state.queueConfig.enableAutoRetry) {
-          // 重置状态标志
-          _isTriggeredConnection = false;
-          _isThreadsRunning = false;
-          _isQueueRunning = true;
-
-          _updateState(_state.copyWith(message: _Messages.queueing));
-          _updateWindow(state: 'queueing', message: _Messages.queueing);
-          _scheduleNextFetch(serverAddress);
-
-          LogService.i('[StatusWindowService] 自动重试：重新开始挤服');
-        } else {
-          LogService.w(
-            '[StatusWindowService] 自动重试取消：type=${_state.type}, enableAutoRetry=${_state.queueConfig.enableAutoRetry}',
-          );
-        }
-      });
+      // 等待游戏回到主菜单后再重试
+      _waitForMainMenuAndRetry(serverAddress);
     } else {
       // 非自动重试模式，显示终态并关闭窗口
       String windowState;
@@ -1439,6 +1413,36 @@ class StatusWindowService {
       _updateWindow(state: windowState, message: reason, autoDismissSeconds: 3);
       _scheduleClose(seconds: 3);
     }
+  }
+
+  /// 等待引擎冷却后重试
+  Future<void> _waitForMainMenuAndRetry(String serverAddress) async {
+    // 检查状态是否仍然需要重试
+    if (_state.type != OperationType.queueing ||
+        !_state.queueConfig.enableAutoRetry) {
+      LogService.w(
+        '[StatusWindowService] 重试已取消：type=${_state.type}, enableAutoRetry=${_state.queueConfig.enableAutoRetry}',
+      );
+      return;
+    }
+
+    // 重置状态标志
+    _isTriggeredConnection = false;
+    _isThreadsRunning = false;
+    _isQueueRunning = true;
+
+    _updateState(_state.copyWith(message: _Messages.queueing));
+    _updateWindow(state: 'queueing', message: _Messages.queueing);
+
+    // 服满拒载时引擎未加载重资源，1秒冷却即可安全重试
+    LogService.i('[StatusWindowService] 自动重试冷却：等待引擎就绪 (1秒)...');
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (!_isQueueRunning) return;
+
+    _scheduleNextFetch(serverAddress);
+
+    LogService.i('[StatusWindowService] 自动重试：引擎冷却完毕，开始重新挤服');
   }
 
   /// 调度下次获取
