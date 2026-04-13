@@ -30,20 +30,21 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     required LobbySprite sprite,
     required bool showNameplate,
     required bool showChatBubble,
-    required void Function(String userId, LobbyPosition arrivedPosition) onArrived,
+    required void Function(String userId, LobbyPosition arrivedPosition)
+    onArrived,
     required this.onDustEmitted,
-  })  : _user = user,
-        _sprite = sprite,
-        _currentSpriteId = user.spriteId,
-        _showNameplate = showNameplate,
-        _showChatBubble = showChatBubble,
-        _onArrived = onArrived,
-        super(
-          priority: 1,
-          // 必须与 _spriteWidth/_spriteHeight 一致，否则 anchor、翻转补偿与文字坐标会错位
-          size: Vector2(_spriteWidth, _spriteHeight),
-          anchor: Anchor.bottomCenter,
-        );
+  }) : _user = user,
+       _sprite = sprite,
+       _currentSpriteId = user.spriteId,
+       _showNameplate = showNameplate,
+       _showChatBubble = showChatBubble,
+       _onArrived = onArrived,
+       super(
+         priority: 1,
+         // 必须与 _spriteWidth/_spriteHeight 一致，否则 anchor、翻转补偿与文字坐标会错位
+         size: Vector2(_spriteWidth, _spriteHeight),
+         anchor: Anchor.bottomCenter,
+       );
 
   LobbyUser _user;
   LobbySprite _sprite;
@@ -81,8 +82,10 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   // === 移动扬尘粒子效果 ===
   /// 发射扬尘的回调（由 LobbyGame 提供，在世界空间中创建 DustCloudComponent）
   final void Function(LobbyPosition worldPosition) onDustEmitted;
+
   /// 累积移动距离（用于控制粒子发射频率）
   double _accumulatedMoveDistance = 0.0;
+
   /// 发射扬尘的距离阈值（每移动这么多像素发射一次粒子）
   static const double _dustEmitDistanceThreshold = 18.0;
 
@@ -100,22 +103,29 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   // ========== 行走节奏动画（方案一）==========
   /// 行走周期时间（累积移动时间）
   double _walkCycleTime = 0;
+
   /// 行走周期频率（Hz），约 8 次/秒的脚步节奏
   static const double _walkCycleFrequency = 8.0;
+
   /// 垂直起伏幅度（像素）
   static const double _walkBobAmplitude = 3.0;
+
   /// 水平摇摆幅度（像素）
   static const double _walkSwayAmplitude = 1.5;
+
   /// 旋转幅度（弧度）
   static const double _walkTiltAngle = 0.03;
+
   /// 行走动画振幅（用于停止时平滑衰减）
   double _walkAmplitude = 1.0;
+
   /// 停止时振幅衰减速度（每秒衰减量）
   static const double _walkAmplitudeDecaySpeed = 8.0;
 
   // 组件销毁标志，用于防止图片加载完成后访问已销毁的组件
   bool _disposed = false;
   static const double _spriteWidth = 152.0;
+
   /// 逻辑框总高度：名字 + 角色槽 + 状态行 + 底部留白（调角色大小只改 [_characterDisplayHeight]）
   static const double _spriteHeight = 180.0;
   static const double _characterDisplayHeight = 52.0; // 角色贴图显示高度（所有尺寸的基准常量）
@@ -123,6 +133,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   static const double _statusGapBelowSprite = 4.0;
   static const double _statusTextLineHeight = 14.0;
   static const double _padBottom = 6.0;
+
   /// 底部状态文字区域高度（供外部补偿点击偏移）
   static const double statusTextAreaHeight =
       _statusGapBelowSprite + _statusTextLineHeight + _padBottom;
@@ -207,7 +218,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       // 计算显示尺寸（基于第一帧）
       final frameWidth = frames.first.srcSize.x.toDouble();
       final frameHeight = frames.first.srcSize.y.toDouble();
-      _characterDisplayWidth = _characterDisplayHeight * (frameWidth / frameHeight);
+      _characterDisplayWidth =
+          _characterDisplayHeight * (frameWidth / frameHeight);
 
       // 角色身体在组件内的位置
       final charX = (_spriteWidth - _characterDisplayWidth) / 2;
@@ -253,7 +265,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       _spriteLoaded = true;
 
       // 计算图片实际宽高比，调整显示宽度（高度固定为 _characterDisplayHeight）
-      _characterDisplayWidth = _characterDisplayHeight * (imageInfo.width / imageInfo.height);
+      _characterDisplayWidth =
+          _characterDisplayHeight * (imageInfo.width / imageInfo.height);
 
       // 角色身体在组件内的位置（居中显示，与名字/状态行同一套布局）
       final charX = (_spriteWidth - _characterDisplayWidth) / 2;
@@ -283,7 +296,9 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     }
 
     // 优先从本地缓存获取
-    final cachedImage = await LobbyImageCacheService.instance.getDecodedImage(url);
+    final cachedImage = await LobbyImageCacheService.instance.getDecodedImage(
+      url,
+    );
     if (cachedImage != null) {
       debugPrint('[LobbyPlayerComponent] 从本地缓存加载角色贴图: $url');
       return cachedImage;
@@ -346,7 +361,9 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     // 检测 spriteId 变化，触发动画切换
     final spriteIdChanged = _currentSpriteId != user.spriteId;
     if (spriteIdChanged) {
-      debugPrint('[LobbyPlayerComponent] 检测到模型切换: $_currentSpriteId -> ${user.spriteId}');
+      debugPrint(
+        '[LobbyPlayerComponent] 检测到模型切换: $_currentSpriteId -> ${user.spriteId}',
+      );
       // 查找新模型的配置
       LobbySprite newSprite = _sprite;
       if (availableSprites != null) {
@@ -369,11 +386,14 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       facing: user.facing,
     );
 
-    if (prevLastMessage != user.lastMessage || prevLastMessageAt != user.lastMessageAt) {
-      debugPrint('[LobbyPlayerComponent] updateUser 消息变化: ${user.userId} '
-          'lastMessage="${user.lastMessage}" '
-          'lastMessageAt=${user.lastMessageAt} '
-          'hasVisibleMessage=${_user.hasVisibleMessage}');
+    if (prevLastMessage != user.lastMessage ||
+        prevLastMessageAt != user.lastMessageAt) {
+      debugPrint(
+        '[LobbyPlayerComponent] updateUser 消息变化: ${user.userId} '
+        'lastMessage="${user.lastMessage}" '
+        'lastMessageAt=${user.lastMessageAt} '
+        'hasVisibleMessage=${_user.hasVisibleMessage}',
+      );
       // 新消息触发弹跳动画
       if (_user.hasVisibleMessage) {
         _bubbleJustAppeared = true;
@@ -399,7 +419,9 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         // 空闲状态：若服务器朝向与当前不一致，触发动画切换
         if (_flipState != targetFacing) {
           final dir = _flipState == FlipState.idleLeft ? '右边' : '左边';
-          debugPrint('[LobbyPlayerComponent] 服务器朝向变化，开始转向$dir: ${_user.userId}');
+          debugPrint(
+            '[LobbyPlayerComponent] 服务器朝向变化，开始转向$dir: ${_user.userId}',
+          );
           _flipState = (targetFacing == FlipState.idleRight)
               ? FlipState.turningToRight
               : FlipState.turningToLeft;
@@ -427,7 +449,10 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     // 如果正在切换中，将请求排队
     if (_spriteSwitchState != SpriteSwitchState.idle) {
       debugPrint('[LobbyPlayerComponent] 模型切换中，排入队列: $newSpriteId');
-      _queuedSpriteSwitch = _PendingSpriteSwitch(spriteId: newSpriteId, sprite: newSprite);
+      _queuedSpriteSwitch = _PendingSpriteSwitch(
+        spriteId: newSpriteId,
+        sprite: newSprite,
+      );
       return;
     }
 
@@ -456,12 +481,14 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     final currentCenterX = _currentRenderPosition.x;
     final targetCenterX = _targetPosition!.x;
 
-    if (_flipState == FlipState.idleLeft || _flipState == FlipState.turningToLeft) {
+    if (_flipState == FlipState.idleLeft ||
+        _flipState == FlipState.turningToLeft) {
       // 当前朝左时：目标在右侧就转向右
       if (targetCenterX > currentCenterX + 1.0) {
         _flipState = FlipState.turningToRight;
       }
-    } else if (_flipState == FlipState.idleRight || _flipState == FlipState.turningToRight) {
+    } else if (_flipState == FlipState.idleRight ||
+        _flipState == FlipState.turningToRight) {
       // 当前朝右时：目标在左侧就转向左
       if (targetCenterX < currentCenterX - 1.0) {
         _flipState = FlipState.turningToLeft;
@@ -477,7 +504,9 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       _accumulatedMoveDistance = 0.0;
       // 不再清空 statusText，让它保持 BLoC 中的值（由 GameStatusService 驱动）
       _user = _user.copyWith(isMoving: false);
-      debugPrint('[LobbyPlayerComponent] 到达目标: ${_user.userId} isMoving=${_user.isMoving} statusText=${_user.statusText}');
+      debugPrint(
+        '[LobbyPlayerComponent] 到达目标: ${_user.userId} isMoving=${_user.isMoving} statusText=${_user.statusText}',
+      );
       // 通知 LobbyGame 更新 Bloc 状态，避免其他角色误判为仍在移动
       _onArrived(_user.userId, arrivedPosition);
     } else {
@@ -517,7 +546,9 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
   /// 应用当前翻转状态到 scale
   void _applyScale() {
-    _flipValue = (_flipState == FlipState.idleRight || _flipState == FlipState.turningToRight)
+    _flipValue =
+        (_flipState == FlipState.idleRight ||
+            _flipState == FlipState.turningToRight)
         ? 1.0
         : 0.0;
     scale = Vector2(1.0 - 2.0 * _flipValue, 1.0);
@@ -541,12 +572,13 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   bool containsLocalPoint(Vector2 point) {
     // 设置合理的点击和悬停判定区域（以角色为中心的垂直矩形，包含名字和状态区域）
     final cx = _spriteWidth / 2;
-    final halfWidth = math.max(_actualCharWidth, _characterDisplayWidth) / 2 + 16.0; 
-    
+    final halfWidth =
+        math.max(_actualCharWidth, _characterDisplayWidth) / 2 + 16.0;
+
     if (point.x < cx - halfWidth || point.x > cx + halfWidth) return false;
     // 从名字区域（大概是 SlotTopY - 40）到脚底信息区域
     if (point.y < _characterSlotTopY - 40 || point.y > size.y) return false;
-    
+
     return true;
   }
 
@@ -581,7 +613,10 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       _walkCycleTime += dt * _walkCycleFrequency;
 
       // 移动时振幅快速恢复到 1.0
-      _walkAmplitude = (_walkAmplitude + dt * _walkAmplitudeDecaySpeed).clamp(0.0, 1.0);
+      _walkAmplitude = (_walkAmplitude + dt * _walkAmplitudeDecaySpeed).clamp(
+        0.0,
+        1.0,
+      );
     } else {
       // 停止时振幅衰减
       if (_walkAmplitude > 0) {
@@ -611,7 +646,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     final bobOffset = math.sin(phase) * _walkBobAmplitude * _walkAmplitude;
 
     // 水平摇摆：身体左右微摆（半周期，乘以振幅衰减）
-    final swayOffset = math.cos(phase * 0.5) * _walkSwayAmplitude * _walkAmplitude;
+    final swayOffset =
+        math.cos(phase * 0.5) * _walkSwayAmplitude * _walkAmplitude;
 
     // 轻微倾斜：模拟身体重心的左右转移（乘以振幅衰减）
     final tiltAngle = math.sin(phase) * _walkTiltAngle * _walkAmplitude;
@@ -621,7 +657,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       final baseY = _characterSlotTopY;
       _animComponent!.position.y = baseY - bobOffset;
       _animComponent!.angle = tiltAngle;
-      _animComponent!.position.x = (_spriteWidth - _characterDisplayWidth) / 2 + swayOffset;
+      _animComponent!.position.x =
+          (_spriteWidth - _characterDisplayWidth) / 2 + swayOffset;
     }
 
     // 应用到精灵图组件（静态）
@@ -629,7 +666,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       final baseY = _characterSlotTopY;
       _spriteComponent!.position.y = baseY - bobOffset;
       _spriteComponent!.angle = tiltAngle;
-      _spriteComponent!.position.x = (_spriteWidth - _characterDisplayWidth) / 2 + swayOffset;
+      _spriteComponent!.position.x =
+          (_spriteWidth - _characterDisplayWidth) / 2 + swayOffset;
     }
   }
 
@@ -658,7 +696,10 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     if (hasVisibleMessage) {
       // 有消息时，透明度快速恢复到 1.0
       if (_bubbleOpacity < 1.0) {
-        _bubbleOpacity = (_bubbleOpacity + _bubbleFadeSpeed * 2 * dt).clamp(0.0, 1.0);
+        _bubbleOpacity = (_bubbleOpacity + _bubbleFadeSpeed * 2 * dt).clamp(
+          0.0,
+          1.0,
+        );
       }
 
       // 弹入动画：使用弹簧效果回到 1.0
@@ -672,7 +713,10 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     } else {
       // 没有消息时，逐渐淡出
       if (_bubbleOpacity > 0.0) {
-        _bubbleOpacity = (_bubbleOpacity - _bubbleFadeSpeed * dt).clamp(0.0, 1.0);
+        _bubbleOpacity = (_bubbleOpacity - _bubbleFadeSpeed * dt).clamp(
+          0.0,
+          1.0,
+        );
       }
       _bubbleScale = 1.0;
     }
@@ -704,7 +748,9 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
           // 检查是否有排队的切换请求，如果有则立即处理
           if (_queuedSpriteSwitch != null) {
-            debugPrint('[LobbyPlayerComponent] 处理排队的切换: ${_queuedSpriteSwitch!.spriteId}');
+            debugPrint(
+              '[LobbyPlayerComponent] 处理排队的切换: ${_queuedSpriteSwitch!.spriteId}',
+            );
             final queued = _queuedSpriteSwitch!;
             _queuedSpriteSwitch = null;
             _triggerSpriteSwitch(queued.spriteId, queued.sprite);
@@ -718,7 +764,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
     // 更新贴图组件的透明度
     if (_spriteComponent != null) {
-      _spriteComponent!.paint = Paint()..color = Colors.white.withValues(alpha: _spriteOpacity);
+      _spriteComponent!.paint = Paint()
+        ..color = Colors.white.withValues(alpha: _spriteOpacity);
     }
   }
 
@@ -799,14 +846,19 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
       final charX = (_spriteWidth - _characterDisplayWidth) / 2;
       final charY = _characterSlotTopY;
-      
-      final rect = Rect.fromLTWH(charX - 4, charY - 4, _characterDisplayWidth + 8, _characterDisplayHeight + 8);
+
+      final rect = Rect.fromLTWH(
+        charX - 4,
+        charY - 4,
+        _characterDisplayWidth + 8,
+        _characterDisplayHeight + 8,
+      );
       final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(8));
-      
+
       final glowPaint = Paint()
         ..color = Colors.white.withValues(alpha: 0.6)
         ..maskFilter = const MaskFilter.blur(BlurStyle.outer, 8.0);
-        
+
       final strokePaint = Paint()
         ..color = Colors.white.withValues(alpha: 0.9)
         ..style = PaintingStyle.stroke
@@ -884,7 +936,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
     // 居中绘制，名字紧贴角色头顶上方
     final offsetX = (_spriteWidth - textPainter.width) / 2;
-    final offsetY = _characterSlotTopY - textPainter.height - _nameGapAboveCharacter;
+    final offsetY =
+        _characterSlotTopY - textPainter.height - _nameGapAboveCharacter;
 
     strokePainter.paint(canvas, Offset(offsetX, offsetY));
     textPainter.paint(canvas, Offset(offsetX, offsetY));
@@ -944,7 +997,12 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     final charY =
         _characterSlotTopY + _characterDisplayHeight - _actualCharHeight;
 
-    final rect = Rect.fromLTWH(charX, charY, _actualCharWidth, _actualCharHeight);
+    final rect = Rect.fromLTWH(
+      charX,
+      charY,
+      _actualCharWidth,
+      _actualCharHeight,
+    );
 
     // 渐变填充
     final gradientPaint = Paint()
@@ -965,10 +1023,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       ..color = _sprite.accentColor.withValues(alpha: 0.35)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
 
-    canvas.drawRRect(
-      rrect.shift(const Offset(0, 6)),
-      shadowPaint,
-    );
+    canvas.drawRRect(rrect.shift(const Offset(0, 6)), shadowPaint);
 
     // 填充
     canvas.drawRRect(rrect, gradientPaint);
@@ -1011,8 +1066,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     // 使用系统默认字体，支持中英文和特殊字符
     final textStyle = TextStyle(
       fontFamily: null,
-      color: Colors.white.withValues(alpha: 0.9),
-      fontSize: 14,
+      color: const Color(0xFFE2E8F0), // 使用柔和的蓝灰色调，与纯白名字区分
+      fontSize: 12,
     );
 
     // 状态文字过长时截断
@@ -1023,9 +1078,26 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       textDirection: TextDirection.ltr,
     )..layout();
 
+    // 描边
+    final strokeStyle = TextStyle(
+      fontFamily: null,
+      fontSize: 12,
+      foreground: Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0
+        ..color = Colors.black.withValues(alpha: 0.6),
+    );
+
+    final strokeSpan = TextSpan(text: displayStatus, style: strokeStyle);
+    final strokePainter = TextPainter(
+      text: strokeSpan,
+      textDirection: TextDirection.ltr,
+    )..layout();
+
     final offsetX = (_spriteWidth - textPainter.width) / 2;
     final offsetY = _spriteBottomY + _statusGapBelowSprite;
 
+    strokePainter.paint(canvas, Offset(offsetX, offsetY));
     textPainter.paint(canvas, Offset(offsetX, offsetY));
 
     canvas.restore();
@@ -1047,7 +1119,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     // 聊天气泡位置 - 居中对齐在 sprite 上方
     final bubbleWidth = 120.0;
     final bubbleX = (_spriteWidth - bubbleWidth) / 2;
-    const bubbleBottom = 80.0;  // 气泡底部基准位置（固定）
+    const bubbleBottom = 80.0; // 气泡底部基准位置（固定）
 
     // 先测量文字实际高度（支持多行自动省略）
     final textStyle = TextStyle(
@@ -1068,7 +1140,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     // 根据文字实际行数计算气泡高度（每行约16px，加上上下padding）
     final lineCount = textPainter.computeLineMetrics().length;
     final bubbleHeight = (lineCount * 16.0 + 16.0).clamp(40.0, 64.0);
-    final bubbleY = bubbleBottom - bubbleHeight;  // 向上扩展，底部固定
+    final bubbleY = bubbleBottom - bubbleHeight; // 向上扩展，底部固定
 
     // 应用缩放效果（入场弹入动画）
     canvas.save();
@@ -1082,8 +1154,16 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     final shadowPaint = Paint()
       ..color = _sprite.accentColor.withValues(alpha: 0.15 * _bubbleOpacity)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-    final shadowRect = Rect.fromLTWH(bubbleX + 4, bubbleY + 4, bubbleWidth, bubbleHeight);
-    final shadowRRect = RRect.fromRectAndRadius(shadowRect, const Radius.circular(16));
+    final shadowRect = Rect.fromLTWH(
+      bubbleX + 4,
+      bubbleY + 4,
+      bubbleWidth,
+      bubbleHeight,
+    );
+    final shadowRRect = RRect.fromRectAndRadius(
+      shadowRect,
+      const Radius.circular(16),
+    );
     canvas.drawRRect(shadowRRect, shadowPaint);
 
     final rect = Rect.fromLTWH(bubbleX, bubbleY, bubbleWidth, bubbleHeight);
@@ -1104,14 +1184,17 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
     // 顶部高光
     final highlightPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.center,
-        colors: [
-          Colors.white.withValues(alpha: 0.4 * _bubbleOpacity),
-          Colors.white.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromLTWH(bubbleX, bubbleY, bubbleWidth, bubbleHeight * 0.5));
+      ..shader =
+          LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.center,
+            colors: [
+              Colors.white.withValues(alpha: 0.4 * _bubbleOpacity),
+              Colors.white.withValues(alpha: 0.0),
+            ],
+          ).createShader(
+            Rect.fromLTWH(bubbleX, bubbleY, bubbleWidth, bubbleHeight * 0.5),
+          );
     canvas.drawRRect(rrect, highlightPaint);
 
     // 边框
@@ -1126,7 +1209,12 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     textPainter.paint(canvas, Offset(bubbleX + 12, bubbleY + 8));
 
     // 气泡尾巴
-    _drawBubbleTail(canvas, bubbleX + 14, bubbleY + bubbleHeight, _bubbleOpacity);
+    _drawBubbleTail(
+      canvas,
+      bubbleX + 14,
+      bubbleY + bubbleHeight,
+      _bubbleOpacity,
+    );
 
     canvas.restore(); // 恢复缩放
     canvas.restore(); // 恢复翻转
@@ -1139,7 +1227,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       ..quadraticBezierTo(x + 6, y + 9, x + 1, y + 4)
       ..close();
 
-    final fillPaint = Paint()..color = Colors.white.withValues(alpha: 0.96 * opacity);
+    final fillPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.96 * opacity);
     final strokePaint = Paint()
       ..color = _sprite.accentColor.withValues(alpha: 0.35 * opacity)
       ..style = PaintingStyle.stroke
