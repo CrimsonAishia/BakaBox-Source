@@ -397,6 +397,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           sum + (serverState.categoryOnlineCounts[cat.modelName ?? ''] ?? 0),
     );
 
+    final isOnlineCountLoading =
+        !serverState.hasEverLoadedOnlineCounts || serverState.isLoadingOnlineCounts;
+
     return Row(
       children: [
         Expanded(
@@ -414,7 +417,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           child: _StatCard(
             icon: MdiIcons.accountGroup,
             iconColor: const Color(0xFF10B981),
-            value: totalOnlinePlayers.toString(),
+            value: isOnlineCountLoading ? null : totalOnlinePlayers.toString(),
             subtitle: '人正在游戏',
             isDark: isDark,
             delay: 1000,
@@ -604,7 +607,8 @@ class _FloatingIconState extends State<_FloatingIcon>
 class _StatCard extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
-  final String value;
+  /// null 表示正在加载中
+  final String? value;
   final String subtitle;
   final bool isDark;
   final int delay;
@@ -652,14 +656,24 @@ class _StatCard extends StatelessWidget {
                 child: Icon(icon, size: 28, color: iconColor),
               ),
               const SizedBox(height: 16),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+              if (value == null)
+                SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: iconColor,
+                  ),
+                )
+              else
+                Text(
+                  value!,
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  ),
                 ),
-              ),
               const SizedBox(height: 4),
               Text(
                 subtitle,
