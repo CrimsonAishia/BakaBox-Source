@@ -23,9 +23,10 @@ class LobbySettingsPanel extends StatelessWidget {
     return LobbyPanelShell(
       width: 520,
       title: '大厅设置',
-      onClose: () => context.read<LobbyBloc>().add(const LobbyPanelsDismissed()),
+      onClose: () =>
+          context.read<LobbyBloc>().add(const LobbyPanelsDismissed()),
       child: SizedBox(
-        height: 480,
+        height: 500,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -48,52 +49,100 @@ class LobbySettingsPanel extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            // 匿名模式（需要冷却和pending状态）
-            _SettingsSwitchTile(
-              title: '匿名模式',
-              subtitle: _isPending('anonymous')
-                  ? '请求中...'
-                  : (state.anonymousSwitchCooldownSeconds > 0
-                      ? '请稍候...'
-                      : (state.isAnonymous
-                          ? (AuthService.instance.isLoggedIn
-                              ? '以匿名形式展示给其他用户'
-                              : '登录后可关闭匿名')
-                          : '公开身份展示给其他用户')),
-              value: state.isAnonymous,
-              onChanged: (!AuthService.instance.isLoggedIn ||
-                      _isPending('anonymous') ||
-                      state.anonymousSwitchCooldownSeconds > 0)
-                  ? null
-                  : (value) => context.read<LobbyBloc>().add(LobbyAnonymousToggled(value)),
-              isLoading: _isPending('anonymous') || state.anonymousSwitchCooldownSeconds > 0,
-              loadingSeconds: state.anonymousSwitchCooldownSeconds > 0
-                  ? state.anonymousSwitchCooldownSeconds
-                  : null,
-              isPending: _isPending('anonymous'),
-              isLocked: !AuthService.instance.isLoggedIn,
-            ),
-            // 显示昵称
-            _SettingsSwitchTile(
-              title: '显示昵称',
-              value: state.showNameplates,
-              onChanged: (value) =>
-                  context.read<LobbyBloc>().add(LobbyNameplatesToggled(value)),
-            ),
-            // 显示气泡
-            _SettingsSwitchTile(
-              title: '显示气泡',
-              value: state.showChatBubbles,
-              onChanged: (value) =>
-                  context.read<LobbyBloc>().add(LobbyChatBubblesToggled(value)),
-            ),
-            // 广播通知
-            _SettingsSwitchTile(
-              title: '广播通知',
-              subtitle: '屏蔽通知窗口，仍会在聊天栏显示',
-              value: state.showBroadcastNotifications,
-              onChanged: (value) =>
-                  context.read<LobbyBloc>().add(LobbyBroadcastNotificationsToggled(value)),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                padding: const EdgeInsets.only(right: 8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 匿名模式（需要冷却和pending状态）
+                    _SettingsSwitchTile(
+                      title: '匿名模式',
+                      subtitle: _isPending('anonymous')
+                          ? '请求中...'
+                          : (state.anonymousSwitchCooldownSeconds > 0
+                                ? '请稍候...'
+                                : (state.isAnonymous
+                                      ? (AuthService.instance.isLoggedIn
+                                            ? '以匿名形式展示给其他用户'
+                                            : '登录后可关闭匿名')
+                                      : '公开身份展示给其他用户')),
+                      value: state.isAnonymous,
+                      onChanged:
+                          (!AuthService.instance.isLoggedIn ||
+                              _isPending('anonymous') ||
+                              state.anonymousSwitchCooldownSeconds > 0)
+                          ? null
+                          : (value) => context.read<LobbyBloc>().add(
+                              LobbyAnonymousToggled(value),
+                            ),
+                      isLoading:
+                          _isPending('anonymous') ||
+                          state.anonymousSwitchCooldownSeconds > 0,
+                      loadingSeconds: state.anonymousSwitchCooldownSeconds > 0
+                          ? state.anonymousSwitchCooldownSeconds
+                          : null,
+                      isPending: _isPending('anonymous'),
+                      isLocked: !AuthService.instance.isLoggedIn,
+                    ),
+                    // 使用 Steam 名称
+                    _SettingsSwitchTile(
+                      title: '使用Steam名称',
+                      subtitle: _isPending('useSteamName')
+                          ? '请求中...'
+                          : (state.steamNameSwitchCooldownSeconds > 0
+                                ? '请稍候...'
+                                : '在大厅中优先展示您的Steam昵称'),
+                      value: state.useSteamName,
+                      onChanged:
+                          (!AuthService.instance.isLoggedIn ||
+                              state.isAnonymous ||
+                              _isPending('useSteamName') ||
+                              state.steamNameSwitchCooldownSeconds > 0)
+                          ? null
+                          : (value) => context.read<LobbyBloc>().add(
+                              LobbyUseSteamNameToggled(value),
+                            ),
+                      isLoading:
+                          _isPending('useSteamName') ||
+                          state.steamNameSwitchCooldownSeconds > 0,
+                      loadingSeconds: state.steamNameSwitchCooldownSeconds > 0
+                          ? state.steamNameSwitchCooldownSeconds
+                          : null,
+                      isPending: _isPending('useSteamName'),
+                      isLocked:
+                          !AuthService.instance.isLoggedIn ||
+                          state.isAnonymous, // 匿名和未登录用户不能使用
+                    ),
+                    // 显示昵称
+                    _SettingsSwitchTile(
+                      title: '显示昵称',
+                      value: state.showNameplates,
+                      onChanged: (value) => context.read<LobbyBloc>().add(
+                        LobbyNameplatesToggled(value),
+                      ),
+                    ),
+                    // 显示气泡
+                    _SettingsSwitchTile(
+                      title: '显示气泡',
+                      value: state.showChatBubbles,
+                      onChanged: (value) => context.read<LobbyBloc>().add(
+                        LobbyChatBubblesToggled(value),
+                      ),
+                    ),
+                    // 广播通知
+                    _SettingsSwitchTile(
+                      title: '广播通知',
+                      subtitle: '屏蔽通知窗口，仍会在聊天栏显示',
+                      value: state.showBroadcastNotifications,
+                      onChanged: (value) => context.read<LobbyBloc>().add(
+                        LobbyBroadcastNotificationsToggled(value),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -304,7 +353,9 @@ class _LobbySpriteChoiceCardState extends State<LobbySpriteChoiceCard> {
           width: 102,
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: widget.selected ? 0.18 : 0.05),
+            color: Colors.white.withValues(
+              alpha: widget.selected ? 0.18 : 0.05,
+            ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: widget.selected
@@ -340,13 +391,19 @@ class _LobbySpriteChoiceCardState extends State<LobbySpriteChoiceCard> {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              widget.sprite.accentColor.withValues(alpha: isLocked ? 0.4 : 0.95),
-                              widget.sprite.accentColor.withValues(alpha: isLocked ? 0.2 : 0.45),
+                              widget.sprite.accentColor.withValues(
+                                alpha: isLocked ? 0.4 : 0.95,
+                              ),
+                              widget.sprite.accentColor.withValues(
+                                alpha: isLocked ? 0.2 : 0.45,
+                              ),
                             ],
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: widget.sprite.accentColor.withValues(alpha: isLocked ? 0.1 : 0.24),
+                              color: widget.sprite.accentColor.withValues(
+                                alpha: isLocked ? 0.1 : 0.24,
+                              ),
                               blurRadius: 12,
                               offset: const Offset(0, 6),
                             ),
@@ -380,40 +437,42 @@ class _LobbySpriteChoiceCardState extends State<LobbySpriteChoiceCard> {
                       color: widget.selected
                           ? Colors.white
                           : isLocked
-                              ? Colors.white54
-                              : Colors.white.withValues(alpha: 0.85),
+                          ? Colors.white54
+                          : Colors.white.withValues(alpha: 0.85),
                       fontSize: 12,
-                      fontWeight: widget.selected ? FontWeight.w800 : FontWeight.w700,
+                      fontWeight: widget.selected
+                          ? FontWeight.w800
+                          : FontWeight.w700,
                     ),
                   ),
                 ],
               ),
-                  // 选中标记（固定绿色 + 白勾）
-                  if (widget.selected)
-                    Positioned(
-                      top: -8,
-                      right: -8,
-                      child: Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF22C55E),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF22C55E).withValues(alpha: 0.4),
-                              blurRadius: 8,
-                            ),
-                          ],
+              // 选中标记（固定绿色 + 白勾）
+              if (widget.selected)
+                Positioned(
+                  top: -8,
+                  right: -8,
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF22C55E),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF22C55E).withValues(alpha: 0.4),
+                          blurRadius: 8,
                         ),
-                        child: const Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: 14,
-                        ),
-                      ),
+                      ],
                     ),
+                    child: const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -507,7 +566,9 @@ class _SettingsSwitchTile extends StatelessWidget {
                     child: Switch(
                       value: value,
                       onChanged: onChanged,
-                      activeThumbColor: isLocked ? Colors.white70 : Colors.white,
+                      activeThumbColor: isLocked
+                          ? Colors.white70
+                          : Colors.white,
                       activeTrackColor: isLocked
                           ? Colors.white.withValues(alpha: 0.2)
                           : const Color(0xFF22C55E),
