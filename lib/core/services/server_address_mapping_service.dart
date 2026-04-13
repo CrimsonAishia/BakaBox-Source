@@ -21,6 +21,9 @@ class ServerAddressMappingService {
   /// IP:Port -> Domain:Port 映射缓存
   final Map<String, String> _ipToDomainCache = {};
 
+  /// 默认分类服务器的域名地址集合（isCustom == false 的分类）
+  final Set<String> _defaultCategoryAddresses = {};
+
   /// 是否已加载
   bool _isLoaded = false;
 
@@ -45,6 +48,7 @@ class ServerAddressMappingService {
 
     try {
       _ipToDomainCache.clear();
+      _defaultCategoryAddresses.clear();
 
       final categories = await _serverApi.getServerList();
       for (final category in categories) {
@@ -57,6 +61,11 @@ class ServerAddressMappingService {
 
           final host = parts[0];
           final port = parts[1];
+
+          // 记录默认分类（非自定义）的服务器地址
+          if (!category.isCustom) {
+            _defaultCategoryAddresses.add(domainAddress);
+          }
 
           try {
             final addresses = await InternetAddress.lookup(host);
@@ -73,7 +82,7 @@ class ServerAddressMappingService {
       }
 
       _isLoaded = true;
-      LogService.d('[AddressMapping] 地址映射加载完成，共 ${_ipToDomainCache.length} 条');
+      LogService.d('[AddressMapping] 地址映射加载完成，共 ${_ipToDomainCache.length} 条，默认分类服务器 ${_defaultCategoryAddresses.length} 个');
     } catch (e) {
       LogService.e('[AddressMapping] 加载服务器地址映射失败', e);
     } finally {
@@ -97,6 +106,14 @@ class ServerAddressMappingService {
   /// 清除缓存
   void clear() {
     _ipToDomainCache.clear();
+    _defaultCategoryAddresses.clear();
     _isLoaded = false;
+  }
+
+  /// 检查某个域名地址是否属于默认分类（非自定义）
+  ///
+  /// [domainAddress] 域名地址，格式为 host:port
+  bool isDefaultCategoryServer(String domainAddress) {
+    return _defaultCategoryAddresses.contains(domainAddress);
   }
 }

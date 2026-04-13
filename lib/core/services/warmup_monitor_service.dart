@@ -443,6 +443,13 @@ class WarmupMonitorService {
       final port = int.tryParse(parts[1]);
       if (port == null) return;
 
+      // 只监控默认分类的服务器，自定义或未知服务器跳过
+      final domainAddress = _currentServerDomainAddress ?? serverAddress;
+      if (!_addressMapping.isDefaultCategoryServer(domainAddress)) {
+        LogService.d('[WarmupMonitor/API] 非默认分类服务器，跳过热身监控: $domainAddress');
+        return;
+      }
+
       final serverInfo = await SourceServerService.getServerInfo(
         ip,
         port,
