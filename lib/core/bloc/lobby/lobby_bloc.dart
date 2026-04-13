@@ -954,6 +954,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             transientNotice: state.isAnonymous ? '身份升级成功' : '登录成功',
           ),
         );
+
+        // 登录成功后重新上报本地活动状态
+        _updateStatusTextByGameStatus(GameStatusService().isGameRunning, emit);
         // 注意：不需要请求 assets 和 snapshot，因为：
         // 1. presence.join 已经会更新用户数据（模型切换等）
         // 2. 已有 assets 数据足够使用
@@ -1069,6 +1072,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           LogService.d('[LobbyBloc] join.success 设置 _selfMapId=$mapId');
         }
         // 不在这里请求 assets，等到进入大厅页面再请求（避免 URL token 过期）
+        
+        // 重新同步本地活动状态（防止启动时因为网络未连接导致首次上报丢失）
+        _updateStatusTextByGameStatus(GameStatusService().isGameRunning, emit);
         break;
       case 'assets':
         {
@@ -1202,6 +1208,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
               add(LobbyTeleportCompleted());
             });
           }
+
+          // 重新同步本地活动状态（防止启动时的状态更新因连接未就绪被忽略）
+          _updateStatusTextByGameStatus(GameStatusService().isGameRunning, emit);
         }
         break;
       case 'presence.join':
