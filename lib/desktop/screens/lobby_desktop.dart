@@ -269,7 +269,7 @@ class _LobbyDesktopState extends State<LobbyDesktop>
       // 排除 chatDraft 变化引起的 rebuild，避免输入时整棵 widget 树重建导致焦点丢失
       buildWhen: (previous, current) =>
           previous.chatDraft == current.chatDraft &&
-          previous.chatCooldownSeconds == current.chatCooldownSeconds ||
+              previous.chatCooldownSeconds == current.chatCooldownSeconds ||
           previous.isChatActive != current.isChatActive ||
           previous.pageStatus != current.pageStatus ||
           previous.mapConfig != current.mapConfig ||
@@ -394,274 +394,276 @@ class _LobbyDesktopState extends State<LobbyDesktop>
           },
           child: Container(
             decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(22),
-                  bottomRight: Radius.circular(22),
-                ),
-                color: isDark
-                    ? const Color(0xFF0B1120)
-                    : const Color(0xFFDDE7F7),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(22),
+                bottomRight: Radius.circular(22),
               ),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(22),
-                  bottomRight: Radius.circular(22),
-                ),
-                child: Stack(
-                  children: [
-                    // 地图场景
+              color: isDark ? const Color(0xFF0B1120) : const Color(0xFFDDE7F7),
+            ),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(22),
+                bottomRight: Radius.circular(22),
+              ),
+              child: Stack(
+                children: [
+                  // 地图场景
+                  Positioned.fill(
+                    child: mapConfig == null
+                        ? const SizedBox.shrink()
+                        : LobbyScene(
+                            mapConfig: mapConfig,
+                            state: state,
+                            sceneFocusNode: _sceneFocusNode,
+                          ),
+                  ),
+                  // 状态横幅
+                  Positioned(
+                    top: 20,
+                    left: 24,
+                    right: 24,
+                    child: IgnorePointer(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 250),
+                        child: state.transientNotice == null
+                            ? const SizedBox.shrink()
+                            : LobbyStatusBanner(
+                                key: ValueKey(state.transientNotice),
+                                message: state.transientNotice!,
+                                connectionStatus: state.connectionStatus,
+                              ),
+                      ),
+                    ),
+                  ),
+                  // 聊天激活时的背景遮罩（排除聊天输入框区域，点击其他地方关闭聊天）
+                  if (state.isChatActive &&
+                      !state.isPlayersPanelOpen &&
+                      !state.isSettingsPanelOpen)
                     Positioned.fill(
-                      child: mapConfig == null
-                          ? const SizedBox.shrink()
-                          : LobbyScene(
-                              mapConfig: mapConfig,
-                              state: state,
-                              sceneFocusNode: _sceneFocusNode,
-                            ),
-                    ),
-                    // 状态横幅
-                    Positioned(
-                      top: 20,
-                      left: 24,
-                      right: 24,
-                      child: IgnorePointer(
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 250),
-                          child: state.transientNotice == null
-                              ? const SizedBox.shrink()
-                              : LobbyStatusBanner(
-                                  key: ValueKey(state.transientNotice),
-                                  message: state.transientNotice!,
-                                  connectionStatus: state.connectionStatus,
-                                ),
-                        ),
-                      ),
-                    ),
-                    // 聊天激活时的背景遮罩（排除聊天输入框区域，点击其他地方关闭聊天）
-                    if (state.isChatActive &&
-                        !state.isPlayersPanelOpen &&
-                        !state.isSettingsPanelOpen)
-                      Positioned.fill(
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            // 聊天输入框的位置：left: 24, bottom: 24, 宽度 360
-                            final chatWidth = 360.0;
-                            final chatHeight = 180.0; // 估算高度
-                            final chatLeft = 24.0;
-                            final chatBottom = 24.0;
-                            final chatRight = constraints.maxWidth - chatLeft - chatWidth;
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          // 聊天输入框的位置：left: 24, bottom: 24, 宽度 360
+                          final chatWidth = 360.0;
+                          final chatHeight = 180.0; // 估算高度
+                          final chatLeft = 24.0;
+                          final chatBottom = 24.0;
+                          final chatRight =
+                              constraints.maxWidth - chatLeft - chatWidth;
 
-                            return Stack(
-                              children: [
-                                // 遮罩层 - 排除聊天输入框区域
-                                Positioned(
-                                  top: 0,
-                                  left: 0,
-                                  right: chatRight,
-                                  bottom: 0,
-                                  child: GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: () {
-                                      context.read<LobbyBloc>().add(
-                                        const LobbyChatModeChanged(false),
-                                      );
-                                      _sceneFocusNode.requestFocus();
-                                    },
-                                    child: Container(color: Colors.transparent),
-                                  ),
+                          return Stack(
+                            children: [
+                              // 遮罩层 - 排除聊天输入框区域
+                              Positioned(
+                                top: 0,
+                                left: 0,
+                                right: chatRight,
+                                bottom: 0,
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () {
+                                    context.read<LobbyBloc>().add(
+                                      const LobbyChatModeChanged(false),
+                                    );
+                                    _sceneFocusNode.requestFocus();
+                                  },
+                                  child: Container(color: Colors.transparent),
                                 ),
-                                Positioned(
-                                  top: 0,
-                                  left: 0,
-                                  right: 0,
-                                  bottom: constraints.maxHeight - chatBottom - chatHeight,
-                                  child: GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: () {
-                                      context.read<LobbyBloc>().add(
-                                        const LobbyChatModeChanged(false),
-                                      );
-                                      _sceneFocusNode.requestFocus();
-                                    },
-                                    child: Container(color: Colors.transparent),
-                                  ),
+                              ),
+                              Positioned(
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom:
+                                    constraints.maxHeight -
+                                    chatBottom -
+                                    chatHeight,
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () {
+                                    context.read<LobbyBloc>().add(
+                                      const LobbyChatModeChanged(false),
+                                    );
+                                    _sceneFocusNode.requestFocus();
+                                  },
+                                  child: Container(color: Colors.transparent),
                                 ),
-                                Positioned(
-                                  top: 0,
-                                  right: 0,
-                                  bottom: 0,
-                                  width: constraints.maxWidth - chatLeft - chatWidth,
-                                  child: GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: () {
-                                      context.read<LobbyBloc>().add(
-                                        const LobbyChatModeChanged(false),
-                                      );
-                                      _sceneFocusNode.requestFocus();
-                                    },
-                                    child: Container(color: Colors.transparent),
-                                  ),
+                              ),
+                              Positioned(
+                                top: 0,
+                                right: 0,
+                                bottom: 0,
+                                width:
+                                    constraints.maxWidth - chatLeft - chatWidth,
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () {
+                                    context.read<LobbyBloc>().add(
+                                      const LobbyChatModeChanged(false),
+                                    );
+                                    _sceneFocusNode.requestFocus();
+                                  },
+                                  child: Container(color: Colors.transparent),
                                 ),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                    // 聊天输入（放在遮罩层上面，确保能接收点击事件）
-                    // 聊天未激活时开启 IgnorePointer 允许鼠标事件穿透到游戏场景
-                    Positioned(
-                      left: 24,
-                      bottom: 24,
-                      child: IgnorePointer(
-                        ignoring: !state.isChatActive,
-                        child: LobbyChatOverlay(
-                          state: state,
-                          controller: _chatController,
-                          focusNode: _chatFocusNode,
-                        ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
-                    // 浮动按钮
-                    Positioned(
-                      right: 24,
-                      bottom: 24,
-                      child: LobbyFloatingActions(state: state),
-                    ),
-                    // 面板打开时的背景遮罩（使用 opaque 确保点击任意位置都能关闭面板）
-                    // 注意：此时如果聊天也激活，聊天输入框在面板下面，不应该被遮挡
-                    if (state.isPlayersPanelOpen || state.isSettingsPanelOpen)
-                      Positioned.fill(
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () {
-                            context.read<LobbyBloc>().add(
-                              const LobbyPanelsDismissed(),
-                            );
-                            _sceneFocusNode.requestFocus();
-                          },
-                          child: Container(color: Colors.transparent),
-                        ),
-                      ),
-                    // 玩家抽屉
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      bottom: 0,
-                      width: 320,
-                      child: SlideTransition(
-                        position: _playersDrawerSlideAnimation,
-                        child: FadeTransition(
-                          opacity: _playersDrawerFadeAnimation,
-                          child: state.isPlayersPanelOpen
-                              ? _PlayersDrawer(
-                                  state: state,
-                                  onClose: () => context.read<LobbyBloc>().add(
-                                    const LobbyPanelsDismissed(),
-                                  ),
-                                )
-                              : const SizedBox.shrink(),
-                        ),
+                  // 聊天输入（放在遮罩层上面，确保能接收点击事件）
+                  // 聊天未激活时开启 IgnorePointer 允许鼠标事件穿透到游戏场景
+                  Positioned(
+                    left: 24,
+                    bottom: 24,
+                    child: IgnorePointer(
+                      ignoring: !state.isChatActive,
+                      child: LobbyChatOverlay(
+                        state: state,
+                        controller: _chatController,
+                        focusNode: _chatFocusNode,
                       ),
                     ),
-                    // 设置面板
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 90,
-                      child: Center(
-                        child: SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.6,
-                          child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 200),
-                            switchInCurve: Curves.easeOut,
-                            switchOutCurve: Curves.easeIn,
-                            transitionBuilder: (child, animation) {
-                              return FadeTransition(
-                                opacity: animation,
-                                child: SlideTransition(
-                                  position: Tween<Offset>(
-                                    begin: const Offset(0, -0.2),
-                                    end: Offset.zero,
-                                  ).animate(animation),
-                                  child: child,
+                  ),
+                  // 浮动按钮
+                  Positioned(
+                    right: 24,
+                    bottom: 24,
+                    child: LobbyFloatingActions(state: state),
+                  ),
+                  // 面板打开时的背景遮罩（使用 opaque 确保点击任意位置都能关闭面板）
+                  // 注意：此时如果聊天也激活，聊天输入框在面板下面，不应该被遮挡
+                  if (state.isPlayersPanelOpen || state.isSettingsPanelOpen)
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          context.read<LobbyBloc>().add(
+                            const LobbyPanelsDismissed(),
+                          );
+                          _sceneFocusNode.requestFocus();
+                        },
+                        child: Container(color: Colors.transparent),
+                      ),
+                    ),
+                  // 玩家抽屉
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    width: 320,
+                    child: SlideTransition(
+                      position: _playersDrawerSlideAnimation,
+                      child: FadeTransition(
+                        opacity: _playersDrawerFadeAnimation,
+                        child: state.isPlayersPanelOpen
+                            ? _PlayersDrawer(
+                                state: state,
+                                onClose: () => context.read<LobbyBloc>().add(
+                                  const LobbyPanelsDismissed(),
                                 ),
-                              );
-                            },
-                            child: state.isSettingsPanelOpen
-                                ? LobbySettingsPanel(
-                                    key: const ValueKey('settings'),
-                                    state: state,
-                                  )
-                                : SizedBox.shrink(
-                                    key: const ValueKey('settings_empty'),
-                                  ),
-                          ),
-                        ),
+                              )
+                            : const SizedBox.shrink(),
                       ),
                     ),
-                    // 传送动画层
-                    if (_showTeleportOverlay && _targetMapConfig != null)
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          ignoring: true,
-                          child: ListenableBuilder(
-                            listenable:
-                                _teleportController ??
-                                AlwaysStoppedAnimation(0.0),
-                            builder: (context, child) {
-                              final progress = _teleportAnimation?.value ?? 0.0;
-                              return MosaicRevealEffect(
-                                targetContent: _buildMosaicTargetContent(
-                                  _targetMapConfig!,
-                                ),
-                                targetName: _targetMapConfig!.displayName,
-                                progress: progress,
-                                showTouhouDecoration: true,
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    // 玩家加入/离开通知
-                    if (state.playerNotifications.isNotEmpty)
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          child: PlayerNotificationOverlay(
-                            notifications: state.playerNotifications,
-                            onNotificationExpire: (id) {
-                              context.read<LobbyBloc>().add(
-                                LobbyNotificationExpired(id),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    // 传送门询问对话框
-                    if (state.nearbyPortal != null && !state.isTeleporting)
-                      Positioned.fill(
-                        child: PortalConfirmDialog(
-                          portal: state.nearbyPortal!,
-                          onConfirm: () {
-                            context.read<LobbyBloc>().add(
-                              LobbyPortalConfirmRequested(
-                                state.nearbyPortal!.key,
+                  ),
+                  // 设置面板
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 90,
+                    child: Center(
+                      child: SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          switchInCurve: Curves.easeOut,
+                          switchOutCurve: Curves.easeIn,
+                          transitionBuilder: (child, animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SlideTransition(
+                                position: Tween<Offset>(
+                                  begin: const Offset(0, -0.2),
+                                  end: Offset.zero,
+                                ).animate(animation),
+                                child: child,
                               ),
                             );
                           },
-                          onCancel: () {
-                            context.read<LobbyBloc>().add(
-                              const LobbyPortalDialogDismissed(),
+                          child: state.isSettingsPanelOpen
+                              ? LobbySettingsPanel(
+                                  key: const ValueKey('settings'),
+                                  state: state,
+                                )
+                              : SizedBox.shrink(
+                                  key: const ValueKey('settings_empty'),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // 传送动画层
+                  if (_showTeleportOverlay && _targetMapConfig != null)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        ignoring: true,
+                        child: ListenableBuilder(
+                          listenable:
+                              _teleportController ??
+                              AlwaysStoppedAnimation(0.0),
+                          builder: (context, child) {
+                            final progress = _teleportAnimation?.value ?? 0.0;
+                            return MosaicRevealEffect(
+                              targetContent: _buildMosaicTargetContent(
+                                _targetMapConfig!,
+                              ),
+                              targetName: _targetMapConfig!.displayName,
+                              progress: progress,
+                              showTouhouDecoration: true,
                             );
                           },
                         ),
                       ),
-                    // 广播发送弹窗
-                    if (state.isBroadcastDialogOpen)
-                      const LobbyBroadcastDialog(),
-                  ],
-                ),
+                    ),
+                  // 玩家加入/离开通知
+                  if (state.playerNotifications.isNotEmpty)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: PlayerNotificationOverlay(
+                          notifications: state.playerNotifications,
+                          onNotificationExpire: (id) {
+                            context.read<LobbyBloc>().add(
+                              LobbyNotificationExpired(id),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  // 传送门询问对话框
+                  if (state.nearbyPortal != null && !state.isTeleporting)
+                    Positioned.fill(
+                      child: PortalConfirmDialog(
+                        portal: state.nearbyPortal!,
+                        onConfirm: () {
+                          context.read<LobbyBloc>().add(
+                            LobbyPortalConfirmRequested(
+                              state.nearbyPortal!.key,
+                            ),
+                          );
+                        },
+                        onCancel: () {
+                          context.read<LobbyBloc>().add(
+                            const LobbyPortalDialogDismissed(),
+                          );
+                        },
+                      ),
+                    ),
+                  // 广播发送弹窗
+                  if (state.isBroadcastDialogOpen) const LobbyBroadcastDialog(),
+                ],
               ),
             ),
+          ),
         );
       },
     );
@@ -1170,14 +1172,17 @@ class _MosaicMapPreviewState extends State<_MosaicMapPreview> {
   }
 
   Future<void> _loadFromCache() async {
-    if (widget.mapConfig.backgroundUrl == null || widget.mapConfig.backgroundUrl!.isEmpty) {
+    if (widget.mapConfig.backgroundUrl == null ||
+        widget.mapConfig.backgroundUrl!.isEmpty) {
       return;
     }
 
     try {
       // 直接从 LobbyImageCacheService 获取已缓存的图片数据
       // 这样可以确保使用已经下载好的图片，而不是重新下载
-      final bytes = await LobbyImageCacheService.instance.getImage(widget.mapConfig.backgroundUrl!);
+      final bytes = await LobbyImageCacheService.instance.getImage(
+        widget.mapConfig.backgroundUrl!,
+      );
 
       if (bytes != null && mounted) {
         setState(() {
@@ -1204,12 +1209,16 @@ class _MosaicMapPreviewState extends State<_MosaicMapPreview> {
   @override
   Widget build(BuildContext context) {
     if (_hasError) {
-      return _MosaicPlaceholderBackground(mapName: widget.mapConfig.displayName);
+      return _MosaicPlaceholderBackground(
+        mapName: widget.mapConfig.displayName,
+      );
     }
 
     // 如果还没有加载完，先显示占位背景
     if (!_imageLoaded || _cachedImageBytes == null) {
-      return _MosaicPlaceholderBackground(mapName: widget.mapConfig.displayName);
+      return _MosaicPlaceholderBackground(
+        mapName: widget.mapConfig.displayName,
+      );
     }
 
     // 使用 MemoryImage 从已缓存的字节数据加载图片
@@ -1220,7 +1229,9 @@ class _MosaicMapPreviewState extends State<_MosaicMapPreview> {
       height: double.infinity,
       errorBuilder: (context, error, stackTrace) {
         LogService.w('[MosaicMapPreview] Image.memory 加载失败: $error');
-        return _MosaicPlaceholderBackground(mapName: widget.mapConfig.displayName);
+        return _MosaicPlaceholderBackground(
+          mapName: widget.mapConfig.displayName,
+        );
       },
     );
   }
