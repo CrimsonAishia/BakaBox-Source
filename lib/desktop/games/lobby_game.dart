@@ -58,6 +58,8 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
   final List<PortalComponent> _portalComponents = [];
   /// 当前悬停的传送门
   PortalComponent? _hoveredPortal;
+  /// 当前悬停的玩家
+  LobbyPlayerComponent? _hoveredPlayer;
   /// 传送门更新锁，防止并发更新
   bool _portalUpdateInProgress = false;
 
@@ -445,10 +447,14 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
       _hoveredPortal!.handleHoverExit();
       _hoveredPortal = null;
     }
+    if (_hoveredPlayer != null) {
+      _hoveredPlayer!.handleHoverExit();
+      _hoveredPlayer = null;
+    }
   }
 
   void _handleHover(Vector2 localPosition) {
-    if (_mapConfig == null || _portalComponents.isEmpty) return;
+    if (_mapConfig == null) return;
 
     // 获取相机偏移量
     final cameraOffset = _cameraComponent.viewfinder.position;
@@ -456,32 +462,59 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     // 将鼠标坐标转换为世界坐标
     final dx = localPosition.x + cameraOffset.x;
     final dy = localPosition.y + cameraOffset.y;
+    final worldPoint = Vector2(dx, dy);
 
     // 查找是否有传送门在鼠标位置
     PortalComponent? hoveredPortal;
     for (final portal in _portalComponents) {
-      if (portal.containsPoint(Vector2(dx, dy))) {
+      if (portal.containsPoint(worldPoint)) {
         hoveredPortal = portal;
         break;
       }
     }
 
-    // 更新 hover 状态
     if (hoveredPortal != null) {
       if (_hoveredPortal != hoveredPortal) {
         // 离开之前的传送门
-        if (_hoveredPortal != null) {
-          _hoveredPortal!.handleHoverExit();
-        }
+        _hoveredPortal?.handleHoverExit();
         // 进入新传送门
         _hoveredPortal = hoveredPortal;
         _hoveredPortal!.handleHoverEnter();
       }
+      // 如果悬停在传送门上，取消角色的悬停
+      if (_hoveredPlayer != null) {
+        _hoveredPlayer!.handleHoverExit();
+        _hoveredPlayer = null;
+      }
+      return; // 悬停了传送门，后面的就不需要判断了
     } else {
       // 离开传送门
       if (_hoveredPortal != null) {
         _hoveredPortal!.handleHoverExit();
         _hoveredPortal = null;
+      }
+    }
+
+    // 查找玩家角色
+    LobbyPlayerComponent? hoveredPlayer;
+    for (final player in _playerComponents.values) {
+      if (player.containsPoint(worldPoint)) {
+        hoveredPlayer = player;
+        // 如果有多个叠加在一起可以 break 也可以继续找最新添加的。
+        // 为了确保能选中在上面的玩家，可以继续遍历覆盖
+      }
+    }
+
+    if (hoveredPlayer != null) {
+      if (_hoveredPlayer != hoveredPlayer) {
+        _hoveredPlayer?.handleHoverExit();
+        _hoveredPlayer = hoveredPlayer;
+        _hoveredPlayer!.handleHoverEnter();
+      }
+    } else {
+      if (_hoveredPlayer != null) {
+        _hoveredPlayer!.handleHoverExit();
+        _hoveredPlayer = null;
       }
     }
   }
