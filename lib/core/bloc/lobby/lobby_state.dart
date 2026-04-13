@@ -64,6 +64,8 @@ class PlayerNotification {
 class LobbyState extends Equatable {
   final LobbyConnectionStatus connectionStatus;
   final LobbyPageStatus pageStatus;
+  /// 大厅页面对应的活动文字（如"在看服务器列表"）
+  final String pageActivityText;
   /// Loading 界面的具体加载阶段
   final LobbyLoadingPhase loadingPhase;
   final LobbyAssets assets;
@@ -120,6 +122,7 @@ class LobbyState extends Equatable {
   const LobbyState({
     required this.connectionStatus,
     required this.pageStatus,
+    this.pageActivityText = '在线',
     required this.loadingPhase,
     required this.assets,
     required this.users,
@@ -161,6 +164,7 @@ class LobbyState extends Equatable {
     return const LobbyState(
       connectionStatus: LobbyConnectionStatus.disconnected,
       pageStatus: LobbyPageStatus.idle,
+      pageActivityText: '在线',
       loadingPhase: LobbyLoadingPhase.connecting,
       assets: LobbyAssets(),
       users: <LobbyUser>[],
@@ -215,6 +219,7 @@ class LobbyState extends Equatable {
   LobbyState copyWith({
     LobbyConnectionStatus? connectionStatus,
     LobbyPageStatus? pageStatus,
+    String? pageActivityText,
     LobbyLoadingPhase? loadingPhase,
     Object? assets = _stateSentinel,
     List<LobbyUser>? users,
@@ -259,6 +264,7 @@ class LobbyState extends Equatable {
     return LobbyState(
       connectionStatus: connectionStatus ?? this.connectionStatus,
       pageStatus: pageStatus ?? this.pageStatus,
+      pageActivityText: pageActivityText ?? this.pageActivityText,
       loadingPhase: loadingPhase ?? this.loadingPhase,
       assets: identical(assets, _stateSentinel)
           ? this.assets
@@ -333,6 +339,7 @@ class LobbyState extends Equatable {
   List<Object?> get props => [
     connectionStatus,
     pageStatus,
+    pageActivityText,
     loadingPhase,
     assets,
     users,
