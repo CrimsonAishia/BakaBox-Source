@@ -61,9 +61,6 @@ class _ServersDesktopState extends State<ServersDesktop> {
   Timer? _categoryCountsRefreshTimer;
   int _categoryCountsCountdown = _kCategoryCountsRefreshInterval;
 
-  // 卡片管理模式（排序模式）
-  bool _isReorderMode = false;
-
   // 沉浸模式标志（用于暂停正常模式的机制）
   bool _isInImmersiveMode = false;
 
@@ -741,6 +738,42 @@ class _ServersDesktopState extends State<ServersDesktop> {
     }
   }
 
+  /// 服务器设置按钮
+  Widget _buildServerSettingsButton(bool isDark) {
+    return Tooltip(
+      message: '服务器设置',
+      child: InkWell(
+        onTap: () => _showServerSettingsPanel(context),
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(
+            Icons.settings_outlined,
+            size: 20,
+            color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 显示服务器设置面板
+  void _showServerSettingsPanel(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => BlocProvider.value(
+        value: context.read<SettingsBloc>(),
+        child: _ServerSettingsDialog(),
+      ),
+    );
+  }
+
   /// 主内容区域（左右布局）
   Widget _buildMainContent() {
     return Row(
@@ -800,86 +833,6 @@ class _ServersDesktopState extends State<ServersDesktop> {
                 ),
               ),
               const Spacer(),
-              // 管理按钮（仅自定义分类显示）
-              if (canAddServer) ...[
-                Tooltip(
-                  message: _isReorderMode ? '完成排序' : '管理卡片',
-                  child: InkWell(
-                    onTap: () {
-                      setState(() => _isReorderMode = !_isReorderMode);
-                    },
-                    borderRadius: BorderRadius.circular(6),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _isReorderMode
-                            ? const Color(0xFF3B82F6).withValues(alpha: 0.2)
-                            : (isDark
-                                  ? Colors.white.withValues(alpha: 0.08)
-                                  : Colors.black.withValues(alpha: 0.06)),
-                        borderRadius: BorderRadius.circular(6),
-                        border: _isReorderMode
-                            ? Border.all(
-                                color: const Color(
-                                  0xFF3B82F6,
-                                ).withValues(alpha: 0.5),
-                                width: 1,
-                              )
-                            : null,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _isReorderMode
-                                ? Icons.check_rounded
-                                : Icons.reorder_rounded,
-                            size: 18,
-                            color: _isReorderMode
-                                ? const Color(0xFF3B82F6)
-                                : (isDark ? Colors.white70 : Colors.black54),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            _isReorderMode ? '完成' : '管理',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: _isReorderMode
-                                  ? const Color(0xFF3B82F6)
-                                  : (isDark ? Colors.white70 : Colors.black54),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // 添加服务器按钮
-                Tooltip(
-                  message: '添加服务器',
-                  child: InkWell(
-                    onTap: _showAddServerDialog,
-                    borderRadius: BorderRadius.circular(6),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Icon(
-                        Icons.add_rounded,
-                        size: 20,
-                        color: Color(0xFF10B981),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
               // 倒计时刷新组件
               if (state.selectedCategory != null) ...[
                 const SizedBox(width: 12),
@@ -891,6 +844,29 @@ class _ServersDesktopState extends State<ServersDesktop> {
                 // 启动游戏按钮
                 _buildLaunchGameButton(isDark),
                 const SizedBox(width: 8),
+                // 添加服务器按钮（仅自定义分类显示）
+                if (canAddServer) ...[
+                  Tooltip(
+                    message: '添加服务器',
+                    child: InkWell(
+                      onTap: _showAddServerDialog,
+                      borderRadius: BorderRadius.circular(6),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.add_rounded,
+                          size: 20,
+                          color: Color(0xFF10B981),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 // 地图订阅按钮
                 Tooltip(
                   message: '地图订阅',
@@ -960,6 +936,11 @@ class _ServersDesktopState extends State<ServersDesktop> {
                   ),
                 ),
                 const SizedBox(width: 8),
+                // 服务器设置按钮（仅自定义分类显示）
+                if (canAddServer) ...[
+                  _buildServerSettingsButton(isDark),
+                  const SizedBox(width: 8),
+                ],
                 CompactRefreshProgress(
                   key: ValueKey(
                     'refresh_${categoryName}_${state.countdownResetKey}',
@@ -1028,22 +1009,35 @@ class _ServersDesktopState extends State<ServersDesktop> {
       children: [
         BlocBuilder<ServerBloc, ServerState>(
           builder: (context, state) {
-            final currentServers = state.servers;
             final isCustomCategory = state.selectedCategory?.isCustom == true;
             final categoryName = state.selectedCategory?.modelName;
 
-            // 自定义分类且处于管理模式时使用可拖拽排序列表
-            if (isCustomCategory && categoryName != null && _isReorderMode) {
+            // 根据排序模式获取服务器列表（仅自定义分类生效）
+            final settingsState = context.watch<SettingsBloc>().state;
+            final sortMode = settingsState.serverSortMode;
+
+            // 置顶在线模式：对服务器进行排序（仅自定义分类）
+            List<ExtendedServerItem> sortedServers;
+            if (sortMode == ServerSortMode.pinOnline && isCustomCategory) {
+              sortedServers = _sortServersByOnlineStatus(state.servers);
+            } else {
+              sortedServers = state.servers;
+            }
+
+            // 手动排序模式 + 自定义分类：使用可拖拽排序列表
+            if (sortMode == ServerSortMode.manual &&
+                isCustomCategory &&
+                categoryName != null) {
               return _buildReorderableServerList(
                 context,
                 state,
-                currentServers,
+                sortedServers,
                 categoryName,
               );
             }
 
-            // 其他情况使用普通列表
-            return _buildNormalServerList(context, state, currentServers);
+            // 其他情况使用普通列表（默认分类或置顶在线模式）
+            return _buildNormalServerList(context, state, sortedServers);
           },
         ),
         // 顶部滚动指示器
@@ -1261,7 +1255,31 @@ class _ServersDesktopState extends State<ServersDesktop> {
     required int index,
   }) {
     final showSkeleton = server.isLoading && server.serverData == null;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // 构建卡片内容
+    final Widget cardContent = showSkeleton
+        ? const ServerCardSkeleton()
+        : ServerCard(
+            key: ValueKey('card_${server.serverItem.address}'),
+            server: server,
+            categoryName: state.selectedCategory?.modelName,
+            // 保留 hover 效果，通过长按触发拖拽
+            onTap: () => _showServerDetails(server),
+            onDelete: () {
+              final categoryName = state.selectedCategory?.modelName;
+              final address =
+                  server.serverItem.address ??
+                  server.serverItem.serverAddress;
+              if (categoryName != null && address != null) {
+                context.read<ServerBloc>().add(
+                  ServerDeleteServer(
+                    categoryName: categoryName,
+                    serverAddress: address,
+                  ),
+                );
+              }
+            },
+          );
 
     // 构建卡片内容
     final Widget cardContent = showSkeleton
@@ -1868,71 +1886,181 @@ class _ServerSettingsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ReorderableDragStartListener(
-      index: widget.index,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.grab,
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        child: Stack(
-          children: [
-            // 卡片内容
-            widget.child,
-            // Hover 黑色遮罩和长按提示
-            Positioned.fill(
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 200),
-                opacity: _isHovered ? 1.0 : 0.0,
-                child: IgnorePointer(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: widget.isDark
-                              ? const Color(0xFF1E293B).withValues(alpha: 0.95)
-                              : Colors.white.withValues(alpha: 0.95),
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.drag_indicator_rounded,
-                              color: Color(0xFF3B82F6),
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '长按拖动排序',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: widget.isDark
-                                    ? Colors.white
-                                    : Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Dialog(
+      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 标题栏
+              Row(
+                children: [
+                  Icon(
+                    Icons.settings_outlined,
+                    size: 22,
+                    color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    '服务器设置',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : const Color(0xFF111827),
                     ),
                   ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Icon(
+                      Icons.close_rounded,
+                      size: 20,
+                      color: isDark ? Colors.white54 : const Color(0xFF9CA3AF),
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // 排序模式说明
+              Text(
+                '排序模式',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white54 : const Color(0xFF6B7280),
                 ),
+              ),
+              const SizedBox(height: 12),
+              // 排序模式选项
+              BlocBuilder<SettingsBloc, SettingsState>(
+                buildWhen: (previous, current) =>
+                    previous.serverSortMode != current.serverSortMode,
+                builder: (context, state) {
+                  return Column(
+                    children: [
+                      _buildSortModeOption(
+                        context: context,
+                        mode: ServerSortMode.manual,
+                        title: '手动排序',
+                        description: '通过长按拖动调整服务器顺序',
+                        isSelected: state.serverSortMode == ServerSortMode.manual,
+                        isDark: isDark,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildSortModeOption(
+                        context: context,
+                        mode: ServerSortMode.pinOnline,
+                        title: '置顶在线服务器',
+                        description: '在线服务器自动排在前面，离线服务器自动排在后面',
+                        isSelected: state.serverSortMode == ServerSortMode.pinOnline,
+                        isDark: isDark,
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建排序模式选项
+  Widget _buildSortModeOption({
+    required BuildContext context,
+    required ServerSortMode mode,
+    required String title,
+    required String description,
+    required bool isSelected,
+    required bool isDark,
+  }) {
+    return InkWell(
+      onTap: () {
+        context.read<SettingsBloc>().add(SettingsSetServerSortMode(mode));
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFF0080FF).withValues(alpha: 0.1)
+              : (isDark
+                    ? Colors.white.withValues(alpha: 0.04)
+                    : Colors.black.withValues(alpha: 0.03)),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF0080FF).withValues(alpha: 0.4)
+                : (isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : Colors.black.withValues(alpha: 0.06)),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            // 单选按钮
+            Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected
+                      ? const Color(0xFF0080FF)
+                      : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? Center(
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Color(0xFF0080FF),
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            // 文字
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: isSelected
+                          ? const Color(0xFF0080FF)
+                          : (isDark ? Colors.white : const Color(0xFF111827)),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
