@@ -13,6 +13,7 @@ import '../../services/lobby_image_cache_service.dart';
 import '../../services/lobby_map_loader_service.dart';
 import '../../services/lobby_ws_service.dart';
 import '../../services/notification_window_service.dart';
+import '../../services/status_window_service.dart';
 import '../../utils/log_service.dart';
 
 part 'lobby_event.dart';
@@ -32,6 +33,15 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       (event) {
         if (_isDisposed) return;
         add(_LobbyGameStatusChanged(event.isRunning));
+      },
+    );
+
+    // 订阅操作状态变化（挤服等），用于更新状态文字
+    _operationStateSubscription = StatusWindowService().stateStream.listen(
+      (event) {
+        if (_isDisposed) return;
+        // 服用 _LobbyGameStatusChanged 触发 _updateStatusTextByGameStatus 重新评估文字
+        add(_LobbyGameStatusChanged(GameStatusService().isGameRunning));
       },
     );
 
@@ -99,6 +109,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   final LobbyWsService _service;
   StreamSubscription<LobbyWsEvent>? _wsSubscription;
   StreamSubscription<GameStatusEvent>? _gameStatusSubscription;
+  StreamSubscription<OperationState>? _operationStateSubscription;
   Timer? _movementTimer;
   Timer? _bubbleExpiryTimer;
   Timer? _chatCooldownTimer;
@@ -834,7 +845,16 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     [String? pageActivityTextOverride]
   ) async {
     final activityText = pageActivityTextOverride ?? state.pageActivityText;
-    final newStatusText = isGameRunning ? '游戏中' : activityText;
+    final isQueueing = StatusWindowService().state.isQueueing;
+    
+    final String newStatusText;
+    if (isQueueing) {
+      newStatusText = '挤服中';
+    } else if (isGameRunning) {
+      newStatusText = '游戏中';
+    } else {
+      newStatusText = activityText;
+    }
 
     emit(
       state.copyWith(
@@ -2686,6 +2706,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   @override
   Future<void> close() async {
     _isDisposed = true;
+    _operationStateSubscription?.cancel();
     _snapshotOnAssetsReceived?.cancel();
     _snapshotOnAssetsReceived = null;
     _movementTimer?.cancel();
@@ -2693,6 +2714,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _chatCooldownTimer?.cancel();
     _broadcastCooldownTimer?.cancel();
     _anonymousSwitchCooldownTimer?.cancel();
+    _steamNameSwitchCooldownTimer?.cancel();
     _settingsTimeoutTimer?.cancel();
     await _wsSubscription?.cancel();
     await _gameStatusSubscription?.cancel();
