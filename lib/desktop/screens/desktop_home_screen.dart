@@ -21,6 +21,7 @@ import 'bilibili_content_screen.dart';
 import 'lobby_desktop.dart';
 import '../../core/services/game_status_service.dart';
 import '../../core/utils/storage_utils.dart';
+import '../widgets/global_broadcast_bar.dart';
 
 /// 桌面端主屏幕
 class DesktopHomeScreen extends StatefulWidget {
@@ -317,6 +318,13 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
                 right: 16,
                 child: QueueFloatingCard(),
               ),
+            // 全服广播底部通知栏
+            const Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: GlobalBroadcastBar(),
+            ),
           ],
         ),
       ),
