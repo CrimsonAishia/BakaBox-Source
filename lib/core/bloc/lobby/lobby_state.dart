@@ -78,6 +78,7 @@ class LobbyState extends Equatable {
   final double chatOpacity;
   final bool showNameplates;
   final bool showChatBubbles;
+  final bool useSteamName;
   final String? transientNotice;
   final LobbyTeleportTarget? teleportTarget;
   final bool isTeleporting;
@@ -91,6 +92,8 @@ class LobbyState extends Equatable {
   final int broadcastCooldownSeconds;
   /// 匿名切换冷却剩余秒数（0 表示不在冷却中）
   final int anonymousSwitchCooldownSeconds;
+  /// Steam名称切换冷却剩余秒数（0 表示不在冷却中）
+  final int steamNameSwitchCooldownSeconds;
   /// 广播弹窗是否打开
   final bool isBroadcastDialogOpen;
   /// 当前显示询问对话框的传送门
@@ -130,6 +133,7 @@ class LobbyState extends Equatable {
     required this.chatOpacity,
     required this.showNameplates,
     required this.showChatBubbles,
+    required this.useSteamName,
     required this.transientNotice,
     this.teleportTarget,
     this.isTeleporting = false,
@@ -142,14 +146,15 @@ class LobbyState extends Equatable {
     this.nearbyPortal,
     this.pendingPortal,
     this.isPortalHovered = false,
-      this.allOnlineUsers = const [],
-      this.isLoadingAllOnlineUsers = false,
-      this.serverOnlineCount = 0,
-      this.showBroadcastNotifications = true,
-      this.pendingSettings = const {},
-      this.pendingSettingsTimeouts = const {},
-      this.anonymousSwitchCooldownSeconds = 0,
-      this.playerNotifications = const [],
+    this.allOnlineUsers = const [],
+    this.isLoadingAllOnlineUsers = false,
+    this.serverOnlineCount = 0,
+    this.showBroadcastNotifications = true,
+    this.pendingSettings = const {},
+    this.pendingSettingsTimeouts = const {},
+    this.anonymousSwitchCooldownSeconds = 0,
+    this.steamNameSwitchCooldownSeconds = 0,
+    this.playerNotifications = const [],
   });
 
   factory LobbyState.initial() {
@@ -169,6 +174,7 @@ class LobbyState extends Equatable {
       chatOpacity: 0.32,
       showNameplates: true,
       showChatBubbles: true,
+      useSteamName: false,
       transientNotice: null,
       teleportTarget: null,
       isTeleporting: false,
@@ -185,6 +191,7 @@ class LobbyState extends Equatable {
       pendingSettings: {},
       pendingSettingsTimeouts: {},
       anonymousSwitchCooldownSeconds: 0,
+      steamNameSwitchCooldownSeconds: 0,
       playerNotifications: [],
     );
   }
@@ -221,6 +228,7 @@ class LobbyState extends Equatable {
     double? chatOpacity,
     bool? showNameplates,
     bool? showChatBubbles,
+    bool? useSteamName,
     Object? transientNotice = _stateSentinel,
     bool clearTransientNotice = false,
     Object? teleportTarget = _stateSentinel,
@@ -245,6 +253,7 @@ class LobbyState extends Equatable {
     Object? pendingSettings = _stateSentinel,
     Object? pendingSettingsTimeouts = _stateSentinel,
     int? anonymousSwitchCooldownSeconds,
+    int? steamNameSwitchCooldownSeconds,
     Object? playerNotifications = _stateSentinel,
   }) {
     return LobbyState(
@@ -265,6 +274,7 @@ class LobbyState extends Equatable {
       chatOpacity: chatOpacity ?? this.chatOpacity,
       showNameplates: showNameplates ?? this.showNameplates,
       showChatBubbles: showChatBubbles ?? this.showChatBubbles,
+      useSteamName: useSteamName ?? this.useSteamName,
       transientNotice: clearTransientNotice
           ? null
           : identical(transientNotice, _stateSentinel)
@@ -312,6 +322,7 @@ class LobbyState extends Equatable {
           ? this.pendingSettingsTimeouts
           : pendingSettingsTimeouts as Map<String, DateTime>,
       anonymousSwitchCooldownSeconds: anonymousSwitchCooldownSeconds ?? this.anonymousSwitchCooldownSeconds,
+      steamNameSwitchCooldownSeconds: steamNameSwitchCooldownSeconds ?? this.steamNameSwitchCooldownSeconds,
       playerNotifications: identical(playerNotifications, _stateSentinel)
           ? this.playerNotifications
           : playerNotifications as List<PlayerNotification>,
@@ -335,6 +346,7 @@ class LobbyState extends Equatable {
     chatOpacity,
     showNameplates,
     showChatBubbles,
+    useSteamName,
     transientNotice,
     teleportTarget,
     isTeleporting,
@@ -354,6 +366,7 @@ class LobbyState extends Equatable {
     pendingSettings,
     pendingSettingsTimeouts,
     anonymousSwitchCooldownSeconds,
+    steamNameSwitchCooldownSeconds,
     playerNotifications,
   ];
 }

@@ -53,6 +53,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     on<LobbyChatOpacityChanged>(_onChatOpacityChanged);
     on<LobbyNameplatesToggled>(_onNameplatesToggled);
     on<LobbyChatBubblesToggled>(_onChatBubblesToggled);
+    on<LobbyUseSteamNameToggled>(_onUseSteamNameToggled);
     on<LobbyTransientNoticeShown>(_onTransientNoticeShown);
     on<LobbyBubbleExpired>(_onBubbleExpired);
     on<LobbyWsEventReceived>(_onWsEventReceived);
@@ -66,6 +67,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     on<LobbyLogoutConfirmed>(_onLogoutConfirmed);
     on<_LobbyChatCooldownTick>(_onChatCooldownTick);
     on<_LobbyAnonymousSwitchCooldownTick>(_onAnonymousSwitchCooldownTick);
+    on<_LobbySteamNameSwitchCooldownTick>(_onSteamNameSwitchCooldownTick);
     on<LobbyBroadcastDialogToggled>(_onBroadcastDialogToggled);
     on<LobbyBroadcastSubmitted>(_onBroadcastSubmitted);
     on<_LobbyBroadcastCooldownTick>(_onBroadcastCooldownTick);
@@ -90,6 +92,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   static const int _chatCooldownDuration = 1;
   /// 匿名切换冷却时间（秒）
   static const int _anonymousSwitchCooldownDuration = 3;
+  /// Steam名称切换冷却时间（秒）
+  static const int _steamNameSwitchCooldownDuration = 3;
 
   final LobbyWsService _service;
   StreamSubscription<LobbyWsEvent>? _wsSubscription;
@@ -99,6 +103,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   Timer? _chatCooldownTimer;
   Timer? _broadcastCooldownTimer;
   Timer? _anonymousSwitchCooldownTimer;
+  Timer? _steamNameSwitchCooldownTimer;
   Timer? _settingsTimeoutTimer;
   StreamSubscription<LobbyWsEvent>? _snapshotOnAssetsReceived;
   bool _authAttemptedAfterConnect = false;
@@ -173,6 +178,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         chatOpacity: _service.loadChatOpacity(),
         showNameplates: _service.loadShowNameplates(),
         showChatBubbles: _service.loadShowChatBubbles(),
+        useSteamName: _service.loadUseSteamName(),
         showBroadcastNotifications: _service.loadShowBroadcastNotifications(),
         // 如果有缓存的 assets，先设置上
         assets: cachedAssets ?? state.assets,
@@ -591,6 +597,27 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     }
   }
 
+  void _startSteamNameSwitchCooldownTimer() {
+    _steamNameSwitchCooldownTimer?.cancel();
+    _steamNameSwitchCooldownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      add(const _LobbySteamNameSwitchCooldownTick());
+    });
+  }
+
+  void _onSteamNameSwitchCooldownTick(
+    _LobbySteamNameSwitchCooldownTick event,
+    Emitter<LobbyState> emit,
+  ) {
+    final newCooldown = state.steamNameSwitchCooldownSeconds - 1;
+    if (newCooldown <= 0) {
+      _steamNameSwitchCooldownTimer?.cancel();
+      _steamNameSwitchCooldownTimer = null;
+      emit(state.copyWith(steamNameSwitchCooldownSeconds: 0));
+    } else {
+      emit(state.copyWith(steamNameSwitchCooldownSeconds: newCooldown));
+    }
+  }
+
   void _onResendMessages(
     LobbyResendMessages event,
     Emitter<LobbyState> emit,
@@ -734,6 +761,34 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     );
     _scheduleSettingsTimeoutCheck();
     await _service.setShowChatBubbles(event.value);
+  }
+
+  Future<void> _onUseSteamNameToggled(
+    LobbyUseSteamNameToggled event,
+    Emitter<LobbyState> emit,
+  ) async {
+    // 检查冷却状态
+    if (state.steamNameSwitchCooldownSeconds > 0) return;
+
+    const settingKey = 'useSteamName';
+    final updatedPending = Map<String, bool>.from(state.pendingSettings);
+    updatedPending[settingKey] = event.value;
+
+    emit(
+      state.copyWith(
+        useSteamName: event.value,
+        pendingSettings: updatedPending,
+        pendingSettingsTimeouts: {
+          ...state.pendingSettingsTimeouts,
+          settingKey: DateTime.now().add(const Duration(seconds: 3)),
+        },
+        // 启动冷却
+        steamNameSwitchCooldownSeconds: _steamNameSwitchCooldownDuration,
+      ),
+    );
+    _startSteamNameSwitchCooldownTimer();
+    _scheduleSettingsTimeoutCheck();
+    await _service.setUseSteamName(event.value);
   }
 
   void _onTransientNoticeShown(
@@ -919,12 +974,15 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           _broadcastCooldownTimer = null;
           _anonymousSwitchCooldownTimer?.cancel();
           _anonymousSwitchCooldownTimer = null;
+          _steamNameSwitchCooldownTimer?.cancel();
+          _steamNameSwitchCooldownTimer = null;
 
           emit(state.copyWith(
             chatDraft: '', // 退出登录后清空聊天草稿
             chatCooldownSeconds: 0,
             broadcastCooldownSeconds: 0,
             anonymousSwitchCooldownSeconds: 0,
+            steamNameSwitchCooldownSeconds: 0,
             transientNotice: '已退出登录，保持匿名身份',
           ));
           if (_isLobbyEntered) {
@@ -1467,6 +1525,33 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
                       ? user.copyWith(statusText: statusText)
                       : user)
                   .toList(growable: false),
+            ),
+          );
+        }
+        break;
+      case 'profile.displayName.changed':
+        final userId = event.event.payload['userId']?.toString();
+        final nickname = event.event.payload['nickname']?.toString();
+        if (userId != null && nickname != null) {
+          final normalizedUserId = _normalizeUserId(userId);
+          final nextUsers = state.users.map((user) {
+            return (user.userId == normalizedUserId || user.serverUserId == userId)
+                ? user.copyWith(nickname: nickname)
+                : user;
+          }).toList(growable: false);
+
+          Map<String, bool> updatedPending = state.pendingSettings;
+          Map<String, DateTime> updatedTimeouts = state.pendingSettingsTimeouts;
+          if (_isSelfServerUserId(userId)) {
+            updatedPending = Map<String, bool>.from(state.pendingSettings)..remove('useSteamName');
+            updatedTimeouts = Map<String, DateTime>.from(state.pendingSettingsTimeouts)..remove('useSteamName');
+          }
+
+          emit(
+            state.copyWith(
+              users: nextUsers,
+              pendingSettings: updatedPending,
+              pendingSettingsTimeouts: updatedTimeouts,
             ),
           );
         }

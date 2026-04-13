@@ -12,6 +12,7 @@ import '../services/auth_service.dart';
 import '../utils/device_id_helper.dart';
 import '../utils/log_service.dart';
 import '../utils/storage_utils.dart';
+import 'steam_user_service.dart';
 import 'token_service.dart';
 
 class LobbyWsService {
@@ -43,6 +44,7 @@ class LobbyWsService {
   static const String keyShowNameplates = 'lobby_show_nameplates';
   static const String keyShowChatBubbles = 'lobby_show_chat_bubbles';
   static const String keyShowBroadcastNotifications = 'lobby_show_broadcast_notifications';
+  static const String keyUseSteamName = 'lobby_use_steam_name';
 
   final StreamController<LobbyWsEvent> _eventController =
       StreamController<LobbyWsEvent>.broadcast();
@@ -281,6 +283,11 @@ class LobbyWsService {
       type: 'login',
       payload: {'token': token},
     );
+
+    // 开启的情况才主动同步显示名称
+    if (loadUseSteamName()) {
+      _syncDisplayName();
+    }
   }
 
   /// 发送登出消息
@@ -382,6 +389,28 @@ class LobbyWsService {
     await StorageUtils.setBool(keyShowBroadcastNotifications, value);
   }
 
+  Future<void> setUseSteamName(bool value) async {
+    await StorageUtils.setBool(keyUseSteamName, value);
+    if (AuthService.instance.isLoggedIn && !loadAnonymousMode()) {
+      _syncDisplayName();
+    }
+  }
+
+  Future<void> _syncDisplayName() async {
+    final useSteamName = loadUseSteamName();
+    String steamName = '';
+    if (useSteamName) {
+      steamName = await SteamUserService().getCurrentUsername() ?? '';
+    }
+    _sendEnvelope(
+      type: 'profile.displayName.update',
+      payload: {
+        'customName': '',
+        'steamName': steamName,
+      },
+    );
+  }
+
   /// 发送全服广播消息
   Future<void> sendBroadcast(String content) async {
     _sendEnvelope(
@@ -434,6 +463,10 @@ class LobbyWsService {
 
   bool loadShowBroadcastNotifications() {
     return StorageUtils.getBool(keyShowBroadcastNotifications, defaultValue: true);
+  }
+
+  bool loadUseSteamName() {
+    return StorageUtils.getBool(keyUseSteamName, defaultValue: false);
   }
 
   String _buildWsUri() {

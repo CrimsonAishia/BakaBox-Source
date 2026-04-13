@@ -111,6 +111,15 @@ class LobbyChatBubblesToggled extends LobbyEvent {
   List<Object?> get props => [value];
 }
 
+class LobbyUseSteamNameToggled extends LobbyEvent {
+  final bool value;
+
+  const LobbyUseSteamNameToggled(this.value);
+
+  @override
+  List<Object?> get props => [value];
+}
+
 class LobbyTeleportStarted extends LobbyEvent {
   final LobbyTeleportTarget target;
 
@@ -198,6 +207,10 @@ class _LobbyChatCooldownTick extends LobbyEvent {
 /// 内部事件：匿名切换冷却倒计时
 class _LobbyAnonymousSwitchCooldownTick extends LobbyEvent {
   const _LobbyAnonymousSwitchCooldownTick();
+}
+
+class _LobbySteamNameSwitchCooldownTick extends LobbyEvent {
+  const _LobbySteamNameSwitchCooldownTick();
 }
 
 /// 用户退出登录后重置状态（清除用户关联信息，但保留匿名可用）
