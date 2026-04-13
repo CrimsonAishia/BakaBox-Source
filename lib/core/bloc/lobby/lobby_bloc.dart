@@ -61,6 +61,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     on<LobbyResendMessages>(_onResendMessages);
     on<_LobbyAssetsReceived>(_onAssetsReceived);
     on<_LobbyGameStatusChanged>(_onGameStatusChanged);
+    on<LobbyPageActivityChanged>(_onPageActivityChanged);
     on<LobbyTeleportStarted>(_onTeleportStarted);
     on<LobbyTeleportCompleted>(_onTeleportCompleted);
     on<_LobbySetLoadingMore>(_onSetLoadingMore);
@@ -818,12 +819,22 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _updateStatusTextByGameStatus(event.isGameRunning, emit);
   }
 
+  void _onPageActivityChanged(
+    LobbyPageActivityChanged event,
+    Emitter<LobbyState> emit,
+  ) {
+    emit(state.copyWith(pageActivityText: event.pageActivityText));
+    _updateStatusTextByGameStatus(GameStatusService().isGameRunning, emit, event.pageActivityText);
+  }
+
   /// 根据游戏运行状态更新状态文字，并同步到服务器
   Future<void> _updateStatusTextByGameStatus(
     bool isGameRunning,
     Emitter<LobbyState> emit,
+    [String? pageActivityTextOverride]
   ) async {
-    final newStatusText = isGameRunning ? '游戏中' : '在线';
+    final activityText = pageActivityTextOverride ?? state.pageActivityText;
+    final newStatusText = isGameRunning ? '游戏中' : activityText;
 
     emit(
       state.copyWith(

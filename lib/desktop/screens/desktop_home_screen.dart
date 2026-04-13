@@ -128,6 +128,8 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
       final bloc = context.read<AnnouncementBloc>();
       bloc.add(AnnouncementFetch());
       bloc.add(AnnouncementStartAutoRefresh());
+      
+      context.read<LobbyBloc>().add(const LobbyPageActivityChanged('在看主页'));
 
       // 检查当前状态，防止错过初始化时的事件
       final gameService = GameStatusService();
@@ -196,6 +198,38 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
 
     // 页面切换时清理 Flutter 图片缓存，释放内存
     PaintingBinding.instance.imageCache.clear();
+
+    String newActivityText = '在线';
+    switch (index) {
+      case 0:
+        newActivityText = '在看主页';
+        break;
+      case 1:
+        newActivityText = '在逛服务器列表';
+        break;
+      case 2:
+        newActivityText = '在大厅';
+        break;
+      case 3:
+        newActivityText = '在看角色图鉴';
+        break;
+      case 4:
+        newActivityText = '在看视频/直播';
+        break;
+      case 5:
+        newActivityText = '在看更新日志';
+        break;
+      case 6:
+        newActivityText = '在使用工具箱';
+        break;
+      case 7:
+        newActivityText = '在看设置';
+        break;
+      case 8:
+        newActivityText = '在看问题反馈';
+        break;
+    }
+    context.read<LobbyBloc>().add(LobbyPageActivityChanged(newActivityText));
 
     setState(() {
       _currentIndex = index;

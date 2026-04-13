@@ -199,6 +199,16 @@ class _LobbyGameStatusChanged extends LobbyEvent {
   List<Object?> get props => [isGameRunning];
 }
 
+/// 页面活动状态改变（在外部导航切换时触发）
+class LobbyPageActivityChanged extends LobbyEvent {
+  final String pageActivityText;
+
+  const LobbyPageActivityChanged(this.pageActivityText);
+
+  @override
+  List<Object?> get props => [pageActivityText];
+}
+
 /// 内部事件：聊天冷却倒计时
 class _LobbyChatCooldownTick extends LobbyEvent {
   const _LobbyChatCooldownTick();
