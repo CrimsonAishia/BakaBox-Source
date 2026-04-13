@@ -63,6 +63,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   SpriteComponent? _spriteComponent; // 当前显示的贴图组件（静态图片）
   SpriteAnimationComponent? _animComponent; // 当前显示的动画组件（图集动画）
 
+  bool _isHovered = false;
+
   // 聊天气泡消失动画
   double _bubbleOpacity = 1.0;
   static const double _bubbleFadeSpeed = 0.15; // 透明度每秒减少量
@@ -521,6 +523,33 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     scale = Vector2(1.0 - 2.0 * _flipValue, 1.0);
   }
 
+  void handleHoverEnter() {
+    if (!_isHovered) {
+      _isHovered = true;
+      priority = 100; // 悬停时提升层级，信息不会被遮挡
+    }
+  }
+
+  void handleHoverExit() {
+    if (_isHovered) {
+      _isHovered = false;
+      priority = 1; // 恢复原来层级
+    }
+  }
+
+  @override
+  bool containsLocalPoint(Vector2 point) {
+    // 设置合理的点击和悬停判定区域（以角色为中心的垂直矩形，包含名字和状态区域）
+    final cx = _spriteWidth / 2;
+    final halfWidth = math.max(_actualCharWidth, _characterDisplayWidth) / 2 + 16.0; 
+    
+    if (point.x < cx - halfWidth || point.x > cx + halfWidth) return false;
+    // 从名字区域（大概是 SlotTopY - 40）到脚底信息区域
+    if (point.y < _characterSlotTopY - 40 || point.y > size.y) return false;
+    
+    return true;
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
@@ -757,6 +786,37 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
   @override
   void render(Canvas canvas) {
+    // 如果被悬停，绘制描边高亮效果
+    if (_isHovered) {
+      canvas.save();
+      if (scale.x < 0) {
+        // 让高亮的左右对称性不再受组件翻转影响，不过对于矩形一般无所谓，还是规范下
+        final centerX = size.x / 2;
+        canvas.translate(centerX, 0);
+        canvas.scale(-1, 1);
+        canvas.translate(-centerX, 0);
+      }
+
+      final charX = (_spriteWidth - _characterDisplayWidth) / 2;
+      final charY = _characterSlotTopY;
+      
+      final rect = Rect.fromLTWH(charX - 4, charY - 4, _characterDisplayWidth + 8, _characterDisplayHeight + 8);
+      final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(8));
+      
+      final glowPaint = Paint()
+        ..color = Colors.white.withValues(alpha: 0.6)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.outer, 8.0);
+        
+      final strokePaint = Paint()
+        ..color = Colors.white.withValues(alpha: 0.9)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+
+      canvas.drawRRect(rrect, glowPaint);
+      canvas.drawRRect(rrect, strokePaint);
+      canvas.restore();
+    }
+
     // 渲染名字标签
     if (_showNameplate) {
       _renderNameplate(canvas);
