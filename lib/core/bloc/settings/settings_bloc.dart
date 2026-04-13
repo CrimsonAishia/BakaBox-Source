@@ -34,6 +34,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   static const String _keyUpdateLogNotificationEnabled =
       'update_log_notification_enabled';
   static const String _keyAppExitBehavior = 'app_exit_behavior';
+  static const String _keyServerSortMode = 'server_sort_mode';
 
   final AudioService _audioService = AudioService();
   final GamePathService _gamePathService = GamePathService();
@@ -76,6 +77,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       _onSetUpdateLogNotificationEnabled,
     );
     on<SettingsSetAppExitBehavior>(_onSetAppExitBehavior);
+    on<SettingsSetServerSortMode>(_onSetServerSortMode);
   }
 
   Future<void> _onInit(SettingsInit event, Emitter<SettingsState> emit) async {
@@ -124,11 +126,14 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       );
       final appExitBehaviorIndex =
           StorageUtils.getInt(_keyAppExitBehavior) ?? AppExitBehavior.ask.index;
+      final serverSortModeIndex =
+          StorageUtils.getInt(_keyServerSortMode) ?? ServerSortMode.manual.index;
       final notificationPosition =
           NotificationPositionType.values[notificationPositionIndex];
       final floatingWindowPosition =
           NotificationPositionType.values[floatingWindowPositionIndex];
       final appExitBehavior = AppExitBehavior.values[appExitBehaviorIndex];
+      final serverSortMode = ServerSortMode.values[serverSortModeIndex];
 
       // 同步通知位置到 NotificationWindowService
       if (PlatformUtils.isDesktopPlatform) {
@@ -149,6 +154,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
           warmupNotificationEnabled: warmupNotificationEnabled,
           updateLogNotificationEnabled: updateLogNotificationEnabled,
           appExitBehavior: appExitBehavior,
+          serverSortMode: serverSortMode,
         ),
       );
     } catch (e) {
@@ -1078,6 +1084,19 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       LogService.d('主窗口关闭行为已设置: ${event.behavior.displayName}');
     } catch (e) {
       LogService.e('设置主窗口关闭行为失败', e);
+    }
+  }
+
+  Future<void> _onSetServerSortMode(
+    SettingsSetServerSortMode event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      await StorageUtils.setInt(_keyServerSortMode, event.mode.index);
+      emit(state.copyWith(serverSortMode: event.mode));
+      LogService.d('服务器排序模式已设置: ${event.mode.displayName}');
+    } catch (e) {
+      LogService.e('设置服务器排序模式失败', e);
     }
   }
 }

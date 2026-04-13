@@ -147,3 +147,11 @@ class SettingsSetAppExitBehavior extends SettingsEvent {
   @override
   List<Object?> get props => [behavior];
 }
+
+// 服务器排序模式设置事件
+class SettingsSetServerSortMode extends SettingsEvent {
+  final ServerSortMode mode;
+  const SettingsSetServerSortMode(this.mode);
+  @override
+  List<Object?> get props => [mode];
+}

@@ -78,6 +78,33 @@ extension AppExitBehaviorExtension on AppExitBehavior {
   }
 }
 
+/// 服务器排序模式
+enum ServerSortMode {
+  manual, // 手动排序（用户通过长按拖动调整顺序）
+  pinOnline, // 置顶在线服务器（自动将在线服务器排到前面）
+}
+
+/// 服务器排序模式扩展
+extension ServerSortModeExtension on ServerSortMode {
+  String get displayName {
+    switch (this) {
+      case ServerSortMode.manual:
+        return '手动排序';
+      case ServerSortMode.pinOnline:
+        return '置顶在线服务器';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case ServerSortMode.manual:
+        return '通过长按拖动调整服务器顺序';
+      case ServerSortMode.pinOnline:
+        return '在线服务器自动排在前面，离线服务器自动排在后面';
+    }
+  }
+}
+
 /// 缓存类型枚举
 enum CacheType {
   cacheFiles, // 图片和临时文件缓存
@@ -174,6 +201,9 @@ class SettingsState extends Equatable {
   // 主窗口关闭行为
   final AppExitBehavior appExitBehavior;
 
+  // 服务器排序模式
+  final ServerSortMode serverSortMode;
+
   const SettingsState({
     this.appVersion = '',
     this.buildNumber = '',
@@ -197,6 +227,7 @@ class SettingsState extends Equatable {
     this.warmupNotificationEnabled = true,
     this.updateLogNotificationEnabled = true,
     this.appExitBehavior = AppExitBehavior.ask,
+    this.serverSortMode = ServerSortMode.manual,
   });
 
   /// 获取总缓存大小（字节）
@@ -262,6 +293,7 @@ class SettingsState extends Equatable {
     bool? warmupNotificationEnabled,
     bool? updateLogNotificationEnabled,
     AppExitBehavior? appExitBehavior,
+    ServerSortMode? serverSortMode,
   }) {
     return SettingsState(
       appVersion: appVersion ?? this.appVersion,
@@ -290,6 +322,7 @@ class SettingsState extends Equatable {
       updateLogNotificationEnabled:
           updateLogNotificationEnabled ?? this.updateLogNotificationEnabled,
       appExitBehavior: appExitBehavior ?? this.appExitBehavior,
+      serverSortMode: serverSortMode ?? this.serverSortMode,
     );
   }
 
@@ -317,5 +350,6 @@ class SettingsState extends Equatable {
     warmupNotificationEnabled,
     updateLogNotificationEnabled,
     appExitBehavior,
+    serverSortMode,
   ];
 }
