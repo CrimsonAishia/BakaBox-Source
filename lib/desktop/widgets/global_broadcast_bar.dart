@@ -112,22 +112,43 @@ class _GlobalBroadcastBarState extends State<GlobalBroadcastBar>
     });
   }
 
+  // 标记下一次 messages 变化是否来自快照（loading → ready 的那次）
+  bool _suppressNextBroadcast = false;
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<LobbyBloc, LobbyState>(
-      listenWhen: (prev, curr) => curr.messages != prev.messages,
+      listenWhen: (prev, curr) {
+        // 检测快照加载完成（loading → ready），标记下一次 messages 变化需要静默
+        if (prev.pageStatus == LobbyPageStatus.loading &&
+            curr.pageStatus == LobbyPageStatus.ready) {
+          _suppressNextBroadcast = true;
+        }
+        return curr.messages != prev.messages;
+      },
       listener: (context, state) {
-        // 从消息列表末尾找最新的一条 broadcast，与上次处理的 ID 对比
+        // 找最新的一条 broadcast
+        LobbyMessage? latestBroadcast;
         for (int i = state.messages.length - 1; i >= 0; i--) {
-          final msg = state.messages[i];
-          if (msg.type == LobbyMessageType.broadcast) {
-            if (msg.messageId != _lastHandledMessageId) {
-              _lastHandledMessageId = msg.messageId;
-              _showBroadcast(msg.nickname, msg.content);
-            }
+          if (state.messages[i].type == LobbyMessageType.broadcast) {
+            latestBroadcast = state.messages[i];
             break;
           }
         }
+
+        // 快照带来的这次 messages 变化，无论有没有广播都要消费掉 suppress 标记
+        final suppress = _suppressNextBroadcast;
+        _suppressNextBroadcast = false;
+
+        if (latestBroadcast == null) return;
+        if (latestBroadcast.messageId == _lastHandledMessageId) return;
+
+        _lastHandledMessageId = latestBroadcast.messageId;
+
+        // 快照带来的历史广播，只标记不弹出
+        if (suppress) return;
+
+        _showBroadcast(latestBroadcast.nickname, latestBroadcast.content);
       },
       child: _nickname == null
           ? const SizedBox.shrink()

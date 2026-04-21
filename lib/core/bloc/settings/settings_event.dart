@@ -99,6 +99,16 @@ class SettingsClearCacheByType extends SettingsEvent {
   List<Object?> get props => [cacheType];
 }
 
+// 移动端缓存管理事件
+class SettingsLoadMobileCacheDetails extends SettingsEvent {}
+
+class SettingsClearMobileCacheByType extends SettingsEvent {
+  final MobileCacheType cacheType;
+  const SettingsClearMobileCacheByType(this.cacheType);
+  @override
+  List<Object?> get props => [cacheType];
+}
+
 class SettingsClearAllCache extends SettingsEvent {}
 
 class SettingsClearSelectedCache extends SettingsEvent {

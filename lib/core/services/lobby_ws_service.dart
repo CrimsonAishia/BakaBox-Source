@@ -11,6 +11,7 @@ import '../models/lobby_models.dart';
 import '../services/auth_service.dart';
 import '../utils/device_id_helper.dart';
 import '../utils/log_service.dart';
+import '../utils/platform_utils.dart';
 import '../utils/storage_utils.dart';
 import 'steam_user_service.dart';
 import 'token_service.dart';
@@ -60,6 +61,9 @@ class LobbyWsService {
   bool _isConnected = false;
   bool _isReconnecting = false;
   bool _isDisposed = false;
+
+  /// 标记是否被服务端踢出（被踢后禁止自动重连）
+  bool _isKicked = false;
 
   /// 标记 assets 是否已到达（用于处理先于 LobbyStarted 收到的 assets）
   bool _hasAssetsReceived = false;
@@ -115,6 +119,50 @@ class LobbyWsService {
 
   /// 获取最新的 assets payload（原始数据，由 LobbyBloc 统一解析）
   Map<String, dynamic>? getLastAssetsPayload() => _latestAssetsPayload;
+
+  /// 重置被踢状态，允许重新连接
+  /// 用户点击"重新登录"时调用
+  void resetKicked() {
+    _isKicked = false;
+    LogService.i('[LobbyWsService] 被踢状态已重置');
+  }
+
+  /// 是否处于被踢状态
+  bool get isKicked => _isKicked;
+
+  /// 强制重新连接（被踢后使用）
+  ///
+  /// 与 [initialize] 不同，此方法会先清理所有旧状态再重新连接，
+  /// 不受 _isConnected / _isReconnecting 守卫限制。
+  Future<void> forceReconnect() async {
+    if (_isDisposed) return;
+    LogService.i('[LobbyWsService] forceReconnect: 清理旧连接并重新连接');
+
+    // 取消重连定时器
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+
+    // 关闭旧 channel（如果还存在）
+    _stopPingTimer();
+    await _channelSubscription?.cancel();
+    _channelSubscription = null;
+    try {
+      await _channel?.sink.close(ws_status.normalClosure);
+    } catch (_) {}
+    _channel = null;
+    _isConnected = false;
+    _isReconnecting = false;
+    _latestSnapshot = null;
+    _latestAssetsPayload = null;
+    _hasAssetsReceived = false;
+    _clearCachedEventsStream();
+    _reconnectDelaySeconds = 2;
+
+    // 重新连接
+    await _waitForTokenReady();
+    await _ensureDeviceIdReady();
+    await _doConnect();
+  }
 
   /// 初始化并连接 WebSocket（幂等操作）
   ///
@@ -182,8 +230,11 @@ class LobbyWsService {
     }
   }
 
+  /// 标记是否正在刷新 Token（避免重复刷新）
+  bool _isRefreshingToken = false;
+
   /// 执行实际的 WebSocket 连接
-  Future<void> _doConnect() async {
+  Future<void> _doConnect({bool isRetryAfterRefresh = false}) async {
     final wsUri = _buildWsUri();
     LogService.d('[LobbyWsService] 正在连接大厅 WebSocket: $wsUri');
 
@@ -216,10 +267,67 @@ class LobbyWsService {
         LogService.d('[LobbyWsService] WebSocket 连接成功，用户已登录，发送 login 事件');
         login();
       }
+    } on WebSocketException catch (error, stackTrace) {
+      // 检查是否是 401 错误（Token 过期）
+      final is401 = error.message.contains('401');
+      
+      if (is401 && !isRetryAfterRefresh && !_isRefreshingToken && AuthService.instance.isLoggedIn) {
+        // 401 错误且未重试过，尝试刷新 Token 后重连
+        LogService.w('[LobbyWsService] WebSocket 连接返回 401，尝试刷新 Token...');
+        _isRefreshingToken = true;
+        
+        try {
+          final refreshed = await _tryRefreshToken();
+          _isRefreshingToken = false;
+          
+          if (refreshed) {
+            LogService.i('[LobbyWsService] Token 刷新成功，重新连接 WebSocket...');
+            // Token 刷新成功，重置重连延迟
+            _reconnectDelaySeconds = 2;
+            // 立即重试连接
+            await _doConnect(isRetryAfterRefresh: true);
+            return;
+          } else {
+            LogService.w('[LobbyWsService] Token 刷新失败，将以匿名身份重连');
+          }
+        } catch (e) {
+          _isRefreshingToken = false;
+          LogService.e('[LobbyWsService] Token 刷新异常', e);
+        }
+      }
+      
+      LogService.e('[LobbyWsService] 连接大厅 WebSocket 失败', error, stackTrace);
+      _emitWsEvent(type: 'ws.error', payload: {'error': error.toString()});
+      _scheduleReconnect();
     } catch (error, stackTrace) {
       LogService.e('[LobbyWsService] 连接大厅 WebSocket 失败', error, stackTrace);
       _emitWsEvent(type: 'ws.error', payload: {'error': error.toString()});
       _scheduleReconnect();
+    }
+  }
+
+  /// 尝试刷新 Token
+  /// 返回 true 表示刷新成功，false 表示刷新失败
+  Future<bool> _tryRefreshToken() async {
+    try {
+      final result = await AuthService.instance.validateAndRefreshSession(
+        forceRefreshJwt: true,
+      );
+      
+      if (result.jwtRefreshed) {
+        return true;
+      }
+      
+      // 如果需要登出（论坛会话也失效了），触发强制登出
+      if (result.shouldLogout) {
+        LogService.w('[LobbyWsService] 论坛会话已失效，触发强制登出');
+        await AuthService.instance.forceLogout();
+      }
+      
+      return false;
+    } catch (e) {
+      LogService.e('[LobbyWsService] 刷新 Token 异常', e);
+      return false;
     }
   }
 
@@ -281,7 +389,10 @@ class LobbyWsService {
 
     _sendEnvelope(
       type: 'login',
-      payload: {'token': token},
+      payload: {
+        'token': token,
+        'deviceType': _deviceType,
+      },
     );
 
     // 开启的情况才主动同步显示名称
@@ -469,6 +580,10 @@ class LobbyWsService {
     return StorageUtils.getBool(keyUseSteamName, defaultValue: false);
   }
 
+  /// 当前设备类型标识，用于 WebSocket 连接和 login 消息
+  /// PC 端为 'pc'，移动端为 'mobile'
+  String get _deviceType => PlatformUtils.isMobile ? 'mobile' : 'pc';
+
   String _buildWsUri() {
     final baseUrl = EnvConfig.apiBaseUrl;
     final wsBase = baseUrl.replaceFirst('http', 'ws');
@@ -478,7 +593,7 @@ class LobbyWsService {
     // fallback 兜底：anonymous-fallback（仅在极端情况下触发）
     final deviceId = _deviceId;
     if (deviceId != null && deviceId.isNotEmpty) {
-      return '$uri?deviceId=$deviceId';
+      return '$uri?deviceId=$deviceId&deviceType=$_deviceType';
     }
     throw StateError('[LobbyWsService] deviceId 未就绪，无法构建 WebSocket URI');
   }
@@ -509,6 +624,13 @@ class LobbyWsService {
         _latestAssetsPayload = wsEvent.payload;
       }
 
+      // 收到 system.kicked 后标记，禁止自动重连
+      if (wsEvent.type == 'system.kicked') {
+        _isKicked = true;
+        _stopPingTimer();
+        LogService.w('[LobbyWsService] 收到 system.kicked，已禁止自动重连');
+      }
+
       // 不在这里请求 assets：等到进入大厅页面再请求（避免 URL token 过期）
 
       // 缓存最新的 snapshot，供新订阅者使用
@@ -535,7 +657,12 @@ class LobbyWsService {
     _clearCachedEventsStream();
     _stopPingTimer();
     _emitWsEvent(type: 'ws.closed', payload: {});
-    _scheduleReconnect();
+    // 被踢出时不自动重连
+    if (!_isKicked) {
+      _scheduleReconnect();
+    } else {
+      LogService.w('[LobbyWsService] 被踢出状态，跳过自动重连');
+    }
   }
 
   void _handleSocketError(Object error, [StackTrace? stackTrace]) {

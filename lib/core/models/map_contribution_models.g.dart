@@ -129,6 +129,10 @@ MapInfo _$MapInfoFromJson(Map<String, dynamic> json) => MapInfo(
   contribCount: (json['contribCount'] as num?)?.toInt() ?? 0,
   nameCount: (json['nameCount'] as num?)?.toInt() ?? 0,
   backgroundCount: (json['backgroundCount'] as num?)?.toInt() ?? 0,
+  tags: (json['tags'] as List<dynamic>?)
+          ?.map((e) => MapTagSimple.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const [],
 );
 
 Map<String, dynamic> _$MapInfoToJson(MapInfo instance) => <String, dynamic>{
@@ -138,6 +142,7 @@ Map<String, dynamic> _$MapInfoToJson(MapInfo instance) => <String, dynamic>{
   'contribCount': instance.contribCount,
   'nameCount': instance.nameCount,
   'backgroundCount': instance.backgroundCount,
+  'tags': instance.tags,
 };
 
 MapContributionGroup _$MapContributionGroupFromJson(

@@ -79,3 +79,8 @@ class NotificationStopAutoRefresh extends NotificationEvent {
 class NotificationClearError extends NotificationEvent {
   const NotificationClearError();
 }
+
+/// 清除所有消息数据（退出登录时调用）
+class NotificationClear extends NotificationEvent {
+  const NotificationClear();
+}

@@ -696,15 +696,21 @@ class BackgroundComponent extends PositionComponent with HasGameReference<LobbyG
 class GradientOverlayComponent extends PositionComponent {
   GradientOverlayComponent({required Vector2 worldSize}) : super(priority: -1) {
     size = worldSize;
+    _rebuildShader();
   }
+
+  Paint? _cachedPaint;
+  Rect? _cachedRect;
 
   void updateWorldSize(Vector2 worldSize) {
     size = worldSize;
+    _rebuildShader();
   }
 
-  @override
-  void render(Canvas canvas) {
-    final paint = Paint()
+  void _rebuildShader() {
+    final rect = size.toRect();
+    _cachedRect = rect;
+    _cachedPaint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
@@ -713,9 +719,14 @@ class GradientOverlayComponent extends PositionComponent {
           Colors.transparent,
           Colors.black.withValues(alpha: 0.28),
         ],
-      ).createShader(size.toRect());
+      ).createShader(rect);
+  }
 
-    canvas.drawRect(size.toRect(), paint);
+  @override
+  void render(Canvas canvas) {
+    if (_cachedPaint != null && _cachedRect != null) {
+      canvas.drawRect(_cachedRect!, _cachedPaint!);
+    }
   }
 }
 
@@ -731,6 +742,22 @@ class PortalComponent extends PositionComponent with TapCallbacks {
 
   /// 发光粒子组件
   ParticleSystemComponent? _glowParticles;
+
+  // 缓存标签 TextPainter（标签文字不变，只需创建一次）
+  TextPainter? _cachedLabelPainter;
+
+  // 缓存魔法阵 Paint（颜色不变）
+  late final Paint _magicCirclePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5
+    ..color = Colors.pinkAccent.withValues(alpha: 0.8)
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.0)
+    ..blendMode = BlendMode.plus;
+
+  // 缓存中心亮点 Paint
+  late final Paint _centerBrightPaint = Paint()
+    ..color = Colors.white.withValues(alpha: 0.8)
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
 
   PortalComponent({
     required this.portal,
@@ -896,13 +923,6 @@ class PortalComponent extends PositionComponent with TapCallbacks {
     canvas.translate(center.x, center.y);
     canvas.rotate(_rotationAngle);
 
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5
-      ..color = Colors.pinkAccent.withValues(alpha: 0.8)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.0)
-      ..blendMode = BlendMode.plus;
-
     // 绘制六芒星
     final path = Path();
     for (int i = 0; i <= 12; i++) {
@@ -917,10 +937,10 @@ class PortalComponent extends PositionComponent with TapCallbacks {
         path.lineTo(x, y);
       }
     }
-    canvas.drawPath(path, paint);
+    canvas.drawPath(path, _magicCirclePaint);
 
     // 绘制内圈
-    canvas.drawCircle(Offset.zero, radius * 0.4, paint);
+    canvas.drawCircle(Offset.zero, radius * 0.4, _magicCirclePaint);
 
     canvas.restore();
   }
@@ -946,26 +966,25 @@ class PortalComponent extends PositionComponent with TapCallbacks {
     canvas.drawCircle(center.toOffset(), radius, paint);
 
     // 中心亮点
-    final centerPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.8)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
-    canvas.drawCircle(center.toOffset(), radius * 0.2, centerPaint);
+    canvas.drawCircle(center.toOffset(), radius * 0.2, _centerBrightPaint);
   }
 
   void _drawLabel(Canvas canvas, Vector2 center, double radius, {bool isHovered = false}) {
-    // 使用系统默认字体，支持中英文和特殊字符
-    final pixelTextStyle = TextStyle(
-      fontFamily: null, // null 表示使用系统默认字体
-      fontSize: 12,
-      fontWeight: FontWeight.w600,
-      color: Colors.white,
-    );
+    // 缓存标签 TextPainter（标签文字不变）
+    if (_cachedLabelPainter == null) {
+      final pixelTextStyle = TextStyle(
+        fontFamily: null,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
+      );
+      _cachedLabelPainter = TextPainter(
+        text: TextSpan(text: portal.label, style: pixelTextStyle),
+        textDirection: TextDirection.ltr,
+      )..layout();
+    }
 
-    final textPainter = TextPainter(
-      text: TextSpan(text: portal.label, style: pixelTextStyle),
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
+    final textPainter = _cachedLabelPainter!;
 
     // 在传送门下方显示标签
     final textOffset = Offset(
@@ -988,6 +1007,13 @@ class PortalComponent extends PositionComponent with TapCallbacks {
     );
 
     textPainter.paint(canvas, textOffset);
+  }
+
+  @override
+  void onRemove() {
+    _cachedLabelPainter?.dispose();
+    _cachedLabelPainter = null;
+    super.onRemove();
   }
 }
 

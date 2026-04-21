@@ -74,7 +74,6 @@ class LobbyState extends Equatable {
   final String selectedSpriteId;
   final bool isAnonymous;
   final bool isChatActive;
-  final String chatDraft;
   final bool isPlayersPanelOpen;
   final bool isSettingsPanelOpen;
   final double chatOpacity;
@@ -82,6 +81,8 @@ class LobbyState extends Equatable {
   final bool showChatBubbles;
   final bool useSteamName;
   final String? transientNotice;
+  /// 每次设置 transientNotice 时递增，确保相同内容也能触发 listener
+  final int transientNoticeSeq;
   final LobbyTeleportTarget? teleportTarget;
   final bool isTeleporting;
   final LobbyPageInfo? pageInfo;
@@ -118,6 +119,11 @@ class LobbyState extends Equatable {
   final Map<String, DateTime> pendingSettingsTimeouts;
   /// 玩家加入/离开通知列表
   final List<PlayerNotification> playerNotifications;
+  /// 被踢出原因（null 表示未被踢出）
+  /// 取值：duplicate_login / device_conflict / admin_kick
+  final String? kickedReason;
+  /// 被踢出时服务端附带的消息（admin_kick 时有管理员填写的原因）
+  final String? kickedMessage;
 
   const LobbyState({
     required this.connectionStatus,
@@ -130,7 +136,6 @@ class LobbyState extends Equatable {
     required this.selectedSpriteId,
     required this.isAnonymous,
     required this.isChatActive,
-    required this.chatDraft,
     required this.isPlayersPanelOpen,
     required this.isSettingsPanelOpen,
     required this.chatOpacity,
@@ -138,6 +143,7 @@ class LobbyState extends Equatable {
     required this.showChatBubbles,
     required this.useSteamName,
     required this.transientNotice,
+    this.transientNoticeSeq = 0,
     this.teleportTarget,
     this.isTeleporting = false,
     this.pageInfo,
@@ -158,6 +164,8 @@ class LobbyState extends Equatable {
     this.anonymousSwitchCooldownSeconds = 0,
     this.steamNameSwitchCooldownSeconds = 0,
     this.playerNotifications = const [],
+    this.kickedReason,
+    this.kickedMessage,
   });
 
   factory LobbyState.initial() {
@@ -172,7 +180,6 @@ class LobbyState extends Equatable {
       selectedSpriteId: 'sprite_01',
       isAnonymous: false,
       isChatActive: false,
-      chatDraft: '',
       isPlayersPanelOpen: false,
       isSettingsPanelOpen: false,
       chatOpacity: 0.32,
@@ -180,6 +187,7 @@ class LobbyState extends Equatable {
       showChatBubbles: true,
       useSteamName: false,
       transientNotice: null,
+      transientNoticeSeq: 0,
       teleportTarget: null,
       isTeleporting: false,
       pageInfo: null,
@@ -197,6 +205,8 @@ class LobbyState extends Equatable {
       anonymousSwitchCooldownSeconds: 0,
       steamNameSwitchCooldownSeconds: 0,
       playerNotifications: [],
+      kickedReason: null,
+      kickedMessage: null,
     );
   }
 
@@ -227,7 +237,6 @@ class LobbyState extends Equatable {
     String? selectedSpriteId,
     bool? isAnonymous,
     bool? isChatActive,
-    String? chatDraft,
     bool? isPlayersPanelOpen,
     bool? isSettingsPanelOpen,
     double? chatOpacity,
@@ -235,8 +244,7 @@ class LobbyState extends Equatable {
     bool? showChatBubbles,
     bool? useSteamName,
     Object? transientNotice = _stateSentinel,
-    bool clearTransientNotice = false,
-    Object? teleportTarget = _stateSentinel,
+    bool clearTransientNotice = false,    Object? teleportTarget = _stateSentinel,
     bool clearTeleportTarget = false,
     bool? isTeleporting,
     Object? pageInfo = _stateSentinel,
@@ -260,6 +268,9 @@ class LobbyState extends Equatable {
     int? anonymousSwitchCooldownSeconds,
     int? steamNameSwitchCooldownSeconds,
     Object? playerNotifications = _stateSentinel,
+    Object? kickedReason = _stateSentinel,
+    bool clearKicked = false,
+    Object? kickedMessage = _stateSentinel,
   }) {
     return LobbyState(
       connectionStatus: connectionStatus ?? this.connectionStatus,
@@ -274,7 +285,6 @@ class LobbyState extends Equatable {
       selectedSpriteId: selectedSpriteId ?? this.selectedSpriteId,
       isAnonymous: isAnonymous ?? this.isAnonymous,
       isChatActive: isChatActive ?? this.isChatActive,
-      chatDraft: chatDraft ?? this.chatDraft,
       isPlayersPanelOpen: isPlayersPanelOpen ?? this.isPlayersPanelOpen,
       isSettingsPanelOpen: isSettingsPanelOpen ?? this.isSettingsPanelOpen,
       chatOpacity: chatOpacity ?? this.chatOpacity,
@@ -286,6 +296,11 @@ class LobbyState extends Equatable {
           : identical(transientNotice, _stateSentinel)
           ? this.transientNotice
           : transientNotice as String?,
+      transientNoticeSeq: clearTransientNotice
+          ? this.transientNoticeSeq
+          : identical(transientNotice, _stateSentinel)
+          ? this.transientNoticeSeq
+          : this.transientNoticeSeq + 1,
       teleportTarget: clearTeleportTarget
           ? null
           : identical(teleportTarget, _stateSentinel)
@@ -300,7 +315,7 @@ class LobbyState extends Equatable {
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       pendingMessages: identical(pendingMessages, _stateSentinel)
           ? this.pendingMessages
-          : pendingMessages as Map<String, String>,
+          : Map<String, String>.from(pendingMessages as Map),
       chatCooldownSeconds: chatCooldownSeconds ?? this.chatCooldownSeconds,
       broadcastCooldownSeconds: broadcastCooldownSeconds ?? this.broadcastCooldownSeconds,
       isBroadcastDialogOpen: isBroadcastDialogOpen ?? this.isBroadcastDialogOpen,
@@ -332,6 +347,16 @@ class LobbyState extends Equatable {
       playerNotifications: identical(playerNotifications, _stateSentinel)
           ? this.playerNotifications
           : playerNotifications as List<PlayerNotification>,
+      kickedReason: clearKicked
+          ? null
+          : identical(kickedReason, _stateSentinel)
+          ? this.kickedReason
+          : kickedReason as String?,
+      kickedMessage: clearKicked
+          ? null
+          : identical(kickedMessage, _stateSentinel)
+          ? this.kickedMessage
+          : kickedMessage as String?,
     );
   }
 
@@ -347,7 +372,6 @@ class LobbyState extends Equatable {
     selectedSpriteId,
     isAnonymous,
     isChatActive,
-    chatDraft,
     isPlayersPanelOpen,
     isSettingsPanelOpen,
     chatOpacity,
@@ -355,6 +379,7 @@ class LobbyState extends Equatable {
     showChatBubbles,
     useSteamName,
     transientNotice,
+    transientNoticeSeq,
     teleportTarget,
     isTeleporting,
     pageInfo,
@@ -375,6 +400,8 @@ class LobbyState extends Equatable {
     anonymousSwitchCooldownSeconds,
     steamNameSwitchCooldownSeconds,
     playerNotifications,
+    kickedReason,
+    kickedMessage,
   ];
 }
 

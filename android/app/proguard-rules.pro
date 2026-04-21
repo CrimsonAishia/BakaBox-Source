@@ -49,3 +49,7 @@
 -keepclassmembers class * {
     @android.webkit.JavascriptInterface <methods>;
 }
+
+# 桌面端专属插件（Android 端排除了原生库，忽略相关警告）
+-dontwarn com.k0d4black.sherpa_onnx.**
+-dontwarn com.mediadevkit.fvp.**

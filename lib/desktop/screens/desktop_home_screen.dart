@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 import '../../core/core.dart';
+import '../widgets/exit_dialog.dart';
 import '../widgets/desktop_window_controls.dart';
 import '../widgets/desktop_navigation.dart';
 import '../widgets/queue/queue_floating_card.dart';

@@ -47,7 +47,7 @@ dependencies:
   curved_navigation_bar: ^1.0.6
 
   # Game Engine
-  flame: ^1.18.0
+  flame: ^1.35.1
   
   # Game Engine - TexturePacker support (compatible with Dart 3.9)
   flame_texturepacker: ^5.0.5
@@ -75,6 +75,15 @@ dependencies:
       path: packages/window_manager
       ref: 2ebc4b2d776b0c2772b6146489193f199b8d69eb
   
+  # Notifications
+  awesome_notifications: ^0.11.0
+
+  # Permissions
+  permission_handler: ^11.3.1
+
+  # Foreground Service (保活)
+  flutter_foreground_task: ^9.2.2
+
   # Audio
   audioplayers: ^6.1.0
 
@@ -105,6 +114,9 @@ dependencies:
     git:
       url: https://github.com/CrimsonAishia/flutter-webview-windows.git
       ref: ff7488a79a310fd03e514dab489e06d67d5d4d37
+  
+  # WebView for mobile platforms
+  webview_flutter: ^4.10.0
   
   # JSON & Serialization
   json_annotation: ^4.8.1

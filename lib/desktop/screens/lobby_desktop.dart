@@ -29,7 +29,6 @@ class _LobbyDesktopState extends State<LobbyDesktop>
   final FocusNode _chatFocusNode = FocusNode();
   final FocusNode _sceneFocusNode = FocusNode();
   bool _started = false;
-  int _transientNoticeId = 0;
   Timer? _transientNoticeTimer;
 
   /// 传送动画控制器
@@ -266,10 +265,8 @@ class _LobbyDesktopState extends State<LobbyDesktop>
     final isDark = theme.brightness == Brightness.dark;
 
     return BlocConsumer<LobbyBloc, LobbyState>(
-      // 排除 chatDraft 变化引起的 rebuild，避免输入时整棵 widget 树重建导致焦点丢失
       buildWhen: (previous, current) =>
-          previous.chatDraft == current.chatDraft &&
-              previous.chatCooldownSeconds == current.chatCooldownSeconds ||
+          previous.chatCooldownSeconds != current.chatCooldownSeconds ||
           previous.isChatActive != current.isChatActive ||
           previous.pageStatus != current.pageStatus ||
           previous.mapConfig != current.mapConfig ||
@@ -282,9 +279,11 @@ class _LobbyDesktopState extends State<LobbyDesktop>
           previous.nearbyPortal != current.nearbyPortal ||
           previous.isTeleporting != current.isTeleporting ||
           previous.playerNotifications != current.playerNotifications ||
-          previous.transientNotice != current.transientNotice,
+          previous.transientNotice != current.transientNotice ||
+          previous.kickedReason != current.kickedReason,
       listenWhen: (previous, current) =>
           previous.isChatActive != current.isChatActive ||
+          previous.transientNoticeSeq != current.transientNoticeSeq ||
           previous.transientNotice != current.transientNotice ||
           previous.isTeleporting != current.isTeleporting ||
           previous.isPlayersPanelOpen != current.isPlayersPanelOpen ||
@@ -323,6 +322,7 @@ class _LobbyDesktopState extends State<LobbyDesktop>
             _chatFocusNode.requestFocus();
           }
         } else {
+          _chatController.clear();
           _chatFocusNode.unfocus();
           // 延迟到下一帧再请求 scene 焦点，避免同一 build 周期内焦点不稳定
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -334,12 +334,11 @@ class _LobbyDesktopState extends State<LobbyDesktop>
         // 每次 transientNotice 变化都重置定时器
         if (state.transientNotice != null) {
           final bloc = context.read<LobbyBloc>();
-          _transientNoticeId++; // 每次递增，确保新值
-          final currentNoticeId = _transientNoticeId;
+          final currentSeq = state.transientNoticeSeq;
           // 取消之前的定时器
           _transientNoticeTimer?.cancel();
           _transientNoticeTimer = Timer(const Duration(seconds: 2), () {
-            if (mounted && currentNoticeId == _transientNoticeId) {
+            if (mounted && currentSeq == context.read<LobbyBloc>().state.transientNoticeSeq) {
               bloc.add(const LobbyTransientNoticeShown());
             }
           });
@@ -378,7 +377,10 @@ class _LobbyDesktopState extends State<LobbyDesktop>
             if (event.logicalKey == LogicalKeyboardKey.enter) {
               // 聊天栏已打开时，尝试发送消息
               if (state.isChatActive) {
-                context.read<LobbyBloc>().add(const LobbyChatSubmitted());
+                final text = _chatController.text;
+                if (text.trim().isNotEmpty) {
+                  context.read<LobbyBloc>().add(LobbyChatSubmitted(text));
+                }
               } else {
                 // 直接打开聊天栏，让用户看到输入框的占位提示
                 context.read<LobbyBloc>().add(const LobbyChatModeChanged(true));
@@ -660,6 +662,17 @@ class _LobbyDesktopState extends State<LobbyDesktop>
                     ),
                   // 广播发送弹窗
                   if (state.isBroadcastDialogOpen) const LobbyBroadcastDialog(),
+                  // 被踢出提示遮罩
+                  if (state.kickedReason != null)
+                    Positioned.fill(
+                      child: LobbyKickedOverlay(
+                        reason: state.kickedReason!,
+                        message: state.kickedMessage,
+                        onDismiss: () {
+                          context.read<LobbyBloc>().add(const LobbyKickedDismissed());
+                        },
+                      ),
+                    ),
                 ],
               ),
             ),

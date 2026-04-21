@@ -26,11 +26,11 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
   IssueType _selectedType = IssueType.bug;
   bool _isSubmitting = false;
   List<String> _imageUrls = [];
-
+  
   // 草稿相关
   bool _showDraftPrompt = false;
   DraftData? _savedDraft;
-
+  
   // 实时验证状态
   String? _titleError;
   String? _contentError;
@@ -54,12 +54,12 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
     _scrollController.dispose();
     super.dispose();
   }
-
+  
   /// 实时验证标题
   void _validateTitle() {
     final value = _titleController.text.trim();
     String? error;
-
+    
     if (value.isEmpty) {
       error = null; // 空值不显示错误，等提交时再提示
     } else if (value.length < 5) {
@@ -67,17 +67,17 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
     } else if (value.length > 150) {
       error = '标题最多 150 个字符（当前 ${value.length} 个）';
     }
-
+    
     if (_titleError != error) {
       setState(() => _titleError = error);
     }
   }
-
+  
   /// 实时验证内容
   void _validateContent() {
     final plainText = _contentController.document.toPlainText().trim();
     String? error;
-
+    
     if (plainText.isEmpty) {
       error = null; // 空值不显示错误，等提交时再提示
     } else if (plainText.length < 20) {
@@ -85,7 +85,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
     } else if (plainText.length > 2000) {
       error = '内容最多 2000 个字符（当前 ${plainText.length} 个）';
     }
-
+    
     if (_contentError != error) {
       setState(() => _contentError = error);
     }
@@ -112,12 +112,12 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
   /// 恢复草稿
   void _restoreDraft() {
     if (_savedDraft == null) return;
-
+    
     // 恢复标题
     if (_savedDraft!.metadata?['title'] != null) {
       _titleController.text = _savedDraft!.metadata!['title'] as String;
     }
-
+    
     // 恢复类型
     if (_savedDraft!.metadata?['type'] != null) {
       final typeValue = _savedDraft!.metadata!['type'] as String;
@@ -126,7 +126,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
         orElse: () => IssueType.bug,
       );
     }
-
+    
     // 恢复内容
     if (_savedDraft!.content.isNotEmpty) {
       try {
@@ -136,15 +136,15 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
         LogService.e('解码草稿内容失败', e);
       }
     }
-
+    
     // 恢复图片
     _imageUrls = _savedDraft!.imageUrls;
-
+    
     setState(() {
       _showDraftPrompt = false;
       _savedDraft = null;
     });
-
+    
     ToastUtils.showSuccess(context, '草稿已恢复');
   }
 
@@ -165,7 +165,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
       deviceModel: 'Mobile',
     );
   }
-
+  
   /// 滚动到标题字段
   void _scrollToTitle() {
     final context = _titleFieldKey.currentContext;
@@ -188,7 +188,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
 
     try {
       final content = QuillDeltaCodec.encode(_contentController.document);
-
+      
       await DraftService().saveDraft(
         draftId: 'issue_create',
         content: content,
@@ -198,7 +198,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
           'type': _selectedType.value,
         },
       );
-
+      
       if (mounted) {
         ToastUtils.showSuccess(context, '草稿已保存');
       }
@@ -231,7 +231,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
       ToastUtils.showError(context, '标题最多 150 个字符');
       return;
     }
-
+    
     // 验证内容长度
     final plainText = _contentController.document.toPlainText().trim();
     if (plainText.isEmpty) {
@@ -249,7 +249,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
       ToastUtils.showError(context, '内容最多 2000 个字符');
       return;
     }
-
+    
     // 表单验证
     if (!_formKey.currentState!.validate()) {
       _scrollToTitle();
@@ -279,9 +279,9 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
       if (issue != null) {
         // 提交成功后删除草稿
         await DraftService().deleteDraft('issue_create');
-
+        
         if (!mounted) return;
-
+        
         ToastUtils.showSuccess(context, '反馈提交成功');
         context.read<IssueBloc>().add(const IssueRefresh());
         context.pop();
@@ -289,10 +289,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
     } catch (e) {
       LogService.e('提交反馈失败', e);
       if (mounted) {
-        ToastUtils.showError(
-          context,
-          ErrorUtils.getErrorMessage(e, defaultMessage: '提交失败，请稍后重试'),
-        );
+        ToastUtils.showError(context, ErrorUtils.getErrorMessage(e, defaultMessage: '提交失败，请稍后重试'));
       }
     } finally {
       if (mounted) {
@@ -305,7 +302,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
+    
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: _buildAppBar(context),
@@ -320,21 +317,15 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
               // 草稿恢复提示条
               if (_showDraftPrompt) _buildDraftPrompt(context),
               if (_showDraftPrompt) const SizedBox(height: 16),
-
+              
               _buildTypeSelector(context).animate().fadeIn(duration: 300.ms),
               const SizedBox(height: 24),
-              _buildTitleField(
-                context,
-              ).animate().fadeIn(duration: 300.ms, delay: 100.ms),
+              _buildTitleField(context).animate().fadeIn(duration: 300.ms, delay: 100.ms),
               const SizedBox(height: 24),
-              _buildContentField(
-                context,
-              ).animate().fadeIn(duration: 300.ms, delay: 200.ms),
+              _buildContentField(context).animate().fadeIn(duration: 300.ms, delay: 200.ms),
               if (_selectedType == IssueType.bug) ...[
                 const SizedBox(height: 24),
-                _buildDeviceInfoCard(
-                  context,
-                ).animate().fadeIn(duration: 300.ms, delay: 300.ms),
+                _buildDeviceInfoCard(context).animate().fadeIn(duration: 300.ms, delay: 300.ms),
               ],
               const SizedBox(height: 32),
             ],
@@ -348,19 +339,21 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
   Widget _buildDraftPrompt(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = const Color(0xFF0080FF);
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF0080FF).withValues(alpha: 0.1),
-            const Color(0xFF0080FF).withValues(alpha: 0.05),
+            primaryColor.withValues(alpha: isDark ? 0.15 : 0.1),
+            primaryColor.withValues(alpha: isDark ? 0.08 : 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+          color: primaryColor.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -368,13 +361,13 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+              color: primaryColor.withValues(alpha: isDark ? 0.2 : 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.restore_rounded,
               size: 24,
-              color: Color(0xFF0080FF),
+              color: primaryColor,
             ),
           ),
           const SizedBox(width: 14),
@@ -408,10 +401,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
                 onPressed: _ignoreDraft,
                 style: TextButton.styleFrom(
                   foregroundColor: colorScheme.onSurfaceVariant,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   minimumSize: const Size(60, 32),
                 ),
                 child: const Text('忽略', style: TextStyle(fontSize: 13)),
@@ -420,22 +410,16 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
               ElevatedButton(
                 onPressed: _restoreDraft,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0080FF),
+                  backgroundColor: primaryColor,
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   minimumSize: const Size(60, 32),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text(
-                  '恢复',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                ),
+                child: const Text('恢复', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
               ),
             ],
           ),
@@ -447,7 +431,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
+    
     return AppBar(
       elevation: 0,
       backgroundColor: theme.appBarTheme.backgroundColor,
@@ -484,10 +468,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
               label: const Text('草稿'),
               style: TextButton.styleFrom(
                 foregroundColor: const Color(0xFF0080FF),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -506,9 +487,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Color(0xFF0080FF),
-                      ),
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0080FF)),
                     ),
                   ),
                 )
@@ -518,10 +497,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
                     backgroundColor: const Color(0xFF0080FF),
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -536,10 +512,11 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
     );
   }
 
+
   Widget _buildTypeSelector(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -569,7 +546,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
           children: IssueType.values.map((type) {
             final isSelected = _selectedType == type;
             final (color, bgColor, icon) = _getTypeStyle(type);
-
+            
             return Expanded(
               child: Padding(
                 padding: EdgeInsets.only(
@@ -581,14 +558,10 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
-                      color: isSelected
-                          ? bgColor
-                          : colorScheme.surfaceContainer,
+                      color: isSelected ? bgColor : colorScheme.surfaceContainer,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isSelected
-                            ? color
-                            : colorScheme.outline.withValues(alpha: 0.2),
+                        color: isSelected ? color : colorScheme.outline.withValues(alpha: 0.2),
                         width: isSelected ? 2 : 1,
                       ),
                       boxShadow: isSelected
@@ -608,29 +581,21 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: isSelected
-                                ? color.withValues(alpha: 0.15)
-                                : colorScheme.surfaceContainerHighest,
+                            color: isSelected ? color.withValues(alpha: 0.15) : colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
                             icon,
                             size: 22,
-                            color: isSelected
-                                ? color
-                                : colorScheme.onSurfaceVariant,
+                            color: isSelected ? color : colorScheme.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(height: 10),
                         Text(
                           type.label,
                           style: TextStyle(
-                            color: isSelected
-                                ? color
-                                : colorScheme.onSurfaceVariant,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w500,
+                            color: isSelected ? color : colorScheme.onSurfaceVariant,
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                             fontSize: 13,
                           ),
                         ),
@@ -648,24 +613,28 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
 
   /// 获取问题类型的样式配置
   (Color, Color, IconData) _getTypeStyle(IssueType type) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return switch (type) {
       IssueType.bug => (
         const Color(0xFFDC2626),
-        const Color(0xFFFEE2E2),
+        isDark ? const Color(0xFFDC2626).withValues(alpha: 0.15) : const Color(0xFFFEE2E2),
         MdiIcons.bug,
       ),
       IssueType.feature => (
         const Color(0xFF2563EB),
-        const Color(0xFFDBEAFE),
+        isDark ? const Color(0xFF2563EB).withValues(alpha: 0.15) : const Color(0xFFDBEAFE),
         MdiIcons.lightbulbOnOutline,
       ),
       IssueType.question => (
         const Color(0xFF059669),
-        const Color(0xFFD1FAE5),
+        isDark ? const Color(0xFF059669).withValues(alpha: 0.15) : const Color(0xFFD1FAE5),
         MdiIcons.helpCircleOutline,
       ),
     };
   }
+
 
   Widget _buildTitleField(BuildContext context) {
     final theme = Theme.of(context);
@@ -673,7 +642,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
     final titleLength = _titleController.text.trim().length;
     final isOverLimit = titleLength > 150;
     final isNearLimit = titleLength > 130;
-
+    
     return Column(
       key: _titleFieldKey,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -718,11 +687,11 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: isOverLimit
-                    ? const Color(0xFFFEE2E2)
-                    : isNearLimit
-                    ? const Color(0xFFFEF3C7)
-                    : colorScheme.surfaceContainerHighest,
+                color: isOverLimit 
+                    ? const Color(0xFFFEE2E2) 
+                    : isNearLimit 
+                        ? const Color(0xFFFEF3C7)
+                        : colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -730,11 +699,11 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: isOverLimit
+                  color: isOverLimit 
                       ? const Color(0xFFDC2626)
                       : isNearLimit
-                      ? const Color(0xFFF59E0B)
-                      : colorScheme.onSurfaceVariant,
+                          ? const Color(0xFFF59E0B)
+                          : colorScheme.onSurfaceVariant,
                 ),
               ),
             ),
@@ -746,7 +715,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
             color: colorScheme.surfaceContainer,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isOverLimit
+              color: isOverLimit 
                   ? const Color(0xFFDC2626)
                   : colorScheme.outline.withValues(alpha: 0.2),
               width: isOverLimit ? 2 : 1,
@@ -762,15 +731,12 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
           child: TextFormField(
             controller: _titleController,
             maxLength: 150,
-            buildCounter:
-                (
-                  context, {
-                  required currentLength,
-                  required isFocused,
-                  maxLength,
-                }) => null,
+            buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
             onChanged: (value) => setState(() {}),
-            style: TextStyle(color: colorScheme.onSurface, fontSize: 15),
+            style: TextStyle(
+              color: colorScheme.onSurface,
+              fontSize: 15,
+            ),
             decoration: InputDecoration(
               hintText: '简洁描述你的问题或建议',
               hintStyle: TextStyle(
@@ -790,10 +756,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
                 ),
               ),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 16,
-              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) return '请输入标题';
@@ -807,15 +770,13 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
     );
   }
 
+
   Widget _buildContentField(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final contentLength = _contentController.document
-        .toPlainText()
-        .trim()
-        .length;
+    final contentLength = _contentController.document.toPlainText().trim().length;
     final hasError = _contentError != null;
-
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -825,9 +786,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
               width: 4,
               height: 16,
               decoration: BoxDecoration(
-                color: hasError
-                    ? const Color(0xFFDC2626)
-                    : const Color(0xFF0080FF),
+                color: hasError ? const Color(0xFFDC2626) : const Color(0xFF0080FF),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -837,9 +796,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: hasError
-                    ? const Color(0xFFDC2626)
-                    : colorScheme.onSurface,
+                color: hasError ? const Color(0xFFDC2626) : colorScheme.onSurface,
               ),
             ),
             const SizedBox(width: 4),
@@ -863,21 +820,21 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: contentLength > 2000
+                color: contentLength > 2000 
                     ? const Color(0xFFFEE2E2)
                     : contentLength < 20 && contentLength > 0
-                    ? const Color(0xFFFEF3C7)
-                    : colorScheme.surfaceContainerHighest,
+                        ? const Color(0xFFFEF3C7)
+                        : colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 '$contentLength/2000',
                 style: TextStyle(
-                  color: contentLength > 2000
+                  color: contentLength > 2000 
                       ? const Color(0xFFDC2626)
                       : contentLength < 20 && contentLength > 0
-                      ? const Color(0xFFF59E0B)
-                      : colorScheme.onSurfaceVariant,
+                          ? const Color(0xFFF59E0B)
+                          : colorScheme.onSurfaceVariant,
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
                 ),
@@ -893,7 +850,9 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
             decoration: BoxDecoration(
               color: const Color(0xFFFEE2E2),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFFECACA)),
+              border: Border.all(
+                color: const Color(0xFFFECACA),
+              ),
             ),
             child: Row(
               children: [
@@ -923,14 +882,14 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
             color: colorScheme.surfaceContainer,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: hasError
+              color: hasError 
                   ? const Color(0xFFDC2626)
                   : colorScheme.outline.withValues(alpha: 0.2),
               width: hasError ? 2 : 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: hasError
+                color: hasError 
                     ? const Color(0xFFDC2626).withValues(alpha: 0.1)
                     : colorScheme.shadow.withValues(alpha: 0.05),
                 offset: const Offset(0, 2),
@@ -965,25 +924,28 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
     );
   }
 
+
   Widget _buildDeviceInfoCard(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final deviceInfo = _collectDeviceInfo();
-
+    final primaryColor = const Color(0xFF0080FF);
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF0080FF).withValues(alpha: 0.08),
-            const Color(0xFF0080FF).withValues(alpha: 0.03),
+            primaryColor.withValues(alpha: isDark ? 0.12 : 0.08),
+            primaryColor.withValues(alpha: isDark ? 0.05 : 0.03),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFF0080FF).withValues(alpha: 0.2),
+          color: primaryColor.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -992,13 +954,13 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+              color: primaryColor.withValues(alpha: isDark ? 0.2 : 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               MdiIcons.cellphoneInformation,
               size: 22,
-              color: const Color(0xFF0080FF),
+              color: primaryColor,
             ),
           ),
           const SizedBox(width: 14),
@@ -1018,18 +980,15 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+                        color: primaryColor.withValues(alpha: isDark ? 0.2 : 0.15),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: const Text(
+                      child: Text(
                         '自动附加',
                         style: TextStyle(
-                          color: Color(0xFF0080FF),
+                          color: primaryColor,
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
                         ),
@@ -1050,7 +1009,11 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
               ],
             ),
           ),
-          Icon(MdiIcons.checkCircle, size: 20, color: const Color(0xFF16A34A)),
+          Icon(
+            MdiIcons.checkCircle,
+            size: 20,
+            color: const Color(0xFF16A34A),
+          ),
         ],
       ),
     );

@@ -1,4 +1,3 @@
-import 'package:window_manager/window_manager.dart';
 import '../services/analytics_service.dart';
 import '../services/app_info_service.dart';
 import '../services/update_service.dart';
@@ -19,7 +18,11 @@ class AppInitializer {
 
   /// 初始化桌面端基础服务
   /// [skipStorage] 是否跳过存储初始化（子窗口不需要访问存储）
-  static Future<void> initDesktopBase({bool skipStorage = false}) async {
+  /// [onPlatformInit] 平台特定的初始化回调（如 windowManager.ensureInitialized）
+  static Future<void> initDesktopBase({
+    bool skipStorage = false,
+    Future<void> Function()? onPlatformInit,
+  }) async {
     // 初始化应用目录服务（缓存和日志目录）
     await AppDirectoryService.init();
     // 初始化 Hive 存储（子窗口跳过，避免文件锁冲突）
@@ -28,8 +31,10 @@ class AppInitializer {
     }
     // 初始化应用信息服务（版本号等）
     await AppInfoService.instance.init();
-    // 初始化 windowManager
-    await windowManager.ensureInitialized();
+    // 执行平台特定初始化（如 windowManager）
+    if (onPlatformInit != null) {
+      await onPlatformInit();
+    }
   }
 
   /// 初始化主窗口服务
