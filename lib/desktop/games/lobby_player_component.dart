@@ -66,14 +66,31 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
   bool _isHovered = false;
 
-  // 聊天气泡消失动画
-  double _bubbleOpacity = 1.0;
-  static const double _bubbleFadeSpeed = 0.15; // 透明度每秒减少量
+  // ========== 聊天气泡动画系统 ==========
+  /// 气泡整体透明度
+  double _bubbleOpacity = 0.0;
+  /// 气泡整体缩放
+  double _bubbleScale = 0.0;
+  /// 气泡缩放速度（弹簧物理）
+  double _bubbleScaleVelocity = 0.0;
 
-  // 聊天气泡入场动画
-  bool _bubbleJustAppeared = false; // 是否刚出现（触发弹跳）
-  double _bubbleScale = 1.0; // 当前缩放值（用于弹入效果）
-  static const double _bubbleSpringSpeed = 0.22; // 弹入弹簧速度
+  /// 气泡动画阶段: 0=hidden, 1=entering, 2=visible, 3=exiting
+  int _bubblePhase = 0;
+
+  // 弹簧参数（Q弹效果）
+  static const double _springStiffness = 280.0;
+  static const double _springDamping = 14.0;
+  static const double _exitSpringStiffness = 200.0;
+  static const double _exitSpringDamping = 18.0;
+
+  // 消息文字切换动画
+  String? _displayedMessage;       // 当前显示的消息文字
+  String? _outgoingMessage;        // 正在退出的旧消息文字
+  double _msgTransitionProgress = 1.0; // 0→1，1=新消息完全显示
+  static const double _msgTransitionSpeed = 4.5; // 切换速度
+
+  /// 气泡是否曾经可见（用于检测首次出现 vs 消息更新）
+  bool _bubbleWasVisible = false;
 
   // 翻转状态机
   FlipState _flipState = FlipState.idleRight;
@@ -121,6 +138,16 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
   /// 停止时振幅衰减速度（每秒衰减量）
   static const double _walkAmplitudeDecaySpeed = 8.0;
+
+  // ========== TextPainter 缓存系统 ==========
+  // 名字标签缓存
+  String? _cachedDisplayName;
+  TextPainter? _cachedNamePainter;
+  TextPainter? _cachedNameStrokePainter;
+  // 状态文字缓存
+  String? _cachedStatusText;
+  TextPainter? _cachedStatusPainter;
+  TextPainter? _cachedStatusStrokePainter;
 
   // 组件销毁标志，用于防止图片加载完成后访问已销毁的组件
   bool _disposed = false;
@@ -394,10 +421,34 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         'lastMessageAt=${user.lastMessageAt} '
         'hasVisibleMessage=${_user.hasVisibleMessage}',
       );
-      // 新消息触发弹跳动画
+      // 新消息到来
       if (_user.hasVisibleMessage) {
-        _bubbleJustAppeared = true;
-        _bubbleScale = 0.6;
+        final newMsg = _user.lastMessage ?? '';
+        if (_bubblePhase == 2 || _bubblePhase == 1) {
+          // 气泡已可见或正在入场 → 消息切换动画
+          _outgoingMessage = _displayedMessage;
+          _displayedMessage = newMsg;
+          _msgTransitionProgress = 0.0;
+          // 给气泡一个小弹跳反馈
+          _bubbleScaleVelocity += 3.0;
+        } else if (_bubblePhase == 3) {
+          // 气泡正在退场 → 反转为入场，保留当前 scale 实现平滑过渡
+          _displayedMessage = newMsg;
+          _outgoingMessage = null;
+          _msgTransitionProgress = 1.0;
+          _bubblePhase = 1; // entering
+          // 不重置 _bubbleScale，从当前位置弹回 1.0
+          _bubbleScaleVelocity = 0.0;
+        } else {
+          // 气泡完全隐藏 → 入场动画
+          _displayedMessage = newMsg;
+          _outgoingMessage = null;
+          _msgTransitionProgress = 1.0;
+          _bubblePhase = 1; // entering
+          _bubbleScale = 0.0;
+          _bubbleScaleVelocity = 0.0;
+          _bubbleOpacity = 0.0;
+        }
       }
     }
 
@@ -689,36 +740,102 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     }
   }
 
-  /// 更新聊天气泡消失动画
+  /// 更新聊天气泡动画（弹簧物理驱动）
   void _updateBubbleAnimation(double dt) {
     final hasVisibleMessage = _user.hasVisibleMessage;
 
-    if (hasVisibleMessage) {
-      // 有消息时，透明度快速恢复到 1.0
-      if (_bubbleOpacity < 1.0) {
-        _bubbleOpacity = (_bubbleOpacity + _bubbleFadeSpeed * 2 * dt).clamp(
-          0.0,
-          1.0,
-        );
+    // 状态转换检测
+    if (hasVisibleMessage && !_bubbleWasVisible) {
+      // 消息刚出现 → 入场（仅在 updateUser 未处理时）
+      if (_bubblePhase == 0) {
+        _bubblePhase = 1; // entering
+        _bubbleScale = 0.0;
+        _bubbleScaleVelocity = 0.0;
+        _bubbleOpacity = 0.0;
+        _displayedMessage = _user.lastMessage;
+        _outgoingMessage = null;
+        _msgTransitionProgress = 1.0;
+      } else if (_bubblePhase == 3) {
+        // 退场中 → 反转入场
+        _bubblePhase = 1;
+        _bubbleScaleVelocity = 0.0;
+        _displayedMessage = _user.lastMessage;
+        _outgoingMessage = null;
+        _msgTransitionProgress = 1.0;
       }
+    } else if (!hasVisibleMessage && _bubbleWasVisible) {
+      // 消息消失 → 退场
+      if (_bubblePhase == 1 || _bubblePhase == 2) {
+        _bubblePhase = 3; // exiting
+        _bubbleScaleVelocity = 1.5; // 先微微放大再缩小的初速度
+      }
+    }
+    _bubbleWasVisible = hasVisibleMessage;
 
-      // 弹入动画：使用弹簧效果回到 1.0
-      if (_bubbleJustAppeared) {
-        _bubbleScale += (_bubbleSpringSpeed * dt) * (1.0 - _bubbleScale) * 12;
-        if ((_bubbleScale - 1.0).abs() < 0.01) {
+    // 弹簧物理更新
+    switch (_bubblePhase) {
+      case 1: // entering - 弹簧驱动 scale 从 0→1
+        final displacement = _bubbleScale - 1.0;
+        final springForce = -_springStiffness * displacement;
+        final dampingForce = -_springDamping * _bubbleScaleVelocity;
+        _bubbleScaleVelocity += (springForce + dampingForce) * dt;
+        _bubbleScale += _bubbleScaleVelocity * dt;
+        // 透明度快速跟上
+        _bubbleOpacity = (_bubbleOpacity + dt * 8.0).clamp(0.0, 1.0);
+        // 收敛判定
+        if ((displacement).abs() < 0.005 && _bubbleScaleVelocity.abs() < 0.1) {
           _bubbleScale = 1.0;
-          _bubbleJustAppeared = false;
+          _bubbleScaleVelocity = 0.0;
+          _bubbleOpacity = 1.0;
+          _bubblePhase = 2; // visible
         }
+        break;
+
+      case 2: // visible - 弹簧回弹（消息切换时的小弹跳）
+        if ((_bubbleScale - 1.0).abs() > 0.002 || _bubbleScaleVelocity.abs() > 0.05) {
+          final displacement = _bubbleScale - 1.0;
+          final springForce = -_springStiffness * displacement;
+          final dampingForce = -_springDamping * _bubbleScaleVelocity;
+          _bubbleScaleVelocity += (springForce + dampingForce) * dt;
+          _bubbleScale += _bubbleScaleVelocity * dt;
+          if ((displacement).abs() < 0.002 && _bubbleScaleVelocity.abs() < 0.05) {
+            _bubbleScale = 1.0;
+            _bubbleScaleVelocity = 0.0;
+          }
+        }
+        _bubbleOpacity = 1.0;
+        break;
+
+      case 3: // exiting - 弹簧驱动 scale 从 1→0（先微弹再缩）
+        final displacement = _bubbleScale - 0.0; // target = 0
+        final springForce = -_exitSpringStiffness * displacement;
+        final dampingForce = -_exitSpringDamping * _bubbleScaleVelocity;
+        _bubbleScaleVelocity += (springForce + dampingForce) * dt;
+        _bubbleScale += _bubbleScaleVelocity * dt;
+        _bubbleScale = _bubbleScale.clamp(0.0, 1.5);
+        // 透明度跟随缩放
+        _bubbleOpacity = (_bubbleScale / 0.5).clamp(0.0, 1.0);
+        // 收敛判定
+        if (_bubbleScale < 0.02 && _bubbleScaleVelocity.abs() < 0.1) {
+          _bubbleScale = 0.0;
+          _bubbleScaleVelocity = 0.0;
+          _bubbleOpacity = 0.0;
+          _bubblePhase = 0; // hidden
+          _displayedMessage = null;
+          _outgoingMessage = null;
+        }
+        break;
+
+      default: // hidden
+        break;
+    }
+
+    // 消息文字切换动画进度
+    if (_msgTransitionProgress < 1.0) {
+      _msgTransitionProgress = (_msgTransitionProgress + _msgTransitionSpeed * dt).clamp(0.0, 1.0);
+      if (_msgTransitionProgress >= 1.0) {
+        _outgoingMessage = null;
       }
-    } else {
-      // 没有消息时，逐渐淡出
-      if (_bubbleOpacity > 0.0) {
-        _bubbleOpacity = (_bubbleOpacity - _bubbleFadeSpeed * dt).clamp(
-          0.0,
-          1.0,
-        );
-      }
-      _bubbleScale = 1.0;
     }
   }
 
@@ -828,6 +945,15 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   @override
   void onRemove() {
     _disposed = true;
+    // 释放缓存的 TextPainter 原生资源
+    _cachedNamePainter?.dispose();
+    _cachedNameStrokePainter?.dispose();
+    _cachedStatusPainter?.dispose();
+    _cachedStatusStrokePainter?.dispose();
+    _cachedNamePainter = null;
+    _cachedNameStrokePainter = null;
+    _cachedStatusPainter = null;
+    _cachedStatusStrokePainter = null;
     super.onRemove();
   }
 
@@ -883,7 +1009,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     }
 
     // 渲染聊天气泡
-    if (_showChatBubble && _user.hasVisibleMessage) {
+    if (_showChatBubble && _bubblePhase != 0) {
       _renderChatBubble(canvas);
     }
   }
@@ -901,46 +1027,46 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       canvas.translate(-centerX, 0);
     }
 
-    // 使用系统默认字体，支持中英文和特殊字符
-    final pixelTextStyle = TextStyle(
-      fontFamily: null, // null 表示使用系统默认字体
-      fontSize: 12,
-      fontWeight: FontWeight.w600,
-      color: Colors.white,
-    );
+    // 缓存名字 TextPainter，只在名字变化时重建
+    final currentName = _user.displayName;
+    if (_cachedDisplayName != currentName || _cachedNamePainter == null) {
+      _cachedDisplayName = currentName;
 
-    // 名字过长时截断显示省略号，最大宽度为 100 像素
-    final displayName = _truncateText(_user.displayName, pixelTextStyle, 120);
-    final textSpan = TextSpan(text: displayName, style: pixelTextStyle);
-    final textPainter = TextPainter(
-      text: textSpan,
-      textDirection: TextDirection.ltr,
-    )..layout();
+      final pixelTextStyle = TextStyle(
+        fontFamily: null,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
+      );
 
-    // 描边
-    final strokeStyle = TextStyle(
-      fontFamily: null,
-      fontSize: 12,
-      fontWeight: FontWeight.w600,
-      foreground: Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3.0
-        ..color = Colors.black.withValues(alpha: 0.7),
-    );
+      final displayName = _truncateText(currentName, pixelTextStyle, 120);
+      _cachedNamePainter = TextPainter(
+        text: TextSpan(text: displayName, style: pixelTextStyle),
+        textDirection: TextDirection.ltr,
+      )..layout();
 
-    final strokeSpan = TextSpan(text: displayName, style: strokeStyle);
-    final strokePainter = TextPainter(
-      text: strokeSpan,
-      textDirection: TextDirection.ltr,
-    )..layout();
+      final strokeStyle = TextStyle(
+        fontFamily: null,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        foreground: Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3.0
+          ..color = Colors.black.withValues(alpha: 0.7),
+      );
+      _cachedNameStrokePainter = TextPainter(
+        text: TextSpan(text: displayName, style: strokeStyle),
+        textDirection: TextDirection.ltr,
+      )..layout();
+    }
 
     // 居中绘制，名字紧贴角色头顶上方
-    final offsetX = (_spriteWidth - textPainter.width) / 2;
+    final offsetX = (_spriteWidth - _cachedNamePainter!.width) / 2;
     final offsetY =
-        _characterSlotTopY - textPainter.height - _nameGapAboveCharacter;
+        _characterSlotTopY - _cachedNamePainter!.height - _nameGapAboveCharacter;
 
-    strokePainter.paint(canvas, Offset(offsetX, offsetY));
-    textPainter.paint(canvas, Offset(offsetX, offsetY));
+    _cachedNameStrokePainter!.paint(canvas, Offset(offsetX, offsetY));
+    _cachedNamePainter!.paint(canvas, Offset(offsetX, offsetY));
 
     canvas.restore();
   }
@@ -1063,49 +1189,49 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       canvas.translate(-centerX, 0);
     }
 
-    // 使用系统默认字体，支持中英文和特殊字符
-    final textStyle = TextStyle(
-      fontFamily: null,
-      color: const Color(0xFFE2E8F0), // 使用柔和的蓝灰色调，与纯白名字区分
-      fontSize: 12,
-    );
+    // 缓存状态文字 TextPainter，只在文字变化时重建
+    final currentStatus = _user.statusText ?? '';
+    if (_cachedStatusText != currentStatus || _cachedStatusPainter == null) {
+      _cachedStatusText = currentStatus;
 
-    // 状态文字过长时截断
-    final displayStatus = _truncateText(_user.statusText ?? '', textStyle, 80);
-    final textSpan = TextSpan(text: displayStatus, style: textStyle);
-    final textPainter = TextPainter(
-      text: textSpan,
-      textDirection: TextDirection.ltr,
-    )..layout();
+      final textStyle = TextStyle(
+        fontFamily: null,
+        color: const Color(0xFFE2E8F0),
+        fontSize: 12,
+      );
 
-    // 描边
-    final strokeStyle = TextStyle(
-      fontFamily: null,
-      fontSize: 12,
-      foreground: Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0
-        ..color = Colors.black.withValues(alpha: 0.6),
-    );
+      final displayStatus = _truncateText(currentStatus, textStyle, 80);
+      _cachedStatusPainter = TextPainter(
+        text: TextSpan(text: displayStatus, style: textStyle),
+        textDirection: TextDirection.ltr,
+      )..layout();
 
-    final strokeSpan = TextSpan(text: displayStatus, style: strokeStyle);
-    final strokePainter = TextPainter(
-      text: strokeSpan,
-      textDirection: TextDirection.ltr,
-    )..layout();
+      final strokeStyle = TextStyle(
+        fontFamily: null,
+        fontSize: 12,
+        foreground: Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.0
+          ..color = Colors.black.withValues(alpha: 0.6),
+      );
+      _cachedStatusStrokePainter = TextPainter(
+        text: TextSpan(text: displayStatus, style: strokeStyle),
+        textDirection: TextDirection.ltr,
+      )..layout();
+    }
 
-    final offsetX = (_spriteWidth - textPainter.width) / 2;
+    final offsetX = (_spriteWidth - _cachedStatusPainter!.width) / 2;
     final offsetY = _spriteBottomY + _statusGapBelowSprite;
 
-    strokePainter.paint(canvas, Offset(offsetX, offsetY));
-    textPainter.paint(canvas, Offset(offsetX, offsetY));
+    _cachedStatusStrokePainter!.paint(canvas, Offset(offsetX, offsetY));
+    _cachedStatusPainter!.paint(canvas, Offset(offsetX, offsetY));
 
     canvas.restore();
   }
 
   void _renderChatBubble(Canvas canvas) {
     // 透明度为 0 时完全不渲染
-    if (_bubbleOpacity <= 0.0) return;
+    if (_bubbleOpacity <= 0.0 || _bubbleScale <= 0.0) return;
 
     // 保存状态并取消组件翻转的影响，使气泡始终正向
     canvas.save();
@@ -1119,17 +1245,18 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     // 聊天气泡位置 - 居中对齐在 sprite 上方
     final bubbleWidth = 120.0;
     final bubbleX = (_spriteWidth - bubbleWidth) / 2;
-    const bubbleBottom = 80.0; // 气泡底部基准位置（固定）
+    const bubbleBottom = 80.0;
 
-    // 先测量文字实际高度（支持多行自动省略）
+    // 测量当前消息文字高度
     final textStyle = TextStyle(
       fontFamily: null,
-      color: const Color(0xFF0F172A).withValues(alpha: _bubbleOpacity),
+      color: const Color(0xFF0F172A),
       fontSize: 12,
       height: 1.3,
     );
 
-    final textSpan = TextSpan(text: _user.lastMessage ?? '', style: textStyle);
+    final currentMsg = _displayedMessage ?? '';
+    final textSpan = TextSpan(text: currentMsg, style: textStyle);
     final textPainter = TextPainter(
       text: textSpan,
       textDirection: TextDirection.ltr,
@@ -1137,76 +1264,142 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       ellipsis: '...',
     )..layout(maxWidth: bubbleWidth - 24);
 
-    // 根据文字实际行数计算气泡高度（每行约16px，加上上下padding）
     final lineCount = textPainter.computeLineMetrics().length;
     final bubbleHeight = (lineCount * 16.0 + 16.0).clamp(40.0, 64.0);
-    final bubbleY = bubbleBottom - bubbleHeight; // 向上扩展，底部固定
+    final bubbleY = bubbleBottom - bubbleHeight;
 
-    // 应用缩放效果（入场弹入动画）
-    canvas.save();
+    // 应用弹簧缩放（从底部中心缩放，更自然）
     final scaleCenterX = bubbleX + bubbleWidth / 2;
-    final scaleCenterY = bubbleY + bubbleHeight / 2;
+    final scaleCenterY = bubbleY + bubbleHeight; // 从底部缩放
+    canvas.save();
     canvas.translate(scaleCenterX, scaleCenterY);
     canvas.scale(_bubbleScale, _bubbleScale);
     canvas.translate(-scaleCenterX, -scaleCenterY);
 
-    // 气泡阴影
+    // 气泡阴影（柔和发光）
     final shadowPaint = Paint()
-      ..color = _sprite.accentColor.withValues(alpha: 0.15 * _bubbleOpacity)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+      ..color = _sprite.accentColor.withValues(alpha: 0.18 * _bubbleOpacity)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
     final shadowRect = Rect.fromLTWH(
-      bubbleX + 4,
-      bubbleY + 4,
+      bubbleX + 2,
+      bubbleY + 3,
       bubbleWidth,
       bubbleHeight,
     );
-    final shadowRRect = RRect.fromRectAndRadius(
-      shadowRect,
-      const Radius.circular(16),
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(shadowRect, const Radius.circular(16)),
+      shadowPaint,
     );
-    canvas.drawRRect(shadowRRect, shadowPaint);
 
     final rect = Rect.fromLTWH(bubbleX, bubbleY, bubbleWidth, bubbleHeight);
+    final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(16));
 
-    // 背景渐变
+    // 背景：毛玻璃质感渐变
     final bgPaint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          Colors.white.withValues(alpha: 0.95 * _bubbleOpacity),
-          _sprite.accentColor.withValues(alpha: 0.12 * _bubbleOpacity),
+          Colors.white.withValues(alpha: 0.96 * _bubbleOpacity),
+          _sprite.accentColor.withValues(alpha: 0.10 * _bubbleOpacity),
         ],
       ).createShader(rect);
-
-    final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(16));
     canvas.drawRRect(rrect, bgPaint);
 
-    // 顶部高光
+    // 顶部高光弧线
     final highlightPaint = Paint()
-      ..shader =
-          LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.center,
-            colors: [
-              Colors.white.withValues(alpha: 0.4 * _bubbleOpacity),
-              Colors.white.withValues(alpha: 0.0),
-            ],
-          ).createShader(
-            Rect.fromLTWH(bubbleX, bubbleY, bubbleWidth, bubbleHeight * 0.5),
-          );
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.center,
+        colors: [
+          Colors.white.withValues(alpha: 0.5 * _bubbleOpacity),
+          Colors.white.withValues(alpha: 0.0),
+        ],
+      ).createShader(
+        Rect.fromLTWH(bubbleX, bubbleY, bubbleWidth, bubbleHeight * 0.45),
+      );
     canvas.drawRRect(rrect, highlightPaint);
 
-    // 边框
+    // 边框（带角色主题色微光）
     final borderPaint = Paint()
-      ..color = _sprite.accentColor.withValues(alpha: 0.3 * _bubbleOpacity)
+      ..color = _sprite.accentColor.withValues(alpha: 0.25 * _bubbleOpacity)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
-
     canvas.drawRRect(rrect, borderPaint);
 
-    // 消息文字（已在上方测量过，直接绘制）
-    textPainter.paint(canvas, Offset(bubbleX + 12, bubbleY + 8));
+    // ===== 消息文字渲染（带切换动画）=====
+    // 裁剪区域，防止文字溢出气泡
+    canvas.save();
+    canvas.clipRRect(rrect);
+
+    final textAreaX = bubbleX + 12;
+    final textAreaY = bubbleY + 8;
+    final textAreaHeight = bubbleHeight - 16;
+
+    if (_outgoingMessage != null && _msgTransitionProgress < 1.0) {
+      // 有旧消息正在退出 → 交叉动画
+      // 使用 easeOut 曲线让动画更自然
+      final t = _msgTransitionProgress;
+      final easeT = 1.0 - (1.0 - t) * (1.0 - t); // easeOut
+
+      // 旧消息：向上滑出 + 淡出
+      final outOpacity = (1.0 - easeT).clamp(0.0, 1.0) * _bubbleOpacity;
+      final outOffsetY = -easeT * textAreaHeight * 0.6;
+      if (outOpacity > 0.01) {
+        final outStyle = TextStyle(
+          fontFamily: null,
+          color: const Color(0xFF0F172A).withValues(alpha: outOpacity),
+          fontSize: 12,
+          height: 1.3,
+        );
+        final outSpan = TextSpan(text: _outgoingMessage!, style: outStyle);
+        final outPainter = TextPainter(
+          text: outSpan,
+          textDirection: TextDirection.ltr,
+          maxLines: 3,
+          ellipsis: '...',
+        )..layout(maxWidth: bubbleWidth - 24);
+        outPainter.paint(canvas, Offset(textAreaX, textAreaY + outOffsetY));
+      }
+
+      // 新消息：从下方滑入 + 淡入
+      final inOpacity = easeT.clamp(0.0, 1.0) * _bubbleOpacity;
+      final inOffsetY = (1.0 - easeT) * textAreaHeight * 0.6;
+      if (inOpacity > 0.01) {
+        final inStyle = TextStyle(
+          fontFamily: null,
+          color: const Color(0xFF0F172A).withValues(alpha: inOpacity),
+          fontSize: 12,
+          height: 1.3,
+        );
+        final inSpan = TextSpan(text: currentMsg, style: inStyle);
+        final inPainter = TextPainter(
+          text: inSpan,
+          textDirection: TextDirection.ltr,
+          maxLines: 3,
+          ellipsis: '...',
+        )..layout(maxWidth: bubbleWidth - 24);
+        inPainter.paint(canvas, Offset(textAreaX, textAreaY + inOffsetY));
+      }
+    } else {
+      // 无切换动画，直接绘制当前消息
+      final normalStyle = TextStyle(
+        fontFamily: null,
+        color: const Color(0xFF0F172A).withValues(alpha: _bubbleOpacity),
+        fontSize: 12,
+        height: 1.3,
+      );
+      final normalSpan = TextSpan(text: currentMsg, style: normalStyle);
+      final normalPainter = TextPainter(
+        text: normalSpan,
+        textDirection: TextDirection.ltr,
+        maxLines: 3,
+        ellipsis: '...',
+      )..layout(maxWidth: bubbleWidth - 24);
+      normalPainter.paint(canvas, Offset(textAreaX, textAreaY));
+    }
+
+    canvas.restore(); // 恢复裁剪
 
     // 气泡尾巴
     _drawBubbleTail(

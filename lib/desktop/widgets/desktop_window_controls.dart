@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../core/core.dart';
+import 'exit_dialog.dart';
 import 'notification/notification_panel.dart';
 
 /// 桌面端自定义窗口控制按钮组件

@@ -6,10 +6,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../bloc/settings/settings_state.dart';
-import '../services/app_exit_service.dart';
-import '../services/obs_server_service.dart';
-import '../services/tray_service.dart';
+import '../../core/bloc/settings/settings_state.dart';
+import '../../core/services/app_exit_service.dart';
+import '../../core/services/obs_server_service.dart';
+import '../../core/services/tray_service.dart';
 
 class ExitDialog extends StatefulWidget {
   const ExitDialog({super.key});

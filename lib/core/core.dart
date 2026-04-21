@@ -55,20 +55,24 @@ export 'services/token_service.dart';
 export 'services/source_server_service.dart';
 export 'services/update_service.dart';
 export 'services/analytics_service.dart';
-export 'services/game_launcher_service.dart';
-export 'services/floating_window_service.dart';
 export 'services/custom_server_service.dart';
 export 'services/draft_service.dart';
 export 'services/image_url_service.dart';
-export 'services/scheduler_service.dart';
-export 'services/score_upload_service.dart';
-export 'services/tts_service.dart';
 export 'services/map_subscription_service.dart';
 export 'services/bilibili_service.dart';
 export 'services/lobby_ws_service.dart';
 export 'services/lobby_asset_cache_service.dart';
 export 'services/lobby_image_cache_service.dart';
 export 'services/lobby_map_loader_service.dart';
+export 'services/broadcast_notification_service.dart';
+export 'services/app_permission_service.dart';
+export 'services/scheduler_service.dart';
+
+// Desktop-only services（桌面端直接 import，不通过 core.dart 导出）
+// - game_launcher_service.dart
+// - floating_window_service.dart
+// - score_upload_service.dart
+// - tts_service.dart
 
 // Utils
 export 'utils/announcement_utils.dart';
@@ -82,6 +86,7 @@ export 'utils/platform_utils.dart';
 export 'utils/server_item_utils.dart';
 export 'utils/time_utils.dart';
 export 'utils/toast_utils.dart';
+export 'utils/screen_wakelock.dart';
 
 // Constants
 export 'constants/api_constants.dart';
@@ -90,7 +95,6 @@ export 'constants/fallback_data.dart';
 
 // Widgets
 export 'services/app_exit_service.dart';
-export 'widgets/exit_dialog.dart';
 export 'widgets/page_view_with_listener.dart';
 export 'widgets/navigation/app_navigation.dart';
 export 'widgets/update_dialog.dart';
@@ -100,3 +104,4 @@ export 'widgets/clickable_image.dart';
 export 'widgets/map_background.dart';
 export 'widgets/rich_text_viewer.dart';
 export 'widgets/feature_gate.dart';
+export 'widgets/lobby_kicked_overlay.dart';

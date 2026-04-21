@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'map_tag_models.dart';
 import '../utils/server_time_converter.dart';
 
 part 'map_contribution_models.g.dart';
@@ -355,6 +356,8 @@ class MapInfo extends Equatable {
   final int nameCount;
   @JsonKey(defaultValue: 0)
   final int backgroundCount;
+  @JsonKey(defaultValue: <MapTagSimple>[])
+  final List<MapTagSimple> tags;
 
   const MapInfo({
     required this.mapName,
@@ -363,6 +366,7 @@ class MapInfo extends Equatable {
     this.contribCount = 0,
     this.nameCount = 0,
     this.backgroundCount = 0,
+    this.tags = const [],
   });
 
   factory MapInfo.fromJson(Map<String, dynamic> json) =>
@@ -377,6 +381,7 @@ class MapInfo extends Equatable {
     contribCount,
     nameCount,
     backgroundCount,
+    tags,
   ];
 }
 

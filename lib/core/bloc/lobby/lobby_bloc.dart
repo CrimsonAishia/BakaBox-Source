@@ -14,15 +14,16 @@ import '../../services/lobby_map_loader_service.dart';
 import '../../services/lobby_ws_service.dart';
 import '../../services/notification_window_service.dart';
 import '../../services/status_window_service.dart';
+import '../../services/steam_user_service.dart';
 import '../../utils/log_service.dart';
 
 part 'lobby_event.dart';
 part 'lobby_state.dart';
 
 class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
-  LobbyBloc({LobbyWsService? service})
+  LobbyBloc({LobbyWsService? service, String initialActivityText = '在线'})
       : _service = service ?? LobbyWsService.instance,
-        super(LobbyState.initial()) {
+        super(LobbyState.initial().copyWith(pageActivityText: initialActivityText)) {
     // 在构造时就订阅 WebSocket 事件
     _wsSubscription = _service.events.listen(
       (wsEvent) => add(LobbyWsEventReceived(wsEvent)),
@@ -53,7 +54,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     on<LobbySceneTapped>(_onSceneTapped);
     on<LobbyMovementTicked>(_onMovementTicked);
     on<LobbyPlayerArrived>(_onPlayerArrived);
-    on<LobbyChatInputChanged>(_onChatInputChanged);
     on<LobbyChatModeChanged>(_onChatModeChanged);
     on<LobbyChatSubmitted>(_onChatSubmitted);
     on<LobbyPlayersPanelToggled>(_onPlayersPanelToggled);
@@ -94,6 +94,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     on<LobbyBroadcastNotificationsToggled>(_onBroadcastNotificationsToggled);
     on<_LobbySettingTimeout>(_onSettingTimeout);
     on<_LobbySettingsTimeoutCheck>(_onSettingsTimeoutCheck);
+    on<LobbyKickedDismissed>(_onKickedDismissed);
+    on<LobbyChatBubblesCleared>(_onChatBubblesCleared);
+    on<LobbySnapshotRefreshRequested>(_onSnapshotRefreshRequested);
   }
 
   static const double _moveSpeed = 2.8;
@@ -163,6 +166,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     }
 
     if (_isDisposed) return;
+    // 防止与 snapshot 中的登录逻辑重复触发
+    if (_authAttemptedAfterConnect) return;
+    _authAttemptedAfterConnect = true;
     LogService.i('[LobbyBloc] Token 已就绪，发送 login 事件');
     _service.login();
   }
@@ -176,6 +182,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _selfServerUserId = null;
     _isLobbyEntered = true;
     _isDisposed = false;
+
+    // 重置被踢标志，允许重连后的自动重连逻辑正常工作
+    _service.resetKicked();
 
     // 确保图片缓存服务已初始化
     await LobbyImageCacheService.instance.init();
@@ -212,8 +221,22 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
     _scheduleBubbleCleanup();
 
-    // 请求服务器在线人数（BLoC 已订阅，确保徽章显示正确）
-    unawaited(_service.requestOnlineStats(includeUsers: false));
+    // 请求服务器在线人数（仅在已连接时发送，否则等 snapshot 返回后自然获取）
+    if (_service.isConnected) {
+      unawaited(_service.requestOnlineStats(includeUsers: false));
+    }
+
+    // 确保 WebSocket 已连接（移动端不在启动时连接，而是进入大厅时才连接）
+    if (!_service.isConnected) {
+      await _service.initialize();
+    }
+
+    // 移动端特殊处理：如果用户已登录但 token 尚未就绪（AuthBloc 异步初始化中），
+    // 主动等待 token 就绪后发送 login 事件，避免第一次进入大厅以匿名身份显示。
+    if (AuthService.instance.isLoggedIn && !_service.hasValidToken) {
+      LogService.i('[LobbyBloc] 用户已登录但 token 未就绪，等待 token 后发送 login 事件');
+      unawaited(_waitAndLogin());
+    }
 
     // 进入大厅页面时才请求 assets 和 snapshot
     // 这样可以确保 URL token 在有效期内
@@ -489,13 +512,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     });
   }
 
-  void _onChatInputChanged(
-    LobbyChatInputChanged event,
-    Emitter<LobbyState> emit,
-  ) {
-    emit(state.copyWith(chatDraft: event.value));
-  }
-
   void _onChatModeChanged(
     LobbyChatModeChanged event,
     Emitter<LobbyState> emit,
@@ -507,7 +523,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     LobbyChatSubmitted event,
     Emitter<LobbyState> emit,
   ) async {
-    final content = state.chatDraft.trim();
+    final content = event.content.trim();
     if (content.isEmpty) {
       emit(state.copyWith(isChatActive: false));
       return;
@@ -515,7 +531,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
     // 检查冷却状态
     if (state.chatCooldownSeconds > 0) {
-      emit(state.copyWith(isChatActive: false));
+      emit(state.copyWith(
+        transientNotice: '发送太快了，请稍后再试',
+      ));
       return;
     }
 
@@ -538,7 +556,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     updatedPendingMessages[myMessage.messageId] = content;
 
     // 立即更新自己的 lastMessage 状态，使聊天气泡和聊天栏立即显示
-    // 注意：不立即清空 chatDraft，只有收到服务器确认后才清空
     final updatedUsers = state.users.map((user) {
       if (!user.isSelf) return user;
       return user.copyWith(
@@ -556,7 +573,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     emit(
       state.copyWith(
         isChatActive: false,
-        chatDraft: '', // 发送后立即清空输入框
         users: updatedUsers,
         messages: updatedMessages,
         pendingMessages: updatedPendingMessages,
@@ -782,6 +798,17 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     // 检查冷却状态
     if (state.steamNameSwitchCooldownSeconds > 0) return;
 
+    // 开启时先检测能否获取到 Steam 用户名
+    if (event.value) {
+      final steamName = await SteamUserService().getCurrentUsername();
+      if (steamName == null || steamName.isEmpty) {
+        emit(state.copyWith(
+          transientNotice: '未检测到 Steam 用户名，请确认 Steam 已登录',
+        ));
+        return;
+      }
+    }
+
     const settingKey = 'useSteamName';
     final updatedPending = Map<String, bool>.from(state.pendingSettings);
     updatedPending[settingKey] = event.value;
@@ -984,12 +1011,27 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         break;
       case 'login.failed':
         _authAttemptedAfterConnect = false;
-        emit(
-          state.copyWith(
-            connectionStatus: LobbyConnectionStatus.connected,
-            transientNotice: event.event.payload['reason']?.toString() ?? '登录失败，已保持匿名身份',
-          ),
-        );
+        final loginFailedReason = event.event.payload['reason']?.toString();
+        final loginFailedCode = event.event.payload['code'];
+
+        // 手机端被拒绝：PC 端已在线（409）
+        // 使用 kicked 遮罩展示，让用户明确知道原因
+        if (loginFailedCode == 409 && loginFailedReason == 'pc_session_active') {
+          emit(
+            state.copyWith(
+              connectionStatus: LobbyConnectionStatus.connected,
+              kickedReason: 'pc_session_active',
+              kickedMessage: 'pc_session_active',
+            ),
+          );
+        } else {
+          emit(
+            state.copyWith(
+              connectionStatus: LobbyConnectionStatus.connected,
+              transientNotice: loginFailedReason ?? '登录失败，已保持匿名身份',
+            ),
+          );
+        }
         break;
       case 'logout.success':
         final kick = event.event.payload['kick'] == true;
@@ -1012,7 +1054,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           _steamNameSwitchCooldownTimer = null;
 
           emit(state.copyWith(
-            chatDraft: '', // 退出登录后清空聊天草稿
             chatCooldownSeconds: 0,
             broadcastCooldownSeconds: 0,
             anonymousSwitchCooldownSeconds: 0,
@@ -1025,6 +1066,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         }
         break;
       case 'ws.closed':
+        // 被踢出时不显示重连提示（由 system.kicked 处理）
+        if (state.kickedReason != null) break;
         if (state.connectionStatus != LobbyConnectionStatus.connecting) {
           // 断线时重置加载阶段，等待重连后重新开始
           emit(state.copyWith(
@@ -1045,33 +1088,33 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         break;
       case 'ws.connected':
         _authAttemptedAfterConnect = false;
-        if (state.connectionStatus != LobbyConnectionStatus.connected &&
-            state.connectionStatus != LobbyConnectionStatus.connecting) {
-          // 构建更新参数
-          final updates = <String, dynamic>{
-            'connectionStatus': LobbyConnectionStatus.connected,
-            'transientNotice': '大厅重连成功，正在同步数据...',
-          };
-          // 如果正在 loading 阶段，更新加载阶段
-          if (state.pageStatus == LobbyPageStatus.loading) {
-            // 判断是否已收到 assets
+        {
+          final wasConnecting = state.connectionStatus == LobbyConnectionStatus.connecting;
+          final wasReconnecting = state.connectionStatus == LobbyConnectionStatus.reconnecting ||
+              state.connectionStatus == LobbyConnectionStatus.disconnected ||
+              state.connectionStatus == LobbyConnectionStatus.failed;
+
+          if (wasConnecting || wasReconnecting) {
             final hasAssets = state.assets.mapConfig != null || state.assets.sprites.isNotEmpty;
-            updates['loadingPhase'] = hasAssets
-                ? LobbyLoadingPhase.loadingSnapshot
-                : LobbyLoadingPhase.waiting;
-          }
-          emit(state.copyWith(
-            connectionStatus: updates['connectionStatus'] as LobbyConnectionStatus,
-            loadingPhase: updates['loadingPhase'] as LobbyLoadingPhase?,
-            transientNotice: updates['transientNotice'] as String,
-          ));
-          // WebSocket 重连成功后，自动重发待发送的消息
-          if (state.pendingMessages.isNotEmpty) {
-            add(const LobbyResendMessages());
-          }
-          // 重连后重新请求广播冷却状态
-          if (_isLobbyEntered) {
-            unawaited(_service.requestBroadcastCD());
+            emit(state.copyWith(
+              connectionStatus: LobbyConnectionStatus.connected,
+              loadingPhase: state.pageStatus == LobbyPageStatus.loading
+                  ? (hasAssets ? LobbyLoadingPhase.loadingSnapshot : LobbyLoadingPhase.waiting)
+                  : state.loadingPhase,
+              transientNotice: wasReconnecting ? '大厅重连成功，正在同步数据...' : state.transientNotice,
+            ));
+
+            if (state.pendingMessages.isNotEmpty) {
+              add(const LobbyResendMessages());
+            }
+            if (_isLobbyEntered) {
+              unawaited(_service.requestBroadcastCD());
+            }
+
+            // 被踢后重连 或 普通断线重连 时，重新请求 assets+snapshot
+            if (wasReconnecting && _isLobbyEntered) {
+              _requestAssetsAndSnapshot();
+            }
           }
         }
         break;
@@ -1377,36 +1420,20 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           updatedPendingMessages.remove(confirmedMessageId);
         }
 
-        // 队列清空后清空 chatDraft（只有当队列变空时才清空，避免恢复用户正在编辑的内容）
-        final shouldClearDraft = updatedPendingMessages.isEmpty && state.pendingMessages.isNotEmpty;
-
         emit(
           state.copyWith(
             users: nextState.users,
             messages: nextState.messages,
             pendingMessages: updatedPendingMessages,
-            chatDraft: shouldClearDraft ? '' : state.chatDraft,
           ),
         );
         _scheduleBubbleCleanup();
         break;
       case 'chat.reject':
-        // 获取最近一次发送的消息内容用于恢复
-        // 使用 lastKey 获取插入顺序最后的消息
-        final lastKey = state.pendingMessages.isNotEmpty
-            ? state.pendingMessages.keys.last
-            : null;
-        final lastPendingContent = lastKey != null
-            ? state.pendingMessages[lastKey]
-            : null;
-
         emit(
           state.copyWith(
             transientNotice: event.event.payload['reason']?.toString() ?? '消息发送失败',
-            // 清空待重发队列（不知道具体哪条被拒绝，避免重复发送）
             pendingMessages: {},
-            // 恢复用户输入，让用户可以重新编辑发送
-            chatDraft: lastPendingContent ?? state.chatDraft,
           ),
         );
         // 注意：这里不重发，因为不知道具体哪条被拒绝
@@ -1505,6 +1532,29 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             transientNotice: message,
           ),
         );
+        break;
+      case 'system.kicked':
+        final reason = event.event.payload['reason']?.toString() ?? 'unknown';
+        final message = event.event.payload['message']?.toString();
+        LogService.w('[LobbyBloc] 收到 system.kicked: reason=$reason message=$message');
+
+        // 取消所有定时器
+        _movementTimer?.cancel();
+        _movementTimer = null;
+        _chatCooldownTimer?.cancel();
+        _chatCooldownTimer = null;
+        _broadcastCooldownTimer?.cancel();
+        _broadcastCooldownTimer = null;
+        _anonymousSwitchCooldownTimer?.cancel();
+        _anonymousSwitchCooldownTimer = null;
+        _steamNameSwitchCooldownTimer?.cancel();
+        _steamNameSwitchCooldownTimer = null;
+
+        emit(state.copyWith(
+          connectionStatus: LobbyConnectionStatus.disconnected,
+          kickedReason: reason,
+          kickedMessage: message,
+        ));
         break;
       case 'portal.teleport':
         final portalKey = event.event.payload['portalKey']?.toString();
@@ -2111,7 +2161,14 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
   /// 解析消息类型
   LobbyMessageType _parseMessageType(String? value) {
-    return value == 'system' ? LobbyMessageType.system : LobbyMessageType.user;
+    switch (value) {
+      case 'system':
+        return LobbyMessageType.system;
+      case 'broadcast':
+        return LobbyMessageType.broadcast;
+      default:
+        return LobbyMessageType.user;
+    }
   }
 
   /// 解析时间戳
@@ -2741,6 +2798,72 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       selectedSpriteId: defaultSpriteId,
       isAnonymous: true,
     ));
+  }
+
+  /// 用户在被踢提示页面点击操作按钮后，重置被踢状态并重新连接
+  Future<void> _onKickedDismissed(
+    LobbyKickedDismissed event,
+    Emitter<LobbyState> emit,
+  ) async {
+    final reason = state.kickedReason;
+    LogService.i('[LobbyBloc] 用户确认被踢提示，reason=$reason');
+
+    // pc_session_active：PC 端仍在线，重连必然再次被拒，不应重连
+    // 只清除遮罩和被踢标志，保持当前连接状态
+    // 重置 _isKicked 以便用户后续重新进入大厅时可以正常连接（PC 可能已下线）
+    if (reason == 'pc_session_active') {
+      _service.resetKicked();
+      emit(state.copyWith(
+        clearKicked: true,
+        clearTransientNotice: true,
+      ));
+      return;
+    }
+
+    // 重置被踢标志，允许重连
+    _service.resetKicked();
+    _authAttemptedAfterConnect = false;
+    _selfServerUserId = null;
+    _selfMapId = null;
+
+    // 设置为 disconnected，这样 ws.connected 到来时会走 wasReconnecting 分支
+    // 并自动触发 _requestAssetsAndSnapshot()
+    emit(state.copyWith(
+      clearKicked: true,
+      connectionStatus: LobbyConnectionStatus.disconnected,
+      pageStatus: LobbyPageStatus.loading,
+      loadingPhase: LobbyLoadingPhase.connecting,
+      users: const [],
+      messages: const [],
+      clearTransientNotice: true,
+    ));
+
+    // 强制重新建立 WebSocket 连接
+    // ws.connected 事件到来后会自动触发 assets+snapshot 请求
+    await _service.forceReconnect();
+  }
+
+  /// 从后台恢复时清除所有玩家的聊天气泡状态
+  void _onChatBubblesCleared(
+    LobbyChatBubblesCleared event,
+    Emitter<LobbyState> emit,
+  ) {
+    // 清除所有用户的 lastMessage 和 lastMessageAt
+    // 这样 hasVisibleMessage 会返回 false，气泡会消失
+    final clearedUsers = state.users.map((user) {
+      return user.copyWith(lastMessage: null, lastMessageAt: null);
+    }).toList();
+    emit(state.copyWith(users: clearedUsers));
+  }
+
+  /// 从后台恢复时重新请求 snapshot，确保数据最新
+  Future<void> _onSnapshotRefreshRequested(
+    LobbySnapshotRefreshRequested event,
+    Emitter<LobbyState> emit,
+  ) async {
+    LogService.d('[LobbyBloc] 从后台恢复，重新请求 snapshot');
+    // 只请求 snapshot，不请求 assets（assets 一般不会变化）
+    await _service.requestSnapshot();
   }
 }
 

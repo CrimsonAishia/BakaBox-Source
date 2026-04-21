@@ -1,39 +1,31 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:window_manager/window_manager.dart';
-
-import 'floating_window_service.dart';
-import 'obs_server_service.dart';
-import 'tray_service.dart';
-
 /// 应用程序退出服务
 /// 负责完整的退出流程：停止服务、销毁窗口、退出进程
+///
+/// 桌面端通过 [registerDesktopExitHandler] 注册平台特定的退出逻辑，
+/// 避免移动端引入桌面端依赖（window_manager、obs_server_service 等）。
 class AppExitService {
   AppExitService._();
 
   static final AppExitService instance = AppExitService._();
 
+  /// 桌面端退出处理器，由桌面端启动时注册
+  Future<void> Function()? _desktopExitHandler;
+
+  /// 注册桌面端退出处理器
+  /// 在桌面端初始化时调用，注入平台特定的退出逻辑
+  void registerDesktopExitHandler(Future<void> Function() handler) {
+    _desktopExitHandler = handler;
+  }
+
   /// 执行完整的应用退出流程
   Future<void> exitApplication() async {
-    // 1. 停止 OBS 服务
-    final obsService = ObsServerService();
-    if (obsService.isRunning) {
-      obsService.clearDisplay();
-      await obsService.stop();
+    if (_desktopExitHandler != null) {
+      await _desktopExitHandler!();
+    } else {
+      exit(0);
     }
-
-    // 2. 关闭所有浮动窗口
-    await FloatingWindowService().closeAllWindows();
-
-    // 3. 隐藏主窗口
-    await windowManager.hide();
-
-    // 4. 销毁托盘图标
-    await TrayService.instance.dispose();
-
-    // 5. 销毁窗口句柄并退出进程
-    await windowManager.destroy();
-    exit(0);
   }
 }

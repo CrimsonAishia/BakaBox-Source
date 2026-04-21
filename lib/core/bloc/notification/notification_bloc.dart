@@ -31,6 +31,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     on<NotificationStartAutoRefresh>(_onStartAutoRefresh);
     on<NotificationStopAutoRefresh>(_onStopAutoRefresh);
     on<NotificationClearError>(_onClearError);
+    on<NotificationClear>(_onClear);
   }
 
   /// 启动自动刷新
@@ -71,6 +72,13 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     NotificationFetch event,
     Emitter<NotificationState> emit,
   ) async {
+    // 检查用户是否已登录，未登录时不请求
+    if (!AuthService.instance.isLoggedIn) {
+      LogService.d('获取消息列表跳过：用户未登录');
+      emit(state.copyWith(isLoading: false, clearError: true));
+      return;
+    }
+
     emit(
       state.copyWith(
         isLoading: true,
@@ -123,6 +131,12 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     NotificationRefresh event,
     Emitter<NotificationState> emit,
   ) async {
+    // 检查用户是否已登录，未登录时不请求
+    if (!AuthService.instance.isLoggedIn) {
+      LogService.d('刷新消息列表跳过：用户未登录');
+      return;
+    }
+
     if (!event.silent) {
       emit(state.copyWith(isLoading: true, clearError: true));
     }
@@ -171,6 +185,12 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     NotificationLoadMore event,
     Emitter<NotificationState> emit,
   ) async {
+    // 检查用户是否已登录，未登录时不请求
+    if (!AuthService.instance.isLoggedIn) {
+      LogService.d('加载更多消息跳过：用户未登录');
+      return;
+    }
+
     if (state.isLoadingMore || !state.hasMore) return;
 
     emit(state.copyWith(isLoadingMore: true));
@@ -363,5 +383,15 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     Emitter<NotificationState> emit,
   ) {
     emit(state.copyWith(clearError: true));
+  }
+
+  /// 处理清除所有消息数据事件（退出登录时调用）
+  void _onClear(
+    NotificationClear event,
+    Emitter<NotificationState> emit,
+  ) {
+    _stopAutoRefresh();
+    emit(const NotificationState());
+    LogService.d('消息数据已清除');
   }
 }

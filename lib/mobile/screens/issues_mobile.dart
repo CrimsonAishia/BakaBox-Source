@@ -47,11 +47,8 @@ class _IssuesMobileState extends State<IssuesMobile> {
 
   void _onScroll() {
     final shouldShow = _scrollController.offset > 200;
-    if (_showScrollToTop != shouldShow) {
-      setState(() => _showScrollToTop = shouldShow);
-    }
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent * 0.8) {
+    if (_showScrollToTop != shouldShow) setState(() => _showScrollToTop = shouldShow);
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8) {
       final bloc = context.read<IssueBloc>();
       if (bloc.state.canLoadMore) {
         bloc.add(const IssueLoadMore());
@@ -59,18 +56,11 @@ class _IssuesMobileState extends State<IssuesMobile> {
     }
   }
 
-  void _scrollToTop() => _scrollController.animateTo(
-    0,
-    duration: const Duration(milliseconds: 500),
-    curve: Curves.easeInOut,
-  );
+  void _scrollToTop() => _scrollController.animateTo(0, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
 
   void _onSearchChanged(String value) {
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(
-      const Duration(milliseconds: 800),
-      () => context.read<IssueBloc>().add(IssueSearch(value)),
-    );
+    _debounceTimer = Timer(const Duration(milliseconds: 800), () => context.read<IssueBloc>().add(IssueSearch(value)));
   }
 
   void _navigateToCreate() {
@@ -88,12 +78,14 @@ class _IssuesMobileState extends State<IssuesMobile> {
 
   void _showSortSheet() {
     final currentSort = context.read<IssueBloc>().state.currentSort;
+    final theme = Theme.of(context);
+    
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: theme.colorScheme.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -104,7 +96,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: theme.dividerColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -115,27 +107,26 @@ class _IssuesMobileState extends State<IssuesMobile> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurface,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
             ),
-            ..._sortOptions.entries.map(
-              (e) => ListTile(
-                leading: Icon(
-                  currentSort == e.key
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_off,
-                  color: currentSort == e.key
-                      ? const Color(0xFF0080FF)
-                      : Colors.grey,
-                ),
-                title: Text(e.value),
-                onTap: () {
-                  Navigator.pop(context);
-                  this.context.read<IssueBloc>().add(IssueSort(e.key));
-                },
+            ..._sortOptions.entries.map((e) => ListTile(
+              leading: Icon(
+                currentSort == e.key ? Icons.radio_button_checked : Icons.radio_button_off,
+                color: currentSort == e.key
+                    ? const Color(0xFF0080FF)
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
-            ),
+              title: Text(
+                e.value,
+                style: TextStyle(color: theme.colorScheme.onSurface),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                this.context.read<IssueBloc>().add(IssueSort(e.key));
+              },
+            )),
             const SizedBox(height: 20),
           ],
         ),
@@ -149,8 +140,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
       body: BlocBuilder<IssueBloc, IssueState>(
         builder: (context, state) {
           return RefreshIndicator(
-            onRefresh: () async =>
-                context.read<IssueBloc>().add(const IssueRefresh()),
+            onRefresh: () async => context.read<IssueBloc>().add(const IssueRefresh()),
             child: CustomScrollView(
               controller: _scrollController,
               slivers: [
@@ -164,26 +154,22 @@ class _IssuesMobileState extends State<IssuesMobile> {
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (_showScrollToTop)
-            FloatingActionButton.small(
-                  heroTag: 'scroll_top',
-                  onPressed: _scrollToTop,
-                  backgroundColor: Colors.grey.shade700,
-                  child: const Icon(
-                    Icons.keyboard_arrow_up_rounded,
-                    color: Colors.white,
-                  ),
-                )
-                .animate()
-                .fadeIn(duration: 200.ms)
-                .scale(begin: const Offset(0.8, 0.8), duration: 200.ms),
-          if (_showScrollToTop) const SizedBox(height: 12),
           FloatingActionButton(
             heroTag: 'create',
             onPressed: _navigateToCreate,
             backgroundColor: const Color(0xFF0080FF),
             child: const Icon(Icons.add, color: Colors.white),
           ),
+          if (_showScrollToTop) const SizedBox(height: 12),
+          if (_showScrollToTop)
+            FloatingActionButton(
+              heroTag: 'scroll_top',
+              onPressed: _scrollToTop,
+              backgroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF374151)
+                  : const Color(0xFF6B7280),
+              child: const Icon(Icons.keyboard_arrow_up_rounded, color: Colors.white),
+            ).animate().fadeIn(duration: 200.ms).scale(begin: const Offset(0.8, 0.8), duration: 200.ms),
         ],
       ),
     );
@@ -192,19 +178,27 @@ class _IssuesMobileState extends State<IssuesMobile> {
   Widget _buildAppBar(BuildContext context, IssueState state) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    
     return SliverAppBar(
       pinned: true,
       elevation: 0,
       backgroundColor: theme.appBarTheme.backgroundColor,
       surfaceTintColor: theme.appBarTheme.backgroundColor,
       toolbarHeight: 80,
-      automaticallyImplyLeading: false,
+      leading: IconButton(
+        onPressed: () => context.pop(),
+        icon: Icon(
+          MdiIcons.arrowLeft,
+          color: colorScheme.onSurface,
+        ),
+      ),
       flexibleSpace: Container(
         decoration: BoxDecoration(
           color: theme.appBarTheme.backgroundColor,
           boxShadow: [
             BoxShadow(
-              color: colorScheme.shadow.withValues(alpha: 0.05),
+              color: colorScheme.shadow.withValues(alpha: isDark ? 0.1 : 0.05),
               offset: const Offset(0, 1),
               blurRadius: 3,
             ),
@@ -212,74 +206,51 @@ class _IssuesMobileState extends State<IssuesMobile> {
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+            padding: const EdgeInsets.fromLTRB(56, 12, 20, 12),
             child: Row(
               children: [
                 Container(
-                      width: 56,
-                      height: 56,
-                      padding: const EdgeInsets.all(4),
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF0080FF), Color(0xFF0066CC)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(
-                                0xFF0080FF,
-                              ).withValues(alpha: 0.3),
-                              offset: const Offset(0, 4),
-                              blurRadius: 12,
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          MdiIcons.commentQuestionOutline,
-                          color: Colors.white,
-                          size: 24,
-                        ),
+                  width: 56,
+                  height: 56,
+                  padding: const EdgeInsets.all(4),
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: isDark
+                            ? [const Color(0xFF0066CC), const Color(0xFF004499)]
+                            : [const Color(0xFF0080FF), const Color(0xFF0066CC)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                    )
-                    .animate()
-                    .scale(
-                      begin: const Offset(0.5, 0.5),
-                      end: const Offset(1.0, 1.0),
-                      duration: 600.ms,
-                      curve: Curves.elasticOut,
-                    )
-                    .fadeIn(duration: 200.ms)
-                    .then()
-                    .scale(
-                      begin: const Offset(1.0, 1.0),
-                      end: const Offset(1.05, 1.05),
-                      duration: 200.ms,
-                      curve: Curves.easeOut,
-                    )
-                    .then()
-                    .scale(
-                      begin: const Offset(1.05, 1.05),
-                      end: const Offset(1.0, 1.0),
-                      duration: 200.ms,
-                      curve: Curves.easeIn,
-                    )
-                    .then()
-                    .shimmer(
-                      duration: 1000.ms,
-                      delay: 100.ms,
-                      colors: [
-                        Colors.white.withValues(alpha: 0.0),
-                        Colors.white.withValues(alpha: 0.3),
-                        Colors.white.withValues(alpha: 0.8),
-                        Colors.white.withValues(alpha: 0.3),
-                        Colors.white.withValues(alpha: 0.0),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0080FF).withValues(alpha: isDark ? 0.2 : 0.3),
+                          offset: const Offset(0, 4),
+                          blurRadius: 12,
+                        ),
                       ],
                     ),
+                    child: Icon(MdiIcons.commentQuestionOutline, color: Colors.white, size: 24),
+                  ),
+                )
+                    .animate()
+                    .scale(begin: const Offset(0.5, 0.5), end: const Offset(1.0, 1.0), duration: 600.ms, curve: Curves.elasticOut)
+                    .fadeIn(duration: 200.ms)
+                    .then()
+                    .scale(begin: const Offset(1.0, 1.0), end: const Offset(1.05, 1.05), duration: 200.ms, curve: Curves.easeOut)
+                    .then()
+                    .scale(begin: const Offset(1.05, 1.05), end: const Offset(1.0, 1.0), duration: 200.ms, curve: Curves.easeIn)
+                    .then()
+                    .shimmer(duration: 1000.ms, delay: 100.ms, colors: [
+                      Colors.white.withValues(alpha: 0.0),
+                      Colors.white.withValues(alpha: 0.3),
+                      Colors.white.withValues(alpha: 0.8),
+                      Colors.white.withValues(alpha: 0.3),
+                      Colors.white.withValues(alpha: 0.0),
+                    ]),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -291,7 +262,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: theme.appBarTheme.foregroundColor,
+                          color: colorScheme.onSurface,
                         ),
                       ).animate().fadeIn(duration: 300.ms),
                       const SizedBox(height: 2),
@@ -299,9 +270,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
                         state.isLoading ? '加载中...' : '共 ${state.totalCount} 条',
                         style: TextStyle(
                           fontSize: 13,
-                          color: theme.appBarTheme.foregroundColor?.withValues(
-                            alpha: 0.7,
-                          ),
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ).animate().fadeIn(duration: 300.ms, delay: 80.ms),
                     ],
@@ -352,6 +321,10 @@ class _IssuesMobileState extends State<IssuesMobile> {
   }
 
   Widget _buildModernLoadingIndicator() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = const Color(0xFF0080FF);
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -360,30 +333,27 @@ class _IssuesMobileState extends State<IssuesMobile> {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+              color: primaryColor.withValues(alpha: isDark ? 0.15 : 0.1),
               borderRadius: BorderRadius.circular(40),
             ),
             child: Stack(
               alignment: Alignment.center,
               children: [
                 Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(30),
-                        color: const Color(0xFF0080FF).withValues(alpha: 0.2),
-                      ),
-                    )
-                    .animate(onPlay: (controller) => controller.repeat())
-                    .scale(duration: 1000.ms)
-                    .fadeIn(duration: 500.ms),
-                const SizedBox(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(30),
+                    color: primaryColor.withValues(alpha: isDark ? 0.25 : 0.2),
+                  ),
+                ).animate(onPlay: (controller) => controller.repeat()).scale(duration: 1000.ms).fadeIn(duration: 500.ms),
+                SizedBox(
                   width: 40,
                   height: 40,
                   child: CircularProgressIndicator(
                     strokeWidth: 3,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      Color(0xFF0080FF),
+                      isDark ? primaryColor.withValues(alpha: 0.9) : primaryColor,
                     ),
                   ),
                 ),
@@ -392,22 +362,18 @@ class _IssuesMobileState extends State<IssuesMobile> {
           ),
           const SizedBox(height: 32),
           Text(
-                '正在加载问题列表',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFF0080FF),
-                  fontWeight: FontWeight.w500,
-                ),
-              )
-              .animate(onPlay: (controller) => controller.repeat(reverse: true))
-              .fadeIn(duration: 800.ms)
-              .then(delay: 200.ms)
-              .fadeOut(duration: 800.ms),
+            '正在加载反馈列表',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: isDark ? primaryColor.withValues(alpha: 0.9) : primaryColor,
+              fontWeight: FontWeight.w500,
+            ),
+          ).animate(onPlay: (controller) => controller.repeat(reverse: true)).fadeIn(duration: 800.ms).then(delay: 200.ms).fadeOut(duration: 800.ms),
           const SizedBox(height: 8),
           Text(
             '请稍候...',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
           ).animate().fadeIn(delay: 300.ms, duration: 500.ms),
         ],
       ),
@@ -423,70 +389,42 @@ class _IssuesMobileState extends State<IssuesMobile> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(
-                context,
-              ).colorScheme.shadow.withValues(alpha: 0.08),
+              color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.08),
               offset: const Offset(0, 2),
               blurRadius: 8,
             ),
           ],
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-          ),
+          border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
         ),
         child: TextField(
           controller: _searchController,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 14,
-          ),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
           decoration: InputDecoration(
             hintText: '搜索问题...',
-            hintStyle: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontSize: 14,
-            ),
+            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14),
             prefixIcon: Container(
               margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.1),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(
-                Icons.search_rounded,
-                color: Theme.of(context).colorScheme.primary,
-                size: 20,
-              ),
+              child: Icon(Icons.search_rounded, color: Theme.of(context).colorScheme.primary, size: 20),
             ),
             suffixIcon: _searchController.text.isNotEmpty
                 ? Container(
                     margin: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: IconButton(
-                      icon: Icon(
-                        Icons.clear_rounded,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        size: 18,
-                      ),
-                      onPressed: () {
-                        _searchController.clear();
-                        _onSearchChanged('');
-                      },
+                      icon: Icon(Icons.clear_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 18),
+                      onPressed: () { _searchController.clear(); _onSearchChanged(''); },
                     ),
                   )
                 : null,
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 16,
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           ),
           onChanged: _onSearchChanged,
         ),
@@ -504,44 +442,10 @@ class _IssuesMobileState extends State<IssuesMobile> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildFilterChip(
-                  context,
-                  '全部',
-                  state.currentType == null,
-                  () => context.read<IssueBloc>().add(
-                    const IssueFilterType(null),
-                  ),
-                ),
-                _buildFilterChip(
-                  context,
-                  'Bug',
-                  state.currentType == 'bug',
-                  () => context.read<IssueBloc>().add(
-                    const IssueFilterType('bug'),
-                  ),
-                  color: const Color(0xFFDC2626),
-                  icon: MdiIcons.bug,
-                ),
-                _buildFilterChip(
-                  context,
-                  '功能建议',
-                  state.currentType == 'feature',
-                  () => context.read<IssueBloc>().add(
-                    const IssueFilterType('feature'),
-                  ),
-                  color: const Color(0xFF2563EB),
-                  icon: MdiIcons.lightbulbOnOutline,
-                ),
-                _buildFilterChip(
-                  context,
-                  '问题',
-                  state.currentType == 'question',
-                  () => context.read<IssueBloc>().add(
-                    const IssueFilterType('question'),
-                  ),
-                  color: const Color(0xFF059669),
-                  icon: MdiIcons.helpCircleOutline,
-                ),
+                _buildFilterChip(context, '全部', state.currentType == null, () => context.read<IssueBloc>().add(const IssueFilterType(null))),
+                _buildFilterChip(context, 'Bug', state.currentType == 'bug', () => context.read<IssueBloc>().add(const IssueFilterType('bug')), color: const Color(0xFFDC2626), icon: MdiIcons.bug),
+                _buildFilterChip(context, '功能建议', state.currentType == 'feature', () => context.read<IssueBloc>().add(const IssueFilterType('feature')), color: const Color(0xFF2563EB), icon: MdiIcons.lightbulbOnOutline),
+                _buildFilterChip(context, '问题', state.currentType == 'question', () => context.read<IssueBloc>().add(const IssueFilterType('question')), color: const Color(0xFF059669), icon: MdiIcons.helpCircleOutline),
               ],
             ),
           ),
@@ -549,36 +453,15 @@ class _IssuesMobileState extends State<IssuesMobile> {
           // 状态和排序
           Row(
             children: [
-              _buildStatusChip(
-                context,
-                '开放',
-                state.currentStatus == 'open',
-                () => context.read<IssueBloc>().add(
-                  const IssueFilterStatus('open'),
-                ),
-                icon: MdiIcons.checkCircleOutline,
-                activeColor: const Color(0xFF16A34A),
-              ),
+              _buildStatusChip(context, '开放', state.currentStatus == 'open', () => context.read<IssueBloc>().add(const IssueFilterStatus('open')), icon: MdiIcons.checkCircleOutline, activeColor: const Color(0xFF16A34A)),
               const SizedBox(width: 8),
-              _buildStatusChip(
-                context,
-                '已关闭',
-                state.currentStatus == 'closed',
-                () => context.read<IssueBloc>().add(
-                  const IssueFilterStatus('closed'),
-                ),
-                icon: MdiIcons.closeCircleOutline,
-                activeColor: const Color(0xFF6B7280),
-              ),
+              _buildStatusChip(context, '已关闭', state.currentStatus == 'closed', () => context.read<IssueBloc>().add(const IssueFilterStatus('closed')), icon: MdiIcons.closeCircleOutline, activeColor: const Color(0xFF6B7280)),
               const Spacer(),
               // 排序按钮
               GestureDetector(
                 onTap: _showSortSheet,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surfaceContainer,
                     borderRadius: BorderRadius.circular(8),
@@ -587,25 +470,11 @@ class _IssuesMobileState extends State<IssuesMobile> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        MdiIcons.sortVariant,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                      Icon(MdiIcons.sortVariant, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       const SizedBox(width: 4),
-                      Text(
-                        _sortOptions[state.currentSort] ?? '排序',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
+                      Text(_sortOptions[state.currentSort] ?? '排序', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                       const SizedBox(width: 2),
-                      Icon(
-                        Icons.keyboard_arrow_down,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                      Icon(Icons.keyboard_arrow_down, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     ],
                   ),
                 ),
@@ -617,14 +486,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
     );
   }
 
-  Widget _buildFilterChip(
-    BuildContext context,
-    String label,
-    bool isSelected,
-    VoidCallback onTap, {
-    Color? color,
-    IconData? icon,
-  }) {
+  Widget _buildFilterChip(BuildContext context, String label, bool isSelected, VoidCallback onTap, {Color? color, IconData? icon}) {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: GestureDetector(
@@ -632,40 +494,18 @@ class _IssuesMobileState extends State<IssuesMobile> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected
-                ? (color ?? const Color(0xFF0080FF))
-                : Theme.of(context).colorScheme.surfaceContainer,
+            color: isSelected ? (color ?? const Color(0xFF0080FF)) : Theme.of(context).colorScheme.surfaceContainer,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isSelected
-                  ? (color ?? const Color(0xFF0080FF))
-                  : Theme.of(context).dividerColor,
-            ),
+            border: Border.all(color: isSelected ? (color ?? const Color(0xFF0080FF)) : Theme.of(context).dividerColor),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                Icon(
-                  icon,
-                  size: 14,
-                  color: isSelected
-                      ? Colors.white
-                      : (color ??
-                            Theme.of(context).colorScheme.onSurfaceVariant),
-                ),
+                Icon(icon, size: 14, color: isSelected ? Colors.white : (color ?? Theme.of(context).colorScheme.onSurfaceVariant)),
                 const SizedBox(width: 5),
               ],
-              Text(
-                label,
-                style: TextStyle(
-                  color: isSelected
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                ),
-              ),
+              Text(label, style: TextStyle(color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500)),
             ],
           ),
         ),
@@ -673,14 +513,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
     );
   }
 
-  Widget _buildStatusChip(
-    BuildContext context,
-    String label,
-    bool isSelected,
-    VoidCallback onTap, {
-    IconData? icon,
-    Color? activeColor,
-  }) {
+  Widget _buildStatusChip(BuildContext context, String label, bool isSelected, VoidCallback onTap, {IconData? icon, Color? activeColor}) {
     final color = activeColor ?? const Color(0xFF0080FF);
     return GestureDetector(
       onTap: onTap,
@@ -689,33 +522,16 @@ class _IssuesMobileState extends State<IssuesMobile> {
         decoration: BoxDecoration(
           color: isSelected ? color.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? color : Theme.of(context).dividerColor,
-          ),
+          border: Border.all(color: isSelected ? color : Theme.of(context).dividerColor),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(
-                icon,
-                size: 14,
-                color: isSelected
-                    ? color
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+              Icon(icon, size: 14, color: isSelected ? color : Theme.of(context).colorScheme.onSurfaceVariant),
               const SizedBox(width: 4),
             ],
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected
-                    ? color
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              ),
-            ),
+            Text(label, style: TextStyle(color: isSelected ? color : Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500)),
           ],
         ),
       ),
@@ -735,9 +551,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surfaceContainer,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
-              ),
+              border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -749,98 +563,35 @@ class _IssuesMobileState extends State<IssuesMobile> {
                     _buildStatusTag(issue.issueStatus),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        '#${issue.id}',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(4)),
+                      child: Text('#${issue.id}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w500)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  issue.title,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                Text(issue.title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface), maxLines: 2, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 12),
                 Row(
                   children: [
                     CircleAvatar(
                       radius: 10,
-                      backgroundColor: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest,
-                      backgroundImage: issue.authorAvatar != null
-                          ? NetworkImage(issue.authorAvatar!)
-                          : null,
+                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      backgroundImage: issue.authorAvatar != null ? NetworkImage(issue.authorAvatar!) : null,
                       child: issue.authorAvatar == null
-                          ? Text(
-                              issue.authorName.isNotEmpty
-                                  ? issue.authorName[0].toUpperCase()
-                                  : '?',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
-                              ),
-                            )
+                          ? Text(issue.authorName.isNotEmpty ? issue.authorName[0].toUpperCase() : '?', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant))
                           : null,
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      issue.authorName,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
-                    ),
+                    Text(issue.authorName, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                     const SizedBox(width: 12),
-                    Icon(
-                      MdiIcons.clockOutline,
-                      size: 14,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                    Icon(MdiIcons.clockOutline, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     const SizedBox(width: 4),
-                    Text(
-                      Formatters.formatRelativeTime(issue.createdAt),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
-                    ),
+                    Text(Formatters.formatRelativeTime(issue.createdAt), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                     const Spacer(),
-                    _buildStatBadge(
-                      context,
-                      MdiIcons.thumbUpOutline,
-                      issue.voteCount,
-                    ),
+                    _buildStatBadge(context, MdiIcons.thumbUpOutline, issue.voteCount),
                     const SizedBox(width: 10),
-                    _buildStatBadge(
-                      context,
-                      MdiIcons.commentOutline,
-                      issue.commentCount,
-                    ),
+                    _buildStatBadge(context, MdiIcons.commentOutline, issue.commentCount),
                   ],
                 ),
               ],
@@ -861,73 +612,60 @@ class _IssuesMobileState extends State<IssuesMobile> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 12,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+          Icon(icon, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
           const SizedBox(width: 4),
-          Text(
-            '$count',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          Text('$count', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w500)),
         ],
       ),
     );
   }
 
   Widget _buildTypeTag(IssueType type) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     final (color, bgColor, icon) = switch (type) {
       IssueType.bug => (
         const Color(0xFFDC2626),
-        const Color(0xFFFEE2E2),
+        isDark ? const Color(0xFFDC2626).withValues(alpha: 0.15) : const Color(0xFFFEE2E2),
         MdiIcons.bug,
       ),
       IssueType.feature => (
         const Color(0xFF2563EB),
-        const Color(0xFFDBEAFE),
+        isDark ? const Color(0xFF2563EB).withValues(alpha: 0.15) : const Color(0xFFDBEAFE),
         MdiIcons.lightbulbOnOutline,
       ),
       IssueType.question => (
         const Color(0xFF059669),
-        const Color(0xFFD1FAE5),
+        isDark ? const Color(0xFF059669).withValues(alpha: 0.15) : const Color(0xFFD1FAE5),
         MdiIcons.helpCircleOutline,
       ),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(6),
-      ),
+      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(6)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 11, color: color),
           const SizedBox(width: 4),
-          Text(
-            type.label,
-            style: TextStyle(
-              color: color,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          Text(type.label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
         ],
       ),
     );
   }
 
   Widget _buildStatusTag(IssueStatus status) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final isOpen = status.isOpen;
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: isOpen ? const Color(0xFFDCFCE7) : const Color(0xFFF3F4F6),
+        color: isOpen
+            ? (isDark ? const Color(0xFF16A34A).withValues(alpha: 0.15) : const Color(0xFFDCFCE7))
+            : (isDark ? const Color(0xFF6B7280).withValues(alpha: 0.15) : const Color(0xFFF3F4F6)),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -956,7 +694,11 @@ class _IssuesMobileState extends State<IssuesMobile> {
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final isSearching = _searchController.text.isNotEmpty;
+    final primaryColor = const Color(0xFF0080FF);
+    
     return Container(
       height: 300,
       padding: const EdgeInsets.all(32),
@@ -968,22 +710,22 @@ class _IssuesMobileState extends State<IssuesMobile> {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
+                color: isDark
+                    ? primaryColor.withValues(alpha: 0.15)
+                    : const Color(0xFFEFF6FF),
                 borderRadius: BorderRadius.circular(36),
               ),
               child: Icon(
-                isSearching
-                    ? Icons.search_off
-                    : MdiIcons.commentQuestionOutline,
+                isSearching ? Icons.search_off : MdiIcons.commentQuestionOutline,
                 size: 36,
-                color: const Color(0xFF3B82F6),
+                color: isDark ? primaryColor.withValues(alpha: 0.9) : const Color(0xFF3B82F6),
               ),
             ),
             const SizedBox(height: 20),
             Text(
-              isSearching ? '没有找到相关问题' : '暂无问题反馈',
+              isSearching ? '没有找到相关反馈' : '暂无反馈',
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
+                color: theme.colorScheme.onSurface,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -992,7 +734,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
             Text(
               isSearching ? '尝试使用其他关键词搜索' : '成为第一个提出反馈的人吧',
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                color: theme.colorScheme.onSurfaceVariant,
                 fontSize: 14,
               ),
             ),
@@ -1003,15 +745,10 @@ class _IssuesMobileState extends State<IssuesMobile> {
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('提交反馈'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0080FF),
+                  backgroundColor: primaryColor,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               )
             else
@@ -1023,9 +760,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
                 icon: Icon(MdiIcons.close, size: 18),
                 label: const Text('清除搜索'),
                 style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(
-                    context,
-                  ).colorScheme.onSurfaceVariant,
+                  foregroundColor: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
           ],
@@ -1035,6 +770,10 @@ class _IssuesMobileState extends State<IssuesMobile> {
   }
 
   Widget _buildErrorState(String error) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final errorColor = const Color(0xFFDC2626);
+    
     return Center(
       child: Container(
         constraints: const BoxConstraints(maxWidth: 320),
@@ -1046,31 +785,39 @@ class _IssuesMobileState extends State<IssuesMobile> {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: const Color(0xFFFEE2E2),
+                color: isDark
+                    ? errorColor.withValues(alpha: 0.15)
+                    : const Color(0xFFFEE2E2),
                 borderRadius: BorderRadius.circular(36),
               ),
               child: Icon(
                 MdiIcons.alertCircleOutline,
                 size: 36,
-                color: const Color(0xFFDC2626),
+                color: isDark ? errorColor.withValues(alpha: 0.9) : errorColor,
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               '加载失败',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1F2937),
+                color: theme.colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFFFEF2F2),
+                color: isDark
+                    ? errorColor.withValues(alpha: 0.1)
+                    : const Color(0xFFFEF2F2),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFFECACA)),
+                border: Border.all(
+                  color: isDark
+                      ? errorColor.withValues(alpha: 0.3)
+                      : const Color(0xFFFECACA),
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1078,14 +825,14 @@ class _IssuesMobileState extends State<IssuesMobile> {
                   Icon(
                     MdiIcons.informationOutline,
                     size: 16,
-                    color: const Color(0xFFDC2626),
+                    color: isDark ? errorColor.withValues(alpha: 0.9) : errorColor,
                   ),
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
                       error,
-                      style: const TextStyle(
-                        color: Color(0xFFDC2626),
+                      style: TextStyle(
+                        color: isDark ? errorColor.withValues(alpha: 0.9) : errorColor,
                         fontSize: 13,
                       ),
                       textAlign: TextAlign.center,
@@ -1096,20 +843,14 @@ class _IssuesMobileState extends State<IssuesMobile> {
             ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
-              onPressed: () =>
-                  context.read<IssueBloc>().add(const IssueFetch()),
+              onPressed: () => context.read<IssueBloc>().add(const IssueFetch()),
               icon: Icon(MdiIcons.refresh, size: 18),
               label: const Text('重新加载'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0080FF),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),
           ],
@@ -1119,6 +860,9 @@ class _IssuesMobileState extends State<IssuesMobile> {
   }
 
   Widget _buildBottomIndicator(IssueState state) {
+    final theme = Theme.of(context);
+    final primaryColor = const Color(0xFF0080FF);
+    
     if (state.isLoadingMore) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 20),
@@ -1126,18 +870,21 @@ class _IssuesMobileState extends State<IssuesMobile> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(
+              SizedBox(
                 width: 18,
                 height: 18,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Color(0xFF0080FF),
+                  color: primaryColor,
                 ),
               ),
               const SizedBox(width: 10),
               Text(
                 '加载更多...',
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  fontSize: 13,
+                ),
               ),
             ],
           ),
@@ -1154,12 +901,15 @@ class _IssuesMobileState extends State<IssuesMobile> {
               Icon(
                 MdiIcons.checkCircleOutline,
                 size: 16,
-                color: Colors.grey.shade400,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
               ),
               const SizedBox(width: 6),
               Text(
                 '已显示全部 ${state.totalCount} 条',
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  fontSize: 13,
+                ),
               ),
             ],
           ),

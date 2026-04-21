@@ -5,6 +5,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 
 import '../core/core.dart';
 import '../core/services/app_info_service.dart';
+import '../core/utils/storage_utils.dart';
 import 'router/mobile_router.dart';
 import 'theme/mobile_theme.dart';
 import 'screens/mobile_home_screen.dart';
@@ -27,7 +28,19 @@ class _MobileAppState extends State<MobileApp> {
   }
 
   Future<void> _initServices() async {
+    // 初始化应用目录服务（缓存和日志目录）
+    await AppDirectoryService.init();
+    // 初始化 Hive 存储
+    await StorageUtils.init();
+    // 初始化应用信息服务（版本号等）
     await AppInfoService.instance.init();
+    // 初始化日志服务
+    await LogService.init();
+    // 初始化广播通知服务
+    await BroadcastNotificationService.instance.init();
+    // 初始化前台保活服务配置（Android 平台）
+    AppPermissionService.initForegroundService();
+
     if (mounted) {
       setState(() => _initialized = true);
     }
@@ -50,6 +63,17 @@ class _MobileAppState extends State<MobileApp> {
         BlocProvider(create: (_) => SettingsBloc()..add(SettingsInit())),
         BlocProvider(
           create: (_) => AuthBloc()..add(const AuthCheckRequested()),
+        ),
+        BlocProvider(create: (_) => DailyTaskBloc()),
+        BlocProvider(
+          create: (_) => NotificationBloc()
+            ..add(const NotificationFetchUnreadCount())
+            ..add(const NotificationStartAutoRefresh()),
+        ),
+        BlocProvider(
+          create: (_) => AnnouncementBloc()
+            ..add(AnnouncementFetch())
+            ..add(AnnouncementStartAutoRefresh()),
         ),
         BlocProvider(
           create: (_) => FeatureStatusBloc()

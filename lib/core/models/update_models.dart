@@ -5,6 +5,7 @@ class AppUpdateInfo {
   final String latestVersion;
   final String releaseNotes;
   final String? downloadUrl;
+  final String? fallbackDownloadUrl;
   final int fileSize;
   final String? fileMd5;
   final DateTime publishDate;
@@ -17,6 +18,7 @@ class AppUpdateInfo {
     required this.latestVersion,
     required this.releaseNotes,
     this.downloadUrl,
+    this.fallbackDownloadUrl,
     required this.fileSize,
     this.fileMd5,
     required this.publishDate,
@@ -61,6 +63,7 @@ class AppUpdateInfo {
       latestVersion: updateInfo['version'] as String? ?? '',
       releaseNotes: updateInfo['releaseNotes'] as String? ?? '',
       downloadUrl: updateInfo['downloadUrl'] as String?,
+      fallbackDownloadUrl: updateInfo['fallbackDownloadUrl'] as String?,
       fileSize: updateInfo['fileSize'] as int? ?? 0,
       fileMd5: updateInfo['fileMd5'] as String?,
       publishDate:

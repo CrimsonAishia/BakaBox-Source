@@ -72,13 +72,9 @@ class UpdateService {
       throw const UpdateException('商店版本由 Microsoft Store 自动更新');
     }
 
-    try {
-      final updateInfo = await _updateApi.checkForUpdate();
-      await _updateLastCheckTime();
-      return updateInfo;
-    } catch (e) {
-      rethrow;
-    }
+    final updateInfo = await _updateApi.checkForUpdate();
+    await _updateLastCheckTime();
+    return updateInfo;
   }
 
   /// 自动检查更新（带间隔限制）
@@ -107,42 +103,24 @@ class UpdateService {
     AppUpdateInfo updateInfo,
     void Function(DownloadProgress) onProgress,
   ) async {
-    if (updateInfo.downloadUrl == null) {
+    if (updateInfo.downloadUrl == null && updateInfo.fallbackDownloadUrl == null) {
       throw const UpdateException('下载地址不可用');
     }
 
     final directory = await getTemporaryDirectory();
-    final fileName = _getFileNameFromUrl(updateInfo.downloadUrl!);
+    final fileName = _getFileNameFromUrl(
+      updateInfo.downloadUrl ?? updateInfo.fallbackDownloadUrl!,
+    );
     final savePath = '${directory.path}/$fileName';
 
+    String downloadedFilePath;
     try {
-      // 下载文件
-      final downloadedFilePath = await _updateApi.downloadUpdate(
-        updateInfo.downloadUrl!,
-        savePath,
-        onProgress,
+      downloadedFilePath = await _downloadWithFallback(
+        updateInfo: updateInfo,
+        savePath: savePath,
+        onProgress: onProgress,
       );
-
-      // 校验文件MD5
-      if (updateInfo.fileMd5 != null) {
-        final isValid = await _verifyFileMd5(
-          downloadedFilePath,
-          updateInfo.fileMd5!,
-        );
-        if (!isValid) {
-          try {
-            await File(downloadedFilePath).delete();
-          } catch (_) {}
-          throw const UpdateException('文件完整性校验失败\n下载的文件可能已损坏，请重新下载');
-        }
-      }
-
-      // 上报下载成功
-      await _reportResult(updateInfo, 'download_success');
-
-      return downloadedFilePath;
     } catch (e) {
-      // 上报下载失败
       await _reportResult(
         updateInfo,
         'download_failed',
@@ -150,6 +128,27 @@ class UpdateService {
       );
       rethrow;
     }
+
+    // 校验文件MD5（下载成功后单独处理，不归入 download_failed）
+    if (updateInfo.fileMd5 != null) {
+      final isValid = await _verifyFileMd5(
+        downloadedFilePath,
+        updateInfo.fileMd5!,
+      );
+      if (isValid == false) {
+        // isValid == null 表示 IO 错误，无法判断，跳过校验继续安装
+        try {
+          await File(downloadedFilePath).delete();
+        } catch (_) {}
+        await _reportResult(updateInfo, 'verify_failed');
+        throw const UpdateException('文件完整性校验失败\n下载的文件可能已损坏，请重新下载');
+      }
+    }
+
+    // 上报下载成功
+    await _reportResult(updateInfo, 'download_success');
+
+    return downloadedFilePath;
   }
 
   /// 安装已下载的更新
@@ -192,52 +191,61 @@ class UpdateService {
   ) async {
     // iOS 跳转下载页面
     if (PlatformUtils.isIOS) {
-      if (updateInfo.downloadUrl != null) {
-        final uri = Uri.parse(updateInfo.downloadUrl!);
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        }
+      final url = updateInfo.downloadUrl ?? updateInfo.fallbackDownloadUrl;
+      if (url == null) {
+        throw const UpdateException('下载地址不可用');
+      }
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
       return;
     }
 
-    if (updateInfo.downloadUrl == null) {
+    if (updateInfo.downloadUrl == null && updateInfo.fallbackDownloadUrl == null) {
       throw const UpdateException('下载地址不可用');
     }
 
     final directory = await getTemporaryDirectory();
-    final fileName = _getFileNameFromUrl(updateInfo.downloadUrl!);
+    final fileName = _getFileNameFromUrl(
+      updateInfo.downloadUrl ?? updateInfo.fallbackDownloadUrl!,
+    );
     final savePath = '${directory.path}/$fileName';
 
-    String? downloadedFilePath;
-    bool downloadSucceeded = false;
+    // 下载文件（主地址失败时自动切换备用地址）
+    final String filePath;
+    try {
+      filePath = await _downloadWithFallback(
+        updateInfo: updateInfo,
+        savePath: savePath,
+        onProgress: onProgress,
+      );
+    } catch (e) {
+      await _reportResult(
+        updateInfo,
+        'download_failed',
+        errorMessage: _getErrorMessageForReport(e),
+      );
+      rethrow;
+    }
+
+    // 校验文件MD5（下载成功后单独处理，不归入 download_failed）
+    if (updateInfo.fileMd5 != null) {
+      final isValid = await _verifyFileMd5(filePath, updateInfo.fileMd5!);
+      if (isValid == false) {
+        // isValid == null 表示 IO 错误，无法判断，跳过校验继续安装
+        try {
+          await File(filePath).delete();
+        } catch (_) {}
+        await _reportResult(updateInfo, 'verify_failed');
+        throw const UpdateException('文件完整性校验失败\n下载的文件可能已损坏，请重新下载');
+      }
+    }
+
+    // 上报下载成功
+    await _reportResult(updateInfo, 'download_success');
 
     try {
-      // 下载文件
-      downloadedFilePath = await _updateApi.downloadUpdate(
-        updateInfo.downloadUrl!,
-        savePath,
-        onProgress,
-      );
-
-      // 校验文件MD5
-      if (updateInfo.fileMd5 != null) {
-        final isValid = await _verifyFileMd5(
-          downloadedFilePath,
-          updateInfo.fileMd5!,
-        );
-        if (!isValid) {
-          try {
-            await File(downloadedFilePath).delete();
-          } catch (_) {}
-          throw const UpdateException('文件完整性校验失败\n下载的文件可能已损坏，请重新下载');
-        }
-      }
-
-      // 上报下载成功
-      await _reportResult(updateInfo, 'download_success');
-      downloadSucceeded = true;
-
       // 记录待安装版本号（用于下次启动时检测安装成功）
       await StorageUtils.setString(
         _keyPendingInstallVersion,
@@ -248,30 +256,17 @@ class UpdateService {
         updateInfo.currentVersion,
       );
 
-      // 安装更新
       // 在安装前上报（Windows 会立即退出，必须提前上报）
       await _reportResult(updateInfo, 'install_started');
-      await _installUpdate(downloadedFilePath);
+      await _installUpdate(filePath);
     } catch (e) {
-      // 判断是下载失败还是安装失败
-      if (!downloadSucceeded) {
-        // 下载阶段失败
-        await _reportResult(
-          updateInfo,
-          'download_failed',
-          errorMessage: _getErrorMessageForReport(e),
-        );
-      } else {
-        // 安装阶段失败
-        await _reportResult(
-          updateInfo,
-          'install_failed',
-          errorMessage: _getErrorMessageForReport(e),
-        );
-      }
-
+      await _reportResult(
+        updateInfo,
+        'install_failed',
+        errorMessage: _getErrorMessageForReport(e),
+      );
       if (e is UpdateException) rethrow;
-      throw const UpdateException('下载安装失败，请检查网络后重试');
+      throw const UpdateException('安装失败，请手动运行安装包');
     }
   }
 
@@ -337,15 +332,56 @@ class UpdateService {
     return 'bakabox_update';
   }
 
-  /// 校验文件MD5
-  Future<bool> _verifyFileMd5(String filePath, String expectedMd5) async {
+  /// 下载文件，主地址失败时自动切换备用地址
+  Future<String> _downloadWithFallback({
+    required AppUpdateInfo updateInfo,
+    required String savePath,
+    required void Function(DownloadProgress) onProgress,
+  }) async {
+    // 主地址优先，没有则直接用备用地址
+    final primaryUrl = updateInfo.downloadUrl;
+    final fallbackUrl = updateInfo.fallbackDownloadUrl;
+
+    if (primaryUrl == null) {
+      // 只有备用地址，直接下载
+      return await _updateApi.downloadUpdate(fallbackUrl!, savePath, onProgress);
+    }
+
+    Object? primaryError;
+    try {
+      return await _updateApi.downloadUpdate(primaryUrl, savePath, onProgress);
+    } catch (e) {
+      primaryError = e;
+      if (fallbackUrl == null || fallbackUrl.isEmpty) rethrow;
+
+      LogService.e('[UpdateService] 主下载地址失败，切换备用地址', e);
+
+      // 删除可能存在的不完整文件
+      try {
+        await File(savePath).delete();
+      } catch (_) {}
+
+      try {
+        return await _updateApi.downloadUpdate(fallbackUrl, savePath, onProgress);
+      } catch (e2) {
+        LogService.e('[UpdateService] 备用下载地址也失败', e2);
+        throw UpdateException(
+          '主地址失败: ${_getErrorMessageForReport(primaryError)}\n备用地址失败: ${_getErrorMessageForReport(e2)}',
+        );
+      }
+    }
+  }
+
+  /// 校验文件MD5，返回 null 表示无法读取文件（IO 错误）
+  Future<bool?> _verifyFileMd5(String filePath, String expectedMd5) async {
     try {
       final file = File(filePath);
       final bytes = await file.readAsBytes();
       final digest = md5.convert(bytes);
       return digest.toString().toLowerCase() == expectedMd5.toLowerCase();
     } catch (e) {
-      return false;
+      LogService.e('[UpdateService] MD5 校验读取文件失败', e);
+      return null; // IO 错误，无法判断文件是否完整
     }
   }
 

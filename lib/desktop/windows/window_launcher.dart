@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:desktop_multi_window/desktop_multi_window.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../../core/bootstrap/app_initializer.dart';
 import '../../core/services/single_instance_service.dart';
@@ -31,7 +32,10 @@ class DesktopWindowLauncher {
     }
 
     // 初始化桌面端基础服务（子窗口跳过存储初始化）
-    await AppInitializer.initDesktopBase(skipStorage: isSubWindow);
+    await AppInitializer.initDesktopBase(
+      skipStorage: isSubWindow,
+      onPlatformInit: () => windowManager.ensureInitialized(),
+    );
 
     // 获取当前窗口控制器
     final controller = await WindowController.fromCurrentEngine();

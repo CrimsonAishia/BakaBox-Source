@@ -17,12 +17,11 @@ class IssueDetailMobile extends StatefulWidget {
 }
 
 class _IssueDetailMobileState extends State<IssueDetailMobile> {
-  final quill.QuillController _commentController =
-      quill.QuillController.basic();
+  final quill.QuillController _commentController = quill.QuillController.basic();
   final ScrollController _scrollController = ScrollController();
   final _commentEditorKey = GlobalKey<RichTextEditorState>();
   List<String> _commentImageUrls = [];
-
+  
   // 评论草稿相关
   bool _showCommentDraftPrompt = false;
   DraftData? _savedCommentDraft;
@@ -63,7 +62,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   /// 恢复评论草稿
   void _restoreCommentDraft() {
     if (_savedCommentDraft == null) return;
-
+    
     // 恢复内容
     if (_savedCommentDraft!.content.isNotEmpty) {
       try {
@@ -73,14 +72,14 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
         LogService.e('解码评论草稿失败', e);
       }
     }
-
+    
     // 恢复图片
     setState(() {
       _commentImageUrls = _savedCommentDraft!.imageUrls;
       _showCommentDraftPrompt = false;
       _savedCommentDraft = null;
     });
-
+    
     ToastUtils.showSuccess(context, '草稿已恢复');
   }
 
@@ -105,13 +104,11 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       return;
     }
     context.read<IssueDetailBloc>().add(IssueDetailSetUser(authState.userInfo));
-    context.read<IssueDetailBloc>().add(
-      IssueDetailAddComment(content, images: _commentImageUrls),
-    );
-
+    context.read<IssueDetailBloc>().add(IssueDetailAddComment(content, images: _commentImageUrls));
+    
     // 提交后删除草稿
     DraftService().deleteDraft('comment_${widget.issueId}');
-
+    
     _commentController.clear();
     _commentEditorKey.currentState?.clearImages();
     setState(() {
@@ -138,13 +135,13 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
 
     try {
       final content = QuillDeltaCodec.encode(_commentController.document);
-
+      
       await DraftService().saveDraft(
         draftId: 'comment_${widget.issueId}',
         content: content,
         imageUrls: _commentImageUrls,
       );
-
+      
       if (mounted) {
         ToastUtils.showSuccess(context, '草稿已保存');
       }
@@ -158,19 +155,23 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
 
   /// 评论草稿提示条
   Widget _buildCommentDraftPrompt() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = const Color(0xFF0080FF);
+    
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF0080FF).withValues(alpha: 0.1),
-            const Color(0xFF0080FF).withValues(alpha: 0.05),
+            primaryColor.withValues(alpha: isDark ? 0.15 : 0.1),
+            primaryColor.withValues(alpha: isDark ? 0.08 : 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+          color: primaryColor.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -178,20 +179,24 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+              color: primaryColor.withValues(alpha: isDark ? 0.2 : 0.15),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.restore_rounded,
               size: 18,
-              color: Color(0xFF0080FF),
+              color: primaryColor,
             ),
           ),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Text(
               '发现未保存的评论草稿',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
             ),
           ),
           TextButton(
@@ -200,13 +205,19 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               minimumSize: const Size(50, 28),
             ),
-            child: const Text('忽略', style: TextStyle(fontSize: 12)),
+            child: Text(
+              '忽略',
+              style: TextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
           const SizedBox(width: 4),
           ElevatedButton(
             onPressed: _restoreCommentDraft,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0080FF),
+              backgroundColor: primaryColor,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -215,10 +226,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 borderRadius: BorderRadius.circular(6),
               ),
             ),
-            child: const Text(
-              '恢复',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-            ),
+            child: const Text('恢复', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -243,11 +251,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           body: state.isLoading
               ? _buildLoadingState()
               : state.issue == null
-              ? _buildErrorState()
-              : _buildContent(state),
-          bottomNavigationBar: state.issue != null
-              ? _buildBottomBar(state)
-              : null,
+                  ? _buildErrorState()
+                  : _buildContent(state),
+          bottomNavigationBar: state.issue != null ? _buildBottomBar(state) : null,
         );
       },
     );
@@ -257,7 +263,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   Widget _buildAppBar(BuildContext context, IssueDetailState state) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
+    
     return SliverAppBar(
       pinned: true,
       elevation: 0,
@@ -299,31 +305,25 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 const SizedBox(width: 8),
                 // 图标容器
                 Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF0080FF), Color(0xFF0066CC)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(
-                              0xFF0080FF,
-                            ).withValues(alpha: 0.3),
-                            offset: const Offset(0, 4),
-                            blurRadius: 12,
-                          ),
-                        ],
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0080FF), Color(0xFF0066CC)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                        offset: const Offset(0, 4),
+                        blurRadius: 12,
                       ),
-                      child: Icon(
-                        MdiIcons.fileDocumentOutline,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    )
+                    ],
+                  ),
+                  child: Icon(MdiIcons.fileDocumentOutline, color: Colors.white, size: 24),
+                )
                     .animate()
                     .scale(
                       begin: const Offset(0.5, 0.5),
@@ -364,9 +364,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                         '问题详情',
                         style: TextStyle(
                           fontSize: 13,
-                          color: theme.appBarTheme.foregroundColor?.withValues(
-                            alpha: 0.7,
-                          ),
+                          color: theme.appBarTheme.foregroundColor?.withValues(alpha: 0.7),
                         ),
                       ).animate().fadeIn(duration: 300.ms, delay: 80.ms),
                     ],
@@ -382,6 +380,10 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
 
   /// 构建加载状态
   Widget _buildLoadingState() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = const Color(0xFF0080FF);
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -390,30 +392,27 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+              color: primaryColor.withValues(alpha: isDark ? 0.15 : 0.1),
               borderRadius: BorderRadius.circular(40),
             ),
             child: Stack(
               alignment: Alignment.center,
               children: [
                 Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(30),
-                        color: const Color(0xFF0080FF).withValues(alpha: 0.2),
-                      ),
-                    )
-                    .animate(onPlay: (controller) => controller.repeat())
-                    .scale(duration: 1000.ms)
-                    .fadeIn(duration: 500.ms),
-                const SizedBox(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(30),
+                    color: primaryColor.withValues(alpha: isDark ? 0.25 : 0.2),
+                  ),
+                ).animate(onPlay: (controller) => controller.repeat()).scale(duration: 1000.ms).fadeIn(duration: 500.ms),
+                SizedBox(
                   width: 40,
                   height: 40,
                   child: CircularProgressIndicator(
                     strokeWidth: 3,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      Color(0xFF0080FF),
+                      isDark ? primaryColor.withValues(alpha: 0.9) : primaryColor,
                     ),
                   ),
                 ),
@@ -422,22 +421,18 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           ),
           const SizedBox(height: 32),
           Text(
-                '正在加载问题详情',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFF0080FF),
-                  fontWeight: FontWeight.w500,
-                ),
-              )
-              .animate(onPlay: (controller) => controller.repeat(reverse: true))
-              .fadeIn(duration: 800.ms)
-              .then(delay: 200.ms)
-              .fadeOut(duration: 800.ms),
+            '正在加载反馈详情',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: isDark ? primaryColor.withValues(alpha: 0.9) : primaryColor,
+              fontWeight: FontWeight.w500,
+            ),
+          ).animate(onPlay: (controller) => controller.repeat(reverse: true)).fadeIn(duration: 800.ms).then(delay: 200.ms).fadeOut(duration: 800.ms),
           const SizedBox(height: 8),
           Text(
             '请稍候...',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
           ).animate().fadeIn(delay: 300.ms, duration: 500.ms),
         ],
       ),
@@ -446,8 +441,12 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
 
   /// 构建错误状态
   Widget _buildErrorState() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final state = context.read<IssueDetailBloc>().state;
     final errorMessage = state.error ?? 'Issue 不存在或加载失败';
+    final errorColor = const Color(0xFFDC2626);
+    
     return Center(
       child: Container(
         constraints: const BoxConstraints(maxWidth: 320),
@@ -459,31 +458,39 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: const Color(0xFFFEE2E2),
+                color: isDark
+                    ? errorColor.withValues(alpha: 0.15)
+                    : const Color(0xFFFEE2E2),
                 borderRadius: BorderRadius.circular(36),
               ),
               child: Icon(
                 MdiIcons.alertCircleOutline,
                 size: 36,
-                color: const Color(0xFFDC2626),
+                color: isDark ? errorColor.withValues(alpha: 0.9) : errorColor,
               ),
             ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               '加载失败',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1F2937),
+                color: theme.colorScheme.onSurface,
               ),
             ).animate().fadeIn(delay: 100.ms, duration: 300.ms),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFFFEF2F2),
+                color: isDark
+                    ? errorColor.withValues(alpha: 0.1)
+                    : const Color(0xFFFEF2F2),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFFECACA)),
+                border: Border.all(
+                  color: isDark
+                      ? errorColor.withValues(alpha: 0.3)
+                      : const Color(0xFFFECACA),
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -491,14 +498,14 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                   Icon(
                     MdiIcons.informationOutline,
                     size: 16,
-                    color: const Color(0xFFDC2626),
+                    color: isDark ? errorColor.withValues(alpha: 0.9) : errorColor,
                   ),
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
                       errorMessage,
-                      style: const TextStyle(
-                        color: Color(0xFFDC2626),
+                      style: TextStyle(
+                        color: isDark ? errorColor.withValues(alpha: 0.9) : errorColor,
                         fontSize: 13,
                       ),
                       textAlign: TextAlign.center,
@@ -509,26 +516,16 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
             ).animate().fadeIn(delay: 200.ms, duration: 300.ms),
             const SizedBox(height: 20),
             ElevatedButton.icon(
-                  onPressed: () => context.read<IssueDetailBloc>().add(
-                    IssueDetailFetch(widget.issueId),
-                  ),
-                  icon: Icon(MdiIcons.refresh, size: 18),
-                  label: const Text('重新加载'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0080FF),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                )
-                .animate()
-                .fadeIn(delay: 300.ms, duration: 300.ms)
-                .slideY(begin: 0.2, end: 0),
+              onPressed: () => context.read<IssueDetailBloc>().add(IssueDetailFetch(widget.issueId)),
+              icon: Icon(MdiIcons.refresh, size: 18),
+              label: const Text('重新加载'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0080FF),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ).animate().fadeIn(delay: 300.ms, duration: 300.ms).slideY(begin: 0.2, end: 0),
           ],
         ),
       ),
@@ -539,8 +536,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   Widget _buildContent(IssueDetailState state) {
     final issue = state.issue!;
     return RefreshIndicator(
-      onRefresh: () async =>
-          context.read<IssueDetailBloc>().add(IssueDetailFetch(widget.issueId)),
+      onRefresh: () async => context.read<IssueDetailBloc>().add(IssueDetailFetch(widget.issueId)),
       child: CustomScrollView(
         controller: _scrollController,
         slivers: [
@@ -551,15 +547,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildIssueCard(issue)
-                      .animate()
-                      .fadeIn(duration: 300.ms)
-                      .slideY(begin: 0.1, end: 0),
+                  _buildIssueCard(issue).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0),
                   const SizedBox(height: 16),
-                  _buildCommentsSection(state)
-                      .animate()
-                      .fadeIn(duration: 300.ms, delay: 100.ms)
-                      .slideY(begin: 0.1, end: 0),
+                  _buildCommentsSection(state).animate().fadeIn(duration: 300.ms, delay: 100.ms).slideY(begin: 0.1, end: 0),
                   const SizedBox(height: 80),
                 ],
               ),
@@ -570,15 +560,18 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     );
   }
 
+
   /// 构建问题详情卡片
   Widget _buildIssueCard(Issue issue) {
+    final theme = Theme.of(context);
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
+        color: theme.colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+          color: theme.dividerColor.withValues(alpha: 0.5),
         ),
       ),
       child: Column(
@@ -594,13 +587,13 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   '#${issue.id}',
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: theme.colorScheme.onSurfaceVariant,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
@@ -612,34 +605,33 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           // 标题
           Text(
             issue.title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
           ),
           const SizedBox(height: 16),
           // 作者信息行
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 18,
-                  backgroundColor: Theme.of(
-                    context,
-                  ).colorScheme.surfaceContainerHighest,
-                  backgroundImage: issue.authorAvatar != null
-                      ? NetworkImage(issue.authorAvatar!)
-                      : null,
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  backgroundImage: issue.authorAvatar != null ? NetworkImage(issue.authorAvatar!) : null,
                   child: issue.authorAvatar == null
                       ? Text(
                           issue.authorName[0].toUpperCase(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         )
                       : null,
@@ -651,9 +643,10 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                     children: [
                       Text(
                         issue.authorName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -662,17 +655,13 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                           Icon(
                             MdiIcons.clockOutline,
                             size: 12,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             Formatters.formatRelativeTime(issue.createdAt),
                             style: TextStyle(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
+                              color: theme.colorScheme.onSurfaceVariant,
                               fontSize: 12,
                             ),
                           ),
@@ -695,9 +684,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Theme.of(context).dividerColor.withValues(alpha: 0),
-                  Theme.of(context).dividerColor,
-                  Theme.of(context).dividerColor.withValues(alpha: 0),
+                  theme.dividerColor.withValues(alpha: 0),
+                  theme.dividerColor,
+                  theme.dividerColor.withValues(alpha: 0),
                 ],
               ),
             ),
@@ -706,7 +695,11 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           // 内容区域
           RichTextViewer(
             content: issue.content,
-            textStyle: const TextStyle(fontSize: 15, height: 1.6),
+            textStyle: TextStyle(
+              fontSize: 15,
+              height: 1.6,
+              color: theme.colorScheme.onSurface,
+            ),
           ),
           // 图片网格
           if (issue.images.isNotEmpty) ...[
@@ -734,11 +727,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 14,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+          Icon(icon, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
           const SizedBox(width: 4),
           Text(
             '$count',
@@ -758,9 +747,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
@@ -805,9 +792,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
@@ -859,20 +844,23 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
 
   /// 构建类型标签
   Widget _buildTypeTag(IssueType type) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     final (color, bgColor, icon) = switch (type) {
       IssueType.bug => (
         const Color(0xFFDC2626),
-        const Color(0xFFFEE2E2),
+        isDark ? const Color(0xFFDC2626).withValues(alpha: 0.15) : const Color(0xFFFEE2E2),
         MdiIcons.bug,
       ),
       IssueType.feature => (
         const Color(0xFF2563EB),
-        const Color(0xFFDBEAFE),
+        isDark ? const Color(0xFF2563EB).withValues(alpha: 0.15) : const Color(0xFFDBEAFE),
         MdiIcons.lightbulbOnOutline,
       ),
       IssueType.question => (
         const Color(0xFF059669),
-        const Color(0xFFD1FAE5),
+        isDark ? const Color(0xFF059669).withValues(alpha: 0.15) : const Color(0xFFD1FAE5),
         MdiIcons.helpCircleOutline,
       ),
     };
@@ -889,11 +877,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           const SizedBox(width: 5),
           Text(
             type.label,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -902,9 +886,14 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
 
   /// 构建状态标签
   Widget _buildStatusTag(IssueStatus status) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final isOpen = status.isOpen;
     final color = isOpen ? const Color(0xFF16A34A) : const Color(0xFF6B7280);
-    final bgColor = isOpen ? const Color(0xFFDCFCE7) : const Color(0xFFF3F4F6);
+    final bgColor = isOpen
+        ? (isDark ? const Color(0xFF16A34A).withValues(alpha: 0.15) : const Color(0xFFDCFCE7))
+        : (isDark ? const Color(0xFF6B7280).withValues(alpha: 0.15) : const Color(0xFFF3F4F6));
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
@@ -917,31 +906,35 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           Container(
             width: 6,
             height: 6,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
           ),
           const SizedBox(width: 5),
           Text(
             status.label,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w500),
           ),
         ],
       ),
     );
   }
 
+
   /// 构建评论区域
   Widget _buildCommentsSection(IssueDetailState state) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = const Color(0xFF0080FF);
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
+        color: theme.colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+          color: theme.dividerColor.withValues(alpha: 0.5),
         ),
       ),
       child: Column(
@@ -954,34 +947,35 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+                  color: primaryColor.withValues(alpha: isDark ? 0.15 : 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   MdiIcons.commentMultipleOutline,
                   size: 18,
-                  color: const Color(0xFF0080FF),
+                  color: primaryColor,
                 ),
               ),
               const SizedBox(width: 12),
               Text(
                 '评论',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+                  color: primaryColor.withValues(alpha: isDark ? 0.15 : 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   '${state.comments.length}',
-                  style: const TextStyle(
-                    color: Color(0xFF0080FF),
+                  style: TextStyle(
+                    color: primaryColor,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -999,10 +993,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
             ...state.comments.asMap().entries.map((entry) {
               return _buildCommentItem(entry.value, entry.key)
                   .animate()
-                  .fadeIn(
-                    duration: 300.ms,
-                    delay: Duration(milliseconds: 50 * entry.key),
-                  )
+                  .fadeIn(duration: 300.ms, delay: Duration(milliseconds: 50 * entry.key))
                   .slideX(begin: 0.05, end: 0);
             }),
         ],
@@ -1041,6 +1032,10 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
 
   /// 构建评论空状态
   Widget _buildCommentsEmpty() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = const Color(0xFF3B82F6);
+    
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -1050,20 +1045,22 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
+                color: isDark
+                    ? primaryColor.withValues(alpha: 0.15)
+                    : const Color(0xFFEFF6FF),
                 borderRadius: BorderRadius.circular(28),
               ),
               child: Icon(
                 MdiIcons.commentOutline,
                 size: 28,
-                color: const Color(0xFF3B82F6),
+                color: primaryColor,
               ),
             ),
             const SizedBox(height: 16),
             Text(
               '暂无评论',
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
+                color: theme.colorScheme.onSurface,
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
               ),
@@ -1072,7 +1069,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
             Text(
               '成为第一个评论的人吧',
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                color: theme.colorScheme.onSurfaceVariant,
                 fontSize: 13,
               ),
             ),
@@ -1084,8 +1081,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
 
   /// 构建评论项
   Widget _buildCommentItem(IssueComment comment, int index) {
-    final isLast =
-        index == context.read<IssueDetailBloc>().state.comments.length - 1;
+    final theme = Theme.of(context);
+    final isLast = index == context.read<IssueDetailBloc>().state.comments.length - 1;
+    
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: BoxDecoration(
@@ -1093,7 +1091,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
             ? null
             : Border(
                 bottom: BorderSide(
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                  color: theme.dividerColor.withValues(alpha: 0.5),
                 ),
               ),
       ),
@@ -1105,18 +1103,15 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: Theme.of(
-                  context,
-                ).colorScheme.surfaceContainerHighest,
-                backgroundImage: comment.authorAvatar != null
-                    ? NetworkImage(comment.authorAvatar!)
-                    : null,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                backgroundImage: comment.authorAvatar != null ? NetworkImage(comment.authorAvatar!) : null,
                 child: comment.authorAvatar == null
                     ? Text(
                         comment.authorName[0].toUpperCase(),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       )
                     : null,
@@ -1133,7 +1128,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                       color: const Color(0xFF0080FF),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Theme.of(context).colorScheme.surface,
+                        color: theme.colorScheme.surface,
                         width: 2,
                       ),
                     ),
@@ -1157,18 +1152,16 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                   children: [
                     Text(
                       comment.authorName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                     if (comment.isAdmin) ...[
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [Color(0xFF0080FF), Color(0xFF0066CC)],
@@ -1177,11 +1170,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                         ),
                         child: const Text(
                           '管理员',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ],
@@ -1189,13 +1178,13 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                     Icon(
                       MdiIcons.clockOutline,
                       size: 12,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       Formatters.formatRelativeTime(comment.createdAt),
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        color: theme.colorScheme.onSurfaceVariant,
                         fontSize: 11,
                       ),
                     ),
@@ -1205,7 +1194,11 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 // 评论内容
                 RichTextViewer(
                   content: comment.content,
-                  textStyle: const TextStyle(fontSize: 14, height: 1.5),
+                  textStyle: TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                    color: theme.colorScheme.onSurface,
+                  ),
                   compact: true,
                 ),
                 // 评论图片
@@ -1227,15 +1220,13 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     );
   }
 
+
   /// 构建底部操作栏
   Widget _buildBottomBar(IssueDetailState state) {
     final issue = state.issue!;
     final authState = context.read<AuthBloc>().state;
     final backendUserInfo = TokenService.instance.userInfo;
-    final isAuthor =
-        authState.isAuthenticated &&
-        backendUserInfo != null &&
-        backendUserInfo.id == issue.authorId;
+    final isAuthor = authState.isAuthenticated && backendUserInfo != null && backendUserInfo.id == issue.authorId;
 
     return Container(
       padding: EdgeInsets.only(
@@ -1247,9 +1238,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(
-          top: BorderSide(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
-          ),
+          top: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
         ),
         boxShadow: [
           BoxShadow(
@@ -1295,9 +1284,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 : Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: issue.isVoted
-                  ? const Color(0xFF0080FF)
-                  : Colors.transparent,
+              color: issue.isVoted ? const Color(0xFF0080FF) : Colors.transparent,
               width: 1.5,
             ),
           ),
@@ -1330,9 +1317,13 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
 
   /// 构建关闭/重开按钮
   Widget _buildCloseReopenButton(Issue issue, bool isSubmitting) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final isOpen = issue.issueStatus.isOpen;
     final color = isOpen ? const Color(0xFFDC2626) : const Color(0xFF059669);
-    final bgColor = isOpen ? const Color(0xFFFEE2E2) : const Color(0xFFD1FAE5);
+    final bgColor = isOpen
+        ? (isDark ? const Color(0xFFDC2626).withValues(alpha: 0.15) : const Color(0xFFFEE2E2))
+        : (isDark ? const Color(0xFF059669).withValues(alpha: 0.15) : const Color(0xFFD1FAE5));
 
     return Material(
       color: Colors.transparent,
@@ -1343,9 +1334,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 if (isOpen) {
                   context.read<IssueDetailBloc>().add(const IssueDetailClose());
                 } else {
-                  context.read<IssueDetailBloc>().add(
-                    const IssueDetailReopen(),
-                  );
+                  context.read<IssueDetailBloc>().add(const IssueDetailReopen());
                 }
               },
         borderRadius: BorderRadius.circular(12),
@@ -1423,9 +1412,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
@@ -1455,224 +1442,210 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          height: MediaQuery.of(context).size.height * 0.75,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      builder: (context) {
+        final theme = Theme.of(context);
+        
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          child: Column(
-            children: [
-              // 顶部拖动条
-              Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              // 标题栏
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Theme.of(
-                        context,
-                      ).dividerColor.withValues(alpha: 0.5),
-                    ),
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.75,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              children: [
+                // 顶部拖动条
+                Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0080FF).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        MdiIcons.commentEditOutline,
-                        size: 18,
-                        color: const Color(0xFF0080FF),
+                // 标题栏
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: theme.dividerColor.withValues(alpha: 0.5),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      '写评论',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          MdiIcons.commentEditOutline,
+                          size: 18,
+                          color: const Color(0xFF0080FF),
+                        ),
                       ),
-                    ),
-                    const Spacer(),
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => Navigator.of(context).pop(),
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.close_rounded,
-                            size: 20,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
+                      const SizedBox(width: 12),
+                      Text(
+                        '写评论',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      const Spacer(),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => Navigator.of(context).pop(),
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerHighest,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.close_rounded,
+                              size: 20,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              // 编辑器
-              Expanded(
-                child: Column(
-                  children: [
-                    // 评论草稿提示条
-                    if (_showCommentDraftPrompt) ...[
-                      _buildCommentDraftPrompt(),
-                      const SizedBox(height: 12),
                     ],
-                    // 编辑器
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: RichTextEditor(
-                          key: _commentEditorKey,
-                          controller: _commentController,
-                          hintText: '写下你的评论...',
-                          maxLength: 500,
-                          maxImages: 5,
-                          compactMode: true,
-                          draftId: 'comment_${widget.issueId}',
-                          enableDraftManualSave: true,
-                          onImagesChanged: (urls) {
-                            setState(() {
-                              _commentImageUrls = urls;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // 提交按钮
-              Container(
-                padding: EdgeInsets.only(
-                  left: 16,
-                  right: 16,
-                  top: 12,
-                  bottom: MediaQuery.of(context).padding.bottom + 12,
-                ),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  border: Border(
-                    top: BorderSide(
-                      color: Theme.of(
-                        context,
-                      ).dividerColor.withValues(alpha: 0.5),
-                    ),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, -2),
-                    ),
-                  ],
                 ),
-                child: Row(
-                  children: [
-                    // 保存草稿按钮
-                    OutlinedButton.icon(
-                      onPressed: state.isSubmitting ? null : _saveCommentDraft,
-                      icon: const Icon(Icons.save_outlined, size: 16),
-                      label: const Text('草稿'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF0080FF),
-                        side: const BorderSide(color: Color(0xFF0080FF)),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                // 编辑器
+                Expanded(
+                  child: Column(
+                    children: [
+                      // 评论草稿提示条
+                      if (_showCommentDraftPrompt) ...[
+                        _buildCommentDraftPrompt(),
+                        const SizedBox(height: 12),
+                      ],
+                      // 编辑器
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: RichTextEditor(
+                            key: _commentEditorKey,
+                            controller: _commentController,
+                            hintText: '写下你的评论...',
+                            maxLength: 500,
+                            maxImages: 5,
+                            compactMode: true,
+                            draftId: 'comment_${widget.issueId}',
+                            enableDraftManualSave: true,
+                            onImagesChanged: (urls) {
+                              setState(() {
+                                _commentImageUrls = urls;
+                              });
+                            },
+                          ),
                         ),
                       ),
+                    ],
+                  ),
+                ),
+                // 提交按钮
+                Container(
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 12,
+                    bottom: MediaQuery.of(context).padding.bottom + 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    border: Border(
+                      top: BorderSide(
+                        color: theme.dividerColor.withValues(alpha: 0.5),
+                      ),
                     ),
-                    const SizedBox(width: 12),
-                    // 发表评论按钮
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: state.isSubmitting
-                            ? null
-                            : () {
-                                _submitComment();
-                                Navigator.of(context).pop();
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0080FF),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.shadow.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      // 保存草稿按钮
+                      OutlinedButton.icon(
+                        onPressed: state.isSubmitting ? null : _saveCommentDraft,
+                        icon: const Icon(Icons.save_outlined, size: 16),
+                        label: const Text('草稿'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF0080FF),
+                          side: const BorderSide(color: Color(0xFF0080FF)),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          elevation: 0,
                         ),
-                        child: state.isSubmitting
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(MdiIcons.send, size: 18),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    '发表评论',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      // 发表评论按钮
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: state.isSubmitting
+                              ? null
+                              : () {
+                                  _submitComment();
+                                  Navigator.of(context).pop();
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0080FF),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: state.isSubmitting
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(MdiIcons.send, size: 18),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      '发表评论',
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

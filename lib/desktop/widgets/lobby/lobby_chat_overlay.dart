@@ -23,42 +23,9 @@ class LobbyChatOverlay extends StatefulWidget {
 }
 
 class _LobbyChatOverlayState extends State<LobbyChatOverlay> {
-  /// 上一次同步时的 chatDraft 值，用于检测外部变化
-  String? _lastSyncedDraft;
-
   @override
   void initState() {
     super.initState();
-    _lastSyncedDraft = widget.state.chatDraft;
-    // 延迟到构建完成后再设置 controller 文本，避免在 build 阶段触发 notifyListeners
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && widget.controller.text != widget.state.chatDraft) {
-        widget.controller.text = widget.state.chatDraft;
-      }
-    });
-  }
-
-  @override
-  void didUpdateWidget(LobbyChatOverlay oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // 当 chatDraft 在外部被更新（如 chat.reject 恢复草稿）且与 controller 文本不一致时，同步到 controller
-    if (widget.state.chatDraft != _lastSyncedDraft) {
-      final controllerText = widget.controller.text;
-      // 只有当 controller 内容与旧草稿一致（用户没有编辑）或为空时才同步
-      if (controllerText == _lastSyncedDraft || controllerText.isEmpty) {
-        final draft = widget.state.chatDraft;
-        // 延迟到构建完成后再设置，避免在 build 阶段触发 notifyListeners
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && widget.controller.text != draft) {
-            widget.controller.text = draft;
-            widget.controller.selection = TextSelection.collapsed(
-              offset: draft.length,
-            );
-          }
-        });
-      }
-      _lastSyncedDraft = widget.state.chatDraft;
-    }
   }
 
   static final DateFormat _timeFormat = DateFormat('HH:mm');
@@ -182,14 +149,11 @@ class _LobbyChatOverlayState extends State<LobbyChatOverlay> {
                     style: const TextStyle(color: Colors.white),
                     maxLength: 50,
                     readOnly: widget.state.selfUser?.isAnonymous ?? false,
-                    enabled: widget.state.chatCooldownSeconds <= 0,
                     decoration: InputDecoration(
                       counterText: '',
                       hintText: widget.state.selfUser?.isAnonymous ?? false
                           ? '登录后即可参与聊天'
-                          : widget.state.chatCooldownSeconds > 0
-                              ? '${widget.state.chatCooldownSeconds}秒后可发送'
-                              : '输入消息',
+                          : '输入消息',
                       hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
                       filled: true,
                       fillColor: Colors.white.withValues(alpha: 0.08),
@@ -210,30 +174,8 @@ class _LobbyChatOverlayState extends State<LobbyChatOverlay> {
                         ),
                       ),
                     ),
-                    onChanged: (value) =>
-                        context.read<LobbyBloc>().add(LobbyChatInputChanged(value)),
-                    onSubmitted: (_) =>
-                        context.read<LobbyBloc>().add(const LobbyChatSubmitted()),
+                    onSubmitted: (_) {},
                   ),
-                  // 冷却动画覆盖层
-                  if (widget.state.chatCooldownSeconds > 0)
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: AnimatedOpacity(
-                          opacity: 1.0,
-                          duration: const Duration(milliseconds: 300),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              color: Colors.black.withValues(alpha: 0.3),
-                            ),
-                            child: Center(
-                              child: _CooldownIndicator(seconds: widget.state.chatCooldownSeconds),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
                 ],
               ),
             ] else
@@ -257,48 +199,6 @@ class _LobbyChatOverlayState extends State<LobbyChatOverlay> {
           ],
         ),
       ),
-    );
-  }
-}
-
-/// 冷却倒计时动画组件
-class _CooldownIndicator extends StatelessWidget {
-  final int seconds;
-
-  const _CooldownIndicator({required this.seconds});
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 1.0, end: 0.0),
-      duration: Duration(seconds: seconds),
-      builder: (context, value, child) {
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            // 圆形进度
-            SizedBox(
-              width: 28,
-              height: 28,
-              child: CircularProgressIndicator(
-                value: value,
-                strokeWidth: 2.5,
-                backgroundColor: Colors.white24,
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF60A5FA)),
-              ),
-            ),
-            // 倒计时数字
-            Text(
-              '$seconds',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }

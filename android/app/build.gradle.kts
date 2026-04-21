@@ -35,6 +35,31 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // 只保留主流架构，减少 APK 体积
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
+    }
+
+    // 排除桌面端专属插件的原生库，大幅减小 APK 体积
+    // - fvp (FFmpeg 视频播放器): ~11MB per ABI
+    // - sherpa_onnx (离线 TTS): ~20MB per ABI
+    packaging {
+        jniLibs {
+            // 排除 fvp (mdk + FFmpeg) 的原生库
+            excludes += listOf(
+                "**/libffmpeg.so",
+                "**/libmdk.so",
+                "**/libass.so",
+            )
+            // 排除 sherpa_onnx (ONNX Runtime TTS) 的原生库
+            excludes += listOf(
+                "**/libonnxruntime.so",
+                "**/libsherpa-onnx-c-api.so",
+                "**/libsherpa-onnx-cxx-api.so",
+            )
+        }
     }
 
     signingConfigs {

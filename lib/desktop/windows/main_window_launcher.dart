@@ -6,10 +6,12 @@ import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../core/bootstrap/app_initializer.dart';
+import '../../core/services/app_exit_service.dart';
 import '../../core/services/floating_window_service.dart';
 import '../../core/services/notification_window_service.dart';
 import '../../core/services/status_window_service.dart';
 import '../../core/services/obs_server_service.dart';
+import '../../core/services/tray_service.dart';
 import '../../core/utils/storage_utils.dart';
 import '../app.dart';
 
@@ -19,6 +21,9 @@ class MainWindowLauncher {
 
   /// 启动主窗口
   static Future<void> launch(WindowController controller) async {
+    // 注册桌面端退出处理器
+    AppExitService.instance.registerDesktopExitHandler(_exitDesktop);
+
     // 设置主窗口 ID，供通知服务使用
     NotificationWindowService().setMainWindowId(controller.windowId);
 
@@ -120,5 +125,28 @@ class MainWindowLauncher {
         await windowManager.setResizable(false);
       }
     });
+  }
+
+  /// 桌面端完整退出流程
+  static Future<void> _exitDesktop() async {
+    // 1. 停止 OBS 服务
+    final obsService = ObsServerService();
+    if (obsService.isRunning) {
+      obsService.clearDisplay();
+      await obsService.stop();
+    }
+
+    // 2. 关闭所有浮动窗口
+    await FloatingWindowService().closeAllWindows();
+
+    // 3. 隐藏主窗口
+    await windowManager.hide();
+
+    // 4. 销毁托盘图标
+    await TrayService.instance.dispose();
+
+    // 5. 销毁窗口句柄并退出进程
+    await windowManager.destroy();
+    exit(0);
   }
 }

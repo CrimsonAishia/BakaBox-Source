@@ -31,11 +31,12 @@ class LoadMoreCharacters extends CharacterGalleryEvent {}
 /// 加载角色详情
 class LoadCharacterDetail extends CharacterGalleryEvent {
   final int characterId;
+  final int? initialSubModelId; // 可选，指定初始选中的子模型
 
-  const LoadCharacterDetail(this.characterId);
+  const LoadCharacterDetail(this.characterId, {this.initialSubModelId});
 
   @override
-  List<Object?> get props => [characterId];
+  List<Object?> get props => [characterId, initialSubModelId];
 }
 
 /// 选择子模型

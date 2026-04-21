@@ -36,15 +36,6 @@ class LobbyPlayerArrived extends LobbyEvent {
   List<Object?> get props => [userId, arrivedPosition];
 }
 
-class LobbyChatInputChanged extends LobbyEvent {
-  final String value;
-
-  const LobbyChatInputChanged(this.value);
-
-  @override
-  List<Object?> get props => [value];
-}
-
 class LobbyChatModeChanged extends LobbyEvent {
   final bool isActive;
 
@@ -55,7 +46,11 @@ class LobbyChatModeChanged extends LobbyEvent {
 }
 
 class LobbyChatSubmitted extends LobbyEvent {
-  const LobbyChatSubmitted();
+  final String content;
+  const LobbyChatSubmitted(this.content);
+
+  @override
+  List<Object?> get props => [content];
 }
 
 class LobbyPlayersPanelToggled extends LobbyEvent {
@@ -336,4 +331,19 @@ class _LobbySettingTimeout extends LobbyEvent {
 /// 内部事件：检查所有设置项的超时状态
 class _LobbySettingsTimeoutCheck extends LobbyEvent {
   const _LobbySettingsTimeoutCheck();
+}
+
+/// 用户在被踢提示页面点击操作按钮（重新登录/知道了）
+class LobbyKickedDismissed extends LobbyEvent {
+  const LobbyKickedDismissed();
+}
+
+/// 清除所有玩家的聊天气泡状态（从后台恢复时调用）
+class LobbyChatBubblesCleared extends LobbyEvent {
+  const LobbyChatBubblesCleared();
+}
+
+/// 请求重新获取 snapshot（从后台恢复时调用，确保数据最新）
+class LobbySnapshotRefreshRequested extends LobbyEvent {
+  const LobbySnapshotRefreshRequested();
 }

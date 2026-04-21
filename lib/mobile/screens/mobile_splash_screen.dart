@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'dart:math' as math;
 import '../../core/core.dart';
 import '../router/mobile_router.dart';
+import '../widgets/app_permission_dialog.dart';
 
 /// 移动端启动屏幕
 class MobileSplashScreen extends StatefulWidget {
@@ -92,7 +93,12 @@ class _MobileSplashScreenState extends State<MobileSplashScreen>
     if (mounted) {
       _exitController.forward();
       await Future.delayed(const Duration(milliseconds: 800));
-      if (mounted) context.go(MobileRoutes.home);
+      if (mounted) {
+        // 强制申请权限（仅首次安装，Android 平台）
+        // 退场动画结束后弹出，此时 splash 已淡出
+        await AppPermissionDialog.showOnStartup(context);
+        if (mounted) context.go(MobileRoutes.home);
+      }
     }
   }
 

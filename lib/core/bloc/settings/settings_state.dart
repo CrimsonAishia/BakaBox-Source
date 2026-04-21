@@ -113,6 +113,69 @@ enum CacheType {
   logs, // 日志文件
 }
 
+/// 移动端缓存类型枚举
+enum MobileCacheType {
+  serverImages, // 服务器背景图片（可清理）
+  serverData, // 服务器列表、地图信息等（可清理）
+  logs, // 日志文件（可清理）
+  lobbyImages, // 大厅背景/角色图片（只读，不可清理）
+}
+
+/// 移动端缓存项信息
+class MobileCacheItemInfo extends Equatable {
+  final MobileCacheType type;
+  final String name;
+  final String description;
+  final int sizeInBytes;
+  final bool canClear;
+  final bool isClearing;
+
+  const MobileCacheItemInfo({
+    required this.type,
+    required this.name,
+    required this.description,
+    this.sizeInBytes = 0,
+    this.canClear = true,
+    this.isClearing = false,
+  });
+
+  String get formattedSize {
+    if (sizeInBytes <= 0) return '0 B';
+    const suffixes = ['B', 'KB', 'MB', 'GB'];
+    var i = (sizeInBytes.bitLength - 1) ~/ 10;
+    if (i >= suffixes.length) i = suffixes.length - 1;
+    return '${(sizeInBytes / (1 << (i * 10))).toStringAsFixed(1)} ${suffixes[i]}';
+  }
+
+  MobileCacheItemInfo copyWith({
+    MobileCacheType? type,
+    String? name,
+    String? description,
+    int? sizeInBytes,
+    bool? canClear,
+    bool? isClearing,
+  }) {
+    return MobileCacheItemInfo(
+      type: type ?? this.type,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      sizeInBytes: sizeInBytes ?? this.sizeInBytes,
+      canClear: canClear ?? this.canClear,
+      isClearing: isClearing ?? this.isClearing,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+    type,
+    name,
+    description,
+    sizeInBytes,
+    canClear,
+    isClearing,
+  ];
+}
+
 /// 缓存项信息
 class CacheItemInfo extends Equatable {
   final CacheType type;
@@ -183,6 +246,10 @@ class SettingsState extends Equatable {
   final List<CacheItemInfo> cacheDetails;
   final bool isLoadingCacheDetails;
 
+  // 移动端缓存详情
+  final List<MobileCacheItemInfo> mobileCacheDetails;
+  final bool isLoadingMobileCacheDetails;
+
   // 通知位置设置
   final NotificationPositionType notificationPosition;
 
@@ -221,6 +288,8 @@ class SettingsState extends Equatable {
     this.audioVolume = 0.8,
     this.cacheDetails = const [],
     this.isLoadingCacheDetails = false,
+    this.mobileCacheDetails = const [],
+    this.isLoadingMobileCacheDetails = false,
     this.notificationPosition = NotificationPositionType.topRight,
     this.floatingWindowPosition = NotificationPositionType.bottomRight,
     this.needsRestart = false,
@@ -287,6 +356,8 @@ class SettingsState extends Equatable {
     double? audioVolume,
     List<CacheItemInfo>? cacheDetails,
     bool? isLoadingCacheDetails,
+    List<MobileCacheItemInfo>? mobileCacheDetails,
+    bool? isLoadingMobileCacheDetails,
     NotificationPositionType? notificationPosition,
     NotificationPositionType? floatingWindowPosition,
     bool? needsRestart,
@@ -313,6 +384,9 @@ class SettingsState extends Equatable {
       cacheDetails: cacheDetails ?? this.cacheDetails,
       isLoadingCacheDetails:
           isLoadingCacheDetails ?? this.isLoadingCacheDetails,
+      mobileCacheDetails: mobileCacheDetails ?? this.mobileCacheDetails,
+      isLoadingMobileCacheDetails:
+          isLoadingMobileCacheDetails ?? this.isLoadingMobileCacheDetails,
       notificationPosition: notificationPosition ?? this.notificationPosition,
       floatingWindowPosition:
           floatingWindowPosition ?? this.floatingWindowPosition,
@@ -344,6 +418,8 @@ class SettingsState extends Equatable {
     audioVolume,
     cacheDetails,
     isLoadingCacheDetails,
+    mobileCacheDetails,
+    isLoadingMobileCacheDetails,
     notificationPosition,
     floatingWindowPosition,
     needsRestart,

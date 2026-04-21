@@ -9,20 +9,6 @@ class NotificationType {
   static const String mapContributionAudit = 'map_contribution_audit';
   static const String keyConfigAudit = 'key_config_audit';
   static const String issueComment = 'issue_comment';
-
-  /// 获取类型显示名称
-  static String getDisplayName(String type) {
-    switch (type) {
-      case mapContributionAudit:
-        return '地图审核';
-      case keyConfigAudit:
-        return '快捷键审核';
-      case issueComment:
-        return 'Issue评论';
-      default:
-        return '全部';
-    }
-  }
 }
 
 /// 通知项

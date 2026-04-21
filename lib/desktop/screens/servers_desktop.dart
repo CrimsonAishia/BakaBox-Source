@@ -1281,34 +1281,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
             },
           );
 
-    // 构建卡片内容
-    final Widget cardContent = showSkeleton
-        ? const ServerCardSkeleton()
-        : ServerCard(
-            key: ValueKey('card_${server.serverItem.address}'),
-            server: server,
-            categoryName: state.selectedCategory?.modelName,
-            // 保留 hover 效果，通过长按触发拖拽
-            onTap: () => _showServerDetails(server),
-            onDelete: () {
-              final categoryName = state.selectedCategory?.modelName;
-              final address =
-                  server.serverItem.address ??
-                  server.serverItem.serverAddress;
-              if (categoryName != null && address != null) {
-                context.read<ServerBloc>().add(
-                  ServerDeleteServer(
-                    categoryName: categoryName,
-                    serverAddress: address,
-                  ),
-                );
-              }
-            },
-          );
-
     return Padding(
       key: key,
-      padding: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.only(bottom: 8),
       // 使用自定义长按监听器，长按 500ms 后触发拖拽
       child: _LongPressDraggableWrapper(
         index: index,

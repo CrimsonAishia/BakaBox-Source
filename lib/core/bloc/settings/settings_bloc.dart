@@ -67,6 +67,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<SettingsClearCacheByType>(_onClearCacheByType);
     on<SettingsClearAllCache>(_onClearAllCache);
     on<SettingsClearSelectedCache>(_onClearSelectedCache);
+    // 移动端缓存管理事件
+    on<SettingsLoadMobileCacheDetails>(_onLoadMobileCacheDetails);
+    on<SettingsClearMobileCacheByType>(_onClearMobileCacheByType);
     // 窗口位置设置事件
     on<SettingsSetNotificationPosition>(_onSetNotificationPosition);
     on<SettingsSetFloatingWindowPosition>(_onSetFloatingWindowPosition);
@@ -200,9 +203,13 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         final cacheDir = Directory(AppDirectoryService.cachePath);
         totalSize = await _calculateDirectorySize(cacheDir);
       } else {
-        // 移动端：使用系统临时目录
-        final cacheDir = await getTemporaryDirectory();
-        totalSize = await _calculateDirectorySize(cacheDir);
+        // 移动端：统计 AppDirectoryService 缓存目录（包含 lobby_images、images 等）
+        final appCacheDir = Directory(AppDirectoryService.cachePath);
+        totalSize += await _calculateDirectorySize(appCacheDir);
+
+        // 同时统计系统临时目录
+        final tempDir = await getTemporaryDirectory();
+        totalSize += await _calculateDirectorySize(tempDir);
       }
 
       emit(state.copyWith(cacheSize: _formatBytes(totalSize)));
@@ -292,23 +299,50 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       await DiskImageCacheService.instance.clearCache();
 
       // 根据平台选择缓存目录
-      Directory cacheDir;
       if (PlatformUtils.isDesktopPlatform) {
-        cacheDir = Directory(AppDirectoryService.cachePath);
-      } else {
-        cacheDir = await getTemporaryDirectory();
-      }
-
-      if (cacheDir.existsSync()) {
-        await for (var entity in cacheDir.list()) {
-          try {
-            if (entity is File) {
-              await entity.delete();
-            } else if (entity is Directory) {
-              await entity.delete(recursive: true);
+        final cacheDir = Directory(AppDirectoryService.cachePath);
+        if (cacheDir.existsSync()) {
+          await for (var entity in cacheDir.list()) {
+            try {
+              if (entity is File) {
+                await entity.delete();
+              } else if (entity is Directory) {
+                await entity.delete(recursive: true);
+              }
+            } catch (e) {
+              LogService.d('删除缓存项失败: ${entity.path}');
             }
-          } catch (e) {
-            LogService.d('删除缓存项失败: ${entity.path}');
+          }
+        }
+      } else {
+        // 移动端：清理 AppDirectoryService 缓存目录（lobby_images、images 等）
+        final appCacheDir = Directory(AppDirectoryService.cachePath);
+        if (appCacheDir.existsSync()) {
+          await for (var entity in appCacheDir.list()) {
+            try {
+              if (entity is File) {
+                await entity.delete();
+              } else if (entity is Directory) {
+                await entity.delete(recursive: true);
+              }
+            } catch (e) {
+              LogService.d('删除缓存项失败: ${entity.path}');
+            }
+          }
+        }
+        // 同时清理系统临时目录
+        final tempDir = await getTemporaryDirectory();
+        if (tempDir.existsSync()) {
+          await for (var entity in tempDir.list()) {
+            try {
+              if (entity is File) {
+                await entity.delete();
+              } else if (entity is Directory) {
+                await entity.delete(recursive: true);
+              }
+            } catch (e) {
+              LogService.d('删除临时文件失败: ${entity.path}');
+            }
           }
         }
       }
@@ -812,14 +846,14 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
           cacheFilesSize = await _calculateDirectorySize(cacheDir);
         }
       } else {
-        final tempDir = await getTemporaryDirectory();
-        cacheFilesSize = await _calculateDirectorySize(tempDir);
-
-        final appDir = await getApplicationSupportDirectory();
-        final imageCacheDir = Directory('${appDir.path}/image_cache');
-        if (await imageCacheDir.exists()) {
-          cacheFilesSize += await _calculateDirectorySize(imageCacheDir);
+        // 移动端：统计 AppDirectoryService 缓存目录（包含 lobby_images、images 等）
+        final appCacheDir = Directory(AppDirectoryService.cachePath);
+        if (await appCacheDir.exists()) {
+          cacheFilesSize += await _calculateDirectorySize(appCacheDir);
         }
+        // 同时统计系统临时目录
+        final tempDir = await getTemporaryDirectory();
+        cacheFilesSize += await _calculateDirectorySize(tempDir);
       }
       details.add(
         CacheItemInfo(
@@ -939,6 +973,22 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
             }
           }
         } else {
+          // 移动端：清理 AppDirectoryService 缓存目录（lobby_images、images 等）
+          final appCacheDir = Directory(AppDirectoryService.cachePath);
+          if (appCacheDir.existsSync()) {
+            await for (var entity in appCacheDir.list()) {
+              try {
+                if (entity is File) {
+                  await entity.delete();
+                } else if (entity is Directory) {
+                  await entity.delete(recursive: true);
+                }
+              } catch (e) {
+                LogService.d('删除缓存文件失败: ${entity.path}');
+              }
+            }
+          }
+          // 同时清理系统临时目录
           final tempDir = await getTemporaryDirectory();
           if (tempDir.existsSync()) {
             await for (var entity in tempDir.list()) {
@@ -952,11 +1002,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
                 LogService.d('删除临时文件失败: ${entity.path}');
               }
             }
-          }
-          final appDir = await getApplicationSupportDirectory();
-          final imageCacheDir = Directory('${appDir.path}/image_cache');
-          if (await imageCacheDir.exists()) {
-            await imageCacheDir.delete(recursive: true);
           }
         }
         break;
@@ -1097,6 +1142,134 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       LogService.d('服务器排序模式已设置: ${event.mode.displayName}');
     } catch (e) {
       LogService.e('设置服务器排序模式失败', e);
+    }
+  }
+
+  // ==================== 移动端缓存管理事件处理 ====================
+
+  Future<void> _onLoadMobileCacheDetails(
+    SettingsLoadMobileCacheDetails event,
+    Emitter<SettingsState> emit,
+  ) async {
+    emit(state.copyWith(isLoadingMobileCacheDetails: true));
+    try {
+      final details = await _calculateMobileCacheInfo();
+      emit(state.copyWith(
+        mobileCacheDetails: details,
+        isLoadingMobileCacheDetails: false,
+      ));
+    } catch (e) {
+      LogService.e('加载移动端缓存详情失败', e);
+      emit(state.copyWith(isLoadingMobileCacheDetails: false));
+    }
+  }
+
+  Future<void> _onClearMobileCacheByType(
+    SettingsClearMobileCacheByType event,
+    Emitter<SettingsState> emit,
+  ) async {
+    // 标记正在清理
+    final updated = state.mobileCacheDetails.map((item) {
+      if (item.type == event.cacheType) return item.copyWith(isClearing: true);
+      return item;
+    }).toList();
+    emit(state.copyWith(mobileCacheDetails: updated));
+
+    try {
+      await _clearMobileCacheByType(event.cacheType);
+      final newDetails = await _calculateMobileCacheInfo();
+      await _calculateCacheSize(emit);
+      emit(state.copyWith(mobileCacheDetails: newDetails));
+      LogService.d('移动端缓存已清除: ${event.cacheType.name}');
+    } catch (e) {
+      LogService.e('清除移动端缓存失败', e);
+      final restored = state.mobileCacheDetails.map((item) {
+        if (item.type == event.cacheType) return item.copyWith(isClearing: false);
+        return item;
+      }).toList();
+      emit(state.copyWith(mobileCacheDetails: restored));
+    }
+  }
+
+  /// 计算移动端各分类缓存大小
+  Future<List<MobileCacheItemInfo>> _calculateMobileCacheInfo() async {
+    final List<MobileCacheItemInfo> details = [];
+
+    // 1. 服务器背景图片（DiskImageCacheService → cache/images/）
+    final serverImagesSize = await DiskImageCacheService.instance.getCacheSize();
+    details.add(MobileCacheItemInfo(
+      type: MobileCacheType.serverImages,
+      name: '服务器背景图片',
+      description: '服务器列表中的背景图片',
+      sizeInBytes: serverImagesSize,
+      canClear: true,
+    ));
+
+    // 2. 服务器数据（StorageUtils 中的缓存键）
+    int serverDataSize = 0;
+    final cachedServerList = StorageUtils.getString('cached_server_list');
+    if (cachedServerList != null) serverDataSize += cachedServerList.length;
+    final cachedMapInfo = StorageUtils.getString('cached_map_info');
+    if (cachedMapInfo != null) serverDataSize += cachedMapInfo.length;
+    details.add(MobileCacheItemInfo(
+      type: MobileCacheType.serverData,
+      name: '服务器数据',
+      description: '服务器列表、地图信息等缓存数据',
+      sizeInBytes: serverDataSize,
+      canClear: true,
+    ));
+
+    // 3. 日志文件
+    int logsSize = 0;
+    final logsDir = Directory(AppDirectoryService.logsPath);
+    if (await logsDir.exists()) {
+      logsSize = await _calculateDirectorySize(logsDir);
+    }
+    details.add(MobileCacheItemInfo(
+      type: MobileCacheType.logs,
+      name: '日志文件',
+      description: '应用运行日志',
+      sizeInBytes: logsSize,
+      canClear: true,
+    ));
+
+    // 4. 大厅图片（LobbyImageCacheService → cache/lobby_images/，只读）
+    int lobbyImagesSize = 0;
+    final lobbyDir = Directory(
+      '${AppDirectoryService.cachePath}${Platform.pathSeparator}lobby_images',
+    );
+    if (await lobbyDir.exists()) {
+      lobbyImagesSize = await _calculateDirectorySize(lobbyDir);
+    }
+    details.add(MobileCacheItemInfo(
+      type: MobileCacheType.lobbyImages,
+      name: '大厅图片',
+      description: '大厅背景及角色图片，用于离线显示',
+      sizeInBytes: lobbyImagesSize,
+      canClear: false,
+    ));
+
+    return details;
+  }
+
+  /// 按类型清除移动端缓存
+  Future<void> _clearMobileCacheByType(MobileCacheType type) async {
+    switch (type) {
+      case MobileCacheType.serverImages:
+        await DiskImageCacheService.instance.clearCache();
+        break;
+      case MobileCacheType.serverData:
+        await CacheService.clearServerListCache();
+        await CacheService.clearMapInfoCache();
+        final serverApi = ServerApi();
+        serverApi.clearMapInfoCache();
+        break;
+      case MobileCacheType.logs:
+        await LogService.clearLogs();
+        break;
+      case MobileCacheType.lobbyImages:
+        // 大厅图片不允许清理
+        break;
     }
   }
 }
