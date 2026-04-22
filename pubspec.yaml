@@ -65,7 +65,10 @@ dependencies:
   
   # Desktop Support
   file_picker: ^8.0.0
-  desktop_multi_window: ^0.3.0
+  desktop_multi_window:
+    git:
+      url: https://github.com/CrimsonAishia/desktop_multi_window.git
+      ref: 7d4b3479451db10e085b58490483931532cb04c2
   windows_single_instance: ^1.1.0
   crop_your_image: ^2.0.0
   # Use the forked window_manager with showWithoutActivating support
@@ -73,7 +76,7 @@ dependencies:
     git:
       url: https://github.com/CrimsonAishia/window_manager.git
       path: packages/window_manager
-      ref: 2ebc4b2d776b0c2772b6146489193f199b8d69eb
+      ref: 5600a44a2b756911b379ad66d294be3ef95180b5
   
   # Notifications
   awesome_notifications: ^0.11.0

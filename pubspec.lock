@@ -356,10 +356,11 @@ packages:
   desktop_multi_window:
     dependency: "direct main"
     description:
-      name: desktop_multi_window
-      sha256: "60ba38725b8887b60e44d15afdcf0c3813568b5da2ccaf1e7f6fd09a380a6e24"
-      url: "https://pub.dev"
-    source: hosted
+      path: "."
+      ref: "7d4b3479451db10e085b58490483931532cb04c2"
+      resolved-ref: "7d4b3479451db10e085b58490483931532cb04c2"
+      url: "https://github.com/CrimsonAishia/desktop_multi_window.git"
+    source: git
     version: "0.3.0"
   device_info_plus:
     dependency: transitive
@@ -1855,8 +1856,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/window_manager"
-      ref: "2ebc4b2d776b0c2772b6146489193f199b8d69eb"
-      resolved-ref: "2ebc4b2d776b0c2772b6146489193f199b8d69eb"
+      ref: "5600a44a2b756911b379ad66d294be3ef95180b5"
+      resolved-ref: "5600a44a2b756911b379ad66d294be3ef95180b5"
       url: "https://github.com/CrimsonAishia/window_manager.git"
     source: git
     version: "0.5.1"
