@@ -272,6 +272,8 @@ class ConfigActionButton extends StatefulWidget {
   final String tooltip;
   final Color? color;
   final VoidCallback onTap;
+  /// 是否显示审核标识点（已通过的配置修改需要重新审核）
+  final bool badge;
 
   const ConfigActionButton({
     super.key,
@@ -279,6 +281,7 @@ class ConfigActionButton extends StatefulWidget {
     required this.tooltip,
     this.color,
     required this.onTap,
+    this.badge = false,
   });
 
   @override
@@ -299,21 +302,39 @@ class _ConfigActionButtonState extends State<ConfigActionButton> {
         cursor: SystemMouseCursors.click,
         child: GestureDetector(
           onTap: widget.onTap,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: _hovered
-                  ? color.withValues(alpha: 0.1)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              widget.icon,
-              size: 18,
-              color: _hovered ? color : Colors.grey[500],
-            ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: _hovered
+                      ? color.withValues(alpha: 0.1)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  widget.icon,
+                  size: 18,
+                  color: _hovered ? color : Colors.grey[500],
+                ),
+              ),
+              if (widget.badge)
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: Container(
+                    width: 7,
+                    height: 7,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF59E0B),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),

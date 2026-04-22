@@ -192,3 +192,20 @@ class KeyBindingAddComment extends KeyBindingEvent {
 
 /// 清除评论列表
 class KeyBindingClearComments extends KeyBindingEvent {}
+
+/// 加载我的变更申请列表
+class KeyBindingLoadChangeRequests extends KeyBindingEvent {
+  final bool showSuccessMessage;
+  const KeyBindingLoadChangeRequests({this.showSuccessMessage = false});
+  @override
+  List<Object?> get props => [showSuccessMessage];
+}
+
+/// 撤销变更申请
+class KeyBindingCancelChangeRequest extends KeyBindingEvent {
+  final int configId;
+  const KeyBindingCancelChangeRequest(this.configId);
+  @override
+  List<Object?> get props => [configId];
+}
+

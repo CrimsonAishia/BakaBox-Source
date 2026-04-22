@@ -6,6 +6,7 @@ class ToolbarButton extends StatefulWidget {
   final String label;
   final bool active;
   final bool badge;
+  final int badgeCount;
   final VoidCallback onTap;
 
   const ToolbarButton({
@@ -14,6 +15,7 @@ class ToolbarButton extends StatefulWidget {
     required this.label,
     required this.active,
     this.badge = false,
+    this.badgeCount = 0,
     required this.onTap,
   });
 
@@ -77,14 +79,33 @@ class _ToolbarButtonState extends State<ToolbarButton> {
               ),
               if (widget.badge) ...[
                 const SizedBox(width: 6),
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFf59e0b),
-                    shape: BoxShape.circle,
-                  ),
-                ),
+                widget.badgeCount > 0
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFf59e0b),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '${widget.badgeCount}',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      )
+                    : Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFf59e0b),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
               ],
             ],
           ),

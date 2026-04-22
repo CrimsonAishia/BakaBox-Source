@@ -72,6 +72,18 @@ class KeyBindingState extends Equatable {
   /// 是否正在提交评论
   final bool isSubmittingComment;
 
+  /// 我的变更申请列表
+  final List<KeyConfigChangeRequest> changeRequests;
+
+  /// 变更申请总数
+  final int changeRequestTotal;
+
+  /// 是否正在加载变更申请
+  final bool isLoadingChangeRequests;
+
+  /// 是否正在撤销变更申请
+  final bool isCancellingChangeRequest;
+
   const KeyBindingState({
     this.configs = const [],
     this.myConfigs = const [],
@@ -96,6 +108,10 @@ class KeyBindingState extends Equatable {
     this.commentTotal = 0,
     this.isLoadingComments = false,
     this.isSubmittingComment = false,
+    this.changeRequests = const [],
+    this.changeRequestTotal = 0,
+    this.isLoadingChangeRequests = false,
+    this.isCancellingChangeRequest = false,
   });
 
   /// 获取配置列表（已应用的置顶）
@@ -115,13 +131,17 @@ class KeyBindingState extends Equatable {
     return [...applied, ...notApplied];
   }
 
-  /// 获取用户配置列表（审核中的置顶）
+  /// 获取用户配置列表（审核中的置顶，有变更申请的次之）
   List<KeyConfig> get filteredMyConfigs {
-    // 审核中的配置置顶
     final pending = myConfigs.where((c) => c.isPending).toList();
-    final others = myConfigs.where((c) => !c.isPending).toList();
+    final pendingChange = myConfigs
+        .where((c) => !c.isPending && c.hasPendingChange)
+        .toList();
+    final others = myConfigs
+        .where((c) => !c.isPending && !c.hasPendingChange)
+        .toList();
 
-    return [...pending, ...others];
+    return [...pending, ...pendingChange, ...others];
   }
 
   /// 检查配置是否已应用
@@ -169,6 +189,11 @@ class KeyBindingState extends Equatable {
     int? commentTotal,
     bool? isLoadingComments,
     bool? isSubmittingComment,
+    List<KeyConfigChangeRequest>? changeRequests,
+    bool clearChangeRequests = false,
+    int? changeRequestTotal,
+    bool? isLoadingChangeRequests,
+    bool? isCancellingChangeRequest,
   }) {
     return KeyBindingState(
       configs: configs ?? this.configs,
@@ -204,6 +229,14 @@ class KeyBindingState extends Equatable {
       commentTotal: commentTotal ?? this.commentTotal,
       isLoadingComments: isLoadingComments ?? this.isLoadingComments,
       isSubmittingComment: isSubmittingComment ?? this.isSubmittingComment,
+      changeRequests: clearChangeRequests
+          ? const []
+          : (changeRequests ?? this.changeRequests),
+      changeRequestTotal: changeRequestTotal ?? this.changeRequestTotal,
+      isLoadingChangeRequests:
+          isLoadingChangeRequests ?? this.isLoadingChangeRequests,
+      isCancellingChangeRequest:
+          isCancellingChangeRequest ?? this.isCancellingChangeRequest,
     );
   }
 
@@ -232,5 +265,9 @@ class KeyBindingState extends Equatable {
     commentTotal,
     isLoadingComments,
     isSubmittingComment,
+    changeRequests,
+    changeRequestTotal,
+    isLoadingChangeRequests,
+    isCancellingChangeRequest,
   ];
 }

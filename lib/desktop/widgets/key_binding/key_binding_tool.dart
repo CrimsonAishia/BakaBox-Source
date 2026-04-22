@@ -18,7 +18,7 @@ class KeyBindingTool extends StatefulWidget {
 class _KeyBindingToolState extends State<KeyBindingTool> {
   final _searchCtrl = TextEditingController();
 
-  // 右侧面板模式: 0=配置详情, 1=autoexec, 2=发布, 3=编辑
+  // 右侧面板模式: 0=配置详情, 1=autoexec, 2=发布, 3=编辑, 4=变更申请
   int _rightMode = 0;
 
   // 正在编辑的配置（模式3时使用）
@@ -57,6 +57,13 @@ class _KeyBindingToolState extends State<KeyBindingTool> {
         if (state.successMessage?.isNotEmpty == true) {
           ToastUtils.showSuccess(context, state.successMessage!);
           if (_rightMode == 3 && state.successMessage!.contains('更新')) {
+            setState(() {
+              _rightMode = 0;
+              _editingConfig = null;
+            });
+          }
+          // 编辑/删除申请提交成功后，回到详情页
+          if (state.successMessage!.contains('申请已提交')) {
             setState(() {
               _rightMode = 0;
               _editingConfig = null;

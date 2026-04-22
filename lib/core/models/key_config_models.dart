@@ -88,6 +88,8 @@ class KeyConfig extends Equatable {
   @JsonKey(defaultValue: 0)
   final int commentCount;
   final String? editReason;
+  @JsonKey(defaultValue: false)
+  final bool hasPendingChange;
 
   const KeyConfig({
     required this.id,
@@ -118,6 +120,7 @@ class KeyConfig extends Equatable {
     this.useCount = 0,
     this.commentCount = 0,
     this.editReason,
+    this.hasPendingChange = false,
   });
 
   /// 获取投票类型枚举
@@ -169,6 +172,7 @@ class KeyConfig extends Equatable {
     int? useCount,
     int? commentCount,
     Object? editReason = _sentinel,
+    bool? hasPendingChange,
   }) {
     return KeyConfig(
       id: id ?? this.id,
@@ -201,6 +205,7 @@ class KeyConfig extends Equatable {
       editReason: editReason == _sentinel
           ? this.editReason
           : editReason as String?,
+      hasPendingChange: hasPendingChange ?? this.hasPendingChange,
     );
   }
 
@@ -234,6 +239,7 @@ class KeyConfig extends Equatable {
     useCount,
     commentCount,
     editReason,
+    hasPendingChange,
   ];
 }
 
@@ -494,6 +500,122 @@ class KeyConfigCreateCommentResponse extends Equatable {
 
   @override
   List<Object?> get props => [id, content, createdAt];
+}
+
+/// 变更申请类型
+enum KeyConfigChangeType {
+  @JsonValue('edit')
+  edit,
+  @JsonValue('delete')
+  delete;
+
+  String get label => switch (this) {
+    KeyConfigChangeType.edit => '编辑申请',
+    KeyConfigChangeType.delete => '删除申请',
+  };
+}
+
+/// 变更申请模型
+@JsonSerializable()
+class KeyConfigChangeRequest extends Equatable {
+  final int id;
+  final int configId;
+  final String originalConfigName;
+  final KeyConfigChangeType changeType;
+  final String editReason;
+  final KeyConfigAuditStatus auditStatus;
+  @JsonKey(defaultValue: '')
+  final String auditRemark;
+  @NullableServerTimeConverter()
+  final DateTime? auditAt;
+
+  // edit 类型时有值
+  final String? pendingName;
+  final String? pendingDescription;
+  final int? pendingCategoryId;
+  final String? pendingCategory;
+  final String? pendingIcon;
+  final String? pendingConfig;
+  final bool? pendingNeedsKeybind;
+  final bool? pendingIsActive;
+  final int? pendingSort;
+
+  @ServerTimeConverter()
+  final DateTime createdAt;
+  @ServerTimeConverter()
+  final DateTime updatedAt;
+
+  const KeyConfigChangeRequest({
+    required this.id,
+    required this.configId,
+    required this.originalConfigName,
+    required this.changeType,
+    required this.editReason,
+    required this.auditStatus,
+    this.auditRemark = '',
+    this.auditAt,
+    this.pendingName,
+    this.pendingDescription,
+    this.pendingCategoryId,
+    this.pendingCategory,
+    this.pendingIcon,
+    this.pendingConfig,
+    this.pendingNeedsKeybind,
+    this.pendingIsActive,
+    this.pendingSort,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  bool get isPending => auditStatus == KeyConfigAuditStatus.pending;
+  bool get isApproved => auditStatus == KeyConfigAuditStatus.approved;
+  bool get isRejected => auditStatus == KeyConfigAuditStatus.rejected;
+
+  factory KeyConfigChangeRequest.fromJson(Map<String, dynamic> json) =>
+      _$KeyConfigChangeRequestFromJson(json);
+  Map<String, dynamic> toJson() => _$KeyConfigChangeRequestToJson(this);
+
+  @override
+  List<Object?> get props => [
+    id,
+    configId,
+    originalConfigName,
+    changeType,
+    editReason,
+    auditStatus,
+    auditRemark,
+    auditAt,
+    pendingName,
+    pendingDescription,
+    pendingCategoryId,
+    pendingCategory,
+    pendingConfig,
+    pendingNeedsKeybind,
+    createdAt,
+    updatedAt,
+  ];
+}
+
+/// 变更申请列表响应
+@JsonSerializable()
+class KeyConfigChangeRequestListResponse extends Equatable {
+  @JsonKey(defaultValue: [])
+  final List<KeyConfigChangeRequest> items;
+  final int total;
+
+  const KeyConfigChangeRequestListResponse({
+    required this.items,
+    required this.total,
+  });
+
+  factory KeyConfigChangeRequestListResponse.fromJson(
+    Map<String, dynamic> json,
+  ) => _$KeyConfigChangeRequestListResponseFromJson(json);
+  Map<String, dynamic> toJson() =>
+      _$KeyConfigChangeRequestListResponseToJson(this);
+
+  @override
+  List<Object?> get props => [items, total];
 }
 
 /// 应用配置响应

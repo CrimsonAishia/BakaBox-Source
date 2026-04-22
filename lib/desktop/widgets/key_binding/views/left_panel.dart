@@ -86,6 +86,27 @@ class LeftPanel extends StatelessWidget {
                       badge: !state.isAuthenticated,
                     ),
                   ),
+                  BlocBuilder<KeyBindingBloc, KeyBindingState>(
+                    builder: (context, kbState) =>
+                        BlocBuilder<AuthBloc, AuthState>(
+                      builder: (context, authState) {
+                        if (!authState.isAuthenticated) {
+                          return const SizedBox.shrink();
+                        }
+                        final pendingCount = kbState.changeRequests
+                            .where((r) => r.isPending)
+                            .length;
+                        return ToolbarButton(
+                          icon: MdiIcons.clipboardTextClockOutline,
+                          label: '变更申请',
+                          active: rightMode == 4,
+                          onTap: () => onModeChanged(4),
+                          badge: pendingCount > 0,
+                          badgeCount: pendingCount,
+                        );
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
