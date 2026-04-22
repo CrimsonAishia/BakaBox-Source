@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/models/key_config_models.dart';
 import 'autoexec_view.dart';
+import 'change_requests_view.dart';
 import 'config_detail_view.dart';
 import 'edit_view.dart';
 import 'publish_view.dart';
@@ -44,6 +45,7 @@ class RightPanel extends StatelessWidget {
             editingConfig != null
                 ? EditView(config: editingConfig!, onComplete: onEditComplete)
                 : ConfigDetailView(onEditConfig: onEditConfig),
+          4 => const ChangeRequestsView(),
           _ => ConfigDetailView(onEditConfig: onEditConfig),
         },
       ),

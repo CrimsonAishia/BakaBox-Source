@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../../core/models/key_config_models.dart';
-import '../../../../core/services/token_service.dart';
 
 /// 配置卡片
 class ConfigCard extends StatefulWidget {
@@ -29,21 +28,23 @@ class _ConfigCardState extends State<ConfigCard> {
 
   @override
   Widget build(BuildContext context) {
-    final backendUserInfo = TokenService.instance.userInfo;
-    final isOwner =
-        backendUserInfo != null && backendUserInfo.id == widget.config.userID;
+    final isOwner = widget.config.isOwner;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     // 只有在 showAuditStatus 为 true 且配置未通过审核时才显示审核状态栏
-    // 显示条件：审核中(pending)或已拒绝(rejected)
+    // 显示条件：审核中(pending)或已拒绝(rejected)，或已通过但有待审核变更申请
     final showAuditStatusBar =
         widget.showAuditStatus &&
-        (widget.config.isPending || widget.config.isRejected);
+        (widget.config.isPending ||
+            widget.config.isRejected ||
+            widget.config.hasPendingChange);
 
     final Color borderColor;
     if (showAuditStatusBar) {
       borderColor = widget.config.isPending
           ? const Color(0xFFF59E0B).withValues(alpha: 0.4)
-          : const Color(0xFFEF4444).withValues(alpha: 0.4);
+          : widget.config.hasPendingChange
+              ? const Color(0xFFF59E0B).withValues(alpha: 0.4)
+              : const Color(0xFFEF4444).withValues(alpha: 0.4);
     } else if (widget.selected) {
       borderColor = const Color(0xFF0080FF);
     } else if (_hovered) {
@@ -321,6 +322,35 @@ class _ConfigCardState extends State<ConfigCard> {
   }
 
   Widget _buildAuditStatusBar(KeyConfig config, bool isDark) {
+    // hasPendingChange 优先级最高（已通过但有变更申请）
+    if (config.hasPendingChange) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: const BoxDecoration(
+          color: Color(0x1AF59E0B),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(10),
+            topRight: Radius.circular(10),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(MdiIcons.clockOutline, size: 12, color: const Color(0xFFF59E0B)),
+            const SizedBox(width: 6),
+            const Text(
+              '变更审核中',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFF59E0B),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final isPending = config.isPending;
     final statusColor = isPending
         ? const Color(0xFFF59E0B)

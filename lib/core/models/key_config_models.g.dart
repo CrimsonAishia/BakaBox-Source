@@ -39,6 +39,7 @@ KeyConfig _$KeyConfigFromJson(Map<String, dynamic> json) => KeyConfig(
   useCount: (json['useCount'] as num?)?.toInt() ?? 0,
   commentCount: (json['commentCount'] as num?)?.toInt() ?? 0,
   editReason: json['editReason'] as String?,
+  hasPendingChange: json['hasPendingChange'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$KeyConfigToJson(KeyConfig instance) => <String, dynamic>{
@@ -70,6 +71,7 @@ Map<String, dynamic> _$KeyConfigToJson(KeyConfig instance) => <String, dynamic>{
   'useCount': instance.useCount,
   'commentCount': instance.commentCount,
   'editReason': instance.editReason,
+  'hasPendingChange': instance.hasPendingChange,
 };
 
 const _$KeyConfigAuditStatusEnumMap = {
@@ -220,6 +222,78 @@ Map<String, dynamic> _$KeyConfigCreateCommentResponseToJson(
   'content': instance.content,
   'createdAt': const ServerTimeConverter().toJson(instance.createdAt),
 };
+
+KeyConfigChangeRequest _$KeyConfigChangeRequestFromJson(
+  Map<String, dynamic> json,
+) => KeyConfigChangeRequest(
+  id: (json['id'] as num).toInt(),
+  configId: (json['configId'] as num).toInt(),
+  originalConfigName: json['originalConfigName'] as String,
+  changeType: $enumDecode(_$KeyConfigChangeTypeEnumMap, json['changeType']),
+  editReason: json['editReason'] as String,
+  auditStatus: $enumDecode(_$KeyConfigAuditStatusEnumMap, json['auditStatus']),
+  auditRemark: json['auditRemark'] as String? ?? '',
+  auditAt: const NullableServerTimeConverter().fromJson(
+    json['auditAt'] as String?,
+  ),
+  pendingName: json['pendingName'] as String?,
+  pendingDescription: json['pendingDescription'] as String?,
+  pendingCategoryId: (json['pendingCategoryId'] as num?)?.toInt(),
+  pendingCategory: json['pendingCategory'] as String?,
+  pendingIcon: json['pendingIcon'] as String?,
+  pendingConfig: json['pendingConfig'] as String?,
+  pendingNeedsKeybind: json['pendingNeedsKeybind'] as bool?,
+  pendingIsActive: json['pendingIsActive'] as bool?,
+  pendingSort: (json['pendingSort'] as num?)?.toInt(),
+  createdAt: const ServerTimeConverter().fromJson(json['createdAt'] as String),
+  updatedAt: const ServerTimeConverter().fromJson(json['updatedAt'] as String),
+);
+
+Map<String, dynamic> _$KeyConfigChangeRequestToJson(
+  KeyConfigChangeRequest instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'configId': instance.configId,
+  'originalConfigName': instance.originalConfigName,
+  'changeType': _$KeyConfigChangeTypeEnumMap[instance.changeType]!,
+  'editReason': instance.editReason,
+  'auditStatus': _$KeyConfigAuditStatusEnumMap[instance.auditStatus]!,
+  'auditRemark': instance.auditRemark,
+  'auditAt': const NullableServerTimeConverter().toJson(instance.auditAt),
+  'pendingName': instance.pendingName,
+  'pendingDescription': instance.pendingDescription,
+  'pendingCategoryId': instance.pendingCategoryId,
+  'pendingCategory': instance.pendingCategory,
+  'pendingIcon': instance.pendingIcon,
+  'pendingConfig': instance.pendingConfig,
+  'pendingNeedsKeybind': instance.pendingNeedsKeybind,
+  'pendingIsActive': instance.pendingIsActive,
+  'pendingSort': instance.pendingSort,
+  'createdAt': const ServerTimeConverter().toJson(instance.createdAt),
+  'updatedAt': const ServerTimeConverter().toJson(instance.updatedAt),
+};
+
+const _$KeyConfigChangeTypeEnumMap = {
+  KeyConfigChangeType.edit: 'edit',
+  KeyConfigChangeType.delete: 'delete',
+};
+
+KeyConfigChangeRequestListResponse _$KeyConfigChangeRequestListResponseFromJson(
+  Map<String, dynamic> json,
+) => KeyConfigChangeRequestListResponse(
+  items:
+      (json['items'] as List<dynamic>?)
+          ?.map(
+            (e) => KeyConfigChangeRequest.fromJson(e as Map<String, dynamic>),
+          )
+          .toList() ??
+      [],
+  total: (json['total'] as num).toInt(),
+);
+
+Map<String, dynamic> _$KeyConfigChangeRequestListResponseToJson(
+  KeyConfigChangeRequestListResponse instance,
+) => <String, dynamic>{'items': instance.items, 'total': instance.total};
 
 KeyConfigUseResponse _$KeyConfigUseResponseFromJson(
   Map<String, dynamic> json,

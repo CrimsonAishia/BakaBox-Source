@@ -5,7 +5,6 @@ import '../../../../core/bloc/key_binding/key_binding_bloc.dart';
 import '../../../../core/bloc/key_binding/key_binding_event.dart';
 import '../../../../core/bloc/key_binding/key_binding_state.dart';
 import '../../../../core/models/key_config_models.dart';
-import '../../../../core/services/token_service.dart';
 import '../../../../core/utils/key_placeholder_parser.dart';
 import '../components/common_widgets.dart' as common;
 import '../components/vote_widgets.dart';
@@ -110,158 +109,184 @@ class DetailHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final backendUserInfo = TokenService.instance.userInfo;
-    final isOwner =
-        backendUserInfo != null && backendUserInfo.id == config.userID;
+    final isOwner = config.isOwner;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // 已通过的配置暂不开放编辑/删除功能
-    final canEdit = isOwner && !config.isApproved;
-    final canDelete = isOwner && !config.isApproved;
+    // 已通过的配置也可以编辑/删除，但需要填写理由并经过后台审核
+    final canEdit = isOwner;
+    final canDelete = isOwner;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF0080FF).withValues(alpha: 0.06),
-            isDark ? const Color(0xFF1E293B) : Colors.white,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return BlocBuilder<KeyBindingBloc, KeyBindingState>(
+      buildWhen: (prev, curr) =>
+          prev.isCancellingChangeRequest != curr.isCancellingChangeRequest,
+      builder: (context, state) {
+        final hasPending = config.isApproved && isOwner && config.hasPendingChange;
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFF0080FF).withValues(alpha: 0.06),
+                isDark ? const Color(0xFF1E293B) : Colors.white,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0080FF).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  config.needsKeybind
-                      ? MdiIcons.keyboardOutline
-                      : MdiIcons.codeJson,
-                  color: const Color(0xFF0080FF),
-                  size: 18,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      config.needsKeybind
+                          ? MdiIcons.keyboardOutline
+                          : MdiIcons.codeJson,
+                      color: const Color(0xFF0080FF),
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          config.name,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1a1a2e),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            common.Badge(
+                              label: config.category,
+                              color: const Color(0xFF0080FF),
+                            ),
+                            const SizedBox(width: 6),
+                            common.Badge(
+                              label: config.needsKeybind ? '需绑定' : '自动',
+                              color: config.needsKeybind
+                                  ? const Color(0xFFf59e0b)
+                                  : const Color(0xFF10b981),
+                            ),
+                            if (applied) ...[
+                              const SizedBox(width: 6),
+                              common.Badge(
+                                label: '已应用',
+                                color: const Color(0xFF10b981),
+                                filled: true,
+                              ),
+                            ],
+                            if (isOwner) ...[
+                              const SizedBox(width: 6),
+                              common.Badge(
+                                label: '我的',
+                                color: const Color(0xFF8b5cf6),
+                                filled: true,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  DetailVoteButtons(config: config, isOwner: config.isOwner),
+                  const SizedBox(width: 8),
+                  if (hasPending) ...[
+                    _PendingChangeActions(
+                      configId: config.id,
+                      isDark: isDark,
+                      isCancelling: state.isCancellingChangeRequest,
+                    ),
+                  ] else ...[
+                    if (canEdit) ...[
+                      common.ConfigActionButton(
+                        icon: MdiIcons.pencilOutline,
+                        tooltip: config.isApproved
+                            ? '编辑配置（需重新审核）'
+                            : '编辑配置',
+                        badge: config.isApproved,
+                        onTap: () => onEditConfig?.call(config),
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                    if (canDelete)
+                      common.ConfigActionButton(
+                        icon: MdiIcons.deleteOutline,
+                        tooltip: config.isApproved
+                            ? '删除配置（需重新审核）'
+                            : '删除配置',
+                        color: const Color(0xFFef4444),
+                        badge: config.isApproved,
+                        onTap: () => _confirmDelete(context, config),
+                      ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                config.description,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isDark ? Colors.white54 : const Color(0xFF6b7280),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              // 显示应用次数和评论数
+              if (config.isApproved) ...[
+                const SizedBox(height: 8),
+                Row(
                   children: [
+                    Icon(
+                      MdiIcons.downloadOutline,
+                      size: 14,
+                      color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                    ),
+                    const SizedBox(width: 4),
                     Text(
-                      config.name,
+                      '${config.useCount} 次应用',
                       style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: isDark ? Colors.white : const Color(0xFF1a1a2e),
+                        fontSize: 11,
+                        color: isDark
+                            ? Colors.white38
+                            : const Color(0xFF9CA3AF),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        common.Badge(
-                          label: config.category,
-                          color: const Color(0xFF0080FF),
-                        ),
-                        const SizedBox(width: 6),
-                        common.Badge(
-                          label: config.needsKeybind ? '需绑定' : '自动',
-                          color: config.needsKeybind
-                              ? const Color(0xFFf59e0b)
-                              : const Color(0xFF10b981),
-                        ),
-                        if (applied) ...[
-                          const SizedBox(width: 6),
-                          common.Badge(
-                            label: '已应用',
-                            color: const Color(0xFF10b981),
-                            filled: true,
-                          ),
-                        ],
-                        if (isOwner) ...[
-                          const SizedBox(width: 6),
-                          common.Badge(
-                            label: '我的',
-                            color: const Color(0xFF8b5cf6),
-                            filled: true,
-                          ),
-                        ],
-                      ],
+                    const SizedBox(width: 12),
+                    Icon(
+                      MdiIcons.commentOutline,
+                      size: 14,
+                      color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${config.commentCount} 条评论',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark
+                            ? Colors.white38
+                            : const Color(0xFF9CA3AF),
+                      ),
                     ),
                   ],
                 ),
-              ),
-              DetailVoteButtons(config: config, isOwner: config.isOwner),
-              const SizedBox(width: 8),
-              if (canEdit) ...[
-                common.ConfigActionButton(
-                  icon: MdiIcons.pencilOutline,
-                  tooltip: '编辑配置',
-                  onTap: () => onEditConfig?.call(config),
-                ),
-                const SizedBox(width: 4),
               ],
-              if (canDelete)
-                common.ConfigActionButton(
-                  icon: MdiIcons.deleteOutline,
-                  tooltip: '删除配置',
-                  color: const Color(0xFFef4444),
-                  onTap: () => _confirmDelete(context, config),
-                ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            config.description,
-            style: TextStyle(
-              fontSize: 11,
-              color: isDark ? Colors.white54 : const Color(0xFF6b7280),
-            ),
-          ),
-          // 显示应用次数和评论数
-          if (config.isApproved) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(
-                  MdiIcons.downloadOutline,
-                  size: 14,
-                  color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '${config.useCount} 次应用',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Icon(
-                  MdiIcons.commentOutline,
-                  size: 14,
-                  color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '${config.commentCount} 条评论',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -288,7 +313,7 @@ class DetailHeader extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Text(
-                '删除已通过的配置',
+                '删除配置',
                 style: TextStyle(
                   fontSize: 16,
                   color: isDark ? Colors.white : null,
@@ -301,16 +326,8 @@ class DetailHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '确定要删除配置 "${config.name}" 吗？',
+                '确定要删除配置 "${config.name}" 吗？删除后不可恢复!!!',
                 style: TextStyle(color: isDark ? Colors.white70 : null),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                '删除已通过审核的配置需要填写理由，删除后将重新进入审核流程。',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDark ? Colors.white54 : Colors.grey[600],
-                ),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -400,6 +417,129 @@ class DetailHeader extends StatelessWidget {
         ),
       );
     }
+  }
+}
+
+/// 待审核变更申请操作区
+class _PendingChangeActions extends StatelessWidget {
+  final int configId;
+  final bool isDark;
+  final bool isCancelling;
+
+  const _PendingChangeActions({
+    required this.configId,
+    required this.isDark,
+    required this.isCancelling,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: '变更申请审核中',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: const Color(0xFFF59E0B).withValues(alpha: 0.4),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              MdiIcons.clockOutline,
+              size: 13,
+              color: const Color(0xFFF59E0B),
+            ),
+            const SizedBox(width: 6),
+            const Text(
+              '审核中',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFF59E0B),
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 7),
+              width: 1,
+              height: 11,
+              color: const Color(0xFFEF4444).withValues(alpha: 0.5),
+            ),
+            GestureDetector(
+              onTap: isCancelling ? null : () => _confirmCancel(context),
+              child: MouseRegion(
+                cursor: isCancelling
+                    ? SystemMouseCursors.basic
+                    : SystemMouseCursors.click,
+                child: isCancelling
+                    ? const SizedBox(
+                        width: 10,
+                        height: 10,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 1.5,
+                          color: Color(0xFFF59E0B),
+                        ),
+                      )
+                    : const Text(
+                        '撤销',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFFEF4444),
+                          decoration: TextDecoration.underline,
+                          decorationColor: Color(0xFFEF4444),
+                        ),
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmCancel(BuildContext context) {
+    final bloc = context.read<KeyBindingBloc>();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: isDark ? const Color(0xFF1E293B) : null,
+        title: Row(
+          children: [
+            Icon(Icons.undo_rounded, color: Colors.grey[600], size: 22),
+            const SizedBox(width: 10),
+            Text(
+              '撤销变更申请',
+              style: TextStyle(
+                fontSize: 16,
+                color: isDark ? Colors.white : null,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          '确定要撤销此变更申请吗？撤销后可以重新发起申请。',
+          style: TextStyle(color: isDark ? Colors.white70 : null),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              bloc.add(KeyBindingCancelChangeRequest(configId));
+            },
+            child: const Text('确认撤销'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

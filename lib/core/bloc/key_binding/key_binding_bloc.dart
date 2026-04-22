@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../api/api.dart';
 import '../../api/key_config_api.dart';
 import '../../models/key_config_models.dart';
 import '../../services/autoexec_service.dart';
@@ -46,6 +47,8 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     on<KeyBindingLoadComments>(_onLoadComments);
     on<KeyBindingAddComment>(_onAddComment);
     on<KeyBindingClearComments>(_onClearComments);
+    on<KeyBindingLoadChangeRequests>(_onLoadChangeRequests);
+    on<KeyBindingCancelChangeRequest>(_onCancelChangeRequest);
   }
 
   /// 加载配置列表
@@ -123,7 +126,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
         selectedConfig: event.config,
         keyBindings: keyBindings,
         clearError: true,
-        clearComments: true, // 清除旧的评论列表
+        clearComments: true,
         commentTotal: 0,
       ),
     );
@@ -581,31 +584,36 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
 
       await _api.deleteConfig(event.id, editReason: event.editReason);
 
-      // 如果删除的是当前选中的配置，清除选中状态
-      final shouldClearSelection = state.selectedConfig?.id == event.id;
+      // 判断是否为已通过配置（有 editReason 说明走的是变更申请流程）
+      final isChangeRequest =
+          event.editReason != null && event.editReason!.isNotEmpty;
+
+      // 如果是直接删除（非变更申请），清除选中状态
+      final shouldClearSelection =
+          !isChangeRequest && state.selectedConfig?.id == event.id;
 
       emit(
         state.copyWith(
           isLoading: false,
-          successMessage: '配置删除成功',
+          successMessage: isChangeRequest ? '删除申请已提交，等待管理员审核' : '配置删除成功',
           clearSelectedConfig: shouldClearSelection,
         ),
       );
 
       // 刷新配置列表
       add(const KeyBindingLoadConfigs(showSuccessMessage: false));
-      // 刷新用户配置列表
       add(const KeyBindingLoadMyConfigs(showSuccessMessage: false));
+      // 如果是变更申请，刷新变更申请列表
+      if (isChangeRequest) {
+        add(const KeyBindingLoadChangeRequests());
+      }
 
       LogService.d('[KeyBindingBloc] 删除配置成功: id=${event.id}');
     } catch (e) {
       LogService.e('[KeyBindingBloc] 删除配置失败', e);
-      emit(
-        state.copyWith(
-          isLoading: false,
-          error: ErrorUtils.getErrorMessage(e, defaultMessage: '删除配置失败'),
-        ),
-      );
+      final errorMsg = _getChangeRequestErrorMessage(e) ??
+          ErrorUtils.getErrorMessage(e, defaultMessage: '删除配置失败');
+      emit(state.copyWith(isLoading: false, error: errorMsg));
     }
   }
 
@@ -634,18 +642,25 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       );
 
       if (config != null) {
+        // 判断是否为变更申请（已通过配置编辑）
+        final isChangeRequest =
+            event.editReason != null && event.editReason!.isNotEmpty;
+
         emit(
           state.copyWith(
             isSaving: false,
-            successMessage: '配置 "${event.request.name}" 更新成功',
+            successMessage: isChangeRequest
+                ? '编辑申请已提交，等待管理员审核'
+                : '配置 "${event.request.name}" 更新成功',
             selectedConfig: config,
           ),
         );
 
-        // 刷新配置列表
         add(const KeyBindingLoadConfigs(showSuccessMessage: false));
-        // 刷新用户配置列表
         add(const KeyBindingLoadMyConfigs(showSuccessMessage: false));
+        if (isChangeRequest) {
+          add(const KeyBindingLoadChangeRequests());
+        }
 
         LogService.d('[KeyBindingBloc] 更新配置成功: id=${event.id}');
       } else {
@@ -653,12 +668,9 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       }
     } catch (e) {
       LogService.e('[KeyBindingBloc] 更新配置失败', e);
-      emit(
-        state.copyWith(
-          isSaving: false,
-          error: ErrorUtils.getErrorMessage(e, defaultMessage: '更新配置失败'),
-        ),
-      );
+      final errorMsg = _getChangeRequestErrorMessage(e) ??
+          ErrorUtils.getErrorMessage(e, defaultMessage: '更新配置失败');
+      emit(state.copyWith(isSaving: false, error: errorMsg));
     }
   }
 
@@ -985,5 +997,102 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
     Emitter<KeyBindingState> emit,
   ) {
     emit(state.copyWith(clearComments: true, commentTotal: 0));
+  }
+
+  /// 加载我的变更申请列表
+  Future<void> _onLoadChangeRequests(
+    KeyBindingLoadChangeRequests event,
+    Emitter<KeyBindingState> emit,
+  ) async {
+    emit(state.copyWith(isLoadingChangeRequests: true, clearError: true));
+
+    try {
+      LogService.d('[KeyBindingBloc] 开始加载变更申请列表');
+
+      final response = await _api.getMyChangeRequests();
+
+      if (response != null) {
+        emit(
+          state.copyWith(
+            changeRequests: response.items,
+            changeRequestTotal: response.total,
+            isLoadingChangeRequests: false,
+            successMessage: event.showSuccessMessage ? '已刷新变更申请列表' : null,
+          ),
+        );
+        LogService.d(
+          '[KeyBindingBloc] 加载变更申请列表成功，共 ${response.items.length} 条',
+        );
+      } else {
+        emit(state.copyWith(isLoadingChangeRequests: false));
+      }
+    } catch (e) {
+      LogService.e('[KeyBindingBloc] 加载变更申请列表失败', e);
+      emit(
+        state.copyWith(
+          isLoadingChangeRequests: false,
+          error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载变更申请列表失败'),
+        ),
+      );
+    }
+  }
+
+  /// 解析变更申请相关的业务错误码
+  String? _getChangeRequestErrorMessage(Object e) {
+    if (e is ApiException) {
+      return switch (e.code) {
+        20533 => '该配置已有待审核的变更申请，请等待审核完成后再提交',
+        20530 => '已通过的配置操作时需要填写理由',
+        _ => null,
+      };
+    }
+    return null;
+  }
+
+  /// 撤销变更申请
+  Future<void> _onCancelChangeRequest(
+    KeyBindingCancelChangeRequest event,
+    Emitter<KeyBindingState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        isCancellingChangeRequest: true,
+        clearError: true,
+        clearSuccessMessage: true,
+      ),
+    );
+    try {
+      LogService.d('[KeyBindingBloc] 撤销变更申请: configId=${event.configId}');
+      await _api.cancelChangeRequest(event.configId);
+
+      emit(
+        state.copyWith(
+          isCancellingChangeRequest: false,
+          successMessage: '变更申请已撤销',
+          // 立即更新 selectedConfig 的 hasPendingChange，详情页 header 即时刷新
+          selectedConfig: state.selectedConfig?.id == event.configId
+              ? state.selectedConfig!.copyWith(hasPendingChange: false)
+              : state.selectedConfig,
+        ),
+      );
+
+      // 刷新所有相关列表
+      add(const KeyBindingLoadChangeRequests());
+      add(const KeyBindingLoadMyConfigs(showSuccessMessage: false));
+      add(const KeyBindingLoadConfigs(showSuccessMessage: false));
+
+      LogService.d('[KeyBindingBloc] 撤销变更申请成功');
+    } catch (e) {
+      LogService.e('[KeyBindingBloc] 撤销变更申请失败', e);
+      String errorMsg;
+      if (e is ApiException && e.code == 20528) {
+        errorMsg = '申请已审核，无法撤销';
+      } else {
+        errorMsg = ErrorUtils.getErrorMessage(e, defaultMessage: '撤销变更申请失败');
+      }
+      emit(
+        state.copyWith(isCancellingChangeRequest: false, error: errorMsg),
+      );
+    }
   }
 }
