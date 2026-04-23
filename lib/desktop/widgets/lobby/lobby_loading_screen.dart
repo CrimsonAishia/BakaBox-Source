@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/bloc/lobby/lobby_bloc.dart';
 
@@ -67,32 +68,36 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
     final steps = <_LoadingStep>[];
 
     // 步骤1：连接大厅
-    // 只有完全 connected 才算完成，reconnecting 需要重新连接
     final isConnected = connectionStatus == LobbyConnectionStatus.connected;
     final isReconnecting = connectionStatus == LobbyConnectionStatus.reconnecting;
+    final isDisconnected =
+        connectionStatus == LobbyConnectionStatus.disconnected ||
+        connectionStatus == LobbyConnectionStatus.failed;
     steps.add(_LoadingStep(
       icon: Icons.cloud_done_outlined,
       label: '连接大厅',
       status: isConnected
           ? _StepStatus.done
-          : (isReconnecting || phase == LobbyLoadingPhase.connecting)
-              ? _StepStatus.loading
-              : _StepStatus.pending,
+          : isDisconnected
+              ? _StepStatus.failed
+              : (isReconnecting || phase == LobbyLoadingPhase.connecting)
+                  ? _StepStatus.loading
+                  : _StepStatus.pending,
     ));
 
     // 步骤2：加载素材（根据当前阶段决定状态）
     final hasAssets = _checkAssetsReady();
     _StepStatus assetsStatus;
-    if (hasAssets) {
+    if (isDisconnected) {
+      assetsStatus = hasAssets ? _StepStatus.done : _StepStatus.failed;
+    } else if (hasAssets) {
       assetsStatus = _StepStatus.done;
     } else if (phase == LobbyLoadingPhase.loadingAssets ||
         phase == LobbyLoadingPhase.waiting) {
       assetsStatus = _StepStatus.loading;
     } else if (isReconnecting || phase == LobbyLoadingPhase.connecting) {
-      // 正在连接或重连中，素材步骤等待
       assetsStatus = _StepStatus.pending;
     } else {
-      // 如果已经进入后面阶段但 assets 还没好，标记为完成（可能是缓存加载的）
       assetsStatus = _StepStatus.done;
     }
     steps.add(_LoadingStep(
@@ -104,12 +109,13 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
     // 步骤3：获取大厅状态
     final hasSnapshot = widget.state.selfUser != null;
     _StepStatus snapshotStatus;
-    if (hasSnapshot) {
+    if (isDisconnected) {
+      snapshotStatus = hasSnapshot ? _StepStatus.done : _StepStatus.failed;
+    } else if (hasSnapshot) {
       snapshotStatus = _StepStatus.done;
     } else if (phase == LobbyLoadingPhase.loadingSnapshot) {
       snapshotStatus = _StepStatus.loading;
     } else if (isReconnecting || phase == LobbyLoadingPhase.connecting) {
-      // 正在连接或重连中，大厅状态步骤等待
       snapshotStatus = _StepStatus.pending;
     } else {
       snapshotStatus = _StepStatus.pending;
@@ -241,19 +247,59 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
                 child: Text(
-                  widget.state.transientNotice ?? '正在加载大厅数据...',
-                  key: ValueKey(widget.state.transientNotice ?? 'loading'),
+                  _buildStatusText(),
+                  key: ValueKey(_buildStatusText()),
                   style: TextStyle(
                     color: textSecondary,
                     fontSize: 12,
                   ),
                 ),
               ),
+              // 连接断开时显示重新连接按钮
+              if (widget.state.connectionStatus ==
+                      LobbyConnectionStatus.disconnected ||
+                  widget.state.connectionStatus ==
+                      LobbyConnectionStatus.failed) ...[
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: 160,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      // ignore: use_build_context_synchronously
+                      context.read<LobbyBloc>().add(const LobbyStarted());
+                    },
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: const Text('重新连接'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF38BDF8),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                      textStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
       ),
     );
+  }
+
+  String _buildStatusText() {
+    final status = widget.state.connectionStatus;
+    if (status == LobbyConnectionStatus.disconnected ||
+        status == LobbyConnectionStatus.failed) {
+      return '连接已断开';
+    }
+    return widget.state.transientNotice ?? '正在加载大厅数据...';
   }
 }
 
@@ -271,7 +317,7 @@ class _LoadingStep {
 }
 
 /// 步骤状态
-enum _StepStatus { pending, loading, done }
+enum _StepStatus { pending, loading, done, failed }
 
 /// 单个加载步骤项
 class _LoadingStepItem extends StatelessWidget {
@@ -300,7 +346,11 @@ class _LoadingStepItem extends StatelessWidget {
           Text(
             step.label,
             style: TextStyle(
-              color: step.status == _StepStatus.done ? textPrimary : textSecondary,
+              color: step.status == _StepStatus.done
+                  ? textPrimary
+                  : step.status == _StepStatus.failed
+                      ? const Color(0xFFEF4444)
+                      : textSecondary,
               fontSize: 14,
               fontWeight: step.status == _StepStatus.done ? FontWeight.w600 : FontWeight.w400,
             ),
@@ -341,6 +391,8 @@ class _StepIndicator extends StatelessWidget {
         return const Color(0xFF22C55E).withValues(alpha: 0.2);
       case _StepStatus.loading:
         return const Color(0xFF38BDF8).withValues(alpha: 0.2);
+      case _StepStatus.failed:
+        return const Color(0xFFEF4444).withValues(alpha: 0.15);
       case _StepStatus.pending:
         return textSecondary.withValues(alpha: 0.08);
     }
@@ -363,6 +415,8 @@ class _StepIndicator extends StatelessWidget {
             valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
           ),
         );
+      case _StepStatus.failed:
+        return const Icon(Icons.close, color: Color(0xFFEF4444), size: 16);
       case _StepStatus.pending:
         return Icon(
           Icons.circle_outlined,
