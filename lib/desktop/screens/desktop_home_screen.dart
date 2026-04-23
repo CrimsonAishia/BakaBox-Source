@@ -23,6 +23,7 @@ import 'lobby_desktop.dart';
 import '../../core/services/game_status_service.dart';
 import '../../core/utils/storage_utils.dart';
 import '../widgets/global_broadcast_bar.dart';
+import '../widgets/floating_chat/floating_chat_button.dart';
 
 /// 桌面端主屏幕
 class DesktopHomeScreen extends StatefulWidget {
@@ -38,6 +39,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
   late AnimationController _contentAnimationController;
   StreamSubscription<GameStatusEvent>? _gameStatusSubscription;
   bool _shownObsWarningForCurrentGame = false;
+  late final FloatingChatCubit _floatingChatCubit;
 
   final List<NavigationItem> _navigationItems = [
     NavigationItem(
@@ -117,13 +119,14 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
   @override
   void initState() {
     super.initState();
+    _floatingChatCubit = FloatingChatCubit();
     _contentAnimationController = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
     _contentAnimationController.forward();
 
-    // 应用启动时立即连接大厅 WebSocket
+    // 应用启动时立即连接大厅 WebSocket 并预加载大厅数据
     WidgetsBinding.instance.addPostFrameCallback((_) {
       LobbyWsService.instance.initialize();
 
@@ -132,6 +135,12 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
       bloc.add(AnnouncementStartAutoRefresh());
       
       context.read<LobbyBloc>().add(const LobbyPageActivityChanged('在看主页'));
+
+      // 预加载大厅数据（消息、用户列表等），使浮动聊天按钮在未进入大厅时也能显示历史消息
+      final lobbyBloc = context.read<LobbyBloc>();
+      if (lobbyBloc.state.pageStatus == LobbyPageStatus.idle) {
+        lobbyBloc.add(const LobbyStarted());
+      }
 
       // 检查当前状态，防止错过初始化时的事件
       final gameService = GameStatusService();
@@ -192,6 +201,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
   void dispose() {
     _contentAnimationController.dispose();
     _gameStatusSubscription?.cancel();
+    _floatingChatCubit.close();
     super.dispose();
   }
 
@@ -211,6 +221,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
         break;
       case 2:
         newActivityText = '在大厅';
+        _floatingChatCubit.onLobbyPageEntered();
         break;
       case 3:
         newActivityText = '在看角色图鉴';
@@ -252,7 +263,9 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
     final isDesktop =
         Platform.isWindows || Platform.isLinux || Platform.isMacOS;
 
-    return PopScope(
+    return BlocProvider<FloatingChatCubit>.value(
+      value: _floatingChatCubit,
+      child: PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
@@ -319,6 +332,11 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
                 right: 16,
                 child: QueueFloatingCard(),
               ),
+            // 浮动聊天按钮（非大厅页面显示）
+            if (isDesktop && _currentIndex != 2)
+              const Positioned.fill(
+                child: FloatingChatButton(),
+              ),
             // 全服广播底部通知栏
             const Positioned(
               left: 0,
@@ -329,6 +347,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
           ],
         ),
       ),
+    ),
     );
   }
 
