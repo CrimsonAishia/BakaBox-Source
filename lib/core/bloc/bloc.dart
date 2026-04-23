@@ -91,3 +91,6 @@ export 'lobby/lobby_bloc.dart';
 export 'bilibili_content/bilibili_content_bloc.dart';
 export 'bilibili_content/bilibili_content_event.dart';
 export 'bilibili_content/bilibili_content_state.dart';
+
+// Floating Chat
+export 'floating_chat/floating_chat.dart';
