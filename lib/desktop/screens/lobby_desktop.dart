@@ -261,9 +261,6 @@ class _LobbyDesktopState extends State<LobbyDesktop>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return BlocConsumer<LobbyBloc, LobbyState>(
       buildWhen: (previous, current) =>
           previous.chatCooldownSeconds != current.chatCooldownSeconds ||
@@ -295,6 +292,7 @@ class _LobbyDesktopState extends State<LobbyDesktop>
           previous.nearbyPortal != current.nearbyPortal ||
           previous.pendingPortal != current.pendingPortal ||
           previous.isPortalHovered != current.isPortalHovered ||
+          previous.kickedReason != current.kickedReason ||
           previous.pageStatus != current.pageStatus,
       listener: (context, state) {
         // 处理传送状态变化
@@ -362,6 +360,27 @@ class _LobbyDesktopState extends State<LobbyDesktop>
       builder: (context, state) {
         final pageStatus = state.pageStatus;
 
+        // 被踢出时，无论处于哪个加载阶段，都优先显示踢出遮罩
+        if (state.kickedReason != null) {
+          return Stack(
+            children: [
+              if (pageStatus == LobbyPageStatus.ready)
+                _buildReadyView(context, state)
+              else
+                LobbyLoadingScreen(state: state),
+              Positioned.fill(
+                child: LobbyKickedOverlay(
+                  reason: state.kickedReason!,
+                  message: state.kickedMessage,
+                  onDismiss: () {
+                    context.read<LobbyBloc>().add(const LobbyKickedDismissed());
+                  },
+                ),
+              ),
+            ],
+          );
+        }
+
         // Loading 阶段：显示加载界面
         if (pageStatus == LobbyPageStatus.loading) {
           return LobbyLoadingScreen(state: state);
@@ -375,9 +394,18 @@ class _LobbyDesktopState extends State<LobbyDesktop>
           return _LobbyIdleScreen(state: state);
         }
 
-        final mapConfig = state.mapConfig;
-        // ignore: deprecated_member_use
-        return RawKeyboardListener(
+        return _buildReadyView(context, state);
+      },
+    );
+  }
+
+  /// 构建 ready 状态的主视图
+  Widget _buildReadyView(BuildContext context, LobbyState state) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final mapConfig = state.mapConfig;
+    // ignore: deprecated_member_use
+    return RawKeyboardListener(
           focusNode: _sceneFocusNode,
           autofocus: true,
           onKey: (event) {
@@ -680,24 +708,11 @@ class _LobbyDesktopState extends State<LobbyDesktop>
                     ),
                   // 广播发送弹窗
                   if (state.isBroadcastDialogOpen) const LobbyBroadcastDialog(),
-                  // 被踢出提示遮罩
-                  if (state.kickedReason != null)
-                    Positioned.fill(
-                      child: LobbyKickedOverlay(
-                        reason: state.kickedReason!,
-                        message: state.kickedMessage,
-                        onDismiss: () {
-                          context.read<LobbyBloc>().add(const LobbyKickedDismissed());
-                        },
-                      ),
-                    ),
                 ],
               ),
             ),
           ),
         );
-      },
-    );
   }
 }
 
