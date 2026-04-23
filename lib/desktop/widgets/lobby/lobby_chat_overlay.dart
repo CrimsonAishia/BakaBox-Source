@@ -77,8 +77,9 @@ class _LobbyChatOverlayState extends State<LobbyChatOverlay> {
             ),
             const SizedBox(height: 10),
             // 聊天消息列表
-            SizedBox(
-              height: 200,
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              height: isChatActive ? 300 : 150,
               child: ListView.separated(
                 reverse: true,
                 // 聊天激活时启用滚动，禁用时阻止滚动传递
@@ -153,6 +154,8 @@ class _LobbyChatOverlayState extends State<LobbyChatOverlay> {
                     readOnly: widget.state.selfUser?.isAnonymous ?? false,
                     decoration: InputDecoration(
                       counterText: '',
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       hintText: widget.state.selfUser?.isAnonymous ?? false
                           ? '登录后即可参与聊天'
                           : '输入消息',
