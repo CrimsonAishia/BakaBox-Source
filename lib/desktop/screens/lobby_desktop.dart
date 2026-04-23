@@ -280,7 +280,10 @@ class _LobbyDesktopState extends State<LobbyDesktop>
           previous.isTeleporting != current.isTeleporting ||
           previous.playerNotifications != current.playerNotifications ||
           previous.transientNotice != current.transientNotice ||
-          previous.kickedReason != current.kickedReason,
+          previous.kickedReason != current.kickedReason ||
+          previous.serverOnlineCount != current.serverOnlineCount ||
+          previous.broadcastCooldownSeconds != current.broadcastCooldownSeconds ||
+          previous.isAnonymous != current.isAnonymous,
       listenWhen: (previous, current) =>
           previous.isChatActive != current.isChatActive ||
           previous.transientNoticeSeq != current.transientNoticeSeq ||
@@ -296,6 +299,15 @@ class _LobbyDesktopState extends State<LobbyDesktop>
       listener: (context, state) {
         // 处理传送状态变化
         _syncTeleportAnimation(state);
+
+        // 页面重新进入 loading 时重置传送动画状态（防止重连后状态残留）
+        if (state.pageStatus == LobbyPageStatus.loading) {
+          _lastTeleportingState = null;
+          _showTeleportOverlay = false;
+          _targetMapConfig = null;
+          _teleportHideTimer?.cancel();
+          _teleportController?.reset();
+        }
 
         // 当页面状态变为 ready 时，请求场景焦点（但聊天激活时不抢焦点）
         if (state.pageStatus == LobbyPageStatus.ready && !state.isChatActive) {
@@ -342,6 +354,9 @@ class _LobbyDesktopState extends State<LobbyDesktop>
               bloc.add(const LobbyTransientNoticeShown());
             }
           });
+        } else {
+          _transientNoticeTimer?.cancel();
+          _transientNoticeTimer = null;
         }
       },
       builder: (context, state) {
@@ -380,6 +395,9 @@ class _LobbyDesktopState extends State<LobbyDesktop>
                 final text = _chatController.text;
                 if (text.trim().isNotEmpty) {
                   context.read<LobbyBloc>().add(LobbyChatSubmitted(text));
+                } else {
+                  // 空消息回车关闭聊天栏
+                  context.read<LobbyBloc>().add(const LobbyChatModeChanged(false));
                 }
               } else {
                 // 直接打开聊天栏，让用户看到输入框的占位提示
@@ -446,7 +464,7 @@ class _LobbyDesktopState extends State<LobbyDesktop>
                         builder: (context, constraints) {
                           // 聊天输入框的位置：left: 24, bottom: 24, 宽度 360
                           final chatWidth = 360.0;
-                          final chatHeight = 180.0; // 估算高度
+                          final chatHeight = 280.0; // 估算高度（消息列表200 + 输入框等）
                           final chatLeft = 24.0;
                           final chatBottom = 24.0;
                           final chatRight =
