@@ -464,7 +464,7 @@ class _LobbyDesktopState extends State<LobbyDesktop>
                         builder: (context, constraints) {
                           // 聊天输入框的位置：left: 24, bottom: 24, 宽度 360
                           final chatWidth = 360.0;
-                          final chatHeight = 280.0; // 估算高度（消息列表200 + 输入框等）
+                          final chatHeight = 360.0; // 估算高度（消息列表300 + 输入框等）
                           final chatLeft = 24.0;
                           final chatBottom = 24.0;
                           final chatRight =
