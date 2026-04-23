@@ -43,7 +43,7 @@ class _LobbyChatOverlayState extends State<LobbyChatOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    final recentMessages = widget.state.messages.reversed.take(50).toList(growable: false);
+    final recentMessages = widget.state.messages.reversed.take(100).toList(growable: false);
     final isChatActive = widget.state.isChatActive;
 
     return SizedBox(
@@ -78,13 +78,15 @@ class _LobbyChatOverlayState extends State<LobbyChatOverlay> {
             const SizedBox(height: 10),
             // 聊天消息列表
             SizedBox(
-              height: 128,
+              height: 200,
               child: ListView.separated(
                 reverse: true,
                 // 聊天激活时启用滚动，禁用时阻止滚动传递
                 primary: isChatActive,
                 physics: isChatActive
-                    ? const BouncingScrollPhysics()
+                    ? const BouncingScrollPhysics(
+                        decelerationRate: ScrollDecelerationRate.fast,
+                      )
                     : const NeverScrollableScrollPhysics(),
                 itemCount: recentMessages.length,
                 separatorBuilder: (context, index) => const SizedBox(height: 8),

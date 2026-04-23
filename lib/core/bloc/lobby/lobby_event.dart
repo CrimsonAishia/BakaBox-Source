@@ -159,11 +159,6 @@ class LobbyPanelsDismissed extends LobbyEvent {
   const LobbyPanelsDismissed();
 }
 
-/// 重新发送待重发的消息
-class LobbyResendMessages extends LobbyEvent {
-  const LobbyResendMessages();
-}
-
 /// 内部事件：assets 收到后更新状态
 class _LobbyAssetsReceived extends LobbyEvent {
   final LobbyWsEvent wsEvent;

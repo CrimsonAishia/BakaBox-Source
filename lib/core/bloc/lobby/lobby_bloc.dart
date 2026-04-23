@@ -68,7 +68,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     on<LobbyBubbleExpired>(_onBubbleExpired);
     on<LobbyWsEventReceived>(_onWsEventReceived);
     on<LobbyPanelsDismissed>(_onPanelsDismissed);
-    on<LobbyResendMessages>(_onResendMessages);
     on<_LobbyAssetsReceived>(_onAssetsReceived);
     on<_LobbyGameStatusChanged>(_onGameStatusChanged);
     on<LobbyPageActivityChanged>(_onPageActivityChanged);
@@ -120,6 +119,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   Timer? _anonymousSwitchCooldownTimer;
   Timer? _steamNameSwitchCooldownTimer;
   Timer? _settingsTimeoutTimer;
+  Timer? _transientNoticeTimer;
   StreamSubscription<LobbyWsEvent>? _snapshotOnAssetsReceived;
   bool _authAttemptedAfterConnect = false;
   String? _selfServerUserId;
@@ -551,10 +551,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       isAnonymous: state.isAnonymous,
     );
 
-    // 添加到待重发队列
-    final updatedPendingMessages = Map<String, String>.from(state.pendingMessages);
-    updatedPendingMessages[myMessage.messageId] = content;
-
     // 立即更新自己的 lastMessage 状态，使聊天气泡和聊天栏立即显示
     final updatedUsers = state.users.map((user) {
       if (!user.isSelf) return user;
@@ -564,8 +560,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       );
     }).toList(growable: false);
 
-    // 添加消息到消息列表（使用新列表对象触发状态更新）
-    final updatedMessages = [...state.messages, myMessage];
+    // 添加消息到消息列表（使用新列表对象触发状态更新，最多保留 100 条）
+    final updatedMessages = _limitMessages([...state.messages, myMessage]);
 
     // 启动冷却计时器
     _startChatCooldownTimer();
@@ -575,7 +571,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         isChatActive: false,
         users: updatedUsers,
         messages: updatedMessages,
-        pendingMessages: updatedPendingMessages,
         chatCooldownSeconds: _chatCooldownDuration,
       ),
     );
@@ -643,18 +638,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       emit(state.copyWith(steamNameSwitchCooldownSeconds: 0));
     } else {
       emit(state.copyWith(steamNameSwitchCooldownSeconds: newCooldown));
-    }
-  }
-
-  void _onResendMessages(
-    LobbyResendMessages event,
-    Emitter<LobbyState> emit,
-  ) {
-    if (state.pendingMessages.isEmpty) return;
-
-    // 重发所有待重发的消息
-    for (final entry in state.pendingMessages.entries) {
-      _service.sendChat(entry.value);
     }
   }
 
@@ -835,6 +818,16 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     Emitter<LobbyState> emit,
   ) {
     emit(state.copyWith(clearTransientNotice: true));
+  }
+
+  /// 在 bloc 内部调度 transientNotice 自动清除（超时后自动消失）
+  void _scheduleTransientNoticeClear({Duration timeout = const Duration(seconds: 5)}) {
+    _transientNoticeTimer?.cancel();
+    _transientNoticeTimer = Timer(timeout, () {
+      if (!_isDisposed && state.transientNotice != null) {
+        add(const LobbyTransientNoticeShown());
+      }
+    });
   }
 
   void _onPanelsDismissed(
@@ -1102,11 +1095,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
                   ? (hasAssets ? LobbyLoadingPhase.loadingSnapshot : LobbyLoadingPhase.waiting)
                   : state.loadingPhase,
               transientNotice: wasReconnecting ? '大厅重连成功，正在同步数据...' : state.transientNotice,
+              // 重连时清空待重发队列，避免重复发送旧消息
+              pendingMessages: const {},
             ));
-
-            if (state.pendingMessages.isNotEmpty) {
-              add(const LobbyResendMessages());
-            }
             if (_isLobbyEntered) {
               unawaited(_service.requestBroadcastCD());
             }
@@ -1413,18 +1404,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         final nextState = _applyChatMessage(event.event.payload);
         LogService.d('[LobbyBloc] chat.message: users=${nextState.users.map((u) => '${u.userId}:lastMsg=${u.lastMessage != null ? '"${u.lastMessage}"' : null}').toList()}');
 
-        // 收到服务器确认消息时，从待重发队列中移除（因为本地消息已经显示，服务器确认说明发送成功）
-        final confirmedMessageId = event.event.payload['messageId']?.toString();
-        final updatedPendingMessages = Map<String, String>.from(state.pendingMessages);
-        if (confirmedMessageId != null) {
-          updatedPendingMessages.remove(confirmedMessageId);
-        }
-
         emit(
           state.copyWith(
             users: nextState.users,
             messages: nextState.messages,
-            pendingMessages: updatedPendingMessages,
           ),
         );
         _scheduleBubbleCleanup();
@@ -1433,7 +1416,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         emit(
           state.copyWith(
             transientNotice: event.event.payload['reason']?.toString() ?? '消息发送失败',
-            pendingMessages: {},
           ),
         );
         // 注意：这里不重发，因为不知道具体哪条被拒绝
@@ -1518,7 +1500,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         if (notice == null || notice.isEmpty) break;
         emit(
           state.copyWith(
-            messages: [...state.messages, _buildSystemMessage(notice)],
+            messages: _limitMessages([...state.messages, _buildSystemMessage(notice)]),
             transientNotice: notice,
           ),
         );
@@ -1670,7 +1652,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             timestamp: broadcast.timestamp,
             isAnonymous: false,
           );
-          final updatedMessages = [...state.messages, broadcastLobbyMessage];
+          final updatedMessages = _limitMessages([...state.messages, broadcastLobbyMessage]);
 
           // 如果开启了广播通知，显示通知窗口
           if (state.showBroadcastNotifications) {
@@ -2134,6 +2116,13 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     );
   }
 
+  /// 限制消息列表最多 100 条（保留最新的）
+  static const int _maxMessages = 100;
+  List<LobbyMessage> _limitMessages(List<LobbyMessage> messages) {
+    if (messages.length <= _maxMessages) return messages;
+    return messages.sublist(messages.length - _maxMessages);
+  }
+
   /// 解析 Hex 颜色
   Color? _parseHexColor(String? hex) {
     if (hex == null || hex.isEmpty) return null;
@@ -2402,11 +2391,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         .toList(growable: false);
 
     // 限制消息数量，防止内存无限增长
-    const int maxMessages = 100;
-    var finalMessages = [...deduplicatedMessages, normalizedMessage];
-    if (finalMessages.length > maxMessages) {
-      finalMessages = finalMessages.sublist(finalMessages.length - maxMessages);
-    }
+    final finalMessages = _limitMessages([...deduplicatedMessages, normalizedMessage]);
 
     return _ChatState(
       users: updatedUsers,
@@ -2761,6 +2746,20 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   }
 
   @override
+  void onChange(Change<LobbyState> change) {
+    super.onChange(change);
+    // 每次 transientNotice 变化时，自动调度清除（防止永久显示）
+    if (change.nextState.transientNotice != null &&
+        change.nextState.transientNoticeSeq != change.currentState.transientNoticeSeq) {
+      _scheduleTransientNoticeClear();
+    } else if (change.nextState.transientNotice == null) {
+      // notice 已被清除，取消兜底 timer
+      _transientNoticeTimer?.cancel();
+      _transientNoticeTimer = null;
+    }
+  }
+
+  @override
   Future<void> close() async {
     _isDisposed = true;
     _operationStateSubscription?.cancel();
@@ -2773,6 +2772,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _anonymousSwitchCooldownTimer?.cancel();
     _steamNameSwitchCooldownTimer?.cancel();
     _settingsTimeoutTimer?.cancel();
+    _transientNoticeTimer?.cancel();
     await _wsSubscription?.cancel();
     await _gameStatusSubscription?.cancel();
     // 注销 AuthService 登录状态监听

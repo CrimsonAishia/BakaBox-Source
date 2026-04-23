@@ -90,6 +90,7 @@ class _LobbyActionButtonState extends State<LobbyActionButton> {
         child: InkWell(
           onTap: widget.isDisabled ? null : widget.onTap,
           borderRadius: BorderRadius.circular(14),
+          canRequestFocus: false,
           child: Ink(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
