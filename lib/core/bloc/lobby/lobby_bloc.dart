@@ -148,6 +148,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   Timer? _settingsTimeoutTimer;
   Timer? _transientNoticeTimer;
   StreamSubscription<LobbyWsEvent>? _snapshotOnAssetsReceived;
+  Timer? _assetsTimeoutTimer;
   bool _authAttemptedAfterConnect = false;
   String? _selfServerUserId;
   DateTime? _lastMoveRequestAt;
@@ -220,6 +221,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _isLobbyEntered = true;
     _isDisposed = false;
 
+    // 取消上一次可能残留的 assets 监听器和超时计时器
+    _snapshotOnAssetsReceived?.cancel();
+    _snapshotOnAssetsReceived = null;
+    _assetsTimeoutTimer?.cancel();
+    _assetsTimeoutTimer = null;
+
     // 重置被踢标志，允许重连后的自动重连逻辑正常工作
     _service.resetKicked();
 
@@ -281,28 +288,74 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   }
 
   /// 请求 assets 和 snapshot
+  ///
+  /// 覆盖所有竞态场景：
+  /// 1. assets 在监听器注册前已到达（先注册监听器再发请求 + 缓存兜底）
+  /// 2. requestAssets() 发出时 WS 未连接（assets 永远不来 → 超时重试）
+  /// 3. 重复调用（取消旧监听器 + 旧超时计时器）
+  /// 4. 监听器与缓存检查同时命中（_handled 防重入标志）
   Future<void> _requestAssetsAndSnapshot() async {
-    // 先请求 assets
-    await _service.requestAssets();
-
-    // 监听 assets 响应，然后请求 snapshot
+    // 取消旧的监听器和超时计时器，避免重复触发
     _snapshotOnAssetsReceived?.cancel();
-    _snapshotOnAssetsReceived = _service.events.listen((wsEvent) async {
+    _snapshotOnAssetsReceived = null;
+    _assetsTimeoutTimer?.cancel();
+    _assetsTimeoutTimer = null;
+
+    // 防重入：监听器回调与缓存检查可能同时命中，只处理第一次
+    var _handled = false;
+
+    Future<void> handleAssetsPayload(LobbyWsEvent wsEvent) async {
+      if (_handled) return;
+      _handled = true;
+
+      _snapshotOnAssetsReceived?.cancel();
+      _snapshotOnAssetsReceived = null;
+      _assetsTimeoutTimer?.cancel();
+      _assetsTimeoutTimer = null;
+
+      add(_LobbyAssetsReceived(wsEvent));
+
+      if (!_isDisposed && _isLobbyEntered) {
+        await _service.requestSnapshot();
+        await _service.requestBroadcastCD();
+      }
+    }
+
+    // 先注册监听器（在发请求之前），彻底消除竞态窗口
+    _snapshotOnAssetsReceived = _service.events.listen((wsEvent) {
       if (wsEvent.type == 'assets') {
-        _snapshotOnAssetsReceived?.cancel();
-        _snapshotOnAssetsReceived = null;
-
-        // 收到 assets 后，通过事件更新状态
-        add(_LobbyAssetsReceived(wsEvent));
-
-        // 请求 snapshot
-        if (!_isDisposed && _isLobbyEntered) {
-          await _service.requestSnapshot();
-          // 请求广播冷却状态
-          await _service.requestBroadcastCD();
-        }
+        handleAssetsPayload(wsEvent);
       }
     });
+
+    // 再发送 assets 请求
+    await _service.requestAssets();
+
+    // 缓存兜底：assets 可能在监听器注册之前就已被 _wsSubscription 消费并缓存
+    if (!_handled && _service.hasAssetsReceived) {
+      final cachedPayload = _service.getLastAssetsPayload();
+      if (cachedPayload != null) {
+        LogService.d('[LobbyBloc] _requestAssetsAndSnapshot: 使用缓存 assets payload');
+        await handleAssetsPayload(LobbyWsEvent(
+          version: 1,
+          type: 'assets',
+          timestamp: DateTime.now(),
+          traceId: '',
+          payload: cachedPayload,
+        ));
+        return;
+      }
+    }
+
+    // 超时兜底：WS 未连接或服务器无响应时，15 秒后重新发起整个流程
+    if (!_handled) {
+      _assetsTimeoutTimer = Timer(const Duration(seconds: 15), () {
+        if (_isDisposed || !_isLobbyEntered) return;
+        if (state.pageStatus != LobbyPageStatus.loading) return;
+        LogService.w('[LobbyBloc] assets 请求超时，重新发送请求');
+        _requestAssetsAndSnapshot();
+      });
+    }
   }
 
   /// 请求更多分页用户
@@ -1236,11 +1289,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
               state.connectionStatus == LobbyConnectionStatus.failed;
 
           if (wasConnecting || wasReconnecting) {
-            final hasAssets = state.assets.mapConfig != null || state.assets.sprites.isNotEmpty;
             emit(state.copyWith(
               connectionStatus: LobbyConnectionStatus.connected,
               loadingPhase: state.pageStatus == LobbyPageStatus.loading
-                  ? (hasAssets ? LobbyLoadingPhase.loadingSnapshot : LobbyLoadingPhase.waiting)
+                  ? LobbyLoadingPhase.loadingAssets
                   : state.loadingPhase,
               transientNotice: wasReconnecting ? '大厅重连成功，正在同步数据...' : state.transientNotice,
               // 重连时清空待重发队列，避免重复发送旧消息
@@ -1250,8 +1302,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
               unawaited(_service.requestBroadcastCD());
             }
 
-            // 被踢后重连 或 普通断线重连 时，重新请求 assets+snapshot
-            if (wasReconnecting && _isLobbyEntered) {
+            // 首次连接或重连成功后，只要大厅处于 loading 状态就重新请求 assets+snapshot。
+            // wasConnecting：_onStarted 里 initialize() 失败重连后到达此处，
+            //   _onStarted 末尾的 _requestAssetsAndSnapshot() 发出时 WS 未连接，请求被丢弃，
+            //   需要在这里补发。_requestAssetsAndSnapshot() 内部会取消旧监听器，重复调用安全。
+            // wasReconnecting：断线重连，同样需要重新请求。
+            if (_isLobbyEntered && state.pageStatus == LobbyPageStatus.loading) {
               _requestAssetsAndSnapshot();
             }
           }
@@ -2929,6 +2985,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _gsiSubscription?.cancel();
     _snapshotOnAssetsReceived?.cancel();
     _snapshotOnAssetsReceived = null;
+    _assetsTimeoutTimer?.cancel();
+    _assetsTimeoutTimer = null;
     _movementTimer?.cancel();
     _bubbleExpiryTimer?.cancel();
     _chatCooldownTimer?.cancel();
