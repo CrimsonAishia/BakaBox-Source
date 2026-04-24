@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../models/queue_user.dart';
 import '../../services/queue_users_service.dart';
 import '../../utils/log_service.dart';
 import 'queue_users_event.dart';
@@ -185,24 +186,48 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
         .where((u) => !oldUserIds.contains(u.uniqueId))
         .toList();
 
-    // 如果有新用户加入，设置 joinedUserId 触发动画
-    // 注意：首次同步时所有用户都是"新"的，但不应该触发加入动画
-    // 只有在已有用户列表的情况下，新增的用户才触发动画
+    // 检测离开的用户（在旧列表中但不在新列表中）
+    final newUserIds = event.users.map((u) => u.uniqueId).toSet();
+    final leftUsers = state.users
+        .where((u) => !newUserIds.contains(u.uniqueId))
+        .toList();
+
+    // 确定 joinedUserId：
+    // 1. 自己加入时（isSelf=true）始终触发，无论是否首次同步
+    // 2. 只有一个新用户时触发（避免首次同步或批量同步时触发）
+    // 3. 如果 _onUserJoined 已经设置了 joinedUserId，不覆盖（保留已有值）
     String? joinedUserId;
-    if (state.users.isNotEmpty && newUsers.length == 1) {
-      // 只有一个新用户时才触发动画（避免首次同步或批量同步时触发）
+    final selfNewUser = newUsers.where((u) => u.isSelf).firstOrNull;
+    if (selfNewUser != null) {
+      joinedUserId = selfNewUser.uniqueId;
+      LogService.d('[QueueUsersBloc] sync 检测到自己加入: $joinedUserId');
+    } else if (state.users.isNotEmpty && newUsers.length == 1) {
       joinedUserId = newUsers.first.uniqueId;
-      LogService.d('[QueueUsersBloc] 检测到新用户加入: $joinedUserId');
+      LogService.d('[QueueUsersBloc] sync 检测到新用户加入: $joinedUserId');
+    }
+
+    // 如果 sync 里检测到有人离开（且当前没有正在处理的 leftUserId），触发离开动画
+    // 这处理了 leave 消息丢失但 sync 里已经没有该用户的情况
+    String? leftUserId;
+    QueueUser? leftUser;
+    if (leftUsers.length == 1 && state.leftUserId == null) {
+      leftUser = leftUsers.first;
+      leftUserId = leftUser.uniqueId;
+      LogService.d('[QueueUsersBloc] sync 检测到用户离开: $leftUserId');
     }
 
     emit(
       state.copyWith(
         users: event.users,
+        // 有新 joinedUserId 则用新的，否则保留已有的（避免覆盖 _onUserJoined 设置的值）
         joinedUserId: joinedUserId,
-        // sync 事件时清除其他动画触发标记，避免残留
-        clearJoinedUserId: joinedUserId == null,
-        clearLeftUserId: true,
-        clearSuccessUserId: true,
+        clearJoinedUserId: joinedUserId == null && state.joinedUserId == null,
+        // 有新 leftUserId 则用新的，否则保留已有的（避免覆盖 _onUserLeft 设置的值）
+        leftUserId: leftUserId,
+        leftUser: leftUser,
+        clearLeftUserId: leftUserId == null && state.leftUserId == null,
+        // success 动画由专门的 success 消息触发，sync 不清除正在进行的 success 动画
+        clearSuccessUserId: state.successUserId == null,
       ),
     );
   }
@@ -237,8 +262,7 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
       state.copyWith(
         users: updatedUsers,
         joinedUserId: user.uniqueId,
-        clearLeftUserId: true,
-        clearSuccessUserId: true,
+        // 不清除 leftUserId/successUserId，避免覆盖正在进行的其他动画
       ),
     );
   }
@@ -269,8 +293,7 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
         users: updatedUsers,
         leftUserId: userId,
         leftUser: leavingUser,
-        clearJoinedUserId: true,
-        clearSuccessUserId: true,
+        // 不清除 joinedUserId/successUserId，避免覆盖正在进行的其他动画
       ),
     );
   }
@@ -299,8 +322,7 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
         users: updatedUsers,
         successUserId: userId,
         successUser: successfulUser,
-        clearJoinedUserId: true,
-        clearLeftUserId: true,
+        // 不清除 joinedUserId/leftUserId，避免覆盖正在进行的其他动画
       ),
     );
   }
@@ -324,10 +346,11 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
     // 连接成功后，如果有待发送的 join，立即发送
     if (event.isConnected && _pendingJoin != null) {
       LogService.d('[QueueUsersBloc] 连接成功，发送待处理的 join');
-      add(_pendingJoin!);
+      final pending = _pendingJoin!;
       _pendingJoin = null;
+      add(pending);
     } else if (event.isConnected && _lastJoin != null) {
-      // 重连成功后，使用上次的 join 信息重新加入
+      // 重连成功后，使用上次的 join 信息重新加入（直接发送，不走 _onJoin 避免重复更新 _lastJoin）
       LogService.d('[QueueUsersBloc] 重连成功，使用上次的 join 信息重新加入');
       _service.sendJoin(nickname: _lastJoin!.nickname);
     }
