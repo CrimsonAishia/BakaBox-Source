@@ -22,8 +22,8 @@ class QueueUserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: _getTooltipText(),
+    return _QueueUserTooltip(
+      user: user,
       child: Container(
         width: size,
         height: size,
@@ -45,18 +45,6 @@ class QueueUserAvatar extends StatelessWidget {
         child: ClipOval(child: _buildAvatarContent()),
       ),
     );
-  }
-
-  /// 获取 Tooltip 文本
-  ///
-  /// 规则：
-  /// - 当前用户：显示"我"
-  /// - 匿名用户：显示"匿名用户"
-  /// - 已登录用户：显示昵称或"未知"
-  String _getTooltipText() {
-    if (user.isSelf) return '我';
-    if (user.isAnonymous) return '匿名用户';
-    return user.nickname ?? '未知';
   }
 
   /// 构建头像内容
@@ -101,6 +89,68 @@ class QueueUserAvatar extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 自定义 Tooltip，hover 时显示用户名 + 挤服时长（每次显示时实时计算）
+class _QueueUserTooltip extends StatelessWidget {
+  final QueueUser user;
+  final Widget child;
+
+  const _QueueUserTooltip({required this.user, required this.child});
+
+  String _formatDuration(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    final s = d.inSeconds.remainder(60);
+    if (h > 0) return '$h小时$m分$s秒';
+    if (m > 0) return '$m分$s秒';
+    return '$s秒';
+  }
+
+  String _getDisplayName() {
+    if (user.isSelf) return '我';
+    if (user.isAnonymous) return '匿名用户';
+    return user.nickname ?? '未知';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final duration = DateTime.now().difference(user.joinedAt);
+    return Tooltip(
+      richMessage: TextSpan(
+        children: [
+          TextSpan(
+            text: _getDisplayName(),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          TextSpan(
+            text: '\n已挤 ${_formatDuration(duration)}',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7),
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(6),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.4),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      child: child,
     );
   }
 }
