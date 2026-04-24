@@ -306,7 +306,7 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
   ) {
     final lobbyState = context.watch<LobbyBloc>().state;
     final isDisconnected =
-        lobbyState.connectionStatus == LobbyConnectionStatus.disconnected;
+        lobbyState.connectionStatus != LobbyConnectionStatus.connected;
 
     return Stack(
       clipBehavior: Clip.none,
@@ -408,10 +408,11 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
           setState(() => _isPanelOpen = true);
           context.read<FloatingChatCubit>().panelOpened();
         },
-        child: ScaleTransition(
-          scale: scaleAnimation,
-          child: Opacity(
-            opacity: isDisconnected ? 0.5 : 1.0,
+        child: Tooltip(
+          message: '点击打开 / 长按拖动',
+          preferBelow: false,
+          child: ScaleTransition(
+            scale: scaleAnimation,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -419,27 +420,54 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
                   width: _buttonSize,
                   height: _buttonSize,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0080FF),
+                    color: isDisconnected
+                        ? const Color(0xFF6B7280)
+                        : const Color(0xFF0080FF),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                        color: isDisconnected
+                            ? const Color(0xFF6B7280).withValues(alpha: 0.3)
+                            : const Color(0xFF0080FF).withValues(alpha: 0.3),
                         blurRadius: 12,
                         spreadRadius: 1,
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.chat_bubble,
-                    color: Colors.white,
+                  child: Icon(
+                    isDisconnected
+                        ? Icons.chat_bubble_outline
+                        : Icons.chat_bubble,
+                    color: isDisconnected
+                        ? Colors.white.withValues(alpha: 0.6)
+                        : Colors.white,
                     size: 24,
                   ),
                 ),
-                Positioned(
-                  top: -4,
-                  right: -4,
-                  child: UnreadBadge(count: floatingState.unreadCount),
-                ),
+                if (!isDisconnected)
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: UnreadBadge(count: floatingState.unreadCount),
+                  ),
+                if (isDisconnected)
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFEF4444),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 10,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
