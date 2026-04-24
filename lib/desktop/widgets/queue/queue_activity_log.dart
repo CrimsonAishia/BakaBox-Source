@@ -129,7 +129,7 @@ class _QueueActivityLogState extends State<QueueActivityLog> {
         : widget.activities;
 
     return Container(
-      height: 100,
+      height: 160,
       decoration: BoxDecoration(
         color: isDark
             ? const Color(0xFF1E293B).withValues(alpha: 0.5)
@@ -267,8 +267,7 @@ class _ActivityItemWidget extends StatelessWidget {
                   ),
                 ],
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              maxLines: null,
             ),
           ),
         ],
