@@ -147,6 +147,12 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
   /// 处理用户停止挤服事件
   /// 服务器会通过 sync 消息更新用户列表
   void _onLeave(QueueUsersLeave event, Emitter<QueueUsersState> emit) {
+    if (!_service.isConnected) {
+      LogService.d('[QueueUsersBloc] 未连接，跳过 leave');
+      _lastJoin = null;
+      _pendingJoin = null;
+      return;
+    }
     LogService.d('[QueueUsersBloc] 发送 leave');
     _service.sendLeave();
     // 清除 lastJoin，停止挤服后不再自动重发
