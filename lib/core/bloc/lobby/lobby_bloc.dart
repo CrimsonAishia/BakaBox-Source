@@ -1870,13 +1870,15 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           final total = event.event.payload['total'] as int? ?? 0;
           final usersData = event.event.payload['users'];
           final List<LobbyUser> parsedUsers = [];
+          bool selfFound = false;
 
           if (usersData is List) {
             for (final item in usersData) {
               // online.stats 返回的用户列表中，每个用户的 userId 就是其唯一标识
               // 需要判断是否是自己
               final userId = item is Map ? item['userId']?.toString() : null;
-              final isSelfUser = userId != null && _selfServerUserId == userId;
+              final isSelfUser = userId != null && _isSelfServerUserId(userId);
+              if (isSelfUser) selfFound = true;
               final user = _parseLobbyUser(item, isSelf: isSelfUser, serverUserId: userId);
               if (user != null) {
                 parsedUsers.add(user);
@@ -1884,7 +1886,17 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             }
           }
 
-          LogService.d('[LobbyBloc] online.stats: total=$total, users=${parsedUsers.length}');
+          // 如果服务端返回的列表中没有自己，从本地 state.users 补充
+          // 避免匿名用户或 _selfServerUserId 尚未就绪时自己从面板消失
+          if (!selfFound) {
+            final localSelf = state.selfUser;
+            if (localSelf != null && localSelf.isOnline) {
+              parsedUsers.insert(0, localSelf);
+              LogService.d('[LobbyBloc] online.stats: self not found in server list, injected from local state');
+            }
+          }
+
+          LogService.d('[LobbyBloc] online.stats: total=$total, users=${parsedUsers.length}, selfFound=$selfFound');
 
           emit(state.copyWith(
             allOnlineUsers: parsedUsers,
