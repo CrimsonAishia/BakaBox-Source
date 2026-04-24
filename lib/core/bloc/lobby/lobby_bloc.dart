@@ -5,14 +5,19 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
+import '../../api/server_api.dart';
+import '../../models/gsi_models.dart';
 import '../../models/lobby_models.dart';
 import '../../services/auth_service.dart';
+import '../../services/console_log_service.dart';
 import '../../services/game_status_service.dart';
+import '../../services/gsi_service.dart';
 import '../../services/lobby_asset_cache_service.dart';
 import '../../services/lobby_image_cache_service.dart';
 import '../../services/lobby_map_loader_service.dart';
 import '../../services/lobby_ws_service.dart';
 import '../../services/notification_window_service.dart';
+import '../../services/server_address_mapping_service.dart';
 import '../../services/status_window_service.dart';
 import '../../services/steam_user_service.dart';
 import '../../utils/log_service.dart';
@@ -38,10 +43,30 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     );
 
     // 订阅操作状态变化（挤服等），用于更新状态文字
+    // 只在 isQueueing 实际变化时才触发，避免挤服过程中疯狂更新
     _operationStateSubscription = StatusWindowService().stateStream.listen(
       (event) {
         if (_isDisposed) return;
-        // 服用 _LobbyGameStatusChanged 触发 _updateStatusTextByGameStatus 重新评估文字
+        final newIsQueueing = event.isQueueing;
+        if (newIsQueueing != _lastIsQueueing) {
+          _lastIsQueueing = newIsQueueing;
+          add(_LobbyGameStatusChanged(GameStatusService().isGameRunning));
+        }
+      },
+    );
+
+    // 订阅 ConsoleLogService 状态变化，用于获取所在服务器信息
+    _consoleLogSubscription = ConsoleLogService().stateStream.listen(
+      (event) {
+        if (_isDisposed) return;
+        add(_LobbyGameStatusChanged(GameStatusService().isGameRunning));
+      },
+    );
+
+    // 订阅 GSI 状态变化，用于获取游戏内详细状态
+    _gsiSubscription = GsiService().stateStream.listen(
+      (event) {
+        if (_isDisposed) return;
         add(_LobbyGameStatusChanged(GameStatusService().isGameRunning));
       },
     );
@@ -112,6 +137,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   StreamSubscription<LobbyWsEvent>? _wsSubscription;
   StreamSubscription<GameStatusEvent>? _gameStatusSubscription;
   StreamSubscription<OperationState>? _operationStateSubscription;
+  StreamSubscription<ConsoleLogState>? _consoleLogSubscription;
+  StreamSubscription<GsiGameState?>? _gsiSubscription;
   Timer? _movementTimer;
   Timer? _bubbleExpiryTimer;
   Timer? _chatCooldownTimer;
@@ -128,6 +155,16 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   bool _isDisposed = false;
   /// 当前地图 ID（从 join.success 中提取，用于资产加载时确定当前地图）
   String? _selfMapId;
+  /// 上次发送到服务器的状态文字（用于去重，避免重复上报）
+  String? _lastSentStatusText;
+  /// 上次 isQueueing 状态（用于避免挤服过程中频繁触发更新）
+  bool _lastIsQueueing = false;
+  /// 地图名称中文标签缓存（mapName → label）
+  final Map<String, String> _mapLabelCache = {};
+  /// 状态文字上报防抖计时器
+  Timer? _statusTextDebounceTimer;
+  /// 状态文字上报防抖时间
+  static const Duration _statusTextDebounceDuration = Duration(seconds: 3);
 
   /// AuthService 登录状态变化监听器回调
   late final LoginStateChangedCallback _authStateListener;
@@ -859,6 +896,13 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   }
 
   /// 根据游戏运行状态更新状态文字，并同步到服务器
+  ///
+  /// 优先级（从高到低）：
+  /// 1. 挤服中
+  /// 2. GSI 游戏状态（有意义的状态：主菜单、热身、游戏中）
+  /// 3. 所在服务器（ConsoleLogService.isInServer → 服务器地址）
+  /// 4. 游戏运行中（isGameRunning → "游戏中"）
+  /// 5. 其他（pageActivityText）
   Future<void> _updateStatusTextByGameStatus(
     bool isGameRunning,
     Emitter<LobbyState> emit,
@@ -866,16 +910,34 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   ) async {
     final activityText = pageActivityTextOverride ?? state.pageActivityText;
     final isQueueing = StatusWindowService().state.isQueueing;
-    
+
     final String newStatusText;
     if (isQueueing) {
       newStatusText = '挤服中';
-    } else if (isGameRunning) {
-      newStatusText = '游戏中';
     } else {
-      newStatusText = activityText;
+      final gsiState = GsiService().latestState;
+      final consoleState = ConsoleLogService().currentState;
+
+      final gsiText = _resolveGsiStatusText(gsiState);
+      if (gsiText != null) {
+        newStatusText = gsiText;
+      } else if (consoleState.isInServer && consoleState.serverAddress.isNotEmpty) {
+        final displayAddress = ServerAddressMappingService().getDomainAddress(consoleState.serverAddress);
+        newStatusText = '在 $displayAddress';
+      } else if (isGameRunning) {
+        newStatusText = '游戏中';
+      } else {
+        newStatusText = activityText;
+      }
     }
 
+    // 去重：只在文字实际变化时才更新
+    if (newStatusText == _lastSentStatusText) return;
+    _lastSentStatusText = newStatusText;
+
+    LogService.d('[StatusText] 更新状态文字: $newStatusText');
+
+    // UI 立即更新（本地用户看到的状态不延迟）
     emit(
       state.copyWith(
         users: state.users
@@ -887,7 +949,92 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             .toList(growable: false),
       ),
     );
-    await _service.updateStatusText(newStatusText);
+
+    // 服务器上报防抖：3 秒内多次变化只发送最后一次，节省带宽
+    _statusTextDebounceTimer?.cancel();
+    _statusTextDebounceTimer = Timer(_statusTextDebounceDuration, () {
+      if (!_isDisposed) {
+        _service.updateStatusText(newStatusText);
+      }
+    });
+  }
+
+  /// 从 GSI 状态解析有意义的状态文字，无意义时返回 null
+  String? _resolveGsiStatusText(GsiGameState? gsiState) {
+    if (gsiState == null) return null;
+
+    // 游戏进程未运行时，GSI 数据一定是过期的（latestState 不会自动清空）
+    if (!GameStatusService().isGameRunning) return null;
+
+    // GSI 数据过期检查：游戏运行中但长时间没收到新数据，可能 GSI 配置异常
+    final receivedAt = gsiState.receivedAt;
+    if (receivedAt != null &&
+        DateTime.now().difference(receivedAt) > const Duration(seconds: 60)) {
+      return null;
+    }
+
+    final activity = gsiState.player?.activity;
+    final mapPhase = gsiState.map?.phase;
+    final mapName = gsiState.map?.name;
+
+    // 主菜单：但如果 ConsoleLog 正在连接/加载，说明用户已经在进服务器了，
+    // 此时 GSI 还没更新，不应该显示"在主菜单"
+    if (activity == 'menu') {
+      final consoleState = ConsoleLogService().currentState;
+      if (consoleState.isConnecting || consoleState.isInServer) return null;
+      return '游戏中 · 主菜单';
+    }
+
+    // 游戏中（playing 或 textinput 都算在游戏内）
+    if (activity == 'playing' || activity == 'textinput') {
+      // 回合结束/游戏结束阶段无意义，跳过让下层处理
+      if (mapPhase == 'gameover') return null;
+
+      final displayMap = _getMapDisplayName(mapName);
+
+      // live / intermission / warmup / freezetime 等阶段
+      return displayMap != null ? '游戏中 · $displayMap' : '游戏中';
+    }
+
+    return null;
+  }
+
+  /// 获取地图显示名称（优先中文标签，其次原名）
+  /// 同时异步预取标签，下次调用时直接命中缓存
+  String? _getMapDisplayName(String? mapName) {
+    if (mapName == null || mapName.isEmpty) return null;
+
+    // 命中缓存直接返回
+    final cached = _mapLabelCache[mapName];
+    if (cached != null) return cached;
+
+    // 缓存未命中：先用原名，同时异步拉取标签
+    _fetchMapLabelAsync(mapName);
+    return mapName;
+  }
+
+  /// 异步拉取地图中文标签并缓存，拉取完成后触发一次状态刷新
+  Future<void> _fetchMapLabelAsync(String mapName) async {
+    // 防止重复拉取（用空字符串占位表示"正在拉取"）
+    if (_mapLabelCache.containsKey(mapName)) return;
+    _mapLabelCache[mapName] = mapName; // 占位，避免并发重复请求
+
+    try {
+      final mapData = await ServerApi().getMapInfo(mapName);
+      final label = mapData?.mapLabel;
+      if (label != null && label.isNotEmpty && label != mapName) {
+        _mapLabelCache[mapName] = label;
+        // 标签拉取完成，重置去重缓存让下次能刷新文字
+        if (_lastSentStatusText?.contains(mapName) == true) {
+          _lastSentStatusText = null;
+          if (!_isDisposed) {
+            add(_LobbyGameStatusChanged(GameStatusService().isGameRunning));
+          }
+        }
+      }
+    } catch (_) {
+      // 拉取失败保留原名，不影响主流程
+    }
   }
 
   void _onTeleportStarted(
@@ -996,6 +1143,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         );
 
         // 登录成功后重新上报本地活动状态
+        _lastSentStatusText = null;
         _updateStatusTextByGameStatus(GameStatusService().isGameRunning, emit);
         // 注意：不需要请求 assets 和 snapshot，因为：
         // 1. presence.join 已经会更新用户数据（模型切换等）
@@ -1128,6 +1276,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         // 不在这里请求 assets，等到进入大厅页面再请求（避免 URL token 过期）
         
         // 重新同步本地活动状态（防止启动时因为网络未连接导致首次上报丢失）
+        _lastSentStatusText = null;
         _updateStatusTextByGameStatus(GameStatusService().isGameRunning, emit);
         break;
       case 'assets':
@@ -1264,6 +1413,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           }
 
           // 重新同步本地活动状态（防止启动时的状态更新因连接未就绪被忽略）
+          _lastSentStatusText = null;
           _updateStatusTextByGameStatus(GameStatusService().isGameRunning, emit);
         }
         break;
@@ -2763,6 +2913,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   Future<void> close() async {
     _isDisposed = true;
     _operationStateSubscription?.cancel();
+    _consoleLogSubscription?.cancel();
+    _gsiSubscription?.cancel();
     _snapshotOnAssetsReceived?.cancel();
     _snapshotOnAssetsReceived = null;
     _movementTimer?.cancel();
@@ -2773,6 +2925,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _steamNameSwitchCooldownTimer?.cancel();
     _settingsTimeoutTimer?.cancel();
     _transientNoticeTimer?.cancel();
+    _statusTextDebounceTimer?.cancel();
     await _wsSubscription?.cancel();
     await _gameStatusSubscription?.cancel();
     // 注销 AuthService 登录状态监听
