@@ -842,22 +842,73 @@ class _LobbyErrorScreen extends StatelessWidget {
 }
 
 /// 玩家抽屉
-class _PlayersDrawer extends StatelessWidget {
+class _PlayersDrawer extends StatefulWidget {
   final LobbyState state;
   final VoidCallback onClose;
 
   const _PlayersDrawer({required this.state, required this.onClose});
 
+  @override
+  State<_PlayersDrawer> createState() => _PlayersDrawerState();
+}
+
+class _PlayersDrawerState extends State<_PlayersDrawer> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  /// 状态筛选：null=全部, 'online'=在线, 'inGame'=游戏中, 'queuing'=挤服中
+  String? _statusFilter;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   List<LobbyUser> _getDisplayUsers() {
     // 优先使用全服用户列表，如果没有则使用当前房间用户列表作为降级
-    final users = state.allOnlineUsers.isNotEmpty
-        ? state.allOnlineUsers
-        : state.users;
-    return users.where((user) => user.isOnline).toList()..sort((a, b) {
+    final users = widget.state.allOnlineUsers.isNotEmpty
+        ? widget.state.allOnlineUsers
+        : widget.state.users;
+    var filtered = users.where((user) => user.isOnline).toList();
+
+    // 搜索过滤
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      filtered = filtered.where((user) =>
+        user.displayName.toLowerCase().contains(query)
+      ).toList();
+    }
+
+    // 状态过滤
+    if (_statusFilter != null) {
+      filtered = filtered.where((user) {
+        final status = (user.statusText ?? '在线').toLowerCase();
+        switch (_statusFilter) {
+          case 'online':
+            return !status.contains('游戏中') &&
+                   !status.contains('挤服') &&
+                   !status.contains('热身') &&
+                   !status.contains('主菜单');
+          case 'inGame':
+            return status.contains('游戏中') ||
+                   status.contains('热身') ||
+                   status.contains('主菜单');
+          case 'queuing':
+            return status.contains('挤服');
+          default:
+            return true;
+        }
+      }).toList();
+    }
+
+    // 排序：自己始终在最前
+    filtered.sort((a, b) {
       if (a.isSelf) return -1;
       if (b.isSelf) return 1;
       return a.displayName.compareTo(b.displayName);
     });
+
+    return filtered;
   }
 
   @override
@@ -865,18 +916,18 @@ class _PlayersDrawer extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final displayUsers = _getDisplayUsers();
     // 优先使用全服人数，否则使用当前房间人数
-    final onlineCount = state.allOnlineUsers.isNotEmpty
-        ? state.totalOnlineCount
-        : state.onlineCount;
+    final onlineCount = widget.state.allOnlineUsers.isNotEmpty
+        ? widget.state.totalOnlineCount
+        : widget.state.onlineCount;
     final isLoading =
-        state.isLoadingAllOnlineUsers && state.allOnlineUsers.isEmpty;
+        widget.state.isLoadingAllOnlineUsers && widget.state.allOnlineUsers.isEmpty;
 
     return Row(
       children: [
         // 半透明背景遮罩（点击可关闭）
         Expanded(
           child: GestureDetector(
-            onTap: onClose,
+            onTap: widget.onClose,
             behavior: HitTestBehavior.opaque,
             child: Container(color: Colors.transparent),
           ),
@@ -905,6 +956,9 @@ class _PlayersDrawer extends StatelessWidget {
               // 抽屉标题栏
               _DrawerHeader(title: '在线玩家', onlineCount: onlineCount),
               const Divider(height: 1, color: Colors.white10),
+              // 搜索和筛选栏
+              _buildFilterBar(),
+              const Divider(height: 1, color: Colors.white10),
               // 玩家列表
               Expanded(
                 child: isLoading
@@ -930,10 +984,12 @@ class _PlayersDrawer extends StatelessWidget {
                         ),
                       )
                     : displayUsers.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Text(
-                          '暂无在线玩家',
-                          style: TextStyle(color: Colors.white38, fontSize: 14),
+                          _searchQuery.isNotEmpty || _statusFilter != null
+                              ? '没有匹配的玩家'
+                              : '暂无在线玩家',
+                          style: const TextStyle(color: Colors.white38, fontSize: 14),
                         ),
                       )
                     : ListView.builder(
@@ -949,6 +1005,155 @@ class _PlayersDrawer extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildFilterBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Column(
+        children: [
+          // 搜索框
+          Container(
+            height: 34,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) => setState(() => _searchQuery = value),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+              ),
+              decoration: InputDecoration(
+                hintText: '搜索玩家...',
+                hintStyle: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  fontSize: 13,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  size: 16,
+                  color: Colors.white.withValues(alpha: 0.3),
+                ),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? GestureDetector(
+                        onTap: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                        child: Icon(
+                          Icons.close,
+                          size: 14,
+                          color: Colors.white.withValues(alpha: 0.3),
+                        ),
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.transparent,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                isDense: true,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // 状态筛选标签
+          SizedBox(
+            height: 28,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _buildFilterChip(null, '全部'),
+                const SizedBox(width: 6),
+                _buildFilterChip('online', '在线'),
+                const SizedBox(width: 6),
+                _buildFilterChip('inGame', '游戏中'),
+                const SizedBox(width: 6),
+                _buildFilterChip('queuing', '挤服中'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String? filterValue, String label) {
+    final isSelected = _statusFilter == filterValue;
+    return _HoverFilterChip(
+      label: label,
+      isSelected: isSelected,
+      onTap: () => setState(() => _statusFilter = filterValue),
+    );
+  }
+}
+
+class _HoverFilterChip extends StatefulWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _HoverFilterChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  State<_HoverFilterChip> createState() => _HoverFilterChipState();
+}
+
+class _HoverFilterChipState extends State<_HoverFilterChip> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: widget.isSelected
+                ? const Color(0xFF1D9BF0).withValues(alpha: 0.25)
+                : _hovered
+                    ? Colors.white.withValues(alpha: 0.10)
+                    : Colors.white.withValues(alpha: 0.04),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: widget.isSelected
+                  ? const Color(0xFF1D9BF0).withValues(alpha: 0.5)
+                  : _hovered
+                      ? Colors.white.withValues(alpha: 0.18)
+                      : Colors.white.withValues(alpha: 0.08),
+            ),
+          ),
+          child: Text(
+            widget.label,
+            style: TextStyle(
+              color: widget.isSelected
+                  ? const Color(0xFF1D9BF0)
+                  : _hovered
+                      ? Colors.white.withValues(alpha: 0.85)
+                      : Colors.white.withValues(alpha: 0.5),
+              fontSize: 11,
+              fontWeight: widget.isSelected ? FontWeight.w700 : FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
