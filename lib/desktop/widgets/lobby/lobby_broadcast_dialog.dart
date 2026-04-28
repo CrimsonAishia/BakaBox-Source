@@ -18,7 +18,7 @@ class _LobbyBroadcastDialogState extends State<LobbyBroadcastDialog> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
 
-  static const int _maxLength = 50;
+  static const int _maxLength = 100;
 
   @override
   void initState() {
