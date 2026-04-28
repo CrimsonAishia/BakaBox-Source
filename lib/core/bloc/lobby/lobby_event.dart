@@ -303,16 +303,6 @@ class LobbyOnlineStatsRequested extends LobbyEvent {
   const LobbyOnlineStatsRequested();
 }
 
-/// 切换广播通知窗口显示
-class LobbyBroadcastNotificationsToggled extends LobbyEvent {
-  final bool value;
-
-  const LobbyBroadcastNotificationsToggled(this.value);
-
-  @override
-  List<Object?> get props => [value];
-}
-
 /// 内部事件：设置选项超时（等待服务器确认超时后触发）
 class _LobbySettingTimeout extends LobbyEvent {
   final String settingKey;

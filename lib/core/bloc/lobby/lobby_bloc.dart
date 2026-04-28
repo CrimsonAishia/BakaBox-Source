@@ -118,7 +118,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     on<LobbyPortalDialogDismissed>(_onPortalDialogDismissed);
     on<LobbyOnlineStatsRequested>(_onOnlineStatsRequested);
     on<LobbyNotificationExpired>(_onNotificationExpired);
-    on<LobbyBroadcastNotificationsToggled>(_onBroadcastNotificationsToggled);
     on<_LobbySettingTimeout>(_onSettingTimeout);
     on<_LobbySettingsTimeoutCheck>(_onSettingsTimeoutCheck);
     on<LobbyKickedDismissed>(_onKickedDismissed);
@@ -148,6 +147,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   Timer? _broadcastCooldownTimer;
   Timer? _anonymousSwitchCooldownTimer;
   Timer? _steamNameSwitchCooldownTimer;
+
+  /// 广播消息 Stream，仅在收到 broadcast.message 事件时发出
+  /// GlobalBroadcastBar 订阅此 Stream 来显示底部广播条
+  final _broadcastController = StreamController<LobbyMessage>.broadcast();
+  Stream<LobbyMessage> get broadcastStream => _broadcastController.stream;
   Timer? _settingsTimeoutTimer;
   Timer? _transientNoticeTimer;
   StreamSubscription<LobbyWsEvent>? _snapshotOnAssetsReceived;
@@ -247,7 +251,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         showNameplates: _service.loadShowNameplates(),
         showChatBubbles: _service.loadShowChatBubbles(),
         useSteamName: _service.loadUseSteamName(),
-        showBroadcastNotifications: _service.loadShowBroadcastNotifications(),
         // 如果有缓存的 assets，先设置上
         assets: cachedAssets ?? state.assets,
         // 进入 loading 状态，显示 Loading UI
@@ -305,11 +308,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _assetsTimeoutTimer = null;
 
     // 防重入：监听器回调与缓存检查可能同时命中，只处理第一次
-    var _handled = false;
+    var handled = false;
 
     Future<void> handleAssetsPayload(LobbyWsEvent wsEvent) async {
-      if (_handled) return;
-      _handled = true;
+      if (handled) return;
+      handled = true;
 
       _snapshotOnAssetsReceived?.cancel();
       _snapshotOnAssetsReceived = null;
@@ -335,7 +338,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     await _service.requestAssets();
 
     // 缓存兜底：assets 可能在监听器注册之前就已被 _wsSubscription 消费并缓存
-    if (!_handled && _service.hasAssetsReceived) {
+    if (!handled && _service.hasAssetsReceived) {
       final cachedPayload = _service.getLastAssetsPayload();
       if (cachedPayload != null) {
         LogService.d('[LobbyBloc] _requestAssetsAndSnapshot: 使用缓存 assets payload');
@@ -351,7 +354,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     }
 
     // 超时兜底：WS 未连接或服务器无响应时，15 秒后重新发起整个流程
-    if (!_handled) {
+    if (!handled) {
       _assetsTimeoutTimer = Timer(const Duration(seconds: 15), () {
         if (_isDisposed || !_isLobbyEntered) return;
         if (state.pageStatus != LobbyPageStatus.loading) return;
@@ -1863,6 +1866,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           );
           final updatedMessages = _limitMessages([...state.messages, broadcastLobbyMessage]);
 
+          // 通过 Stream 通知 GlobalBroadcastBar 显示底部广播条（桌面端使用）
+          _broadcastController.add(broadcastLobbyMessage);
+
           // 根据设置选择通知方式
           final rawIndex = StorageUtils.getInt('broadcast_notification_type') ?? 0;
           final safeIndex = rawIndex.clamp(0, BroadcastNotificationType.values.length - 1);
@@ -2598,6 +2604,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       return _ChatState(users: state.users, messages: state.messages);
     }
 
+    // 如果是自己发送的消息，直接忽略
+    // 因为本地已经在发送时立即显示了（乐观更新）
+    if (_isSelfServerUserId(message.userId)) {
+      return _ChatState(users: state.users, messages: state.messages);
+    }
+
     // 规范化消息发送者的 userId，以便与用户列表匹配
     final normalizedUserId = _normalizeUserId(message.userId);
     final normalizedMessage = LobbyMessage(
@@ -2878,26 +2890,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     await _service.requestOnlineStats(includeUsers: true);
   }
 
-  Future<void> _onBroadcastNotificationsToggled(
-    LobbyBroadcastNotificationsToggled event,
-    Emitter<LobbyState> emit,
-  ) async {
-    const settingKey = 'broadcastNotifications';
-    final updatedPending = Map<String, bool>.from(state.pendingSettings);
-    updatedPending[settingKey] = event.value;
-
-    emit(state.copyWith(
-      showBroadcastNotifications: event.value,
-      pendingSettings: updatedPending,
-      pendingSettingsTimeouts: {
-        ...state.pendingSettingsTimeouts,
-        settingKey: DateTime.now().add(const Duration(seconds: 3)),
-      },
-    ));
-    _scheduleSettingsTimeoutCheck();
-    await _service.setShowBroadcastNotifications(event.value);
-  }
-
   /// 处理玩家通知过期（从显示队列中移除）
   void _onNotificationExpired(
     LobbyNotificationExpired event,
@@ -3016,6 +3008,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _statusTextDebounceTimer?.cancel();
     await _wsSubscription?.cancel();
     await _gameStatusSubscription?.cancel();
+    await _broadcastController.close();
     // 注销 AuthService 登录状态监听
     AuthService.instance.removeLoginStateListener(_authStateListener);
     // 不调用 _service.dispose()：LobbyWsService 是单例，跨 LobbyBloc 生命周期复用

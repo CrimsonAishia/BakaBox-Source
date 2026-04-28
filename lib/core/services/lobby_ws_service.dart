@@ -44,7 +44,6 @@ class LobbyWsService {
   static const String keyChatOpacity = 'lobby_chat_opacity';
   static const String keyShowNameplates = 'lobby_show_nameplates';
   static const String keyShowChatBubbles = 'lobby_show_chat_bubbles';
-  static const String keyShowBroadcastNotifications = 'lobby_show_broadcast_notifications';
   static const String keyUseSteamName = 'lobby_use_steam_name';
 
   final StreamController<LobbyWsEvent> _eventController =
@@ -496,10 +495,6 @@ class LobbyWsService {
     await StorageUtils.setBool(keyShowChatBubbles, value);
   }
 
-  Future<void> setShowBroadcastNotifications(bool value) async {
-    await StorageUtils.setBool(keyShowBroadcastNotifications, value);
-  }
-
   Future<void> setUseSteamName(bool value) async {
     await StorageUtils.setBool(keyUseSteamName, value);
     if (AuthService.instance.isLoggedIn && !loadAnonymousMode()) {
@@ -570,10 +565,6 @@ class LobbyWsService {
 
   bool loadShowChatBubbles() {
     return StorageUtils.getBool(keyShowChatBubbles, defaultValue: true);
-  }
-
-  bool loadShowBroadcastNotifications() {
-    return StorageUtils.getBool(keyShowBroadcastNotifications, defaultValue: true);
   }
 
   bool loadUseSteamName() {

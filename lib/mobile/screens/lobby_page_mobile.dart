@@ -50,9 +50,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
   int _transientNoticeId = 0;
   Timer? _transientNoticeTimer;
 
-  // 记录上次已触发通知的消息 ID，防止同一条消息重复通知
-  String? _lastNotifiedMessageId;
-  // 记录上次看到的消息数量，只有消息真正新增时才检查广播通知
+  // 记录上次看到的消息数量，只有消息真正新增时才累加未读数
   int _lastSeenMessageCount = 0;
 
   // ─── 聊天未读消息计数 ────────────────────────────────────
@@ -343,10 +341,10 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
             _syncTeleportAnimation(state);
           });
 
-          // ─── 广播系统通知 ─────────────────────────────────────
-          // 只在消息列表真正新增（count 增加）且是单条追加时才检查广播通知。
+          // ─── 未读消息计数 ─────────────────────────────────────
+          // 只在消息列表真正新增（count 增加）且是单条追加时才累加未读数。
           // 快照恢复 / 重连刷新会一次性替换整个 messages 列表（批量变化），
-          // 此时只更新计数基线，不触发通知。
+          // 此时只更新计数基线，不累加未读数。
           final currentCount = state.messages.length;
           final isNewSingleMessage =
               currentCount > 0 && currentCount == _lastSeenMessageCount + 1;
@@ -359,17 +357,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
                 _unreadMessageCount++;
               });
             }
-
-            final lastMessage = state.messages.last;
-            if (lastMessage.type == LobbyMessageType.broadcast &&
-                lastMessage.messageId != _lastNotifiedMessageId &&
-                state.showBroadcastNotifications) {
-              _lastNotifiedMessageId = lastMessage.messageId;
-              BroadcastNotificationService.instance.showBroadcastNotification(
-                sender: lastMessage.displayName,
-                content: lastMessage.content,
-              );
-            }
+            // 广播通知已在 LobbyBloc 中统一处理，这里不再重复调用
           }
 
           // ─── 更新前台保活通知 ─────────────────────────────────
