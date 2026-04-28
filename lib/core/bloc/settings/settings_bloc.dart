@@ -35,6 +35,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       'update_log_notification_enabled';
   static const String _keyAppExitBehavior = 'app_exit_behavior';
   static const String _keyServerSortMode = 'server_sort_mode';
+  static const String _keyBroadcastNotificationType = 'broadcast_notification_type';
 
   final AudioService _audioService = AudioService();
   final GamePathService _gamePathService = GamePathService();
@@ -81,6 +82,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     );
     on<SettingsSetAppExitBehavior>(_onSetAppExitBehavior);
     on<SettingsSetServerSortMode>(_onSetServerSortMode);
+    on<SettingsSetBroadcastNotificationType>(_onSetBroadcastNotificationType);
   }
 
   Future<void> _onInit(SettingsInit event, Emitter<SettingsState> emit) async {
@@ -131,12 +133,20 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
           StorageUtils.getInt(_keyAppExitBehavior) ?? AppExitBehavior.ask.index;
       final serverSortModeIndex =
           StorageUtils.getInt(_keyServerSortMode) ?? ServerSortMode.manual.index;
+      final broadcastNotificationTypeIndex =
+          StorageUtils.getInt(_keyBroadcastNotificationType) ??
+          BroadcastNotificationType.software.index;
       final notificationPosition =
           NotificationPositionType.values[notificationPositionIndex];
       final floatingWindowPosition =
           NotificationPositionType.values[floatingWindowPositionIndex];
       final appExitBehavior = AppExitBehavior.values[appExitBehaviorIndex];
       final serverSortMode = ServerSortMode.values[serverSortModeIndex];
+      final broadcastNotificationType =
+          BroadcastNotificationType.values[broadcastNotificationTypeIndex.clamp(
+            0,
+            BroadcastNotificationType.values.length - 1,
+          )];
 
       // 同步通知位置到 NotificationWindowService
       if (PlatformUtils.isDesktopPlatform) {
@@ -158,6 +168,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
           updateLogNotificationEnabled: updateLogNotificationEnabled,
           appExitBehavior: appExitBehavior,
           serverSortMode: serverSortMode,
+          broadcastNotificationType: broadcastNotificationType,
         ),
       );
     } catch (e) {
@@ -1142,6 +1153,24 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       LogService.d('服务器排序模式已设置: ${event.mode.displayName}');
     } catch (e) {
       LogService.e('设置服务器排序模式失败', e);
+    }
+  }
+
+  // ==================== 广播通知方式设置事件处理 ====================
+
+  Future<void> _onSetBroadcastNotificationType(
+    SettingsSetBroadcastNotificationType event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      await StorageUtils.setInt(
+        _keyBroadcastNotificationType,
+        event.notificationType.index,
+      );
+      emit(state.copyWith(broadcastNotificationType: event.notificationType));
+      LogService.d('广播通知方式已设置: ${event.notificationType.displayName}');
+    } catch (e) {
+      LogService.e('设置广播通知方式失败', e);
     }
   }
 

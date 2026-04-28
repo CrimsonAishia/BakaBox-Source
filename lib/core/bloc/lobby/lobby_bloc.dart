@@ -17,10 +17,13 @@ import '../../services/lobby_image_cache_service.dart';
 import '../../services/lobby_map_loader_service.dart';
 import '../../services/lobby_ws_service.dart';
 import '../../services/notification_window_service.dart';
+import '../../services/broadcast_notification_service.dart';
 import '../../services/server_address_mapping_service.dart';
 import '../../services/status_window_service.dart';
 import '../../services/steam_user_service.dart';
 import '../../utils/log_service.dart';
+import '../../utils/storage_utils.dart';
+import '../settings/settings_state.dart';
 
 part 'lobby_event.dart';
 part 'lobby_state.dart';
@@ -1860,8 +1863,21 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           );
           final updatedMessages = _limitMessages([...state.messages, broadcastLobbyMessage]);
 
-          // 如果开启了广播通知，显示通知窗口
-          if (state.showBroadcastNotifications) {
+          // 根据设置选择通知方式
+          final rawIndex = StorageUtils.getInt('broadcast_notification_type') ?? 0;
+          final safeIndex = rawIndex.clamp(0, BroadcastNotificationType.values.length - 1);
+          final broadcastNotificationType = BroadcastNotificationType.values[safeIndex];
+
+          if (broadcastNotificationType == BroadcastNotificationType.system) {
+            unawaited(
+              BroadcastNotificationService.instance.showBroadcastNotification(
+                sender: broadcast.nickname,
+                content: broadcast.content,
+                avatarUrl: broadcast.avatarUrl,
+              ),
+            );
+          } else {
+            // 软件内浮窗通知
             NotificationWindowService().showBroadcastNotification(
               nickname: broadcast.nickname,
               content: broadcast.content,
@@ -2950,6 +2966,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     final nickname = map['nickname']?.toString();
     final content = map['content']?.toString();
     final timestamp = _parseTimestamp(map['timestamp']);
+    final avatarUrl = map['avatarUrl']?.toString();
     if (messageId == null || userId == null || nickname == null || content == null) {
       return null;
     }
@@ -2960,6 +2977,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       nickname: nickname,
       content: content,
       timestamp: timestamp ?? DateTime.now(),
+      avatarUrl: avatarUrl,
     );
   }
 

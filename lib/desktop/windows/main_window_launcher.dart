@@ -7,6 +7,7 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../core/bootstrap/app_initializer.dart';
 import '../../core/services/app_exit_service.dart';
+import '../../core/services/broadcast_notification_service.dart';
 import '../../core/services/floating_window_service.dart';
 import '../../core/services/notification_window_service.dart';
 import '../../core/services/status_window_service.dart';
@@ -35,6 +36,9 @@ class MainWindowLauncher {
 
     // 初始化主窗口服务
     await AppInitializer.initMainWindowServices();
+
+    // 初始化广播系统通知服务
+    await BroadcastNotificationService.instance.init();
 
     // 初始化状态窗口服务
     StatusWindowService().initialize();

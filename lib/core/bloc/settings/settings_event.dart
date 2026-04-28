@@ -165,3 +165,11 @@ class SettingsSetServerSortMode extends SettingsEvent {
   @override
   List<Object?> get props => [mode];
 }
+
+// 广播通知方式设置事件
+class SettingsSetBroadcastNotificationType extends SettingsEvent {
+  final BroadcastNotificationType notificationType;
+  const SettingsSetBroadcastNotificationType(this.notificationType);
+  @override
+  List<Object?> get props => [notificationType];
+}

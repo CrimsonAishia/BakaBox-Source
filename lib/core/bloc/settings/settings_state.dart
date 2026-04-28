@@ -105,6 +105,33 @@ extension ServerSortModeExtension on ServerSortMode {
   }
 }
 
+/// 广播通知方式枚举
+enum BroadcastNotificationType {
+  software, // 软件内通知（浮窗）
+  system, // 系统通知
+}
+
+/// 广播通知方式扩展
+extension BroadcastNotificationTypeExtension on BroadcastNotificationType {
+  String get displayName {
+    switch (this) {
+      case BroadcastNotificationType.software:
+        return '软件通知';
+      case BroadcastNotificationType.system:
+        return '系统通知';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case BroadcastNotificationType.software:
+        return '在软件内以浮窗形式显示广播消息';
+      case BroadcastNotificationType.system:
+        return '使用系统通知栏显示广播消息（即使软件在后台也能收到）';
+    }
+  }
+}
+
 /// 缓存类型枚举
 enum CacheType {
   cacheFiles, // 图片和临时文件缓存
@@ -271,6 +298,9 @@ class SettingsState extends Equatable {
   // 服务器排序模式
   final ServerSortMode serverSortMode;
 
+  // 广播通知方式
+  final BroadcastNotificationType broadcastNotificationType;
+
   const SettingsState({
     this.appVersion = '',
     this.buildNumber = '',
@@ -297,6 +327,7 @@ class SettingsState extends Equatable {
     this.updateLogNotificationEnabled = true,
     this.appExitBehavior = AppExitBehavior.ask,
     this.serverSortMode = ServerSortMode.manual,
+    this.broadcastNotificationType = BroadcastNotificationType.software,
   });
 
   /// 获取总缓存大小（字节）
@@ -365,6 +396,7 @@ class SettingsState extends Equatable {
     bool? updateLogNotificationEnabled,
     AppExitBehavior? appExitBehavior,
     ServerSortMode? serverSortMode,
+    BroadcastNotificationType? broadcastNotificationType,
   }) {
     return SettingsState(
       appVersion: appVersion ?? this.appVersion,
@@ -397,6 +429,7 @@ class SettingsState extends Equatable {
           updateLogNotificationEnabled ?? this.updateLogNotificationEnabled,
       appExitBehavior: appExitBehavior ?? this.appExitBehavior,
       serverSortMode: serverSortMode ?? this.serverSortMode,
+      broadcastNotificationType: broadcastNotificationType ?? this.broadcastNotificationType,
     );
   }
 
@@ -427,5 +460,6 @@ class SettingsState extends Equatable {
     updateLogNotificationEnabled,
     appExitBehavior,
     serverSortMode,
+    broadcastNotificationType,
   ];
 }
