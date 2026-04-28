@@ -576,6 +576,7 @@ class LobbyBroadcastMessage extends Equatable {
   final String nickname;
   final String content;
   final DateTime timestamp;
+  final String? avatarUrl;
 
   const LobbyBroadcastMessage({
     required this.messageId,
@@ -583,8 +584,9 @@ class LobbyBroadcastMessage extends Equatable {
     required this.nickname,
     required this.content,
     required this.timestamp,
+    this.avatarUrl,
   });
 
   @override
-  List<Object?> get props => [messageId, userId, nickname, content, timestamp];
+  List<Object?> get props => [messageId, userId, nickname, content, timestamp, avatarUrl];
 }

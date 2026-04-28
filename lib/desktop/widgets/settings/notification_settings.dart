@@ -10,6 +10,8 @@ import 'package:window_manager/window_manager.dart';
 import '../../../core/bloc/settings/settings_bloc.dart';
 import '../../../core/bloc/settings/settings_event.dart';
 import '../../../core/bloc/settings/settings_state.dart';
+import '../../../core/services/broadcast_notification_service.dart';
+import '../../../core/services/notification_window_service.dart';
 import '../../../core/utils/log_service.dart';
 import '../notification_position_editor.dart';
 import 'settings_group_title.dart';
@@ -38,6 +40,18 @@ class NotificationSettings extends StatelessWidget {
             settingsState: settingsState,
           ),
           action: const SizedBox.shrink(),
+        ),
+        const SizedBox(height: 30),
+        SettingsGroupTitle(
+          title: '广播通知方式',
+          hasGlow: true,
+          icon: MdiIcons.bullhorn,
+        ),
+        SettingsItem(
+          label: '收到广播时的通知方式',
+          description: '选择收到全服广播消息时的提醒方式。',
+          control: _BroadcastNotificationTypeSelector(settingsState: settingsState),
+          alignTop: true,
         ),
       ],
     );
@@ -455,5 +469,228 @@ class _NotificationPositionEditorWrapperState
       case WindowPositionType.bottomRight:
         return NotificationPositionType.bottomRight;
     }
+  }
+}
+
+/// 广播通知方式选择器（参考窗口设置 Wrap chip 风格）
+class _BroadcastNotificationTypeSelector extends StatelessWidget {
+  final SettingsState settingsState;
+
+  const _BroadcastNotificationTypeSelector({required this.settingsState});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final current = settingsState.broadcastNotificationType;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: BroadcastNotificationType.values.map((type) {
+            final isSelected = current == type;
+            return InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () {
+                context.read<SettingsBloc>().add(
+                  SettingsSetBroadcastNotificationType(type),
+                );
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  gradient: isSelected
+                      ? LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            const Color(0xFF0080FF).withValues(alpha: 0.15),
+                            const Color(0xFF00D4FF).withValues(alpha: 0.08),
+                          ],
+                        )
+                      : null,
+                  color: isSelected
+                      ? null
+                      : (isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFF9FAFB)),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isSelected
+                        ? const Color(0xFF0080FF)
+                        : (isDark
+                              ? const Color(0xFF475569)
+                              : const Color(0xFFE5E7EB)),
+                    width: isSelected ? 2 : 1,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _iconForType(type),
+                      size: 18,
+                      color: isSelected
+                          ? const Color(0xFF0080FF)
+                          : (isDark ? Colors.white70 : const Color(0xFF6B7280)),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      type.displayName,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w500,
+                        color: isSelected
+                            ? const Color(0xFF0080FF)
+                            : (isDark ? Colors.white : const Color(0xFF374151)),
+                      ),
+                    ),
+                    if (isSelected) ...[
+                      const SizedBox(width: 6),
+                      Icon(
+                        MdiIcons.checkCircle,
+                        size: 16,
+                        color: const Color(0xFF0080FF),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 10),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: Text(
+            current.description,
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.45,
+              color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        _BroadcastNotificationTestButton(settingsState: settingsState),
+      ],
+    );
+  }
+
+  IconData _iconForType(BroadcastNotificationType type) {
+    switch (type) {
+      case BroadcastNotificationType.software:
+        return MdiIcons.bellOutline;
+      case BroadcastNotificationType.system:
+        return MdiIcons.microsoftWindows;
+    }
+  }
+}
+
+/// 广播通知测试按钮
+class _BroadcastNotificationTestButton extends StatefulWidget {
+  final SettingsState settingsState;
+
+  const _BroadcastNotificationTestButton({required this.settingsState});
+
+  @override
+  State<_BroadcastNotificationTestButton> createState() =>
+      _BroadcastNotificationTestButtonState();
+}
+
+class _BroadcastNotificationTestButtonState
+    extends State<_BroadcastNotificationTestButton> {
+  bool _isSending = false;
+
+  Future<void> _sendTest() async {
+    if (_isSending) return;
+    setState(() => _isSending = true);
+
+    try {
+      final type = widget.settingsState.broadcastNotificationType;
+      if (type == BroadcastNotificationType.system) {
+        await BroadcastNotificationService.instance.showBroadcastNotification(
+          sender: 'BakaBox',
+          content: '这是一条系统通知测试消息',
+        );
+      } else {
+        NotificationWindowService().showBroadcastNotification(
+          nickname: 'BakaBox',
+          content: '这是一条软件通知测试消息',
+        );
+      }
+    } catch (e) {
+      LogService.e('[NotificationTest] 测试通知发送失败', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('通知发送失败，请检查系统通知权限'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+
+    // 短暂禁用按钮防止连点
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) setState(() => _isSending = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: AnimatedOpacity(
+        opacity: _isSending ? 0.5 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        child: OutlinedButton.icon(
+          onPressed: _isSending ? null : _sendTest,
+          icon: _isSending
+              ? SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: isDark
+                        ? Colors.white54
+                        : const Color(0xFF6366F1),
+                  ),
+                )
+              : const Icon(Icons.notifications_active_outlined, size: 16),
+          label: Text(_isSending ? '已发送' : '发送测试通知'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: isDark
+                ? Colors.white70
+                : const Color(0xFF6366F1),
+            side: BorderSide(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.15)
+                  : const Color(0xFF6366F1).withValues(alpha: 0.4),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -131,15 +131,6 @@ class LobbySettingsPanel extends StatelessWidget {
                         LobbyChatBubblesToggled(value),
                       ),
                     ),
-                    // 广播通知
-                    _SettingsSwitchTile(
-                      title: '广播通知',
-                      subtitle: '屏蔽通知窗口，仍会在聊天栏显示',
-                      value: state.showBroadcastNotifications,
-                      onChanged: (value) => context.read<LobbyBloc>().add(
-                        LobbyBroadcastNotificationsToggled(value),
-                      ),
-                    ),
                   ],
                 ),
               ),
