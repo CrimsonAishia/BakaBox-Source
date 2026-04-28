@@ -50,7 +50,11 @@ class _NotificationPanelState extends State<NotificationPanel>
   }
 
   void _onScroll() {
-    if (!_notificationScrollController.hasClients) return;
+    _checkLoadMore();
+  }
+
+  void _checkLoadMore() {
+    if (!mounted || !_notificationScrollController.hasClients) return;
 
     final position = _notificationScrollController.position;
     final maxScroll = position.maxScrollExtent;
@@ -511,7 +515,15 @@ class _NotificationPanelState extends State<NotificationPanel>
       children: [
         _buildNotificationToolbar(isDark),
         Expanded(
-          child: BlocBuilder<NotificationBloc, NotificationState>(
+          child: BlocConsumer<NotificationBloc, NotificationState>(
+            listener: (context, state) {
+              // 监听状态变化（如删除消息后），如果是未加载中且还有更多，检查是否需要加载
+              if (!state.isLoading && !state.isLoadingMore && state.hasMore) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _checkLoadMore();
+                });
+              }
+            },
             builder: (context, state) {
               if (state.isLoading && state.notifications.isEmpty) {
                 return _buildLoadingState();
