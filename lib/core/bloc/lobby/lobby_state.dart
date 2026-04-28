@@ -111,8 +111,6 @@ class LobbyState extends Equatable {
   final bool isLoadingAllOnlineUsers;
   /// 服务器在线总人数（定时刷新，用于玩家按钮徽章）
   final int serverOnlineCount;
-  /// 是否显示广播通知窗口
-  final bool showBroadcastNotifications;
   /// 设置选项的 pending 状态（用于服务器确认/拒绝）
   final Map<String, bool> pendingSettings;
   /// pending 状态的超时时间（key: 设置项名, value: 超时截止时间）
@@ -158,7 +156,6 @@ class LobbyState extends Equatable {
     this.allOnlineUsers = const [],
     this.isLoadingAllOnlineUsers = false,
     this.serverOnlineCount = 0,
-    this.showBroadcastNotifications = true,
     this.pendingSettings = const {},
     this.pendingSettingsTimeouts = const {},
     this.anonymousSwitchCooldownSeconds = 0,
@@ -199,7 +196,6 @@ class LobbyState extends Equatable {
       allOnlineUsers: [],
       isLoadingAllOnlineUsers: false,
       serverOnlineCount: 0,
-      showBroadcastNotifications: true,
       pendingSettings: {},
       pendingSettingsTimeouts: {},
       anonymousSwitchCooldownSeconds: 0,
@@ -262,7 +258,6 @@ class LobbyState extends Equatable {
     Object? allOnlineUsers = _stateSentinel,
     bool? isLoadingAllOnlineUsers,
     int? serverOnlineCount,
-    bool? showBroadcastNotifications,
     Object? pendingSettings = _stateSentinel,
     Object? pendingSettingsTimeouts = _stateSentinel,
     int? anonymousSwitchCooldownSeconds,
@@ -335,7 +330,6 @@ class LobbyState extends Equatable {
           : allOnlineUsers as List<LobbyUser>,
       isLoadingAllOnlineUsers: isLoadingAllOnlineUsers ?? this.isLoadingAllOnlineUsers,
       serverOnlineCount: serverOnlineCount ?? this.serverOnlineCount,
-      showBroadcastNotifications: showBroadcastNotifications ?? this.showBroadcastNotifications,
       pendingSettings: identical(pendingSettings, _stateSentinel)
           ? this.pendingSettings
           : pendingSettings as Map<String, bool>,
@@ -394,7 +388,6 @@ class LobbyState extends Equatable {
     allOnlineUsers,
     isLoadingAllOnlineUsers,
     serverOnlineCount,
-    showBroadcastNotifications,
     pendingSettings,
     pendingSettingsTimeouts,
     anonymousSwitchCooldownSeconds,

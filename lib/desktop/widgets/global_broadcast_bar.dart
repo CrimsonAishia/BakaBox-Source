@@ -2,7 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../core/core.dart';
+import '../../core/bloc/lobby/lobby_bloc.dart';
+import '../../core/models/lobby_models.dart';
 
 /// 全局底部广播通知栏
 /// 收到广播消息时从底部滑入，30秒后自动消失；新消息直接顶替旧消息
@@ -25,11 +26,11 @@ class _GlobalBroadcastBarState extends State<GlobalBroadcastBar>
   Timer? _countdownTimer;
   int _remainingSeconds = 30;
 
-  // 用最后一条已处理的 broadcast 消息 ID 来追踪，避免 length 比较的竞态问题
-  String? _lastHandledMessageId;
-
   // 标记是否正在执行 dismiss 的 reverse 动画，防止 reverse 完成后覆盖新消息
   bool _isDismissing = false;
+
+  // 订阅 LobbyBloc 的广播 Stream
+  StreamSubscription<LobbyMessage>? _broadcastSubscription;
 
   static const int _displaySeconds = 30;
 
@@ -53,7 +54,20 @@ class _GlobalBroadcastBarState extends State<GlobalBroadcastBar>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 订阅 LobbyBloc 的广播 Stream
+    _broadcastSubscription?.cancel();
+    _broadcastSubscription = context.read<LobbyBloc>().broadcastStream.listen(
+      (broadcast) {
+        _showBroadcast(broadcast.nickname, broadcast.content);
+      },
+    );
+  }
+
+  @override
   void dispose() {
+    _broadcastSubscription?.cancel();
     _hideTimer?.cancel();
     _countdownTimer?.cancel();
     _controller.dispose();
@@ -112,59 +126,24 @@ class _GlobalBroadcastBarState extends State<GlobalBroadcastBar>
     });
   }
 
-  // 标记下一次 messages 变化是否来自快照（loading → ready 的那次）
-  bool _suppressNextBroadcast = false;
-
   @override
   Widget build(BuildContext context) {
-    return BlocListener<LobbyBloc, LobbyState>(
-      listenWhen: (prev, curr) {
-        // 检测快照加载完成（loading → ready），标记下一次 messages 变化需要静默
-        if (prev.pageStatus == LobbyPageStatus.loading &&
-            curr.pageStatus == LobbyPageStatus.ready) {
-          _suppressNextBroadcast = true;
-        }
-        return curr.messages != prev.messages;
-      },
-      listener: (context, state) {
-        // 找最新的一条 broadcast
-        LobbyMessage? latestBroadcast;
-        for (int i = state.messages.length - 1; i >= 0; i--) {
-          if (state.messages[i].type == LobbyMessageType.broadcast) {
-            latestBroadcast = state.messages[i];
-            break;
-          }
-        }
+    if (_nickname == null) {
+      return const SizedBox.shrink();
+    }
 
-        // 快照带来的这次 messages 变化，无论有没有广播都要消费掉 suppress 标记
-        final suppress = _suppressNextBroadcast;
-        _suppressNextBroadcast = false;
-
-        if (latestBroadcast == null) return;
-        if (latestBroadcast.messageId == _lastHandledMessageId) return;
-
-        _lastHandledMessageId = latestBroadcast.messageId;
-
-        // 快照带来的历史广播，只标记不弹出
-        if (suppress) return;
-
-        _showBroadcast(latestBroadcast.nickname, latestBroadcast.content);
-      },
-      child: _nickname == null
-          ? const SizedBox.shrink()
-          : SlideTransition(
-              position: _slideAnimation,
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: _BroadcastBarContent(
-                  nickname: _nickname!,
-                  content: _content!,
-                  remainingSeconds: _remainingSeconds,
-                  totalSeconds: _displaySeconds,
-                  onClose: _dismiss,
-                ),
-              ),
-            ),
+    return SlideTransition(
+      position: _slideAnimation,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: _BroadcastBarContent(
+          nickname: _nickname!,
+          content: _content!,
+          remainingSeconds: _remainingSeconds,
+          totalSeconds: _displaySeconds,
+          onClose: _dismiss,
+        ),
+      ),
     );
   }
 }
