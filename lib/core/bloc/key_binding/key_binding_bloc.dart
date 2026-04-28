@@ -77,16 +77,26 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
         );
         LogService.d('[KeyBindingBloc] 加载配置列表成功，共 ${response.items.length} 条');
       } else {
-        emit(state.copyWith(isLoading: false, error: '加载配置列表失败'));
+        // 用户主动刷新时才显示错误，后台静默刷新不覆盖 successMessage
+        if (event.showSuccessMessage) {
+          emit(state.copyWith(isLoading: false, error: '加载配置列表失败'));
+        } else {
+          emit(state.copyWith(isLoading: false));
+        }
       }
     } catch (e) {
       LogService.e('[KeyBindingBloc] 加载配置列表失败', e);
-      emit(
-        state.copyWith(
-          isLoading: false,
-          error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载配置列表失败'),
-        ),
-      );
+      // 用户主动刷新时才显示错误，后台静默刷新不覆盖 successMessage
+      if (event.showSuccessMessage) {
+        emit(
+          state.copyWith(
+            isLoading: false,
+            error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载配置列表失败'),
+          ),
+        );
+      } else {
+        emit(state.copyWith(isLoading: false));
+      }
     }
   }
 
@@ -820,16 +830,26 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
           '[KeyBindingBloc] 加载用户配置列表成功，共 ${response.items.length} 条',
         );
       } else {
-        emit(state.copyWith(isLoadingMyConfigs: false, error: '加载我的配置列表失败'));
+        // 用户主动刷新时才显示错误，后台静默刷新不覆盖 successMessage
+        if (event.showSuccessMessage) {
+          emit(state.copyWith(isLoadingMyConfigs: false, error: '加载我的配置列表失败'));
+        } else {
+          emit(state.copyWith(isLoadingMyConfigs: false));
+        }
       }
     } catch (e) {
       LogService.e('[KeyBindingBloc] 加载用户配置列表失败', e);
-      emit(
-        state.copyWith(
-          isLoadingMyConfigs: false,
-          error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载我的配置列表失败'),
-        ),
-      );
+      // 用户主动刷新时才显示错误，后台静默刷新不覆盖 successMessage
+      if (event.showSuccessMessage) {
+        emit(
+          state.copyWith(
+            isLoadingMyConfigs: false,
+            error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载我的配置列表失败'),
+          ),
+        );
+      } else {
+        emit(state.copyWith(isLoadingMyConfigs: false));
+      }
     }
   }
 
@@ -1028,12 +1048,8 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       }
     } catch (e) {
       LogService.e('[KeyBindingBloc] 加载变更申请列表失败', e);
-      emit(
-        state.copyWith(
-          isLoadingChangeRequests: false,
-          error: ErrorUtils.getErrorMessage(e, defaultMessage: '加载变更申请列表失败'),
-        ),
-      );
+      // 仅重置加载状态，不覆盖 successMessage（避免掩盖前序操作的成功提示）
+      emit(state.copyWith(isLoadingChangeRequests: false));
     }
   }
 
