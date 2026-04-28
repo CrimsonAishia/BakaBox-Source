@@ -17,7 +17,7 @@ class FloatingChatButton extends StatefulWidget {
 
   const FloatingChatButton({
     super.key,
-    this.initialBottom = 50,
+    this.initialBottom = 100,
     this.initialRight = 50,
   });
 
@@ -28,6 +28,37 @@ class FloatingChatButton extends StatefulWidget {
 class _FloatingChatButtonState extends State<FloatingChatButton>
     with TickerProviderStateMixin {
   late AnimationController _hoverController;
+
+  /// Controls the button opacity: 1.0 = fully visible, 0.0 = fully transparent.
+  /// We clamp the actual displayed opacity between [_minOpacity] and 1.0.
+  late AnimationController _opacityController;
+  late Animation<double> _opacityAnimation;
+
+  /// New-message notification animation: bounce + ripple.
+  late AnimationController _notifyController;
+  late Animation<double> _notifyScale;
+  late Animation<double> _rippleScale;
+  late Animation<double> _rippleOpacity;
+
+  /// Minimum opacity — button is always visible enough to locate.
+  static const double _minOpacity = 0.35;
+
+  /// Opacity when active (unread messages / recently interacted).
+  static const double _maxOpacity = 1.0;
+
+  /// How long to stay fully visible after a user interaction (tap/drag).
+  static const Duration _activeHoldDuration = Duration(seconds: 10);
+
+  /// How long the fade-out transition takes.
+  static const Duration _fadeDuration = Duration(seconds: 3);
+
+  Timer? _activeHoldTimer;
+  bool _isHovered = false;
+
+  /// Prevent double-firing the notify animation from both _addBubble and
+  /// the FloatingChatCubit unreadCount listener in the same frame.
+  bool _notifyScheduledThisFrame = false;
+
   final List<BubbleEntry> _bubbles = [];
   bool _isPanelOpen = false;
 
@@ -64,18 +95,137 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
       vsync: this,
       duration: const Duration(milliseconds: 150),
     );
+
+    // Start fully visible, then fade to min after the hold duration.
+    _opacityController = AnimationController(
+      vsync: this,
+      value: 1.0, // start fully visible
+    );
+    _opacityAnimation = Tween<double>(begin: _minOpacity, end: _maxOpacity)
+        .animate(_opacityController);
+
+    // New-message notify animation (total ~700ms).
+    _notifyController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    // Bounce: 1.0 → 1.22 → 0.93 → 1.0 using a custom curve sequence.
+    _notifyScale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 1.0, end: 1.22)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 30,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.22, end: 0.93)
+            .chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 30,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 0.93, end: 1.0)
+            .chain(CurveTween(curve: Curves.elasticOut)),
+        weight: 40,
+      ),
+    ]).animate(_notifyController);
+    // Ripple scale: button size → 2.4× over the full duration.
+    _rippleScale = Tween<double>(begin: 1.0, end: 2.4).animate(
+      CurvedAnimation(parent: _notifyController, curve: Curves.easeOut),
+    );
+    // Ripple opacity: fade from 0.55 → 0 in the second half.
+    _rippleOpacity = TweenSequence<double>([
+      TweenSequenceItem(tween: ConstantTween(0.55), weight: 20),
+      TweenSequenceItem(
+        tween: Tween(begin: 0.55, end: 0.0)
+            .chain(CurveTween(curve: Curves.easeIn)),
+        weight: 80,
+      ),
+    ]).animate(_notifyController);
+
+    // Begin the initial fade-out after a short grace period (hold 3s first).
+    _activeHoldTimer = Timer(_activeHoldDuration, _scheduleIdleFade);
   }
 
   @override
   void dispose() {
     _isDisposed = true;
+    _activeHoldTimer?.cancel();
     _hoverController.dispose();
+    _opacityController.dispose();
+    _notifyController.dispose();
     for (final entry in _bubbles) {
       entry.controller.dispose();
       entry.expireTimer.cancel();
     }
     _bubbles.clear();
     super.dispose();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Opacity helpers
+  // ---------------------------------------------------------------------------
+
+  /// Immediately snap to full opacity and restart the idle-fade timer.
+  void _activateOpacity() {
+    _activeHoldTimer?.cancel();
+    _opacityController.animateTo(
+      1.0,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+    );
+    _activeHoldTimer = Timer(_activeHoldDuration, _scheduleIdleFade);
+  }
+
+  /// Fade the button down to [_minOpacity] over [_fadeDuration].
+  void _scheduleIdleFade() {
+    if (_isDisposed) return;
+    _opacityController.animateTo(
+      0.0, // controller 0 → animation value = _minOpacity
+      duration: _fadeDuration,
+      curve: Curves.easeInOut,
+    );
+  }
+
+  /// Called whenever the unread / connection state changes so we can decide
+  /// whether to keep the button fully visible or let it fade.
+  void _updateOpacityForState({
+    required bool hasUnread,
+    required bool isDisconnected,
+  }) {
+    if (hasUnread) {
+      // Always fully visible when there are unread messages.
+      // Don't cancel an active hold timer — it will naturally expire and then
+      // idle-fade, which is fine. We just ensure opacity is at max now.
+      _opacityController.animateTo(
+        1.0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    } else if (isDisconnected) {
+      // Disconnected and no unread — cancel any hold and fade to min.
+      _activeHoldTimer?.cancel();
+      _activeHoldTimer = null;
+      _opacityController.animateTo(
+        0.0,
+        duration: const Duration(seconds: 2),
+        curve: Curves.easeInOut,
+      );
+    }
+    // If connected with no unread, let the existing hold-timer / idle-fade
+    // handle the transition naturally.
+  }
+
+  /// Trigger the bounce + ripple animation when a new message arrives.
+  /// Uses a microtask dedup flag to prevent double-firing when both
+  /// [_addBubble] and the unreadCount BlocListener fire in the same frame.
+  void _triggerNewMessageAnimation() {
+    if (_isPanelOpen) return;
+    if (_notifyScheduledThisFrame) return;
+    _notifyScheduledThisFrame = true;
+    // Reset flag after the current microtask queue drains.
+    Future.microtask(() => _notifyScheduledThisFrame = false);
+    _notifyController
+      ..stop()
+      ..forward(from: 0.0);
   }
 
   /// Computes the allowed [angleMin, angleMax] range so that a bubble placed
@@ -171,6 +321,7 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
 
     controller.forward();
     setState(() => _bubbles.add(entry));
+    _triggerNewMessageAnimation();
   }
 
   void _removeBubble(String id) {
@@ -197,6 +348,7 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
   void _onPanelClose() {
     setState(() => _isPanelOpen = false);
     context.read<FloatingChatCubit>().panelClosed();
+    _activateOpacity();
   }
 
   /// Compute where the panel should be placed relative to the button.
@@ -280,19 +432,51 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
 
             _addBubble(lastMsg);
           },
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final parentSize = Size(
-                constraints.maxWidth,
-                constraints.maxHeight,
+          child: BlocListener<FloatingChatCubit, FloatingChatState>(
+            listenWhen: (previous, current) =>
+                previous.unreadCount != current.unreadCount,
+            listener: (context, chatState) {
+              final lobbyState = context.read<LobbyBloc>().state;
+              final isDisconnected = lobbyState.connectionStatus !=
+                  LobbyConnectionStatus.connected;
+              _updateOpacityForState(
+                hasUnread: chatState.unreadCount > 0,
+                isDisconnected: isDisconnected,
               );
-
-              _left ??= parentSize.width - _buttonSize - widget.initialRight;
-              _top ??= parentSize.height - _buttonSize - widget.initialBottom;
-              _lastParentSize = parentSize;
-
-              return _buildContent(context, floatingState, parentSize);
+              // Trigger animation when a new unread message arrives.
+              if (chatState.unreadCount > 0) {
+                _triggerNewMessageAnimation();
+              }
             },
+            child: BlocListener<LobbyBloc, LobbyState>(
+              listenWhen: (previous, current) =>
+                  previous.connectionStatus != current.connectionStatus,
+              listener: (context, lobbyState) {
+                final chatState = context.read<FloatingChatCubit>().state;
+                final isDisconnected = lobbyState.connectionStatus !=
+                    LobbyConnectionStatus.connected;
+                _updateOpacityForState(
+                  hasUnread: chatState.unreadCount > 0,
+                  isDisconnected: isDisconnected,
+                );
+              },
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final parentSize = Size(
+                    constraints.maxWidth,
+                    constraints.maxHeight,
+                  );
+
+                  _left ??=
+                      parentSize.width - _buttonSize - widget.initialRight;
+                  _top ??=
+                      parentSize.height - _buttonSize - widget.initialBottom;
+                  _lastParentSize = parentSize;
+
+                  return _buildContent(context, floatingState, parentSize);
+                },
+              ),
+            ),
           ),
         );
       },
@@ -345,9 +529,18 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
           top: _top ?? 0,
           child: IgnorePointer(
             ignoring: _isPanelOpen,
-            child: AnimatedOpacity(
-              opacity: _isPanelOpen ? 0.0 : 1.0,
-              duration: const Duration(milliseconds: 200),
+            child: AnimatedBuilder(
+              animation: _opacityAnimation,
+              builder: (context, child) {
+                final opacity = _isPanelOpen
+                    ? 0.0
+                    : (_isHovered ? 1.0 : _opacityAnimation.value);
+                return AnimatedOpacity(
+                  opacity: opacity,
+                  duration: const Duration(milliseconds: 200),
+                  child: child,
+                );
+              },
               child: _buildDraggableButton(
                 floatingState: floatingState,
                 isDisconnected: isDisconnected,
@@ -374,16 +567,23 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
           ? SystemMouseCursors.grabbing
           : SystemMouseCursors.click,
       onEnter: (_) {
-        if (!_isDragging) _hoverController.forward();
+        if (!_isDragging) {
+          _hoverController.forward();
+          setState(() => _isHovered = true);
+        }
       },
       onExit: (_) {
-        if (!_isDragging) _hoverController.reverse();
+        if (!_isDragging) {
+          _hoverController.reverse();
+          setState(() => _isHovered = false);
+        }
       },
       child: GestureDetector(
         onPanStart: (_) {
           _dragDistance = 0.0;
           setState(() => _isDragging = true);
           _hoverController.reverse();
+          _activateOpacity();
         },
         onPanUpdate: (details) {
           _dragDistance += details.delta.distance;
@@ -400,11 +600,13 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
 
           // If the total drag distance was below threshold, treat as a tap
           if (!wasDrag) {
+            _activateOpacity();
             setState(() => _isPanelOpen = true);
             context.read<FloatingChatCubit>().panelOpened();
           }
         },
         onTap: () {
+          _activateOpacity();
           setState(() => _isPanelOpen = true);
           context.read<FloatingChatCubit>().panelOpened();
         },
@@ -413,62 +615,98 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
           preferBelow: false,
           child: ScaleTransition(
             scale: scaleAnimation,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  width: _buttonSize,
-                  height: _buttonSize,
-                  decoration: BoxDecoration(
-                    color: isDisconnected
-                        ? const Color(0xFF6B7280)
-                        : const Color(0xFF0080FF),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: isDisconnected
-                            ? const Color(0xFF6B7280).withValues(alpha: 0.3)
-                            : const Color(0xFF0080FF).withValues(alpha: 0.3),
-                        blurRadius: 12,
-                        spreadRadius: 1,
+            child: AnimatedBuilder(
+              animation: _notifyController,
+              builder: (context, child) {
+                return Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.center,
+                  children: [
+                    // Ripple ring — only rendered while animation is running
+                    if (_notifyController.isAnimating)
+                      Positioned.fill(
+                        child: Transform.scale(
+                          scale: _rippleScale.value,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: (isDisconnected
+                                        ? const Color(0xFF6B7280)
+                                        : const Color(0xFF0080FF))
+                                    .withValues(
+                                        alpha: _rippleOpacity.value),
+                                width: 2.5,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
-                  child: Icon(
-                    isDisconnected
-                        ? Icons.chat_bubble_outline
-                        : Icons.chat_bubble,
-                    color: isDisconnected
-                        ? Colors.white.withValues(alpha: 0.6)
-                        : Colors.white,
-                    size: 24,
-                  ),
-                ),
-                if (!isDisconnected)
-                  Positioned(
-                    top: -4,
-                    right: -4,
-                    child: UnreadBadge(count: floatingState.unreadCount),
-                  ),
-                if (isDisconnected)
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFEF4444),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 10,
-                      ),
+                    // Button with bounce scale
+                    Transform.scale(
+                      scale: _notifyScale.value,
+                      child: child,
+                    ),
+                  ],
+                );
+              },
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: _buttonSize,
+                    height: _buttonSize,
+                    decoration: BoxDecoration(
+                      color: isDisconnected
+                          ? const Color(0xFF6B7280)
+                          : const Color(0xFF0080FF),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: isDisconnected
+                              ? const Color(0xFF6B7280).withValues(alpha: 0.3)
+                              : const Color(0xFF0080FF).withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      isDisconnected
+                          ? Icons.chat_bubble_outline
+                          : Icons.chat_bubble,
+                      color: isDisconnected
+                          ? Colors.white.withValues(alpha: 0.6)
+                          : Colors.white,
+                      size: 24,
                     ),
                   ),
-              ],
+                  if (!isDisconnected)
+                    Positioned(
+                      top: -4,
+                      right: -4,
+                      child: UnreadBadge(count: floatingState.unreadCount),
+                    ),
+                  if (isDisconnected)
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        width: 16,
+                        height: 16,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFEF4444),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 10,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
