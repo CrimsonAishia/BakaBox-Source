@@ -5,7 +5,10 @@ import '../../../core/bloc/lobby/lobby_bloc.dart';
 
 /// 全服广播发送弹窗
 class LobbyBroadcastDialog extends StatefulWidget {
-  const LobbyBroadcastDialog({super.key});
+  /// 紧凑模式：适配小容器（如浮动聊天面板），卡片宽度自适应，内边距缩小
+  final bool compact;
+
+  const LobbyBroadcastDialog({super.key, this.compact = false});
 
   @override
   State<LobbyBroadcastDialog> createState() => _LobbyBroadcastDialogState();
@@ -80,11 +83,14 @@ class _LobbyBroadcastDialogState extends State<LobbyBroadcastDialog> {
               child: GestureDetector(
                 onTap: () {},
                 child: Container(
-                  width: 400,
-                  padding: const EdgeInsets.all(24),
+                  width: widget.compact ? double.infinity : 400,
+                  margin: widget.compact
+                      ? const EdgeInsets.all(12)
+                      : EdgeInsets.zero,
+                  padding: EdgeInsets.all(widget.compact ? 16 : 24),
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(widget.compact ? 14 : 20),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.2),
@@ -101,24 +107,24 @@ class _LobbyBroadcastDialogState extends State<LobbyBroadcastDialog> {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(10),
+                            padding: EdgeInsets.all(widget.compact ? 7 : 10),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
                                 colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
                               ),
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.campaign,
                               color: Colors.white,
-                              size: 24,
+                              size: widget.compact ? 18 : 24,
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 10),
                           Text(
                             '全服广播',
                             style: TextStyle(
-                              fontSize: 20,
+                              fontSize: widget.compact ? 15 : 20,
                               fontWeight: FontWeight.bold,
                               color: textColor,
                             ),
@@ -131,50 +137,42 @@ class _LobbyBroadcastDialogState extends State<LobbyBroadcastDialog> {
                             ? '冷却中，请 ${state.broadcastCooldownSeconds} 秒后再试'
                             : '发送的消息将广播给房间内所有在线玩家',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 12,
                           color: isInCooldown
                               ? const Color(0xFFEF4444)
                               : secondaryTextColor,
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 14),
                       // 输入框
                       Container(
                         decoration: BoxDecoration(
                           color: inputBackgroundColor,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: inputBorderColor,
-                          ),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: inputBorderColor),
                         ),
                         child: TextField(
                           controller: _controller,
                           focusNode: _focusNode,
                           maxLength: _maxLength,
-                          maxLines: 3,
+                          maxLines: 8,
                           enabled: !isInCooldown,
                           style: TextStyle(
                             color: inputTextColor,
-                            fontSize: 15,
+                            fontSize: widget.compact ? 13 : 15,
                           ),
                           decoration: InputDecoration(
-                            hintText: isInCooldown
-                                ? '冷却中...'
-                                : '输入广播内容...',
-                            hintStyle: TextStyle(
-                              color: inputHintTextColor,
-                            ),
+                            hintText: isInCooldown ? '冷却中...' : '输入广播内容...',
+                            hintStyle: TextStyle(color: inputHintTextColor),
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.all(16),
-                            counterStyle: TextStyle(
-                              color: inputCounterTextColor,
-                            ),
+                            contentPadding: EdgeInsets.all(widget.compact ? 12 : 16),
+                            counterStyle: TextStyle(color: inputCounterTextColor),
                           ),
                           onChanged: (_) => setState(() {}),
                           onSubmitted: (_) => _onSubmit(),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 14),
                       // 按钮
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -183,14 +181,15 @@ class _LobbyBroadcastDialogState extends State<LobbyBroadcastDialog> {
                             onPressed: _onCancel,
                             style: TextButton.styleFrom(
                               foregroundColor: secondaryTextColor,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 12,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: widget.compact ? 12 : 20,
+                                vertical: widget.compact ? 8 : 12,
                               ),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                             child: const Text('取消'),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 8),
                           ElevatedButton(
                             onPressed: canSubmit ? _onSubmit : null,
                             style: ElevatedButton.styleFrom(
@@ -202,18 +201,22 @@ class _LobbyBroadcastDialogState extends State<LobbyBroadcastDialog> {
                               disabledForegroundColor: isDark
                                   ? Colors.white.withValues(alpha: 0.3)
                                   : const Color(0xFF94A3B8),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 12,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: widget.compact ? 16 : 24,
+                                vertical: widget.compact ? 8 : 12,
                               ),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                             ),
                             child: Text(
                               isInCooldown
                                   ? '${state.broadcastCooldownSeconds}s 后可发送'
                                   : '发送广播',
+                              style: TextStyle(
+                                fontSize: widget.compact ? 12 : 14,
+                              ),
                             ),
                           ),
                         ],

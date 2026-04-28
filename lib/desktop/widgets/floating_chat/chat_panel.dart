@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/bloc/lobby/lobby_bloc.dart';
 import '../../../core/models/lobby_models.dart';
+import '../lobby/lobby_broadcast_dialog.dart';
 
 /// 浮动聊天面板，从 56×56 圆形展开为 320×480 矩形
 class ChatPanel extends StatefulWidget {
@@ -153,33 +154,41 @@ class _ChatPanelState extends State<ChatPanel>
         return SizedBox(
           width: _expandedWidth,
           height: _expandedHeight,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(borderRadius),
-            child: _RevealClip(
-              progress: t,
-              origin: widget.expandOrigin,
-              child: Container(
-                color: const Color(0xFF1A1A2E),
-                child: Column(
-                  children: [
-                    _buildHeader(),
-                    Expanded(child: _buildMessageList(messages)),
-                    if (!isConnected) _buildDisconnectedBanner(),
-                    _buildInputRow(
-                      isConnected: isConnected,
-                      isAnonymous: isAnonymous,
+          child: Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(borderRadius),
+                child: _RevealClip(
+                  progress: t,
+                  origin: widget.expandOrigin,
+                  child: Container(
+                    color: const Color(0xFF1A1A2E),
+                    child: Column(
+                      children: [
+                        _buildHeader(lobbyState),
+                        Expanded(child: _buildMessageList(messages)),
+                        if (!isConnected) _buildDisconnectedBanner(),
+                        _buildInputRow(
+                          isConnected: isConnected,
+                          isAnonymous: isAnonymous,
+                          lobbyState: lobbyState,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+              // 广播弹窗叠加层
+              if (lobbyState.isBroadcastDialogOpen)
+                const Positioned.fill(child: LobbyBroadcastDialog(compact: true)),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(LobbyState lobbyState) {
     return Container(
       height: 44,
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -307,8 +316,11 @@ class _ChatPanelState extends State<ChatPanel>
   Widget _buildInputRow({
     required bool isConnected,
     required bool isAnonymous,
+    required LobbyState lobbyState,
   }) {
     final canType = isConnected && !isAnonymous;
+    final cooldown = lobbyState.broadcastCooldownSeconds;
+    final canBroadcast = !isAnonymous && isConnected && cooldown <= 0;
 
     // Anonymous users see a tappable prompt instead of a disabled text field
     if (isConnected && isAnonymous) {
@@ -400,6 +412,17 @@ class _ChatPanelState extends State<ChatPanel>
                 onSubmitted: canType ? (_) => _sendMessage() : null,
               ),
             ),
+          ),
+          const SizedBox(width: 8),
+          _BroadcastButton(
+            cooldown: cooldown,
+            canBroadcast: canBroadcast,
+            isAnonymous: isAnonymous,
+            onTap: canBroadcast
+                ? () => context
+                    .read<LobbyBloc>()
+                    .add(const LobbyBroadcastDialogToggled())
+                : null,
           ),
           const SizedBox(width: 8),
           _SendButton(
@@ -583,6 +606,105 @@ class _SendButtonState extends State<_SendButton> {
                 ? Colors.white
                 : Colors.white.withValues(alpha: 0.3),
             size: 16,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// _BroadcastButton — broadcast button styled like _SendButton
+// ---------------------------------------------------------------------------
+
+class _BroadcastButton extends StatefulWidget {
+  const _BroadcastButton({
+    required this.cooldown,
+    required this.canBroadcast,
+    required this.isAnonymous,
+    required this.onTap,
+  });
+
+  final int cooldown;
+  final bool canBroadcast;
+  final bool isAnonymous;
+  final VoidCallback? onTap;
+
+  @override
+  State<_BroadcastButton> createState() => _BroadcastButtonState();
+}
+
+class _BroadcastButtonState extends State<_BroadcastButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    const baseColor = Color(0xFFF59E0B);
+    final disabledColor = Colors.white.withValues(alpha: 0.1);
+
+    final tooltipMsg = widget.isAnonymous
+        ? '登录后可使用广播'
+        : widget.cooldown > 0
+            ? '冷却中 (${widget.cooldown}s)'
+            : '全服广播';
+
+    return Tooltip(
+      message: tooltipMsg,
+      preferBelow: false,
+      child: MouseRegion(
+        cursor: widget.canBroadcast
+            ? SystemMouseCursors.click
+            : SystemMouseCursors.basic,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 120),
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: widget.canBroadcast
+                      ? (_hovered
+                          ? Color.lerp(baseColor, Colors.white, 0.15)!
+                          : baseColor)
+                      : disabledColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.campaign,
+                  color: widget.canBroadcast
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.3),
+                  size: 18,
+                ),
+              ),
+              // 冷却 badge
+              if (widget.cooldown > 0)
+                Positioned(
+                  top: -6,
+                  right: -6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 4, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF59E0B),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '${widget.cooldown}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),

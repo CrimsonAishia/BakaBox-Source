@@ -52,7 +52,12 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
   /// How long the fade-out transition takes.
   static const Duration _fadeDuration = Duration(seconds: 3);
 
+  /// Interval between periodic bounce animations when there are unread messages.
+  static const Duration _bouncePeriod = Duration(seconds: 3);
+
   Timer? _activeHoldTimer;
+  Timer? _bounceTimer;
+  bool _hasUnread = false;
   bool _isHovered = false;
 
   /// Prevent double-firing the notify animation from both _addBubble and
@@ -149,6 +154,7 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
   void dispose() {
     _isDisposed = true;
     _activeHoldTimer?.cancel();
+    _bounceTimer?.cancel();
     _hoverController.dispose();
     _opacityController.dispose();
     _notifyController.dispose();
@@ -178,11 +184,28 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
   /// Fade the button down to [_minOpacity] over [_fadeDuration].
   void _scheduleIdleFade() {
     if (_isDisposed) return;
+    // Don't fade out while there are unread messages.
+    if (_hasUnread) return;
     _opacityController.animateTo(
       0.0, // controller 0 → animation value = _minOpacity
       duration: _fadeDuration,
       curve: Curves.easeInOut,
     );
+  }
+
+  /// Start the periodic bounce timer for unread-message reminder.
+  void _startBounceTimer() {
+    _bounceTimer?.cancel();
+    _bounceTimer = Timer.periodic(_bouncePeriod, (_) {
+      if (_isDisposed || _isPanelOpen) return;
+      _triggerNewMessageAnimation();
+    });
+  }
+
+  /// Stop the periodic bounce timer.
+  void _stopBounceTimer() {
+    _bounceTimer?.cancel();
+    _bounceTimer = null;
   }
 
   /// Called whenever the unread / connection state changes so we can decide
@@ -191,27 +214,32 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
     required bool hasUnread,
     required bool isDisconnected,
   }) {
+    _hasUnread = hasUnread;
     if (hasUnread) {
-      // Always fully visible when there are unread messages.
-      // Don't cancel an active hold timer — it will naturally expire and then
-      // idle-fade, which is fine. We just ensure opacity is at max now.
+      // Always fully visible when there are unread messages — cancel idle fade.
+      _activeHoldTimer?.cancel();
+      _activeHoldTimer = null;
       _opacityController.animateTo(
         1.0,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
-    } else if (isDisconnected) {
-      // Disconnected and no unread — cancel any hold and fade to min.
-      _activeHoldTimer?.cancel();
-      _activeHoldTimer = null;
-      _opacityController.animateTo(
-        0.0,
-        duration: const Duration(seconds: 2),
-        curve: Curves.easeInOut,
-      );
+      _startBounceTimer();
+    } else {
+      _stopBounceTimer();
+      if (isDisconnected) {
+        // Disconnected and no unread — cancel any hold and fade to min.
+        _activeHoldTimer?.cancel();
+        _activeHoldTimer = null;
+        _opacityController.animateTo(
+          0.0,
+          duration: const Duration(seconds: 2),
+          curve: Curves.easeInOut,
+        );
+      }
+      // If connected with no unread, let the existing hold-timer / idle-fade
+      // handle the transition naturally.
     }
-    // If connected with no unread, let the existing hold-timer / idle-fade
-    // handle the transition naturally.
   }
 
   /// Trigger the bounce + ripple animation when a new message arrives.
@@ -349,6 +377,9 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
     setState(() => _isPanelOpen = false);
     context.read<FloatingChatCubit>().panelClosed();
     _activateOpacity();
+    // _updateOpacityForState will be called by the unreadCount listener after
+    // panelClosed() emits. If unread count is still > 0 after that emit,
+    // _startBounceTimer will be called there. No need to check here.
   }
 
   /// Compute where the panel should be placed relative to the button.
