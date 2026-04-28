@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:win32_registry/win32_registry.dart';
 import 'package:windows_notification/notification_message.dart';
 import 'package:windows_notification/windows_notification.dart';
@@ -75,6 +78,12 @@ class BroadcastNotificationService {
   }) async {
     if (_plugin == null) return;
     try {
+      // 非 MSIX 打包的 Win32 应用无法直接加载网络图片，需先下载到本地
+      String? localAvatarPath;
+      if (avatarUrl != null && avatarUrl.isNotEmpty) {
+        localAvatarPath = await _downloadAvatarToTemp(avatarUrl);
+      }
+
       final id = 'broadcast_${_random.nextInt(100000)}';
       final message = NotificationMessage.fromCustomTemplate(
         id,
@@ -82,60 +91,60 @@ class BroadcastNotificationService {
       );
       _plugin!.showNotificationCustomTemplate(
         message,
-        _buildToastXml(sender: sender, content: content, avatarUrl: avatarUrl),
+        _buildToastXml(sender: sender, content: content, localAvatarPath: localAvatarPath),
       );
     } catch (e) {
       LogService.e('[BroadcastNotification] 显示通知失败', e);
     }
   }
 
+  /// 下载头像到临时目录，返回本地文件路径；失败返回 null
+  Future<String?> _downloadAvatarToTemp(String url) async {
+    try {
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+      if (response.statusCode != 200) return null;
+
+      final tempDir = await getTemporaryDirectory();
+      final ext = p.extension(Uri.parse(url).path).isNotEmpty
+          ? p.extension(Uri.parse(url).path)
+          : '.jpg';
+      final fileName = 'baka_avatar_${url.hashCode.abs()}$ext';
+      final file = File(p.join(tempDir.path, fileName));
+      await file.writeAsBytes(response.bodyBytes);
+      LogService.d('[BroadcastNotification] 头像已缓存: ${file.path}');
+      return file.path;
+    } catch (e) {
+      LogService.w('[BroadcastNotification] 头像下载失败，将使用默认图标: $e');
+      return null;
+    }
+  }
+
   /// 构建 Toast XML
   ///
-  /// 有头像时：左侧圆形头像 + 右侧用户名/内容
-  /// 无头像时：纯文字布局
+  /// 有头像时：appLogoOverride 使用本地缓存的头像路径
+  /// 无头像时：使用应用 logo
   String _buildToastXml({
     required String sender,
     required String content,
-    String? avatarUrl,
+    String? localAvatarPath,
   }) {
-    // XML 转义
     final safeSender = _escapeXml(sender);
     final safeContent = _escapeXml(content);
-
-    // 应用图标路径（用于 appLogoOverride）
     final exeDir = File(Platform.resolvedExecutable).parent.path;
     final iconPath = _escapeXml('$exeDir\\data\\flutter_assets\\assets\\images\\logo.png');
 
-    if (avatarUrl != null && avatarUrl.isNotEmpty) {
-      final safeAvatarUrl = _escapeXml(avatarUrl);
-      return '''
-<toast>
-  <visual>
-    <binding template="ToastGeneric">
-      <image placement="appLogoOverride" src="$iconPath"/>
-      <text>BakaBox 大厅广播</text>
-      <group>
-        <subgroup hint-weight="1" hint-textStacking="center">
-          <image src="$safeAvatarUrl" hint-crop="circle" hint-align="center" hint-removeMargin="true"/>
-        </subgroup>
-        <subgroup hint-weight="3">
-          <text hint-style="base">$safeSender</text>
-          <text hint-style="captionSubtle" hint-wrap="true">$safeContent</text>
-        </subgroup>
-      </group>
-    </binding>
-  </visual>
-</toast>''';
-    }
+    final imageSrc = localAvatarPath != null
+        ? _escapeXml(localAvatarPath)
+        : iconPath;
+    final cropAttr = localAvatarPath != null ? ' hint-crop="circle"' : '';
 
-    // 无头像：标准两行布局
     return '''
 <toast>
   <visual>
     <binding template="ToastGeneric">
-      <image placement="appLogoOverride" src="$iconPath"/>
+      <image placement="appLogoOverride"$cropAttr src="$imageSrc"/>
       <text>BakaBox 大厅广播</text>
-      <text hint-style="base">$safeSender</text>
+      <text hint-style="body" hint-bold="true">$safeSender</text>
       <text hint-style="captionSubtle" hint-wrap="true">$safeContent</text>
     </binding>
   </visual>
