@@ -626,7 +626,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
         // 最新标签
         if (isLatest)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: const Color(0xFF10B981),
               borderRadius: BorderRadius.circular(10),
@@ -635,7 +635,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
               '最新',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 10,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
             ),
