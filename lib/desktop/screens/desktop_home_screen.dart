@@ -325,25 +325,27 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
                 height: 56,
                 child: DragToMoveArea(child: SizedBox.expand()),
               ),
-            // 挤服悬浮卡片
-            if (isDesktop)
-              const Positioned(
-                bottom: 16,
-                right: 16,
-                child: QueueFloatingCard(),
-              ),
             // 浮动聊天按钮（非大厅页面显示）
             if (isDesktop && _currentIndex != 2)
               const Positioned.fill(
                 child: FloatingChatButton(),
               ),
-            // 全服广播底部通知栏
-            const Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: GlobalBroadcastBar(),
-            ),
+            // 右下角悬浮区域：广播通知卡片 + 挤服卡片（从下到上堆叠）
+            if (isDesktop)
+              Positioned(
+                key: const ValueKey('bottom_right_overlay'),
+                bottom: 16,
+                right: 16,
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    GlobalBroadcastBar(),
+                    SizedBox(height: 8),
+                    QueueFloatingCard(),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
