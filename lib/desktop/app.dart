@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:flutter_portal/flutter_portal.dart';
 
 import '../core/core.dart';
 import '../core/services/game_launcher_service.dart';
@@ -87,7 +88,8 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
       ],
       child: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {
-          return MaterialApp.router(
+        return Portal(
+          child: MaterialApp.router(
             title: AppConstants.appName,
             debugShowCheckedModeBanner: false,
             localizationsDelegates: const [
@@ -132,7 +134,8 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
             darkTheme: DesktopTheme.darkTheme,
             themeMode: settingsState.themeMode,
             routerConfig: DesktopRouter.router,
-          );
+          ),
+        );
         },
       ),
     );

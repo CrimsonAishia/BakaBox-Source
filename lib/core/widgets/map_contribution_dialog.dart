@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:flutter_portal/flutter_portal.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
 import '../bloc/map_contribution/map_contribution_bloc.dart';
@@ -21,6 +23,7 @@ import '../utils/log_service.dart';
 import '../utils/toast_utils.dart';
 import '../services/file_upload_service.dart';
 import '../services/image_url_service.dart';
+import '../services/token_service.dart';
 import 'disk_cached_image.dart';
 import 'feature_gate.dart';
 import 'tag_color_picker.dart';
@@ -127,6 +130,61 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   /// 显示删除标签对话框（暴露给外部组件）
   void showDeleteTagDialog(MapTag tag) {
     _showDeleteTagDialog(tag);
+  }
+
+  /// 处理撤销变更申请（先弹确认对话框，暴露给外部组件）
+  void handleCancelChangeRequest(MapTag tag) {
+    if (!_checkLogin()) return;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Row(
+          children: [
+            Icon(MdiIcons.alertCircleOutline, color: const Color(0xFFF59E0B)),
+            const SizedBox(width: 12),
+            Text(
+              '撤销变更申请',
+              style: TextStyle(
+                color: isDark ? Colors.white : const Color(0xFF1F2937),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          '确定要撤销标签 "${tag.name}" 的变更申请吗？撤销后可重新发起申请。',
+          style: TextStyle(
+            color: isDark ? Colors.white70 : const Color(0xFF374151),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(
+              '取消',
+              style: TextStyle(
+                color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              context.read<MapTagBloc>().add(
+                CancelTagChangeRequest(tagId: tag.id),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('确认撤销'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _onNameChanged() {
@@ -497,6 +555,9 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         if (state.deleteSuccess) {
           ToastUtils.showSuccess(context, '删除成功');
         }
+        if (state.cancelSuccess) {
+          ToastUtils.showSuccess(context, '已撤销变更申请');
+        }
       },
       builder: (context, state) {
         if (state.isLoading) {
@@ -587,14 +648,37 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   Widget _buildTagList(MapTagState state, bool isDark) {
     final query = _tagSearchController.text.trim().toLowerCase();
 
+    // 获取后端用户 ID
+    final currentUserId = TokenService.instance.userInfo?.id;
+
+    // 分离出用户自己在全局标签中的已通过标签
+    // 未登录时 currentUserId 为 null，不应匹配任何标签
+    final userGlobalTags = currentUserId != null
+        ? state.tagList
+              .where((t) => t.contributor?.userId == currentUserId)
+              .toList()
+        : <MapTag>[];
+    final otherGlobalTags = currentUserId != null
+        ? state.tagList
+              .where((t) => t.contributor?.userId != currentUserId)
+              .toList()
+        : state.tagList;
+
+    // 合并用户的审核中/被拒绝标签与已通过标签，并按 id 去重
+    final seen = <int>{};
+    List<MapTag> allUserTags = [
+      ...state.userTags,
+      ...userGlobalTags,
+    ].where((t) => seen.add(t.id)).toList();
+
     // 根据搜索关键词过滤标签（不区分大小写）
-    List<MapTag> filteredUserTags = state.userTags;
-    List<MapTag> filteredTagList = state.tagList;
+    List<MapTag> filteredUserTags = allUserTags;
+    List<MapTag> filteredTagList = otherGlobalTags;
     if (query.isNotEmpty) {
-      filteredUserTags = state.userTags
+      filteredUserTags = allUserTags
           .where((t) => t.name.toLowerCase().contains(query))
           .toList();
-      filteredTagList = state.tagList
+      filteredTagList = otherGlobalTags
           .where((t) => t.name.toLowerCase().contains(query))
           .toList();
     }
@@ -733,10 +817,13 @@ class _MapContributionDialogState extends State<MapContributionDialog>
 
   /// 显示编辑标签对话框
   void _showEditTagDialog(MapTag tag) {
+    if (!_checkLogin()) return;
     final controller = TextEditingController(text: tag.name);
+    final reasonController = TextEditingController();
     String? selectedColor = tag.color;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final mapTagBloc = context.read<MapTagBloc>();
+    final isApproved = tag.isApproved;
 
     showDialog(
       context: context,
@@ -805,6 +892,43 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                   isDark,
                   (color) => setDialogState(() => selectedColor = color),
                 ),
+                if (isApproved) ...[
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: reasonController,
+                    maxLength: 100,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF1F2937),
+                    ),
+                    decoration: InputDecoration(
+                      labelText: '变更理由',
+                      labelStyle: TextStyle(
+                        color: isDark
+                            ? Colors.white54
+                            : const Color(0xFF6B7280),
+                      ),
+                      hintText: '请输入申请变更的理由',
+                      hintStyle: TextStyle(
+                        color: isDark
+                            ? Colors.white38
+                            : const Color(0xFF6B7280),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: isDark ? Colors.white24 : Colors.black12,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFF0080FF)),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -825,9 +949,19 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                   ToastUtils.showError(dialogContext, '标签名称不能为空');
                   return;
                 }
+                final reason = reasonController.text.trim();
+                if (isApproved && reason.isEmpty) {
+                  ToastUtils.showError(dialogContext, '变更理由不能为空');
+                  return;
+                }
                 Navigator.of(dialogContext).pop();
                 mapTagBloc.add(
-                  UpdateTag(tagId: tag.id, name: newName, color: selectedColor),
+                  UpdateTag(
+                    tagId: tag.id,
+                    name: newName,
+                    color: selectedColor,
+                    editReason: isApproved ? reason : null,
+                  ),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -857,8 +991,11 @@ class _MapContributionDialogState extends State<MapContributionDialog>
 
   /// 显示删除标签确认对话框
   void _showDeleteTagDialog(MapTag tag) {
+    if (!_checkLogin()) return;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final mapTagBloc = context.read<MapTagBloc>();
+    final reasonController = TextEditingController();
+    final isApproved = tag.isApproved;
 
     showDialog(
       context: context,
@@ -877,11 +1014,50 @@ class _MapContributionDialogState extends State<MapContributionDialog>
             ),
           ],
         ),
-        content: Text(
-          '确定要删除标签 "${tag.name}" 吗？删除后无法恢复。',
-          style: TextStyle(
-            color: isDark ? Colors.white70 : const Color(0xFF374151),
-          ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '确定要删除标签 "${tag.name}" 吗？删除后无法恢复。',
+              style: TextStyle(
+                color: isDark ? Colors.white70 : const Color(0xFF374151),
+              ),
+            ),
+            if (isApproved) ...[
+              const SizedBox(height: 16),
+              TextField(
+                controller: reasonController,
+                maxLength: 100,
+                style: TextStyle(
+                  color: isDark ? Colors.white : const Color(0xFF1F2937),
+                ),
+                decoration: InputDecoration(
+                  labelText: '删除理由',
+                  labelStyle: TextStyle(
+                    color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                  ),
+                  hintText: '请输入申请删除的理由',
+                  hintStyle: TextStyle(
+                    color: isDark ? Colors.white38 : const Color(0xFF6B7280),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: isDark ? Colors.white24 : Colors.black12,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF0080FF)),
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
         actions: [
           TextButton(
@@ -895,8 +1071,18 @@ class _MapContributionDialogState extends State<MapContributionDialog>
           ),
           ElevatedButton(
             onPressed: () {
+              final reason = reasonController.text.trim();
+              if (isApproved && reason.isEmpty) {
+                ToastUtils.showError(dialogContext, '删除理由不能为空');
+                return;
+              }
               Navigator.of(dialogContext).pop();
-              mapTagBloc.add(DeleteTag(tagId: tag.id));
+              mapTagBloc.add(
+                DeleteTag(
+                  tagId: tag.id,
+                  editReason: isApproved ? reason : null,
+                ),
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFEF4444),
@@ -954,6 +1140,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
 
   /// 显示添加标签对话框
   void _showAddTagDialog() {
+    if (!_checkLogin()) return;
     final controller = TextEditingController();
     String? selectedColor;
     bool autoVote = false;
@@ -1746,7 +1933,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
                         child: Text(
                           '拒绝原因: ${contribution.auditRemark}',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 16,
                             color: isDark
                                 ? Colors.white70
                                 : const Color(0xFF374151),
@@ -3025,6 +3212,9 @@ class _TagGrid extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    // 获取后端用户 ID
+    final currentUserId = TokenService.instance.userInfo?.id;
+
     return SizedBox(
       width: double.infinity,
       child: Wrap(
@@ -3036,7 +3226,10 @@ class _TagGrid extends StatelessWidget {
           final mapVote = state.getMapTagVoteByTagId(tag.id);
           final hasVoted = mapVote?.hasVoted ?? false;
           final voteCount = mapVote?.voteCount ?? 0;
-          final isOwner = state.userTags.any((t) => t.id == tag.id);
+          final isOwner =
+              state.userTags.any((t) => t.id == tag.id) ||
+              (currentUserId != null &&
+                  tag.contributor?.userId == currentUserId);
 
           return TweenAnimationBuilder<double>(
             key: ValueKey('tag_${isUserSection ? 'user_' : ''}${tag.id}'),
@@ -3058,9 +3251,12 @@ class _TagGrid extends StatelessWidget {
               isOwner: isOwner,
               hasUpvoted: mapVote?.hasUpvoted ?? false,
               hasDownvoted: mapVote?.hasDownvoted ?? false,
+              hasPendingChangeRequest: state.hasPendingChangeRequest(tag.id),
               onVote: (voteType) => dialogState.handleTagVote(tag, voteType),
               onEdit: () => dialogState.showEditTagDialog(tag),
               onDelete: () => dialogState.showDeleteTagDialog(tag),
+              onCancelChangeRequest: () =>
+                  dialogState.handleCancelChangeRequest(tag),
             ),
           );
         }).toList(),
@@ -3079,9 +3275,11 @@ class _AnimatedTagChip extends StatefulWidget {
   final bool isOwner;
   final bool hasUpvoted;
   final bool hasDownvoted;
+  final bool hasPendingChangeRequest;
   final void Function(String voteType) onVote;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onCancelChangeRequest;
 
   const _AnimatedTagChip({
     required this.tag,
@@ -3092,46 +3290,150 @@ class _AnimatedTagChip extends StatefulWidget {
     required this.isOwner,
     required this.hasUpvoted,
     required this.hasDownvoted,
+    required this.hasPendingChangeRequest,
     required this.onVote,
     required this.onEdit,
     required this.onDelete,
+    required this.onCancelChangeRequest,
   });
 
   @override
   State<_AnimatedTagChip> createState() => _AnimatedTagChipState();
 }
 
-class _AnimatedTagChipState extends State<_AnimatedTagChip> {
-  bool _isHovered = false;
+class _AnimatedTagChipState extends State<_AnimatedTagChip>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _opacityAnimation;
+
+  bool _isTagHovered = false;
+  bool _isOverlayHovered = false;
+  bool _isVisible = false;
+  Timer? _hideTimer;
+
+  bool get _isHovered => _isTagHovered || _isOverlayHovered;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+      reverseDuration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animController,
+        curve: Curves.easeOutBack,
+        reverseCurve: Curves.easeIn,
+      ),
+    );
+    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animController,
+        curve: Curves.easeOut,
+        reverseCurve: Curves.easeIn,
+      ),
+    );
+
+    _animController.addStatusListener((status) {
+      if (status == AnimationStatus.dismissed) {
+        if (mounted && _isVisible && !_isHovered) {
+          setState(() {
+            _isVisible = false;
+          });
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    _hideTimer?.cancel();
+    super.dispose();
+  }
+
+  void _forceCloseOverlay() {
+    _hideTimer?.cancel();
+    _isTagHovered = false;
+    _isOverlayHovered = false;
+    if (mounted) {
+      _animController.reverse();
+    }
+  }
+
+  void _updateHoverState(bool isOverlay, bool isHovered) {
+    if (isOverlay) {
+      _isOverlayHovered = isHovered;
+    } else {
+      _isTagHovered = isHovered;
+    }
+
+    _hideTimer?.cancel();
+
+    if (_isHovered) {
+      if (!_isVisible) {
+        setState(() {
+          _isVisible = true;
+        });
+      }
+      _animController.forward();
+    } else {
+      // 延迟 100ms 再执行消失动画，防止跨越间隙时闪烁
+      _hideTimer = Timer(const Duration(milliseconds: 100), () {
+        if (mounted && !_isHovered) {
+          _animController.reverse();
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final tag = widget.tag;
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // 主标签按钮
-          _buildTagMainButton(
-            tag,
-            widget.hasVoted,
-            widget.voteCount,
-            widget.isDark,
-            _isHovered,
-          ),
-          // Hover 显示的遮罩 + 操作面板
-          if (_isHovered)
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 150),
-              curve: Curves.easeOut,
-              top: 0,
-              left: 0,
+    return PortalTarget(
+      visible: _isVisible,
+      anchor: const Aligned(
+        follower: Alignment.bottomCenter,
+        target: Alignment.topCenter,
+        offset: Offset(0, 0),
+      ),
+      portalFollower: MouseRegion(
+        onEnter: (_) => _updateHoverState(true, true),
+        onExit: (_) => _updateHoverState(true, false),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 2.0),
+          child: AnimatedBuilder(
+            animation: _animController,
+            builder: (context, child) {
+              return Opacity(
+                opacity: _opacityAnimation.value,
+                child: Transform.scale(
+                  scale: _scaleAnimation.value,
+                  child: child,
+                ),
+              );
+            },
+            child: Material(
+              color: Colors.transparent,
               child: _buildTagHoverOverlay(tag),
             ),
-        ],
+          ),
+        ),
+      ),
+      child: MouseRegion(
+        onEnter: (_) => _updateHoverState(false, true),
+        onExit: (_) => _updateHoverState(false, false),
+        child: _buildTagMainButton(
+          tag,
+          widget.hasVoted,
+          widget.voteCount,
+          widget.isDark,
+          _isHovered,
+        ),
       ),
     );
   }
@@ -3197,16 +3499,28 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip> {
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeOut,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      transform: isHovered
+          ? Matrix4.diagonal3Values(1.05, 1.05, 1.0)
+          : Matrix4.identity(),
+      transformAlignment: Alignment.center,
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor, width: 4),
+        border: Border.all(
+          color: isHovered && statusBorderColor == Colors.transparent
+              ? (tagColor ?? const Color(0xFF0080FF)).withValues(alpha: 0.8)
+              : borderColor,
+          width: 4,
+        ),
         boxShadow: isHovered
             ? [
                 BoxShadow(
-                  color: const Color(0xFF0080FF).withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  color: (tagColor ?? const Color(0xFF0080FF)).withValues(
+                    alpha: 0.4,
+                  ),
+                  blurRadius: 12,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 4),
                 ),
               ]
             : null,
@@ -3267,6 +3581,70 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip> {
                 ),
               ),
             ],
+            // 变更审核中状态标签（深色实底，不受 tag 背景色干扰）
+            if (widget.hasPendingChangeRequest) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                decoration: BoxDecoration(
+                  // 深色实底遮罩，对任何 tag 颜色都有强对比
+                  color: const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    width: 0.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      '变更审核中',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFF59E0B),
+                        height: 1.2,
+                      ),
+                    ),
+                    if (widget.isOwner) ...[
+                      const Text(
+                        ' | ',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                          height: 1.2,
+                        ),
+                      ),
+                      MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: GestureDetector(
+                          onTap: widget.onCancelChangeRequest,
+                          child: const Text(
+                            '撤销',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFEF4444),
+                              decoration: TextDecoration.underline,
+                              decorationColor: Color(0xFFEF4444),
+                              height: 1.2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -3276,39 +3654,27 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip> {
   /// 构建标签 Hover 遮罩层
   Widget _buildTagHoverOverlay(MapTag tag) {
     final tagColor = tag.colorValue;
+    final shadowColor = (tagColor ?? const Color(0xFF0080FF)).withValues(
+      alpha: 0.4,
+    );
+    final bgColor = const Color(0xFF1E293B);
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      child: IntrinsicWidth(
-        child: IntrinsicHeight(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.85),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.3),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: (tagColor ?? const Color(0xFF0080FF)).withValues(
-                    alpha: 0.4,
-                  ),
-                  blurRadius: 12,
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 1),
-              child: _buildTagExpandedPanel(
-                tag,
-                hasUpvoted: widget.hasUpvoted,
-                hasDownvoted: widget.hasDownvoted,
-              ),
-            ),
+    return IntrinsicWidth(
+      child: Container(
+        decoration: ShapeDecoration(
+          color: bgColor,
+          shape: TooltipShapeBorder(
+            borderColor: Colors.white.withValues(alpha: 0.3),
           ),
+          shadows: [
+            BoxShadow(color: shadowColor, blurRadius: 12, spreadRadius: 1),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: _buildTagExpandedPanel(
+          tag,
+          hasUpvoted: widget.hasUpvoted,
+          hasDownvoted: widget.hasDownvoted,
         ),
       ),
     );
@@ -3320,48 +3686,114 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip> {
     required bool hasUpvoted,
     required bool hasDownvoted,
   }) {
-    // 只有已通过的标签才显示投票按钮
-    final showVoteButtons = tag.isApproved;
+    // 全局标签 (auditStatus == null) 视为已通过
+    final isEffectivelyApproved = tag.isApproved || tag.auditStatus == null;
 
-    return Row(
+    // 只有已通过的标签才显示投票按钮
+    final showVoteButtons = isEffectivelyApproved;
+
+    // 被拒绝时显示拒绝原因
+    final auditRemark = tag.auditRemark ?? '';
+    // 被拒绝时，有 remark 显示原因，没有 remark 也显示兜底文字
+    final showRejectReason = tag.isRejected;
+
+    return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 投票按钮（审核中的标签不显示）
-        if (showVoteButtons) ...[
-          // 赞成按钮
-          _buildTagVoteButton(
-            icon: hasUpvoted ? MdiIcons.thumbUp : MdiIcons.thumbUpOutline,
-            isActive: hasUpvoted,
-            isUpvote: true,
-            onTap: widget.isVoting ? null : () => widget.onVote('up'),
-          ),
-          const SizedBox(width: 4),
-          // 反对按钮
-          _buildTagVoteButton(
-            icon: hasDownvoted ? MdiIcons.thumbDown : MdiIcons.thumbDownOutline,
-            isActive: hasDownvoted,
-            isUpvote: false,
-            onTap: widget.isVoting ? null : () => widget.onVote('down'),
-          ),
-        ],
-        // 用户自己的标签显示编辑和删除按钮（仅审核中/已拒绝状态）
-        if (widget.isOwner && (tag.isPending || tag.isRejected)) ...[
-          // 编辑按钮
-          _buildTagActionButton(
-            icon: MdiIcons.pencilOutline,
-            tooltip: '修改后重新提交',
-            color: const Color(0xFFF59E0B),
-            onTap: widget.onEdit,
-          ),
-          const SizedBox(width: 4),
-          // 删除按钮
-          _buildTagActionButton(
-            icon: MdiIcons.deleteOutline,
-            tooltip: '删除',
-            color: const Color(0xFFEF4444),
-            onTap: widget.onDelete,
+        // 拒绝原因行
+        if (showRejectReason) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 1),
+                  child: Icon(
+                    Icons.cancel_outlined,
+                    size: 13,
+                    color: Color(0xFFEF4444),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 220),
+                  child: Text(
+                    auditRemark.isNotEmpty ? '拒绝原因：$auditRemark' : '审核未通过',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFFEF4444),
+                      height: 1.3,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
+        // 操作按钮行
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 投票按钮（审核中的标签不显示）
+            if (showVoteButtons) ...[
+              // 赞成按钮
+              _buildTagVoteButton(
+                icon: hasUpvoted ? MdiIcons.thumbUp : MdiIcons.thumbUpOutline,
+                isActive: hasUpvoted,
+                isUpvote: true,
+                onTap: widget.isVoting
+                    ? null
+                    : () {
+                        widget.onVote('up');
+                      },
+              ),
+              const SizedBox(width: 4),
+              // 反对按钮
+              _buildTagVoteButton(
+                icon: hasDownvoted
+                    ? MdiIcons.thumbDown
+                    : MdiIcons.thumbDownOutline,
+                isActive: hasDownvoted,
+                isUpvote: false,
+                onTap: widget.isVoting
+                    ? null
+                    : () {
+                        widget.onVote('down');
+                      },
+              ),
+            ],
+            // 用户自己的标签显示编辑和删除按钮（若不在变更中）
+            if (widget.isOwner && !widget.hasPendingChangeRequest) ...[
+              if (showVoteButtons) const SizedBox(width: 4),
+              // 编辑按钮
+              _buildTagActionButton(
+                icon: MdiIcons.pencilOutline,
+                tooltip: isEffectivelyApproved ? '申请变更' : '修改后重新提交',
+                color: const Color(0xFFF59E0B),
+                onTap: () {
+                  _forceCloseOverlay();
+                  widget.onEdit();
+                },
+              ),
+              const SizedBox(width: 4),
+              // 删除按钮
+              _buildTagActionButton(
+                icon: MdiIcons.deleteOutline,
+                tooltip: isEffectivelyApproved ? '申请删除' : '删除',
+                color: const Color(0xFFEF4444),
+                onTap: () {
+                  _forceCloseOverlay();
+                  widget.onDelete();
+                },
+              ),
+            ],
+          ],
+        ),
       ],
     );
   }
@@ -3403,22 +3835,98 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    final bgColor = Colors.white.withValues(alpha: 0.15);
-
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: bgColor,
+        color: color,
         borderRadius: BorderRadius.circular(6),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(6),
           child: Padding(
             padding: const EdgeInsets.all(8),
-            child: Icon(icon, size: 18, color: color),
+            child: Icon(icon, size: 18, color: Colors.white),
           ),
         ),
       ),
     );
   }
+}
+
+/// 自定义带有向下箭头的气泡边框
+class TooltipShapeBorder extends ShapeBorder {
+  final double radius;
+  final double arrowWidth;
+  final double arrowHeight;
+  final Color borderColor;
+
+  const TooltipShapeBorder({
+    this.radius = 20.0,
+    this.arrowWidth = 12.0,
+    this.arrowHeight = 6.0,
+    this.borderColor = Colors.transparent,
+  });
+
+  @override
+  EdgeInsetsGeometry get dimensions => EdgeInsets.only(bottom: arrowHeight);
+
+  @override
+  Path getInnerPath(Rect rect, {TextDirection? textDirection}) {
+    return getOuterPath(rect, textDirection: textDirection);
+  }
+
+  @override
+  Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
+    rect = Rect.fromPoints(
+      rect.topLeft,
+      rect.bottomRight - Offset(0, arrowHeight),
+    );
+    final path = Path();
+    path.moveTo(rect.left + radius, rect.top);
+    path.lineTo(rect.right - radius, rect.top);
+    path.arcToPoint(
+      Offset(rect.right, rect.top + radius),
+      radius: Radius.circular(radius),
+    );
+    path.lineTo(rect.right, rect.bottom - radius);
+    path.arcToPoint(
+      Offset(rect.right - radius, rect.bottom),
+      radius: Radius.circular(radius),
+    );
+
+    // Bottom edge with arrow
+    path.lineTo(rect.width / 2 + rect.left + arrowWidth / 2, rect.bottom);
+    path.lineTo(
+      rect.width / 2 + rect.left,
+      rect.bottom + arrowHeight,
+    ); // Arrow tip
+    path.lineTo(rect.width / 2 + rect.left - arrowWidth / 2, rect.bottom);
+
+    path.lineTo(rect.left + radius, rect.bottom);
+    path.arcToPoint(
+      Offset(rect.left, rect.bottom - radius),
+      radius: Radius.circular(radius),
+    );
+    path.lineTo(rect.left, rect.top + radius);
+    path.arcToPoint(
+      Offset(rect.left + radius, rect.top),
+      radius: Radius.circular(radius),
+    );
+    path.close();
+    return path;
+  }
+
+  @override
+  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {
+    if (borderColor != Colors.transparent) {
+      final paint = Paint()
+        ..color = borderColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1;
+      canvas.drawPath(getOuterPath(rect, textDirection: textDirection), paint);
+    }
+  }
+
+  @override
+  ShapeBorder scale(double t) => this;
 }

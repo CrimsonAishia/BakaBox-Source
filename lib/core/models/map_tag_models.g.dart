@@ -16,6 +16,8 @@ MapTag _$MapTagFromJson(Map<String, dynamic> json) => MapTag(
   createdAt: const ServerTimeConverter().fromJson(json['createdAt'] as String),
   updatedAt: const ServerTimeConverter().fromJson(json['updatedAt'] as String),
   auditStatus: $enumDecodeNullable(_$AuditStatusEnumMap, json['auditStatus']),
+  auditRemark: json['auditRemark'] as String?,
+  isPinned: json['isPinned'] as bool?,
 );
 
 Map<String, dynamic> _$MapTagToJson(MapTag instance) => <String, dynamic>{
@@ -26,12 +28,31 @@ Map<String, dynamic> _$MapTagToJson(MapTag instance) => <String, dynamic>{
   'createdAt': const ServerTimeConverter().toJson(instance.createdAt),
   'updatedAt': const ServerTimeConverter().toJson(instance.updatedAt),
   'auditStatus': _$AuditStatusEnumMap[instance.auditStatus],
+  'auditRemark': instance.auditRemark,
+  'isPinned': instance.isPinned,
 };
 
 const _$AuditStatusEnumMap = {
   AuditStatus.pending: 'pending',
   AuditStatus.approved: 'approved',
   AuditStatus.rejected: 'rejected',
+};
+
+MapTagChangeRequest _$MapTagChangeRequestFromJson(Map<String, dynamic> json) =>
+    MapTagChangeRequest(
+      id: (json['id'] as num).toInt(),
+      tagId: (json['tagId'] as num).toInt(),
+      changeType: json['changeType'] as String,
+      auditStatus: $enumDecode(_$AuditStatusEnumMap, json['auditStatus']),
+    );
+
+Map<String, dynamic> _$MapTagChangeRequestToJson(
+  MapTagChangeRequest instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'tagId': instance.tagId,
+  'changeType': instance.changeType,
+  'auditStatus': _$AuditStatusEnumMap[instance.auditStatus]!,
 };
 
 MapTagVoteSimple _$MapTagVoteSimpleFromJson(Map<String, dynamic> json) =>

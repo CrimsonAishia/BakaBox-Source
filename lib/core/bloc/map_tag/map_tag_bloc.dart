@@ -21,6 +21,7 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
     on<RefreshUserTags>(_onRefreshUserTags);
     on<UpdateTag>(_onUpdateTag);
     on<DeleteTag>(_onDeleteTag);
+    on<CancelTagChangeRequest>(_onCancelTagChangeRequest);
     on<ClearTagError>(_onClearError);
   }
 
@@ -86,17 +87,23 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
     emit(state.copyWith(isLoadingUserTags: true, clearError: true));
 
     try {
-      // 并行加载 pending 和 rejected 状态的标签
+      // 并行加载 pending 和 rejected 状态的标签，以及变更申请
       final results = await Future.wait([
         _api.getMyTags(auditStatus: 'pending'),
         _api.getMyTags(auditStatus: 'rejected'),
+        _api.getMyTagChangeRequests(),
       ]);
-      final pendingTags = results[0];
-      final rejectedTags = results[1];
+      final pendingTags = results[0] as List<MapTag>;
+      final rejectedTags = results[1] as List<MapTag>;
+      final changeRequests = results[2] as List<MapTagChangeRequest>;
       // 合并并按创建时间降序排列
       final allUserTags = [...pendingTags, ...rejectedTags]
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      emit(state.copyWith(userTags: allUserTags, isLoadingUserTags: false));
+      emit(state.copyWith(
+        userTags: allUserTags,
+        myChangeRequests: changeRequests,
+        isLoadingUserTags: false,
+      ));
     } catch (e) {
       emit(
         state.copyWith(error: _getErrorMessage(e), isLoadingUserTags: false),
@@ -155,6 +162,7 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
         event.tagId,
         event.name,
         color: event.color,
+        editReason: event.editReason,
       );
       if (success) {
         // 刷新用户标签列表
@@ -169,30 +177,59 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
     }
   }
 
-  /// 删除标签
   Future<void> _onDeleteTag(DeleteTag event, Emitter<MapTagState> emit) async {
     emit(state.copyWith(isSubmitting: true, clearError: true));
 
     try {
-      final success = await _api.deleteTag(event.tagId);
+      final success = await _api.deleteTag(event.tagId, editReason: event.editReason);
       if (success) {
-        // 从用户标签列表中移除
-        final updatedUserTags = state.userTags
-            .where((t) => t.id != event.tagId)
-            .toList();
-        emit(
-          state.copyWith(
-            userTags: updatedUserTags,
-            isSubmitting: false,
-            deleteSuccess: true,
-          ),
-        );
+        if (event.editReason != null && event.editReason!.isNotEmpty) {
+          // 已通过标签走变更申请流程：刷新用户标签列表（含变更申请）以同步状态
+          add(const LoadUserTags());
+          emit(state.copyWith(isSubmitting: false, submitSuccess: true));
+        } else {
+          // 未通过标签直接删除：从用户标签列表和全局标签列表中移除
+          final updatedUserTags = state.userTags
+              .where((t) => t.id != event.tagId)
+              .toList();
+          final updatedTagList = state.tagList
+              .where((t) => t.id != event.tagId)
+              .toList();
+          emit(
+            state.copyWith(
+              userTags: updatedUserTags,
+              tagList: updatedTagList,
+              isSubmitting: false,
+              deleteSuccess: true,
+            ),
+          );
+        }
       } else {
         emit(state.copyWith(isSubmitting: false));
       }
     } catch (e) {
       emit(state.copyWith(error: _getErrorMessage(e), isSubmitting: false));
       LogService.e('删除标签失败', e);
+    }
+  }
+
+  /// 撤销变更申请
+  Future<void> _onCancelTagChangeRequest(CancelTagChangeRequest event, Emitter<MapTagState> emit) async {
+    emit(state.copyWith(isSubmitting: true, clearError: true));
+
+    try {
+      final success = await _api.cancelTagChangeRequest(event.tagId);
+      if (success) {
+        // 刷新用户标签列表和全局标签列表（以便状态同步）
+        add(const LoadUserTags());
+        add(const LoadTagList());
+        emit(state.copyWith(isSubmitting: false, cancelSuccess: true));
+      } else {
+        emit(state.copyWith(isSubmitting: false));
+      }
+    } catch (e) {
+      emit(state.copyWith(error: _getErrorMessage(e), isSubmitting: false));
+      LogService.e('撤销变更申请失败', e);
     }
   }
 
