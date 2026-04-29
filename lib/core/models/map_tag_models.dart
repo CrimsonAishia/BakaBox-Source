@@ -237,6 +237,127 @@ class TagVoteResponse extends Equatable {
   List<Object?> get props => [success, hasVoted, mapTagVote];
 }
 
+/// 标签用户投票记录（单条）
+@JsonSerializable()
+class TagUserVoteItem extends Equatable {
+  final int id;
+  final int userId;
+  final String username;
+  final String avatar;
+  final String voteType;
+
+  const TagUserVoteItem({
+    required this.id,
+    required this.userId,
+    required this.username,
+    required this.avatar,
+    required this.voteType,
+  });
+
+  bool get isUpvote => voteType == 'up';
+
+  factory TagUserVoteItem.fromJson(Map<String, dynamic> json) =>
+      _$TagUserVoteItemFromJson(json);
+  Map<String, dynamic> toJson() => _$TagUserVoteItemToJson(this);
+
+  @override
+  List<Object?> get props => [id, userId, username, avatar, voteType];
+}
+
+/// 标签用户投票记录响应
+@JsonSerializable()
+class TagUserVotesResponse extends Equatable {
+  final String mapName;
+  final int tagId;
+  final String tagName;
+  final List<TagUserVoteItem> items;
+  final int total;
+
+  const TagUserVotesResponse({
+    required this.mapName,
+    required this.tagId,
+    required this.tagName,
+    required this.items,
+    required this.total,
+  });
+
+  factory TagUserVotesResponse.fromJson(Map<String, dynamic> json) =>
+      _$TagUserVotesResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$TagUserVotesResponseToJson(this);
+
+  @override
+  List<Object?> get props => [mapName, tagId, tagName, items, total];
+}
+
+/// 地图所有标签投票记录（单条）
+@JsonSerializable()
+class MapAllTagVoteItem extends Equatable {
+  final int id;
+  final int tagId;
+  final String tagName;
+  final String? tagColor;
+  final int userId;
+  final String username;
+  final String avatar;
+  final String voteType;
+
+  const MapAllTagVoteItem({
+    required this.id,
+    required this.tagId,
+    required this.tagName,
+    this.tagColor,
+    required this.userId,
+    required this.username,
+    required this.avatar,
+    required this.voteType,
+  });
+
+  bool get isUpvote => voteType == 'up';
+
+  /// 将十六进制颜色字符串转换为 Color
+  Color? get tagColorValue {
+    if (tagColor == null || tagColor!.isEmpty) return null;
+    try {
+      final hex = tagColor!.replaceFirst('#', '');
+      if (hex.length == 6) {
+        return Color(int.parse('FF$hex', radix: 16));
+      } else if (hex.length == 8) {
+        return Color(int.parse(hex, radix: 16));
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  factory MapAllTagVoteItem.fromJson(Map<String, dynamic> json) =>
+      _$MapAllTagVoteItemFromJson(json);
+  Map<String, dynamic> toJson() => _$MapAllTagVoteItemToJson(this);
+
+  @override
+  List<Object?> get props =>
+      [id, tagId, tagName, tagColor, userId, username, avatar, voteType];
+}
+
+/// 地图所有标签投票记录响应
+@JsonSerializable()
+class MapAllTagVotesResponse extends Equatable {
+  final String mapName;
+  final List<MapAllTagVoteItem> items;
+  final int total;
+
+  const MapAllTagVotesResponse({
+    required this.mapName,
+    required this.items,
+    required this.total,
+  });
+
+  factory MapAllTagVotesResponse.fromJson(Map<String, dynamic> json) =>
+      _$MapAllTagVotesResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$MapAllTagVotesResponseToJson(this);
+
+  @override
+  List<Object?> get props => [mapName, items, total];
+}
+
 /// 标签模型（用于地图信息中的标签列表）
 @JsonSerializable()
 class MapTagSimple extends Equatable {
