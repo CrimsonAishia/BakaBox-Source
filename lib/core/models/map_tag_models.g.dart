@@ -110,6 +110,88 @@ Map<String, dynamic> _$TagVoteResponseToJson(TagVoteResponse instance) =>
       'mapTagVote': instance.mapTagVote,
     };
 
+TagUserVoteItem _$TagUserVoteItemFromJson(Map<String, dynamic> json) =>
+    TagUserVoteItem(
+      id: (json['id'] as num).toInt(),
+      userId: (json['userId'] as num).toInt(),
+      username: json['username'] as String,
+      avatar: json['avatar'] as String,
+      voteType: json['voteType'] as String,
+    );
+
+Map<String, dynamic> _$TagUserVoteItemToJson(TagUserVoteItem instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'userId': instance.userId,
+      'username': instance.username,
+      'avatar': instance.avatar,
+      'voteType': instance.voteType,
+    };
+
+TagUserVotesResponse _$TagUserVotesResponseFromJson(
+  Map<String, dynamic> json,
+) => TagUserVotesResponse(
+  mapName: json['mapName'] as String,
+  tagId: (json['tagId'] as num).toInt(),
+  tagName: json['tagName'] as String,
+  items: (json['items'] as List<dynamic>)
+      .map((e) => TagUserVoteItem.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  total: (json['total'] as num).toInt(),
+);
+
+Map<String, dynamic> _$TagUserVotesResponseToJson(
+  TagUserVotesResponse instance,
+) => <String, dynamic>{
+  'mapName': instance.mapName,
+  'tagId': instance.tagId,
+  'tagName': instance.tagName,
+  'items': instance.items,
+  'total': instance.total,
+};
+
+MapAllTagVoteItem _$MapAllTagVoteItemFromJson(Map<String, dynamic> json) =>
+    MapAllTagVoteItem(
+      id: (json['id'] as num).toInt(),
+      tagId: (json['tagId'] as num).toInt(),
+      tagName: json['tagName'] as String,
+      tagColor: json['tagColor'] as String?,
+      userId: (json['userId'] as num).toInt(),
+      username: json['username'] as String,
+      avatar: json['avatar'] as String,
+      voteType: json['voteType'] as String,
+    );
+
+Map<String, dynamic> _$MapAllTagVoteItemToJson(MapAllTagVoteItem instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'tagId': instance.tagId,
+      'tagName': instance.tagName,
+      'tagColor': instance.tagColor,
+      'userId': instance.userId,
+      'username': instance.username,
+      'avatar': instance.avatar,
+      'voteType': instance.voteType,
+    };
+
+MapAllTagVotesResponse _$MapAllTagVotesResponseFromJson(
+  Map<String, dynamic> json,
+) => MapAllTagVotesResponse(
+  mapName: json['mapName'] as String,
+  items: (json['items'] as List<dynamic>)
+      .map((e) => MapAllTagVoteItem.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  total: (json['total'] as num).toInt(),
+);
+
+Map<String, dynamic> _$MapAllTagVotesResponseToJson(
+  MapAllTagVotesResponse instance,
+) => <String, dynamic>{
+  'mapName': instance.mapName,
+  'items': instance.items,
+  'total': instance.total,
+};
+
 MapTagSimple _$MapTagSimpleFromJson(Map<String, dynamic> json) =>
     MapTagSimple(name: json['name'] as String, color: json['color'] as String?);
 
