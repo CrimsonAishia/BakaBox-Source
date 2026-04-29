@@ -37,6 +37,12 @@ class MapTag extends Equatable {
   /// 外部获取的全局标签（getTagList）此字段为 null
   final AuditStatus? auditStatus;
 
+  /// 审核备注（拒绝原因）
+  final String? auditRemark;
+
+  /// 是否置顶
+  final bool? isPinned;
+
   const MapTag({
     required this.id,
     required this.name,
@@ -45,6 +51,8 @@ class MapTag extends Equatable {
     required this.createdAt,
     required this.updatedAt,
     this.auditStatus,
+    this.auditRemark,
+    this.isPinned,
   });
 
   /// 将十六进制颜色字符串转换为 Color
@@ -86,7 +94,31 @@ class MapTag extends Equatable {
     createdAt,
     updatedAt,
     auditStatus,
+    isPinned,
   ];
+}
+
+/// 标签变更申请
+@JsonSerializable()
+class MapTagChangeRequest extends Equatable {
+  final int id;
+  final int tagId;
+  final String changeType; // 'edit' or 'delete'
+  final AuditStatus auditStatus;
+  
+  const MapTagChangeRequest({
+    required this.id,
+    required this.tagId,
+    required this.changeType,
+    required this.auditStatus,
+  });
+
+  factory MapTagChangeRequest.fromJson(Map<String, dynamic> json) =>
+      _$MapTagChangeRequestFromJson(json);
+  Map<String, dynamic> toJson() => _$MapTagChangeRequestToJson(this);
+
+  @override
+  List<Object?> get props => [id, tagId, changeType, auditStatus];
 }
 
 /// 地图标签投票记录（GET /api/stub 接口专用）

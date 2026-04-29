@@ -78,18 +78,30 @@ class UpdateTag extends MapTagEvent {
 
   /// 标签颜色，十六进制格式如 #FF5733
   final String? color;
+  final String? editReason;
 
-  const UpdateTag({required this.tagId, required this.name, this.color});
+  const UpdateTag({required this.tagId, required this.name, this.color, this.editReason});
 
   @override
-  List<Object?> get props => [tagId, name, color];
+  List<Object?> get props => [tagId, name, color, editReason];
 }
 
 /// 删除标签
 class DeleteTag extends MapTagEvent {
   final int tagId;
+  final String? editReason;
 
-  const DeleteTag({required this.tagId});
+  const DeleteTag({required this.tagId, this.editReason});
+
+  @override
+  List<Object?> get props => [tagId, editReason];
+}
+
+/// 撤销变更申请
+class CancelTagChangeRequest extends MapTagEvent {
+  final int tagId;
+
+  const CancelTagChangeRequest({required this.tagId});
 
   @override
   List<Object?> get props => [tagId];

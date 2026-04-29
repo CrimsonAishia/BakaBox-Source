@@ -11,6 +11,9 @@ class MapTagState extends Equatable {
   /// 地图的标签投票列表
   final List<MapTagVoteSimple> mapTagVotes;
 
+  /// 我的标签变更申请列表
+  final List<MapTagChangeRequest> myChangeRequests;
+
   /// 是否正在加载全局标签列表
   final bool isLoadingTagList;
 
@@ -32,6 +35,9 @@ class MapTagState extends Equatable {
   /// 删除成功标识
   final bool deleteSuccess;
 
+  /// 撤销变更申请成功标识
+  final bool cancelSuccess;
+
   /// 错误信息
   final String? error;
 
@@ -42,6 +48,7 @@ class MapTagState extends Equatable {
     this.tagList = const [],
     this.userTags = const [],
     this.mapTagVotes = const [],
+    this.myChangeRequests = const [],
     this.isLoadingTagList = false,
     this.isLoadingUserTags = false,
     this.isLoadingMapTagVotes = false,
@@ -49,6 +56,7 @@ class MapTagState extends Equatable {
     this.isVoting = false,
     this.submitSuccess = false,
     this.deleteSuccess = false,
+    this.cancelSuccess = false,
     this.error,
     this.currentMapName,
   });
@@ -97,10 +105,18 @@ class MapTagState extends Equatable {
     return vote?.hasVoted ?? false;
   }
 
+  /// 检查某个标签是否有待审核的变更申请
+  bool hasPendingChangeRequest(int tagId) {
+    return myChangeRequests.any(
+      (req) => req.tagId == tagId && req.auditStatus == AuditStatus.pending,
+    );
+  }
+
   MapTagState copyWith({
     List<MapTag>? tagList,
     List<MapTag>? userTags,
     List<MapTagVoteSimple>? mapTagVotes,
+    List<MapTagChangeRequest>? myChangeRequests,
     bool? isLoadingTagList,
     bool? isLoadingUserTags,
     bool? isLoadingMapTagVotes,
@@ -108,6 +124,7 @@ class MapTagState extends Equatable {
     bool? isVoting,
     bool? submitSuccess,
     bool? deleteSuccess,
+    bool? cancelSuccess,
     String? error,
     bool clearError = false,
     String? currentMapName,
@@ -116,6 +133,7 @@ class MapTagState extends Equatable {
       tagList: tagList ?? this.tagList,
       userTags: userTags ?? this.userTags,
       mapTagVotes: mapTagVotes ?? this.mapTagVotes,
+      myChangeRequests: myChangeRequests ?? this.myChangeRequests,
       isLoadingTagList: isLoadingTagList ?? this.isLoadingTagList,
       isLoadingUserTags: isLoadingUserTags ?? this.isLoadingUserTags,
       isLoadingMapTagVotes: isLoadingMapTagVotes ?? this.isLoadingMapTagVotes,
@@ -123,6 +141,7 @@ class MapTagState extends Equatable {
       isVoting: isVoting ?? this.isVoting,
       submitSuccess: submitSuccess ?? false,
       deleteSuccess: deleteSuccess ?? false,
+      cancelSuccess: cancelSuccess ?? false,
       error: clearError ? null : (error ?? this.error),
       currentMapName: currentMapName ?? this.currentMapName,
     );
@@ -133,6 +152,7 @@ class MapTagState extends Equatable {
     tagList,
     userTags,
     mapTagVotes,
+    myChangeRequests,
     isLoadingTagList,
     isLoadingUserTags,
     isLoadingMapTagVotes,
@@ -140,6 +160,7 @@ class MapTagState extends Equatable {
     isVoting,
     submitSuccess,
     deleteSuccess,
+    cancelSuccess,
     error,
     currentMapName,
   ];
