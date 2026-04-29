@@ -395,8 +395,8 @@ class _WindowControlButtonState extends State<_WindowControlButton> {
                       bottomRight: Radius.circular(11),
                     )
                   : const BorderRadius.only(
-                      topLeft: Radius.circular(11),
-                      bottomLeft: Radius.circular(11),
+                      topLeft: Radius.circular(0),
+                      bottomLeft: Radius.circular(0),
                     ),
             ),
             child: Icon(widget.icon, size: 14, color: iconColor),
