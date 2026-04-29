@@ -37,7 +37,8 @@ class _ChatPanelState extends State<ChatPanel>
   static final DateFormat _timeFormat = DateFormat('HH:mm');
   static final DateFormat _dateTimeFormat = DateFormat('MM-dd HH:mm');
 
-  int _lastMessageCount = 0;
+  // reverse ListView needs no scroll tracking — latest message is always
+  // at the visual bottom (index 0 in the reversed list).
 
   @override
   void initState() {
@@ -46,11 +47,6 @@ class _ChatPanelState extends State<ChatPanel>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _expandController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        _scrollToBottom();
-      }
-    });
     _expandController.forward();
   }
 
@@ -64,12 +60,10 @@ class _ChatPanelState extends State<ChatPanel>
   }
 
   void _scrollToBottom() {
+    // With reverse:true the list always starts at the bottom.
+    // Jump to offset 0 to show the latest message (which is at index 0).
     if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.easeOut,
-      );
+      _scrollController.jumpTo(0);
     }
   }
 
@@ -90,9 +84,7 @@ class _ChatPanelState extends State<ChatPanel>
     if (text.isEmpty) return;
     context.read<LobbyBloc>().add(LobbyChatSubmitted(text));
     _textController.clear();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToBottom();
-    });
+    _scrollToBottom();
   }
 
   /// Remove local optimistic messages when a server-confirmed duplicate exists.
@@ -137,13 +129,8 @@ class _ChatPanelState extends State<ChatPanel>
     final isAnonymous = lobbyState.selfUser?.isAnonymous ?? true;
     final messages = _deduplicateMessages(lobbyState.messages);
 
-    // Auto-scroll when new messages arrive
-    if (messages.length != _lastMessageCount) {
-      _lastMessageCount = messages.length;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollToBottom();
-      });
-    }
+    // With reverse:true, new messages appear at the visual bottom automatically.
+    // No manual scroll tracking needed.
 
     return AnimatedBuilder(
       animation: _expandController,
@@ -151,13 +138,15 @@ class _ChatPanelState extends State<ChatPanel>
         final t = Curves.easeOutCubic.transform(_expandController.value);
         final borderRadius = 28.0 + (12.0 - 28.0) * t;
 
+        final radius = BorderRadius.circular(borderRadius);
         return SizedBox(
           width: _expandedWidth,
           height: _expandedHeight,
           child: Stack(
             children: [
+              // Content layer — clipped to rounded rect
               ClipRRect(
-                borderRadius: BorderRadius.circular(borderRadius),
+                borderRadius: radius,
                 child: _RevealClip(
                   progress: t,
                   origin: widget.expandOrigin,
@@ -180,7 +169,32 @@ class _ChatPanelState extends State<ChatPanel>
               ),
               // 广播弹窗叠加层
               if (lobbyState.isBroadcastDialogOpen)
-                const Positioned.fill(child: LobbyBroadcastDialog(compact: true)),
+                Positioned.fill(
+                  child: ClipRRect(
+                    borderRadius: radius,
+                    child: const LobbyBroadcastDialog(compact: true),
+                  ),
+                ),
+              // Border overlay — wrapped in the same reveal clip so it only
+              // appears within the expanding region and never shows as a full
+              // rectangle before the animation completes.
+              Positioned.fill(
+                child: _RevealClip(
+                  progress: t,
+                  origin: widget.expandOrigin,
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: radius,
+                        border: Border.all(
+                          color: const Color(0xFF0080FF).withValues(alpha: 0.5),
+                          width: 1.0,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         );
@@ -234,13 +248,18 @@ class _ChatPanelState extends State<ChatPanel>
       );
     }
 
+    // reverse: true renders the list from bottom to top, so index 0 is the
+    // latest message and always sits at the visual bottom. No scroll-to-bottom
+    // logic is needed — the list is always "at the bottom" by construction.
+    final reversed = messages.reversed.toList();
     return ListView.separated(
       controller: _scrollController,
+      reverse: true,
       padding: const EdgeInsets.all(12),
-      itemCount: messages.length,
+      itemCount: reversed.length,
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
-        final message = messages[index];
+        final message = reversed[index];
         if (message.type == LobbyMessageType.broadcast) {
           return _BroadcastMessageWidget(
             message: message,

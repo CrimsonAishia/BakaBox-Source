@@ -149,9 +149,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   Timer? _steamNameSwitchCooldownTimer;
 
   /// 广播消息 Stream，仅在收到 broadcast.message 事件时发出
-  /// GlobalBroadcastBar 订阅此 Stream 来显示底部广播条
-  final _broadcastController = StreamController<LobbyMessage>.broadcast();
-  Stream<LobbyMessage> get broadcastStream => _broadcastController.stream;
+  /// GlobalBroadcastBar 订阅此 Stream 来显示右下角广播通知卡片（桌面端使用）
+  final _broadcastController = StreamController<LobbyBroadcastMessage>.broadcast();
+  Stream<LobbyBroadcastMessage> get broadcastStream => _broadcastController.stream;
   Timer? _settingsTimeoutTimer;
   Timer? _transientNoticeTimer;
   StreamSubscription<LobbyWsEvent>? _snapshotOnAssetsReceived;
@@ -1866,8 +1866,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           );
           final updatedMessages = _limitMessages([...state.messages, broadcastLobbyMessage]);
 
-          // 通过 Stream 通知 GlobalBroadcastBar 显示底部广播条（桌面端使用）
-          _broadcastController.add(broadcastLobbyMessage);
+          // 通过 Stream 通知 GlobalBroadcastBar 显示右下角广播通知卡片（桌面端使用）
+          _broadcastController.add(broadcast);
 
           // 根据设置选择通知方式
           final rawIndex = StorageUtils.getInt('broadcast_notification_type') ?? 0;
