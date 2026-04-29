@@ -316,7 +316,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
               ],
             ),
             if (isDesktop)
-              Positioned(top: 12, right: 12, child: DesktopWindowControls()),
+              Positioned(top: 8, right: 12, child: DesktopWindowControls()),
             if (isDesktop)
               const Positioned(
                 top: 0,
