@@ -116,14 +116,19 @@ class QueueSettings extends StatelessWidget {
   Widget _buildTargetPlayersSlider(BuildContext context, bool isDark) {
     final theme = Theme.of(context);
 
+    // 判断是否显示捐助者选项
+    final shouldShowDonatorOption =
+        !isCustomServer && _shouldShowDonatorOption(mapName);
+
     // 根据捐助者状态决定最大值
     // 自定义服务器不受捐助者限制，默认就是 maxPlayers - 1
+    // 不需要捐助者的地图（非 ze_/zm_ 地图）也不受捐助者限制
     int effectiveMaxPlayers;
-    if (isCustomServer || isDonator) {
-      // 自定义服务器或捐助者：可以拉到 maxPlayers - 1（因为满人时无法进入）
+    if (isCustomServer || !shouldShowDonatorOption || isDonator) {
+      // 自定义服务器、不需要捐助者的地图、或捐助者：可以拉到 maxPlayers - 1（因为满人时无法进入）
       effectiveMaxPlayers = (maxPlayers > 1 ? maxPlayers : 64) - 1;
     } else {
-      // 非捐助者：最多只能拉到59人，但不超过 maxPlayers - 1
+      // 需要捐助者的地图且非捐助者：最多只能拉到59人，但不超过 maxPlayers - 1
       final serverMax = (maxPlayers > 1 ? maxPlayers : 64) - 1;
       effectiveMaxPlayers = serverMax < 59 ? serverMax : 59;
     }
