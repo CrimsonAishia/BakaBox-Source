@@ -75,3 +75,6 @@ scripts/release
 # NSIS Installer
 scripts/windows_installer/FilesToInstall/
 scripts/windows_installer/Output/
+
+# Protobuf tools (downloaded locally, not committed)
+/tools/protoc/

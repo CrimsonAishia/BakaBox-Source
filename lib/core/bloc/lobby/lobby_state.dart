@@ -292,10 +292,10 @@ class LobbyState extends Equatable {
           ? this.transientNotice
           : transientNotice as String?,
       transientNoticeSeq: clearTransientNotice
-          ? this.transientNoticeSeq
+          ? transientNoticeSeq
           : identical(transientNotice, _stateSentinel)
-          ? this.transientNoticeSeq
-          : this.transientNoticeSeq + 1,
+          ? transientNoticeSeq
+          : transientNoticeSeq + 1,
       teleportTarget: clearTeleportTarget
           ? null
           : identical(teleportTarget, _stateSentinel)

@@ -161,12 +161,12 @@ class LobbyPanelsDismissed extends LobbyEvent {
 
 /// 内部事件：assets 收到后更新状态
 class _LobbyAssetsReceived extends LobbyEvent {
-  final LobbyWsEvent wsEvent;
+  final LobbyServerEvent serverEvent;
 
-  const _LobbyAssetsReceived(this.wsEvent);
+  const _LobbyAssetsReceived(this.serverEvent);
 
   @override
-  List<Object?> get props => [wsEvent];
+  List<Object?> get props => [serverEvent];
 }
 
 /// 内部事件：设置加载更多状态

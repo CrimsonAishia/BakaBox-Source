@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
 import '../services/lobby_asset_cache_service.dart';
+import 'proto/lobby.pb.dart' as pb;
 
 /// 大厅角色朝向
 enum LobbyFacing { down, up, left, right }
@@ -417,24 +418,50 @@ class LobbyTeleportTarget extends Equatable {
   List<Object?> get props => [portalKey, label, sourceMapId, targetMapId, targetX, targetY];
 }
 
-/// WebSocket 事件模型
-class LobbyWsEvent extends Equatable {
-  final int version;
+/// 大厅 WebSocket 事件基类（sealed class）
+///
+/// 拆分为两种事件：
+/// - [LobbyServerEvent]：服务端 protobuf 消息
+/// - [LobbyConnectionEvent]：客户端连接状态事件
+sealed class LobbyWsEvent extends Equatable {
+  const LobbyWsEvent();
+}
+
+/// 服务端 protobuf 消息事件
+///
+/// 携带完整的 protobuf 信封，Bloc 层直接访问强类型字段。
+class LobbyServerEvent extends LobbyWsEvent {
   final String type;
   final DateTime timestamp;
   final String traceId;
-  final Map<String, dynamic> payload;
+  final pb.LobbyEnvelope envelope;
 
-  const LobbyWsEvent({
-    required this.version,
+  const LobbyServerEvent({
     required this.type,
     required this.timestamp,
     required this.traceId,
-    required this.payload,
+    required this.envelope,
   });
 
   @override
-  List<Object?> get props => [version, type, timestamp, traceId, payload];
+  List<Object?> get props => [type, timestamp, traceId];
+}
+
+/// 连接状态枚举
+enum LobbyConnectionEventType { connected, closed, error }
+
+/// 客户端连接状态事件
+class LobbyConnectionEvent extends LobbyWsEvent {
+  final LobbyConnectionEventType status;
+  final String? error;
+
+  const LobbyConnectionEvent({
+    required this.status,
+    this.error,
+  });
+
+  @override
+  List<Object?> get props => [status, error];
 }
 
 /// 传送门拒绝原因
@@ -480,6 +507,14 @@ class LobbyPortalReject extends Equatable {
 
   factory LobbyPortalReject.fromPayload(Map<String, dynamic> payload) {
     final reason = payload['reason']?.toString() ?? 'unknown';
+    return LobbyPortalReject(
+      reason: reason,
+      reasonType: LobbyPortalRejectReasonExt.fromString(reason),
+    );
+  }
+
+  factory LobbyPortalReject.fromProtobuf(pb.PortalUseRejectResponse pbReject) {
+    final reason = pbReject.reason.isNotEmpty ? pbReject.reason : 'unknown';
     return LobbyPortalReject(
       reason: reason,
       reasonType: LobbyPortalRejectReasonExt.fromString(reason),

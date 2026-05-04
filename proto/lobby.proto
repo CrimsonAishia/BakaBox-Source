@@ -1,0 +1,402 @@
+syntax = "proto3";
+
+package lobby;
+
+option go_package = "./proto";
+
+// ==================== 通用 Envelope ====================
+
+// LobbyEnvelope 所有大厅消息的外层包装
+message LobbyEnvelope {
+  int32 v = 1;                    // 协议版本
+  string type = 2;                // 消息类型
+  int64 ts = 3;                   // 服务端时间戳（毫秒）
+  string trace_id = 4;            // 请求追踪 ID
+  
+  oneof payload {
+    // 客户端 -> 服务端
+    LoginRequest login_request = 10;
+    LogoutRequest logout_request = 11;
+    MoveRequest move_request = 12;
+    ChatSendRequest chat_send_request = 13;
+    ProfileAnonymousChangeRequest profile_anonymous_change_request = 14;
+    ProfileSpriteChangeRequest profile_sprite_change_request = 15;
+    ProfileStatusTextUpdateRequest profile_status_text_update_request = 16;
+    ProfileDisplayNameUpdateRequest profile_display_name_update_request = 17;
+    SnapshotRequest snapshot_request = 18;
+    AssetsRequest assets_request = 19;
+    BroadcastSendRequest broadcast_send_request = 20;
+    BroadcastCDRequest broadcast_cd_request = 21;
+    PortalUseRequest portal_use_request = 22;
+    OnlineStatsRequest online_stats_request = 23;
+    
+    // 服务端 -> 客户端
+    LoginSuccessResponse login_success_response = 50;
+    LoginFailedResponse login_failed_response = 51;
+    LogoutSuccessResponse logout_success_response = 52;
+    JoinSuccessResponse join_success_response = 53;
+    SnapshotResponse snapshot_response = 54;
+    PresenceJoinResponse presence_join_response = 55;
+    PresenceLeaveResponse presence_leave_response = 56;
+    IdentityChangedResponse identity_changed_response = 57;
+    MoveBroadcastResponse move_broadcast_response = 58;
+    MoveRejectResponse move_reject_response = 59;
+    ChatMessageResponse chat_message_response = 60;
+    ChatRejectResponse chat_reject_response = 61;
+    AnonymousChangedResponse anonymous_changed_response = 62;
+    SpriteChangedResponse sprite_changed_response = 63;
+    SpriteChangeRejectResponse sprite_change_reject_response = 64;
+    StatusTextBroadcastResponse status_text_broadcast_response = 65;
+    DisplayNameChangedResponse display_name_changed_response = 66;
+    AssetsResponse assets_response = 67;
+    AssetsUpdatedResponse assets_updated_response = 68;
+    PortalTeleportResponse portal_teleport_response = 69;
+    PortalUseRejectResponse portal_use_reject_response = 70;
+    BroadcastMessageResponse broadcast_message_response = 71;
+    BroadcastRejectResponse broadcast_reject_response = 72;
+    BroadcastCDResponse broadcast_cd_response = 73;
+    OnlineStatsResponse online_stats_response = 74;
+    SystemErrorResponse system_error_response = 75;
+    SystemNoticeResponse system_notice_response = 76;
+    SystemKickedResponse system_kicked_response = 77;
+  }
+}
+
+// ==================== 数据模型 ====================
+
+// LobbyUser 用户信息
+message LobbyUser {
+  string user_id = 1;
+  string nickname = 2;
+  string steam_name = 3;
+  string sprite_id = 4;
+  string avatar_url = 5;
+  double x = 6;
+  double y = 7;
+  string facing = 8;
+  bool is_online = 9;
+  bool is_anonymous = 10;
+  string status_text = 11;
+  string last_message = 12;
+}
+
+// LobbyMessage 聊天消息
+message LobbyMessage {
+  string message_id = 1;
+  string user_id = 2;
+  string nickname = 3;
+  string content = 4;
+  string type = 5;
+  bool is_anonymous = 6;
+  int64 timestamp = 7;
+}
+
+// LobbyBroadcastMessage 全服广播消息
+message LobbyBroadcastMessage {
+  string message_id = 1;
+  string user_id = 2;
+  string nickname = 3;
+  string content = 4;
+  int64 timestamp = 5;
+  string avatar_url = 6;
+}
+
+// LobbyMapConfig 地图配置
+message LobbyMapConfig {
+  string map_id = 1;
+  string label = 2;
+  string background_url = 3;
+  double width = 4;
+  double height = 5;
+  repeated LobbyWalkableArea walkable_areas = 6;
+  repeated LobbyPortal portals = 7;
+  bool is_default = 8;
+}
+
+// LobbyWalkableArea 可行走区域
+message LobbyWalkableArea {
+  double left = 1;
+  double top = 2;
+  double right = 3;
+  double bottom = 4;
+}
+
+// LobbyPortal 传送门
+message LobbyPortal {
+  string key = 1;
+  string label = 2;
+  double x = 3;
+  double y = 4;
+  string target_map_id = 5;
+  double target_x = 6;
+  double target_y = 7;
+}
+
+// LobbySpriteConfig 角色外观配置
+message LobbySpriteConfig {
+  string id = 1;
+  string label = 2;
+  string accent_color = 3;
+  string sprite_url = 4;
+  string preview_url = 5;
+  bool is_default = 6;
+}
+
+// PageInfo 分页信息
+message PageInfo {
+  int32 current_page = 1;
+  int32 total_pages = 2;
+  int32 page_size = 3;
+  int32 total_users = 4;
+}
+
+// ==================== 客户端 -> 服务端 请求 ====================
+
+message LoginRequest {
+  string token = 1;
+  string device_type = 2;
+}
+
+message LogoutRequest {
+  bool force = 1;
+}
+
+message MoveRequest {
+  double target_x = 1;
+  double target_y = 2;
+}
+
+message ChatSendRequest {
+  string content = 1;
+}
+
+message ProfileAnonymousChangeRequest {
+  bool is_anonymous = 1;
+}
+
+message ProfileSpriteChangeRequest {
+  string sprite_id = 1;
+}
+
+message ProfileStatusTextUpdateRequest {
+  string status_text = 1;
+}
+
+message ProfileDisplayNameUpdateRequest {
+  string custom_name = 1;
+  string steam_name = 2;
+}
+
+message SnapshotRequest {
+  // 无参数
+}
+
+message AssetsRequest {
+  // 无参数
+}
+
+message BroadcastSendRequest {
+  string content = 1;
+}
+
+message BroadcastCDRequest {
+  // 无参数
+}
+
+message PortalUseRequest {
+  string portal_key = 1;
+}
+
+message OnlineStatsRequest {
+  bool include_users = 1;
+}
+
+// ==================== 服务端 -> 客户端 响应 ====================
+
+message LoginSuccessResponse {
+  string user_id = 1;
+  string nickname = 2;
+}
+
+message LoginFailedResponse {
+  int32 code = 1;
+  string reason = 2;
+}
+
+message LogoutSuccessResponse {
+  bool kick = 1;
+}
+
+message JoinSuccessResponse {
+  string map_id = 1;
+  LobbyUser user = 2;
+  int32 online_count = 3;
+}
+
+message SnapshotResponse {
+  LobbyMapConfig map_config = 1;
+  LobbyUser self = 2;
+  repeated LobbyUser users = 3;
+  repeated LobbyMessage recent_messages = 4;
+  PageInfo page_info = 5;
+}
+
+message PresenceJoinResponse {
+  LobbyUser user = 1;
+}
+
+message PresenceLeaveResponse {
+  string user_id = 1;
+  string target_map_id = 2;
+}
+
+message IdentityChangedResponse {
+  string session_key = 1;
+  string old_user_id = 2;
+  string new_user_id = 3;
+  string nickname = 4;
+  string avatar_url = 5;
+  string sprite_id = 6;
+  bool is_anonymous = 7;
+}
+
+message MoveBroadcastResponse {
+  string user_id = 1;
+  double target_x = 2;
+  double target_y = 3;
+  string facing = 4;
+}
+
+message MoveRejectResponse {
+  string reason = 1;
+  double correction_x = 2;
+  double correction_y = 3;
+}
+
+message ChatMessageResponse {
+  LobbyMessage message = 1;
+}
+
+message ChatRejectResponse {
+  string reason = 1;
+}
+
+message AnonymousChangedResponse {
+  string user_id = 1;
+  bool is_anonymous = 2;
+  string display_nickname = 3;
+}
+
+message SpriteChangedResponse {
+  string user_id = 1;
+  string sprite_id = 2;
+}
+
+message SpriteChangeRejectResponse {
+  string reason = 1;
+}
+
+message StatusTextBroadcastResponse {
+  string user_id = 1;
+  string status_text = 2;
+}
+
+message DisplayNameChangedResponse {
+  string user_id = 1;
+  string nickname = 2;
+}
+
+message AssetsResponse {
+  repeated LobbyMapConfig maps = 1;
+  repeated LobbySpriteConfig sprites = 2;
+}
+
+message AssetsUpdatedResponse {
+  string update_type = 1;
+  string message = 2;
+}
+
+message PortalTeleportResponse {
+  string portal_key = 1;
+  string label = 2;
+  string source_map_id = 3;
+  string target_map_id = 4;
+  double target_x = 5;
+  double target_y = 6;
+  string target_match_id = 7;  // 目标地图的 Match ID，客户端直接用此 ID joinMatch，无需再调 lobby_join RPC
+}
+
+message PortalUseRejectResponse {
+  string reason = 1;
+}
+
+message BroadcastMessageResponse {
+  LobbyBroadcastMessage message = 1;
+}
+
+message BroadcastRejectResponse {
+  string reason = 1;
+}
+
+message BroadcastCDResponse {
+  bool in_cooldown = 1;
+  int64 remaining_ms = 2;
+  int64 next_broadcast_at = 3;
+}
+
+message OnlineStatsResponse {
+  int32 total = 1;
+  map<string, int32> by_map = 2;
+  repeated LobbyUser users = 3;
+}
+
+message SystemErrorResponse {
+  int32 code = 1;
+  string message = 2;
+}
+
+message SystemNoticeResponse {
+  string message = 1;
+}
+
+message SystemKickedResponse {
+  string reason = 1;
+  string message = 2;
+}
+
+// ==================== RPC 请求/响应 ====================
+
+// LobbyJoinRequest 加入大厅请求
+message LobbyJoinRequest {
+  string device_type = 1;  // "mobile" 或 "pc"，默认 "pc"
+}
+
+// LobbyJoinResponse 加入大厅响应
+message LobbyJoinResponse {
+  string match_id = 1;  // 分配的 Match ID
+  string map_id = 2;    // 分配的地图 ID
+}
+
+// ==================== Match Signal ====================
+
+// MatchSignal 管理后台发送的信号
+message MatchSignal {
+  string action = 1;
+  
+  oneof payload {
+    KickSignal kick = 10;
+    AssetsUpdatedSignal assets_updated = 11;
+  }
+}
+
+// KickSignal 踢人信号
+message KickSignal {
+  string user_id = 1;
+  string reason = 2;
+}
+
+// AssetsUpdatedSignal 素材更新信号
+message AssetsUpdatedSignal {
+  string update_type = 1;
+  string message = 2;
+}
