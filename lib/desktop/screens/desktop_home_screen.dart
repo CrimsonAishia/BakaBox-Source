@@ -128,7 +128,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
 
     // 应用启动时立即连接大厅 WebSocket 并预加载大厅数据
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      LobbyWsService.instance.initialize();
+      LobbyNakamaService.instance.initialize();
 
       final bloc = context.read<AnnouncementBloc>();
       bloc.add(AnnouncementFetch());

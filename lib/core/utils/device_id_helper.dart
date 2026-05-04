@@ -18,7 +18,7 @@ import 'storage_utils.dart';
 /// 虚拟机/沙箱兜底方案：
 /// - 检测 BIOS UUID 占位符（如 VMware/VirtualBox 返回的 0000... / BBBB...）
 /// - 占位符检测失败后，生成并持久化一个确定性随机 ID（基于机器名+OS+核心数种子）
-/// - LobbyWsService 另有最终随机 UUIDv4 兜底作为安全网
+/// - LobbyNakamaService 另有最终随机 UUIDv4 兜底作为安全网
 class DeviceIdHelper {
   DeviceIdHelper._();
 
@@ -103,7 +103,7 @@ class DeviceIdHelper {
   /// 优先级：
   /// 1. 从本地存储读取已缓存的 fallback ID（保证重启后 ID 稳定）
   /// 2. 生成新的确定性 ID（基于机器名+OS+核心数种子）
-  /// 3. 若确定性路径也失败，生成随机 ID（LobbyWsService 最终安全网）
+  /// 3. 若确定性路径也失败，生成随机 ID（LobbyNakamaService 最终安全网）
   static String _getFallbackDeviceId() {
     // 尝试从 Hive 缓存读取（同步读取，Box 已打开时可用）
     try {
@@ -263,7 +263,7 @@ class DeviceIdHelper {
   /// 3. Linux: dmidecode 获取 system-uuid
   /// 4. 占位符过滤（虚拟机 BIOS UUID 检测）
   /// 5. 本地持久化 fallback ID（确定性，相同硬件重启后仍一致）
-  /// 6. LobbyWsService 另有随机 UUIDv4 最终安全网
+  /// 6. LobbyNakamaService 另有随机 UUIDv4 最终安全网
   static Future<String> getDeviceId() async {
     if (_cachedDeviceId != null) return _cachedDeviceId!;
 

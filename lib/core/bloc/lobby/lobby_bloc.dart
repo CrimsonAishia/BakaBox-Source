@@ -15,7 +15,7 @@ import '../../services/gsi_service.dart';
 import '../../services/lobby_asset_cache_service.dart';
 import '../../services/lobby_image_cache_service.dart';
 import '../../services/lobby_map_loader_service.dart';
-import '../../services/lobby_ws_service.dart';
+import '../../services/lobby_nakama_service.dart';
 import '../../services/notification_window_service.dart';
 import '../../services/broadcast_notification_service.dart';
 import '../../services/server_address_mapping_service.dart';
@@ -24,13 +24,14 @@ import '../../services/steam_user_service.dart';
 import '../../utils/log_service.dart';
 import '../../utils/storage_utils.dart';
 import '../settings/settings_state.dart';
+import '../../models/proto/lobby.pb.dart' as pb;
 
 part 'lobby_event.dart';
 part 'lobby_state.dart';
 
 class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
-  LobbyBloc({LobbyWsService? service, String initialActivityText = '在线'})
-      : _service = service ?? LobbyWsService.instance,
+  LobbyBloc({LobbyNakamaService? service, String initialActivityText = '在线'})
+      : _service = service ?? LobbyNakamaService.instance,
         super(LobbyState.initial().copyWith(pageActivityText: initialActivityText)) {
     // 在构造时就订阅 WebSocket 事件
     _wsSubscription = _service.events.listen(
@@ -135,7 +136,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   /// Steam名称切换冷却时间（秒）
   static const int _steamNameSwitchCooldownDuration = 3;
 
-  final LobbyWsService _service;
+  final LobbyNakamaService _service;
   StreamSubscription<LobbyWsEvent>? _wsSubscription;
   StreamSubscription<GameStatusEvent>? _gameStatusSubscription;
   StreamSubscription<OperationState>? _operationStateSubscription;
@@ -310,7 +311,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     // 防重入：监听器回调与缓存检查可能同时命中，只处理第一次
     var handled = false;
 
-    Future<void> handleAssetsPayload(LobbyWsEvent wsEvent) async {
+    Future<void> handleAssetsEvent(LobbyServerEvent serverEvent) async {
       if (handled) return;
       handled = true;
 
@@ -319,7 +320,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       _assetsTimeoutTimer?.cancel();
       _assetsTimeoutTimer = null;
 
-      add(_LobbyAssetsReceived(wsEvent));
+      add(_LobbyAssetsReceived(serverEvent));
 
       if (!_isDisposed && _isLobbyEntered) {
         await _service.requestSnapshot();
@@ -329,8 +330,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
     // 先注册监听器（在发请求之前），彻底消除竞态窗口
     _snapshotOnAssetsReceived = _service.events.listen((wsEvent) {
-      if (wsEvent.type == 'assets') {
-        handleAssetsPayload(wsEvent);
+      if (wsEvent is LobbyServerEvent && wsEvent.type == 'assets') {
+        handleAssetsEvent(wsEvent);
       }
     });
 
@@ -339,15 +340,18 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
     // 缓存兜底：assets 可能在监听器注册之前就已被 _wsSubscription 消费并缓存
     if (!handled && _service.hasAssetsReceived) {
-      final cachedPayload = _service.getLastAssetsPayload();
-      if (cachedPayload != null) {
+      final cachedAssetsResponse = _service.getLastAssetsPayload();
+      if (cachedAssetsResponse != null) {
         LogService.d('[LobbyBloc] _requestAssetsAndSnapshot: 使用缓存 assets payload');
-        await handleAssetsPayload(LobbyWsEvent(
-          version: 1,
+        // 构造 LobbyServerEvent 时需要包装为 pb.LobbyEnvelope
+        final cachedEnvelope = pb.LobbyEnvelope()
+          ..type = 'assets'
+          ..assetsResponse = cachedAssetsResponse;
+        await handleAssetsEvent(LobbyServerEvent(
           type: 'assets',
           timestamp: DateTime.now(),
           traceId: '',
-          payload: cachedPayload,
+          envelope: cachedEnvelope,
         ));
         return;
       }
@@ -365,13 +369,16 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   }
 
   /// 请求更多分页用户
+  ///
+  /// 注意：文档协议中 SnapshotRequest 无参数，分页由服务端 snapshot 响应中的
+  /// PageInfo 控制。此处仅重新请求 snapshot。
   Future<void> _loadMoreUsers(int page) async {
     if (_isDisposed || !_isLobbyEntered) return;
 
     // 标记正在加载更多
     add(_LobbySetLoadingMore(true));
 
-    await _service.requestSnapshot(page: page);
+    await _service.requestSnapshot();
   }
 
   /// 内部事件处理：assets 收到后更新状态并缓存
@@ -379,7 +386,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _LobbyAssetsReceived event,
     Emitter<LobbyState> emit,
   ) async {
-    final rawAssets = _parseAssets(event.wsEvent.payload, currentMapId: _selfMapId);
+    final rawAssets = _parseAssets(event.serverEvent.envelope.assetsResponse, currentMapId: _selfMapId);
     final assets = _mergeAssetsWithCache(rawAssets);
 
     // 立即缓存 URL（后台执行）
@@ -1153,13 +1160,84 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     LobbyWsEventReceived event,
     Emitter<LobbyState> emit,
   ) {
-    LogService.d('[LobbyBloc] _onWsEventReceived: type=${event.event.type}');
-    switch (event.event.type) {
+    final wsEvent = event.event;
+    
+    switch (wsEvent) {
+      case LobbyConnectionEvent(:final status, :final error):
+        _handleConnectionEvent(status, error, emit);
+      case LobbyServerEvent(:final type, :final envelope):
+        LogService.d('[LobbyBloc] _onWsEventReceived: type=$type');
+        _handleServerEvent(type, envelope, emit);
+    }
+  }
+
+  void _handleConnectionEvent(
+    LobbyConnectionEventType status,
+    String? error,
+    Emitter<LobbyState> emit,
+  ) {
+    switch (status) {
+      case LobbyConnectionEventType.connected:
+        _authAttemptedAfterConnect = false;
+        {
+          final wasConnecting = state.connectionStatus == LobbyConnectionStatus.connecting;
+          final wasReconnecting = state.connectionStatus == LobbyConnectionStatus.reconnecting ||
+              state.connectionStatus == LobbyConnectionStatus.disconnected ||
+              state.connectionStatus == LobbyConnectionStatus.failed;
+
+          if (wasConnecting || wasReconnecting) {
+            emit(state.copyWith(
+              connectionStatus: LobbyConnectionStatus.connected,
+              loadingPhase: state.pageStatus == LobbyPageStatus.loading
+                  ? LobbyLoadingPhase.loadingAssets
+                  : state.loadingPhase,
+              transientNotice: wasReconnecting ? '大厅重连成功，正在同步数据...' : state.transientNotice,
+              // 重连时清空待重发队列，避免重复发送旧消息
+              pendingMessages: const {},
+            ));
+            if (_isLobbyEntered) {
+              unawaited(_service.requestBroadcastCD());
+            }
+
+            // 首次连接或重连成功后，只要大厅处于 loading 状态就重新请求 assets+snapshot。
+            if (_isLobbyEntered && state.pageStatus == LobbyPageStatus.loading) {
+              _requestAssetsAndSnapshot();
+            }
+          }
+        }
+      case LobbyConnectionEventType.closed:
+        // 被踢出时不显示重连提示（由 system.kicked 处理）
+        if (state.kickedReason != null) return;
+        if (state.connectionStatus != LobbyConnectionStatus.connecting) {
+          // 断线时重置加载阶段，等待重连后重新开始
+          emit(state.copyWith(
+            connectionStatus: LobbyConnectionStatus.reconnecting,
+            loadingPhase: LobbyLoadingPhase.connecting,
+            transientNotice: '大厅连接断开，正在尝试重连...',
+          ));
+        }
+      case LobbyConnectionEventType.error:
+        if (state.connectionStatus != LobbyConnectionStatus.connecting) {
+          emit(state.copyWith(
+            connectionStatus: LobbyConnectionStatus.reconnecting,
+            loadingPhase: LobbyLoadingPhase.connecting,
+            transientNotice: '大厅连接异常，正在尝试重连...',
+          ));
+        }
+    }
+  }
+
+  void _handleServerEvent(
+    String type,
+    pb.LobbyEnvelope envelope,
+    Emitter<LobbyState> emit,
+  ) {
+    switch (type) {
       case 'login.success':
         // 登录成功（用户显式登录或匿名升级登录成功后服务端返回）
         // 不再自动请求 snapshot，客户端需主动请求
-        final loginUserId = event.event.payload['userId']?.toString();
-        final loginNickname = event.event.payload['nickname']?.toString();
+        final loginUserId = envelope.loginSuccessResponse.userId;
+        final loginNickname = envelope.loginSuccessResponse.nickname;
         LogService.d('[LobbyBloc] login.success: userId=$loginUserId nickname=$loginNickname '
             '_selfServerUserId=$_selfServerUserId '
             'state.users=${state.users.map((u) => '${u.userId}:${u.nickname}:isSelf=${u.isSelf}').toList()}');
@@ -1171,21 +1249,21 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         // 旧匿名自己：userId='self', isSelf=true, isAnonymous=true
         // 新用户 serverId = loginUserId
         var migratedUsers = state.users;
-        if (loginUserId != null && loginUserId != _selfUserId) {
+        if (loginUserId.isNotEmpty && loginUserId != _selfUserId) {
           // 查找旧匿名自己（userId='self' 且 isSelf=true）
           final oldSelfIdx = migratedUsers.indexWhere(
             (u) => u.userId == _selfUserId && u.isSelf,
           );
           if (oldSelfIdx >= 0) {
             // 替换为新的登录用户（保留 userId='self' 但更新所有登录信息）
+            // 注意：LoginSuccessResponse 没有 avatarUrl 字段，保留原有值
             final oldSelf = migratedUsers[oldSelfIdx];
             migratedUsers = [
               ...migratedUsers.sublist(0, oldSelfIdx),
               oldSelf.copyWith(
-                nickname: loginNickname ?? oldSelf.nickname,
+                nickname: loginNickname.isNotEmpty ? loginNickname : oldSelf.nickname,
                 isAnonymous: false,
                 serverUserId: loginUserId,
-                avatarUrl: event.event.payload['avatarUrl'] ?? oldSelf.avatarUrl,
               ),
               ...migratedUsers.sublist(oldSelfIdx + 1),
             ];
@@ -1211,8 +1289,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         break;
       case 'login.failed':
         _authAttemptedAfterConnect = false;
-        final loginFailedReason = event.event.payload['reason']?.toString();
-        final loginFailedCode = event.event.payload['code'];
+        final loginFailedReason = envelope.loginFailedResponse.reason;
+        final loginFailedCode = envelope.loginFailedResponse.code;
 
         // 手机端被拒绝：PC 端已在线（409）
         // 使用 kicked 遮罩展示，让用户明确知道原因
@@ -1228,13 +1306,13 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           emit(
             state.copyWith(
               connectionStatus: LobbyConnectionStatus.connected,
-              transientNotice: loginFailedReason ?? '登录失败，已保持匿名身份',
+              transientNotice: loginFailedReason.isNotEmpty ? loginFailedReason : '登录失败，已保持匿名身份',
             ),
           );
         }
         break;
       case 'logout.success':
-        final kick = event.event.payload['kick'] == true;
+        final kick = envelope.logoutSuccessResponse.kick;
         if (kick) {
           // force=true：WebSocket 连接已断开，等待重连
           emit(state.copyWith(
@@ -1265,75 +1343,26 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           }
         }
         break;
-      case 'ws.closed':
-        // 被踢出时不显示重连提示（由 system.kicked 处理）
-        if (state.kickedReason != null) break;
-        if (state.connectionStatus != LobbyConnectionStatus.connecting) {
-          // 断线时重置加载阶段，等待重连后重新开始
-          emit(state.copyWith(
-            connectionStatus: LobbyConnectionStatus.reconnecting,
-            loadingPhase: LobbyLoadingPhase.connecting,
-            transientNotice: '大厅连接断开，正在尝试重连...',
-          ));
-        }
-        break;
-      case 'ws.error':
-        if (state.connectionStatus != LobbyConnectionStatus.connecting) {
-          emit(state.copyWith(
-            connectionStatus: LobbyConnectionStatus.reconnecting,
-            loadingPhase: LobbyLoadingPhase.connecting,
-            transientNotice: '大厅连接异常，正在尝试重连...',
-          ));
-        }
-        break;
-      case 'ws.connected':
-        _authAttemptedAfterConnect = false;
-        {
-          final wasConnecting = state.connectionStatus == LobbyConnectionStatus.connecting;
-          final wasReconnecting = state.connectionStatus == LobbyConnectionStatus.reconnecting ||
-              state.connectionStatus == LobbyConnectionStatus.disconnected ||
-              state.connectionStatus == LobbyConnectionStatus.failed;
-
-          if (wasConnecting || wasReconnecting) {
-            emit(state.copyWith(
-              connectionStatus: LobbyConnectionStatus.connected,
-              loadingPhase: state.pageStatus == LobbyPageStatus.loading
-                  ? LobbyLoadingPhase.loadingAssets
-                  : state.loadingPhase,
-              transientNotice: wasReconnecting ? '大厅重连成功，正在同步数据...' : state.transientNotice,
-              // 重连时清空待重发队列，避免重复发送旧消息
-              pendingMessages: const {},
-            ));
-            if (_isLobbyEntered) {
-              unawaited(_service.requestBroadcastCD());
-            }
-
-            // 首次连接或重连成功后，只要大厅处于 loading 状态就重新请求 assets+snapshot。
-            // wasConnecting：_onStarted 里 initialize() 失败重连后到达此处，
-            //   _onStarted 末尾的 _requestAssetsAndSnapshot() 发出时 WS 未连接，请求被丢弃，
-            //   需要在这里补发。_requestAssetsAndSnapshot() 内部会取消旧监听器，重复调用安全。
-            // wasReconnecting：断线重连，同样需要重新请求。
-            if (_isLobbyEntered && state.pageStatus == LobbyPageStatus.loading) {
-              _requestAssetsAndSnapshot();
-            }
-          }
-        }
-        break;
       case 'join.success':
         // 从 join.success 中提取用户信息和当前地图 ID
-        final joinUser = event.event.payload['user'];
-        if (joinUser is Map) {
-          final userId = joinUser['userId']?.toString();
-          if (userId != null && userId.isNotEmpty) {
+        final joinResp = envelope.joinSuccessResponse;
+        if (joinResp.hasUser()) {
+          final userId = joinResp.user.userId;
+          if (userId.isNotEmpty) {
             _selfServerUserId = userId;
             LogService.d('[LobbyBloc] join.success 设置 _selfServerUserId=$userId');
           }
         }
         // 保存当前地图 ID（用于后续 assets 解析时确定当前地图）
-        final mapId = event.event.payload['mapId']?.toString();
-        if (mapId != null && mapId.isNotEmpty) {
+        final mapId = joinResp.mapId;
+        if (mapId.isNotEmpty) {
           _selfMapId = mapId;
           LogService.d('[LobbyBloc] join.success 设置 _selfMapId=$mapId');
+        }
+        // 从 join.success 中获取在线人数，直接更新面板按钮徽章
+        if (joinResp.onlineCount > 0) {
+          LogService.d('[LobbyBloc] join.success 在线人数: ${joinResp.onlineCount}');
+          emit(state.copyWith(serverOnlineCount: joinResp.onlineCount));
         }
         // 不在这里请求 assets，等到进入大厅页面再请求（避免 URL token 过期）
         
@@ -1345,11 +1374,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         {
           // 由于是在进入大厅页面后才请求 assets，这里收到说明正在加载中
           // 实际处理在 _requestAssetsAndSnapshot 中
-          final rawAssets = _parseAssets(event.event.payload, currentMapId: _selfMapId);
-          final assets = _mergeAssetsWithCache(rawAssets);
+          final rawAssets = _parseAssets(envelope.assetsResponse);
 
           // 如果 pageStatus 已经是 ready（从 snapshot 进入），刷新 assets
           if (state.pageStatus == LobbyPageStatus.ready) {
+            final assets = _mergeAssetsWithCache(rawAssets);
             emit(
               state.copyWith(
                 assets: assets,
@@ -1361,7 +1390,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       case 'snapshot':
         {
           final previousSelf = state.selfUser;
-          final snapshotState = _applySnapshot(event.event.payload);
+          final snapshotState = _applySnapshot(envelope.snapshotResponse);
           final previousServerUserId = _selfServerUserId;
           final nextServerUserId = snapshotState.selfServerUserId;
           _selfServerUserId = nextServerUserId;
@@ -1480,19 +1509,17 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         }
         break;
       case 'presence.join':
-        // 尝试从 payload 中提取 userId 判断是否是自己
-        final rawUserId = event.event.payload['user'] is Map
-            ? event.event.payload['user']['userId']?.toString()
-            : null;
-        final isSelfUser = rawUserId != null && _selfServerUserId == rawUserId;
+        // 尝试从 protobuf 中提取 userId 判断是否是自己
+        final presenceJoinResp = envelope.presenceJoinResponse;
+        final rawUserId = presenceJoinResp.user.userId;
+        final isSelfUser = rawUserId.isNotEmpty && _selfServerUserId == rawUserId;
         LogService.d('[LobbyBloc] presence.join: rawUserId=$rawUserId _selfServerUserId=$_selfServerUserId '
             'isSelfUser=$isSelfUser users=${state.users.map((u) => '${u.userId}:serverId=${u.serverUserId}:${u.nickname}').toList()}');
         final user = _parseLobbyUser(
-          event.event.payload['user'],
+          presenceJoinResp.user,
           isSelf: isSelfUser,
           serverUserId: rawUserId,
         );
-        if (user == null) break;
 
         // 如果是自己，同步 selectedSpriteId（服务端知道用户上次用的模型）
         final newSelectedSpriteId = isSelfUser && user.spriteId.isNotEmpty
@@ -1519,12 +1546,17 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             users: _upsertUser(state.users, user),
             selectedSpriteId: newSelectedSpriteId,
             playerNotifications: updatedNotifications,
+            // 有新用户加入时同步更新在线人数（自己加入时服务端已在 join.success 给出准确值，跳过）
+            serverOnlineCount: isSelfUser
+                ? state.serverOnlineCount
+                : state.serverOnlineCount + 1,
           ),
         );
         break;
       case 'presence.leave':
-        final serverUserId = event.event.payload['userId']?.toString();
-        if (serverUserId == null || serverUserId.isEmpty) break;
+        final presenceLeaveResp = envelope.presenceLeaveResponse;
+        final serverUserId = presenceLeaveResp.userId;
+        if (serverUserId.isEmpty) break;
         // 通过 serverUserId 或 userId 查找离开的用户
         final leavingUser = _findUserById(state.users, serverUserId);
         final updatedUsers = state.users
@@ -1532,10 +1564,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             .toList(growable: false);
 
         // 获取 targetMapId 判断是传送离开还是断线离开
-        final targetMapId = event.event.payload['targetMapId']?.toString();
+        final targetMapId = presenceLeaveResp.targetMapId;
         PlayerNotification? newNotification;
         if (leavingUser != null) {
-          if (targetMapId != null && targetMapId.isNotEmpty) {
+          if (targetMapId.isNotEmpty) {
             // 传送离开：获取目标地图名称
             final targetMapName = state.assets.getMapById(targetMapId)?.displayName ?? targetMapId;
             newNotification = PlayerNotification(
@@ -1565,15 +1597,18 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           state.copyWith(
             users: updatedUsers,
             playerNotifications: updatedNotifications,
+            // 有用户离开时同步减少在线人数（不低于 0）
+            serverOnlineCount: (state.serverOnlineCount - 1).clamp(0, double.maxFinite.toInt()),
           ),
         );
         break;
-      case 'presence.update':
-        final updatedUsers = _applyPresenceUpdate(state.users, event.event.payload);
-        emit(state.copyWith(users: updatedUsers));
-        break;
+      // TODO: presence.update 消息类型在当前 protobuf 协议中不存在，暂时注释掉
+      // case 'presence.update':
+      //   final updatedUsers = _applyPresenceUpdate(state.users, envelope.presenceUpdateResponse);
+      //   emit(state.copyWith(users: updatedUsers));
+      //   break;
       case 'move.broadcast':
-        var updatedUsers = _applyMoveBroadcast(state.users, event.event.payload);
+        var updatedUsers = _applyMoveBroadcast(state.users, envelope.moveBroadcastResponse);
 
         // 检查是否到达了 pendingPortal 附近
         final pendingPortal = state.pendingPortal;
@@ -1605,15 +1640,16 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         _startMovementTimer();
         break;
       case 'move.reject':
+        final moveRejectResp = envelope.moveRejectResponse;
         emit(
           state.copyWith(
-            users: _applyMoveReject(state.users, event.event.payload),
-            transientNotice: event.event.payload['reason']?.toString() ?? '移动请求被拒绝',
+            users: _applyMoveReject(state.users, moveRejectResp),
+            transientNotice: moveRejectResp.reason.isNotEmpty ? moveRejectResp.reason : '移动请求被拒绝',
           ),
         );
         break;
       case 'chat.message':
-        final nextState = _applyChatMessage(event.event.payload);
+        final nextState = _applyChatMessage(envelope.chatMessageResponse);
         LogService.d('[LobbyBloc] chat.message: users=${nextState.users.map((u) => '${u.userId}:lastMsg=${u.lastMessage != null ? '"${u.lastMessage}"' : null}').toList()}');
 
         emit(
@@ -1625,28 +1661,31 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         _scheduleBubbleCleanup();
         break;
       case 'chat.reject':
+        final chatRejectResp = envelope.chatRejectResponse;
         emit(
           state.copyWith(
-            transientNotice: event.event.payload['reason']?.toString() ?? '消息发送失败',
+            transientNotice: chatRejectResp.reason.isNotEmpty ? chatRejectResp.reason : '消息发送失败',
           ),
         );
         // 注意：这里不重发，因为不知道具体哪条被拒绝
         break;
       case 'profile.sprite.changed':
-        final nextUsers = _applySpriteChanged(state.users, event.event.payload);
-        final changedSpriteId = event.event.payload['spriteId']?.toString();
-        final changedUserId = event.event.payload['userId']?.toString();
+        final spriteChangedResp = envelope.spriteChangedResponse;
+        final nextUsers = _applySpriteChanged(state.users, spriteChangedResp);
+        final changedSpriteId = spriteChangedResp.spriteId;
+        final changedUserId = spriteChangedResp.userId;
         emit(
           state.copyWith(
             users: nextUsers,
-            selectedSpriteId: _isSelfServerUserId(changedUserId) && changedSpriteId != null
+            selectedSpriteId: _isSelfServerUserId(changedUserId) && changedSpriteId.isNotEmpty
                 ? changedSpriteId
                 : state.selectedSpriteId,
           ),
         );
         break;
       case 'profile.sprite.change.reject':
-        final reason = event.event.payload['reason']?.toString();
+        final spriteRejectResp = envelope.spriteChangeRejectResponse;
+        final reason = spriteRejectResp.reason;
         String message;
         switch (reason) {
           case 'invalid_sprite_id':
@@ -1665,9 +1704,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         );
         break;
       case 'profile.anonymous.changed':
-        final nextUsers = _applyAnonymousChanged(state.users, event.event.payload);
-        final userId = event.event.payload['userId']?.toString();
-        final isAnonymous = event.event.payload['isAnonymous'] == true;
+        final anonChangedResp = envelope.anonymousChangedResponse;
+        final nextUsers = _applyAnonymousChanged(state.users, anonChangedResp);
+        final userId = anonChangedResp.userId;
+        final isAnonymous = anonChangedResp.isAnonymous;
 
         // 清除 anonymous 设置项的 pending 状态
         final updatedPending = Map<String, bool>.from(state.pendingSettings);
@@ -1684,32 +1724,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           ),
         );
         break;
-      case 'profile.anonymous.change.reject':
-        // 匿名设置被拒绝，回退状态
-        LogService.d('[LobbyBloc] 收到 profile.anonymous.change.reject: payload=${event.event.payload}');
-        final updatedPending = Map<String, bool>.from(state.pendingSettings);
-        final pendingValue = updatedPending.remove('anonymous');
-        final updatedTimeouts = Map<String, DateTime>.from(state.pendingSettingsTimeouts);
-        updatedTimeouts.remove('anonymous');
-
-        final reason = event.event.payload['reason']?.toString() ?? '匿名模式设置失败';
-
-        // 从 pending 设置中获取被拒绝的操作值，回退到之前的值
-        // 例如：pending=true 表示尝试开启匿名被拒绝，则回退到 false
-        final revertedValue = pendingValue != null ? !pendingValue : state.isAnonymous;
-        emit(state.copyWith(
-          isAnonymous: revertedValue,
-          users: state.users
-              .map((user) => user.isSelf ? user.copyWith(isAnonymous: revertedValue) : user)
-              .toList(growable: false),
-          pendingSettings: updatedPending,
-          pendingSettingsTimeouts: updatedTimeouts,
-          transientNotice: reason,
-        ));
-        break;
       case 'system.notice':
-        final notice = event.event.payload['message']?.toString();
-        if (notice == null || notice.isEmpty) break;
+        final systemNoticeResp = envelope.systemNoticeResponse;
+        final notice = systemNoticeResp.message;
+        if (notice.isEmpty) break;
         emit(
           state.copyWith(
             messages: _limitMessages([...state.messages, _buildSystemMessage(notice)]),
@@ -1718,8 +1736,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         );
         break;
       case 'system.error':
-        final code = event.event.payload['code'];
-        final message = event.event.payload['message']?.toString() ?? '大厅服务暂时不可用';
+        final systemErrorResp = envelope.systemErrorResponse;
+        final code = systemErrorResp.code;
+        final message = systemErrorResp.message.isNotEmpty ? systemErrorResp.message : '大厅服务暂时不可用';
         emit(
           state.copyWith(
             connectionStatus: code == 409 ? LobbyConnectionStatus.disconnected : LobbyConnectionStatus.failed,
@@ -1728,8 +1747,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         );
         break;
       case 'system.kicked':
-        final reason = event.event.payload['reason']?.toString() ?? 'unknown';
-        final message = event.event.payload['message']?.toString();
+        final systemKickedResp = envelope.systemKickedResponse;
+        final reason = systemKickedResp.reason.isNotEmpty ? systemKickedResp.reason : 'unknown';
+        final message = systemKickedResp.message.isNotEmpty ? systemKickedResp.message : null;
         LogService.w('[LobbyBloc] 收到 system.kicked: reason=$reason message=$message');
 
         // 取消所有定时器
@@ -1751,13 +1771,14 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         ));
         break;
       case 'portal.teleport':
-        final portalKey = event.event.payload['portalKey']?.toString();
-        final label = event.event.payload['label']?.toString() ?? '未知传送点';
-        final sourceMapId = event.event.payload['sourceMapId']?.toString() ?? '';
-        final targetMapId = event.event.payload['targetMapId']?.toString() ?? '';
-        final targetX = _asDouble(event.event.payload['targetX']) ?? 0;
-        final targetY = _asDouble(event.event.payload['targetY']) ?? 0;
-        if (portalKey != null && portalKey.isNotEmpty && targetMapId.isNotEmpty) {
+        final portalTeleportResp = envelope.portalTeleportResponse;
+        final portalKey = portalTeleportResp.portalKey;
+        final label = portalTeleportResp.label.isNotEmpty ? portalTeleportResp.label : '未知传送点';
+        final sourceMapId = portalTeleportResp.sourceMapId;
+        final targetMapId = portalTeleportResp.targetMapId;
+        final targetX = portalTeleportResp.targetX;
+        final targetY = portalTeleportResp.targetY;
+        if (portalKey.isNotEmpty && targetMapId.isNotEmpty) {
           final target = LobbyTeleportTarget(
             portalKey: portalKey,
             label: label,
@@ -1772,11 +1793,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
           add(LobbyTeleportStarted(target));
 
-          // 主动请求 snapshot 以获取新地图的完整配置
-          LogService.d('[LobbyBloc] portal.teleport: 主动请求 snapshot');
-
           // 尝试从已有的 maps 中找到目标地图并预加载
-          // 注意：已在 _preloadPortalTargetMap 中检查 _isDisposed
           final targetMapConfig = state.assets.getMapById(targetMapId);
           if (targetMapConfig != null) {
             LogService.d('[LobbyBloc] portal.teleport: 预加载目标地图 $targetMapId');
@@ -1784,12 +1801,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           } else {
             LogService.d('[LobbyBloc] portal.teleport: 目标地图配置尚未加载，等待 snapshot');
           }
-
-          unawaited(_service.requestSnapshot());
+          // snapshot 由 join.success 触发后自动请求，不在此处主动发送
         }
         break;
       case 'portal.use.reject':
-        final reject = LobbyPortalReject.fromPayload(event.event.payload);
+        final portalRejectResp = envelope.portalUseRejectResponse;
+        final reject = LobbyPortalReject.fromProtobuf(portalRejectResp);
         LogService.w('[LobbyBloc] 传送门请求被拒绝: ${reject.reasonType.displayText}');
         emit(state.copyWith(
           transientNotice: reject.reasonType.displayText,
@@ -1798,9 +1815,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         ));
         break;
       case 'profile.statusText.broadcast':
-        final userId = event.event.payload['userId']?.toString();
-        final statusText = event.event.payload['statusText']?.toString();
-        if (userId != null && statusText != null) {
+        final statusTextResp = envelope.statusTextBroadcastResponse;
+        final userId = statusTextResp.userId;
+        final statusText = statusTextResp.statusText;
+        if (userId.isNotEmpty) {
           final normalizedUserId = _normalizeUserId(userId);
           emit(
             state.copyWith(
@@ -1814,9 +1832,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         }
         break;
       case 'profile.displayName.changed':
-        final userId = event.event.payload['userId']?.toString();
-        final nickname = event.event.payload['nickname']?.toString();
-        if (userId != null && nickname != null) {
+        final displayNameResp = envelope.displayNameChangedResponse;
+        final userId = displayNameResp.userId;
+        final nickname = displayNameResp.nickname;
+        if (userId.isNotEmpty && nickname.isNotEmpty) {
           final normalizedUserId = _normalizeUserId(userId);
           final nextUsers = state.users.map((user) {
             return (user.userId == normalizedUserId || user.serverUserId == userId)
@@ -1841,8 +1860,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         }
         break;
       case 'assets.updated':
-        final updateType = event.event.payload['updateType']?.toString() ?? 'all';
-        final message = event.event.payload['message']?.toString() ?? '素材已更新';
+        final assetsUpdatedResp = envelope.assetsUpdatedResponse;
+        final updateType = assetsUpdatedResp.updateType.isNotEmpty ? assetsUpdatedResp.updateType : 'all';
+        final message = assetsUpdatedResp.message.isNotEmpty ? assetsUpdatedResp.message : '素材已更新';
         LogService.i('[LobbyBloc] 收到素材更新通知: updateType=$updateType, message=$message');
 
         // 静默处理素材更新，只在日志中记录
@@ -1852,50 +1872,50 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         }
         break;
       case 'broadcast.message':
-        final broadcast = _parseBroadcastMessage(event.event.payload['message']);
-        if (broadcast != null) {
-          // 将广播消息转换为 LobbyMessage 并添加到聊天栏
-          final broadcastLobbyMessage = LobbyMessage(
-            messageId: broadcast.messageId,
-            userId: broadcast.userId,
+        final broadcastMsgResp = envelope.broadcastMessageResponse;
+        final broadcast = _parseBroadcastMessage(broadcastMsgResp.message);
+        // 将广播消息转换为 LobbyMessage 并添加到聊天栏
+        final broadcastLobbyMessage = LobbyMessage(
+          messageId: broadcast.messageId,
+          userId: broadcast.userId,
+          nickname: broadcast.nickname,
+          content: broadcast.content,
+          type: LobbyMessageType.broadcast,
+          timestamp: broadcast.timestamp,
+          isAnonymous: false,
+        );
+        final updatedMessages = _limitMessages([...state.messages, broadcastLobbyMessage]);
+
+        // 通过 Stream 通知 GlobalBroadcastBar 显示右下角广播通知卡片（桌面端使用）
+        _broadcastController.add(broadcast);
+
+        // 根据设置选择通知方式
+        final rawIndex = StorageUtils.getInt('broadcast_notification_type') ?? 0;
+        final safeIndex = rawIndex.clamp(0, BroadcastNotificationType.values.length - 1);
+        final broadcastNotificationType = BroadcastNotificationType.values[safeIndex];
+
+        if (broadcastNotificationType == BroadcastNotificationType.system) {
+          unawaited(
+            BroadcastNotificationService.instance.showBroadcastNotification(
+              sender: broadcast.nickname,
+              content: broadcast.content,
+              avatarUrl: broadcast.avatarUrl,
+            ),
+          );
+        } else {
+          // 软件内浮窗通知
+          NotificationWindowService().showBroadcastNotification(
             nickname: broadcast.nickname,
             content: broadcast.content,
-            type: LobbyMessageType.broadcast,
-            timestamp: broadcast.timestamp,
-            isAnonymous: false,
           );
-          final updatedMessages = _limitMessages([...state.messages, broadcastLobbyMessage]);
-
-          // 通过 Stream 通知 GlobalBroadcastBar 显示右下角广播通知卡片（桌面端使用）
-          _broadcastController.add(broadcast);
-
-          // 根据设置选择通知方式
-          final rawIndex = StorageUtils.getInt('broadcast_notification_type') ?? 0;
-          final safeIndex = rawIndex.clamp(0, BroadcastNotificationType.values.length - 1);
-          final broadcastNotificationType = BroadcastNotificationType.values[safeIndex];
-
-          if (broadcastNotificationType == BroadcastNotificationType.system) {
-            unawaited(
-              BroadcastNotificationService.instance.showBroadcastNotification(
-                sender: broadcast.nickname,
-                content: broadcast.content,
-                avatarUrl: broadcast.avatarUrl,
-              ),
-            );
-          } else {
-            // 软件内浮窗通知
-            NotificationWindowService().showBroadcastNotification(
-              nickname: broadcast.nickname,
-              content: broadcast.content,
-            );
-          }
-
-          emit(state.copyWith(messages: updatedMessages));
         }
+
+        emit(state.copyWith(messages: updatedMessages));
         break;
       case 'broadcast.cd':
-        final inCooldown = event.event.payload['inCooldown'] == true;
-        final remainingMs = event.event.payload['remainingMs'] as int? ?? 0;
+        final broadcastCdResp = envelope.broadcastCdResponse;
+        final inCooldown = broadcastCdResp.inCooldown;
+        final remainingMs = broadcastCdResp.remainingMs.toInt();
         if (inCooldown && remainingMs > 0) {
           // 取消旧的冷却倒计时
           _broadcastCooldownTimer?.cancel();
@@ -1917,51 +1937,31 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         _broadcastCooldownTimer?.cancel();
         _broadcastCooldownTimer = null;
 
-        final reason = event.event.payload['reason']?.toString() ?? '广播发送失败';
-        final remainingMs = event.event.payload['remainingMs'] as int?;
+        final broadcastRejectResp = envelope.broadcastRejectResponse;
+        final reason = broadcastRejectResp.reason.isNotEmpty ? broadcastRejectResp.reason : '广播发送失败';
 
-        // 如果服务器返回了剩余冷却时间，设置冷却状态并启动倒计时
-        if (remainingMs != null && remainingMs > 0) {
-          final remainingSeconds = (remainingMs / 1000).ceil();
-          emit(state.copyWith(
-            transientNotice: reason,
-            broadcastCooldownSeconds: remainingSeconds,
-          ));
-          _broadcastCooldownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-            add(const _LobbyBroadcastCooldownTick());
-          });
-        } else {
-          emit(state.copyWith(
-            transientNotice: reason,
-            broadcastCooldownSeconds: 0,
-          ));
-        }
-        break;
-      case 'online.count':
-        // 服务端主动推送的当前服务器在线人数
-        final count = event.event.payload['count'] as int? ?? 0;
-        LogService.d('[LobbyBloc] online.count: count=$count');
-        emit(state.copyWith(serverOnlineCount: count));
+        // 注意：BroadcastRejectResponse 只有 reason 字段，没有 remainingMs
+        // 如果需要冷却时间，应该由服务器通过 broadcast.cd 消息单独发送
+        emit(state.copyWith(
+          transientNotice: reason,
+          broadcastCooldownSeconds: 0,
+        ));
         break;
       case 'online.stats':
         {
-          final total = event.event.payload['total'] as int? ?? 0;
-          final usersData = event.event.payload['users'];
+          final onlineStatsResp = envelope.onlineStatsResponse;
+          final total = onlineStatsResp.total;
           final List<LobbyUser> parsedUsers = [];
           bool selfFound = false;
 
-          if (usersData is List) {
-            for (final item in usersData) {
-              // online.stats 返回的用户列表中，每个用户的 userId 就是其唯一标识
-              // 需要判断是否是自己
-              final userId = item is Map ? item['userId']?.toString() : null;
-              final isSelfUser = userId != null && _isSelfServerUserId(userId);
-              if (isSelfUser) selfFound = true;
-              final user = _parseLobbyUser(item, isSelf: isSelfUser, serverUserId: userId);
-              if (user != null) {
-                parsedUsers.add(user);
-              }
-            }
+          for (final pbUser in onlineStatsResp.users) {
+            // online.stats 返回的用户列表中，每个用户的 userId 就是其唯一标识
+            // 需要判断是否是自己
+            final userId = pbUser.userId;
+            final isSelfUser = userId.isNotEmpty && _isSelfServerUserId(userId);
+            if (isSelfUser) selfFound = true;
+            final user = _parseLobbyUser(pbUser, isSelf: isSelfUser, serverUserId: userId);
+            parsedUsers.add(user);
           }
 
           // 如果服务端返回的列表中没有自己，从本地 state.users 补充
@@ -2043,36 +2043,21 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   // 解析方法
   // ---------------------------------------------------------------------------
 
-  /// 从 payload 解析 assets（地图配置 + 角色贴图）
+  /// 从 protobuf 解析 assets（地图配置 + 角色贴图）
   ///
-  /// [payload] WebSocket assets 消息的 payload
+  /// [pbAssets] protobuf AssetsResponse 对象
   /// [skipCache] 是否跳过缓存（用于 snapshot 消息中的 assets）
   /// [currentMapId] 当前地图 ID，用于从 maps 数组中选择当前地图
   LobbyAssets _parseAssets(
-    Map<String, dynamic> payload, {
+    pb.AssetsResponse pbAssets, {
     bool skipCache = false,
     String? currentMapId,
   }) {
-    // 支持新的 maps 数组格式（优先）或旧的 mapConfig 格式（兼容）
+    // 从 protobuf maps 数组解析
     final List<LobbyMapConfig> parsedMaps = [];
-
-    // 尝试从 maps 数组解析（新的协议格式）
-    final payloadMaps = payload['maps'];
-    if (payloadMaps is List) {
-      for (final item in payloadMaps) {
-        final mapConfig = _parseMapConfig(item);
-        if (mapConfig != null) {
-          parsedMaps.add(mapConfig);
-        }
-      }
-    }
-
-    // 兼容旧的 mapConfig 格式
-    if (parsedMaps.isEmpty) {
-      final mapConfig = _parseMapConfig(payload['mapConfig']);
-      if (mapConfig != null) {
-        parsedMaps.add(mapConfig);
-      }
+    for (final pbMap in pbAssets.maps) {
+      final mapConfig = _parseMapConfig(pbMap);
+      parsedMaps.add(mapConfig);
     }
 
     // 确定当前地图：如果指定了 currentMapId，从 maps 中查找；否则使用第一个
@@ -2089,17 +2074,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         'availableMaps=${parsedMaps.map((m) => m.mapId).toList()}');
 
     final sprites = <LobbySprite>[];
-    final payloadSprites = payload['sprites'];
-    if (payloadSprites is List) {
-      for (final item in payloadSprites) {
-        final sprite = _parseLobbySprite(item);
-        if (sprite != null) {
-          sprites.add(sprite);
-        }
-      }
+    for (final pbSprite in pbAssets.sprites) {
+      final sprite = _parseLobbySprite(pbSprite);
+      sprites.add(sprite);
     }
 
-    // 如果 payload 中没有 sprites，保留现有的 assets
+    // 如果 protobuf 中没有 sprites，保留现有的 assets
     final hasNewSprites = sprites.isNotEmpty;
     final existingSprites = (!hasNewSprites && state.assets.sprites.isNotEmpty)
         ? state.assets.sprites
@@ -2170,59 +2150,32 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   }
 
   /// 将 snapshot 中的 assets（可能只有 mapConfig）与之前 assets 事件的 sprites 合并
-  /// 解析地图配置
-  LobbyMapConfig? _parseMapConfig(Object? raw) {
-    if (raw is! Map) return null;
-    final map = raw.cast<dynamic, dynamic>();
-    final mapId = map['mapId']?.toString();
-    final backgroundUrl = (map['backgroundUrl'] ?? map['background'])?.toString();
-    final width = _asDouble(map['width']);
-    final height = _asDouble(map['height']);
-    if (mapId == null || width == null || height == null) {
-      return null;
-    }
-
+  /// 解析地图配置（从 protobuf 类型）
+  LobbyMapConfig _parseMapConfig(pb.LobbyMapConfig pbMap) {
     final areas = <LobbyWalkableArea>[];
-    final walkableAreas = map['walkableAreas'];
-    if (walkableAreas is List) {
-      for (final item in walkableAreas) {
-        if (item is! Map) continue;
-        final left = _asDouble(item['left']);
-        final top = _asDouble(item['top']);
-        final right = _asDouble(item['right']);
-        final bottom = _asDouble(item['bottom']);
-        if (left == null || top == null || right == null || bottom == null) {
-          continue;
-        }
-        areas.add(LobbyWalkableArea.fromRect(
-          left: left,
-          top: top,
-          right: right,
-          bottom: bottom,
-        ));
-      }
+    for (final pbArea in pbMap.walkableAreas) {
+      areas.add(LobbyWalkableArea.fromRect(
+        left: pbArea.left,
+        top: pbArea.top,
+        right: pbArea.right,
+        bottom: pbArea.bottom,
+      ));
     }
 
     // 解析传送点
     final portals = <LobbyPortal>[];
-    final rawPortals = map['portals'];
-    if (rawPortals is List) {
-      for (final item in rawPortals) {
-        if (item is! Map) continue;
-        final portal = _parseLobbyPortal(item);
-        if (portal != null) {
-          portals.add(portal);
-        }
-      }
+    for (final pbPortal in pbMap.portals) {
+      final portal = _parseLobbyPortal(pbPortal);
+      portals.add(portal);
     }
 
-    final label = map['label']?.toString() ?? mapId;
+    final label = pbMap.label.isNotEmpty ? pbMap.label : pbMap.mapId;
     return LobbyMapConfig(
-      mapId: mapId,
+      mapId: pbMap.mapId,
       displayName: label,
-      backgroundUrl: backgroundUrl,
-      width: width,
-      height: height,
+      backgroundUrl: pbMap.backgroundUrl.isEmpty ? null : pbMap.backgroundUrl,
+      width: pbMap.width,
+      height: pbMap.height,
       walkableAreas: areas.isEmpty
           ? const [LobbyWalkableArea(left: 0, top: 0, width: 1600, height: 900)]
           : areas,
@@ -2230,116 +2183,73 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     );
   }
 
-  /// 解析传送点
-  LobbyPortal? _parseLobbyPortal(Map<dynamic, dynamic> raw) {
-    final key = raw['key']?.toString();
-    final label = raw['label']?.toString();
-    final targetMapId = raw['targetMapId']?.toString();
-    final x = _asDouble(raw['x']);
-    final y = _asDouble(raw['y']);
-    final targetX = _asDouble(raw['targetX']) ?? 0;
-    final targetY = _asDouble(raw['targetY']) ?? 0;
-    if (key == null || key.isEmpty || label == null || targetMapId == null) {
-      return null;
-    }
-    if (x == null || y == null) {
-      return null;
-    }
-
+  /// 解析传送点（从 protobuf 类型）
+  LobbyPortal _parseLobbyPortal(pb.LobbyPortal pbPortal) {
     return LobbyPortal(
-      key: key,
-      label: label,
-      x: x,
-      y: y,
-      targetMapId: targetMapId,
-      targetX: targetX,
-      targetY: targetY,
+      key: pbPortal.key,
+      label: pbPortal.label,
+      x: pbPortal.x,
+      y: pbPortal.y,
+      targetMapId: pbPortal.targetMapId,
+      targetX: pbPortal.targetX,
+      targetY: pbPortal.targetY,
     );
   }
 
-  /// 解析角色贴图
-  LobbySprite? _parseLobbySprite(Object? raw) {
-    if (raw is! Map) return null;
-    final map = raw.cast<dynamic, dynamic>();
-    final id = map['id']?.toString();
-    final label = map['label']?.toString() ?? id ?? '';
-    if (id == null || id.isEmpty) return null;
-
-    final accentColorHex = map['accentColor']?.toString();
-    final accentColor = _parseHexColor(accentColorHex) ?? const Color(0xFF60A5FA);
-    final isDefault = map['isDefault'] == true;
+  /// 解析角色贴图（从 protobuf 类型）
+  LobbySprite _parseLobbySprite(pb.LobbySpriteConfig pbSprite) {
+    final accentColor = _parseHexColor(pbSprite.accentColor) ?? const Color(0xFF60A5FA);
 
     return LobbySprite(
-      id: id,
-      label: label,
+      id: pbSprite.id,
+      label: pbSprite.label.isNotEmpty ? pbSprite.label : pbSprite.id,
       accentColor: accentColor,
-      spriteUrl: map['spriteUrl']?.toString(),
-      previewUrl: map['previewUrl']?.toString(),
-      isDefault: isDefault,
+      spriteUrl: pbSprite.spriteUrl.isEmpty ? null : pbSprite.spriteUrl,
+      previewUrl: pbSprite.previewUrl.isEmpty ? null : pbSprite.previewUrl,
+      isDefault: pbSprite.isDefault,
     );
   }
 
-  /// 解析用户信息
-  LobbyUser? _parseLobbyUser(
-    Object? raw, {
+  /// 解析用户信息（从 protobuf 类型）
+  LobbyUser _parseLobbyUser(
+    pb.LobbyUser pbUser, {
     required bool isSelf,
     String? serverUserId,
   }) {
-    if (raw is! Map) return null;
-    final map = raw.cast<dynamic, dynamic>();
-    final userId = map['userId']?.toString();
-    final nickname = map['nickname']?.toString();
-    final spriteId = map['spriteId']?.toString();
-    final x = _asDouble(map['x']);
-    final y = _asDouble(map['y']);
-    if (userId == null || nickname == null || spriteId == null || x == null || y == null) {
-      return null;
-    }
-
-    final timestamp = _parseTimestamp(map['lastMessageAt']);
-    final isAnonymous = map['isAnonymous'] == true;
-
     return LobbyUser(
-      userId: isSelf ? _selfUserId : userId,
+      userId: isSelf ? _selfUserId : pbUser.userId,
       serverUserId: serverUserId,
-      nickname: nickname,
-      spriteId: spriteId,
-      avatarUrl: map['avatarUrl']?.toString(),
-      position: LobbyPosition(x: x, y: y),
-      facing: _parseFacing(map['facing']?.toString()),
-      isMoving: map['isMoving'] == true,
-      isOnline: map['isOnline'] != false,
-      isAnonymous: isAnonymous,
+      nickname: pbUser.nickname,
+      spriteId: pbUser.spriteId,
+      avatarUrl: pbUser.avatarUrl.isEmpty ? null : pbUser.avatarUrl,
+      position: LobbyPosition(x: pbUser.x, y: pbUser.y),
+      facing: _parseFacing(pbUser.facing),
+      isMoving: false, // protobuf 中没有 isMoving 字段
+      isOnline: pbUser.isOnline,
+      isAnonymous: pbUser.isAnonymous,
       isSelf: isSelf,
-      statusText: map['statusText']?.toString(),
-      lastMessage: map['lastMessage']?.toString(),
-      lastMessageAt: timestamp,
+      statusText: pbUser.statusText.isEmpty ? null : pbUser.statusText,
+      lastMessage: pbUser.lastMessage.isEmpty ? null : pbUser.lastMessage,
+      lastMessageAt: null, // protobuf 中没有 lastMessageAt 字段
     );
   }
 
-  /// 解析消息
-  LobbyMessage? _parseLobbyMessage(Object? raw) {
-    if (raw is! Map) return null;
-    final map = raw.cast<dynamic, dynamic>();
-    final messageId = map['messageId']?.toString();
-    final userId = map['userId']?.toString();
-    final nickname = map['nickname']?.toString();
-    final content = map['content']?.toString();
-    final type = _parseMessageType(map['type']?.toString());
-    // 如果 timestamp 解析失败，使用当前时间作为兜底，确保消息不丢失
-    final timestamp = _parseTimestamp(map['timestamp']) ?? DateTime.now();
-    if (messageId == null || userId == null || nickname == null || content == null) {
-      return null;
-    }
+  /// 解析消息（从 protobuf 类型）
+  LobbyMessage _parseLobbyMessage(pb.LobbyMessage pbMsg) {
+    final type = _parseMessageType(pbMsg.type);
+    // 如果 timestamp 为 0，使用当前时间作为兜底，确保消息不丢失
+    final timestamp = pbMsg.timestamp.toInt() > 0
+        ? DateTime.fromMillisecondsSinceEpoch(pbMsg.timestamp.toInt())
+        : DateTime.now();
 
     return LobbyMessage(
-      messageId: messageId,
-      userId: userId,
-      nickname: nickname,
-      content: content,
+      messageId: pbMsg.messageId,
+      userId: pbMsg.userId,
+      nickname: pbMsg.nickname,
+      content: pbMsg.content,
       type: type,
       timestamp: timestamp,
-      isAnonymous: map['isAnonymous'] == true,
+      isAnonymous: pbMsg.isAnonymous,
     );
   }
 
@@ -2400,83 +2310,18 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     }
   }
 
-  /// 解析时间戳
-  DateTime? _parseTimestamp(Object? raw) {
-    if (raw == null) return null;
-    if (raw is int) {
-      // 检测是否为秒级时间戳（10位数字），如果是则转换为毫秒
-      if (raw > 10000000000 && raw < 100000000000) {
-        return DateTime.fromMillisecondsSinceEpoch(raw * 1000);
-      }
-      return DateTime.fromMillisecondsSinceEpoch(raw);
-    }
-    if (raw is String) {
-      final trimmed = raw.trim();
-      if (trimmed.isEmpty) return null;
-      final millis = int.tryParse(trimmed);
-      if (millis != null) {
-        // 检测秒级时间戳
-        if (millis > 10000000000 && millis < 100000000000) {
-          return DateTime.fromMillisecondsSinceEpoch(millis * 1000);
-        }
-        return DateTime.fromMillisecondsSinceEpoch(millis);
-      }
-      return DateTime.tryParse(trimmed);
-    }
-    return null;
-  }
-
-  /// 安全的 double 转换
-  double? _asDouble(Object? value) {
-    if (value is num) return value.toDouble();
-    if (value is String) return double.tryParse(value);
-    return null;
-  }
-
   // ---------------------------------------------------------------------------
   // Apply 方法（将解析结果应用到状态）
   // ---------------------------------------------------------------------------
 
-  List<LobbyUser> _applyPresenceUpdate(
-    List<LobbyUser> users,
-    Map<String, dynamic> payload,
-  ) {
-    final serverUserId = payload['userId']?.toString();
-    if (serverUserId == null || serverUserId.isEmpty) return users;
-    final updates = payload['updates'];
-    if (updates is! Map) return users;
-
-    // 通过 serverUserId 或 userId 查找目标用户
-    final idx = users.indexWhere(
-      (u) => u.serverUserId == serverUserId || u.userId == serverUserId,
-    );
-    if (idx < 0) return users;
-
-    return [
-      ...users.sublist(0, idx),
-      users[idx].copyWith(
-        statusText: updates.containsKey('statusText')
-            ? updates['statusText']?.toString()
-            : users[idx].statusText,
-        nickname: updates.containsKey('nickname')
-            ? updates['nickname']?.toString() ?? users[idx].nickname
-            : users[idx].nickname,
-      ),
-      ...users.sublist(idx + 1),
-    ];
-  }
-
   List<LobbyUser> _applyMoveBroadcast(
     List<LobbyUser> users,
-    Map<String, dynamic> payload,
+    pb.MoveBroadcastResponse pbMove,
   ) {
-    final serverUserId = payload['userId']?.toString();
-    if (serverUserId == null || serverUserId.isEmpty) return users;
-    final targetX = _asDouble(payload['targetX']);
-    final targetY = _asDouble(payload['targetY']);
-    if (targetX == null || targetY == null) return users;
-    final target = LobbyPosition(x: targetX, y: targetY);
-    final facing = _parseFacing(payload['facing']?.toString());
+    final serverUserId = pbMove.userId;
+    if (serverUserId.isEmpty) return users;
+    final target = LobbyPosition(x: pbMove.targetX, y: pbMove.targetY);
+    final facing = _parseFacing(pbMove.facing);
 
     // 通过 serverUserId 或 userId 查找目标用户
     final idx = users.indexWhere(
@@ -2497,12 +2342,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
   List<LobbyUser> _applyMoveReject(
     List<LobbyUser> users,
-    Map<String, dynamic> payload,
+    pb.MoveRejectResponse pbReject,
   ) {
-    final correctionX = _asDouble(payload['correctionX']);
-    final correctionY = _asDouble(payload['correctionY']);
-    if (correctionX == null || correctionY == null) return users;
-    final corrected = LobbyPosition(x: correctionX, y: correctionY);
+    final corrected = LobbyPosition(x: pbReject.correctionX, y: pbReject.correctionY);
 
     return users.map((user) {
       if (!user.isSelf) return user;
@@ -2515,56 +2357,46 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     }).toList(growable: false);
   }
 
-  _SnapshotState _applySnapshot(Map<String, dynamic> payload) {
-    final selfServerUserId = payload['self']?['userId']?.toString();
-    final self = _parseLobbyUser(payload['self'], isSelf: true, serverUserId: selfServerUserId);
+  _SnapshotState _applySnapshot(pb.SnapshotResponse pbSnapshot) {
+    final selfServerUserId = pbSnapshot.hasSelf() ? pbSnapshot.self.userId : null;
+    final self = pbSnapshot.hasSelf() 
+        ? _parseLobbyUser(pbSnapshot.self, isSelf: true, serverUserId: selfServerUserId)
+        : null;
 
-    // selfServerUserId 必须直接从原始 payload 获取，因为 _parseLobbyUser 已经将 self 的 userId 转换为 'self'
+    // selfServerUserId 必须直接从原始 protobuf 获取，因为 _parseLobbyUser 已经将 self 的 userId 转换为 'self'
 
     final users = <LobbyUser>[];
     if (self != null) {
       users.add(self);
     }
 
-    // 注意：payload['users'] 中已经包含了当前用户（通过 userId 匹配），
+    // 注意：pbSnapshot.users 中已经包含了当前用户（通过 userId 匹配），
     // 需要排除 self，避免渲染两个自己的角色。
     // 使用 selfServerUserId 来识别并排除。
-    final payloadUsers = payload['users'];
-    if (payloadUsers is List) {
-      for (final item in payloadUsers) {
-        // 检查是否与 self 是同一个用户（通过原始 userId 匹配）
-        final itemUserId = item is Map ? item['userId']?.toString() : null;
-        if (selfServerUserId != null && itemUserId == selfServerUserId) {
-          continue; // 跳过 self，避免重复渲染
-        }
-        final user = _parseLobbyUser(item, isSelf: false, serverUserId: itemUserId);
-        if (user != null) {
-          users.add(user);
-        }
+    for (final pbUser in pbSnapshot.users) {
+      // 检查是否与 self 是同一个用户（通过原始 userId 匹配）
+      final itemUserId = pbUser.userId;
+      if (selfServerUserId != null && selfServerUserId.isNotEmpty && itemUserId == selfServerUserId) {
+        continue; // 跳过 self，避免重复渲染
       }
+      final user = _parseLobbyUser(pbUser, isSelf: false, serverUserId: itemUserId);
+      users.add(user);
     }
 
     final recentMessages = <LobbyMessage>[];
-    final payloadMessages = payload['recentMessages'];
-    if (payloadMessages is List) {
-      for (final item in payloadMessages) {
-        final message = _parseLobbyMessage(item);
-        if (message != null) {
-          recentMessages.add(message);
-        }
-      }
+    for (final pbMsg in pbSnapshot.recentMessages) {
+      final message = _parseLobbyMessage(pbMsg);
+      recentMessages.add(message);
     }
 
     final selectedSpriteId = state.selectedSpriteId;
     final isAnonymous = self?.isAnonymous ?? state.isAnonymous;
 
     // 解析分页信息
-    final pageInfo = _parsePageInfo(payload['pageInfo']);
+    final pageInfo = pbSnapshot.hasPageInfo() ? _parsePageInfo(pbSnapshot.pageInfo) : null;
 
     // 解析地图配置（snapshot 中包含当前地图的完整配置）
-    final rawMapConfig = payload['mapConfig'];
-    LogService.d('[LobbyBloc] _applySnapshot: raw mapConfig=$rawMapConfig');
-    final mapConfig = _parseMapConfig(rawMapConfig);
+    final mapConfig = pbSnapshot.hasMapConfig() ? _parseMapConfig(pbSnapshot.mapConfig) : null;
     LogService.d('[LobbyBloc] _applySnapshot: parsed mapConfig.mapId=${mapConfig?.mapId}');
 
     return _SnapshotState(
@@ -2579,30 +2411,21 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     );
   }
 
-  /// 解析分页信息
-  LobbyPageInfo? _parsePageInfo(Object? raw) {
-    if (raw is! Map) return null;
-    final map = raw.cast<dynamic, dynamic>();
-    final currentPage = map['currentPage'] as int?;
-    final totalPages = map['totalPages'] as int?;
-    final pageSize = map['pageSize'] as int?;
-    final totalUsers = map['totalUsers'] as int?;
-    if (currentPage == null || totalPages == null || pageSize == null || totalUsers == null) {
-      return null;
-    }
+  /// 解析分页信息（从 protobuf 类型）
+  LobbyPageInfo _parsePageInfo(pb.PageInfo pbPage) {
     return LobbyPageInfo(
-      currentPage: currentPage,
-      totalPages: totalPages,
-      pageSize: pageSize,
-      totalUsers: totalUsers,
+      currentPage: pbPage.currentPage,
+      totalPages: pbPage.totalPages,
+      pageSize: pbPage.pageSize,
+      totalUsers: pbPage.totalUsers,
     );
   }
 
-  _ChatState _applyChatMessage(Map<String, dynamic> payload) {
-    final message = _parseLobbyMessage(payload['message']);
-    if (message == null) {
+  _ChatState _applyChatMessage(pb.ChatMessageResponse pbChat) {
+    if (!pbChat.hasMessage()) {
       return _ChatState(users: state.users, messages: state.messages);
     }
+    final message = _parseLobbyMessage(pbChat.message);
 
     // 如果是自己发送的消息，直接忽略
     // 因为本地已经在发送时立即显示了（乐观更新）
@@ -2647,11 +2470,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
   List<LobbyUser> _applySpriteChanged(
     List<LobbyUser> users,
-    Map<String, dynamic> payload,
+    pb.SpriteChangedResponse pbSprite,
   ) {
-    final userId = payload['userId']?.toString();
-    final spriteId = payload['spriteId']?.toString();
-    if (userId == null || userId.isEmpty || spriteId == null || spriteId.isEmpty) {
+    final userId = pbSprite.userId;
+    final spriteId = pbSprite.spriteId;
+    if (userId.isEmpty || spriteId.isEmpty) {
       return users;
     }
 
@@ -2664,19 +2487,19 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
   List<LobbyUser> _applyAnonymousChanged(
     List<LobbyUser> users,
-    Map<String, dynamic> payload,
+    pb.AnonymousChangedResponse pbAnon,
   ) {
-    final userId = payload['userId']?.toString();
-    if (userId == null || userId.isEmpty) return users;
-    final isAnonymous = payload['isAnonymous'] == true;
-    final displayNickname = payload['displayNickname']?.toString();
+    final userId = pbAnon.userId;
+    if (userId.isEmpty) return users;
+    final isAnonymous = pbAnon.isAnonymous;
+    final displayNickname = pbAnon.displayNickname;
     final normalizedUserId = _normalizeUserId(userId);
 
     return users.map((user) {
       if (user.userId != normalizedUserId) return user;
       return user.copyWith(
         isAnonymous: isAnonymous,
-        nickname: displayNickname ?? user.nickname,
+        nickname: displayNickname.isNotEmpty ? displayNickname : user.nickname,
       );
     }).toList(growable: false);
   }
@@ -2950,26 +2773,14 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   }
 
   /// 解析广播消息
-  LobbyBroadcastMessage? _parseBroadcastMessage(Object? raw) {
-    if (raw is! Map) return null;
-    final map = raw.cast<dynamic, dynamic>();
-    final messageId = map['messageId']?.toString();
-    final userId = map['userId']?.toString();
-    final nickname = map['nickname']?.toString();
-    final content = map['content']?.toString();
-    final timestamp = _parseTimestamp(map['timestamp']);
-    final avatarUrl = map['avatarUrl']?.toString();
-    if (messageId == null || userId == null || nickname == null || content == null) {
-      return null;
-    }
-
+  LobbyBroadcastMessage _parseBroadcastMessage(pb.LobbyBroadcastMessage pbMsg) {
     return LobbyBroadcastMessage(
-      messageId: messageId,
-      userId: userId,
-      nickname: nickname,
-      content: content,
-      timestamp: timestamp ?? DateTime.now(),
-      avatarUrl: avatarUrl,
+      messageId: pbMsg.messageId,
+      userId: pbMsg.userId,
+      nickname: pbMsg.nickname,
+      content: pbMsg.content,
+      timestamp: DateTime.fromMillisecondsSinceEpoch(pbMsg.timestamp.toInt()),
+      avatarUrl: pbMsg.avatarUrl.isEmpty ? null : pbMsg.avatarUrl,
     );
   }
 
@@ -3011,7 +2822,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     await _broadcastController.close();
     // 注销 AuthService 登录状态监听
     AuthService.instance.removeLoginStateListener(_authStateListener);
-    // 不调用 _service.dispose()：LobbyWsService 是单例，跨 LobbyBloc 生命周期复用
+    // 不调用 _service.dispose()：LobbyNakamaService 是单例，跨 LobbyBloc 生命周期复用
     return super.close();
   }
 
