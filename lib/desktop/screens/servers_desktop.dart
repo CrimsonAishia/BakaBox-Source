@@ -39,19 +39,19 @@ class _ServersDesktopState extends State<ServersDesktop> {
   // 状态窗口服务（用于共享游戏状态）
   final StatusWindowService _statusService = StatusWindowService();
 
+  // 游戏状态监听订阅
+  StreamSubscription? _gameStatusSubscription;
+
   // 游戏运行状态（从 StatusWindowService 共享）
   bool _isGameRunning = false;
   bool _isLaunchingGame = false;
 
   // ScrollController for lists
   final ScrollController _serversScrollController = ScrollController();
-  final ScrollController _categoriesScrollController = ScrollController();
 
   // 滚动指示器状态
   bool _canScrollUpServers = false;
   bool _canScrollDownServers = false;
-  bool _canScrollUpCategories = false;
-  bool _canScrollDownCategories = false;
 
   // Ping 相关
   int _lastPingRequestId = 0;
@@ -64,14 +64,15 @@ class _ServersDesktopState extends State<ServersDesktop> {
   // 沉浸模式标志（用于暂停正常模式的机制）
   bool _isInImmersiveMode = false;
 
+  // 分类列表刷新动画 key（应用 pending categories 时递增，驱动 AnimatedSwitcher）
+  int _categoriesListAnimKey = 0;
+
   @override
   void initState() {
     super.initState();
 
     // 监听服务器列表滚动
     _serversScrollController.addListener(_updateServersScrollIndicators);
-    // 监听分类列表滚动
-    _categoriesScrollController.addListener(_updateCategoriesScrollIndicators);
 
     // 启动分类人数刷新定时器
     _startCategoryCountsRefreshTimer();
@@ -86,7 +87,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
     _checkGameStatus();
 
     // 监听 StatusWindowService 状态变化
-    _statusService.stateStream.listen((state) {
+    _gameStatusSubscription = _statusService.stateStream.listen((state) {
       if (mounted) {
         setState(() {
           _isGameRunning = state.isGameRunning;
@@ -122,19 +123,6 @@ class _ServersDesktopState extends State<ServersDesktop> {
     }
   }
 
-  void _updateCategoriesScrollIndicators() {
-    if (!_categoriesScrollController.hasClients) return;
-    final position = _categoriesScrollController.position;
-    final canUp = position.pixels > 0;
-    final canDown = position.pixels < position.maxScrollExtent;
-    if (canUp != _canScrollUpCategories ||
-        canDown != _canScrollDownCategories) {
-      setState(() {
-        _canScrollUpCategories = canUp;
-        _canScrollDownCategories = canDown;
-      });
-    }
-  }
 
   /// 延迟获取所有服务器的 ping（防抖 + 并行获取）
   void _scheduleDelayedPingFetch() {
@@ -422,12 +410,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
   void dispose() {
     _serverBloc?.add(ServerStopPeriodicRefresh());
     _stopCategoryCountsRefreshTimer();
+    _gameStatusSubscription?.cancel();
     _serversScrollController.removeListener(_updateServersScrollIndicators);
-    _categoriesScrollController.removeListener(
-      _updateCategoriesScrollIndicators,
-    );
     _serversScrollController.dispose();
-    _categoriesScrollController.dispose();
     super.dispose();
   }
 
@@ -497,6 +482,17 @@ class _ServersDesktopState extends State<ServersDesktop> {
               current.serverCategories.isNotEmpty &&
               current.selectedCategory == null,
           listener: (context, state) => _autoSelectFirstCategory(state),
+        ),
+        // 应用 pending categories 时触发分类列表刷新动画
+        // 仅当 serverCategories 实际发生变化时触发（dismiss 不改变 categories，不触发）
+        BlocListener<ServerBloc, ServerState>(
+          listenWhen: (previous, current) =>
+              previous.pendingCategories != null &&
+              current.pendingCategories == null &&
+              previous.serverCategories != current.serverCategories,
+          listener: (context, state) {
+            setState(() => _categoriesListAnimKey++);
+          },
         ),
       ],
       child: Scaffold(
@@ -1403,23 +1399,242 @@ class _ServersDesktopState extends State<ServersDesktop> {
   /// 右侧分类列表列
   Widget _buildCategoriesColumn() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+    return Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF9FAFB),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Tab 标签栏
+              _buildTabBar(),
+              // 分类列表
+              Expanded(child: _buildCategoriesList()),
+            ],
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Tab 标签栏
-          _buildTabBar(),
-          // 分类列表
-          Expanded(child: _buildCategoriesList()),
-        ],
-      ),
+        // 分类更新浮层提示（覆盖在列表上方）
+        _buildPendingCategoriesOverlay(),
+      ],
+    );
+  }
+
+  /// 分类更新浮层提示（检测到新分类时从顶部滑入）
+  Widget _buildPendingCategoriesOverlay() {
+    return BlocBuilder<ServerBloc, ServerState>(
+      buildWhen: (previous, current) =>
+          (previous.pendingCategories == null) !=
+          (current.pendingCategories == null),
+      builder: (context, state) {
+        final hasPending = state.pendingCategories != null;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+
+        return IgnorePointer(
+          ignoring: !hasPending,
+          child: AnimatedSlide(
+            offset: hasPending ? Offset.zero : const Offset(0, -1.5),
+            duration: const Duration(milliseconds: 350),
+            curve: hasPending ? Curves.easeOutBack : Curves.easeIn,
+            child: AnimatedOpacity(
+              opacity: hasPending ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 250),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+                  child: Material(
+                    elevation: hasPending ? 8 : 0,
+                    shadowColor: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: isDark
+                              ? [
+                                  const Color(0xFF1E3A5F),
+                                  const Color(0xFF1A2F4A),
+                                ]
+                              : [
+                                  const Color(0xFFEFF6FF),
+                                  const Color(0xFFDBEAFE),
+                                ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFF0080FF).withValues(alpha: 0.5),
+                          width: 1.5,
+                        ),
+                      ),
+                      padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 标题行
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.system_update_alt_rounded,
+                                  size: 18,
+                                  color: Color(0xFF0080FF),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '分类列表有更新',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: isDark
+                                            ? Colors.white
+                                            : const Color(0xFF1E40AF),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '服务器分类已在后台更新，点击应用以刷新列表',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: isDark
+                                            ? Colors.white54
+                                            : const Color(0xFF3B82F6),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // 关闭按钮
+                              InkWell(
+                                onTap: () => context.read<ServerBloc>().add(
+                                  const ServerDismissPendingCategories(),
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4),
+                                  child: Icon(
+                                    Icons.close_rounded,
+                                    size: 16,
+                                    color: isDark
+                                        ? Colors.white38
+                                        : const Color(0xFF93C5FD),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          // 操作按钮行
+                          Row(
+                            children: [
+                              const Spacer(),
+                              // 稍后按钮
+                              InkWell(
+                                onTap: () => context.read<ServerBloc>().add(
+                                  const ServerDismissPendingCategories(),
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? Colors.white.withValues(alpha: 0.08)
+                                        : Colors.white.withValues(alpha: 0.6),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: isDark
+                                          ? Colors.white.withValues(alpha: 0.12)
+                                          : const Color(0xFF93C5FD),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '稍后',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDark
+                                          ? Colors.white54
+                                          : const Color(0xFF3B82F6),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // 立即应用按钮
+                              InkWell(
+                                onTap: () => context.read<ServerBloc>().add(
+                                  const ServerApplyPendingCategories(),
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0080FF),
+                                    borderRadius: BorderRadius.circular(6),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF0080FF).withValues(alpha: 0.4),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.refresh_rounded,
+                                        size: 14,
+                                        color: Colors.white,
+                                      ),
+                                      SizedBox(width: 5),
+                                      Text(
+                                        '立即应用',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1576,207 +1791,33 @@ class _ServersDesktopState extends State<ServersDesktop> {
 
   /// 分类列表内容
   Widget _buildCategoriesList() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return BlocBuilder<ServerBloc, ServerState>(
-      builder: (context, state) {
-        // 首次加载且没有分类数据时显示加载指示器
-        if (state.isLoading && state.serverCategories.isEmpty) {
-          return const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0080FF)),
-            ),
-          );
-        }
-
-        if (state.error != null && state.serverCategories.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(state.error ?? '加载失败'),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () =>
-                      context.read<ServerBloc>().add(ServerFetchList()),
-                  child: const Text('重试'),
-                ),
-              ],
-            ),
-          );
-        }
-
-        // 根据当前 tab 过滤分类列表
-        final filteredCategories = state.filteredCategories;
-
-        if (filteredCategories.isEmpty) {
-          // 空状态提示
-          final isCustomTab = state.selectedTabIndex == 1;
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(30),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isCustomTab ? Icons.add_circle_outline : Icons.dns_outlined,
-                    size: 48,
-                    color: isDark ? Colors.white24 : const Color(0xFFCCCCCC),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    isCustomTab ? '暂无自定义分类' : '暂无默认分类',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : const Color(0xFF374151),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    isCustomTab ? '点击上方 + 按钮添加自定义分类' : '系统默认分类将在此显示',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? Colors.white54 : const Color(0xFF6B7280),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        // 延迟检查滚动状态
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _updateCategoriesScrollIndicators();
-        });
-
-        return Stack(
-          children: [
-            Scrollbar(
-              controller: _categoriesScrollController,
-              thumbVisibility: true,
-              child: _buildCategoriesListView(
-                context,
-                state,
-                filteredCategories,
-              ),
-            ),
-            // 顶部滚动指示器
-            if (_canScrollUpCategories)
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 12,
-                child: _buildScrollIndicator(isTop: true),
-              ),
-            // 底部滚动指示器
-            if (_canScrollDownCategories)
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 12,
-                child: _buildScrollIndicator(isTop: false),
-              ),
-          ],
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 350),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      transitionBuilder: (child, animation) {
+        // animation 对新 child 是 0→1（进入），对旧 child 是 1→0（退出）
+        // 新内容从下方轻微滑入，旧内容原地淡出（不位移，避免方向混乱）
+        final isEntering = animation.status == AnimationStatus.forward ||
+            animation.status == AnimationStatus.completed;
+        return FadeTransition(
+          opacity: animation,
+          child: isEntering
+              ? SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.04),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                )
+              : child,
         );
       },
-    );
-  }
-
-  /// 构建分类列表视图（支持自定义分类拖动排序）
-  Widget _buildCategoriesListView(
-    BuildContext context,
-    ServerState state,
-    List<ServerCategory> filteredCategories,
-  ) {
-    final isCustomTab = state.selectedTabIndex == 1;
-
-    // 自定义分类 tab 使用可拖拽排序列表
-    if (isCustomTab && filteredCategories.isNotEmpty) {
-      return ReorderableListView.builder(
-        scrollController: _categoriesScrollController,
-        padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-        itemCount: filteredCategories.length,
-        buildDefaultDragHandles: false,
-        onReorder: (oldIndex, newIndex) {
-          if (newIndex > oldIndex) {
-            newIndex -= 1;
-          }
-          if (oldIndex != newIndex) {
-            context.read<ServerBloc>().add(
-              ServerReorderCategories(oldIndex: oldIndex, newIndex: newIndex),
-            );
-          }
-        },
-        itemBuilder: (context, index) {
-          final category = filteredCategories[index];
-          final categoryName = category.modelName ?? '';
-          final isSelected = state.selectedCategory?.modelName == categoryName;
-          final onlineCount = state.getCategoryOnlineCount(categoryName);
-          final isLoadingOnlineCount =
-              !state.hasEverLoadedOnlineCounts &&
-              state.isLoadingOnlineCounts &&
-              !state.hasCategoryOnlineCount(categoryName);
-
-          return ReorderableDragStartListener(
-            index: index,
-            key: ValueKey('category_$categoryName'),
-            child: CategoryCard(
-              category: category,
-              isSelected: isSelected,
-              onlineCount: onlineCount,
-              isLoadingOnlineCount: isLoadingOnlineCount,
-              onTap: () => _onCategoryTap(category),
-              onEdit: category.isCustom
-                  ? () => _showEditCategoryDialog(category)
-                  : null,
-              onDelete: category.isCustom
-                  ? () {
-                      context.read<ServerBloc>().add(
-                        ServerDeleteCategory(categoryName),
-                      );
-                    }
-                  : null,
-            ),
-          );
-        },
-      );
-    }
-
-    // 默认分类 tab 使用普通列表
-    return ListView.builder(
-      controller: _categoriesScrollController,
-      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-      itemCount: filteredCategories.length,
-      itemBuilder: (context, index) {
-        final category = filteredCategories[index];
-        final categoryName = category.modelName ?? '';
-        final isSelected = state.selectedCategory?.modelName == categoryName;
-        final onlineCount = state.getCategoryOnlineCount(categoryName);
-        final isLoadingOnlineCount =
-            !state.hasEverLoadedOnlineCounts &&
-            state.isLoadingOnlineCounts &&
-            !state.hasCategoryOnlineCount(categoryName);
-
-        return CategoryCard(
-          category: category,
-          isSelected: isSelected,
-          onlineCount: onlineCount,
-          isLoadingOnlineCount: isLoadingOnlineCount,
-          onTap: () => _onCategoryTap(category),
-          onEdit: category.isCustom
-              ? () => _showEditCategoryDialog(category)
-              : null,
-          onDelete: category.isCustom
-              ? () {
-                  context.read<ServerBloc>().add(
-                    ServerDeleteCategory(categoryName),
-                  );
-                }
-              : null,
-        );
-      },
+      child: _CategoriesListContent(
+        key: ValueKey(_categoriesListAnimKey),
+        onCategoryTap: _onCategoryTap,
+        onEditCategory: _showEditCategoryDialog,
+      ),
     );
   }
 
@@ -2119,6 +2160,287 @@ class _LongPressDraggableWrapperState extends State<_LongPressDraggableWrapper> 
             duration: const Duration(milliseconds: 100),
             curve: Curves.easeOut,
             child: widget.child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ==================== 分类列表独立组件 ====================
+
+/// 分类列表内容组件（独立 StatefulWidget，持有自己的 ScrollController）
+/// 使用独立组件是为了配合 AnimatedSwitcher：动画过渡期间新旧两个实例同时存在，
+/// 各自持有独立的 ScrollController，避免同一 controller attach 到多个 ScrollView 的断言错误。
+class _CategoriesListContent extends StatefulWidget {
+  final void Function(ServerCategory) onCategoryTap;
+  final void Function(ServerCategory) onEditCategory;
+
+  const _CategoriesListContent({
+    super.key,
+    required this.onCategoryTap,
+    required this.onEditCategory,
+  });
+
+  @override
+  State<_CategoriesListContent> createState() => _CategoriesListContentState();
+}
+
+class _CategoriesListContentState extends State<_CategoriesListContent> {
+  final ScrollController _scrollController = ScrollController();
+  bool _canScrollUp = false;
+  bool _canScrollDown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_updateScrollIndicators);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_updateScrollIndicators);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _updateScrollIndicators() {
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    final canUp = pos.pixels > 0;
+    final canDown = pos.pixels < pos.maxScrollExtent;
+    if (canUp != _canScrollUp || canDown != _canScrollDown) {
+      setState(() {
+        _canScrollUp = canUp;
+        _canScrollDown = canDown;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return BlocBuilder<ServerBloc, ServerState>(
+      builder: (context, state) {
+        // 首次加载且没有分类数据时显示加载指示器
+        if (state.isLoading && state.serverCategories.isEmpty) {
+          return const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0080FF)),
+            ),
+          );
+        }
+
+        if (state.error != null && state.serverCategories.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(state.error ?? '加载失败'),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () =>
+                      context.read<ServerBloc>().add(ServerFetchList()),
+                  child: const Text('重试'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final filteredCategories = state.filteredCategories;
+
+        if (filteredCategories.isEmpty) {
+          final isCustomTab = state.selectedTabIndex == 1;
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(30),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isCustomTab ? Icons.add_circle_outline : Icons.dns_outlined,
+                    size: 48,
+                    color: isDark ? Colors.white24 : const Color(0xFFCCCCCC),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    isCustomTab ? '暂无自定义分类' : '暂无默认分类',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : const Color(0xFF374151),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    isCustomTab ? '点击上方 + 按钮添加自定义分类' : '系统默认分类将在此显示',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // 延迟检查滚动状态
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _updateScrollIndicators();
+        });
+
+        final bgColor = isDark
+            ? const Color(0xFF1E293B)
+            : const Color(0xFFF9FAFB);
+
+        return Stack(
+          children: [
+            Scrollbar(
+              controller: _scrollController,
+              thumbVisibility: true,
+              child: _buildListView(context, state, filteredCategories),
+            ),
+            // 顶部滚动指示器
+            if (_canScrollUp)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 12,
+                child: _buildScrollIndicator(isTop: true, bgColor: bgColor),
+              ),
+            // 底部滚动指示器
+            if (_canScrollDown)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 12,
+                child: _buildScrollIndicator(isTop: false, bgColor: bgColor),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildListView(
+    BuildContext context,
+    ServerState state,
+    List<ServerCategory> filteredCategories,
+  ) {
+    final isCustomTab = state.selectedTabIndex == 1;
+
+    if (isCustomTab && filteredCategories.isNotEmpty) {
+      return ReorderableListView.builder(
+        scrollController: _scrollController,
+        padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+        itemCount: filteredCategories.length,
+        buildDefaultDragHandles: false,
+        onReorder: (oldIndex, newIndex) {
+          if (newIndex > oldIndex) newIndex -= 1;
+          if (oldIndex != newIndex) {
+            context.read<ServerBloc>().add(
+              ServerReorderCategories(oldIndex: oldIndex, newIndex: newIndex),
+            );
+          }
+        },
+        itemBuilder: (context, index) {
+          final category = filteredCategories[index];
+          final categoryName = category.modelName ?? '';
+          final isSelected =
+              state.selectedCategory?.modelName == categoryName;
+          final onlineCount = state.getCategoryOnlineCount(categoryName);
+          final isLoadingOnlineCount =
+              !state.hasEverLoadedOnlineCounts &&
+              state.isLoadingOnlineCounts &&
+              !state.hasCategoryOnlineCount(categoryName);
+
+          return ReorderableDragStartListener(
+            index: index,
+            key: ValueKey('category_$categoryName'),
+            child: CategoryCard(
+              category: category,
+              isSelected: isSelected,
+              onlineCount: onlineCount,
+              isLoadingOnlineCount: isLoadingOnlineCount,
+              onTap: () => widget.onCategoryTap(category),
+              onEdit: category.isCustom
+                  ? () => widget.onEditCategory(category)
+                  : null,
+              onDelete: category.isCustom
+                  ? () => context.read<ServerBloc>().add(
+                        ServerDeleteCategory(categoryName),
+                      )
+                  : null,
+            ),
+          );
+        },
+      );
+    }
+
+    return ListView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+      itemCount: filteredCategories.length,
+      itemBuilder: (context, index) {
+        final category = filteredCategories[index];
+        final categoryName = category.modelName ?? '';
+        final isSelected =
+            state.selectedCategory?.modelName == categoryName;
+        final onlineCount = state.getCategoryOnlineCount(categoryName);
+        final isLoadingOnlineCount =
+            !state.hasEverLoadedOnlineCounts &&
+            state.isLoadingOnlineCounts &&
+            !state.hasCategoryOnlineCount(categoryName);
+
+        return CategoryCard(
+          category: category,
+          isSelected: isSelected,
+          onlineCount: onlineCount,
+          isLoadingOnlineCount: isLoadingOnlineCount,
+          onTap: () => widget.onCategoryTap(category),
+          onEdit: category.isCustom
+              ? () => widget.onEditCategory(category)
+              : null,
+          onDelete: category.isCustom
+              ? () => context.read<ServerBloc>().add(
+                    ServerDeleteCategory(categoryName),
+                  )
+              : null,
+        );
+      },
+    );
+  }
+
+  Widget _buildScrollIndicator({
+    required bool isTop,
+    required Color bgColor,
+  }) {
+    return IgnorePointer(
+      child: Container(
+        height: 48,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: isTop ? Alignment.topCenter : Alignment.bottomCenter,
+            end: isTop ? Alignment.bottomCenter : Alignment.topCenter,
+            colors: [
+              bgColor,
+              bgColor.withValues(alpha: 0.9),
+              bgColor.withValues(alpha: 0),
+            ],
+            stops: const [0.0, 0.5, 1.0],
+          ),
+        ),
+        child: Center(
+          child: Icon(
+            isTop ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+            color: bgColor.computeLuminance() > 0.5
+                ? Colors.black26
+                : Colors.white24,
+            size: 20,
           ),
         ),
       ),

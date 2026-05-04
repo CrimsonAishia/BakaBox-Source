@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/api/server_api.dart';
 import '../../../../core/bloc/map_subscription/map_subscription_bloc.dart';
 import '../../../../core/models/map_subscription_models.dart';
 import '../../../../core/models/server_models.dart';
 import '../../../../core/services/custom_server_service.dart';
+import '../../../../core/services/server_category_service.dart';
 import '../../../../core/services/source_server_service.dart';
 import '../../../../core/utils/storage_utils.dart';
 
@@ -146,13 +146,12 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
   }
 
   Future<void> _loadData() async {
-    final serverApi = ServerApi();
-
     try {
       // 获取自定义分类
       final customCategories = await CustomServerService.loadCustomCategories();
       // 获取 API 分类
-      final apiCategories = await serverApi.getServerList();
+      final apiCategories =
+          await ServerCategoryService.instance.getApiCategories();
       // 合并所有分类（自定义分类在前）
       _allCategories = [...customCategories, ...apiCategories];
 

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import '../api/server_api.dart';
+import '../services/server_category_service.dart';
 import '../utils/log_service.dart';
 
 /// 服务器地址映射服务
@@ -15,8 +15,6 @@ class ServerAddressMappingService {
       ServerAddressMappingService._internal();
   factory ServerAddressMappingService() => _instance;
   ServerAddressMappingService._internal();
-
-  final ServerApi _serverApi = ServerApi();
 
   /// IP:Port -> Domain:Port 映射缓存
   final Map<String, String> _ipToDomainCache = {};
@@ -50,7 +48,7 @@ class ServerAddressMappingService {
       _ipToDomainCache.clear();
       _defaultCategoryAddresses.clear();
 
-      final categories = await _serverApi.getServerList();
+      final categories = await ServerCategoryService.instance.getApiCategories();
       for (final category in categories) {
         for (final server in category.serverList) {
           final domainAddress = server.address;

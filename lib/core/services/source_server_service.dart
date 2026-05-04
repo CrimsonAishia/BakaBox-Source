@@ -116,7 +116,7 @@ class SourceServerService {
         gameType: gameType,
       );
     } catch (e) {
-      LogService.d('获取服务器信息失败 ($ip:$port): $e', e);
+      // LogService.d('获取服务器信息失败 ($ip:$port): $e', e);
       return null;
     } finally {
       server?.close();

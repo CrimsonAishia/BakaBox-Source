@@ -224,3 +224,19 @@ class ServerReorderCategories extends ServerEvent {
 
 /// 强制刷新服务器列表（重置所有状态，用于手动点击刷新）
 class ServerForceRefresh extends ServerEvent {}
+
+/// 内部事件：定时刷新分类列表（静默更新，不影响当前选中分类）
+/// 由 ServerBloc 内部定时器触发，不应在外部使用。
+class ServerRefreshCategoriesInternal extends ServerEvent {
+  const ServerRefreshCategoriesInternal();
+}
+
+/// 用户确认应用待更新的分类列表
+class ServerApplyPendingCategories extends ServerEvent {
+  const ServerApplyPendingCategories();
+}
+
+/// 用户忽略待更新的分类列表
+class ServerDismissPendingCategories extends ServerEvent {
+  const ServerDismissPendingCategories();
+}
