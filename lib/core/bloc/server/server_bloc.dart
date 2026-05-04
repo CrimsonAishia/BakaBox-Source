@@ -920,10 +920,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       // 记录当前选中分类名
       final selectedCategoryName = state.selectedCategory?.modelName;
 
-      // 从现有的 categoryOnlineCounts 复制，保留当前选中分类的人数
+      // 为所有分类初始化 categoryOnlineCounts 默认值（如果还没有记录）
       final currentCounts = Map<String, int>.from(state.categoryOnlineCounts);
-
-      // 为所有分类初始化默认值 0（如果还没有记录）
       for (final category in state.serverCategories) {
         final categoryName = category.modelName ?? '';
         if (!currentCounts.containsKey(categoryName)) {
@@ -931,7 +929,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         }
       }
 
-      // 先 emit 初始化的数据（显示 0）
+      // 先 emit 初始化的数据
       if (!emit.isDone && isFirstLoad) {
         emit(
           state.copyWith(
@@ -942,7 +940,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         );
       }
 
-      // 所有的待查询地址和所属分类映射
+      // 所有的待查询地址和所属分类映射（仅非选中分类）
       final pendingAddresses = <String>{};
       final categoryAddressesMap = <String, Set<String>>{};
 
@@ -954,10 +952,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         if (categoryName == selectedCategoryName) {
           // 如果已有服务器数据，立即更新；否则保留现有值，等待 _fetchServersInfo 完成
           if (state.servers.any((s) => s.serverData != null)) {
-            int totalOnline = state.servers.fold(
-              0,
-              (sum, s) => sum + (s.serverData?.players ?? 0),
-            );
+            final totalOnline = _calcCurrentCategoryOnlineCount();
             if (!emit.isDone) {
               final latestCounts = Map<String, int>.from(
                 state.categoryOnlineCounts,
@@ -980,45 +975,63 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         categoryAddressesMap[categoryName] = uniqueAddresses;
       }
 
-      // 缓存所有服务器的人数结果
+      // 非选中分类：每台服务器查完立即累加到对应分类并 emit，实现实时增长效果
+      // serverPlayers 作为本轮查询结果的共享缓冲，用于计算分类总人数
       final serverPlayers = <String, int>{};
+
+      // 构建地址 → 所属分类名的反向映射，方便查完一台立即定位分类
+      final addressToCategoryName = <String, String>{};
+      for (final entry in categoryAddressesMap.entries) {
+        for (final addr in entry.value) {
+          addressToCategoryName[addr] = entry.key;
+        }
+      }
+
+      // 并发控制：分批请求（20 个一批），防止并发爆 UDP 端口
+      // 每台服务器查完后立即更新对应分类的人数，不等整批完成
+      const batchSize = 20;
       final addressList = pendingAddresses.toList();
 
-      // 并发控制：分批请求（20 个一批），一方面防并发爆 UDP 端口，另一方面实现全局极速刷新
-      const batchSize = 20;
       for (int i = 0; i < addressList.length; i += batchSize) {
+        if (emit.isDone) break;
         final end = (i + batchSize < addressList.length)
             ? i + batchSize
             : addressList.length;
         final batch = addressList.sublist(i, end);
 
-        final futures = batch.map((address) async {
-          final count = await _fetchSingleServerPlayerCount(address);
-          serverPlayers[address] = count;
-        });
+        await Future.wait(
+          batch.map((address) async {
+            final count = await _fetchSingleServerPlayerCount(address);
+            serverPlayers[address] = count;
 
-        await Future.wait(futures);
+            // 查完一台立即更新对应分类的人数（累加效果）
+            if (emit.isDone) return;
+            final categoryName = addressToCategoryName[address];
+            if (categoryName == null) return;
+
+            // 重新累加该分类当前已查完的所有服务器人数
+            final addressSet = categoryAddressesMap[categoryName]!;
+            int total = 0;
+            for (final addr in addressSet) {
+              total += serverPlayers[addr] ?? 0; // 未查完的地址贡献 0，查完后会再次更新
+            }
+
+            // 只有人数实际变化时才 emit，避免无意义的 UI 重建
+            final currentTotal = state.categoryOnlineCounts[categoryName] ?? 0;
+            if (total == currentTotal) return;
+
+            final latestCounts = Map<String, int>.from(
+              state.categoryOnlineCounts,
+            )..[categoryName] = total;
+            emit(state.copyWith(categoryOnlineCounts: latestCounts));
+          }),
+          eagerError: false,
+        );
       }
 
-      // 所有查询完成后，一次性发出包含所有分类的最新人数（避免数值从0临时闪烁，也防止旧状态覆盖主分类）
-      if (!emit.isDone) {
-        final latestCounts = Map<String, int>.from(state.categoryOnlineCounts);
-        for (final entry in categoryAddressesMap.entries) {
-          final categoryName = entry.key;
-          final addressSet = entry.value;
-          int totalPlayers = 0;
-          for (final addr in addressSet) {
-            totalPlayers += (serverPlayers[addr] ?? 0);
-          }
-          latestCounts[categoryName] = totalPlayers;
-        }
-
-        emit(
-          state.copyWith(
-            categoryOnlineCounts: latestCounts,
-            isLoadingOnlineCounts: false,
-          ),
-        );
+      // 所有查询完成，关闭加载状态（仅首次加载时需要）
+      if (!emit.isDone && isFirstLoad) {
+        emit(state.copyWith(isLoadingOnlineCounts: false));
       }
     } catch (e) {
       LogService.e('批量更新分类在线人数失败: $e', e);
@@ -1030,9 +1043,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     }
   }
 
-  /// 获取单个服务器人数（返回人数，不直接更新状态）
-  /// 获取单个服务器人数（用于分类在线人数统计）
-  /// 独立查询，不影响服务器卡片状态，不增加失败计数
+  /// 获取单个服务器人数（用于非选中分类的独立查询）
+  /// 失败返回 0（服务器无响应即视为 0 人）
   Future<int> _fetchSingleServerPlayerCount(String address) async {
     final parts = address.split(':');
     if (parts.length != 2) return 0;
@@ -1042,7 +1054,6 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
     for (int retry = 0; retry < _singleServerMaxRetries; retry++) {
       try {
-        // 使用独立的服务获取人数，超时统一与主要查询一致
         final info = await SourceServerService.getServerInfo(
           ip,
           port,
@@ -1056,7 +1067,6 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       }
 
       if (retry < _singleServerMaxRetries - 1) {
-        // 还有重试机会，等待后再试（应对网络抖动）
         await Future.delayed(
           const Duration(milliseconds: _singleServerRetryDelayMs),
         );
@@ -1066,16 +1076,64 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     return 0;
   }
 
+  /// 计算当前选中分类的在线人数
+  ///
+  /// 累加规则：
+  /// - 有 serverData（在线）：使用实时人数
+  /// - 无 serverData 且已确认离线（isOffline == true）：贡献 0
+  /// - 无 serverData 但未达到离线阈值（网络抖动中）：使用 serverPlayerCache 中的上次成功值
+  int _calcCurrentCategoryOnlineCount() {
+    int total = 0;
+    for (final s in state.servers) {
+      if (s.serverData != null) {
+        // 在线：使用实时人数
+        total += s.serverData!.players ?? 0;
+      } else if (!s.isOffline) {
+        // 未达到离线阈值（网络抖动）：使用缓存的上次成功值
+        final addr = s.serverItem.address ?? s.serverItem.serverAddress;
+        if (addr != null) {
+          total += state.serverPlayerCache[addr] ?? 0;
+        }
+      }
+      // isOffline == true：贡献 0，不累加
+    }
+    return total;
+  }
+
   void _updateCurrentCategoryOnlineCount(Emitter<ServerState> emit) {
     if (state.selectedCategory == null) return;
     final categoryName = state.selectedCategory!.modelName ?? '';
-    int totalOnline = state.servers.fold(
-      0,
-      (sum, s) => sum + (s.serverData?.players ?? 0),
-    );
+
+    // 先将本轮成功获取到数据的服务器人数写入缓存
+    final updatedCache = Map<String, int>.from(state.serverPlayerCache);
+    for (final s in state.servers) {
+      final addr = s.serverItem.address ?? s.serverItem.serverAddress;
+      if (addr != null && s.serverData != null) {
+        updatedCache[addr] = s.serverData!.players ?? 0;
+      }
+    }
+
+    // 计算分类总人数（使用更新后的缓存）
+    int totalOnline = 0;
+    for (final s in state.servers) {
+      if (s.serverData != null) {
+        totalOnline += s.serverData!.players ?? 0;
+      } else if (!s.isOffline) {
+        // 网络抖动中（未达到离线阈值）：保留上次成功的人数
+        final addr = s.serverItem.address ?? s.serverItem.serverAddress;
+        if (addr != null) {
+          totalOnline += updatedCache[addr] ?? 0;
+        }
+      }
+      // isOffline == true：贡献 0
+    }
+
     final updatedCounts = Map<String, int>.from(state.categoryOnlineCounts)
       ..[categoryName] = totalOnline;
-    emit(state.copyWith(categoryOnlineCounts: updatedCounts));
+    emit(state.copyWith(
+      categoryOnlineCounts: updatedCounts,
+      serverPlayerCache: updatedCache,
+    ));
   }
 
   Future<SourceServerInfo?> _getServerInfo(String address) async {
@@ -1263,15 +1321,23 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           .where((c) => c.modelName != event.categoryName)
           .toList();
 
-      // 清理该分类的在线人数记录
+      // 清理该分类的在线人数记录和人数缓存
       final updatedOnlineCounts = Map<String, int>.from(
         state.categoryOnlineCounts,
       )..remove(event.categoryName);
+
+      // 清理该分类所有服务器的人数缓存
+      final updatedPlayerCache = Map<String, int>.from(state.serverPlayerCache);
+      for (final server in categoryToDelete.serverList) {
+        final address = server.address ?? server.serverAddress;
+        if (address != null) updatedPlayerCache.remove(address);
+      }
 
       emit(
         state.copyWith(
           serverCategories: updatedCategories,
           categoryOnlineCounts: updatedOnlineCounts,
+          serverPlayerCache: updatedPlayerCache,
           successMessage: '分类 "${event.categoryName}" 已删除',
         ),
       );
@@ -1357,6 +1423,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       _mapRuntimeCache.remove(event.serverAddress);
       _mapRuntimeLastFetchedCache.remove(event.serverAddress);
       _serverMapCache.remove(event.serverAddress);
+      // 清理人数缓存，避免同一 IP 重新添加时读到旧值
+      final updatedPlayerCache = Map<String, int>.from(state.serverPlayerCache)
+        ..remove(event.serverAddress);
 
       // 取消该服务器的换图监控（如果有）
       final monitorService = MapChangeMonitorService();
@@ -1388,15 +1457,24 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         );
         if (state.selectedCategory?.modelName == event.categoryName) {
           // 从当前服务器列表中排除被删除的服务器，重新计算人数
+          // 使用与 _updateCurrentCategoryOnlineCount 一致的逻辑：
+          // 在线用实时值，抖动中用缓存值，确认离线贡献 0
           final remainingServers = state.servers.where(
             (s) =>
                 (s.serverItem.address ?? s.serverItem.serverAddress) !=
                 event.serverAddress,
           );
-          final newCount = remainingServers.fold(
-            0,
-            (sum, s) => sum + (s.serverData?.players ?? 0),
-          );
+          int newCount = 0;
+          for (final s in remainingServers) {
+            if (s.serverData != null) {
+              newCount += s.serverData!.players ?? 0;
+            } else if (!s.isOffline) {
+              final addr = s.serverItem.address ?? s.serverItem.serverAddress;
+              if (addr != null) {
+                newCount += updatedPlayerCache[addr] ?? 0;
+              }
+            }
+          }
           updatedOnlineCounts[event.categoryName] = newCount;
         }
 
@@ -1404,6 +1482,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           state.copyWith(
             serverCategories: updatedCategories,
             categoryOnlineCounts: updatedOnlineCounts,
+            serverPlayerCache: updatedPlayerCache,
             successMessage: '服务器 "${event.serverAddress}" 已删除',
           ),
         );
@@ -1573,6 +1652,13 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       _mapRuntimeCache.remove(event.oldServerAddress);
       _mapRuntimeLastFetchedCache.remove(event.oldServerAddress);
       _serverMapCache.remove(event.oldServerAddress);
+      // 清理旧地址的人数缓存
+      if (state.serverPlayerCache.containsKey(event.oldServerAddress)) {
+        emit(state.copyWith(
+          serverPlayerCache: Map<String, int>.from(state.serverPlayerCache)
+            ..remove(event.oldServerAddress),
+        ));
+      }
 
       // 取消旧地址的换图监控（如果有）
       final monitorService = MapChangeMonitorService();
