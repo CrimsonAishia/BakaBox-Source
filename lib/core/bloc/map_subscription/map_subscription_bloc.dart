@@ -4,11 +4,11 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../api/map_contribution_api.dart';
-import '../../api/server_api.dart';
 import '../../models/map_contribution_models.dart';
 import '../../models/map_subscription_models.dart';
 import '../../services/custom_server_service.dart';
 import '../../services/map_subscription_service.dart';
+import '../../services/server_category_service.dart';
 import '../../services/tts_service.dart';
 import '../../utils/log_service.dart';
 
@@ -21,7 +21,6 @@ class MapSubscriptionBloc
   final MapSubscriptionService _service = MapSubscriptionService();
   final TtsService _ttsService = TtsService();
   final MapContributionApi _mapApi = MapContributionApi();
-  final ServerApi _serverApi = ServerApi();
 
   StreamSubscription<void>? _serviceSubscription;
   StreamSubscription<TtsDownloadProgress>? _ttsProgressSubscription;
@@ -107,12 +106,10 @@ class MapSubscriptionBloc
   ) async {
     emit(state.copyWith(isLoadingCategories: true));
     try {
-      // 获取 API 分类
-      final apiCategories = await _serverApi.getServerList();
-      // 获取自定义分类
+      final apiCategories =
+          await ServerCategoryService.instance.getApiCategories();
       final customCategories = await CustomServerService.loadCustomCategories();
 
-      // 合并所有分类名称
       final allCategories = [...customCategories, ...apiCategories];
       final categoryNames = allCategories
           .where((c) => c.modelName != null && c.modelName!.isNotEmpty)

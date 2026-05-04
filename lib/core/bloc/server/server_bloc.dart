@@ -9,6 +9,7 @@ import '../../services/game_launcher_service.dart';
 import '../../services/map_change_monitor_service.dart';
 import '../../services/custom_server_service.dart';
 import '../../services/obs_server_service.dart';
+import '../../services/server_category_service.dart';
 import '../../utils/log_service.dart';
 import '../../utils/error_utils.dart';
 import 'server_event.dart';
@@ -25,6 +26,10 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
   // 分类人数查询防重入标记
   bool _isUpdatingCategoryOnlineCounts = false;
+
+  // 分类列表定时刷新定时器（每 10 分钟静默刷新一次）
+  Timer? _categoryRefreshTimer;
+  static const Duration _categoryRefreshInterval = Duration(minutes: 10);
 
   // 刷新频率限制：记录每个服务器的刷新时间戳
   final Map<String, List<DateTime>> _refreshHistory = {};
@@ -126,6 +131,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     on<ServerReorderServers>(_onReorderServers);
     on<ServerReorderCategories>(_onReorderCategories);
     on<ServerForceRefresh>(_onForceRefresh);
+    on<ServerRefreshCategoriesInternal>(_onRefreshCategories);
+    on<ServerApplyPendingCategories>(_onApplyPendingCategories);
+    on<ServerDismissPendingCategories>(_onDismissPendingCategories);
   }
 
   /// 重置倒计时（递增 countdownResetKey 触发 UI 重置）
@@ -137,11 +145,13 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     ServerFetchList event,
     Emitter<ServerState> emit,
   ) async {
+    // 防重入：已在加载中则忽略
+    if (state.isLoading) return;
+
     emit(state.copyWith(isLoading: true, error: null));
     try {
-      LogService.d('开始加载服务器列表');
-      final serverApi = ServerApi();
-      final apiCategories = await serverApi.getServerList();
+      final apiCategories =
+          await ServerCategoryService.instance.getApiCategories();
 
       // 加载自定义分类
       final customCategories = await CustomServerService.loadCustomCategories();
@@ -655,6 +665,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
   void _clearRecentlyUpdatedAfterDelay(int requestId) {
     Future.delayed(const Duration(seconds: 2), () {
+      if (isClosed) return;
       if (requestId == _currentRequestId &&
           state.servers.any((s) => s.recentlyUpdated)) {
         add(ServerClearRecentlyUpdated(requestId));
@@ -717,6 +728,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           requestId: requestId,
         )
         .then((mapInfo) {
+          if (isClosed) return;
           if (requestId == _currentRequestId && mapInfo != null) {
             add(ServerUpdateSingleServer(address: address, mapInfo: mapInfo));
           }
@@ -737,6 +749,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           requestId: requestId,
         )
         .then((mapRuntime) {
+          if (isClosed) return;
           if (requestId == _currentRequestId) {
             add(
               ServerUpdateSingleServer(
@@ -749,9 +762,11 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         })
         .catchError((e) {
           LogService.e('加载地图运行时间失败 ($address, $mapName): $e', e);
-          add(
-            ServerUpdateSingleServer(address: address, mapRuntimeError: true),
-          );
+          if (!isClosed) {
+            add(
+              ServerUpdateSingleServer(address: address, mapRuntimeError: true),
+            );
+          }
         });
   }
 
@@ -789,6 +804,12 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   ) {
     // 只设置状态，刷新时机由 UI 倒计时进度条的 onComplete 控制
     emit(state.copyWith(isCountdownActive: true));
+
+    // 启动分类列表定时刷新（每 10 分钟静默更新一次）
+    _categoryRefreshTimer?.cancel();
+    _categoryRefreshTimer = Timer.periodic(_categoryRefreshInterval, (_) {
+      add(const ServerRefreshCategoriesInternal());
+    });
   }
 
   void _onStopPeriodicRefresh(
@@ -796,6 +817,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     Emitter<ServerState> emit,
   ) {
     emit(state.copyWith(isCountdownActive: false));
+    _categoryRefreshTimer?.cancel();
+    _categoryRefreshTimer = null;
   }
 
   void _onPauseRefresh(ServerPauseRefresh event, Emitter<ServerState> emit) {
@@ -1652,6 +1675,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       // 获取服务器数据
       final info = await _getServerInfo(serverAddress);
 
+      if (isClosed) return;
+
       // 检查服务器是否还在列表中且地址匹配
       if (serverIndex >= state.servers.length) return;
       final currentServer = state.servers[serverIndex];
@@ -1679,6 +1704,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           serverApi
               .getMapInfo(mapName)
               .then((mapInfo) {
+                if (isClosed) return;
                 if (mapInfo != null) {
                   add(
                     ServerUpdateSingleServer(
@@ -1694,6 +1720,19 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         }
       } else {
         // 获取失败
+        if (!isClosed) {
+          add(
+            ServerUpdateEditedServer(
+              serverAddress: serverAddress,
+              serverData: null,
+              hasError: true,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      LogService.e('获取服务器数据失败: $serverAddress, $e', e);
+      if (!isClosed) {
         add(
           ServerUpdateEditedServer(
             serverAddress: serverAddress,
@@ -1702,15 +1741,6 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           ),
         );
       }
-    } catch (e) {
-      LogService.e('获取服务器数据失败: $serverAddress, $e', e);
-      add(
-        ServerUpdateEditedServer(
-          serverAddress: serverAddress,
-          serverData: null,
-          hasError: true,
-        ),
-      );
     }
   }
 
@@ -1981,6 +2011,109 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     _serverMapCache.clear();
     _failureCountCache.clear();
     _refreshHistory.clear();
+    _categoryRefreshTimer?.cancel();
+    _categoryRefreshTimer = null;
     return super.close();
+  }
+
+  /// 内部事件：定时静默检测分类列表是否有变化
+  ///
+  /// 检测到变化时不直接替换，而是暂存到 pendingCategories，
+  /// 由 UI 层显示提示，用户确认后再应用。
+  Future<void> _onRefreshCategories(
+    ServerRefreshCategoriesInternal event,
+    Emitter<ServerState> emit,
+  ) async {
+    try {
+      final apiCategories =
+          await ServerCategoryService.instance.fetchFresh();
+      if (apiCategories.isEmpty || emit.isDone) return;
+
+      // 分类尚未加载完成时不触发更新提示（避免首次加载前误报）
+      if (state.serverCategories.isEmpty) return;
+
+      // 比较分类结构是否有变化（按 modelName 比较）
+      final oldApiNames = state.serverCategories
+          .where((c) => !c.isCustom)
+          .map((c) => c.modelName)
+          .toSet();
+      final newApiNames = apiCategories.map((c) => c.modelName).toSet();
+      final categoriesChanged = oldApiNames.length != newApiNames.length ||
+          !oldApiNames.containsAll(newApiNames);
+
+      // 比较各分类的服务器列表是否有变化（新增/删除服务器 IP）
+      bool serverListChanged = false;
+      if (!categoriesChanged) {
+        for (final newCat in apiCategories) {
+          final oldCat = state.serverCategories.firstWhere(
+            (c) => c.modelName == newCat.modelName,
+            orElse: () => newCat,
+          );
+          final oldAddresses = oldCat.serverList
+              .map((s) => s.address ?? s.serverAddress)
+              .toSet();
+          final newAddresses = newCat.serverList
+              .map((s) => s.address ?? s.serverAddress)
+              .toSet();
+          if (oldAddresses.length != newAddresses.length ||
+              !oldAddresses.containsAll(newAddresses)) {
+            serverListChanged = true;
+            break;
+          }
+        }
+      }
+
+      if (!categoriesChanged && !serverListChanged) return;
+      if (emit.isDone) return;
+
+      // 有变化：保留自定义分类，合并新的 API 分类，暂存到 pendingCategories
+      final customCategories = state.serverCategories
+          .where((c) => c.isCustom)
+          .toList();
+      final pending = [...customCategories, ...apiCategories];
+
+      emit(state.copyWith(pendingCategories: pending));
+      LogService.i('检测到分类列表有更新，等待用户确认');
+    } catch (e) {
+      LogService.w('定时检测分类列表失败（静默忽略）: $e');
+    }
+  }
+
+  /// 用户确认应用待更新的分类列表
+  void _onApplyPendingCategories(
+    ServerApplyPendingCategories event,
+    Emitter<ServerState> emit,
+  ) {
+    final pending = state.pendingCategories;
+    if (pending == null || pending.isEmpty) return;
+
+    emit(state.copyWith(
+      serverCategories: pending,
+      clearPendingCategories: true,
+    ));
+
+    LogService.i('已应用新分类列表：${pending.length} 个分类');
+
+    // 如果当前选中的分类在新列表中仍然存在，触发刷新；否则清除选中
+    final selected = state.selectedCategory;
+    if (selected != null) {
+      final stillExists = pending.any((c) => c.modelName == selected.modelName);
+      if (stillExists) {
+        final updated = pending.firstWhere(
+          (c) => c.modelName == selected.modelName,
+        );
+        add(ServerSelectCategory(updated, forceRefresh: true));
+      } else {
+        add(ServerClearCategory());
+      }
+    }
+  }
+
+  /// 用户忽略待更新的分类列表
+  void _onDismissPendingCategories(
+    ServerDismissPendingCategories event,
+    Emitter<ServerState> emit,
+  ) {
+    emit(state.copyWith(clearPendingCategories: true));
   }
 }

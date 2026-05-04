@@ -9,6 +9,7 @@ import '../utils/storage_utils.dart';
 import 'custom_server_service.dart';
 import 'notification_window_service.dart';
 import 'scheduler_service.dart';
+import 'server_category_service.dart';
 import 'source_server_service.dart';
 import 'tts_service.dart';
 
@@ -425,7 +426,8 @@ class MapSubscriptionService {
   /// 加载并合并分类（提取公共逻辑）
   Future<List<ServerCategory>> _loadAndMergeCategories() async {
     final customCategories = await CustomServerService.loadCustomCategories();
-    final apiCategories = await _serverApi.getServerList();
+    final apiCategories =
+        await ServerCategoryService.instance.getApiCategories();
     return _mergeCategories(customCategories, apiCategories);
   }
 

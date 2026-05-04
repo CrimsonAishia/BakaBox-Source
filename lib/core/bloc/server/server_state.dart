@@ -30,6 +30,8 @@ class ServerState extends Equatable {
   final DateTime? lastRefreshTime; // 最后一次刷新时间
   final LoadingPhase loadingPhase; // 当前加载阶段
   final DateTime? loadingStartTime; // 加载开始时间（用于计算倒计时）
+  /// 待应用的新分类列表（定时检测到变化后暂存，等用户确认后再应用）
+  final List<ServerCategory>? pendingCategories;
 
   const ServerState({
     this.serverCategories = const [],
@@ -53,6 +55,7 @@ class ServerState extends Equatable {
     this.lastRefreshTime,
     this.loadingPhase = LoadingPhase.idle,
     this.loadingStartTime,
+    this.pendingCategories,
   });
 
   ServerState copyWith({
@@ -78,6 +81,8 @@ class ServerState extends Equatable {
     DateTime? lastRefreshTime,
     LoadingPhase? loadingPhase,
     DateTime? loadingStartTime,
+    Object? pendingCategories = _sentinel,
+    bool clearPendingCategories = false,
   }) {
     return ServerState(
       serverCategories: serverCategories ?? this.serverCategories,
@@ -105,6 +110,11 @@ class ServerState extends Equatable {
       lastRefreshTime: lastRefreshTime ?? this.lastRefreshTime,
       loadingPhase: loadingPhase ?? this.loadingPhase,
       loadingStartTime: loadingStartTime ?? this.loadingStartTime,
+      pendingCategories: clearPendingCategories
+          ? null
+          : identical(pendingCategories, _sentinel)
+          ? this.pendingCategories
+          : pendingCategories as List<ServerCategory>?,
     );
   }
 
@@ -150,5 +160,8 @@ class ServerState extends Equatable {
     lastRefreshTime,
     loadingPhase,
     loadingStartTime,
+    pendingCategories,
   ];
 }
+
+const Object _sentinel = Object();
