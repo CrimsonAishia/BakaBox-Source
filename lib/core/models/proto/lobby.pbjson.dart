@@ -557,13 +557,14 @@ const PresenceJoinResponse$json = {
   '1': 'PresenceJoinResponse',
   '2': [
     {'1': 'user', '3': 1, '4': 1, '5': 11, '6': '.lobby.LobbyUser', '10': 'user'},
+    {'1': 'source_map_id', '3': 2, '4': 1, '5': 9, '10': 'sourceMapId'},
   ],
 };
 
 /// Descriptor for `PresenceJoinResponse`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List presenceJoinResponseDescriptor = $convert.base64Decode(
     'ChRQcmVzZW5jZUpvaW5SZXNwb25zZRIkCgR1c2VyGAEgASgLMhAubG9iYnkuTG9iYnlVc2VyUg'
-    'R1c2Vy');
+    'R1c2VyEiIKDXNvdXJjZV9tYXBfaWQYAiABKAlSC3NvdXJjZU1hcElk');
 
 @$core.Deprecated('Use presenceLeaveResponseDescriptor instead')
 const PresenceLeaveResponse$json = {
@@ -933,6 +934,13 @@ const MatchSignal$json = {
     {'1': 'action', '3': 1, '4': 1, '5': 9, '10': 'action'},
     {'1': 'kick', '3': 10, '4': 1, '5': 11, '6': '.lobby.KickSignal', '9': 0, '10': 'kick'},
     {'1': 'assets_updated', '3': 11, '4': 1, '5': 11, '6': '.lobby.AssetsUpdatedSignal', '9': 0, '10': 'assetsUpdated'},
+    {'1': 'broadcast_message', '3': 12, '4': 1, '5': 11, '6': '.lobby.BroadcastMessageSignal', '9': 0, '10': 'broadcastMessage'},
+    {'1': 'teleport_arrival', '3': 13, '4': 1, '5': 11, '6': '.lobby.TeleportArrivalSignal', '9': 0, '10': 'teleportArrival'},
+    {'1': 'chat_message', '3': 14, '4': 1, '5': 11, '6': '.lobby.ChatMessageSignal', '9': 0, '10': 'chatMessage'},
+    {'1': 'status_text_changed', '3': 15, '4': 1, '5': 11, '6': '.lobby.StatusTextChangedSignal', '9': 0, '10': 'statusTextChanged'},
+    {'1': 'anonymous_changed', '3': 16, '4': 1, '5': 11, '6': '.lobby.AnonymousChangedSignal', '9': 0, '10': 'anonymousChanged'},
+    {'1': 'display_name_changed', '3': 17, '4': 1, '5': 11, '6': '.lobby.DisplayNameChangedSignal', '9': 0, '10': 'displayNameChanged'},
+    {'1': 'online_count_changed', '3': 18, '4': 1, '5': 11, '6': '.lobby.OnlineCountChangedSignal', '9': 0, '10': 'onlineCountChanged'},
   ],
   '8': [
     {'1': 'payload'},
@@ -943,7 +951,17 @@ const MatchSignal$json = {
 final $typed_data.Uint8List matchSignalDescriptor = $convert.base64Decode(
     'CgtNYXRjaFNpZ25hbBIWCgZhY3Rpb24YASABKAlSBmFjdGlvbhInCgRraWNrGAogASgLMhEubG'
     '9iYnkuS2lja1NpZ25hbEgAUgRraWNrEkMKDmFzc2V0c191cGRhdGVkGAsgASgLMhoubG9iYnku'
-    'QXNzZXRzVXBkYXRlZFNpZ25hbEgAUg1hc3NldHNVcGRhdGVkQgkKB3BheWxvYWQ=');
+    'QXNzZXRzVXBkYXRlZFNpZ25hbEgAUg1hc3NldHNVcGRhdGVkEkwKEWJyb2FkY2FzdF9tZXNzYW'
+    'dlGAwgASgLMh0ubG9iYnkuQnJvYWRjYXN0TWVzc2FnZVNpZ25hbEgAUhBicm9hZGNhc3RNZXNz'
+    'YWdlEkkKEHRlbGVwb3J0X2Fycml2YWwYDSABKAsyHC5sb2JieS5UZWxlcG9ydEFycml2YWxTaW'
+    'duYWxIAFIPdGVsZXBvcnRBcnJpdmFsEj0KDGNoYXRfbWVzc2FnZRgOIAEoCzIYLmxvYmJ5LkNo'
+    'YXRNZXNzYWdlU2lnbmFsSABSC2NoYXRNZXNzYWdlElAKE3N0YXR1c190ZXh0X2NoYW5nZWQYDy'
+    'ABKAsyHi5sb2JieS5TdGF0dXNUZXh0Q2hhbmdlZFNpZ25hbEgAUhFzdGF0dXNUZXh0Q2hhbmdl'
+    'ZBJMChFhbm9ueW1vdXNfY2hhbmdlZBgQIAEoCzIdLmxvYmJ5LkFub255bW91c0NoYW5nZWRTaW'
+    'duYWxIAFIQYW5vbnltb3VzQ2hhbmdlZBJTChRkaXNwbGF5X25hbWVfY2hhbmdlZBgRIAEoCzIf'
+    'LmxvYmJ5LkRpc3BsYXlOYW1lQ2hhbmdlZFNpZ25hbEgAUhJkaXNwbGF5TmFtZUNoYW5nZWQSUw'
+    'oUb25saW5lX2NvdW50X2NoYW5nZWQYEiABKAsyHy5sb2JieS5PbmxpbmVDb3VudENoYW5nZWRT'
+    'aWduYWxIAFISb25saW5lQ291bnRDaGFuZ2VkQgkKB3BheWxvYWQ=');
 
 @$core.Deprecated('Use kickSignalDescriptor instead')
 const KickSignal$json = {
@@ -972,4 +990,136 @@ const AssetsUpdatedSignal$json = {
 final $typed_data.Uint8List assetsUpdatedSignalDescriptor = $convert.base64Decode(
     'ChNBc3NldHNVcGRhdGVkU2lnbmFsEh8KC3VwZGF0ZV90eXBlGAEgASgJUgp1cGRhdGVUeXBlEh'
     'gKB21lc3NhZ2UYAiABKAlSB21lc3NhZ2U=');
+
+@$core.Deprecated('Use broadcastMessageSignalDescriptor instead')
+const BroadcastMessageSignal$json = {
+  '1': 'BroadcastMessageSignal',
+  '2': [
+    {'1': 'message_id', '3': 1, '4': 1, '5': 9, '10': 'messageId'},
+    {'1': 'user_id', '3': 2, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'nickname', '3': 3, '4': 1, '5': 9, '10': 'nickname'},
+    {'1': 'avatar_url', '3': 4, '4': 1, '5': 9, '10': 'avatarUrl'},
+    {'1': 'content', '3': 5, '4': 1, '5': 9, '10': 'content'},
+    {'1': 'timestamp', '3': 6, '4': 1, '5': 3, '10': 'timestamp'},
+  ],
+};
+
+/// Descriptor for `BroadcastMessageSignal`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List broadcastMessageSignalDescriptor = $convert.base64Decode(
+    'ChZCcm9hZGNhc3RNZXNzYWdlU2lnbmFsEh0KCm1lc3NhZ2VfaWQYASABKAlSCW1lc3NhZ2VJZB'
+    'IXCgd1c2VyX2lkGAIgASgJUgZ1c2VySWQSGgoIbmlja25hbWUYAyABKAlSCG5pY2tuYW1lEh0K'
+    'CmF2YXRhcl91cmwYBCABKAlSCWF2YXRhclVybBIYCgdjb250ZW50GAUgASgJUgdjb250ZW50Eh'
+    'wKCXRpbWVzdGFtcBgGIAEoA1IJdGltZXN0YW1w');
+
+@$core.Deprecated('Use teleportArrivalSignalDescriptor instead')
+const TeleportArrivalSignal$json = {
+  '1': 'TeleportArrivalSignal',
+  '2': [
+    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'source_map_id', '3': 2, '4': 1, '5': 9, '10': 'sourceMapId'},
+    {'1': 'target_x', '3': 3, '4': 1, '5': 1, '10': 'targetX'},
+    {'1': 'target_y', '3': 4, '4': 1, '5': 1, '10': 'targetY'},
+    {'1': 'issued_at', '3': 5, '4': 1, '5': 3, '10': 'issuedAt'},
+  ],
+};
+
+/// Descriptor for `TeleportArrivalSignal`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List teleportArrivalSignalDescriptor = $convert.base64Decode(
+    'ChVUZWxlcG9ydEFycml2YWxTaWduYWwSFwoHdXNlcl9pZBgBIAEoCVIGdXNlcklkEiIKDXNvdX'
+    'JjZV9tYXBfaWQYAiABKAlSC3NvdXJjZU1hcElkEhkKCHRhcmdldF94GAMgASgBUgd0YXJnZXRY'
+    'EhkKCHRhcmdldF95GAQgASgBUgd0YXJnZXRZEhsKCWlzc3VlZF9hdBgFIAEoA1IIaXNzdWVkQX'
+    'Q=');
+
+@$core.Deprecated('Use chatMessageSignalDescriptor instead')
+const ChatMessageSignal$json = {
+  '1': 'ChatMessageSignal',
+  '2': [
+    {'1': 'message_id', '3': 1, '4': 1, '5': 9, '10': 'messageId'},
+    {'1': 'user_id', '3': 2, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'nickname', '3': 3, '4': 1, '5': 9, '10': 'nickname'},
+    {'1': 'content', '3': 4, '4': 1, '5': 9, '10': 'content'},
+    {'1': 'message_type', '3': 5, '4': 1, '5': 9, '10': 'messageType'},
+    {'1': 'is_anonymous', '3': 6, '4': 1, '5': 8, '10': 'isAnonymous'},
+    {'1': 'timestamp', '3': 7, '4': 1, '5': 3, '10': 'timestamp'},
+  ],
+};
+
+/// Descriptor for `ChatMessageSignal`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List chatMessageSignalDescriptor = $convert.base64Decode(
+    'ChFDaGF0TWVzc2FnZVNpZ25hbBIdCgptZXNzYWdlX2lkGAEgASgJUgltZXNzYWdlSWQSFwoHdX'
+    'Nlcl9pZBgCIAEoCVIGdXNlcklkEhoKCG5pY2tuYW1lGAMgASgJUghuaWNrbmFtZRIYCgdjb250'
+    'ZW50GAQgASgJUgdjb250ZW50EiEKDG1lc3NhZ2VfdHlwZRgFIAEoCVILbWVzc2FnZVR5cGUSIQ'
+    'oMaXNfYW5vbnltb3VzGAYgASgIUgtpc0Fub255bW91cxIcCgl0aW1lc3RhbXAYByABKANSCXRp'
+    'bWVzdGFtcA==');
+
+@$core.Deprecated('Use statusTextChangedSignalDescriptor instead')
+const StatusTextChangedSignal$json = {
+  '1': 'StatusTextChangedSignal',
+  '2': [
+    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'status_text', '3': 2, '4': 1, '5': 9, '10': 'statusText'},
+  ],
+};
+
+/// Descriptor for `StatusTextChangedSignal`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List statusTextChangedSignalDescriptor = $convert.base64Decode(
+    'ChdTdGF0dXNUZXh0Q2hhbmdlZFNpZ25hbBIXCgd1c2VyX2lkGAEgASgJUgZ1c2VySWQSHwoLc3'
+    'RhdHVzX3RleHQYAiABKAlSCnN0YXR1c1RleHQ=');
+
+@$core.Deprecated('Use anonymousChangedSignalDescriptor instead')
+const AnonymousChangedSignal$json = {
+  '1': 'AnonymousChangedSignal',
+  '2': [
+    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'is_anonymous', '3': 2, '4': 1, '5': 8, '10': 'isAnonymous'},
+    {'1': 'display_nickname', '3': 3, '4': 1, '5': 9, '10': 'displayNickname'},
+  ],
+};
+
+/// Descriptor for `AnonymousChangedSignal`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List anonymousChangedSignalDescriptor = $convert.base64Decode(
+    'ChZBbm9ueW1vdXNDaGFuZ2VkU2lnbmFsEhcKB3VzZXJfaWQYASABKAlSBnVzZXJJZBIhCgxpc1'
+    '9hbm9ueW1vdXMYAiABKAhSC2lzQW5vbnltb3VzEikKEGRpc3BsYXlfbmlja25hbWUYAyABKAlS'
+    'D2Rpc3BsYXlOaWNrbmFtZQ==');
+
+@$core.Deprecated('Use displayNameChangedSignalDescriptor instead')
+const DisplayNameChangedSignal$json = {
+  '1': 'DisplayNameChangedSignal',
+  '2': [
+    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'nickname', '3': 2, '4': 1, '5': 9, '10': 'nickname'},
+  ],
+};
+
+/// Descriptor for `DisplayNameChangedSignal`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List displayNameChangedSignalDescriptor = $convert.base64Decode(
+    'ChhEaXNwbGF5TmFtZUNoYW5nZWRTaWduYWwSFwoHdXNlcl9pZBgBIAEoCVIGdXNlcklkEhoKCG'
+    '5pY2tuYW1lGAIgASgJUghuaWNrbmFtZQ==');
+
+@$core.Deprecated('Use onlineCountChangedSignalDescriptor instead')
+const OnlineCountChangedSignal$json = {
+  '1': 'OnlineCountChangedSignal',
+  '2': [
+    {'1': 'total', '3': 1, '4': 1, '5': 5, '10': 'total'},
+    {'1': 'by_map', '3': 2, '4': 3, '5': 11, '6': '.lobby.OnlineCountChangedSignal.ByMapEntry', '10': 'byMap'},
+  ],
+  '3': [OnlineCountChangedSignal_ByMapEntry$json],
+};
+
+@$core.Deprecated('Use onlineCountChangedSignalDescriptor instead')
+const OnlineCountChangedSignal_ByMapEntry$json = {
+  '1': 'ByMapEntry',
+  '2': [
+    {'1': 'key', '3': 1, '4': 1, '5': 9, '10': 'key'},
+    {'1': 'value', '3': 2, '4': 1, '5': 5, '10': 'value'},
+  ],
+  '7': {'7': true},
+};
+
+/// Descriptor for `OnlineCountChangedSignal`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List onlineCountChangedSignalDescriptor = $convert.base64Decode(
+    'ChhPbmxpbmVDb3VudENoYW5nZWRTaWduYWwSFAoFdG90YWwYASABKAVSBXRvdGFsEkEKBmJ5X2'
+    '1hcBgCIAMoCzIqLmxvYmJ5Lk9ubGluZUNvdW50Q2hhbmdlZFNpZ25hbC5CeU1hcEVudHJ5UgVi'
+    'eU1hcBo4CgpCeU1hcEVudHJ5EhAKA2tleRgBIAEoCVIDa2V5EhQKBXZhbHVlGAIgASgFUgV2YW'
+    'x1ZToCOAE=');
 

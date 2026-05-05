@@ -243,6 +243,7 @@ message SnapshotResponse {
 
 message PresenceJoinResponse {
   LobbyUser user = 1;
+  string source_map_id = 2;  // 非空表示用户是从该地图传送过来的（空 = 正常加入）
 }
 
 message PresenceLeaveResponse {
@@ -386,6 +387,13 @@ message MatchSignal {
   oneof payload {
     KickSignal kick = 10;
     AssetsUpdatedSignal assets_updated = 11;
+    BroadcastMessageSignal broadcast_message = 12;
+    TeleportArrivalSignal teleport_arrival = 13;
+    ChatMessageSignal chat_message = 14;
+    StatusTextChangedSignal status_text_changed = 15;
+    AnonymousChangedSignal anonymous_changed = 16;
+    DisplayNameChangedSignal display_name_changed = 17;
+    OnlineCountChangedSignal online_count_changed = 18;
   }
 }
 
@@ -399,4 +407,62 @@ message KickSignal {
 message AssetsUpdatedSignal {
   string update_type = 1;
   string message = 2;
+}
+
+// BroadcastMessageSignal 跨 Match 全服广播信号
+message BroadcastMessageSignal {
+  string message_id = 1;
+  string user_id = 2;
+  string nickname = 3;
+  string avatar_url = 4;
+  string content = 5;
+  int64 timestamp = 6;
+}
+
+// TeleportArrivalSignal 传送到达信号（源地图 → 目标地图）
+// 由源地图的 handlePortalUse 通过 MatchSignal 发送给目标地图，
+// 目标地图在 MatchSignal 回调中缓存到 pendingTeleports，
+// MatchJoin 时从本地内存读取，彻底消除 Storage 竞态。
+message TeleportArrivalSignal {
+  string user_id = 1;       // 传送用户 ID
+  string source_map_id = 2; // 来源地图 ID
+  double target_x = 3;      // 目标落点 X
+  double target_y = 4;      // 目标落点 Y
+  int64 issued_at = 5;      // 签发时间戳（毫秒），用于 TTL 过期清理
+}
+
+// ChatMessageSignal 跨 Match 聊天消息信号
+message ChatMessageSignal {
+  string message_id = 1;
+  string user_id = 2;
+  string nickname = 3;
+  string content = 4;
+  string message_type = 5;
+  bool is_anonymous = 6;
+  int64 timestamp = 7;
+}
+
+// StatusTextChangedSignal 跨 Match 状态文本变更信号
+message StatusTextChangedSignal {
+  string user_id = 1;
+  string status_text = 2;
+}
+
+// AnonymousChangedSignal 跨 Match 匿名状态变更信号
+message AnonymousChangedSignal {
+  string user_id = 1;
+  bool is_anonymous = 2;
+  string display_nickname = 3;
+}
+
+// DisplayNameChangedSignal 跨 Match 昵称变更信号
+message DisplayNameChangedSignal {
+  string user_id = 1;
+  string nickname = 2;
+}
+
+// OnlineCountChangedSignal 全服在线人数变更信号
+message OnlineCountChangedSignal {
+  int32 total = 1;
+  map<string, int32> by_map = 2;
 }

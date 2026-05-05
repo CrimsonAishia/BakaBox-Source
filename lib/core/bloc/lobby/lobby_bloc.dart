@@ -226,6 +226,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     // 重置状态，但保留 WebSocket 订阅（已在应用启动时建立）
     _authAttemptedAfterConnect = false;
     _selfServerUserId = null;
+    _selfMapId = null;
+    _lastSentStatusText = null;
     _isLobbyEntered = true;
     _isDisposed = false;
 
@@ -271,11 +273,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _preloadCachedImages();
 
     _scheduleBubbleCleanup();
-
-    // 请求服务器在线人数（仅在已连接时发送，否则等 snapshot 返回后自然获取）
-    if (_service.isConnected) {
-      unawaited(_service.requestOnlineStats(includeUsers: false));
-    }
 
     // 确保 WebSocket 已连接（移动端不在启动时连接，而是进入大厅时才连接）
     if (!_service.isConnected) {
@@ -1331,6 +1328,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           _steamNameSwitchCooldownTimer?.cancel();
           _steamNameSwitchCooldownTimer = null;
 
+          // 清空 selfServerUserId，避免后续 snapshot 用旧实名 ID 识别 self
+          _selfServerUserId = null;
+          _lastSentStatusText = null;
+
           emit(state.copyWith(
             chatCooldownSeconds: 0,
             broadcastCooldownSeconds: 0,
@@ -1366,6 +1367,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         }
         // 不在这里请求 assets，等到进入大厅页面再请求（避免 URL token 过期）
         
+        // 加入 Match 成功后请求一次在线人数，作为初始值
+        // 后续由后端每次 presence 变化时自动推送 online.stats 更新
+        if (_isLobbyEntered) {
+          unawaited(_service.requestOnlineStats(includeUsers: false));
+        }
+
         // 重新同步本地活动状态（防止启动时因为网络未连接导致首次上报丢失）
         _lastSentStatusText = null;
         _updateStatusTextByGameStatus(GameStatusService().isGameRunning, emit);
@@ -1526,15 +1533,29 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             ? user.spriteId
             : state.selectedSpriteId;
 
-        // 构建玩家加入通知（自己加入时不显示通知）
-        final newNotification = isSelfUser
-            ? null
-            : PlayerNotification(
-                id: 'join_${DateTime.now().microsecondsSinceEpoch}',
-                type: PlayerNotificationType.join,
-                playerName: user.displayName,
-                createdAt: DateTime.now(),
-              );
+        // 构建玩家加入通知（自己加入时不显示通知；从其他地图传送过来时显示传送通知）
+        final sourceMapId = presenceJoinResp.sourceMapId;
+        final isFromTeleport = sourceMapId.isNotEmpty;
+        PlayerNotification? newNotification;
+        if (!isSelfUser) {
+          if (isFromTeleport) {
+            final sourceMapName = state.assets.getMapById(sourceMapId)?.displayName ?? sourceMapId;
+            newNotification = PlayerNotification(
+              id: 'teleport_in_${DateTime.now().microsecondsSinceEpoch}',
+              type: PlayerNotificationType.teleportIn,
+              playerName: user.displayName,
+              sourceMapName: sourceMapName,
+              createdAt: DateTime.now(),
+            );
+          } else {
+            newNotification = PlayerNotification(
+              id: 'join_${DateTime.now().microsecondsSinceEpoch}',
+              type: PlayerNotificationType.join,
+              playerName: user.displayName,
+              createdAt: DateTime.now(),
+            );
+          }
+        }
 
         // 更新通知列表（限制最多保留20条）
         final updatedNotifications = newNotification != null
@@ -1546,10 +1567,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             users: _upsertUser(state.users, user),
             selectedSpriteId: newSelectedSpriteId,
             playerNotifications: updatedNotifications,
-            // 有新用户加入时同步更新在线人数（自己加入时服务端已在 join.success 给出准确值，跳过）
-            serverOnlineCount: isSelfUser
-                ? state.serverOnlineCount
-                : state.serverOnlineCount + 1,
           ),
         );
         break;
@@ -1597,16 +1614,44 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           state.copyWith(
             users: updatedUsers,
             playerNotifications: updatedNotifications,
-            // 有用户离开时同步减少在线人数（不低于 0）
-            serverOnlineCount: (state.serverOnlineCount - 1).clamp(0, double.maxFinite.toInt()),
           ),
         );
         break;
-      // TODO: presence.update 消息类型在当前 protobuf 协议中不存在，暂时注释掉
-      // case 'presence.update':
-      //   final updatedUsers = _applyPresenceUpdate(state.users, envelope.presenceUpdateResponse);
-      //   emit(state.copyWith(users: updatedUsers));
-      //   break;
+      case 'identity.changed':
+        // 某用户登录或退出登录时，服务端向其他所有用户广播此消息
+        // 需要用 oldUserId 找到该用户，并用新身份信息（newUserId、nickname、isAnonymous 等）更新
+        final identityResp = envelope.identityChangedResponse;
+        final oldUserId = identityResp.oldUserId;
+        final newUserId = identityResp.newUserId;
+        final identityNickname = identityResp.nickname;
+        final identityAvatarUrl = identityResp.avatarUrl;
+        final identitySpriteId = identityResp.spriteId;
+        final identityIsAnonymous = identityResp.isAnonymous;
+
+        LogService.d('[LobbyBloc] identity.changed: oldUserId=$oldUserId newUserId=$newUserId '
+            'nickname=$identityNickname isAnonymous=$identityIsAnonymous');
+
+        if (oldUserId.isEmpty && newUserId.isEmpty) break;
+
+        // 通过 oldUserId 找到对应用户并更新其身份信息
+        final identityUpdatedUsers = state.users.map((user) {
+          // 匹配条件：serverUserId 或 userId 与 oldUserId 相符
+          final matches = (user.serverUserId != null && user.serverUserId == oldUserId) ||
+              user.userId == oldUserId;
+          if (!matches) return user;
+
+          return user.copyWith(
+            nickname: identityNickname.isNotEmpty ? identityNickname : user.nickname,
+            avatarUrl: identityAvatarUrl.isNotEmpty ? identityAvatarUrl : user.avatarUrl,
+            spriteId: identitySpriteId.isNotEmpty ? identitySpriteId : user.spriteId,
+            isAnonymous: identityIsAnonymous,
+            // 更新 serverUserId 为新的 userId（退出登录后变为匿名 UUID）
+            serverUserId: newUserId.isNotEmpty ? newUserId : user.serverUserId,
+          );
+        }).toList(growable: false);
+
+        emit(state.copyWith(users: identityUpdatedUsers));
+        break;
       case 'move.broadcast':
         var updatedUsers = _applyMoveBroadcast(state.users, envelope.moveBroadcastResponse);
 
@@ -1823,7 +1868,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           emit(
             state.copyWith(
               users: state.users
-                  .map((user) => user.userId == normalizedUserId
+                  .map((user) => (user.userId == normalizedUserId || user.serverUserId == userId)
                       ? user.copyWith(statusText: statusText)
                       : user)
                   .toList(growable: false),
@@ -2446,7 +2491,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     );
 
     final updatedUsers = state.users.map((user) {
-      if (user.userId != normalizedUserId) return user;
+      // 同时检查 userId 和 serverUserId，兼容 identity.changed 后 serverUserId 已更新的情况
+      if (user.userId != normalizedUserId && user.serverUserId != message.userId) return user;
       return user.copyWith(
         lastMessage: normalizedMessage.content,
         lastMessageAt: normalizedMessage.timestamp,
@@ -2480,7 +2526,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
     final normalizedUserId = _normalizeUserId(userId);
     return users.map((user) {
-      if (user.userId != normalizedUserId) return user;
+      if (user.userId != normalizedUserId && user.serverUserId != userId) return user;
       return user.copyWith(spriteId: spriteId);
     }).toList(growable: false);
   }
@@ -2496,7 +2542,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     final normalizedUserId = _normalizeUserId(userId);
 
     return users.map((user) {
-      if (user.userId != normalizedUserId) return user;
+      if (user.userId != normalizedUserId && user.serverUserId != userId) return user;
       return user.copyWith(
         isAnonymous: isAnonymous,
         nickname: displayNickname.isNotEmpty ? displayNickname : user.nickname,
