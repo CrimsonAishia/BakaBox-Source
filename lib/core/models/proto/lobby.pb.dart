@@ -2965,10 +2965,14 @@ class SnapshotResponse extends $pb.GeneratedMessage {
 class PresenceJoinResponse extends $pb.GeneratedMessage {
   factory PresenceJoinResponse({
     LobbyUser? user,
+    $core.String? sourceMapId,
   }) {
     final $result = create();
     if (user != null) {
       $result.user = user;
+    }
+    if (sourceMapId != null) {
+      $result.sourceMapId = sourceMapId;
     }
     return $result;
   }
@@ -2978,6 +2982,7 @@ class PresenceJoinResponse extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PresenceJoinResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
     ..aOM<LobbyUser>(1, _omitFieldNames ? '' : 'user', subBuilder: LobbyUser.create)
+    ..aOS(2, _omitFieldNames ? '' : 'sourceMapId')
     ..hasRequiredFields = false
   ;
 
@@ -3012,6 +3017,15 @@ class PresenceJoinResponse extends $pb.GeneratedMessage {
   void clearUser() => clearField(1);
   @$pb.TagNumber(1)
   LobbyUser ensureUser() => $_ensure(0);
+
+  @$pb.TagNumber(2)
+  $core.String get sourceMapId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set sourceMapId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasSourceMapId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearSourceMapId() => clearField(2);
 }
 
 class PresenceLeaveResponse extends $pb.GeneratedMessage {
@@ -4647,6 +4661,13 @@ class LobbyJoinResponse extends $pb.GeneratedMessage {
 enum MatchSignal_Payload {
   kick, 
   assetsUpdated, 
+  broadcastMessage, 
+  teleportArrival, 
+  chatMessage, 
+  statusTextChanged, 
+  anonymousChanged, 
+  displayNameChanged, 
+  onlineCountChanged, 
   notSet
 }
 
@@ -4656,6 +4677,13 @@ class MatchSignal extends $pb.GeneratedMessage {
     $core.String? action,
     KickSignal? kick,
     AssetsUpdatedSignal? assetsUpdated,
+    BroadcastMessageSignal? broadcastMessage,
+    TeleportArrivalSignal? teleportArrival,
+    ChatMessageSignal? chatMessage,
+    StatusTextChangedSignal? statusTextChanged,
+    AnonymousChangedSignal? anonymousChanged,
+    DisplayNameChangedSignal? displayNameChanged,
+    OnlineCountChangedSignal? onlineCountChanged,
   }) {
     final $result = create();
     if (action != null) {
@@ -4667,6 +4695,27 @@ class MatchSignal extends $pb.GeneratedMessage {
     if (assetsUpdated != null) {
       $result.assetsUpdated = assetsUpdated;
     }
+    if (broadcastMessage != null) {
+      $result.broadcastMessage = broadcastMessage;
+    }
+    if (teleportArrival != null) {
+      $result.teleportArrival = teleportArrival;
+    }
+    if (chatMessage != null) {
+      $result.chatMessage = chatMessage;
+    }
+    if (statusTextChanged != null) {
+      $result.statusTextChanged = statusTextChanged;
+    }
+    if (anonymousChanged != null) {
+      $result.anonymousChanged = anonymousChanged;
+    }
+    if (displayNameChanged != null) {
+      $result.displayNameChanged = displayNameChanged;
+    }
+    if (onlineCountChanged != null) {
+      $result.onlineCountChanged = onlineCountChanged;
+    }
     return $result;
   }
   MatchSignal._() : super();
@@ -4676,13 +4725,27 @@ class MatchSignal extends $pb.GeneratedMessage {
   static const $core.Map<$core.int, MatchSignal_Payload> _MatchSignal_PayloadByTag = {
     10 : MatchSignal_Payload.kick,
     11 : MatchSignal_Payload.assetsUpdated,
+    12 : MatchSignal_Payload.broadcastMessage,
+    13 : MatchSignal_Payload.teleportArrival,
+    14 : MatchSignal_Payload.chatMessage,
+    15 : MatchSignal_Payload.statusTextChanged,
+    16 : MatchSignal_Payload.anonymousChanged,
+    17 : MatchSignal_Payload.displayNameChanged,
+    18 : MatchSignal_Payload.onlineCountChanged,
     0 : MatchSignal_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'MatchSignal', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
-    ..oo(0, [10, 11])
+    ..oo(0, [10, 11, 12, 13, 14, 15, 16, 17, 18])
     ..aOS(1, _omitFieldNames ? '' : 'action')
     ..aOM<KickSignal>(10, _omitFieldNames ? '' : 'kick', subBuilder: KickSignal.create)
     ..aOM<AssetsUpdatedSignal>(11, _omitFieldNames ? '' : 'assetsUpdated', subBuilder: AssetsUpdatedSignal.create)
+    ..aOM<BroadcastMessageSignal>(12, _omitFieldNames ? '' : 'broadcastMessage', subBuilder: BroadcastMessageSignal.create)
+    ..aOM<TeleportArrivalSignal>(13, _omitFieldNames ? '' : 'teleportArrival', subBuilder: TeleportArrivalSignal.create)
+    ..aOM<ChatMessageSignal>(14, _omitFieldNames ? '' : 'chatMessage', subBuilder: ChatMessageSignal.create)
+    ..aOM<StatusTextChangedSignal>(15, _omitFieldNames ? '' : 'statusTextChanged', subBuilder: StatusTextChangedSignal.create)
+    ..aOM<AnonymousChangedSignal>(16, _omitFieldNames ? '' : 'anonymousChanged', subBuilder: AnonymousChangedSignal.create)
+    ..aOM<DisplayNameChangedSignal>(17, _omitFieldNames ? '' : 'displayNameChanged', subBuilder: DisplayNameChangedSignal.create)
+    ..aOM<OnlineCountChangedSignal>(18, _omitFieldNames ? '' : 'onlineCountChanged', subBuilder: OnlineCountChangedSignal.create)
     ..hasRequiredFields = false
   ;
 
@@ -4740,6 +4803,83 @@ class MatchSignal extends $pb.GeneratedMessage {
   void clearAssetsUpdated() => clearField(11);
   @$pb.TagNumber(11)
   AssetsUpdatedSignal ensureAssetsUpdated() => $_ensure(2);
+
+  @$pb.TagNumber(12)
+  BroadcastMessageSignal get broadcastMessage => $_getN(3);
+  @$pb.TagNumber(12)
+  set broadcastMessage(BroadcastMessageSignal v) { setField(12, v); }
+  @$pb.TagNumber(12)
+  $core.bool hasBroadcastMessage() => $_has(3);
+  @$pb.TagNumber(12)
+  void clearBroadcastMessage() => clearField(12);
+  @$pb.TagNumber(12)
+  BroadcastMessageSignal ensureBroadcastMessage() => $_ensure(3);
+
+  @$pb.TagNumber(13)
+  TeleportArrivalSignal get teleportArrival => $_getN(4);
+  @$pb.TagNumber(13)
+  set teleportArrival(TeleportArrivalSignal v) { setField(13, v); }
+  @$pb.TagNumber(13)
+  $core.bool hasTeleportArrival() => $_has(4);
+  @$pb.TagNumber(13)
+  void clearTeleportArrival() => clearField(13);
+  @$pb.TagNumber(13)
+  TeleportArrivalSignal ensureTeleportArrival() => $_ensure(4);
+
+  @$pb.TagNumber(14)
+  ChatMessageSignal get chatMessage => $_getN(5);
+  @$pb.TagNumber(14)
+  set chatMessage(ChatMessageSignal v) { setField(14, v); }
+  @$pb.TagNumber(14)
+  $core.bool hasChatMessage() => $_has(5);
+  @$pb.TagNumber(14)
+  void clearChatMessage() => clearField(14);
+  @$pb.TagNumber(14)
+  ChatMessageSignal ensureChatMessage() => $_ensure(5);
+
+  @$pb.TagNumber(15)
+  StatusTextChangedSignal get statusTextChanged => $_getN(6);
+  @$pb.TagNumber(15)
+  set statusTextChanged(StatusTextChangedSignal v) { setField(15, v); }
+  @$pb.TagNumber(15)
+  $core.bool hasStatusTextChanged() => $_has(6);
+  @$pb.TagNumber(15)
+  void clearStatusTextChanged() => clearField(15);
+  @$pb.TagNumber(15)
+  StatusTextChangedSignal ensureStatusTextChanged() => $_ensure(6);
+
+  @$pb.TagNumber(16)
+  AnonymousChangedSignal get anonymousChanged => $_getN(7);
+  @$pb.TagNumber(16)
+  set anonymousChanged(AnonymousChangedSignal v) { setField(16, v); }
+  @$pb.TagNumber(16)
+  $core.bool hasAnonymousChanged() => $_has(7);
+  @$pb.TagNumber(16)
+  void clearAnonymousChanged() => clearField(16);
+  @$pb.TagNumber(16)
+  AnonymousChangedSignal ensureAnonymousChanged() => $_ensure(7);
+
+  @$pb.TagNumber(17)
+  DisplayNameChangedSignal get displayNameChanged => $_getN(8);
+  @$pb.TagNumber(17)
+  set displayNameChanged(DisplayNameChangedSignal v) { setField(17, v); }
+  @$pb.TagNumber(17)
+  $core.bool hasDisplayNameChanged() => $_has(8);
+  @$pb.TagNumber(17)
+  void clearDisplayNameChanged() => clearField(17);
+  @$pb.TagNumber(17)
+  DisplayNameChangedSignal ensureDisplayNameChanged() => $_ensure(8);
+
+  @$pb.TagNumber(18)
+  OnlineCountChangedSignal get onlineCountChanged => $_getN(9);
+  @$pb.TagNumber(18)
+  set onlineCountChanged(OnlineCountChangedSignal v) { setField(18, v); }
+  @$pb.TagNumber(18)
+  $core.bool hasOnlineCountChanged() => $_has(9);
+  @$pb.TagNumber(18)
+  void clearOnlineCountChanged() => clearField(18);
+  @$pb.TagNumber(18)
+  OnlineCountChangedSignal ensureOnlineCountChanged() => $_ensure(9);
 }
 
 /// KickSignal 踢人信号
@@ -4870,6 +5010,640 @@ class AssetsUpdatedSignal extends $pb.GeneratedMessage {
   $core.bool hasMessage() => $_has(1);
   @$pb.TagNumber(2)
   void clearMessage() => clearField(2);
+}
+
+/// BroadcastMessageSignal 跨 Match 全服广播信号
+class BroadcastMessageSignal extends $pb.GeneratedMessage {
+  factory BroadcastMessageSignal({
+    $core.String? messageId,
+    $core.String? userId,
+    $core.String? nickname,
+    $core.String? avatarUrl,
+    $core.String? content,
+    $fixnum.Int64? timestamp,
+  }) {
+    final $result = create();
+    if (messageId != null) {
+      $result.messageId = messageId;
+    }
+    if (userId != null) {
+      $result.userId = userId;
+    }
+    if (nickname != null) {
+      $result.nickname = nickname;
+    }
+    if (avatarUrl != null) {
+      $result.avatarUrl = avatarUrl;
+    }
+    if (content != null) {
+      $result.content = content;
+    }
+    if (timestamp != null) {
+      $result.timestamp = timestamp;
+    }
+    return $result;
+  }
+  BroadcastMessageSignal._() : super();
+  factory BroadcastMessageSignal.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory BroadcastMessageSignal.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'BroadcastMessageSignal', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'messageId')
+    ..aOS(2, _omitFieldNames ? '' : 'userId')
+    ..aOS(3, _omitFieldNames ? '' : 'nickname')
+    ..aOS(4, _omitFieldNames ? '' : 'avatarUrl')
+    ..aOS(5, _omitFieldNames ? '' : 'content')
+    ..aInt64(6, _omitFieldNames ? '' : 'timestamp')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  BroadcastMessageSignal clone() => BroadcastMessageSignal()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  BroadcastMessageSignal copyWith(void Function(BroadcastMessageSignal) updates) => super.copyWith((message) => updates(message as BroadcastMessageSignal)) as BroadcastMessageSignal;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static BroadcastMessageSignal create() => BroadcastMessageSignal._();
+  BroadcastMessageSignal createEmptyInstance() => create();
+  static $pb.PbList<BroadcastMessageSignal> createRepeated() => $pb.PbList<BroadcastMessageSignal>();
+  @$core.pragma('dart2js:noInline')
+  static BroadcastMessageSignal getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<BroadcastMessageSignal>(create);
+  static BroadcastMessageSignal? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get messageId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set messageId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasMessageId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearMessageId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get userId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set userId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasUserId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearUserId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get nickname => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set nickname($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasNickname() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearNickname() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get avatarUrl => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set avatarUrl($core.String v) { $_setString(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasAvatarUrl() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearAvatarUrl() => clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.String get content => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set content($core.String v) { $_setString(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasContent() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearContent() => clearField(5);
+
+  @$pb.TagNumber(6)
+  $fixnum.Int64 get timestamp => $_getI64(5);
+  @$pb.TagNumber(6)
+  set timestamp($fixnum.Int64 v) { $_setInt64(5, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasTimestamp() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearTimestamp() => clearField(6);
+}
+
+/// TeleportArrivalSignal 传送到达信号（源地图 → 目标地图）
+/// 由源地图的 handlePortalUse 通过 MatchSignal 发送给目标地图，
+/// 目标地图在 MatchSignal 回调中缓存到 pendingTeleports，
+/// MatchJoin 时从本地内存读取，彻底消除 Storage 竞态。
+class TeleportArrivalSignal extends $pb.GeneratedMessage {
+  factory TeleportArrivalSignal({
+    $core.String? userId,
+    $core.String? sourceMapId,
+    $core.double? targetX,
+    $core.double? targetY,
+    $fixnum.Int64? issuedAt,
+  }) {
+    final $result = create();
+    if (userId != null) {
+      $result.userId = userId;
+    }
+    if (sourceMapId != null) {
+      $result.sourceMapId = sourceMapId;
+    }
+    if (targetX != null) {
+      $result.targetX = targetX;
+    }
+    if (targetY != null) {
+      $result.targetY = targetY;
+    }
+    if (issuedAt != null) {
+      $result.issuedAt = issuedAt;
+    }
+    return $result;
+  }
+  TeleportArrivalSignal._() : super();
+  factory TeleportArrivalSignal.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory TeleportArrivalSignal.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'TeleportArrivalSignal', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'userId')
+    ..aOS(2, _omitFieldNames ? '' : 'sourceMapId')
+    ..a<$core.double>(3, _omitFieldNames ? '' : 'targetX', $pb.PbFieldType.OD)
+    ..a<$core.double>(4, _omitFieldNames ? '' : 'targetY', $pb.PbFieldType.OD)
+    ..aInt64(5, _omitFieldNames ? '' : 'issuedAt')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  TeleportArrivalSignal clone() => TeleportArrivalSignal()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  TeleportArrivalSignal copyWith(void Function(TeleportArrivalSignal) updates) => super.copyWith((message) => updates(message as TeleportArrivalSignal)) as TeleportArrivalSignal;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static TeleportArrivalSignal create() => TeleportArrivalSignal._();
+  TeleportArrivalSignal createEmptyInstance() => create();
+  static $pb.PbList<TeleportArrivalSignal> createRepeated() => $pb.PbList<TeleportArrivalSignal>();
+  @$core.pragma('dart2js:noInline')
+  static TeleportArrivalSignal getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TeleportArrivalSignal>(create);
+  static TeleportArrivalSignal? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get userId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set userId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasUserId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearUserId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get sourceMapId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set sourceMapId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasSourceMapId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearSourceMapId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.double get targetX => $_getN(2);
+  @$pb.TagNumber(3)
+  set targetX($core.double v) { $_setDouble(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasTargetX() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearTargetX() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.double get targetY => $_getN(3);
+  @$pb.TagNumber(4)
+  set targetY($core.double v) { $_setDouble(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasTargetY() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearTargetY() => clearField(4);
+
+  @$pb.TagNumber(5)
+  $fixnum.Int64 get issuedAt => $_getI64(4);
+  @$pb.TagNumber(5)
+  set issuedAt($fixnum.Int64 v) { $_setInt64(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasIssuedAt() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearIssuedAt() => clearField(5);
+}
+
+/// ChatMessageSignal 跨 Match 聊天消息信号
+class ChatMessageSignal extends $pb.GeneratedMessage {
+  factory ChatMessageSignal({
+    $core.String? messageId,
+    $core.String? userId,
+    $core.String? nickname,
+    $core.String? content,
+    $core.String? messageType,
+    $core.bool? isAnonymous,
+    $fixnum.Int64? timestamp,
+  }) {
+    final $result = create();
+    if (messageId != null) {
+      $result.messageId = messageId;
+    }
+    if (userId != null) {
+      $result.userId = userId;
+    }
+    if (nickname != null) {
+      $result.nickname = nickname;
+    }
+    if (content != null) {
+      $result.content = content;
+    }
+    if (messageType != null) {
+      $result.messageType = messageType;
+    }
+    if (isAnonymous != null) {
+      $result.isAnonymous = isAnonymous;
+    }
+    if (timestamp != null) {
+      $result.timestamp = timestamp;
+    }
+    return $result;
+  }
+  ChatMessageSignal._() : super();
+  factory ChatMessageSignal.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory ChatMessageSignal.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ChatMessageSignal', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'messageId')
+    ..aOS(2, _omitFieldNames ? '' : 'userId')
+    ..aOS(3, _omitFieldNames ? '' : 'nickname')
+    ..aOS(4, _omitFieldNames ? '' : 'content')
+    ..aOS(5, _omitFieldNames ? '' : 'messageType')
+    ..aOB(6, _omitFieldNames ? '' : 'isAnonymous')
+    ..aInt64(7, _omitFieldNames ? '' : 'timestamp')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  ChatMessageSignal clone() => ChatMessageSignal()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  ChatMessageSignal copyWith(void Function(ChatMessageSignal) updates) => super.copyWith((message) => updates(message as ChatMessageSignal)) as ChatMessageSignal;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ChatMessageSignal create() => ChatMessageSignal._();
+  ChatMessageSignal createEmptyInstance() => create();
+  static $pb.PbList<ChatMessageSignal> createRepeated() => $pb.PbList<ChatMessageSignal>();
+  @$core.pragma('dart2js:noInline')
+  static ChatMessageSignal getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ChatMessageSignal>(create);
+  static ChatMessageSignal? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get messageId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set messageId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasMessageId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearMessageId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get userId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set userId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasUserId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearUserId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get nickname => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set nickname($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasNickname() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearNickname() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get content => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set content($core.String v) { $_setString(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasContent() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearContent() => clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.String get messageType => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set messageType($core.String v) { $_setString(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasMessageType() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearMessageType() => clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.bool get isAnonymous => $_getBF(5);
+  @$pb.TagNumber(6)
+  set isAnonymous($core.bool v) { $_setBool(5, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasIsAnonymous() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearIsAnonymous() => clearField(6);
+
+  @$pb.TagNumber(7)
+  $fixnum.Int64 get timestamp => $_getI64(6);
+  @$pb.TagNumber(7)
+  set timestamp($fixnum.Int64 v) { $_setInt64(6, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasTimestamp() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearTimestamp() => clearField(7);
+}
+
+/// StatusTextChangedSignal 跨 Match 状态文本变更信号
+class StatusTextChangedSignal extends $pb.GeneratedMessage {
+  factory StatusTextChangedSignal({
+    $core.String? userId,
+    $core.String? statusText,
+  }) {
+    final $result = create();
+    if (userId != null) {
+      $result.userId = userId;
+    }
+    if (statusText != null) {
+      $result.statusText = statusText;
+    }
+    return $result;
+  }
+  StatusTextChangedSignal._() : super();
+  factory StatusTextChangedSignal.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory StatusTextChangedSignal.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'StatusTextChangedSignal', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'userId')
+    ..aOS(2, _omitFieldNames ? '' : 'statusText')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  StatusTextChangedSignal clone() => StatusTextChangedSignal()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  StatusTextChangedSignal copyWith(void Function(StatusTextChangedSignal) updates) => super.copyWith((message) => updates(message as StatusTextChangedSignal)) as StatusTextChangedSignal;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static StatusTextChangedSignal create() => StatusTextChangedSignal._();
+  StatusTextChangedSignal createEmptyInstance() => create();
+  static $pb.PbList<StatusTextChangedSignal> createRepeated() => $pb.PbList<StatusTextChangedSignal>();
+  @$core.pragma('dart2js:noInline')
+  static StatusTextChangedSignal getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<StatusTextChangedSignal>(create);
+  static StatusTextChangedSignal? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get userId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set userId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasUserId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearUserId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get statusText => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set statusText($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasStatusText() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearStatusText() => clearField(2);
+}
+
+/// AnonymousChangedSignal 跨 Match 匿名状态变更信号
+class AnonymousChangedSignal extends $pb.GeneratedMessage {
+  factory AnonymousChangedSignal({
+    $core.String? userId,
+    $core.bool? isAnonymous,
+    $core.String? displayNickname,
+  }) {
+    final $result = create();
+    if (userId != null) {
+      $result.userId = userId;
+    }
+    if (isAnonymous != null) {
+      $result.isAnonymous = isAnonymous;
+    }
+    if (displayNickname != null) {
+      $result.displayNickname = displayNickname;
+    }
+    return $result;
+  }
+  AnonymousChangedSignal._() : super();
+  factory AnonymousChangedSignal.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory AnonymousChangedSignal.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'AnonymousChangedSignal', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'userId')
+    ..aOB(2, _omitFieldNames ? '' : 'isAnonymous')
+    ..aOS(3, _omitFieldNames ? '' : 'displayNickname')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  AnonymousChangedSignal clone() => AnonymousChangedSignal()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  AnonymousChangedSignal copyWith(void Function(AnonymousChangedSignal) updates) => super.copyWith((message) => updates(message as AnonymousChangedSignal)) as AnonymousChangedSignal;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static AnonymousChangedSignal create() => AnonymousChangedSignal._();
+  AnonymousChangedSignal createEmptyInstance() => create();
+  static $pb.PbList<AnonymousChangedSignal> createRepeated() => $pb.PbList<AnonymousChangedSignal>();
+  @$core.pragma('dart2js:noInline')
+  static AnonymousChangedSignal getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<AnonymousChangedSignal>(create);
+  static AnonymousChangedSignal? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get userId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set userId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasUserId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearUserId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.bool get isAnonymous => $_getBF(1);
+  @$pb.TagNumber(2)
+  set isAnonymous($core.bool v) { $_setBool(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasIsAnonymous() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearIsAnonymous() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get displayNickname => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set displayNickname($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasDisplayNickname() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearDisplayNickname() => clearField(3);
+}
+
+/// DisplayNameChangedSignal 跨 Match 昵称变更信号
+class DisplayNameChangedSignal extends $pb.GeneratedMessage {
+  factory DisplayNameChangedSignal({
+    $core.String? userId,
+    $core.String? nickname,
+  }) {
+    final $result = create();
+    if (userId != null) {
+      $result.userId = userId;
+    }
+    if (nickname != null) {
+      $result.nickname = nickname;
+    }
+    return $result;
+  }
+  DisplayNameChangedSignal._() : super();
+  factory DisplayNameChangedSignal.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory DisplayNameChangedSignal.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DisplayNameChangedSignal', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'userId')
+    ..aOS(2, _omitFieldNames ? '' : 'nickname')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  DisplayNameChangedSignal clone() => DisplayNameChangedSignal()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  DisplayNameChangedSignal copyWith(void Function(DisplayNameChangedSignal) updates) => super.copyWith((message) => updates(message as DisplayNameChangedSignal)) as DisplayNameChangedSignal;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DisplayNameChangedSignal create() => DisplayNameChangedSignal._();
+  DisplayNameChangedSignal createEmptyInstance() => create();
+  static $pb.PbList<DisplayNameChangedSignal> createRepeated() => $pb.PbList<DisplayNameChangedSignal>();
+  @$core.pragma('dart2js:noInline')
+  static DisplayNameChangedSignal getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<DisplayNameChangedSignal>(create);
+  static DisplayNameChangedSignal? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get userId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set userId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasUserId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearUserId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get nickname => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set nickname($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasNickname() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearNickname() => clearField(2);
+}
+
+/// OnlineCountChangedSignal 全服在线人数变更信号
+class OnlineCountChangedSignal extends $pb.GeneratedMessage {
+  factory OnlineCountChangedSignal({
+    $core.int? total,
+    $core.Map<$core.String, $core.int>? byMap,
+  }) {
+    final $result = create();
+    if (total != null) {
+      $result.total = total;
+    }
+    if (byMap != null) {
+      $result.byMap.addAll(byMap);
+    }
+    return $result;
+  }
+  OnlineCountChangedSignal._() : super();
+  factory OnlineCountChangedSignal.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory OnlineCountChangedSignal.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'OnlineCountChangedSignal', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'total', $pb.PbFieldType.O3)
+    ..m<$core.String, $core.int>(2, _omitFieldNames ? '' : 'byMap', entryClassName: 'OnlineCountChangedSignal.ByMapEntry', keyFieldType: $pb.PbFieldType.OS, valueFieldType: $pb.PbFieldType.O3, packageName: const $pb.PackageName('lobby'))
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  OnlineCountChangedSignal clone() => OnlineCountChangedSignal()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  OnlineCountChangedSignal copyWith(void Function(OnlineCountChangedSignal) updates) => super.copyWith((message) => updates(message as OnlineCountChangedSignal)) as OnlineCountChangedSignal;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static OnlineCountChangedSignal create() => OnlineCountChangedSignal._();
+  OnlineCountChangedSignal createEmptyInstance() => create();
+  static $pb.PbList<OnlineCountChangedSignal> createRepeated() => $pb.PbList<OnlineCountChangedSignal>();
+  @$core.pragma('dart2js:noInline')
+  static OnlineCountChangedSignal getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<OnlineCountChangedSignal>(create);
+  static OnlineCountChangedSignal? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get total => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set total($core.int v) { $_setSignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasTotal() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearTotal() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.Map<$core.String, $core.int> get byMap => $_getMap(1);
 }
 
 

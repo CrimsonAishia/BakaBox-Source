@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 class _PlayerNotificationItem extends StatefulWidget {
   /// 玩家显示名称
   final String playerName;
-  /// 通知类型（0=join, 1=leave, 2=teleport）
+  /// 通知类型（0=join, 1=leave, 2=teleport, 3=teleportIn）
   final int type;
-  /// 目标地图名称（传送类型使用）
+  /// 目标地图名称（teleport 类型使用）
   final String? targetMapName;
+  /// 来源地图名称（teleportIn 类型使用）
+  final String? sourceMapName;
   /// 通知ID
   final String notificationId;
   /// 回调：当动画完成时通知父组件移除此通知
@@ -17,6 +19,7 @@ class _PlayerNotificationItem extends StatefulWidget {
     required this.playerName,
     required this.type,
     this.targetMapName,
+    this.sourceMapName,
     required this.notificationId,
     required this.onExpire,
   });
@@ -86,6 +89,8 @@ class _PlayerNotificationItemState extends State<_PlayerNotificationItem>
         return _leaveColor;
       case 2:
         return _teleportColor;
+      case 3:
+        return _teleportColor;
       default:
         return _textColor;
     }
@@ -99,7 +104,9 @@ class _PlayerNotificationItemState extends State<_PlayerNotificationItem>
       case 1:
         return '-';  // 减号表示离开
       case 2:
-        return '>';  // 箭头表示传送
+        return '>';  // 箭头表示传送离开
+      case 3:
+        return '<';  // 箭头表示传送进入
       default:
         return '';
     }
@@ -114,6 +121,8 @@ class _PlayerNotificationItemState extends State<_PlayerNotificationItem>
         return '离开';
       case 2:
         return '传送';
+      case 3:
+        return '传送过来';
       default:
         return '';
     }
@@ -166,11 +175,23 @@ class _PlayerNotificationItemState extends State<_PlayerNotificationItem>
                 fontWeight: FontWeight.w400,
               ),
             ),
-            // 传送目标
+            // 传送目标（teleport 离开）
             if (widget.type == 2 && widget.targetMapName != null) ...[
               const SizedBox(width: 4),
               Text(
                 '→ ${widget.targetMapName}',
+                style: const TextStyle(
+                  color: _textColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+            // 传送来源（teleportIn 进入）
+            if (widget.type == 3 && widget.sourceMapName != null) ...[
+              const SizedBox(width: 4),
+              Text(
+                '← ${widget.sourceMapName}',
                 style: const TextStyle(
                   color: _textColor,
                   fontSize: 12,
@@ -202,6 +223,7 @@ class _NotificationItemWrapper extends StatelessWidget {
       playerName: notification.playerName as String,
       type: notification.type.index as int,
       targetMapName: notification.targetMapName as String?,
+      sourceMapName: notification.sourceMapName as String?,
       notificationId: notification.id as String,
       onExpire: onExpire,
     );

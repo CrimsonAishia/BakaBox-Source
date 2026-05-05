@@ -25,6 +25,8 @@ enum PlayerNotificationType {
   leave,
   /// 玩家传送到其他地图
   teleport,
+  /// 玩家从其他地图传送进来
+  teleportIn,
 }
 
 /// 玩家通知数据模型
@@ -35,8 +37,10 @@ class PlayerNotification {
   final PlayerNotificationType type;
   /// 玩家显示名称
   final String playerName;
-  /// 目标地图名称（传送类型使用）
+  /// 目标地图名称（teleport 类型使用）
   final String? targetMapName;
+  /// 来源地图名称（teleportIn 类型使用）
+  final String? sourceMapName;
   /// 通知创建时间
   final DateTime createdAt;
 
@@ -45,6 +49,7 @@ class PlayerNotification {
     required this.type,
     required this.playerName,
     this.targetMapName,
+    this.sourceMapName,
     required this.createdAt,
   });
 
@@ -57,6 +62,8 @@ class PlayerNotification {
         return '$playerName 离开了大厅';
       case PlayerNotificationType.teleport:
         return '$playerName 传送到了 ${targetMapName ?? "未知地图"}';
+      case PlayerNotificationType.teleportIn:
+        return '$playerName 从 ${sourceMapName ?? "其他地图"} 传送过来了';
     }
   }
 }

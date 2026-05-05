@@ -280,7 +280,10 @@ class _LobbyDesktopState extends State<LobbyDesktop>
           previous.kickedReason != current.kickedReason ||
           previous.serverOnlineCount != current.serverOnlineCount ||
           previous.broadcastCooldownSeconds != current.broadcastCooldownSeconds ||
-          previous.isAnonymous != current.isAnonymous,
+          previous.isAnonymous != current.isAnonymous ||
+          previous.anonymousSwitchCooldownSeconds != current.anonymousSwitchCooldownSeconds ||
+          previous.steamNameSwitchCooldownSeconds != current.steamNameSwitchCooldownSeconds ||
+          previous.pendingSettings != current.pendingSettings,
       listenWhen: (previous, current) =>
           previous.isChatActive != current.isChatActive ||
           previous.transientNoticeSeq != current.transientNoticeSeq ||
