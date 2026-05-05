@@ -49,28 +49,37 @@ class ServerCategoryService {
   }
 
   Future<List<ServerCategory>> _fetchApiCategories() async {
-    // 1. 主 API
-    try {
-      LogService.d('[ServerCategoryService] 从主 API 获取分类列表');
-      final result = await Api.get<List<ServerCategory>>(
-        '/api/stub',
-        fromJson: (json) {
-          final data = json as Map<String, dynamic>;
-          final servers = data['servers'] as List?;
-          if (servers == null) return <ServerCategory>[];
-          return _parseList(servers);
-        },
-      );
+    // 1. 主 API（最多重试 3 次，指数退避，防止网络抖动导致获取失败）
+    const maxAttempts = 3;
+    for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        LogService.d('[ServerCategoryService] 从主 API 获取分类列表（第 $attempt 次）');
+        final result = await Api.get<List<ServerCategory>>(
+          '/api/stub',
+          fromJson: (json) {
+            final data = json as Map<String, dynamic>;
+            final servers = data['servers'] as List?;
+            if (servers == null) return <ServerCategory>[];
+            return _parseList(servers);
+          },
+        );
 
-      if (result != null && result.isNotEmpty) {
-        LogService.i('[ServerCategoryService] 主 API 获取成功，共 ${result.length} 个分类');
-        _lastSuccessfulList = result;
-        await CacheService.cacheServerList(result);
-        return result;
+        if (result != null && result.isNotEmpty) {
+          LogService.i('[ServerCategoryService] 主 API 获取成功（第 $attempt 次），共 ${result.length} 个分类');
+          _lastSuccessfulList = result;
+          await CacheService.cacheServerList(result);
+          return result;
+        }
+      } catch (e) {
+        LogService.w('[ServerCategoryService] 主 API 第 $attempt 次请求失败: $e');
+        if (attempt < maxAttempts) {
+          final delay = Duration(seconds: attempt); // 1s, 2s
+          LogService.d('[ServerCategoryService] ${delay.inSeconds}s 后重试...');
+          await Future.delayed(delay);
+        }
       }
-    } catch (e) {
-      LogService.w('[ServerCategoryService] 主 API 请求异常: $e');
     }
+    LogService.w('[ServerCategoryService] 主 API 重试 $maxAttempts 次均失败，降级到缓存');
 
     // 2. 本次运行内存缓存
     if (_lastSuccessfulList != null && _lastSuccessfulList!.isNotEmpty) {
