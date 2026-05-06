@@ -964,68 +964,73 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
     super.dispose();
   }
 
-  List<LobbyUser> _getDisplayUsers() {
-    // 优先使用全服用户列表，如果没有则使用当前房间用户列表作为降级
+  /// 返回搜索过滤后、状态过滤前的在线用户列表（用于计算各分类人数）
+  List<LobbyUser> _getSearchedUsers() {
     final users = widget.state.allOnlineUsers.isNotEmpty
         ? widget.state.allOnlineUsers
         : widget.state.users;
     var filtered = users.where((user) => user.isOnline).toList();
-
-    // 搜索过滤
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
-      filtered = filtered.where((user) =>
-        user.displayName.toLowerCase().contains(query)
-      ).toList();
+      filtered = filtered
+          .where((user) => user.displayName.toLowerCase().contains(query))
+          .toList();
     }
-
-    // 状态过滤
-    if (_statusFilter != null) {
-      filtered = filtered.where((user) {
-        final status = (user.statusText ?? '在线').toLowerCase();
-        // "在 " 前缀表示用户在服务器中（如 "在 192.168.1.1" 或 "在 xxx · 地图名"），
-        // 应该归类为"游戏中"
-        final isOnServer = status.startsWith('在 ');
-        switch (_statusFilter) {
-          case 'online':
-            return !status.contains('游戏中') &&
-                   !status.contains('挤服') &&
-                   !status.contains('热身') &&
-                   !status.contains('主菜单') &&
-                   !isOnServer;
-          case 'inGame':
-            return status.contains('游戏中') ||
-                   status.contains('热身') ||
-                   status.contains('主菜单') ||
-                   isOnServer;
-          case 'queuing':
-            return status.contains('挤服');
-          default:
-            return true;
-        }
-      }).toList();
-    }
-
-    // 排序：自己始终在最前
-    filtered.sort((a, b) {
-      if (a.isSelf) return -1;
-      if (b.isSelf) return 1;
-      return a.displayName.compareTo(b.displayName);
-    });
-
     return filtered;
+  }
+
+  /// 判断单个用户是否匹配指定筛选条件
+  bool _matchesFilter(LobbyUser user, String? filter) {
+    if (filter == null) return true;
+    final status = (user.statusText ?? '在线').toLowerCase();
+    switch (filter) {
+      case 'online':
+        return !status.contains('游戏中') &&
+               !status.contains('挤服') &&
+               !status.contains('热身') &&
+               !status.contains('主菜单');
+      case 'inGame':
+        return status.contains('游戏中') ||
+               status.contains('热身') ||
+               status.contains('主菜单');
+      case 'queuing':
+        return status.contains('挤服');
+      default:
+        return true;
+    }
+  }
+
+
+  /// 计算指定筛选条件下的人数（基于搜索后列表，随搜索词动态变化）
+  int _countForFilter(List<LobbyUser> searchedUsers, String? filter) {
+    return searchedUsers.where((u) => _matchesFilter(u, filter)).length;
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final displayUsers = _getDisplayUsers();
     // 优先使用全服人数，否则使用当前房间人数
     final onlineCount = widget.state.allOnlineUsers.isNotEmpty
         ? widget.state.totalOnlineCount
         : widget.state.onlineCount;
     final isLoading =
         widget.state.isLoadingAllOnlineUsers && widget.state.allOnlineUsers.isEmpty;
+
+    // 基于搜索结果计算各分类人数（状态过滤前），供 chip 动态显示
+    final searchedUsers = _getSearchedUsers();
+    final countAll = searchedUsers.length;
+    final countOnline = _countForFilter(searchedUsers, 'online');
+    final countInGame = _countForFilter(searchedUsers, 'inGame');
+    final countQueuing = _countForFilter(searchedUsers, 'queuing');
+
+    final displayUsers = searchedUsers
+        .where((u) => _matchesFilter(u, _statusFilter))
+        .toList()
+      ..sort((a, b) {
+        if (a.isSelf) return -1;
+        if (b.isSelf) return 1;
+        return a.displayName.compareTo(b.displayName);
+      });
 
     return Row(
       children: [
@@ -1062,7 +1067,12 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
               _DrawerHeader(title: '在线玩家', onlineCount: onlineCount),
               const Divider(height: 1, color: Colors.white10),
               // 搜索和筛选栏
-              _buildFilterBar(),
+              _buildFilterBar(
+                countAll: countAll,
+                countOnline: countOnline,
+                countInGame: countInGame,
+                countQueuing: countQueuing,
+              ),
               const Divider(height: 1, color: Colors.white10),
               // 玩家列表
               Expanded(
@@ -1113,7 +1123,12 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
     );
   }
 
-  Widget _buildFilterBar() {
+  Widget _buildFilterBar({
+    required int countAll,
+    required int countOnline,
+    required int countInGame,
+    required int countQueuing,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Column(
@@ -1176,13 +1191,13 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
-                _buildFilterChip(null, '全部'),
+                _buildFilterChip(null,     '全部',   countAll),
                 const SizedBox(width: 6),
-                _buildFilterChip('online', '在线'),
+                _buildFilterChip('online',  '在线',   countOnline),
                 const SizedBox(width: 6),
-                _buildFilterChip('inGame', '游戏中'),
+                _buildFilterChip('inGame',  '游戏中', countInGame),
                 const SizedBox(width: 6),
-                _buildFilterChip('queuing', '挤服中'),
+                _buildFilterChip('queuing', '挤服中', countQueuing),
               ],
             ),
           ),
@@ -1191,10 +1206,11 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
     );
   }
 
-  Widget _buildFilterChip(String? filterValue, String label) {
+  Widget _buildFilterChip(String? filterValue, String label, int count) {
     final isSelected = _statusFilter == filterValue;
     return _HoverFilterChip(
       label: label,
+      count: isSelected ? count : null,  // 只有选中时才传入人数
       isSelected: isSelected,
       onTap: () => setState(() => _statusFilter = filterValue),
     );
@@ -1203,6 +1219,8 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
 
 class _HoverFilterChip extends StatefulWidget {
   final String label;
+  /// 仅选中时传入，用于显示动态人数；null 表示不显示人数
+  final int? count;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -1210,6 +1228,7 @@ class _HoverFilterChip extends StatefulWidget {
     required this.label,
     required this.isSelected,
     required this.onTap,
+    this.count,
   });
 
   @override
@@ -1221,6 +1240,10 @@ class _HoverFilterChipState extends State<_HoverFilterChip> {
 
   @override
   Widget build(BuildContext context) {
+    final displayText = (widget.isSelected && widget.count != null)
+        ? '${widget.label} (${widget.count})'
+        : widget.label;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
@@ -1246,7 +1269,7 @@ class _HoverFilterChipState extends State<_HoverFilterChip> {
             ),
           ),
           child: Text(
-            widget.label,
+            displayText,
             style: TextStyle(
               color: widget.isSelected
                   ? const Color(0xFF1D9BF0)
