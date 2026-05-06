@@ -103,7 +103,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
   /// 根据索引构建页面（使用全局 Bloc，页面切换不重新创建）
   Widget _buildScreen(int index) {
     return switch (index) {
-      0 => WelcomeScreen(onNavigateToServers: () => _onIndexChanged(2)),
+      0 => WelcomeScreen(onNavigateToServers: () => _onIndexChanged(1)),
       1 => const ServersDesktop(),
       2 => const LobbyDesktop(),
       3 => const CharacterGalleryDesktop(),

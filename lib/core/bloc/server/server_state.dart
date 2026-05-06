@@ -21,6 +21,7 @@ class ServerState extends Equatable {
   final Set<String> loadingCategories;
   final bool isLoadingOnlineCounts;
   final bool hasEverLoadedOnlineCounts;
+  final DateTime? onlineCountsLastFetched;
   final int countdownResetKey; // 倒计时重置信号，每次需要重置时递增
   final bool isCountdownActive; // 倒计时是否激活
   final Set<String> refreshingMaps; // 正在刷新缓存的服务器地址集合
@@ -48,6 +49,7 @@ class ServerState extends Equatable {
     this.loadingCategories = const {},
     this.isLoadingOnlineCounts = false,
     this.hasEverLoadedOnlineCounts = false,
+    this.onlineCountsLastFetched,
     this.countdownResetKey = 0,
     this.isCountdownActive = false,
     this.refreshingMaps = const {},
@@ -75,6 +77,7 @@ class ServerState extends Equatable {
     Set<String>? loadingCategories,
     bool? isLoadingOnlineCounts,
     bool? hasEverLoadedOnlineCounts,
+    DateTime? onlineCountsLastFetched,
     int? countdownResetKey,
     bool? isCountdownActive,
     Set<String>? refreshingMaps,
@@ -105,6 +108,8 @@ class ServerState extends Equatable {
           isLoadingOnlineCounts ?? this.isLoadingOnlineCounts,
       hasEverLoadedOnlineCounts:
           hasEverLoadedOnlineCounts ?? this.hasEverLoadedOnlineCounts,
+      onlineCountsLastFetched:
+          onlineCountsLastFetched ?? this.onlineCountsLastFetched,
       countdownResetKey: countdownResetKey ?? this.countdownResetKey,
       isCountdownActive: isCountdownActive ?? this.isCountdownActive,
       refreshingMaps: refreshingMaps ?? this.refreshingMaps,
@@ -156,6 +161,7 @@ class ServerState extends Equatable {
     loadingCategories,
     isLoadingOnlineCounts,
     hasEverLoadedOnlineCounts,
+    onlineCountsLastFetched,
     countdownResetKey,
     isCountdownActive,
     refreshingMaps,

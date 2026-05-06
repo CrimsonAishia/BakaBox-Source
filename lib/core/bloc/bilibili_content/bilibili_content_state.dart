@@ -45,6 +45,15 @@ class BilibiliContentState extends Equatable {
   // 各自 Tab 是否已完成初次加载
   final bool hasLoadedLiveRooms;
   final bool hasLoadedVideos;
+  
+  // 各自 Tab 的最后加载时间
+  final DateTime? liveRoomsLastFetched;
+  final DateTime? videosLastFetched;
+  
+  // 各自 Tab 的加载状态
+  final bool isLoadingLiveRooms;
+  final bool isLoadingVideos;
+  
   // 最后一次操作结果（用于Toast提示）
   final bool? lastOperationSuccess;
   final String? lastOperationMessage;
@@ -69,6 +78,10 @@ class BilibiliContentState extends Equatable {
     this.isRefreshing = false,
     this.hasLoadedLiveRooms = false,
     this.hasLoadedVideos = false,
+    this.liveRoomsLastFetched,
+    this.videosLastFetched,
+    this.isLoadingLiveRooms = false,
+    this.isLoadingVideos = false,
     this.lastOperationSuccess,
     this.lastOperationMessage,
     this.liveRoomsTotal = 0,
@@ -121,6 +134,10 @@ class BilibiliContentState extends Equatable {
     bool? isRefreshing,
     bool? hasLoadedLiveRooms,
     bool? hasLoadedVideos,
+    DateTime? liveRoomsLastFetched,
+    DateTime? videosLastFetched,
+    bool? isLoadingLiveRooms,
+    bool? isLoadingVideos,
     bool? lastOperationSuccess,
     String? lastOperationMessage,
     bool clearLastOperation = false,
@@ -151,6 +168,10 @@ class BilibiliContentState extends Equatable {
       isRefreshing: isRefreshing ?? this.isRefreshing,
       hasLoadedLiveRooms: hasLoadedLiveRooms ?? this.hasLoadedLiveRooms,
       hasLoadedVideos: hasLoadedVideos ?? this.hasLoadedVideos,
+      liveRoomsLastFetched: liveRoomsLastFetched ?? this.liveRoomsLastFetched,
+      videosLastFetched: videosLastFetched ?? this.videosLastFetched,
+      isLoadingLiveRooms: isLoadingLiveRooms ?? this.isLoadingLiveRooms,
+      isLoadingVideos: isLoadingVideos ?? this.isLoadingVideos,
       lastOperationSuccess: clearLastOperation
           ? null
           : (lastOperationSuccess ?? this.lastOperationSuccess),
@@ -183,6 +204,10 @@ class BilibiliContentState extends Equatable {
     isRefreshing,
     hasLoadedLiveRooms,
     hasLoadedVideos,
+    liveRoomsLastFetched,
+    videosLastFetched,
+    isLoadingLiveRooms,
+    isLoadingVideos,
     lastOperationSuccess,
     lastOperationMessage,
     liveRoomsTotal,

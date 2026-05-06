@@ -1031,7 +1031,10 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
       // 所有查询完成，关闭加载状态（仅首次加载时需要）
       if (!emit.isDone && isFirstLoad) {
-        emit(state.copyWith(isLoadingOnlineCounts: false));
+        emit(state.copyWith(
+          isLoadingOnlineCounts: false,
+          onlineCountsLastFetched: DateTime.now(),
+        ));
       }
     } catch (e) {
       LogService.e('批量更新分类在线人数失败: $e', e);
