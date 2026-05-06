@@ -19,13 +19,13 @@ enum LobbyLoadingPhase {
 
 /// 玩家通知类型
 enum PlayerNotificationType {
-  /// 玩家进入大厅
-  join,
-  /// 玩家离开大厅
-  leave,
-  /// 玩家传送到其他地图
+  /// 玩家上线（同地图或跨地图）
+  online,
+  /// 玩家下线（同地图或跨地图）
+  offline,
+  /// 玩家传送到其他地图（同地图传送离开）
   teleport,
-  /// 玩家从其他地图传送进来
+  /// 玩家从其他地图传送进来（同地图传送到达）
   teleportIn,
 }
 
@@ -56,10 +56,10 @@ class PlayerNotification {
   /// 生成描述文字
   String get message {
     switch (type) {
-      case PlayerNotificationType.join:
-        return '$playerName 进入了大厅';
-      case PlayerNotificationType.leave:
-        return '$playerName 离开了大厅';
+      case PlayerNotificationType.online:
+        return '$playerName 上线了';
+      case PlayerNotificationType.offline:
+        return '$playerName 下线了';
       case PlayerNotificationType.teleport:
         return '$playerName 传送到了 ${targetMapName ?? "未知地图"}';
       case PlayerNotificationType.teleportIn:

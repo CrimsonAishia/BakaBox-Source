@@ -589,13 +589,15 @@ const PresenceJoinResponse$json = {
   '2': [
     {'1': 'user', '3': 1, '4': 1, '5': 11, '6': '.lobby.LobbyUser', '10': 'user'},
     {'1': 'source_map_id', '3': 2, '4': 1, '5': 9, '10': 'sourceMapId'},
+    {'1': 'is_cross_map_notification', '3': 3, '4': 1, '5': 8, '10': 'isCrossMapNotification'},
   ],
 };
 
 /// Descriptor for `PresenceJoinResponse`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List presenceJoinResponseDescriptor = $convert.base64Decode(
     'ChRQcmVzZW5jZUpvaW5SZXNwb25zZRIkCgR1c2VyGAEgASgLMhAubG9iYnkuTG9iYnlVc2VyUg'
-    'R1c2VyEiIKDXNvdXJjZV9tYXBfaWQYAiABKAlSC3NvdXJjZU1hcElk');
+    'R1c2VyEiIKDXNvdXJjZV9tYXBfaWQYAiABKAlSC3NvdXJjZU1hcElkEjkKGWlzX2Nyb3NzX21h'
+    'cF9ub3RpZmljYXRpb24YAyABKAhSFmlzQ3Jvc3NNYXBOb3RpZmljYXRpb24=');
 
 @$core.Deprecated('Use presenceLeaveResponseDescriptor instead')
 const PresenceLeaveResponse$json = {
@@ -1109,6 +1111,7 @@ const MatchSignal$json = {
     {'1': 'anonymous_changed', '3': 16, '4': 1, '5': 11, '6': '.lobby.AnonymousChangedSignal', '9': 0, '10': 'anonymousChanged'},
     {'1': 'display_name_changed', '3': 17, '4': 1, '5': 11, '6': '.lobby.DisplayNameChangedSignal', '9': 0, '10': 'displayNameChanged'},
     {'1': 'online_count_changed', '3': 18, '4': 1, '5': 11, '6': '.lobby.OnlineCountChangedSignal', '9': 0, '10': 'onlineCountChanged'},
+    {'1': 'presence_join', '3': 19, '4': 1, '5': 11, '6': '.lobby.PresenceJoinSignal', '9': 0, '10': 'presenceJoin'},
   ],
   '8': [
     {'1': 'payload'},
@@ -1129,7 +1132,26 @@ final $typed_data.Uint8List matchSignalDescriptor = $convert.base64Decode(
     'duYWxIAFIQYW5vbnltb3VzQ2hhbmdlZBJTChRkaXNwbGF5X25hbWVfY2hhbmdlZBgRIAEoCzIf'
     'LmxvYmJ5LkRpc3BsYXlOYW1lQ2hhbmdlZFNpZ25hbEgAUhJkaXNwbGF5TmFtZUNoYW5nZWQSUw'
     'oUb25saW5lX2NvdW50X2NoYW5nZWQYEiABKAsyHy5sb2JieS5PbmxpbmVDb3VudENoYW5nZWRT'
-    'aWduYWxIAFISb25saW5lQ291bnRDaGFuZ2VkQgkKB3BheWxvYWQ=');
+    'aWduYWxIAFISb25saW5lQ291bnRDaGFuZ2VkEkAKDXByZXNlbmNlX2pvaW4YEyABKAsyGS5sb2'
+    'JieS5QcmVzZW5jZUpvaW5TaWduYWxIAFIMcHJlc2VuY2VKb2luQgkKB3BheWxvYWQ=');
+
+@$core.Deprecated('Use presenceJoinSignalDescriptor instead')
+const PresenceJoinSignal$json = {
+  '1': 'PresenceJoinSignal',
+  '2': [
+    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'nickname', '3': 2, '4': 1, '5': 9, '10': 'nickname'},
+    {'1': 'avatar_url', '3': 3, '4': 1, '5': 9, '10': 'avatarUrl'},
+    {'1': 'is_anonymous', '3': 4, '4': 1, '5': 8, '10': 'isAnonymous'},
+    {'1': 'map_id', '3': 5, '4': 1, '5': 9, '10': 'mapId'},
+  ],
+};
+
+/// Descriptor for `PresenceJoinSignal`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List presenceJoinSignalDescriptor = $convert.base64Decode(
+    'ChJQcmVzZW5jZUpvaW5TaWduYWwSFwoHdXNlcl9pZBgBIAEoCVIGdXNlcklkEhoKCG5pY2tuYW'
+    '1lGAIgASgJUghuaWNrbmFtZRIdCgphdmF0YXJfdXJsGAMgASgJUglhdmF0YXJVcmwSIQoMaXNf'
+    'YW5vbnltb3VzGAQgASgIUgtpc0Fub255bW91cxIVCgZtYXBfaWQYBSABKAlSBW1hcElk');
 
 @$core.Deprecated('Use kickSignalDescriptor instead')
 const KickSignal$json = {
