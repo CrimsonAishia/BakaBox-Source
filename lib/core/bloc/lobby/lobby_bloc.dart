@@ -187,12 +187,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       // 注意：AuthService.login() 中 _notifyLoginStateChanged 在 _exchangeBackendToken 之前调用，
       // 所以需要等待 token 交换完成
       LogService.i('[LobbyBloc] 检测到登录，等待 token 就绪后发送 login 事件');
-      _waitAndLogin();
+      unawaited(_waitAndLogin());
     } else {
       // 用户登出了，重置状态并发送 logout 事件（保留连接，降级为匿名）
       LogService.i('[LobbyBloc] 检测到登出，发送 logout 事件');
       add(const LobbyLogoutConfirmed());
-      _service.logout(force: false);
+      unawaited(_service.logout(force: false));
     }
   }
 
@@ -214,9 +214,14 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     if (_isDisposed) return;
     // 防止与 snapshot 中的登录逻辑重复触发
     if (_authAttemptedAfterConnect) return;
+    // 用户开启了匿名模式，不发送 login（保持匿名身份）
+    if (_service.loadAnonymousMode()) {
+      LogService.i('[LobbyBloc] 用户已开启匿名模式，跳过 login 事件');
+      return;
+    }
     _authAttemptedAfterConnect = true;
     LogService.i('[LobbyBloc] Token 已就绪，发送 login 事件');
-    _service.login();
+    unawaited(_service.login());
   }
 
   Future<void> _onStarted(
@@ -279,11 +284,20 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       await _service.initialize();
     }
 
-    // 移动端特殊处理：如果用户已登录但 token 尚未就绪（AuthBloc 异步初始化中），
-    // 主动等待 token 就绪后发送 login 事件，避免第一次进入大厅以匿名身份显示。
-    if (AuthService.instance.isLoggedIn && !_service.hasValidToken) {
-      LogService.i('[LobbyBloc] 用户已登录但 token 未就绪，等待 token 后发送 login 事件');
-      unawaited(_waitAndLogin());
+    // 用户已登录时，确保 login 消息会被发送：
+    // - token 已就绪且 WS 已连接且未开启匿名模式：直接发送
+    // - token 未就绪：等待 token 就绪后发送（_waitAndLogin 内部也会检查匿名模式）
+    if (AuthService.instance.isLoggedIn) {
+      if (_service.hasValidToken && _service.isConnected && !_service.loadAnonymousMode()) {
+        LogService.i('[LobbyBloc] 用户已登录且 token 就绪，直接发送 login 事件');
+        _authAttemptedAfterConnect = true;
+        unawaited(_service.login());
+      } else if (!_service.hasValidToken) {
+        LogService.i('[LobbyBloc] 用户已登录但 token 未就绪，等待 token 后发送 login 事件');
+        unawaited(_waitAndLogin());
+      }
+      // token 就绪但 WS 未连接：WS 连接后 join.success 会触发 service 层的 login，
+      // 或者 snapshot 里的补发逻辑会处理。
     }
 
     // 进入大厅页面时才请求 assets 和 snapshot
@@ -1299,6 +1313,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             '_selfServerUserId=$_selfServerUserId '
             'state.users=${state.users.map((u) => '${u.userId}:${u.nickname}:isSelf=${u.isSelf}').toList()}');
 
+        // 标记已完成登录，防止 snapshot 补发逻辑重复触发
+        _authAttemptedAfterConnect = true;
+
         // 更新 _selfServerUserId（需要先于 presence.join 处理）
         _selfServerUserId = loginUserId;
 
@@ -1396,6 +1413,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           // 清空 selfServerUserId，避免后续 snapshot 用旧实名 ID 识别 self
           _selfServerUserId = null;
           _lastSentStatusText = null;
+          // 重置登录标志，允许用户重新登录时再次发送 login
+          _authAttemptedAfterConnect = false;
 
           emit(state.copyWith(
             chatCooldownSeconds: 0,
@@ -1417,6 +1436,14 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           if (userId.isNotEmpty) {
             _selfServerUserId = userId;
             LogService.d('[LobbyBloc] join.success 设置 _selfServerUserId=$userId');
+          }
+
+          // 服务端因设备 UUID 关联了账号，把连接识别为已登录（isAnonymous=false），
+          // 但客户端实际上没有登录——立即发送 logout 纠正，降级为匿名身份。
+          // 在 join.success 阶段处理比等到 snapshot 更快，避免短暂以错误身份显示。
+          if (!joinResp.user.isAnonymous && !AuthService.instance.isLoggedIn) {
+            LogService.w('[LobbyBloc] join.success 检测到服务端身份与客户端不一致（服务端已登录但客户端未登录），立即发送 logout 纠正');
+            unawaited(_service.logout(force: false));
           }
         }
         // 保存当前地图 ID（用于后续 assets 解析时确定当前地图）
@@ -1509,13 +1536,24 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             mergedUsers = snapshotState.users;
           }
 
-          // 如果是匿名身份且用户已登录，发送 login 事件
+          // 如果用户已登录、token 有效、未开启匿名模式，且还没发送过 login，则补发。
+          // 不依赖 snapshotState.isAnonymous：服务端可能因 UUID 关联账号返回 isAnonymous=false，
+          // 但客户端实际上还没发过 login（例如 WS 连接时 token 尚未就绪）。
           if (!_authAttemptedAfterConnect &&
-              snapshotState.isAnonymous &&
               AuthService.instance.isLoggedIn &&
-              _service.hasValidToken) {
+              _service.hasValidToken &&
+              !_service.loadAnonymousMode()) {
             _authAttemptedAfterConnect = true;
+            LogService.i('[LobbyBloc] snapshot 补发 login（isAnonymous=${snapshotState.isAnonymous}）');
             unawaited(_service.login());
+          }
+
+          // 服务端因设备 UUID 关联了账号，返回 isAnonymous=false，
+          // 但客户端实际上没有登录——主动发送 logout 纠正服务端状态。
+          // 通常 join.success 阶段已经处理，这里作为兜底二次检查。
+          if (!snapshotState.isAnonymous && !AuthService.instance.isLoggedIn) {
+            LogService.w('[LobbyBloc] snapshot 检测到服务端身份与客户端不一致（服务端已登录但客户端未登录），发送 logout 纠正');
+            unawaited(_service.logout(force: false));
           }
 
           // 检查是否需要加载更多分页

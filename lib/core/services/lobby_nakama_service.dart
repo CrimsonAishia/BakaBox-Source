@@ -489,12 +489,12 @@ class LobbyNakamaService {
 
     if (!isLoggedIn) {
       LogService.i('[LobbyNakamaService] 检测到用户登出，发送 logout 事件');
-      logout(force: false);
-    } else if (_isConnected && hasValidToken) {
-      // 已连接状态下用户登录，直接发送 login 消息切换为实名身份
+      unawaited(logout(force: false));
+    } else if (_isConnected && hasValidToken && !loadAnonymousMode()) {
+      // 已连接状态下用户登录且未开启匿名模式，直接发送 login 消息切换为实名身份
       // （未连接时会在 join.success 收到后自动处理）
-      LogService.i('[LobbyNakamaService] 检测到用户登录（已连接），发送 login 事件');
-      login();
+      LogService.i('[LobbyNakamaService] 检测到用户登录（已连接，非匿名模式），发送 login 事件');
+      unawaited(login());
     }
   }
 
@@ -707,16 +707,16 @@ class LobbyNakamaService {
     LogService.d('[LobbyNakamaService] 收到消息: ${wsEvent.type}');
 
     // 收到 join.success 后按文档流程处理：
-    // 1. 若用户已登录，发送 login 消息切换为实名身份
+    // 1. 若用户已登录且未开启匿名模式，发送 login 消息切换为实名身份
     // 2. 发送 snapshot.request 获取完整场景数据
     if (wsEvent.type == 'join.success') {
       LogService.i('[LobbyNakamaService] 收到 join.success，开始初始化场景');
-      if (AuthService.instance.isLoggedIn && hasValidToken) {
-        LogService.d('[LobbyNakamaService] 用户已登录，发送 login 事件');
-        login();
+      if (AuthService.instance.isLoggedIn && hasValidToken && !loadAnonymousMode()) {
+        LogService.d('[LobbyNakamaService] 用户已登录（非匿名模式），发送 login 事件');
+        unawaited(login());
       }
       // 发送 snapshot.request 获取完整场景数据
-      requestSnapshot();
+      unawaited(requestSnapshot());
     }
 
     // 收到 assets 后标记
