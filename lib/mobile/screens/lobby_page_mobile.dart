@@ -43,8 +43,29 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
   LobbyMapConfig? _targetMapConfig;
   bool? _lastTeleportingState;
 
-  static const int _teleportDurationMs = 3000;
+  /// 传送动画开始时间（用于保证最小动画时长）
+  DateTime? _teleportStartTime;
+
+  /// 最小传送动画时长（毫秒）
+  static const int _minTeleportDurationMs = 2000;
+
+  /// 阶段1动画时长（等待传送完成时，缓慢推进到 70%）
+  static const int _phase1DurationMs = 4000;
+
+  /// 阶段2动画时长（传送完成后，快速推进到 100%）
+  static const int _phase2DurationMs = 500;
+
+  /// 阶段1目标进度（等待传送完成时最多推进到此值）
+  static const double _phase1TargetProgress = 0.7;
+
+  /// 动画完成后额外显示时长（毫秒）
   static const int _holdDurationMs = 1500;
+
+  /// 等待最小动画时间的定时器
+  Timer? _minDurationTimer;
+
+  /// 标记传送数据是否已就绪（等待最小动画时间后再进入阶段2）
+  bool _teleportDataReady = false;
 
   // ─── transientNotice 定时消失 ────────────────────────────
   int _transientNoticeId = 0;
@@ -78,7 +99,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
     _lobbyBloc = LobbyBloc(initialActivityText: '手机在线');
 
     _teleportController = AnimationController(
-      duration: const Duration(milliseconds: _teleportDurationMs),
+      duration: const Duration(milliseconds: _phase1DurationMs),
       vsync: this,
     );
     _teleportAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -167,6 +188,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
     _teleportController?.removeStatusListener(_onTeleportAnimationStatus);
     _teleportController?.dispose();
     _teleportHideTimer?.cancel();
+    _minDurationTimer?.cancel();
     _transientNoticeTimer?.cancel();
     _foregroundNotifyDebounce?.cancel();
     // 关闭屏幕常亮
@@ -226,7 +248,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
     });
   }
 
-  // ─── 传送动画逻辑（复用桌面端） ──────────────────────────
+  // ─── 传送动画逻辑（复用桌面端两阶段动画） ──────────────────────────
 
   void _syncTeleportAnimation(LobbyState state) {
     if (_lastTeleportingState == null) {
@@ -234,6 +256,8 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
       if (state.isTeleporting) {
         _showTeleportOverlay = true;
         _teleportHideTimer?.cancel();
+        _minDurationTimer?.cancel();
+        _teleportDataReady = false;
         _targetMapConfig = _findTargetMapConfig(state);
         _startTeleportAnimation();
       }
@@ -241,42 +265,108 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
     }
 
     if (state.isTeleporting && !_lastTeleportingState!) {
+      // 开始传送 — 立即显示动画（阶段1：缓慢推进到 70%）
       _showTeleportOverlay = true;
       _teleportHideTimer?.cancel();
+      _minDurationTimer?.cancel();
+      _teleportDataReady = false;
       _targetMapConfig = _findTargetMapConfig(state);
       _startTeleportAnimation();
       _lastTeleportingState = true;
     } else if (!state.isTeleporting && _lastTeleportingState!) {
+      // 传送数据就绪 — 检查是否满足最小动画时间
       _lastTeleportingState = false;
-      _scheduleHideOverlay();
+      _onTeleportDataReady();
     }
   }
 
+  /// 启动传送动画（阶段1：缓慢推进到 70%）
   void _startTeleportAnimation() {
+    _teleportStartTime = DateTime.now();
+    _teleportDataReady = false;
+
+    // animateTo 的实际时间 = duration * (target - current) / range
+    // 要让实际时间 = _phase1DurationMs，需要 duration = _phase1DurationMs / 0.7
     _teleportController?.removeStatusListener(_onTeleportAnimationStatus);
+    _teleportController?.duration = Duration(
+      milliseconds: (_phase1DurationMs / _phase1TargetProgress).round(),
+    );
     _teleportController?.addStatusListener(_onTeleportAnimationStatus);
-    _teleportController?.forward(from: 0);
+    _teleportController?.value = 0;
+    _teleportController?.animateTo(_phase1TargetProgress);
+  }
+
+  /// 传送数据就绪时调用
+  void _onTeleportDataReady() {
+    final startTime = _teleportStartTime;
+    if (startTime == null) {
+      _startPhase2();
+      return;
+    }
+
+    final elapsed = DateTime.now().difference(startTime).inMilliseconds;
+    final remaining = _minTeleportDurationMs - elapsed;
+
+    if (remaining <= 0) {
+      _startPhase2();
+    } else {
+      _teleportDataReady = true;
+      _minDurationTimer?.cancel();
+      _minDurationTimer = Timer(Duration(milliseconds: remaining), () {
+        if (mounted && _teleportDataReady) {
+          _startPhase2();
+        }
+      });
+    }
+  }
+
+  /// 启动阶段2动画（快速推进到 100%）
+  void _startPhase2() {
+    _teleportDataReady = false;
+    _minDurationTimer?.cancel();
+
+    // animateTo 的实际时间 = duration * (target - current) / range
+    // 要让实际时间 = _phase2DurationMs，需要 duration = _phase2DurationMs / (1.0 - current)
+    final currentValue = _teleportController?.value ?? 0.0;
+    final remaining = 1.0 - currentValue;
+    if (remaining <= 0) {
+      _scheduleHideOverlay();
+      return;
+    }
+    _teleportController?.duration = Duration(
+      milliseconds: (_phase2DurationMs / remaining).round(),
+    );
+    _teleportController?.animateTo(1.0);
   }
 
   void _scheduleHideOverlay() {
     _teleportHideTimer?.cancel();
-    final animationValue = _teleportController?.value ?? 0.0;
-    final remainingMs = ((1.0 - animationValue) * _teleportDurationMs).round();
-    final delayMs = remainingMs + _holdDurationMs;
 
-    _teleportHideTimer = Timer(Duration(milliseconds: delayMs), () {
+    _teleportHideTimer = Timer(Duration(milliseconds: _holdDurationMs), () {
       if (mounted) {
         _showTeleportOverlay = false;
         _targetMapConfig = null;
         _teleportController?.removeStatusListener(_onTeleportAnimationStatus);
         _teleportController?.reset();
+        _teleportStartTime = null;
         setState(() {});
       }
     });
   }
 
   void _onTeleportAnimationStatus(AnimationStatus status) {
-    // 动画完成或重置时的回调（可扩展）
+    if (status == AnimationStatus.completed) {
+      final value = _teleportController?.value ?? 0.0;
+      if (value >= 1.0) {
+        // 阶段2完成（进度到达 100%），调度隐藏
+        _scheduleHideOverlay();
+      } else {
+        // 阶段1完成（停在 70%），等待传送数据就绪
+        if (_teleportDataReady) {
+          _startPhase2();
+        }
+      }
+    }
   }
 
   LobbyMapConfig? _findTargetMapConfig(LobbyState state) {
