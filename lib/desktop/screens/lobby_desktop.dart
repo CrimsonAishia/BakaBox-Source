@@ -160,20 +160,21 @@ class _LobbyDesktopState extends State<LobbyDesktop>
   /// 传送动画开始时间（用于保证最小动画时长）
   DateTime? _teleportStartTime;
 
-  /// 最小传送动画时长（毫秒）
-  static const int _minTeleportDurationMs = 2000;
+  /// 整体最短传送时长（毫秒）：从动画开始到 overlay 完全消失
+  /// = _minTeleportDurationMs + _phase2DurationMs + _holdDurationMs
+  static const int _minTeleportDurationMs = 700;
 
   /// 阶段1动画时长（等待传送完成时，缓慢推进到 70%）
-  static const int _phase1DurationMs = 4000;
+  static const int _phase1DurationMs = 900;
 
   /// 阶段2动画时长（传送完成后，快速推进到 100%）
-  static const int _phase2DurationMs = 500;
+  static const int _phase2DurationMs = 200;
 
   /// 阶段1目标进度（等待传送完成时最多推进到此值）
   static const double _phase1TargetProgress = 0.7;
 
   /// 动画完成后额外显示时长（毫秒）
-  static const int _holdDurationMs = 1500;
+  static const int _holdDurationMs = 100;
 
   /// 等待最小动画时间的定时器
   Timer? _minDurationTimer;
@@ -208,7 +209,8 @@ class _LobbyDesktopState extends State<LobbyDesktop>
       _startTeleportAnimation();
       _lastTeleportingState = true;
     } else if (!state.isTeleporting && _lastTeleportingState!) {
-      // 传送数据就绪 — 检查是否满足最小动画时间
+      // 传送数据就绪（正常完成）或传送被取消/拒绝
+      // 统一走 _onTeleportDataReady()：满足最小时间后快速完成动画再隐藏
       LogService.d('[LobbyDesktop] _syncTeleportAnimation: 检测到传送结束');
       _lastTeleportingState = false;
       _onTeleportDataReady();
