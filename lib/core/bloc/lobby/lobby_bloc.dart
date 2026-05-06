@@ -219,6 +219,17 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       LogService.i('[LobbyBloc] 用户已开启匿名模式，跳过 login 事件');
       return;
     }
+    // service 层已进入大厅（_hasEnteredLobby=true）时，由 service._onAuthStateChanged 处理大厅内 login
+    // 避免 bloc 层与 service 层重复发送
+    if (_service.hasEnteredLobby) {
+      LogService.d('[LobbyBloc] service 层已进入大厅，跳过 _waitAndLogin（由 service._onAuthStateChanged 处理）');
+      return;
+    }
+    // service 层已在等待 login 响应（前厅内 login 已发），不重复发送
+    if (_service.isLoginPending) {
+      LogService.d('[LobbyBloc] service 层 login 已在进行中，跳过 _waitAndLogin');
+      return;
+    }
     _authAttemptedAfterConnect = true;
     LogService.i('[LobbyBloc] Token 已就绪，发送 login 事件');
     unawaited(_service.login());
@@ -285,13 +296,29 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     }
 
     // 用户已登录时，确保 login 消息会被发送：
-    // - token 已就绪且 WS 已连接且未开启匿名模式：直接发送
-    // - token 未就绪：等待 token 就绪后发送（_waitAndLogin 内部也会检查匿名模式）
+    // - token 已就绪且 WS 已连接且未开启匿名模式：
+    //   - 已进入大厅（hasEnteredLobby=true）：service 层 join.success 已处理，无需重复发送
+    //   - 还在前厅（hasEnteredLobby=false）：直接发送 login，等待 login.success 后 service 层发 enter
+    // - token 未就绪：等待 token 就绪后发送（_waitAndLogin 内部也会检查匿名模式和 hasEnteredLobby）
     if (AuthService.instance.isLoggedIn) {
       if (_service.hasValidToken && _service.isConnected && !_service.loadAnonymousMode()) {
-        LogService.i('[LobbyBloc] 用户已登录且 token 就绪，直接发送 login 事件');
-        _authAttemptedAfterConnect = true;
-        unawaited(_service.login());
+        if (!_service.hasEnteredLobby) {
+          // 前厅中：直接发 login，service 层 login.success 会触发 enter
+          // 但如果 service 层已经在等待 login 响应（isLoginPending），不重复发送
+          if (!_service.isLoginPending) {
+            LogService.i('[LobbyBloc] 用户已登录且 token 就绪（前厅中），直接发送 login 事件');
+            _authAttemptedAfterConnect = true;
+            unawaited(_service.login());
+          } else {
+            LogService.d('[LobbyBloc] 用户已登录且 token 就绪（前厅中，login 已在进行中），跳过重复发送');
+            _authAttemptedAfterConnect = true;
+          }
+        } else {
+          // 已进入大厅：service 层 join.success 已处理过 login，无需重复
+          // 但需要标记 _authAttemptedAfterConnect 防止 _waitAndLogin 重复触发
+          LogService.d('[LobbyBloc] 用户已登录且已进入大厅，跳过重复 login（service 层已处理）');
+          _authAttemptedAfterConnect = true;
+        }
       } else if (!_service.hasValidToken) {
         LogService.i('[LobbyBloc] 用户已登录但 token 未就绪，等待 token 后发送 login 事件');
         unawaited(_waitAndLogin());
@@ -1539,10 +1566,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           // 如果用户已登录、token 有效、未开启匿名模式，且还没发送过 login，则补发。
           // 不依赖 snapshotState.isAnonymous：服务端可能因 UUID 关联账号返回 isAnonymous=false，
           // 但客户端实际上还没发过 login（例如 WS 连接时 token 尚未就绪）。
+          // 同时检查 isLoginPending：service 层已在等待 login 响应时不重复发送。
           if (!_authAttemptedAfterConnect &&
               AuthService.instance.isLoggedIn &&
               _service.hasValidToken &&
-              !_service.loadAnonymousMode()) {
+              !_service.loadAnonymousMode() &&
+              !_service.isLoginPending) {
             _authAttemptedAfterConnect = true;
             LogService.i('[LobbyBloc] snapshot 补发 login（isAnonymous=${snapshotState.isAnonymous}）');
             unawaited(_service.login());
