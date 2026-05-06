@@ -425,6 +425,15 @@ class LobbyNakamaService {
 
   // === 传送门 ===
 
+  /// 标记本次 joinMatch 是否由传送门触发（传送到达时跳过 enter，直接请求 snapshot）
+  bool _isTeleportArrival = false;
+
+  /// 标记是否已发送 enter（用于 login.success 后判断是否需要补发 enter）
+  bool _hasEnteredLobby = false;
+
+  /// 标记是否已发送 login 但尚未收到响应（防止前厅内重复发送 login）
+  bool _isLoginPending = false;
+
   // =========================================================================
   // 事件流（与现有接口一致）
   // =========================================================================
@@ -470,6 +479,12 @@ class LobbyNakamaService {
   /// Assets 是否已到达
   bool get hasAssetsReceived => _hasAssetsReceived;
 
+  /// 是否已发送 enter（已正式进入大厅）
+  bool get hasEnteredLobby => _hasEnteredLobby;
+
+  /// 是否正在等待 login 响应（前厅内 login 已发但未收到 login.success/failed）
+  bool get isLoginPending => _isLoginPending;
+
   /// 获取最新的 assets payload
   pb.AssetsResponse? getLastAssetsPayload() => _latestAssetsPayload;
 
@@ -491,10 +506,14 @@ class LobbyNakamaService {
       LogService.i('[LobbyNakamaService] 检测到用户登出，发送 logout 事件');
       unawaited(logout(force: false));
     } else if (_isConnected && hasValidToken && !loadAnonymousMode()) {
-      // 已连接状态下用户登录且未开启匿名模式，直接发送 login 消息切换为实名身份
-      // （未连接时会在 join.success 收到后自动处理）
-      LogService.i('[LobbyNakamaService] 检测到用户登录（已连接，非匿名模式），发送 login 事件');
-      unawaited(login());
+      // 已连接且已进入大厅（_hasEnteredLobby=true）：大厅内 login，直接发送
+      // 还在前厅（_hasEnteredLobby=false）：join.success 流程会处理，此处不重复发送
+      if (_hasEnteredLobby) {
+        LogService.i('[LobbyNakamaService] 检测到用户登录（已连接，已进入大厅，非匿名模式），发送 login 事件');
+        unawaited(login());
+      } else {
+        LogService.d('[LobbyNakamaService] 检测到用户登录（已连接，前厅中），等待 join.success 流程处理');
+      }
     }
   }
 
@@ -552,6 +571,9 @@ class LobbyNakamaService {
     _latestSnapshot = null;
     _latestAssetsPayload = null;
     _hasAssetsReceived = false;
+    _isTeleportArrival = false;
+    _hasEnteredLobby = false;
+    _isLoginPending = false;
     _clearCachedEventsStream();
     _reconnectDelaySeconds = 2;
 
@@ -706,17 +728,52 @@ class LobbyNakamaService {
 
     LogService.d('[LobbyNakamaService] 收到消息: ${wsEvent.type}');
 
-    // 收到 join.success 后按文档流程处理：
-    // 1. 若用户已登录且未开启匿名模式，发送 login 消息切换为实名身份
-    // 2. 发送 snapshot.request 获取完整场景数据
+    // 收到 join.success 后按两阶段进入协议处理：
+    // - 传送到达：服务端已跳过前厅，直接发送 snapshot.request
+    // - 普通进入：[可选 login] → enter → snapshot.request
     if (wsEvent.type == 'join.success') {
       LogService.i('[LobbyNakamaService] 收到 join.success，开始初始化场景');
-      if (AuthService.instance.isLoggedIn && hasValidToken && !loadAnonymousMode()) {
-        LogService.d('[LobbyNakamaService] 用户已登录（非匿名模式），发送 login 事件');
+      _hasEnteredLobby = false;
+      _isLoginPending = false;
+
+      if (_isTeleportArrival) {
+        // 传送到达：服务端自动跳过前厅，无需发送 enter
+        _isTeleportArrival = false;
+        _hasEnteredLobby = true; // 视为已进入大厅
+        LogService.d('[LobbyNakamaService] 传送到达，跳过 enter，直接请求 snapshot');
+        unawaited(requestSnapshot());
+      } else if (AuthService.instance.isLoggedIn && hasValidToken && !loadAnonymousMode()) {
+        // 已登录且非匿名：先发 login，等待 login.success 后再发 enter + snapshot.request
+        LogService.d('[LobbyNakamaService] 用户已登录（非匿名模式），发送 login，等待 login.success 后发 enter');
+        _isLoginPending = true;
         unawaited(login());
+        // enter 和 snapshot.request 在收到 login.success 时发送（见下方处理逻辑）
+      } else {
+        // 匿名用户或未登录：直接发 enter，然后请求 snapshot
+        LogService.d('[LobbyNakamaService] 匿名用户，发送 enter 进入大厅');
+        unawaited(sendEnter());
+        unawaited(requestSnapshot());
       }
-      // 发送 snapshot.request 获取完整场景数据
-      unawaited(requestSnapshot());
+    }
+
+    // 收到 login.success 后，若尚未发送 enter（前厅内 login），补发 enter + snapshot.request
+    if (wsEvent.type == 'login.success') {
+      _isLoginPending = false;
+      if (!_hasEnteredLobby) {
+        LogService.i('[LobbyNakamaService] 收到 login.success（前厅内），发送 enter 进入大厅');
+        unawaited(sendEnter());
+        unawaited(requestSnapshot());
+      }
+    }
+
+    // login.failed：前厅内登录失败，以匿名身份继续进入大厅
+    if (wsEvent.type == 'login.failed') {
+      _isLoginPending = false;
+      if (!_hasEnteredLobby) {
+        LogService.w('[LobbyNakamaService] 收到 login.failed（前厅内），以匿名身份发送 enter 进入大厅');
+        unawaited(sendEnter());
+        unawaited(requestSnapshot());
+      }
     }
 
     // 收到 assets 后标记
@@ -753,6 +810,9 @@ class LobbyNakamaService {
     _latestSnapshot = null;
     _latestAssetsPayload = null;
     _hasAssetsReceived = false;
+    _isTeleportArrival = false;
+    _hasEnteredLobby = false;
+    _isLoginPending = false;
     _clearCachedEventsStream();
 
     _emitConnectionEvent(LobbyConnectionEventType.closed);
@@ -885,6 +945,22 @@ class LobbyNakamaService {
   // =========================================================================
   // 消息发送方法（Task 4.4）- 使用 Protobuf 类型
   // =========================================================================
+
+  /// 宣告正式进入大厅（两阶段进入协议第二步）
+  ///
+  /// 文档协议：joinMatch 成功并完成身份确认后，客户端必须发送此消息，
+  /// 服务端才会将用户正式加入大厅并向其他人广播 presence.join。
+  /// 传送到达时不需要发送（服务端自动跳过前厅）。
+  Future<void> sendEnter() async {
+    _hasEnteredLobby = true;
+    final envelope = pb.LobbyEnvelope()
+      ..v = 1
+      ..type = 'enter'
+      ..traceId = _generateTraceId()
+      ..enter = pb.EnterRequest();
+    _sendEnvelope(envelope);
+    LogService.i('[LobbyNakamaService] 已发送 enter，正式进入大厅');
+  }
 
   /// 发送移动请求
   Future<void> sendMove(LobbyPosition position) async {
@@ -1179,8 +1255,9 @@ class LobbyNakamaService {
   /// 协议流程（WebSocket 连接保持不变，只切换 Match）：
   /// 1. 收到 portal.teleport，取出 target_match_id
   /// 2. leaveMatch（离开当前 Match）
-  /// 3. joinMatch(target_match_id)（加入目标 Match）
-  /// 4. 收到 join.success → 自动发送 snapshot.request
+  /// 3. 设置 _isTeleportArrival=true（join.success 后跳过 enter）
+  /// 4. joinMatch(target_match_id)（加入目标 Match）
+  /// 5. 收到 join.success → 检测到传送到达，跳过 enter，直接发送 snapshot.request
   Future<void> _handlePortalTeleport(pb.PortalTeleportResponse teleportResp) async {
     final targetMapId = teleportResp.targetMapId;
     final targetMatchId = teleportResp.targetMatchId;
@@ -1206,14 +1283,18 @@ class LobbyNakamaService {
       // 离开当前 Match（WebSocket 连接保持）
       await _socketManager.leaveMatch();
 
+      // 标记本次 joinMatch 为传送到达（join.success 后跳过 enter，直接请求 snapshot）
+      _isTeleportArrival = true;
+      _hasEnteredLobby = false;
+
       // 加入目标 Match（同一 WebSocket 连接）
       await _socketManager.joinMatch(targetMatchId);
 
-      // joinMatch() resolve 后立即请求 snapshot。
-      // 不依赖 join.success 作为触发条件——join.success 走 MatchData 通道，
-      // 在 joinMatch() resolve 之前到达时监听器尚未注册，消息会丢失。
-      // snapshot 包含 join.success 的全部信息（mapId、user、onlineCount），可完全替代。
-      LogService.i('[LobbyNakamaService] 传送完成，已加入 Match: $targetMatchId，主动请求 snapshot');
+      // 传送到达时，join.success 会触发 _handleMatchEvent，
+      // 由于 _isTeleportArrival=true，会跳过 enter 直接请求 snapshot。
+      // 此处额外调用 requestSnapshot() 作为兜底，防止 join.success 在监听器
+      // 注册前到达导致消息丢失（snapshot 请求是幂等的，重复发送无副作用）。
+      LogService.i('[LobbyNakamaService] 传送完成，已加入 Match: $targetMatchId，发送 snapshot 兜底请求');
       await requestSnapshot();
     } catch (e, stackTrace) {
       LogService.e('[LobbyNakamaService] 传送失败', e, stackTrace);

@@ -30,6 +30,7 @@ message LobbyEnvelope {
     PortalUseRequest portal_use_request = 22;
     OnlineStatsRequest online_stats_request = 23;
     ProfileSteamBindRequest profile_steam_bind = 24;
+    EnterRequest enter = 25;
     
     // 服务端 -> 客户端
     LoginSuccessResponse login_success_response = 50;
@@ -158,6 +159,12 @@ message PageInfo {
 message LoginRequest {
   string token = 1;
   string device_type = 2;
+}
+
+// EnterRequest 客户端完成身份确认后，主动宣告进入大厅（两阶段进入协议第二阶段）
+// 客户端流程：joinMatch() → [可选 login] → enter → 服务端广播 presence.join
+message EnterRequest {
+  // 无额外参数，服务端从 stagingMap 取当前身份
 }
 
 message LogoutRequest {
