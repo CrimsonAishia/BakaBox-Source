@@ -983,16 +983,21 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
     if (_statusFilter != null) {
       filtered = filtered.where((user) {
         final status = (user.statusText ?? '在线').toLowerCase();
+        // "在 " 前缀表示用户在服务器中（如 "在 192.168.1.1" 或 "在 xxx · 地图名"），
+        // 应该归类为"游戏中"
+        final isOnServer = status.startsWith('在 ');
         switch (_statusFilter) {
           case 'online':
             return !status.contains('游戏中') &&
                    !status.contains('挤服') &&
                    !status.contains('热身') &&
-                   !status.contains('主菜单');
+                   !status.contains('主菜单') &&
+                   !isOnServer;
           case 'inGame':
             return status.contains('游戏中') ||
                    status.contains('热身') ||
-                   status.contains('主菜单');
+                   status.contains('主菜单') ||
+                   isOnServer;
           case 'queuing':
             return status.contains('挤服');
           default:
