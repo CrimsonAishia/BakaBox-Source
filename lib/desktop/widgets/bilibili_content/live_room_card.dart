@@ -15,7 +15,6 @@ class LiveRoomCard extends StatefulWidget {
   final VoidCallback? onDelete;
   final Function(bool)? onToggle;
   final bool isRefreshing; // 刷新状态
-  final bool isLoadingBilibiliData; // B站数据加载状态
   final VoidCallback? onTap; // 点击回调（用于增加点击数）
 
   const LiveRoomCard({
@@ -28,7 +27,6 @@ class LiveRoomCard extends StatefulWidget {
     this.onDelete,
     this.onToggle,
     this.isRefreshing = false,
-    this.isLoadingBilibiliData = false,
     this.onTap,
   });
 
@@ -189,30 +187,6 @@ class _LiveRoomCardState extends State<LiveRoomCard>
                       ),
                     ),
                   ),
-                // B站数据加载状态
-                if (widget.isLoadingBilibiliData && !widget.isRefreshing)
-                  Positioned.fill(
-                    child: AnimatedOpacity(
-                      opacity: 1.0,
-                      duration: const Duration(milliseconds: 200),
-                      child: Container(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        child: const Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white70,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                // 底部渐变遮罩
                 Positioned(
                   bottom: 0,
                   left: 0,
@@ -313,7 +287,7 @@ class _LiveRoomCardState extends State<LiveRoomCard>
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            _formatNumber(widget.room.viewCount),
+                            _formatNumber(widget.room.popularity),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 11,
@@ -384,9 +358,7 @@ class _LiveRoomCardState extends State<LiveRoomCard>
                 children: [
                   // 标题
                   Text(
-                    widget.isLoadingBilibiliData
-                        ? '获取中...'
-                        : (widget.title ?? widget.room.ownerName),
+                    widget.title ?? widget.room.ownerName,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -431,9 +403,7 @@ class _LiveRoomCardState extends State<LiveRoomCard>
                       // 主播名称
                       Expanded(
                         child: Text(
-                          widget.isLoadingBilibiliData
-                              ? '获取中...'
-                              : widget.room.ownerName,
+                          widget.room.ownerName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(

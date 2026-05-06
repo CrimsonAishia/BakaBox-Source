@@ -8,21 +8,13 @@ const _bilibiliBlue = Color(0xFF00A1D6);
 /// 视频卡片组件
 class VideoCard extends StatefulWidget {
   final BilibiliVideo video;
-  final bool isOwner;
-  final VoidCallback? onEdit;
-  final VoidCallback? onDelete;
   final bool isRefreshing; // 刷新状态
-  final bool isLoadingBilibiliData; // 数据加载状态
   final VoidCallback? onTap; // 点击回调（用于增加点击数）
 
   const VideoCard({
     super.key,
     required this.video,
-    this.isOwner = false,
-    this.onEdit,
-    this.onDelete,
     this.isRefreshing = false,
-    this.isLoadingBilibiliData = false,
     this.onTap,
   });
 
@@ -129,150 +121,42 @@ class _VideoCardState extends State<VideoCard> {
                       ),
                     ),
                   ),
-                // 数据加载状态
-                if (widget.isLoadingBilibiliData && !widget.isRefreshing)
-                  Positioned.fill(
-                    child: AnimatedOpacity(
-                      opacity: 1.0,
-                      duration: const Duration(milliseconds: 200),
-                      child: Container(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        child: const Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white70,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
                 // 审核状态标签
                 if (widget.video.auditStatus != null &&
                     widget.video.auditStatus != 'approved')
                   Positioned(top: 8, left: 8, child: _buildAuditStatusBadge()),
-                // 播放量（左下角）
+                // 底部数据遮罩（播放、点赞、投币、收藏）
                 Positioned(
                   bottom: 0,
                   left: 0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.play_arrow,
-                          size: 12,
-                          color: Colors.white,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _formatNumber(widget.video.viewCount),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // 点赞数（右下角）
-                Positioned(
-                  bottom: 0,
                   right: 0,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
+                    padding: const EdgeInsets.fromLTRB(8, 16, 8, 6),
                     decoration: BoxDecoration(
-                      color: Colors.pink.shade400.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(4),
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.8),
+                          Colors.transparent,
+                        ],
+                      ),
                     ),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.thumb_up,
-                          size: 12,
-                          color: Colors.white,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _formatNumber(widget.video.likeCount),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        // 播放量（居左）
+                        _buildCoverStat(Icons.play_arrow, widget.video.playCount),
+                        const Spacer(),
+                        // 互动三连（居右）
+                        _buildCoverStat(Icons.thumb_up_outlined, widget.video.likeCount),
+                        const SizedBox(width: 8),
+                        _buildCoverStat(Icons.monetization_on_outlined, widget.video.coinCount),
+                        const SizedBox(width: 8),
+                        _buildCoverStat(Icons.star_border, widget.video.favoriteCount),
                       ],
                     ),
                   ),
                 ),
-                // 所有者编辑按钮
-                if (widget.isOwner)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: PopupMenuButton<String>(
-                      icon: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.black54,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Icon(
-                          Icons.more_vert,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                      ),
-                      onSelected: (value) {
-                        if (value == 'edit') {
-                          widget.onEdit?.call();
-                        } else if (value == 'delete') {
-                          widget.onDelete?.call();
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Row(
-                            children: [
-                              Icon(Icons.edit, size: 18),
-                              SizedBox(width: 8),
-                              Text('编辑'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(Icons.delete, size: 18, color: Colors.red),
-                              SizedBox(width: 8),
-                              Text('删除', style: TextStyle(color: Colors.red)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
               ],
             ),
           ),
@@ -285,9 +169,7 @@ class _VideoCardState extends State<VideoCard> {
                 children: [
                   // 标题
                   Text(
-                    widget.isLoadingBilibiliData
-                        ? '获取中...'
-                        : widget.video.displayName,
+                    widget.video.displayName,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -330,9 +212,7 @@ class _VideoCardState extends State<VideoCard> {
                       // 作者名称
                       Expanded(
                         child: Text(
-                          widget.isLoadingBilibiliData
-                              ? '获取中...'
-                              : widget.video.ownerName,
+                          widget.video.ownerName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -438,6 +318,26 @@ class _VideoCardState extends State<VideoCard> {
           ),
         ],
       ),
+    );
+  }
+
+  /// 构建封面上的数据项
+  Widget _buildCoverStat(IconData icon, int count) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Icon(icon, size: 13, color: Colors.white),
+        const SizedBox(width: 3),
+        Text(
+          _formatNumber(count),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -66,7 +66,6 @@ class BilibiliContentGrids extends StatelessWidget {
   }
 
   Widget _buildVideoGrid(BuildContext context) {
-    final myId = state.myVideoId;
     final itemCount = state.videos.length;
 
     return ListView.builder(
@@ -87,12 +86,7 @@ class BilibiliContentGrids extends StatelessWidget {
                   flex: itemsInRow,
                   child: SizedBox(
                     height: 255,
-                    child: VideoCard(
-                      video: state.videos[i],
-                      isOwner: state.videos[i].id == myId,
-                      onEdit: null,
-                      onDelete: null,
-                    ),
+                    child: VideoCard(video: state.videos[i]),
                   ),
                 ),
                 if (i < endIndex - 1) const SizedBox(width: 4),

@@ -29,12 +29,15 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
   // B站主题色
   static const kBilibiliBlue = Color(0xFF00A1D6);
 
-  // 网格布局常量（每页8个卡片）
-  static const int _itemsPerRow = 4; // 每行4个
-  static const int _rowsPerPage = 2; // 每页2行
-  static const int _pageSize = _itemsPerRow * _rowsPerPage; // 每页8个
+  // 卡片固定尺寸与间距
+  static const double _cardWidth = 200;   // 卡片固定宽度
+  static const double _cardHeight = 255;  // 卡片固定高度
+  static const double _cardGap = 8;       // 卡片间距
+  static const int _minColumns = 2;       // 最少列数
+  static const int _apiPageSize = 16;     // 每次 API 加载条数（与 bloc 一致）
 
-  // 滚动控制器和状态（用于上下滚动指示器）
+  // 滚动控制器
+  final ScrollController _liveRoomScrollController = ScrollController();
   final ScrollController _videoScrollController = ScrollController();
 
   // 标记TabController是否已初始化完成，防止初始化时触发重复刷新
@@ -45,6 +48,9 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_onTabChanged);
+
+    _liveRoomScrollController.addListener(_onLiveRoomScroll);
+    _videoScrollController.addListener(_onVideoScroll);
 
     // 标记TabController初始化完成后再允许刷新
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -57,6 +63,44 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
     });
   }
 
+  void _onLiveRoomScroll() {
+    if (_liveRoomScrollController.position.pixels >=
+        _liveRoomScrollController.position.maxScrollExtent - 100) {
+      _loadMoreLiveRooms();
+    }
+  }
+
+  void _onVideoScroll() {
+    if (_videoScrollController.position.pixels >=
+        _videoScrollController.position.maxScrollExtent - 100) {
+      _loadMoreVideos();
+    }
+  }
+
+  void _loadMoreLiveRooms() {
+    final bloc = context.read<BilibiliContentBloc>();
+    final state = bloc.state;
+    if (state.status == BilibiliContentStatus.loading) return;
+
+    final currentCount = state.liveRooms.length;
+    if (currentCount >= state.liveRoomsTotal) return;
+
+    final nextPage = (currentCount / _apiPageSize).ceil() + 1;
+    bloc.add(BilibiliContentFetchRequested(tabIndex: 0, pageIndex: nextPage));
+  }
+
+  void _loadMoreVideos() {
+    final bloc = context.read<BilibiliContentBloc>();
+    final state = bloc.state;
+    if (state.status == BilibiliContentStatus.loading) return;
+
+    final currentCount = state.videos.length;
+    if (currentCount >= state.videosTotal) return;
+
+    final nextPage = (currentCount / _apiPageSize).ceil() + 1;
+    bloc.add(BilibiliContentFetchRequested(tabIndex: 1, pageIndex: nextPage));
+  }
+
   /// 进入页面时加载内容数据（首次加载使用缓存，后台异步刷新）
   void _refreshContentOnPageEnter() {
     if (!mounted) return;
@@ -66,8 +110,7 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
     // 进入页面时，重置Tab状态到直播间Tab
     bloc.add(const BilibiliContentTabChanged(0));
 
-    // 首次进入页面不强制刷新，使用缓存并后台异步更新
-    // 这样可以立即显示数据，不需要等待B站API响应
+    // 首次进入页面不强制刷新，优先使用缓存
     bloc.add(const BilibiliContentFetchRequested(tabIndex: 0, refresh: false));
 
     // 加载视频分类列表
@@ -88,6 +131,7 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     _searchController.dispose();
+    _liveRoomScrollController.dispose();
     _videoScrollController.dispose();
     super.dispose();
   }
@@ -102,26 +146,14 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
     if (bloc.state.currentTabIndex != _tabController.index) {
       bloc.add(BilibiliContentTabChanged(_tabController.index));
 
-      // 如果切换到的 Tab 完全没有数据，且当前并不处于 loading 状态，主动补发请求拉取数据
+      // 如果切换到的 Tab 完全没有加载过数据，且当前并不处于 loading 状态，主动补发请求拉取数据
       final state = bloc.state;
-      final isTabEmpty =
-          (_tabController.index == 0 && state.liveRooms.isEmpty) ||
-          (_tabController.index == 1 && state.videos.isEmpty);
+      final needsFetch =
+          (_tabController.index == 0 && !state.hasLoadedLiveRooms) ||
+          (_tabController.index == 1 && !state.hasLoadedVideos);
 
-      // 切换Tab时主动刷新B站数据（点赞、关注等实时信息）
-      final isVideoTab = _tabController.index == 1;
-      final isLiveRoomTab = _tabController.index == 0;
-
-      // 视频Tab：刷新视频的点赞、播放量等数据
-      if (isVideoTab && state.videos.isNotEmpty) {
-        bloc.add(BilibiliContentFetchRequested(tabIndex: 1));
-      }
-      // 直播间Tab：刷新直播间的粉丝数、观看人数等数据
-      else if (isLiveRoomTab && state.liveRooms.isNotEmpty) {
-        bloc.add(BilibiliContentFetchRequested(tabIndex: 0));
-      }
-      // 如果Tab完全没有数据，则全量获取
-      else if (isTabEmpty && state.status != BilibiliContentStatus.loading) {
+      // 如果Tab未加载过数据，则全量获取
+      if (needsFetch && state.status != BilibiliContentStatus.loading) {
         bloc.add(BilibiliContentFetchRequested(tabIndex: _tabController.index));
       }
     }
@@ -272,6 +304,57 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
     return _buildLiveRoomGrid(state, state.liveRooms);
   }
 
+  /// 直播间/视频通用「有更多内容」浮动遮罩（IgnorePointer 确保不阻断滚动）
+  Widget _buildHasMoreOverlay() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // 背景色与容器一致
+    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: IgnorePointer(
+        child: Container(
+          height: 72,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              stops: const [0.0, 0.45, 1.0],
+              colors: [
+                bgColor.withValues(alpha: 0),
+                bgColor.withValues(alpha: 0.82),
+                bgColor.withValues(alpha: 0.97),
+              ],
+            ),
+          ),
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _BouncingArrow(isDark: isDark),
+                const SizedBox(width: 6),
+                Text(
+                  '还有更多精彩内容',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.75)
+                        : Colors.black.withValues(alpha: 0.55),
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildVideoTab(BilibiliContentState state) {
     if (state.status == BilibiliContentStatus.loading && state.videos.isEmpty) {
       return const Center(
@@ -306,250 +389,57 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
       return const SizedBox.shrink();
     }
 
-    // 计算行数（每行4个）
-    final rows = (rooms.length / _itemsPerRow).ceil();
+    final hasMore = rooms.length < state.liveRoomsTotal;
 
-    final totalItems = state.liveRoomsTotal;
-    final totalPages = (totalItems / _pageSize).ceil().clamp(1, 999);
-    final currentPage = state.currentPage;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 根据可用宽度动态计算列数，卡片宽度固定
+        final columns = math.max(
+          _minColumns,
+          ((constraints.maxWidth + _cardGap) / (_cardWidth + _cardGap)).floor(),
+        );
+        final rows = (rooms.length / columns).ceil();
 
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(4),
-            itemCount: rows,
-            itemBuilder: (context, rowIndex) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    for (int col = 0; col < _itemsPerRow; col++)
-                      if (rowIndex * _itemsPerRow + col < rooms.length)
-                        Expanded(
-                          child: Padding(
-                            padding: EdgeInsets.only(
-                              right: col < _itemsPerRow - 1 ? 4 : 0,
-                            ),
-                            child: SizedBox(
-                              height: 255,
-                              child: _buildLiveRoomCard(
-                                context,
-                                state,
-                                rooms[rowIndex * _itemsPerRow + col],
-                              ),
-                            ),
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: ListView.builder(
+                controller: _liveRoomScrollController,
+                padding: const EdgeInsets.all(4),
+                itemCount: rows,
+                itemBuilder: (context, rowIndex) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: _cardGap),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        for (int col = 0; col < columns; col++) ...[
+                          if (col > 0) const SizedBox(width: _cardGap),
+                          SizedBox(
+                            width: _cardWidth,
+                            height: _cardHeight,
+                            child: rowIndex * columns + col < rooms.length
+                                ? _buildLiveRoomCard(
+                                    context,
+                                    state,
+                                    rooms[rowIndex * columns + col],
+                                  )
+                                : const SizedBox.shrink(),
                           ),
-                        )
-                      else
-                        const Expanded(child: SizedBox()),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-        // 分页组件
-        if (totalItems > 0)
-          _buildSimplePaginationBar(
-            currentPage: currentPage,
-            totalPages: totalPages,
-            onPageChanged: (page) {
-              context.read<BilibiliContentBloc>().add(
-                BilibiliContentFetchRequested(tabIndex: 0, pageIndex: page),
-              );
-            },
-          ),
-      ],
-    );
-  }
-
-  Widget _buildSimplePaginationBar({
-    required int currentPage,
-    required int totalPages,
-    required ValueChanged<int> onPageChanged,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: isDark ? Colors.white10 : Colors.black12),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _buildSimplePageButton(
-            icon: Icons.chevron_left,
-            enabled: currentPage > 1,
-            onTap: () => onPageChanged(currentPage - 1),
-          ),
-          const SizedBox(width: 8),
-          ..._buildSimplePageNumbers(currentPage, totalPages, onPageChanged),
-          const SizedBox(width: 8),
-          _buildSimplePageButton(
-            icon: Icons.chevron_right,
-            enabled: currentPage < totalPages,
-            onTap: () => onPageChanged(currentPage + 1),
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildSimplePageNumbers(
-    int currentPage,
-    int totalPages,
-    ValueChanged<int> onPageChanged,
-  ) {
-    final buttons = <Widget>[];
-    const maxVisible = 5;
-
-    if (totalPages <= maxVisible) {
-      for (int i = 1; i <= totalPages; i++) {
-        buttons.add(
-          _buildSimplePageNumber(i, i == currentPage, () => onPageChanged(i)),
-        );
-      }
-    } else {
-      buttons.add(
-        _buildSimplePageNumber(1, currentPage == 1, () => onPageChanged(1)),
-      );
-
-      if (currentPage > 3) {
-        buttons.add(_buildSimpleEllipsis());
-      }
-
-      final start = (currentPage - 1).clamp(2, totalPages - 1);
-      final end = (currentPage + 1).clamp(2, totalPages - 1);
-      for (int i = start; i <= end; i++) {
-        buttons.add(
-          _buildSimplePageNumber(i, i == currentPage, () => onPageChanged(i)),
-        );
-      }
-
-      if (currentPage < totalPages - 2) {
-        buttons.add(_buildSimpleEllipsis());
-      }
-
-      buttons.add(
-        _buildSimplePageNumber(
-          totalPages,
-          currentPage == totalPages,
-          () => onPageChanged(totalPages),
-        ),
-      );
-    }
-
-    return buttons;
-  }
-
-  Widget _buildSimplePageNumber(int page, bool isActive, VoidCallback onTap) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return _HoverableWidget(
-      builder: (isHovered) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 32,
-          height: 32,
-          margin: const EdgeInsets.symmetric(horizontal: 2),
-          decoration: BoxDecoration(
-            color: isActive
-                ? kBilibiliBlue
-                : (isHovered
-                      ? (isDark
-                            ? Colors.white.withValues(alpha: 0.1)
-                            : Colors.black.withValues(alpha: 0.06))
-                      : (isDark
-                            ? Colors.white.withValues(alpha: 0.05)
-                            : Colors.black.withValues(alpha: 0.03))),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: isActive
-                  ? kBilibiliBlue
-                  : (isHovered
-                        ? kBilibiliBlue.withValues(alpha: 0.5)
-                        : (isDark
-                              ? Colors.white.withValues(alpha: 0.1)
-                              : Colors.black.withValues(alpha: 0.1))),
-            ),
-          ),
-          child: Center(
-            child: Text(
-              '$page',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                color: isActive
-                    ? Colors.white
-                    : (isDark ? Colors.white70 : Colors.black87),
+                        ],
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
-          ),
-        ),
-      ),
+            if (hasMore) _buildHasMoreOverlay(),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildSimpleEllipsis() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Text(
-        '...',
-        style: TextStyle(color: _getInkColor(context).withValues(alpha: 0.5)),
-      ),
-    );
-  }
-
-  Widget _buildSimplePageButton({
-    required IconData icon,
-    required bool enabled,
-    required VoidCallback onTap,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return _HoverableWidget(
-      builder: (isHovered) => GestureDetector(
-        onTap: enabled ? onTap : null,
-        child: Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: enabled
-                ? (isHovered
-                      ? (isDark
-                            ? Colors.white.withValues(alpha: 0.1)
-                            : Colors.black.withValues(alpha: 0.06))
-                      : (isDark
-                            ? Colors.white.withValues(alpha: 0.05)
-                            : Colors.black.withValues(alpha: 0.03)))
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: enabled
-                  ? (isHovered
-                        ? kBilibiliBlue.withValues(alpha: 0.5)
-                        : (isDark
-                              ? Colors.white.withValues(alpha: 0.1)
-                              : Colors.black.withValues(alpha: 0.1)))
-                  : (isDark
-                        ? Colors.white.withValues(alpha: 0.05)
-                        : Colors.black.withValues(alpha: 0.05)),
-            ),
-          ),
-          child: Icon(
-            icon,
-            size: 18,
-            color: enabled
-                ? (isHovered
-                      ? kBilibiliBlue
-                      : (isDark ? Colors.white70 : Colors.black87))
-                : (isDark ? Colors.white30 : Colors.black38),
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildLiveRoomCard(
     BuildContext context,
@@ -562,7 +452,6 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
       coverUrl: room.displayCoverUrl,
       title: room.displayTitle,
       isRefreshing: state.isRefreshing,
-      isLoadingBilibiliData: state.isLoadingBilibiliData,
       onToggle: room.id == state.myLiveRoomId
           ? (enabled) {
               context.read<BilibiliContentBloc>().add(
@@ -590,74 +479,60 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
       return const SizedBox.shrink();
     }
 
-    // 计算行数（每行4个）
-    final rows = (videos.length / _itemsPerRow).ceil();
+    final hasMore = videos.length < state.videosTotal;
 
-    final totalItems = state.videosTotal;
-    final totalPages = (totalItems / _pageSize).ceil().clamp(1, 999);
-    final currentPage = state.currentPage;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 根据可用宽度动态计算列数，卡片宽度固定
+        final columns = math.max(
+          _minColumns,
+          ((constraints.maxWidth + _cardGap) / (_cardWidth + _cardGap)).floor(),
+        );
+        final rows = (videos.length / columns).ceil();
 
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            controller: _videoScrollController,
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            itemCount: rows,
-            itemBuilder: (context, rowIndex) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  children: [
-                    for (int col = 0; col < _itemsPerRow; col++)
-                      if (rowIndex * _itemsPerRow + col < videos.length)
-                        Expanded(
-                          child: Padding(
-                            padding: EdgeInsets.only(
-                              right: col < _itemsPerRow - 1 ? 8 : 0,
-                            ),
-                            child: SizedBox(
-                              height: 255,
-                              child: VideoCard(
-                                video: videos[rowIndex * _itemsPerRow + col],
-                                isOwner: false,
-                                onEdit: null,
-                                onDelete: null,
-                                isRefreshing: state.isRefreshing,
-                                isLoadingBilibiliData:
-                                    state.isLoadingBilibiliData,
-                                onTap: () {
-                                  context.read<BilibiliContentBloc>().add(
-                                    BilibiliContentIncreaseVideoViewRequested(
-                                      id: videos[rowIndex * _itemsPerRow + col]
-                                          .id,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: ListView.builder(
+                controller: _videoScrollController,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                itemCount: rows,
+                itemBuilder: (context, rowIndex) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: _cardGap),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        for (int col = 0; col < columns; col++) ...[
+                          if (col > 0) const SizedBox(width: _cardGap),
+                          SizedBox(
+                            width: _cardWidth,
+                            height: _cardHeight,
+                            child: rowIndex * columns + col < videos.length
+                                ? VideoCard(
+                                    video: videos[rowIndex * columns + col],
+                                    isRefreshing: state.isRefreshing,
+                                    onTap: () {
+                                      context.read<BilibiliContentBloc>().add(
+                                        BilibiliContentIncreaseVideoViewRequested(
+                                          id: videos[rowIndex * columns + col].id,
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : const SizedBox.shrink(),
                           ),
-                        )
-                      else
-                        const Expanded(child: SizedBox()),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-        // 简化分页组件
-        if (totalItems > 0)
-          _buildSimplePaginationBar(
-            currentPage: currentPage,
-            totalPages: totalPages,
-            onPageChanged: (page) {
-              context.read<BilibiliContentBloc>().add(
-                BilibiliContentFetchRequested(tabIndex: 1, pageIndex: page),
-              );
-            },
-          ),
-      ],
+                        ],
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            if (hasMore) _buildHasMoreOverlay(),
+          ],
+        );
+      },
     );
   }
 
@@ -1059,6 +934,59 @@ class _FloatingBilibiliIconState extends State<_FloatingBilibiliIcon>
             color: isDark ? Colors.white.withValues(alpha: 0.7) : Colors.white,
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// 跳动的向下箭头动画 widget（用于浮动遮罩中）
+class _BouncingArrow extends StatefulWidget {
+  final bool isDark;
+  const _BouncingArrow({required this.isDark});
+
+  @override
+  State<_BouncingArrow> createState() => _BouncingArrowState();
+}
+
+class _BouncingArrowState extends State<_BouncingArrow>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 550),
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: -2, end: 2).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _animation.value),
+          child: child,
+        );
+      },
+      child: Icon(
+        Icons.keyboard_double_arrow_down_rounded,
+        size: 18,
+        color: widget.isDark
+            ? Colors.white.withValues(alpha: 0.75)
+            : Colors.black.withValues(alpha: 0.5),
       ),
     );
   }

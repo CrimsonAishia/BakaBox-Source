@@ -42,10 +42,9 @@ class BilibiliContentState extends Equatable {
   // 刷新状态（用于显示 loading 动画）
   final bool isRefreshing;
 
-  // 数据加载状态（用于卡片过渡动画）
-  // 当后端数据已获取但B站API数据还在加载时为true
-  final bool isLoadingBilibiliData;
-
+  // 各自 Tab 是否已完成初次加载
+  final bool hasLoadedLiveRooms;
+  final bool hasLoadedVideos;
   // 最后一次操作结果（用于Toast提示）
   final bool? lastOperationSuccess;
   final String? lastOperationMessage;
@@ -68,7 +67,8 @@ class BilibiliContentState extends Equatable {
     this.videoCategoryFilter,
     this.videoCategories = const [],
     this.isRefreshing = false,
-    this.isLoadingBilibiliData = false,
+    this.hasLoadedLiveRooms = false,
+    this.hasLoadedVideos = false,
     this.lastOperationSuccess,
     this.lastOperationMessage,
     this.liveRoomsTotal = 0,
@@ -119,7 +119,8 @@ class BilibiliContentState extends Equatable {
     bool clearVideoCategoryFilter = false,
     List<VideoCategory>? videoCategories,
     bool? isRefreshing,
-    bool? isLoadingBilibiliData,
+    bool? hasLoadedLiveRooms,
+    bool? hasLoadedVideos,
     bool? lastOperationSuccess,
     String? lastOperationMessage,
     bool clearLastOperation = false,
@@ -148,8 +149,8 @@ class BilibiliContentState extends Equatable {
           : (videoCategoryFilter ?? this.videoCategoryFilter),
       videoCategories: videoCategories ?? this.videoCategories,
       isRefreshing: isRefreshing ?? this.isRefreshing,
-      isLoadingBilibiliData:
-          isLoadingBilibiliData ?? this.isLoadingBilibiliData,
+      hasLoadedLiveRooms: hasLoadedLiveRooms ?? this.hasLoadedLiveRooms,
+      hasLoadedVideos: hasLoadedVideos ?? this.hasLoadedVideos,
       lastOperationSuccess: clearLastOperation
           ? null
           : (lastOperationSuccess ?? this.lastOperationSuccess),
@@ -180,7 +181,8 @@ class BilibiliContentState extends Equatable {
     videoCategoryFilter,
     videoCategories,
     isRefreshing,
-    isLoadingBilibiliData,
+    hasLoadedLiveRooms,
+    hasLoadedVideos,
     lastOperationSuccess,
     lastOperationMessage,
     liveRoomsTotal,
