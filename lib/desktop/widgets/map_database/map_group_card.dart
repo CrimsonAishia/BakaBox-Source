@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/bloc/map_cd/map_cd_bloc.dart';
+import '../../../core/bloc/map_cd/map_cd_event.dart';
 import '../../../core/models/map_contribution_models.dart';
 import '../../../core/models/map_tag_models.dart' show MapTagSimple;
 import '../../../core/services/image_url_service.dart';
 import '../../../core/widgets/disk_cached_image.dart';
 import '../../../core/widgets/marquee_text.dart';
+import 'cd_badge.dart';
 import 'map_history_dialog.dart';
 
 /// 地图大卡片组件
@@ -69,7 +73,14 @@ class _MapGroupCardState extends State<MapGroupCard> {
     final mapInfo = widget.group.mapInfo;
 
     return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
+      onEnter: (_) {
+        setState(() => _isHovered = true);
+        // Hover时加载CD信息
+        final mapCdBloc = context.read<MapCdBloc>();
+        if (mapCdBloc.state.shouldLoad(widget.group.mapInfo.mapName)) {
+          mapCdBloc.add(LoadMapCd(widget.group.mapInfo.mapName));
+        }
+      },
       onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -108,10 +119,17 @@ class _MapGroupCardState extends State<MapGroupCard> {
                 // 背景图
                 _buildMapBackground(mapInfo, isDark),
 
-                // 审核状态标签（右上角）
+                // CD徽章（右上角）
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: _buildCdBadge(isDark),
+                ),
+
+                // 审核状态标签（右上角，CD下方）
                 if (widget.showAuditStatus && widget.group.items.isNotEmpty)
                   Positioned(
-                    top: 8,
+                    top: 44, // CD徽章下方
                     right: 8,
                     child: _buildAuditStatusBadge(
                       widget.group.items.first.auditStatus,
@@ -429,6 +447,14 @@ class _MapGroupCardState extends State<MapGroupCard> {
         const SizedBox(width: 6),
         Expanded(child: _MapTagRow(tags: tags)),
       ],
+    );
+  }
+
+  /// 构建CD徽章
+  Widget _buildCdBadge(bool isDark) {
+    return MapCdBadge(
+      mapName: widget.group.mapInfo.mapName,
+      triggerOnHover: true,
     );
   }
 }
