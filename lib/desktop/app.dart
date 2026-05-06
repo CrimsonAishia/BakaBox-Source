@@ -85,6 +85,7 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
               MapSubscriptionBloc()..add(const MapSubscriptionLoad()),
         ),
         BlocProvider(create: (_) => LobbyBloc()),
+        BlocProvider(create: (_) => MapCdBloc()),
       ],
       child: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {
