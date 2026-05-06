@@ -15,6 +15,7 @@ import '../widgets/lobby/lobby_broadcast_dialog.dart';
 import '../widgets/lobby/mosaic_reveal_effect.dart';
 import '../widgets/lobby/portal_confirm_dialog.dart';
 import '../widgets/lobby/player_notification_overlay.dart';
+import '../widgets/lobby/lobby_user_info_panel.dart';
 
 class LobbyDesktop extends StatefulWidget {
   const LobbyDesktop({super.key});
@@ -1241,10 +1242,11 @@ class _PlayerListTile extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: user.isSelf
+          onTap: user.isAnonymous
               ? null
               : () {
-                  // TODO: 点击玩家可查看详情或发起互动
+                  // 点击已登录用户显示用户信息面板
+                  LobbyUserInfoPanel.show(context, user);
                 },
           borderRadius: BorderRadius.circular(10),
           child: Padding(
@@ -1321,7 +1323,7 @@ class _PlayerListTile extends StatelessWidget {
                       ),
                     ),
                   )
-                else
+                else if (!user.isAnonymous)
                   Icon(
                     Icons.chevron_right,
                     color: Colors.white.withValues(alpha: 0.3),

@@ -1100,6 +1100,66 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     }
   }
 
+  /// 登录成功后主动绑定 Steam ID
+  ///
+  /// 从 AuthService.userInfo.steamId 获取原始 Steam ID（STEAM_x:x:xxxxxxx 格式），
+  /// 转换为 Steam64 ID 后发送 profile.steam.bind。
+  /// 同时从 SteamUserService 获取本地 Steam 用户名一并发送。
+  Future<void> _bindSteamAfterLogin() async {
+    try {
+      final userInfo = AuthService.instance.userInfo;
+      if (userInfo == null) return;
+
+      // steamId 是 STEAM_x:x:xxxxxxx 格式，需要转换为 Steam64 ID
+      final rawSteamId = userInfo.steamId;
+      if (rawSteamId == null || rawSteamId.isEmpty) {
+        LogService.d('[LobbyBloc] 用户未绑定 Steam，跳过 steam bind');
+        return;
+      }
+
+      // 将 STEAM_x:x:xxxxxxx 转换为 Steam64 ID
+      // 公式：76561197960265728 + Y * 2^32 / 2 + Z（其中 STEAM_W:Y:Z）
+      // 实际：steamId64 = 76561197960265728 + Z * 2 + Y
+      final steamId64 = _convertSteamIdToSteam64(rawSteamId);
+      if (steamId64 == null) {
+        LogService.w('[LobbyBloc] Steam ID 格式无法解析: $rawSteamId');
+        return;
+      }
+
+      // 获取本地 Steam 用户名（可选）
+      final steamName = await SteamUserService().getCurrentUsername() ?? '';
+
+      LogService.i('[LobbyBloc] 登录成功后绑定 Steam: raw=$rawSteamId id64=$steamId64, name=$steamName');
+      _service.bindSteam(steamId64: steamId64, steamName: steamName);
+    } catch (e) {
+      LogService.w('[LobbyBloc] _bindSteamAfterLogin 异常: $e');
+    }
+  }
+
+  /// 将 STEAM_W:Y:Z 格式转换为 Steam64 ID
+  ///
+  /// Steam64 = 76561197960265728 + Z * 2 + Y
+  /// 例：STEAM_0:1:12345678 → 76561197960265728 + 12345678 * 2 + 1 = 76561198024877135
+  String? _convertSteamIdToSteam64(String steamId) {
+    // 匹配 STEAM_W:Y:Z 格式
+    final match = RegExp(r'^STEAM_\d+:(\d+):(\d+)$').firstMatch(steamId);
+    if (match == null) {
+      // 如果已经是纯数字（Steam64 格式），直接验证后返回
+      if (RegExp(r'^\d{10,20}$').hasMatch(steamId)) {
+        return steamId;
+      }
+      return null;
+    }
+
+    final y = int.parse(match.group(1)!); // 0 或 1
+    final z = int.parse(match.group(2)!); // 账号 ID 的一半
+
+    // Steam64 基础值（Steam Universe 1）
+    const base = 76561197960265728;
+    final steam64 = base + z * 2 + y;
+    return steam64.toString();
+  }
+
   void _onTeleportStarted(
     LobbyTeleportStarted event,
     Emitter<LobbyState> emit,
@@ -1279,6 +1339,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         // 登录成功后重新上报本地活动状态
         _lastSentStatusText = null;
         _updateStatusTextByGameStatus(GameStatusService().isGameRunning, emit);
+
+        // 登录成功后主动绑定 Steam ID
+        // steamProfileId 是 Steam64 格式（纯数字），从论坛账户信息中获取
+        _bindSteamAfterLogin();
+
         // 注意：不需要请求 assets 和 snapshot，因为：
         // 1. presence.join 已经会更新用户数据（模型切换等）
         // 2. 已有 assets 数据足够使用
@@ -2026,6 +2091,23 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             isLoadingAllOnlineUsers: false,
             serverOnlineCount: total,
           ));
+        }
+        break;
+      case 'profile.steam.bind.success':
+        final steamBindResp = envelope.steamBindSuccess;
+        final steamId = steamBindResp.steamId;
+        final steamName = steamBindResp.steamName;
+        final displayNickname = steamBindResp.displayNickname;
+        LogService.i('[LobbyBloc] profile.steam.bind.success: steamId=$steamId steamName=$steamName displayNickname=$displayNickname');
+        // 更新自身用户的昵称（如果 displayNickname 有变化）
+        if (displayNickname.isNotEmpty) {
+          final updatedUsers = state.users.map((user) {
+            if (user.isSelf) {
+              return user.copyWith(nickname: displayNickname);
+            }
+            return user;
+          }).toList(growable: false);
+          emit(state.copyWith(users: updatedUsers));
         }
         break;
     }

@@ -29,6 +29,7 @@ enum LobbyEnvelope_Payload {
   broadcastCdRequest, 
   portalUseRequest, 
   onlineStatsRequest, 
+  profileSteamBind, 
   loginSuccessResponse, 
   loginFailedResponse, 
   logoutSuccessResponse, 
@@ -57,6 +58,7 @@ enum LobbyEnvelope_Payload {
   systemErrorResponse, 
   systemNoticeResponse, 
   systemKickedResponse, 
+  steamBindSuccess, 
   notSet
 }
 
@@ -81,6 +83,7 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     BroadcastCDRequest? broadcastCdRequest,
     PortalUseRequest? portalUseRequest,
     OnlineStatsRequest? onlineStatsRequest,
+    ProfileSteamBindRequest? profileSteamBind,
     LoginSuccessResponse? loginSuccessResponse,
     LoginFailedResponse? loginFailedResponse,
     LogoutSuccessResponse? logoutSuccessResponse,
@@ -109,6 +112,7 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     SystemErrorResponse? systemErrorResponse,
     SystemNoticeResponse? systemNoticeResponse,
     SystemKickedResponse? systemKickedResponse,
+    SteamBindSuccessResponse? steamBindSuccess,
   }) {
     final $result = create();
     if (v != null) {
@@ -164,6 +168,9 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     }
     if (onlineStatsRequest != null) {
       $result.onlineStatsRequest = onlineStatsRequest;
+    }
+    if (profileSteamBind != null) {
+      $result.profileSteamBind = profileSteamBind;
     }
     if (loginSuccessResponse != null) {
       $result.loginSuccessResponse = loginSuccessResponse;
@@ -249,6 +256,9 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     if (systemKickedResponse != null) {
       $result.systemKickedResponse = systemKickedResponse;
     }
+    if (steamBindSuccess != null) {
+      $result.steamBindSuccess = steamBindSuccess;
+    }
     return $result;
   }
   LobbyEnvelope._() : super();
@@ -270,6 +280,7 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     21 : LobbyEnvelope_Payload.broadcastCdRequest,
     22 : LobbyEnvelope_Payload.portalUseRequest,
     23 : LobbyEnvelope_Payload.onlineStatsRequest,
+    24 : LobbyEnvelope_Payload.profileSteamBind,
     50 : LobbyEnvelope_Payload.loginSuccessResponse,
     51 : LobbyEnvelope_Payload.loginFailedResponse,
     52 : LobbyEnvelope_Payload.logoutSuccessResponse,
@@ -298,10 +309,11 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     75 : LobbyEnvelope_Payload.systemErrorResponse,
     76 : LobbyEnvelope_Payload.systemNoticeResponse,
     77 : LobbyEnvelope_Payload.systemKickedResponse,
+    78 : LobbyEnvelope_Payload.steamBindSuccess,
     0 : LobbyEnvelope_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'LobbyEnvelope', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
-    ..oo(0, [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77])
+    ..oo(0, [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78])
     ..a<$core.int>(1, _omitFieldNames ? '' : 'v', $pb.PbFieldType.O3)
     ..aOS(2, _omitFieldNames ? '' : 'type')
     ..aInt64(3, _omitFieldNames ? '' : 'ts')
@@ -320,6 +332,7 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     ..aOM<BroadcastCDRequest>(21, _omitFieldNames ? '' : 'broadcastCdRequest', subBuilder: BroadcastCDRequest.create)
     ..aOM<PortalUseRequest>(22, _omitFieldNames ? '' : 'portalUseRequest', subBuilder: PortalUseRequest.create)
     ..aOM<OnlineStatsRequest>(23, _omitFieldNames ? '' : 'onlineStatsRequest', subBuilder: OnlineStatsRequest.create)
+    ..aOM<ProfileSteamBindRequest>(24, _omitFieldNames ? '' : 'profileSteamBind', subBuilder: ProfileSteamBindRequest.create)
     ..aOM<LoginSuccessResponse>(50, _omitFieldNames ? '' : 'loginSuccessResponse', subBuilder: LoginSuccessResponse.create)
     ..aOM<LoginFailedResponse>(51, _omitFieldNames ? '' : 'loginFailedResponse', subBuilder: LoginFailedResponse.create)
     ..aOM<LogoutSuccessResponse>(52, _omitFieldNames ? '' : 'logoutSuccessResponse', subBuilder: LogoutSuccessResponse.create)
@@ -348,6 +361,7 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     ..aOM<SystemErrorResponse>(75, _omitFieldNames ? '' : 'systemErrorResponse', subBuilder: SystemErrorResponse.create)
     ..aOM<SystemNoticeResponse>(76, _omitFieldNames ? '' : 'systemNoticeResponse', subBuilder: SystemNoticeResponse.create)
     ..aOM<SystemKickedResponse>(77, _omitFieldNames ? '' : 'systemKickedResponse', subBuilder: SystemKickedResponse.create)
+    ..aOM<SteamBindSuccessResponse>(78, _omitFieldNames ? '' : 'steamBindSuccess', subBuilder: SteamBindSuccessResponse.create)
     ..hasRequiredFields = false
   ;
 
@@ -566,314 +580,336 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
   @$pb.TagNumber(23)
   OnlineStatsRequest ensureOnlineStatsRequest() => $_ensure(17);
 
+  @$pb.TagNumber(24)
+  ProfileSteamBindRequest get profileSteamBind => $_getN(18);
+  @$pb.TagNumber(24)
+  set profileSteamBind(ProfileSteamBindRequest v) { setField(24, v); }
+  @$pb.TagNumber(24)
+  $core.bool hasProfileSteamBind() => $_has(18);
+  @$pb.TagNumber(24)
+  void clearProfileSteamBind() => clearField(24);
+  @$pb.TagNumber(24)
+  ProfileSteamBindRequest ensureProfileSteamBind() => $_ensure(18);
+
   /// 服务端 -> 客户端
   @$pb.TagNumber(50)
-  LoginSuccessResponse get loginSuccessResponse => $_getN(18);
+  LoginSuccessResponse get loginSuccessResponse => $_getN(19);
   @$pb.TagNumber(50)
   set loginSuccessResponse(LoginSuccessResponse v) { setField(50, v); }
   @$pb.TagNumber(50)
-  $core.bool hasLoginSuccessResponse() => $_has(18);
+  $core.bool hasLoginSuccessResponse() => $_has(19);
   @$pb.TagNumber(50)
   void clearLoginSuccessResponse() => clearField(50);
   @$pb.TagNumber(50)
-  LoginSuccessResponse ensureLoginSuccessResponse() => $_ensure(18);
+  LoginSuccessResponse ensureLoginSuccessResponse() => $_ensure(19);
 
   @$pb.TagNumber(51)
-  LoginFailedResponse get loginFailedResponse => $_getN(19);
+  LoginFailedResponse get loginFailedResponse => $_getN(20);
   @$pb.TagNumber(51)
   set loginFailedResponse(LoginFailedResponse v) { setField(51, v); }
   @$pb.TagNumber(51)
-  $core.bool hasLoginFailedResponse() => $_has(19);
+  $core.bool hasLoginFailedResponse() => $_has(20);
   @$pb.TagNumber(51)
   void clearLoginFailedResponse() => clearField(51);
   @$pb.TagNumber(51)
-  LoginFailedResponse ensureLoginFailedResponse() => $_ensure(19);
+  LoginFailedResponse ensureLoginFailedResponse() => $_ensure(20);
 
   @$pb.TagNumber(52)
-  LogoutSuccessResponse get logoutSuccessResponse => $_getN(20);
+  LogoutSuccessResponse get logoutSuccessResponse => $_getN(21);
   @$pb.TagNumber(52)
   set logoutSuccessResponse(LogoutSuccessResponse v) { setField(52, v); }
   @$pb.TagNumber(52)
-  $core.bool hasLogoutSuccessResponse() => $_has(20);
+  $core.bool hasLogoutSuccessResponse() => $_has(21);
   @$pb.TagNumber(52)
   void clearLogoutSuccessResponse() => clearField(52);
   @$pb.TagNumber(52)
-  LogoutSuccessResponse ensureLogoutSuccessResponse() => $_ensure(20);
+  LogoutSuccessResponse ensureLogoutSuccessResponse() => $_ensure(21);
 
   @$pb.TagNumber(53)
-  JoinSuccessResponse get joinSuccessResponse => $_getN(21);
+  JoinSuccessResponse get joinSuccessResponse => $_getN(22);
   @$pb.TagNumber(53)
   set joinSuccessResponse(JoinSuccessResponse v) { setField(53, v); }
   @$pb.TagNumber(53)
-  $core.bool hasJoinSuccessResponse() => $_has(21);
+  $core.bool hasJoinSuccessResponse() => $_has(22);
   @$pb.TagNumber(53)
   void clearJoinSuccessResponse() => clearField(53);
   @$pb.TagNumber(53)
-  JoinSuccessResponse ensureJoinSuccessResponse() => $_ensure(21);
+  JoinSuccessResponse ensureJoinSuccessResponse() => $_ensure(22);
 
   @$pb.TagNumber(54)
-  SnapshotResponse get snapshotResponse => $_getN(22);
+  SnapshotResponse get snapshotResponse => $_getN(23);
   @$pb.TagNumber(54)
   set snapshotResponse(SnapshotResponse v) { setField(54, v); }
   @$pb.TagNumber(54)
-  $core.bool hasSnapshotResponse() => $_has(22);
+  $core.bool hasSnapshotResponse() => $_has(23);
   @$pb.TagNumber(54)
   void clearSnapshotResponse() => clearField(54);
   @$pb.TagNumber(54)
-  SnapshotResponse ensureSnapshotResponse() => $_ensure(22);
+  SnapshotResponse ensureSnapshotResponse() => $_ensure(23);
 
   @$pb.TagNumber(55)
-  PresenceJoinResponse get presenceJoinResponse => $_getN(23);
+  PresenceJoinResponse get presenceJoinResponse => $_getN(24);
   @$pb.TagNumber(55)
   set presenceJoinResponse(PresenceJoinResponse v) { setField(55, v); }
   @$pb.TagNumber(55)
-  $core.bool hasPresenceJoinResponse() => $_has(23);
+  $core.bool hasPresenceJoinResponse() => $_has(24);
   @$pb.TagNumber(55)
   void clearPresenceJoinResponse() => clearField(55);
   @$pb.TagNumber(55)
-  PresenceJoinResponse ensurePresenceJoinResponse() => $_ensure(23);
+  PresenceJoinResponse ensurePresenceJoinResponse() => $_ensure(24);
 
   @$pb.TagNumber(56)
-  PresenceLeaveResponse get presenceLeaveResponse => $_getN(24);
+  PresenceLeaveResponse get presenceLeaveResponse => $_getN(25);
   @$pb.TagNumber(56)
   set presenceLeaveResponse(PresenceLeaveResponse v) { setField(56, v); }
   @$pb.TagNumber(56)
-  $core.bool hasPresenceLeaveResponse() => $_has(24);
+  $core.bool hasPresenceLeaveResponse() => $_has(25);
   @$pb.TagNumber(56)
   void clearPresenceLeaveResponse() => clearField(56);
   @$pb.TagNumber(56)
-  PresenceLeaveResponse ensurePresenceLeaveResponse() => $_ensure(24);
+  PresenceLeaveResponse ensurePresenceLeaveResponse() => $_ensure(25);
 
   @$pb.TagNumber(57)
-  IdentityChangedResponse get identityChangedResponse => $_getN(25);
+  IdentityChangedResponse get identityChangedResponse => $_getN(26);
   @$pb.TagNumber(57)
   set identityChangedResponse(IdentityChangedResponse v) { setField(57, v); }
   @$pb.TagNumber(57)
-  $core.bool hasIdentityChangedResponse() => $_has(25);
+  $core.bool hasIdentityChangedResponse() => $_has(26);
   @$pb.TagNumber(57)
   void clearIdentityChangedResponse() => clearField(57);
   @$pb.TagNumber(57)
-  IdentityChangedResponse ensureIdentityChangedResponse() => $_ensure(25);
+  IdentityChangedResponse ensureIdentityChangedResponse() => $_ensure(26);
 
   @$pb.TagNumber(58)
-  MoveBroadcastResponse get moveBroadcastResponse => $_getN(26);
+  MoveBroadcastResponse get moveBroadcastResponse => $_getN(27);
   @$pb.TagNumber(58)
   set moveBroadcastResponse(MoveBroadcastResponse v) { setField(58, v); }
   @$pb.TagNumber(58)
-  $core.bool hasMoveBroadcastResponse() => $_has(26);
+  $core.bool hasMoveBroadcastResponse() => $_has(27);
   @$pb.TagNumber(58)
   void clearMoveBroadcastResponse() => clearField(58);
   @$pb.TagNumber(58)
-  MoveBroadcastResponse ensureMoveBroadcastResponse() => $_ensure(26);
+  MoveBroadcastResponse ensureMoveBroadcastResponse() => $_ensure(27);
 
   @$pb.TagNumber(59)
-  MoveRejectResponse get moveRejectResponse => $_getN(27);
+  MoveRejectResponse get moveRejectResponse => $_getN(28);
   @$pb.TagNumber(59)
   set moveRejectResponse(MoveRejectResponse v) { setField(59, v); }
   @$pb.TagNumber(59)
-  $core.bool hasMoveRejectResponse() => $_has(27);
+  $core.bool hasMoveRejectResponse() => $_has(28);
   @$pb.TagNumber(59)
   void clearMoveRejectResponse() => clearField(59);
   @$pb.TagNumber(59)
-  MoveRejectResponse ensureMoveRejectResponse() => $_ensure(27);
+  MoveRejectResponse ensureMoveRejectResponse() => $_ensure(28);
 
   @$pb.TagNumber(60)
-  ChatMessageResponse get chatMessageResponse => $_getN(28);
+  ChatMessageResponse get chatMessageResponse => $_getN(29);
   @$pb.TagNumber(60)
   set chatMessageResponse(ChatMessageResponse v) { setField(60, v); }
   @$pb.TagNumber(60)
-  $core.bool hasChatMessageResponse() => $_has(28);
+  $core.bool hasChatMessageResponse() => $_has(29);
   @$pb.TagNumber(60)
   void clearChatMessageResponse() => clearField(60);
   @$pb.TagNumber(60)
-  ChatMessageResponse ensureChatMessageResponse() => $_ensure(28);
+  ChatMessageResponse ensureChatMessageResponse() => $_ensure(29);
 
   @$pb.TagNumber(61)
-  ChatRejectResponse get chatRejectResponse => $_getN(29);
+  ChatRejectResponse get chatRejectResponse => $_getN(30);
   @$pb.TagNumber(61)
   set chatRejectResponse(ChatRejectResponse v) { setField(61, v); }
   @$pb.TagNumber(61)
-  $core.bool hasChatRejectResponse() => $_has(29);
+  $core.bool hasChatRejectResponse() => $_has(30);
   @$pb.TagNumber(61)
   void clearChatRejectResponse() => clearField(61);
   @$pb.TagNumber(61)
-  ChatRejectResponse ensureChatRejectResponse() => $_ensure(29);
+  ChatRejectResponse ensureChatRejectResponse() => $_ensure(30);
 
   @$pb.TagNumber(62)
-  AnonymousChangedResponse get anonymousChangedResponse => $_getN(30);
+  AnonymousChangedResponse get anonymousChangedResponse => $_getN(31);
   @$pb.TagNumber(62)
   set anonymousChangedResponse(AnonymousChangedResponse v) { setField(62, v); }
   @$pb.TagNumber(62)
-  $core.bool hasAnonymousChangedResponse() => $_has(30);
+  $core.bool hasAnonymousChangedResponse() => $_has(31);
   @$pb.TagNumber(62)
   void clearAnonymousChangedResponse() => clearField(62);
   @$pb.TagNumber(62)
-  AnonymousChangedResponse ensureAnonymousChangedResponse() => $_ensure(30);
+  AnonymousChangedResponse ensureAnonymousChangedResponse() => $_ensure(31);
 
   @$pb.TagNumber(63)
-  SpriteChangedResponse get spriteChangedResponse => $_getN(31);
+  SpriteChangedResponse get spriteChangedResponse => $_getN(32);
   @$pb.TagNumber(63)
   set spriteChangedResponse(SpriteChangedResponse v) { setField(63, v); }
   @$pb.TagNumber(63)
-  $core.bool hasSpriteChangedResponse() => $_has(31);
+  $core.bool hasSpriteChangedResponse() => $_has(32);
   @$pb.TagNumber(63)
   void clearSpriteChangedResponse() => clearField(63);
   @$pb.TagNumber(63)
-  SpriteChangedResponse ensureSpriteChangedResponse() => $_ensure(31);
+  SpriteChangedResponse ensureSpriteChangedResponse() => $_ensure(32);
 
   @$pb.TagNumber(64)
-  SpriteChangeRejectResponse get spriteChangeRejectResponse => $_getN(32);
+  SpriteChangeRejectResponse get spriteChangeRejectResponse => $_getN(33);
   @$pb.TagNumber(64)
   set spriteChangeRejectResponse(SpriteChangeRejectResponse v) { setField(64, v); }
   @$pb.TagNumber(64)
-  $core.bool hasSpriteChangeRejectResponse() => $_has(32);
+  $core.bool hasSpriteChangeRejectResponse() => $_has(33);
   @$pb.TagNumber(64)
   void clearSpriteChangeRejectResponse() => clearField(64);
   @$pb.TagNumber(64)
-  SpriteChangeRejectResponse ensureSpriteChangeRejectResponse() => $_ensure(32);
+  SpriteChangeRejectResponse ensureSpriteChangeRejectResponse() => $_ensure(33);
 
   @$pb.TagNumber(65)
-  StatusTextBroadcastResponse get statusTextBroadcastResponse => $_getN(33);
+  StatusTextBroadcastResponse get statusTextBroadcastResponse => $_getN(34);
   @$pb.TagNumber(65)
   set statusTextBroadcastResponse(StatusTextBroadcastResponse v) { setField(65, v); }
   @$pb.TagNumber(65)
-  $core.bool hasStatusTextBroadcastResponse() => $_has(33);
+  $core.bool hasStatusTextBroadcastResponse() => $_has(34);
   @$pb.TagNumber(65)
   void clearStatusTextBroadcastResponse() => clearField(65);
   @$pb.TagNumber(65)
-  StatusTextBroadcastResponse ensureStatusTextBroadcastResponse() => $_ensure(33);
+  StatusTextBroadcastResponse ensureStatusTextBroadcastResponse() => $_ensure(34);
 
   @$pb.TagNumber(66)
-  DisplayNameChangedResponse get displayNameChangedResponse => $_getN(34);
+  DisplayNameChangedResponse get displayNameChangedResponse => $_getN(35);
   @$pb.TagNumber(66)
   set displayNameChangedResponse(DisplayNameChangedResponse v) { setField(66, v); }
   @$pb.TagNumber(66)
-  $core.bool hasDisplayNameChangedResponse() => $_has(34);
+  $core.bool hasDisplayNameChangedResponse() => $_has(35);
   @$pb.TagNumber(66)
   void clearDisplayNameChangedResponse() => clearField(66);
   @$pb.TagNumber(66)
-  DisplayNameChangedResponse ensureDisplayNameChangedResponse() => $_ensure(34);
+  DisplayNameChangedResponse ensureDisplayNameChangedResponse() => $_ensure(35);
 
   @$pb.TagNumber(67)
-  AssetsResponse get assetsResponse => $_getN(35);
+  AssetsResponse get assetsResponse => $_getN(36);
   @$pb.TagNumber(67)
   set assetsResponse(AssetsResponse v) { setField(67, v); }
   @$pb.TagNumber(67)
-  $core.bool hasAssetsResponse() => $_has(35);
+  $core.bool hasAssetsResponse() => $_has(36);
   @$pb.TagNumber(67)
   void clearAssetsResponse() => clearField(67);
   @$pb.TagNumber(67)
-  AssetsResponse ensureAssetsResponse() => $_ensure(35);
+  AssetsResponse ensureAssetsResponse() => $_ensure(36);
 
   @$pb.TagNumber(68)
-  AssetsUpdatedResponse get assetsUpdatedResponse => $_getN(36);
+  AssetsUpdatedResponse get assetsUpdatedResponse => $_getN(37);
   @$pb.TagNumber(68)
   set assetsUpdatedResponse(AssetsUpdatedResponse v) { setField(68, v); }
   @$pb.TagNumber(68)
-  $core.bool hasAssetsUpdatedResponse() => $_has(36);
+  $core.bool hasAssetsUpdatedResponse() => $_has(37);
   @$pb.TagNumber(68)
   void clearAssetsUpdatedResponse() => clearField(68);
   @$pb.TagNumber(68)
-  AssetsUpdatedResponse ensureAssetsUpdatedResponse() => $_ensure(36);
+  AssetsUpdatedResponse ensureAssetsUpdatedResponse() => $_ensure(37);
 
   @$pb.TagNumber(69)
-  PortalTeleportResponse get portalTeleportResponse => $_getN(37);
+  PortalTeleportResponse get portalTeleportResponse => $_getN(38);
   @$pb.TagNumber(69)
   set portalTeleportResponse(PortalTeleportResponse v) { setField(69, v); }
   @$pb.TagNumber(69)
-  $core.bool hasPortalTeleportResponse() => $_has(37);
+  $core.bool hasPortalTeleportResponse() => $_has(38);
   @$pb.TagNumber(69)
   void clearPortalTeleportResponse() => clearField(69);
   @$pb.TagNumber(69)
-  PortalTeleportResponse ensurePortalTeleportResponse() => $_ensure(37);
+  PortalTeleportResponse ensurePortalTeleportResponse() => $_ensure(38);
 
   @$pb.TagNumber(70)
-  PortalUseRejectResponse get portalUseRejectResponse => $_getN(38);
+  PortalUseRejectResponse get portalUseRejectResponse => $_getN(39);
   @$pb.TagNumber(70)
   set portalUseRejectResponse(PortalUseRejectResponse v) { setField(70, v); }
   @$pb.TagNumber(70)
-  $core.bool hasPortalUseRejectResponse() => $_has(38);
+  $core.bool hasPortalUseRejectResponse() => $_has(39);
   @$pb.TagNumber(70)
   void clearPortalUseRejectResponse() => clearField(70);
   @$pb.TagNumber(70)
-  PortalUseRejectResponse ensurePortalUseRejectResponse() => $_ensure(38);
+  PortalUseRejectResponse ensurePortalUseRejectResponse() => $_ensure(39);
 
   @$pb.TagNumber(71)
-  BroadcastMessageResponse get broadcastMessageResponse => $_getN(39);
+  BroadcastMessageResponse get broadcastMessageResponse => $_getN(40);
   @$pb.TagNumber(71)
   set broadcastMessageResponse(BroadcastMessageResponse v) { setField(71, v); }
   @$pb.TagNumber(71)
-  $core.bool hasBroadcastMessageResponse() => $_has(39);
+  $core.bool hasBroadcastMessageResponse() => $_has(40);
   @$pb.TagNumber(71)
   void clearBroadcastMessageResponse() => clearField(71);
   @$pb.TagNumber(71)
-  BroadcastMessageResponse ensureBroadcastMessageResponse() => $_ensure(39);
+  BroadcastMessageResponse ensureBroadcastMessageResponse() => $_ensure(40);
 
   @$pb.TagNumber(72)
-  BroadcastRejectResponse get broadcastRejectResponse => $_getN(40);
+  BroadcastRejectResponse get broadcastRejectResponse => $_getN(41);
   @$pb.TagNumber(72)
   set broadcastRejectResponse(BroadcastRejectResponse v) { setField(72, v); }
   @$pb.TagNumber(72)
-  $core.bool hasBroadcastRejectResponse() => $_has(40);
+  $core.bool hasBroadcastRejectResponse() => $_has(41);
   @$pb.TagNumber(72)
   void clearBroadcastRejectResponse() => clearField(72);
   @$pb.TagNumber(72)
-  BroadcastRejectResponse ensureBroadcastRejectResponse() => $_ensure(40);
+  BroadcastRejectResponse ensureBroadcastRejectResponse() => $_ensure(41);
 
   @$pb.TagNumber(73)
-  BroadcastCDResponse get broadcastCdResponse => $_getN(41);
+  BroadcastCDResponse get broadcastCdResponse => $_getN(42);
   @$pb.TagNumber(73)
   set broadcastCdResponse(BroadcastCDResponse v) { setField(73, v); }
   @$pb.TagNumber(73)
-  $core.bool hasBroadcastCdResponse() => $_has(41);
+  $core.bool hasBroadcastCdResponse() => $_has(42);
   @$pb.TagNumber(73)
   void clearBroadcastCdResponse() => clearField(73);
   @$pb.TagNumber(73)
-  BroadcastCDResponse ensureBroadcastCdResponse() => $_ensure(41);
+  BroadcastCDResponse ensureBroadcastCdResponse() => $_ensure(42);
 
   @$pb.TagNumber(74)
-  OnlineStatsResponse get onlineStatsResponse => $_getN(42);
+  OnlineStatsResponse get onlineStatsResponse => $_getN(43);
   @$pb.TagNumber(74)
   set onlineStatsResponse(OnlineStatsResponse v) { setField(74, v); }
   @$pb.TagNumber(74)
-  $core.bool hasOnlineStatsResponse() => $_has(42);
+  $core.bool hasOnlineStatsResponse() => $_has(43);
   @$pb.TagNumber(74)
   void clearOnlineStatsResponse() => clearField(74);
   @$pb.TagNumber(74)
-  OnlineStatsResponse ensureOnlineStatsResponse() => $_ensure(42);
+  OnlineStatsResponse ensureOnlineStatsResponse() => $_ensure(43);
 
   @$pb.TagNumber(75)
-  SystemErrorResponse get systemErrorResponse => $_getN(43);
+  SystemErrorResponse get systemErrorResponse => $_getN(44);
   @$pb.TagNumber(75)
   set systemErrorResponse(SystemErrorResponse v) { setField(75, v); }
   @$pb.TagNumber(75)
-  $core.bool hasSystemErrorResponse() => $_has(43);
+  $core.bool hasSystemErrorResponse() => $_has(44);
   @$pb.TagNumber(75)
   void clearSystemErrorResponse() => clearField(75);
   @$pb.TagNumber(75)
-  SystemErrorResponse ensureSystemErrorResponse() => $_ensure(43);
+  SystemErrorResponse ensureSystemErrorResponse() => $_ensure(44);
 
   @$pb.TagNumber(76)
-  SystemNoticeResponse get systemNoticeResponse => $_getN(44);
+  SystemNoticeResponse get systemNoticeResponse => $_getN(45);
   @$pb.TagNumber(76)
   set systemNoticeResponse(SystemNoticeResponse v) { setField(76, v); }
   @$pb.TagNumber(76)
-  $core.bool hasSystemNoticeResponse() => $_has(44);
+  $core.bool hasSystemNoticeResponse() => $_has(45);
   @$pb.TagNumber(76)
   void clearSystemNoticeResponse() => clearField(76);
   @$pb.TagNumber(76)
-  SystemNoticeResponse ensureSystemNoticeResponse() => $_ensure(44);
+  SystemNoticeResponse ensureSystemNoticeResponse() => $_ensure(45);
 
   @$pb.TagNumber(77)
-  SystemKickedResponse get systemKickedResponse => $_getN(45);
+  SystemKickedResponse get systemKickedResponse => $_getN(46);
   @$pb.TagNumber(77)
   set systemKickedResponse(SystemKickedResponse v) { setField(77, v); }
   @$pb.TagNumber(77)
-  $core.bool hasSystemKickedResponse() => $_has(45);
+  $core.bool hasSystemKickedResponse() => $_has(46);
   @$pb.TagNumber(77)
   void clearSystemKickedResponse() => clearField(77);
   @$pb.TagNumber(77)
-  SystemKickedResponse ensureSystemKickedResponse() => $_ensure(45);
+  SystemKickedResponse ensureSystemKickedResponse() => $_ensure(46);
+
+  @$pb.TagNumber(78)
+  SteamBindSuccessResponse get steamBindSuccess => $_getN(47);
+  @$pb.TagNumber(78)
+  set steamBindSuccess(SteamBindSuccessResponse v) { setField(78, v); }
+  @$pb.TagNumber(78)
+  $core.bool hasSteamBindSuccess() => $_has(47);
+  @$pb.TagNumber(78)
+  void clearSteamBindSuccess() => clearField(78);
+  @$pb.TagNumber(78)
+  SteamBindSuccessResponse ensureSteamBindSuccess() => $_ensure(47);
 }
 
 /// LobbyUser 用户信息
@@ -891,6 +927,7 @@ class LobbyUser extends $pb.GeneratedMessage {
     $core.bool? isAnonymous,
     $core.String? statusText,
     $core.String? lastMessage,
+    $core.String? steamId,
   }) {
     final $result = create();
     if (userId != null) {
@@ -929,6 +966,9 @@ class LobbyUser extends $pb.GeneratedMessage {
     if (lastMessage != null) {
       $result.lastMessage = lastMessage;
     }
+    if (steamId != null) {
+      $result.steamId = steamId;
+    }
     return $result;
   }
   LobbyUser._() : super();
@@ -948,6 +988,7 @@ class LobbyUser extends $pb.GeneratedMessage {
     ..aOB(10, _omitFieldNames ? '' : 'isAnonymous')
     ..aOS(11, _omitFieldNames ? '' : 'statusText')
     ..aOS(12, _omitFieldNames ? '' : 'lastMessage')
+    ..aOS(13, _omitFieldNames ? '' : 'steamId')
     ..hasRequiredFields = false
   ;
 
@@ -1079,6 +1120,15 @@ class LobbyUser extends $pb.GeneratedMessage {
   $core.bool hasLastMessage() => $_has(11);
   @$pb.TagNumber(12)
   void clearLastMessage() => clearField(12);
+
+  @$pb.TagNumber(13)
+  $core.String get steamId => $_getSZ(12);
+  @$pb.TagNumber(13)
+  set steamId($core.String v) { $_setString(12, v); }
+  @$pb.TagNumber(13)
+  $core.bool hasSteamId() => $_has(12);
+  @$pb.TagNumber(13)
+  void clearSteamId() => clearField(13);
 }
 
 /// LobbyMessage 聊天消息
@@ -2347,6 +2397,70 @@ class ProfileDisplayNameUpdateRequest extends $pb.GeneratedMessage {
   $core.bool hasCustomName() => $_has(0);
   @$pb.TagNumber(1)
   void clearCustomName() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get steamName => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set steamName($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasSteamName() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearSteamName() => clearField(2);
+}
+
+class ProfileSteamBindRequest extends $pb.GeneratedMessage {
+  factory ProfileSteamBindRequest({
+    $core.String? steamId,
+    $core.String? steamName,
+  }) {
+    final $result = create();
+    if (steamId != null) {
+      $result.steamId = steamId;
+    }
+    if (steamName != null) {
+      $result.steamName = steamName;
+    }
+    return $result;
+  }
+  ProfileSteamBindRequest._() : super();
+  factory ProfileSteamBindRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory ProfileSteamBindRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ProfileSteamBindRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'steamId')
+    ..aOS(2, _omitFieldNames ? '' : 'steamName')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  ProfileSteamBindRequest clone() => ProfileSteamBindRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  ProfileSteamBindRequest copyWith(void Function(ProfileSteamBindRequest) updates) => super.copyWith((message) => updates(message as ProfileSteamBindRequest)) as ProfileSteamBindRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ProfileSteamBindRequest create() => ProfileSteamBindRequest._();
+  ProfileSteamBindRequest createEmptyInstance() => create();
+  static $pb.PbList<ProfileSteamBindRequest> createRepeated() => $pb.PbList<ProfileSteamBindRequest>();
+  @$core.pragma('dart2js:noInline')
+  static ProfileSteamBindRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ProfileSteamBindRequest>(create);
+  static ProfileSteamBindRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get steamId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set steamId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasSteamId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSteamId() => clearField(1);
 
   @$pb.TagNumber(2)
   $core.String get steamName => $_getSZ(1);
@@ -4542,6 +4656,84 @@ class SystemKickedResponse extends $pb.GeneratedMessage {
   void clearMessage() => clearField(2);
 }
 
+class SteamBindSuccessResponse extends $pb.GeneratedMessage {
+  factory SteamBindSuccessResponse({
+    $core.String? steamId,
+    $core.String? steamName,
+    $core.String? displayNickname,
+  }) {
+    final $result = create();
+    if (steamId != null) {
+      $result.steamId = steamId;
+    }
+    if (steamName != null) {
+      $result.steamName = steamName;
+    }
+    if (displayNickname != null) {
+      $result.displayNickname = displayNickname;
+    }
+    return $result;
+  }
+  SteamBindSuccessResponse._() : super();
+  factory SteamBindSuccessResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory SteamBindSuccessResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'SteamBindSuccessResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'steamId')
+    ..aOS(2, _omitFieldNames ? '' : 'steamName')
+    ..aOS(3, _omitFieldNames ? '' : 'displayNickname')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  SteamBindSuccessResponse clone() => SteamBindSuccessResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  SteamBindSuccessResponse copyWith(void Function(SteamBindSuccessResponse) updates) => super.copyWith((message) => updates(message as SteamBindSuccessResponse)) as SteamBindSuccessResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static SteamBindSuccessResponse create() => SteamBindSuccessResponse._();
+  SteamBindSuccessResponse createEmptyInstance() => create();
+  static $pb.PbList<SteamBindSuccessResponse> createRepeated() => $pb.PbList<SteamBindSuccessResponse>();
+  @$core.pragma('dart2js:noInline')
+  static SteamBindSuccessResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<SteamBindSuccessResponse>(create);
+  static SteamBindSuccessResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get steamId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set steamId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasSteamId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSteamId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get steamName => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set steamName($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasSteamName() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearSteamName() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get displayNickname => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set displayNickname($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasDisplayNickname() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearDisplayNickname() => clearField(3);
+}
+
 /// LobbyJoinRequest 加入大厅请求
 class LobbyJoinRequest extends $pb.GeneratedMessage {
   factory LobbyJoinRequest({
@@ -4656,6 +4848,924 @@ class LobbyJoinResponse extends $pb.GeneratedMessage {
   $core.bool hasMapId() => $_has(1);
   @$pb.TagNumber(2)
   void clearMapId() => clearField(2);
+}
+
+/// SteamUserInfoRequest 查询 Steam 用户信息请求
+class SteamUserInfoRequest extends $pb.GeneratedMessage {
+  factory SteamUserInfoRequest({
+    $core.String? userId,
+  }) {
+    final $result = create();
+    if (userId != null) {
+      $result.userId = userId;
+    }
+    return $result;
+  }
+  SteamUserInfoRequest._() : super();
+  factory SteamUserInfoRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory SteamUserInfoRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'SteamUserInfoRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'userId')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  SteamUserInfoRequest clone() => SteamUserInfoRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  SteamUserInfoRequest copyWith(void Function(SteamUserInfoRequest) updates) => super.copyWith((message) => updates(message as SteamUserInfoRequest)) as SteamUserInfoRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static SteamUserInfoRequest create() => SteamUserInfoRequest._();
+  SteamUserInfoRequest createEmptyInstance() => create();
+  static $pb.PbList<SteamUserInfoRequest> createRepeated() => $pb.PbList<SteamUserInfoRequest>();
+  @$core.pragma('dart2js:noInline')
+  static SteamUserInfoRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<SteamUserInfoRequest>(create);
+  static SteamUserInfoRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get userId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set userId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasUserId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearUserId() => clearField(1);
+}
+
+/// SteamUserInfoResponse 查询 Steam 用户信息响应
+class SteamUserInfoResponse extends $pb.GeneratedMessage {
+  factory SteamUserInfoResponse({
+    $core.int? code,
+    $core.String? message,
+    $fixnum.Int64? forumUid,
+    $core.String? forumUsername,
+    $core.String? forumAvatarUrl,
+    $core.String? steamId,
+    $core.String? steamId64,
+    $core.String? avatarUrl,
+    $core.String? steamName,
+    $core.String? inGameName,
+    $core.String? joinDate,
+    $core.int? vipLevel,
+    $core.String? vipDate,
+    $core.String? vipEnd,
+    $fixnum.Int64? csgoGold,
+    $fixnum.Int64? onlineTimeTotal,
+    $fixnum.Int64? onlineTimeDay,
+    $fixnum.Int64? cs2Gold,
+    $fixnum.Int64? cs2Point,
+    $fixnum.Int64? cs2SpentPoint,
+    $fixnum.Int64? mgPts,
+    $fixnum.Int64? mgPtsRank,
+    $fixnum.Int64? mgPtsTotal,
+    $fixnum.Int64? surfPts,
+    $fixnum.Int64? surfPtsRank,
+    $fixnum.Int64? surfPtsTotal,
+    $fixnum.Int64? bhopPts,
+    $fixnum.Int64? bhopPtsRank,
+    $fixnum.Int64? bhopPtsTotal,
+    $fixnum.Int64? kzPts,
+    $fixnum.Int64? kzPtsRank,
+    $fixnum.Int64? kzPtsTotal,
+    $fixnum.Int64? csgoOnlineTime,
+    $fixnum.Int64? csgoZombiePts,
+    $fixnum.Int64? csgoZombieKill,
+    $fixnum.Int64? csgoZombieKnife,
+    $fixnum.Int64? csgoZombieKickAss,
+    $fixnum.Int64? csgoZombieLostAss,
+    $fixnum.Int64? csgoZombieProLevel,
+    $fixnum.Int64? csgoMgPts,
+    $fixnum.Int64? csgoSurfPts,
+    $fixnum.Int64? csgoBhopPts,
+    $fixnum.Int64? csgoKzPts,
+    $fixnum.Int64? csgoTttInnocentPts,
+    $fixnum.Int64? csgoTttDetectivePts,
+    $fixnum.Int64? csgoTttTraitorPts,
+    $fixnum.Int64? cssZombiePts,
+    $fixnum.Int64? cssZombieKill,
+    $fixnum.Int64? cssZombieKnife,
+    $fixnum.Int64? cssZombieKickAss,
+    $fixnum.Int64? cssZombieProLevel,
+    $fixnum.Int64? cssTitanPts,
+    $fixnum.Int64? cssTitanKills,
+    $fixnum.Int64? cssTitanSpecialKills,
+    $fixnum.Int64? cssTitanHumanKills,
+    $fixnum.Int64? cssTitanAssists,
+    $fixnum.Int64? cssTttPts,
+    $fixnum.Int64? cssTttWrongKill,
+    $fixnum.Int64? cssTttKarma,
+  }) {
+    final $result = create();
+    if (code != null) {
+      $result.code = code;
+    }
+    if (message != null) {
+      $result.message = message;
+    }
+    if (forumUid != null) {
+      $result.forumUid = forumUid;
+    }
+    if (forumUsername != null) {
+      $result.forumUsername = forumUsername;
+    }
+    if (forumAvatarUrl != null) {
+      $result.forumAvatarUrl = forumAvatarUrl;
+    }
+    if (steamId != null) {
+      $result.steamId = steamId;
+    }
+    if (steamId64 != null) {
+      $result.steamId64 = steamId64;
+    }
+    if (avatarUrl != null) {
+      $result.avatarUrl = avatarUrl;
+    }
+    if (steamName != null) {
+      $result.steamName = steamName;
+    }
+    if (inGameName != null) {
+      $result.inGameName = inGameName;
+    }
+    if (joinDate != null) {
+      $result.joinDate = joinDate;
+    }
+    if (vipLevel != null) {
+      $result.vipLevel = vipLevel;
+    }
+    if (vipDate != null) {
+      $result.vipDate = vipDate;
+    }
+    if (vipEnd != null) {
+      $result.vipEnd = vipEnd;
+    }
+    if (csgoGold != null) {
+      $result.csgoGold = csgoGold;
+    }
+    if (onlineTimeTotal != null) {
+      $result.onlineTimeTotal = onlineTimeTotal;
+    }
+    if (onlineTimeDay != null) {
+      $result.onlineTimeDay = onlineTimeDay;
+    }
+    if (cs2Gold != null) {
+      $result.cs2Gold = cs2Gold;
+    }
+    if (cs2Point != null) {
+      $result.cs2Point = cs2Point;
+    }
+    if (cs2SpentPoint != null) {
+      $result.cs2SpentPoint = cs2SpentPoint;
+    }
+    if (mgPts != null) {
+      $result.mgPts = mgPts;
+    }
+    if (mgPtsRank != null) {
+      $result.mgPtsRank = mgPtsRank;
+    }
+    if (mgPtsTotal != null) {
+      $result.mgPtsTotal = mgPtsTotal;
+    }
+    if (surfPts != null) {
+      $result.surfPts = surfPts;
+    }
+    if (surfPtsRank != null) {
+      $result.surfPtsRank = surfPtsRank;
+    }
+    if (surfPtsTotal != null) {
+      $result.surfPtsTotal = surfPtsTotal;
+    }
+    if (bhopPts != null) {
+      $result.bhopPts = bhopPts;
+    }
+    if (bhopPtsRank != null) {
+      $result.bhopPtsRank = bhopPtsRank;
+    }
+    if (bhopPtsTotal != null) {
+      $result.bhopPtsTotal = bhopPtsTotal;
+    }
+    if (kzPts != null) {
+      $result.kzPts = kzPts;
+    }
+    if (kzPtsRank != null) {
+      $result.kzPtsRank = kzPtsRank;
+    }
+    if (kzPtsTotal != null) {
+      $result.kzPtsTotal = kzPtsTotal;
+    }
+    if (csgoOnlineTime != null) {
+      $result.csgoOnlineTime = csgoOnlineTime;
+    }
+    if (csgoZombiePts != null) {
+      $result.csgoZombiePts = csgoZombiePts;
+    }
+    if (csgoZombieKill != null) {
+      $result.csgoZombieKill = csgoZombieKill;
+    }
+    if (csgoZombieKnife != null) {
+      $result.csgoZombieKnife = csgoZombieKnife;
+    }
+    if (csgoZombieKickAss != null) {
+      $result.csgoZombieKickAss = csgoZombieKickAss;
+    }
+    if (csgoZombieLostAss != null) {
+      $result.csgoZombieLostAss = csgoZombieLostAss;
+    }
+    if (csgoZombieProLevel != null) {
+      $result.csgoZombieProLevel = csgoZombieProLevel;
+    }
+    if (csgoMgPts != null) {
+      $result.csgoMgPts = csgoMgPts;
+    }
+    if (csgoSurfPts != null) {
+      $result.csgoSurfPts = csgoSurfPts;
+    }
+    if (csgoBhopPts != null) {
+      $result.csgoBhopPts = csgoBhopPts;
+    }
+    if (csgoKzPts != null) {
+      $result.csgoKzPts = csgoKzPts;
+    }
+    if (csgoTttInnocentPts != null) {
+      $result.csgoTttInnocentPts = csgoTttInnocentPts;
+    }
+    if (csgoTttDetectivePts != null) {
+      $result.csgoTttDetectivePts = csgoTttDetectivePts;
+    }
+    if (csgoTttTraitorPts != null) {
+      $result.csgoTttTraitorPts = csgoTttTraitorPts;
+    }
+    if (cssZombiePts != null) {
+      $result.cssZombiePts = cssZombiePts;
+    }
+    if (cssZombieKill != null) {
+      $result.cssZombieKill = cssZombieKill;
+    }
+    if (cssZombieKnife != null) {
+      $result.cssZombieKnife = cssZombieKnife;
+    }
+    if (cssZombieKickAss != null) {
+      $result.cssZombieKickAss = cssZombieKickAss;
+    }
+    if (cssZombieProLevel != null) {
+      $result.cssZombieProLevel = cssZombieProLevel;
+    }
+    if (cssTitanPts != null) {
+      $result.cssTitanPts = cssTitanPts;
+    }
+    if (cssTitanKills != null) {
+      $result.cssTitanKills = cssTitanKills;
+    }
+    if (cssTitanSpecialKills != null) {
+      $result.cssTitanSpecialKills = cssTitanSpecialKills;
+    }
+    if (cssTitanHumanKills != null) {
+      $result.cssTitanHumanKills = cssTitanHumanKills;
+    }
+    if (cssTitanAssists != null) {
+      $result.cssTitanAssists = cssTitanAssists;
+    }
+    if (cssTttPts != null) {
+      $result.cssTttPts = cssTttPts;
+    }
+    if (cssTttWrongKill != null) {
+      $result.cssTttWrongKill = cssTttWrongKill;
+    }
+    if (cssTttKarma != null) {
+      $result.cssTttKarma = cssTttKarma;
+    }
+    return $result;
+  }
+  SteamUserInfoResponse._() : super();
+  factory SteamUserInfoResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory SteamUserInfoResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'SteamUserInfoResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'code', $pb.PbFieldType.O3)
+    ..aOS(2, _omitFieldNames ? '' : 'message')
+    ..aInt64(3, _omitFieldNames ? '' : 'forumUid')
+    ..aOS(4, _omitFieldNames ? '' : 'forumUsername')
+    ..aOS(5, _omitFieldNames ? '' : 'forumAvatarUrl')
+    ..aOS(6, _omitFieldNames ? '' : 'steamId')
+    ..aOS(7, _omitFieldNames ? '' : 'steamId64')
+    ..aOS(8, _omitFieldNames ? '' : 'avatarUrl')
+    ..aOS(9, _omitFieldNames ? '' : 'steamName')
+    ..aOS(10, _omitFieldNames ? '' : 'inGameName')
+    ..aOS(11, _omitFieldNames ? '' : 'joinDate')
+    ..a<$core.int>(12, _omitFieldNames ? '' : 'vipLevel', $pb.PbFieldType.O3)
+    ..aOS(13, _omitFieldNames ? '' : 'vipDate')
+    ..aOS(14, _omitFieldNames ? '' : 'vipEnd')
+    ..aInt64(15, _omitFieldNames ? '' : 'csgoGold')
+    ..aInt64(16, _omitFieldNames ? '' : 'onlineTimeTotal')
+    ..aInt64(17, _omitFieldNames ? '' : 'onlineTimeDay')
+    ..aInt64(18, _omitFieldNames ? '' : 'cs2Gold')
+    ..aInt64(19, _omitFieldNames ? '' : 'cs2Point')
+    ..aInt64(20, _omitFieldNames ? '' : 'cs2SpentPoint')
+    ..aInt64(21, _omitFieldNames ? '' : 'mgPts')
+    ..aInt64(22, _omitFieldNames ? '' : 'mgPtsRank')
+    ..aInt64(23, _omitFieldNames ? '' : 'mgPtsTotal')
+    ..aInt64(24, _omitFieldNames ? '' : 'surfPts')
+    ..aInt64(25, _omitFieldNames ? '' : 'surfPtsRank')
+    ..aInt64(26, _omitFieldNames ? '' : 'surfPtsTotal')
+    ..aInt64(27, _omitFieldNames ? '' : 'bhopPts')
+    ..aInt64(28, _omitFieldNames ? '' : 'bhopPtsRank')
+    ..aInt64(29, _omitFieldNames ? '' : 'bhopPtsTotal')
+    ..aInt64(30, _omitFieldNames ? '' : 'kzPts')
+    ..aInt64(31, _omitFieldNames ? '' : 'kzPtsRank')
+    ..aInt64(32, _omitFieldNames ? '' : 'kzPtsTotal')
+    ..aInt64(33, _omitFieldNames ? '' : 'csgoOnlineTime')
+    ..aInt64(34, _omitFieldNames ? '' : 'csgoZombiePts')
+    ..aInt64(35, _omitFieldNames ? '' : 'csgoZombieKill')
+    ..aInt64(36, _omitFieldNames ? '' : 'csgoZombieKnife')
+    ..aInt64(37, _omitFieldNames ? '' : 'csgoZombieKickAss')
+    ..aInt64(38, _omitFieldNames ? '' : 'csgoZombieLostAss')
+    ..aInt64(39, _omitFieldNames ? '' : 'csgoZombieProLevel')
+    ..aInt64(40, _omitFieldNames ? '' : 'csgoMgPts')
+    ..aInt64(41, _omitFieldNames ? '' : 'csgoSurfPts')
+    ..aInt64(42, _omitFieldNames ? '' : 'csgoBhopPts')
+    ..aInt64(43, _omitFieldNames ? '' : 'csgoKzPts')
+    ..aInt64(44, _omitFieldNames ? '' : 'csgoTttInnocentPts')
+    ..aInt64(45, _omitFieldNames ? '' : 'csgoTttDetectivePts')
+    ..aInt64(46, _omitFieldNames ? '' : 'csgoTttTraitorPts')
+    ..aInt64(47, _omitFieldNames ? '' : 'cssZombiePts')
+    ..aInt64(48, _omitFieldNames ? '' : 'cssZombieKill')
+    ..aInt64(49, _omitFieldNames ? '' : 'cssZombieKnife')
+    ..aInt64(50, _omitFieldNames ? '' : 'cssZombieKickAss')
+    ..aInt64(51, _omitFieldNames ? '' : 'cssZombieProLevel')
+    ..aInt64(52, _omitFieldNames ? '' : 'cssTitanPts')
+    ..aInt64(53, _omitFieldNames ? '' : 'cssTitanKills')
+    ..aInt64(54, _omitFieldNames ? '' : 'cssTitanSpecialKills')
+    ..aInt64(55, _omitFieldNames ? '' : 'cssTitanHumanKills')
+    ..aInt64(56, _omitFieldNames ? '' : 'cssTitanAssists')
+    ..aInt64(57, _omitFieldNames ? '' : 'cssTttPts')
+    ..aInt64(58, _omitFieldNames ? '' : 'cssTttWrongKill')
+    ..aInt64(59, _omitFieldNames ? '' : 'cssTttKarma')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  SteamUserInfoResponse clone() => SteamUserInfoResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  SteamUserInfoResponse copyWith(void Function(SteamUserInfoResponse) updates) => super.copyWith((message) => updates(message as SteamUserInfoResponse)) as SteamUserInfoResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static SteamUserInfoResponse create() => SteamUserInfoResponse._();
+  SteamUserInfoResponse createEmptyInstance() => create();
+  static $pb.PbList<SteamUserInfoResponse> createRepeated() => $pb.PbList<SteamUserInfoResponse>();
+  @$core.pragma('dart2js:noInline')
+  static SteamUserInfoResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<SteamUserInfoResponse>(create);
+  static SteamUserInfoResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get code => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set code($core.int v) { $_setSignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasCode() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearCode() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get message => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set message($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasMessage() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMessage() => clearField(2);
+
+  /// 以下字段仅 code=0 时有效
+  @$pb.TagNumber(3)
+  $fixnum.Int64 get forumUid => $_getI64(2);
+  @$pb.TagNumber(3)
+  set forumUid($fixnum.Int64 v) { $_setInt64(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasForumUid() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearForumUid() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get forumUsername => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set forumUsername($core.String v) { $_setString(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasForumUsername() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearForumUsername() => clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.String get forumAvatarUrl => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set forumAvatarUrl($core.String v) { $_setString(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasForumAvatarUrl() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearForumAvatarUrl() => clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.String get steamId => $_getSZ(5);
+  @$pb.TagNumber(6)
+  set steamId($core.String v) { $_setString(5, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasSteamId() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearSteamId() => clearField(6);
+
+  @$pb.TagNumber(7)
+  $core.String get steamId64 => $_getSZ(6);
+  @$pb.TagNumber(7)
+  set steamId64($core.String v) { $_setString(6, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasSteamId64() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearSteamId64() => clearField(7);
+
+  @$pb.TagNumber(8)
+  $core.String get avatarUrl => $_getSZ(7);
+  @$pb.TagNumber(8)
+  set avatarUrl($core.String v) { $_setString(7, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasAvatarUrl() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearAvatarUrl() => clearField(8);
+
+  @$pb.TagNumber(9)
+  $core.String get steamName => $_getSZ(8);
+  @$pb.TagNumber(9)
+  set steamName($core.String v) { $_setString(8, v); }
+  @$pb.TagNumber(9)
+  $core.bool hasSteamName() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearSteamName() => clearField(9);
+
+  @$pb.TagNumber(10)
+  $core.String get inGameName => $_getSZ(9);
+  @$pb.TagNumber(10)
+  set inGameName($core.String v) { $_setString(9, v); }
+  @$pb.TagNumber(10)
+  $core.bool hasInGameName() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearInGameName() => clearField(10);
+
+  @$pb.TagNumber(11)
+  $core.String get joinDate => $_getSZ(10);
+  @$pb.TagNumber(11)
+  set joinDate($core.String v) { $_setString(10, v); }
+  @$pb.TagNumber(11)
+  $core.bool hasJoinDate() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearJoinDate() => clearField(11);
+
+  @$pb.TagNumber(12)
+  $core.int get vipLevel => $_getIZ(11);
+  @$pb.TagNumber(12)
+  set vipLevel($core.int v) { $_setSignedInt32(11, v); }
+  @$pb.TagNumber(12)
+  $core.bool hasVipLevel() => $_has(11);
+  @$pb.TagNumber(12)
+  void clearVipLevel() => clearField(12);
+
+  @$pb.TagNumber(13)
+  $core.String get vipDate => $_getSZ(12);
+  @$pb.TagNumber(13)
+  set vipDate($core.String v) { $_setString(12, v); }
+  @$pb.TagNumber(13)
+  $core.bool hasVipDate() => $_has(12);
+  @$pb.TagNumber(13)
+  void clearVipDate() => clearField(13);
+
+  @$pb.TagNumber(14)
+  $core.String get vipEnd => $_getSZ(13);
+  @$pb.TagNumber(14)
+  set vipEnd($core.String v) { $_setString(13, v); }
+  @$pb.TagNumber(14)
+  $core.bool hasVipEnd() => $_has(13);
+  @$pb.TagNumber(14)
+  void clearVipEnd() => clearField(14);
+
+  @$pb.TagNumber(15)
+  $fixnum.Int64 get csgoGold => $_getI64(14);
+  @$pb.TagNumber(15)
+  set csgoGold($fixnum.Int64 v) { $_setInt64(14, v); }
+  @$pb.TagNumber(15)
+  $core.bool hasCsgoGold() => $_has(14);
+  @$pb.TagNumber(15)
+  void clearCsgoGold() => clearField(15);
+
+  @$pb.TagNumber(16)
+  $fixnum.Int64 get onlineTimeTotal => $_getI64(15);
+  @$pb.TagNumber(16)
+  set onlineTimeTotal($fixnum.Int64 v) { $_setInt64(15, v); }
+  @$pb.TagNumber(16)
+  $core.bool hasOnlineTimeTotal() => $_has(15);
+  @$pb.TagNumber(16)
+  void clearOnlineTimeTotal() => clearField(16);
+
+  @$pb.TagNumber(17)
+  $fixnum.Int64 get onlineTimeDay => $_getI64(16);
+  @$pb.TagNumber(17)
+  set onlineTimeDay($fixnum.Int64 v) { $_setInt64(16, v); }
+  @$pb.TagNumber(17)
+  $core.bool hasOnlineTimeDay() => $_has(16);
+  @$pb.TagNumber(17)
+  void clearOnlineTimeDay() => clearField(17);
+
+  @$pb.TagNumber(18)
+  $fixnum.Int64 get cs2Gold => $_getI64(17);
+  @$pb.TagNumber(18)
+  set cs2Gold($fixnum.Int64 v) { $_setInt64(17, v); }
+  @$pb.TagNumber(18)
+  $core.bool hasCs2Gold() => $_has(17);
+  @$pb.TagNumber(18)
+  void clearCs2Gold() => clearField(18);
+
+  @$pb.TagNumber(19)
+  $fixnum.Int64 get cs2Point => $_getI64(18);
+  @$pb.TagNumber(19)
+  set cs2Point($fixnum.Int64 v) { $_setInt64(18, v); }
+  @$pb.TagNumber(19)
+  $core.bool hasCs2Point() => $_has(18);
+  @$pb.TagNumber(19)
+  void clearCs2Point() => clearField(19);
+
+  @$pb.TagNumber(20)
+  $fixnum.Int64 get cs2SpentPoint => $_getI64(19);
+  @$pb.TagNumber(20)
+  set cs2SpentPoint($fixnum.Int64 v) { $_setInt64(19, v); }
+  @$pb.TagNumber(20)
+  $core.bool hasCs2SpentPoint() => $_has(19);
+  @$pb.TagNumber(20)
+  void clearCs2SpentPoint() => clearField(20);
+
+  /// 各模式当前积分（null 时为 0）
+  @$pb.TagNumber(21)
+  $fixnum.Int64 get mgPts => $_getI64(20);
+  @$pb.TagNumber(21)
+  set mgPts($fixnum.Int64 v) { $_setInt64(20, v); }
+  @$pb.TagNumber(21)
+  $core.bool hasMgPts() => $_has(20);
+  @$pb.TagNumber(21)
+  void clearMgPts() => clearField(21);
+
+  @$pb.TagNumber(22)
+  $fixnum.Int64 get mgPtsRank => $_getI64(21);
+  @$pb.TagNumber(22)
+  set mgPtsRank($fixnum.Int64 v) { $_setInt64(21, v); }
+  @$pb.TagNumber(22)
+  $core.bool hasMgPtsRank() => $_has(21);
+  @$pb.TagNumber(22)
+  void clearMgPtsRank() => clearField(22);
+
+  @$pb.TagNumber(23)
+  $fixnum.Int64 get mgPtsTotal => $_getI64(22);
+  @$pb.TagNumber(23)
+  set mgPtsTotal($fixnum.Int64 v) { $_setInt64(22, v); }
+  @$pb.TagNumber(23)
+  $core.bool hasMgPtsTotal() => $_has(22);
+  @$pb.TagNumber(23)
+  void clearMgPtsTotal() => clearField(23);
+
+  @$pb.TagNumber(24)
+  $fixnum.Int64 get surfPts => $_getI64(23);
+  @$pb.TagNumber(24)
+  set surfPts($fixnum.Int64 v) { $_setInt64(23, v); }
+  @$pb.TagNumber(24)
+  $core.bool hasSurfPts() => $_has(23);
+  @$pb.TagNumber(24)
+  void clearSurfPts() => clearField(24);
+
+  @$pb.TagNumber(25)
+  $fixnum.Int64 get surfPtsRank => $_getI64(24);
+  @$pb.TagNumber(25)
+  set surfPtsRank($fixnum.Int64 v) { $_setInt64(24, v); }
+  @$pb.TagNumber(25)
+  $core.bool hasSurfPtsRank() => $_has(24);
+  @$pb.TagNumber(25)
+  void clearSurfPtsRank() => clearField(25);
+
+  @$pb.TagNumber(26)
+  $fixnum.Int64 get surfPtsTotal => $_getI64(25);
+  @$pb.TagNumber(26)
+  set surfPtsTotal($fixnum.Int64 v) { $_setInt64(25, v); }
+  @$pb.TagNumber(26)
+  $core.bool hasSurfPtsTotal() => $_has(25);
+  @$pb.TagNumber(26)
+  void clearSurfPtsTotal() => clearField(26);
+
+  @$pb.TagNumber(27)
+  $fixnum.Int64 get bhopPts => $_getI64(26);
+  @$pb.TagNumber(27)
+  set bhopPts($fixnum.Int64 v) { $_setInt64(26, v); }
+  @$pb.TagNumber(27)
+  $core.bool hasBhopPts() => $_has(26);
+  @$pb.TagNumber(27)
+  void clearBhopPts() => clearField(27);
+
+  @$pb.TagNumber(28)
+  $fixnum.Int64 get bhopPtsRank => $_getI64(27);
+  @$pb.TagNumber(28)
+  set bhopPtsRank($fixnum.Int64 v) { $_setInt64(27, v); }
+  @$pb.TagNumber(28)
+  $core.bool hasBhopPtsRank() => $_has(27);
+  @$pb.TagNumber(28)
+  void clearBhopPtsRank() => clearField(28);
+
+  @$pb.TagNumber(29)
+  $fixnum.Int64 get bhopPtsTotal => $_getI64(28);
+  @$pb.TagNumber(29)
+  set bhopPtsTotal($fixnum.Int64 v) { $_setInt64(28, v); }
+  @$pb.TagNumber(29)
+  $core.bool hasBhopPtsTotal() => $_has(28);
+  @$pb.TagNumber(29)
+  void clearBhopPtsTotal() => clearField(29);
+
+  @$pb.TagNumber(30)
+  $fixnum.Int64 get kzPts => $_getI64(29);
+  @$pb.TagNumber(30)
+  set kzPts($fixnum.Int64 v) { $_setInt64(29, v); }
+  @$pb.TagNumber(30)
+  $core.bool hasKzPts() => $_has(29);
+  @$pb.TagNumber(30)
+  void clearKzPts() => clearField(30);
+
+  @$pb.TagNumber(31)
+  $fixnum.Int64 get kzPtsRank => $_getI64(30);
+  @$pb.TagNumber(31)
+  set kzPtsRank($fixnum.Int64 v) { $_setInt64(30, v); }
+  @$pb.TagNumber(31)
+  $core.bool hasKzPtsRank() => $_has(30);
+  @$pb.TagNumber(31)
+  void clearKzPtsRank() => clearField(31);
+
+  @$pb.TagNumber(32)
+  $fixnum.Int64 get kzPtsTotal => $_getI64(31);
+  @$pb.TagNumber(32)
+  set kzPtsTotal($fixnum.Int64 v) { $_setInt64(31, v); }
+  @$pb.TagNumber(32)
+  $core.bool hasKzPtsTotal() => $_has(31);
+  @$pb.TagNumber(32)
+  void clearKzPtsTotal() => clearField(32);
+
+  /// CSGO 数据
+  @$pb.TagNumber(33)
+  $fixnum.Int64 get csgoOnlineTime => $_getI64(32);
+  @$pb.TagNumber(33)
+  set csgoOnlineTime($fixnum.Int64 v) { $_setInt64(32, v); }
+  @$pb.TagNumber(33)
+  $core.bool hasCsgoOnlineTime() => $_has(32);
+  @$pb.TagNumber(33)
+  void clearCsgoOnlineTime() => clearField(33);
+
+  @$pb.TagNumber(34)
+  $fixnum.Int64 get csgoZombiePts => $_getI64(33);
+  @$pb.TagNumber(34)
+  set csgoZombiePts($fixnum.Int64 v) { $_setInt64(33, v); }
+  @$pb.TagNumber(34)
+  $core.bool hasCsgoZombiePts() => $_has(33);
+  @$pb.TagNumber(34)
+  void clearCsgoZombiePts() => clearField(34);
+
+  @$pb.TagNumber(35)
+  $fixnum.Int64 get csgoZombieKill => $_getI64(34);
+  @$pb.TagNumber(35)
+  set csgoZombieKill($fixnum.Int64 v) { $_setInt64(34, v); }
+  @$pb.TagNumber(35)
+  $core.bool hasCsgoZombieKill() => $_has(34);
+  @$pb.TagNumber(35)
+  void clearCsgoZombieKill() => clearField(35);
+
+  @$pb.TagNumber(36)
+  $fixnum.Int64 get csgoZombieKnife => $_getI64(35);
+  @$pb.TagNumber(36)
+  set csgoZombieKnife($fixnum.Int64 v) { $_setInt64(35, v); }
+  @$pb.TagNumber(36)
+  $core.bool hasCsgoZombieKnife() => $_has(35);
+  @$pb.TagNumber(36)
+  void clearCsgoZombieKnife() => clearField(36);
+
+  @$pb.TagNumber(37)
+  $fixnum.Int64 get csgoZombieKickAss => $_getI64(36);
+  @$pb.TagNumber(37)
+  set csgoZombieKickAss($fixnum.Int64 v) { $_setInt64(36, v); }
+  @$pb.TagNumber(37)
+  $core.bool hasCsgoZombieKickAss() => $_has(36);
+  @$pb.TagNumber(37)
+  void clearCsgoZombieKickAss() => clearField(37);
+
+  @$pb.TagNumber(38)
+  $fixnum.Int64 get csgoZombieLostAss => $_getI64(37);
+  @$pb.TagNumber(38)
+  set csgoZombieLostAss($fixnum.Int64 v) { $_setInt64(37, v); }
+  @$pb.TagNumber(38)
+  $core.bool hasCsgoZombieLostAss() => $_has(37);
+  @$pb.TagNumber(38)
+  void clearCsgoZombieLostAss() => clearField(38);
+
+  @$pb.TagNumber(39)
+  $fixnum.Int64 get csgoZombieProLevel => $_getI64(38);
+  @$pb.TagNumber(39)
+  set csgoZombieProLevel($fixnum.Int64 v) { $_setInt64(38, v); }
+  @$pb.TagNumber(39)
+  $core.bool hasCsgoZombieProLevel() => $_has(38);
+  @$pb.TagNumber(39)
+  void clearCsgoZombieProLevel() => clearField(39);
+
+  @$pb.TagNumber(40)
+  $fixnum.Int64 get csgoMgPts => $_getI64(39);
+  @$pb.TagNumber(40)
+  set csgoMgPts($fixnum.Int64 v) { $_setInt64(39, v); }
+  @$pb.TagNumber(40)
+  $core.bool hasCsgoMgPts() => $_has(39);
+  @$pb.TagNumber(40)
+  void clearCsgoMgPts() => clearField(40);
+
+  @$pb.TagNumber(41)
+  $fixnum.Int64 get csgoSurfPts => $_getI64(40);
+  @$pb.TagNumber(41)
+  set csgoSurfPts($fixnum.Int64 v) { $_setInt64(40, v); }
+  @$pb.TagNumber(41)
+  $core.bool hasCsgoSurfPts() => $_has(40);
+  @$pb.TagNumber(41)
+  void clearCsgoSurfPts() => clearField(41);
+
+  @$pb.TagNumber(42)
+  $fixnum.Int64 get csgoBhopPts => $_getI64(41);
+  @$pb.TagNumber(42)
+  set csgoBhopPts($fixnum.Int64 v) { $_setInt64(41, v); }
+  @$pb.TagNumber(42)
+  $core.bool hasCsgoBhopPts() => $_has(41);
+  @$pb.TagNumber(42)
+  void clearCsgoBhopPts() => clearField(42);
+
+  @$pb.TagNumber(43)
+  $fixnum.Int64 get csgoKzPts => $_getI64(42);
+  @$pb.TagNumber(43)
+  set csgoKzPts($fixnum.Int64 v) { $_setInt64(42, v); }
+  @$pb.TagNumber(43)
+  $core.bool hasCsgoKzPts() => $_has(42);
+  @$pb.TagNumber(43)
+  void clearCsgoKzPts() => clearField(43);
+
+  @$pb.TagNumber(44)
+  $fixnum.Int64 get csgoTttInnocentPts => $_getI64(43);
+  @$pb.TagNumber(44)
+  set csgoTttInnocentPts($fixnum.Int64 v) { $_setInt64(43, v); }
+  @$pb.TagNumber(44)
+  $core.bool hasCsgoTttInnocentPts() => $_has(43);
+  @$pb.TagNumber(44)
+  void clearCsgoTttInnocentPts() => clearField(44);
+
+  @$pb.TagNumber(45)
+  $fixnum.Int64 get csgoTttDetectivePts => $_getI64(44);
+  @$pb.TagNumber(45)
+  set csgoTttDetectivePts($fixnum.Int64 v) { $_setInt64(44, v); }
+  @$pb.TagNumber(45)
+  $core.bool hasCsgoTttDetectivePts() => $_has(44);
+  @$pb.TagNumber(45)
+  void clearCsgoTttDetectivePts() => clearField(45);
+
+  @$pb.TagNumber(46)
+  $fixnum.Int64 get csgoTttTraitorPts => $_getI64(45);
+  @$pb.TagNumber(46)
+  set csgoTttTraitorPts($fixnum.Int64 v) { $_setInt64(45, v); }
+  @$pb.TagNumber(46)
+  $core.bool hasCsgoTttTraitorPts() => $_has(45);
+  @$pb.TagNumber(46)
+  void clearCsgoTttTraitorPts() => clearField(46);
+
+  /// CSS 数据
+  @$pb.TagNumber(47)
+  $fixnum.Int64 get cssZombiePts => $_getI64(46);
+  @$pb.TagNumber(47)
+  set cssZombiePts($fixnum.Int64 v) { $_setInt64(46, v); }
+  @$pb.TagNumber(47)
+  $core.bool hasCssZombiePts() => $_has(46);
+  @$pb.TagNumber(47)
+  void clearCssZombiePts() => clearField(47);
+
+  @$pb.TagNumber(48)
+  $fixnum.Int64 get cssZombieKill => $_getI64(47);
+  @$pb.TagNumber(48)
+  set cssZombieKill($fixnum.Int64 v) { $_setInt64(47, v); }
+  @$pb.TagNumber(48)
+  $core.bool hasCssZombieKill() => $_has(47);
+  @$pb.TagNumber(48)
+  void clearCssZombieKill() => clearField(48);
+
+  @$pb.TagNumber(49)
+  $fixnum.Int64 get cssZombieKnife => $_getI64(48);
+  @$pb.TagNumber(49)
+  set cssZombieKnife($fixnum.Int64 v) { $_setInt64(48, v); }
+  @$pb.TagNumber(49)
+  $core.bool hasCssZombieKnife() => $_has(48);
+  @$pb.TagNumber(49)
+  void clearCssZombieKnife() => clearField(49);
+
+  @$pb.TagNumber(50)
+  $fixnum.Int64 get cssZombieKickAss => $_getI64(49);
+  @$pb.TagNumber(50)
+  set cssZombieKickAss($fixnum.Int64 v) { $_setInt64(49, v); }
+  @$pb.TagNumber(50)
+  $core.bool hasCssZombieKickAss() => $_has(49);
+  @$pb.TagNumber(50)
+  void clearCssZombieKickAss() => clearField(50);
+
+  @$pb.TagNumber(51)
+  $fixnum.Int64 get cssZombieProLevel => $_getI64(50);
+  @$pb.TagNumber(51)
+  set cssZombieProLevel($fixnum.Int64 v) { $_setInt64(50, v); }
+  @$pb.TagNumber(51)
+  $core.bool hasCssZombieProLevel() => $_has(50);
+  @$pb.TagNumber(51)
+  void clearCssZombieProLevel() => clearField(51);
+
+  @$pb.TagNumber(52)
+  $fixnum.Int64 get cssTitanPts => $_getI64(51);
+  @$pb.TagNumber(52)
+  set cssTitanPts($fixnum.Int64 v) { $_setInt64(51, v); }
+  @$pb.TagNumber(52)
+  $core.bool hasCssTitanPts() => $_has(51);
+  @$pb.TagNumber(52)
+  void clearCssTitanPts() => clearField(52);
+
+  @$pb.TagNumber(53)
+  $fixnum.Int64 get cssTitanKills => $_getI64(52);
+  @$pb.TagNumber(53)
+  set cssTitanKills($fixnum.Int64 v) { $_setInt64(52, v); }
+  @$pb.TagNumber(53)
+  $core.bool hasCssTitanKills() => $_has(52);
+  @$pb.TagNumber(53)
+  void clearCssTitanKills() => clearField(53);
+
+  @$pb.TagNumber(54)
+  $fixnum.Int64 get cssTitanSpecialKills => $_getI64(53);
+  @$pb.TagNumber(54)
+  set cssTitanSpecialKills($fixnum.Int64 v) { $_setInt64(53, v); }
+  @$pb.TagNumber(54)
+  $core.bool hasCssTitanSpecialKills() => $_has(53);
+  @$pb.TagNumber(54)
+  void clearCssTitanSpecialKills() => clearField(54);
+
+  @$pb.TagNumber(55)
+  $fixnum.Int64 get cssTitanHumanKills => $_getI64(54);
+  @$pb.TagNumber(55)
+  set cssTitanHumanKills($fixnum.Int64 v) { $_setInt64(54, v); }
+  @$pb.TagNumber(55)
+  $core.bool hasCssTitanHumanKills() => $_has(54);
+  @$pb.TagNumber(55)
+  void clearCssTitanHumanKills() => clearField(55);
+
+  @$pb.TagNumber(56)
+  $fixnum.Int64 get cssTitanAssists => $_getI64(55);
+  @$pb.TagNumber(56)
+  set cssTitanAssists($fixnum.Int64 v) { $_setInt64(55, v); }
+  @$pb.TagNumber(56)
+  $core.bool hasCssTitanAssists() => $_has(55);
+  @$pb.TagNumber(56)
+  void clearCssTitanAssists() => clearField(56);
+
+  @$pb.TagNumber(57)
+  $fixnum.Int64 get cssTttPts => $_getI64(56);
+  @$pb.TagNumber(57)
+  set cssTttPts($fixnum.Int64 v) { $_setInt64(56, v); }
+  @$pb.TagNumber(57)
+  $core.bool hasCssTttPts() => $_has(56);
+  @$pb.TagNumber(57)
+  void clearCssTttPts() => clearField(57);
+
+  @$pb.TagNumber(58)
+  $fixnum.Int64 get cssTttWrongKill => $_getI64(57);
+  @$pb.TagNumber(58)
+  set cssTttWrongKill($fixnum.Int64 v) { $_setInt64(57, v); }
+  @$pb.TagNumber(58)
+  $core.bool hasCssTttWrongKill() => $_has(57);
+  @$pb.TagNumber(58)
+  void clearCssTttWrongKill() => clearField(58);
+
+  @$pb.TagNumber(59)
+  $fixnum.Int64 get cssTttKarma => $_getI64(58);
+  @$pb.TagNumber(59)
+  set cssTttKarma($fixnum.Int64 v) { $_setInt64(58, v); }
+  @$pb.TagNumber(59)
+  $core.bool hasCssTttKarma() => $_has(58);
+  @$pb.TagNumber(59)
+  void clearCssTttKarma() => clearField(59);
 }
 
 enum MatchSignal_Payload {

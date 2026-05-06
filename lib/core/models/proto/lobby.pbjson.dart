@@ -35,6 +35,7 @@ const LobbyEnvelope$json = {
     {'1': 'broadcast_cd_request', '3': 21, '4': 1, '5': 11, '6': '.lobby.BroadcastCDRequest', '9': 0, '10': 'broadcastCdRequest'},
     {'1': 'portal_use_request', '3': 22, '4': 1, '5': 11, '6': '.lobby.PortalUseRequest', '9': 0, '10': 'portalUseRequest'},
     {'1': 'online_stats_request', '3': 23, '4': 1, '5': 11, '6': '.lobby.OnlineStatsRequest', '9': 0, '10': 'onlineStatsRequest'},
+    {'1': 'profile_steam_bind', '3': 24, '4': 1, '5': 11, '6': '.lobby.ProfileSteamBindRequest', '9': 0, '10': 'profileSteamBind'},
     {'1': 'login_success_response', '3': 50, '4': 1, '5': 11, '6': '.lobby.LoginSuccessResponse', '9': 0, '10': 'loginSuccessResponse'},
     {'1': 'login_failed_response', '3': 51, '4': 1, '5': 11, '6': '.lobby.LoginFailedResponse', '9': 0, '10': 'loginFailedResponse'},
     {'1': 'logout_success_response', '3': 52, '4': 1, '5': 11, '6': '.lobby.LogoutSuccessResponse', '9': 0, '10': 'logoutSuccessResponse'},
@@ -63,6 +64,7 @@ const LobbyEnvelope$json = {
     {'1': 'system_error_response', '3': 75, '4': 1, '5': 11, '6': '.lobby.SystemErrorResponse', '9': 0, '10': 'systemErrorResponse'},
     {'1': 'system_notice_response', '3': 76, '4': 1, '5': 11, '6': '.lobby.SystemNoticeResponse', '9': 0, '10': 'systemNoticeResponse'},
     {'1': 'system_kicked_response', '3': 77, '4': 1, '5': 11, '6': '.lobby.SystemKickedResponse', '9': 0, '10': 'systemKickedResponse'},
+    {'1': 'steam_bind_success', '3': 78, '4': 1, '5': 11, '6': '.lobby.SteamBindSuccessResponse', '9': 0, '10': 'steamBindSuccess'},
   ],
   '8': [
     {'1': 'payload'},
@@ -93,51 +95,54 @@ final $typed_data.Uint8List lobbyEnvelopeDescriptor = $convert.base64Decode(
     '9hZGNhc3RDRFJlcXVlc3RIAFISYnJvYWRjYXN0Q2RSZXF1ZXN0EkcKEnBvcnRhbF91c2VfcmVx'
     'dWVzdBgWIAEoCzIXLmxvYmJ5LlBvcnRhbFVzZVJlcXVlc3RIAFIQcG9ydGFsVXNlUmVxdWVzdB'
     'JNChRvbmxpbmVfc3RhdHNfcmVxdWVzdBgXIAEoCzIZLmxvYmJ5Lk9ubGluZVN0YXRzUmVxdWVz'
-    'dEgAUhJvbmxpbmVTdGF0c1JlcXVlc3QSUwoWbG9naW5fc3VjY2Vzc19yZXNwb25zZRgyIAEoCz'
-    'IbLmxvYmJ5LkxvZ2luU3VjY2Vzc1Jlc3BvbnNlSABSFGxvZ2luU3VjY2Vzc1Jlc3BvbnNlElAK'
-    'FWxvZ2luX2ZhaWxlZF9yZXNwb25zZRgzIAEoCzIaLmxvYmJ5LkxvZ2luRmFpbGVkUmVzcG9uc2'
-    'VIAFITbG9naW5GYWlsZWRSZXNwb25zZRJWChdsb2dvdXRfc3VjY2Vzc19yZXNwb25zZRg0IAEo'
-    'CzIcLmxvYmJ5LkxvZ291dFN1Y2Nlc3NSZXNwb25zZUgAUhVsb2dvdXRTdWNjZXNzUmVzcG9uc2'
-    'USUAoVam9pbl9zdWNjZXNzX3Jlc3BvbnNlGDUgASgLMhoubG9iYnkuSm9pblN1Y2Nlc3NSZXNw'
-    'b25zZUgAUhNqb2luU3VjY2Vzc1Jlc3BvbnNlEkYKEXNuYXBzaG90X3Jlc3BvbnNlGDYgASgLMh'
-    'cubG9iYnkuU25hcHNob3RSZXNwb25zZUgAUhBzbmFwc2hvdFJlc3BvbnNlElMKFnByZXNlbmNl'
-    'X2pvaW5fcmVzcG9uc2UYNyABKAsyGy5sb2JieS5QcmVzZW5jZUpvaW5SZXNwb25zZUgAUhRwcm'
-    'VzZW5jZUpvaW5SZXNwb25zZRJWChdwcmVzZW5jZV9sZWF2ZV9yZXNwb25zZRg4IAEoCzIcLmxv'
-    'YmJ5LlByZXNlbmNlTGVhdmVSZXNwb25zZUgAUhVwcmVzZW5jZUxlYXZlUmVzcG9uc2USXAoZaW'
-    'RlbnRpdHlfY2hhbmdlZF9yZXNwb25zZRg5IAEoCzIeLmxvYmJ5LklkZW50aXR5Q2hhbmdlZFJl'
-    'c3BvbnNlSABSF2lkZW50aXR5Q2hhbmdlZFJlc3BvbnNlElYKF21vdmVfYnJvYWRjYXN0X3Jlc3'
-    'BvbnNlGDogASgLMhwubG9iYnkuTW92ZUJyb2FkY2FzdFJlc3BvbnNlSABSFW1vdmVCcm9hZGNh'
-    'c3RSZXNwb25zZRJNChRtb3ZlX3JlamVjdF9yZXNwb25zZRg7IAEoCzIZLmxvYmJ5Lk1vdmVSZW'
-    'plY3RSZXNwb25zZUgAUhJtb3ZlUmVqZWN0UmVzcG9uc2USUAoVY2hhdF9tZXNzYWdlX3Jlc3Bv'
-    'bnNlGDwgASgLMhoubG9iYnkuQ2hhdE1lc3NhZ2VSZXNwb25zZUgAUhNjaGF0TWVzc2FnZVJlc3'
-    'BvbnNlEk0KFGNoYXRfcmVqZWN0X3Jlc3BvbnNlGD0gASgLMhkubG9iYnkuQ2hhdFJlamVjdFJl'
-    'c3BvbnNlSABSEmNoYXRSZWplY3RSZXNwb25zZRJfChphbm9ueW1vdXNfY2hhbmdlZF9yZXNwb2'
-    '5zZRg+IAEoCzIfLmxvYmJ5LkFub255bW91c0NoYW5nZWRSZXNwb25zZUgAUhhhbm9ueW1vdXND'
-    'aGFuZ2VkUmVzcG9uc2USVgoXc3ByaXRlX2NoYW5nZWRfcmVzcG9uc2UYPyABKAsyHC5sb2JieS'
-    '5TcHJpdGVDaGFuZ2VkUmVzcG9uc2VIAFIVc3ByaXRlQ2hhbmdlZFJlc3BvbnNlEmYKHXNwcml0'
-    'ZV9jaGFuZ2VfcmVqZWN0X3Jlc3BvbnNlGEAgASgLMiEubG9iYnkuU3ByaXRlQ2hhbmdlUmVqZW'
-    'N0UmVzcG9uc2VIAFIac3ByaXRlQ2hhbmdlUmVqZWN0UmVzcG9uc2USaQoec3RhdHVzX3RleHRf'
-    'YnJvYWRjYXN0X3Jlc3BvbnNlGEEgASgLMiIubG9iYnkuU3RhdHVzVGV4dEJyb2FkY2FzdFJlc3'
-    'BvbnNlSABSG3N0YXR1c1RleHRCcm9hZGNhc3RSZXNwb25zZRJmCh1kaXNwbGF5X25hbWVfY2hh'
-    'bmdlZF9yZXNwb25zZRhCIAEoCzIhLmxvYmJ5LkRpc3BsYXlOYW1lQ2hhbmdlZFJlc3BvbnNlSA'
-    'BSGmRpc3BsYXlOYW1lQ2hhbmdlZFJlc3BvbnNlEkAKD2Fzc2V0c19yZXNwb25zZRhDIAEoCzIV'
-    'LmxvYmJ5LkFzc2V0c1Jlc3BvbnNlSABSDmFzc2V0c1Jlc3BvbnNlElYKF2Fzc2V0c191cGRhdG'
-    'VkX3Jlc3BvbnNlGEQgASgLMhwubG9iYnkuQXNzZXRzVXBkYXRlZFJlc3BvbnNlSABSFWFzc2V0'
-    'c1VwZGF0ZWRSZXNwb25zZRJZChhwb3J0YWxfdGVsZXBvcnRfcmVzcG9uc2UYRSABKAsyHS5sb2'
-    'JieS5Qb3J0YWxUZWxlcG9ydFJlc3BvbnNlSABSFnBvcnRhbFRlbGVwb3J0UmVzcG9uc2USXQoa'
-    'cG9ydGFsX3VzZV9yZWplY3RfcmVzcG9uc2UYRiABKAsyHi5sb2JieS5Qb3J0YWxVc2VSZWplY3'
-    'RSZXNwb25zZUgAUhdwb3J0YWxVc2VSZWplY3RSZXNwb25zZRJfChpicm9hZGNhc3RfbWVzc2Fn'
-    'ZV9yZXNwb25zZRhHIAEoCzIfLmxvYmJ5LkJyb2FkY2FzdE1lc3NhZ2VSZXNwb25zZUgAUhhicm'
-    '9hZGNhc3RNZXNzYWdlUmVzcG9uc2USXAoZYnJvYWRjYXN0X3JlamVjdF9yZXNwb25zZRhIIAEo'
-    'CzIeLmxvYmJ5LkJyb2FkY2FzdFJlamVjdFJlc3BvbnNlSABSF2Jyb2FkY2FzdFJlamVjdFJlc3'
-    'BvbnNlElAKFWJyb2FkY2FzdF9jZF9yZXNwb25zZRhJIAEoCzIaLmxvYmJ5LkJyb2FkY2FzdENE'
-    'UmVzcG9uc2VIAFITYnJvYWRjYXN0Q2RSZXNwb25zZRJQChVvbmxpbmVfc3RhdHNfcmVzcG9uc2'
-    'UYSiABKAsyGi5sb2JieS5PbmxpbmVTdGF0c1Jlc3BvbnNlSABSE29ubGluZVN0YXRzUmVzcG9u'
-    'c2USUAoVc3lzdGVtX2Vycm9yX3Jlc3BvbnNlGEsgASgLMhoubG9iYnkuU3lzdGVtRXJyb3JSZX'
-    'Nwb25zZUgAUhNzeXN0ZW1FcnJvclJlc3BvbnNlElMKFnN5c3RlbV9ub3RpY2VfcmVzcG9uc2UY'
-    'TCABKAsyGy5sb2JieS5TeXN0ZW1Ob3RpY2VSZXNwb25zZUgAUhRzeXN0ZW1Ob3RpY2VSZXNwb2'
-    '5zZRJTChZzeXN0ZW1fa2lja2VkX3Jlc3BvbnNlGE0gASgLMhsubG9iYnkuU3lzdGVtS2lja2Vk'
-    'UmVzcG9uc2VIAFIUc3lzdGVtS2lja2VkUmVzcG9uc2VCCQoHcGF5bG9hZA==');
+    'dEgAUhJvbmxpbmVTdGF0c1JlcXVlc3QSTgoScHJvZmlsZV9zdGVhbV9iaW5kGBggASgLMh4ubG'
+    '9iYnkuUHJvZmlsZVN0ZWFtQmluZFJlcXVlc3RIAFIQcHJvZmlsZVN0ZWFtQmluZBJTChZsb2dp'
+    'bl9zdWNjZXNzX3Jlc3BvbnNlGDIgASgLMhsubG9iYnkuTG9naW5TdWNjZXNzUmVzcG9uc2VIAF'
+    'IUbG9naW5TdWNjZXNzUmVzcG9uc2USUAoVbG9naW5fZmFpbGVkX3Jlc3BvbnNlGDMgASgLMhou'
+    'bG9iYnkuTG9naW5GYWlsZWRSZXNwb25zZUgAUhNsb2dpbkZhaWxlZFJlc3BvbnNlElYKF2xvZ2'
+    '91dF9zdWNjZXNzX3Jlc3BvbnNlGDQgASgLMhwubG9iYnkuTG9nb3V0U3VjY2Vzc1Jlc3BvbnNl'
+    'SABSFWxvZ291dFN1Y2Nlc3NSZXNwb25zZRJQChVqb2luX3N1Y2Nlc3NfcmVzcG9uc2UYNSABKA'
+    'syGi5sb2JieS5Kb2luU3VjY2Vzc1Jlc3BvbnNlSABSE2pvaW5TdWNjZXNzUmVzcG9uc2USRgoR'
+    'c25hcHNob3RfcmVzcG9uc2UYNiABKAsyFy5sb2JieS5TbmFwc2hvdFJlc3BvbnNlSABSEHNuYX'
+    'BzaG90UmVzcG9uc2USUwoWcHJlc2VuY2Vfam9pbl9yZXNwb25zZRg3IAEoCzIbLmxvYmJ5LlBy'
+    'ZXNlbmNlSm9pblJlc3BvbnNlSABSFHByZXNlbmNlSm9pblJlc3BvbnNlElYKF3ByZXNlbmNlX2'
+    'xlYXZlX3Jlc3BvbnNlGDggASgLMhwubG9iYnkuUHJlc2VuY2VMZWF2ZVJlc3BvbnNlSABSFXBy'
+    'ZXNlbmNlTGVhdmVSZXNwb25zZRJcChlpZGVudGl0eV9jaGFuZ2VkX3Jlc3BvbnNlGDkgASgLMh'
+    '4ubG9iYnkuSWRlbnRpdHlDaGFuZ2VkUmVzcG9uc2VIAFIXaWRlbnRpdHlDaGFuZ2VkUmVzcG9u'
+    'c2USVgoXbW92ZV9icm9hZGNhc3RfcmVzcG9uc2UYOiABKAsyHC5sb2JieS5Nb3ZlQnJvYWRjYX'
+    'N0UmVzcG9uc2VIAFIVbW92ZUJyb2FkY2FzdFJlc3BvbnNlEk0KFG1vdmVfcmVqZWN0X3Jlc3Bv'
+    'bnNlGDsgASgLMhkubG9iYnkuTW92ZVJlamVjdFJlc3BvbnNlSABSEm1vdmVSZWplY3RSZXNwb2'
+    '5zZRJQChVjaGF0X21lc3NhZ2VfcmVzcG9uc2UYPCABKAsyGi5sb2JieS5DaGF0TWVzc2FnZVJl'
+    'c3BvbnNlSABSE2NoYXRNZXNzYWdlUmVzcG9uc2USTQoUY2hhdF9yZWplY3RfcmVzcG9uc2UYPS'
+    'ABKAsyGS5sb2JieS5DaGF0UmVqZWN0UmVzcG9uc2VIAFISY2hhdFJlamVjdFJlc3BvbnNlEl8K'
+    'GmFub255bW91c19jaGFuZ2VkX3Jlc3BvbnNlGD4gASgLMh8ubG9iYnkuQW5vbnltb3VzQ2hhbm'
+    'dlZFJlc3BvbnNlSABSGGFub255bW91c0NoYW5nZWRSZXNwb25zZRJWChdzcHJpdGVfY2hhbmdl'
+    'ZF9yZXNwb25zZRg/IAEoCzIcLmxvYmJ5LlNwcml0ZUNoYW5nZWRSZXNwb25zZUgAUhVzcHJpdG'
+    'VDaGFuZ2VkUmVzcG9uc2USZgodc3ByaXRlX2NoYW5nZV9yZWplY3RfcmVzcG9uc2UYQCABKAsy'
+    'IS5sb2JieS5TcHJpdGVDaGFuZ2VSZWplY3RSZXNwb25zZUgAUhpzcHJpdGVDaGFuZ2VSZWplY3'
+    'RSZXNwb25zZRJpCh5zdGF0dXNfdGV4dF9icm9hZGNhc3RfcmVzcG9uc2UYQSABKAsyIi5sb2Ji'
+    'eS5TdGF0dXNUZXh0QnJvYWRjYXN0UmVzcG9uc2VIAFIbc3RhdHVzVGV4dEJyb2FkY2FzdFJlc3'
+    'BvbnNlEmYKHWRpc3BsYXlfbmFtZV9jaGFuZ2VkX3Jlc3BvbnNlGEIgASgLMiEubG9iYnkuRGlz'
+    'cGxheU5hbWVDaGFuZ2VkUmVzcG9uc2VIAFIaZGlzcGxheU5hbWVDaGFuZ2VkUmVzcG9uc2USQA'
+    'oPYXNzZXRzX3Jlc3BvbnNlGEMgASgLMhUubG9iYnkuQXNzZXRzUmVzcG9uc2VIAFIOYXNzZXRz'
+    'UmVzcG9uc2USVgoXYXNzZXRzX3VwZGF0ZWRfcmVzcG9uc2UYRCABKAsyHC5sb2JieS5Bc3NldH'
+    'NVcGRhdGVkUmVzcG9uc2VIAFIVYXNzZXRzVXBkYXRlZFJlc3BvbnNlElkKGHBvcnRhbF90ZWxl'
+    'cG9ydF9yZXNwb25zZRhFIAEoCzIdLmxvYmJ5LlBvcnRhbFRlbGVwb3J0UmVzcG9uc2VIAFIWcG'
+    '9ydGFsVGVsZXBvcnRSZXNwb25zZRJdChpwb3J0YWxfdXNlX3JlamVjdF9yZXNwb25zZRhGIAEo'
+    'CzIeLmxvYmJ5LlBvcnRhbFVzZVJlamVjdFJlc3BvbnNlSABSF3BvcnRhbFVzZVJlamVjdFJlc3'
+    'BvbnNlEl8KGmJyb2FkY2FzdF9tZXNzYWdlX3Jlc3BvbnNlGEcgASgLMh8ubG9iYnkuQnJvYWRj'
+    'YXN0TWVzc2FnZVJlc3BvbnNlSABSGGJyb2FkY2FzdE1lc3NhZ2VSZXNwb25zZRJcChlicm9hZG'
+    'Nhc3RfcmVqZWN0X3Jlc3BvbnNlGEggASgLMh4ubG9iYnkuQnJvYWRjYXN0UmVqZWN0UmVzcG9u'
+    'c2VIAFIXYnJvYWRjYXN0UmVqZWN0UmVzcG9uc2USUAoVYnJvYWRjYXN0X2NkX3Jlc3BvbnNlGE'
+    'kgASgLMhoubG9iYnkuQnJvYWRjYXN0Q0RSZXNwb25zZUgAUhNicm9hZGNhc3RDZFJlc3BvbnNl'
+    'ElAKFW9ubGluZV9zdGF0c19yZXNwb25zZRhKIAEoCzIaLmxvYmJ5Lk9ubGluZVN0YXRzUmVzcG'
+    '9uc2VIAFITb25saW5lU3RhdHNSZXNwb25zZRJQChVzeXN0ZW1fZXJyb3JfcmVzcG9uc2UYSyAB'
+    'KAsyGi5sb2JieS5TeXN0ZW1FcnJvclJlc3BvbnNlSABSE3N5c3RlbUVycm9yUmVzcG9uc2USUw'
+    'oWc3lzdGVtX25vdGljZV9yZXNwb25zZRhMIAEoCzIbLmxvYmJ5LlN5c3RlbU5vdGljZVJlc3Bv'
+    'bnNlSABSFHN5c3RlbU5vdGljZVJlc3BvbnNlElMKFnN5c3RlbV9raWNrZWRfcmVzcG9uc2UYTS'
+    'ABKAsyGy5sb2JieS5TeXN0ZW1LaWNrZWRSZXNwb25zZUgAUhRzeXN0ZW1LaWNrZWRSZXNwb25z'
+    'ZRJPChJzdGVhbV9iaW5kX3N1Y2Nlc3MYTiABKAsyHy5sb2JieS5TdGVhbUJpbmRTdWNjZXNzUm'
+    'VzcG9uc2VIAFIQc3RlYW1CaW5kU3VjY2Vzc0IJCgdwYXlsb2Fk');
 
 @$core.Deprecated('Use lobbyUserDescriptor instead')
 const LobbyUser$json = {
@@ -155,6 +160,7 @@ const LobbyUser$json = {
     {'1': 'is_anonymous', '3': 10, '4': 1, '5': 8, '10': 'isAnonymous'},
     {'1': 'status_text', '3': 11, '4': 1, '5': 9, '10': 'statusText'},
     {'1': 'last_message', '3': 12, '4': 1, '5': 9, '10': 'lastMessage'},
+    {'1': 'steam_id', '3': 13, '4': 1, '5': 9, '10': 'steamId'},
   ],
 };
 
@@ -166,7 +172,7 @@ final $typed_data.Uint8List lobbyUserDescriptor = $convert.base64Decode(
     'IBeBIMCgF5GAcgASgBUgF5EhYKBmZhY2luZxgIIAEoCVIGZmFjaW5nEhsKCWlzX29ubGluZRgJ'
     'IAEoCFIIaXNPbmxpbmUSIQoMaXNfYW5vbnltb3VzGAogASgIUgtpc0Fub255bW91cxIfCgtzdG'
     'F0dXNfdGV4dBgLIAEoCVIKc3RhdHVzVGV4dBIhCgxsYXN0X21lc3NhZ2UYDCABKAlSC2xhc3RN'
-    'ZXNzYWdl');
+    'ZXNzYWdlEhkKCHN0ZWFtX2lkGA0gASgJUgdzdGVhbUlk');
 
 @$core.Deprecated('Use lobbyMessageDescriptor instead')
 const LobbyMessage$json = {
@@ -411,6 +417,20 @@ const ProfileDisplayNameUpdateRequest$json = {
 final $typed_data.Uint8List profileDisplayNameUpdateRequestDescriptor = $convert.base64Decode(
     'Ch9Qcm9maWxlRGlzcGxheU5hbWVVcGRhdGVSZXF1ZXN0Eh8KC2N1c3RvbV9uYW1lGAEgASgJUg'
     'pjdXN0b21OYW1lEh0KCnN0ZWFtX25hbWUYAiABKAlSCXN0ZWFtTmFtZQ==');
+
+@$core.Deprecated('Use profileSteamBindRequestDescriptor instead')
+const ProfileSteamBindRequest$json = {
+  '1': 'ProfileSteamBindRequest',
+  '2': [
+    {'1': 'steam_id', '3': 1, '4': 1, '5': 9, '10': 'steamId'},
+    {'1': 'steam_name', '3': 2, '4': 1, '5': 9, '10': 'steamName'},
+  ],
+};
+
+/// Descriptor for `ProfileSteamBindRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List profileSteamBindRequestDescriptor = $convert.base64Decode(
+    'ChdQcm9maWxlU3RlYW1CaW5kUmVxdWVzdBIZCghzdGVhbV9pZBgBIAEoCVIHc3RlYW1JZBIdCg'
+    'pzdGVhbV9uYW1lGAIgASgJUglzdGVhbU5hbWU=');
 
 @$core.Deprecated('Use snapshotRequestDescriptor instead')
 const SnapshotRequest$json = {
@@ -901,6 +921,22 @@ final $typed_data.Uint8List systemKickedResponseDescriptor = $convert.base64Deco
     'ChRTeXN0ZW1LaWNrZWRSZXNwb25zZRIWCgZyZWFzb24YASABKAlSBnJlYXNvbhIYCgdtZXNzYW'
     'dlGAIgASgJUgdtZXNzYWdl');
 
+@$core.Deprecated('Use steamBindSuccessResponseDescriptor instead')
+const SteamBindSuccessResponse$json = {
+  '1': 'SteamBindSuccessResponse',
+  '2': [
+    {'1': 'steam_id', '3': 1, '4': 1, '5': 9, '10': 'steamId'},
+    {'1': 'steam_name', '3': 2, '4': 1, '5': 9, '10': 'steamName'},
+    {'1': 'display_nickname', '3': 3, '4': 1, '5': 9, '10': 'displayNickname'},
+  ],
+};
+
+/// Descriptor for `SteamBindSuccessResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List steamBindSuccessResponseDescriptor = $convert.base64Decode(
+    'ChhTdGVhbUJpbmRTdWNjZXNzUmVzcG9uc2USGQoIc3RlYW1faWQYASABKAlSB3N0ZWFtSWQSHQ'
+    'oKc3RlYW1fbmFtZRgCIAEoCVIJc3RlYW1OYW1lEikKEGRpc3BsYXlfbmlja25hbWUYAyABKAlS'
+    'D2Rpc3BsYXlOaWNrbmFtZQ==');
+
 @$core.Deprecated('Use lobbyJoinRequestDescriptor instead')
 const LobbyJoinRequest$json = {
   '1': 'LobbyJoinRequest',
@@ -926,6 +962,127 @@ const LobbyJoinResponse$json = {
 final $typed_data.Uint8List lobbyJoinResponseDescriptor = $convert.base64Decode(
     'ChFMb2JieUpvaW5SZXNwb25zZRIZCghtYXRjaF9pZBgBIAEoCVIHbWF0Y2hJZBIVCgZtYXBfaW'
     'QYAiABKAlSBW1hcElk');
+
+@$core.Deprecated('Use steamUserInfoRequestDescriptor instead')
+const SteamUserInfoRequest$json = {
+  '1': 'SteamUserInfoRequest',
+  '2': [
+    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
+  ],
+};
+
+/// Descriptor for `SteamUserInfoRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List steamUserInfoRequestDescriptor = $convert.base64Decode(
+    'ChRTdGVhbVVzZXJJbmZvUmVxdWVzdBIXCgd1c2VyX2lkGAEgASgJUgZ1c2VySWQ=');
+
+@$core.Deprecated('Use steamUserInfoResponseDescriptor instead')
+const SteamUserInfoResponse$json = {
+  '1': 'SteamUserInfoResponse',
+  '2': [
+    {'1': 'code', '3': 1, '4': 1, '5': 5, '10': 'code'},
+    {'1': 'message', '3': 2, '4': 1, '5': 9, '10': 'message'},
+    {'1': 'forum_uid', '3': 3, '4': 1, '5': 3, '10': 'forumUid'},
+    {'1': 'forum_username', '3': 4, '4': 1, '5': 9, '10': 'forumUsername'},
+    {'1': 'forum_avatar_url', '3': 5, '4': 1, '5': 9, '10': 'forumAvatarUrl'},
+    {'1': 'steam_id', '3': 6, '4': 1, '5': 9, '10': 'steamId'},
+    {'1': 'steam_id64', '3': 7, '4': 1, '5': 9, '10': 'steamId64'},
+    {'1': 'avatar_url', '3': 8, '4': 1, '5': 9, '10': 'avatarUrl'},
+    {'1': 'steam_name', '3': 9, '4': 1, '5': 9, '10': 'steamName'},
+    {'1': 'in_game_name', '3': 10, '4': 1, '5': 9, '10': 'inGameName'},
+    {'1': 'join_date', '3': 11, '4': 1, '5': 9, '10': 'joinDate'},
+    {'1': 'vip_level', '3': 12, '4': 1, '5': 5, '10': 'vipLevel'},
+    {'1': 'vip_date', '3': 13, '4': 1, '5': 9, '10': 'vipDate'},
+    {'1': 'vip_end', '3': 14, '4': 1, '5': 9, '10': 'vipEnd'},
+    {'1': 'csgo_gold', '3': 15, '4': 1, '5': 3, '10': 'csgoGold'},
+    {'1': 'online_time_total', '3': 16, '4': 1, '5': 3, '10': 'onlineTimeTotal'},
+    {'1': 'online_time_day', '3': 17, '4': 1, '5': 3, '10': 'onlineTimeDay'},
+    {'1': 'cs2_gold', '3': 18, '4': 1, '5': 3, '10': 'cs2Gold'},
+    {'1': 'cs2_point', '3': 19, '4': 1, '5': 3, '10': 'cs2Point'},
+    {'1': 'cs2_spent_point', '3': 20, '4': 1, '5': 3, '10': 'cs2SpentPoint'},
+    {'1': 'mg_pts', '3': 21, '4': 1, '5': 3, '10': 'mgPts'},
+    {'1': 'mg_pts_rank', '3': 22, '4': 1, '5': 3, '10': 'mgPtsRank'},
+    {'1': 'mg_pts_total', '3': 23, '4': 1, '5': 3, '10': 'mgPtsTotal'},
+    {'1': 'surf_pts', '3': 24, '4': 1, '5': 3, '10': 'surfPts'},
+    {'1': 'surf_pts_rank', '3': 25, '4': 1, '5': 3, '10': 'surfPtsRank'},
+    {'1': 'surf_pts_total', '3': 26, '4': 1, '5': 3, '10': 'surfPtsTotal'},
+    {'1': 'bhop_pts', '3': 27, '4': 1, '5': 3, '10': 'bhopPts'},
+    {'1': 'bhop_pts_rank', '3': 28, '4': 1, '5': 3, '10': 'bhopPtsRank'},
+    {'1': 'bhop_pts_total', '3': 29, '4': 1, '5': 3, '10': 'bhopPtsTotal'},
+    {'1': 'kz_pts', '3': 30, '4': 1, '5': 3, '10': 'kzPts'},
+    {'1': 'kz_pts_rank', '3': 31, '4': 1, '5': 3, '10': 'kzPtsRank'},
+    {'1': 'kz_pts_total', '3': 32, '4': 1, '5': 3, '10': 'kzPtsTotal'},
+    {'1': 'csgo_online_time', '3': 33, '4': 1, '5': 3, '10': 'csgoOnlineTime'},
+    {'1': 'csgo_zombie_pts', '3': 34, '4': 1, '5': 3, '10': 'csgoZombiePts'},
+    {'1': 'csgo_zombie_kill', '3': 35, '4': 1, '5': 3, '10': 'csgoZombieKill'},
+    {'1': 'csgo_zombie_knife', '3': 36, '4': 1, '5': 3, '10': 'csgoZombieKnife'},
+    {'1': 'csgo_zombie_kick_ass', '3': 37, '4': 1, '5': 3, '10': 'csgoZombieKickAss'},
+    {'1': 'csgo_zombie_lost_ass', '3': 38, '4': 1, '5': 3, '10': 'csgoZombieLostAss'},
+    {'1': 'csgo_zombie_pro_level', '3': 39, '4': 1, '5': 3, '10': 'csgoZombieProLevel'},
+    {'1': 'csgo_mg_pts', '3': 40, '4': 1, '5': 3, '10': 'csgoMgPts'},
+    {'1': 'csgo_surf_pts', '3': 41, '4': 1, '5': 3, '10': 'csgoSurfPts'},
+    {'1': 'csgo_bhop_pts', '3': 42, '4': 1, '5': 3, '10': 'csgoBhopPts'},
+    {'1': 'csgo_kz_pts', '3': 43, '4': 1, '5': 3, '10': 'csgoKzPts'},
+    {'1': 'csgo_ttt_innocent_pts', '3': 44, '4': 1, '5': 3, '10': 'csgoTttInnocentPts'},
+    {'1': 'csgo_ttt_detective_pts', '3': 45, '4': 1, '5': 3, '10': 'csgoTttDetectivePts'},
+    {'1': 'csgo_ttt_traitor_pts', '3': 46, '4': 1, '5': 3, '10': 'csgoTttTraitorPts'},
+    {'1': 'css_zombie_pts', '3': 47, '4': 1, '5': 3, '10': 'cssZombiePts'},
+    {'1': 'css_zombie_kill', '3': 48, '4': 1, '5': 3, '10': 'cssZombieKill'},
+    {'1': 'css_zombie_knife', '3': 49, '4': 1, '5': 3, '10': 'cssZombieKnife'},
+    {'1': 'css_zombie_kick_ass', '3': 50, '4': 1, '5': 3, '10': 'cssZombieKickAss'},
+    {'1': 'css_zombie_pro_level', '3': 51, '4': 1, '5': 3, '10': 'cssZombieProLevel'},
+    {'1': 'css_titan_pts', '3': 52, '4': 1, '5': 3, '10': 'cssTitanPts'},
+    {'1': 'css_titan_kills', '3': 53, '4': 1, '5': 3, '10': 'cssTitanKills'},
+    {'1': 'css_titan_special_kills', '3': 54, '4': 1, '5': 3, '10': 'cssTitanSpecialKills'},
+    {'1': 'css_titan_human_kills', '3': 55, '4': 1, '5': 3, '10': 'cssTitanHumanKills'},
+    {'1': 'css_titan_assists', '3': 56, '4': 1, '5': 3, '10': 'cssTitanAssists'},
+    {'1': 'css_ttt_pts', '3': 57, '4': 1, '5': 3, '10': 'cssTttPts'},
+    {'1': 'css_ttt_wrong_kill', '3': 58, '4': 1, '5': 3, '10': 'cssTttWrongKill'},
+    {'1': 'css_ttt_karma', '3': 59, '4': 1, '5': 3, '10': 'cssTttKarma'},
+  ],
+};
+
+/// Descriptor for `SteamUserInfoResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List steamUserInfoResponseDescriptor = $convert.base64Decode(
+    'ChVTdGVhbVVzZXJJbmZvUmVzcG9uc2USEgoEY29kZRgBIAEoBVIEY29kZRIYCgdtZXNzYWdlGA'
+    'IgASgJUgdtZXNzYWdlEhsKCWZvcnVtX3VpZBgDIAEoA1IIZm9ydW1VaWQSJQoOZm9ydW1fdXNl'
+    'cm5hbWUYBCABKAlSDWZvcnVtVXNlcm5hbWUSKAoQZm9ydW1fYXZhdGFyX3VybBgFIAEoCVIOZm'
+    '9ydW1BdmF0YXJVcmwSGQoIc3RlYW1faWQYBiABKAlSB3N0ZWFtSWQSHQoKc3RlYW1faWQ2NBgH'
+    'IAEoCVIJc3RlYW1JZDY0Eh0KCmF2YXRhcl91cmwYCCABKAlSCWF2YXRhclVybBIdCgpzdGVhbV'
+    '9uYW1lGAkgASgJUglzdGVhbU5hbWUSIAoMaW5fZ2FtZV9uYW1lGAogASgJUgppbkdhbWVOYW1l'
+    'EhsKCWpvaW5fZGF0ZRgLIAEoCVIIam9pbkRhdGUSGwoJdmlwX2xldmVsGAwgASgFUgh2aXBMZX'
+    'ZlbBIZCgh2aXBfZGF0ZRgNIAEoCVIHdmlwRGF0ZRIXCgd2aXBfZW5kGA4gASgJUgZ2aXBFbmQS'
+    'GwoJY3Nnb19nb2xkGA8gASgDUghjc2dvR29sZBIqChFvbmxpbmVfdGltZV90b3RhbBgQIAEoA1'
+    'IPb25saW5lVGltZVRvdGFsEiYKD29ubGluZV90aW1lX2RheRgRIAEoA1INb25saW5lVGltZURh'
+    'eRIZCghjczJfZ29sZBgSIAEoA1IHY3MyR29sZBIbCgljczJfcG9pbnQYEyABKANSCGNzMlBvaW'
+    '50EiYKD2NzMl9zcGVudF9wb2ludBgUIAEoA1INY3MyU3BlbnRQb2ludBIVCgZtZ19wdHMYFSAB'
+    'KANSBW1nUHRzEh4KC21nX3B0c19yYW5rGBYgASgDUgltZ1B0c1JhbmsSIAoMbWdfcHRzX3RvdG'
+    'FsGBcgASgDUgptZ1B0c1RvdGFsEhkKCHN1cmZfcHRzGBggASgDUgdzdXJmUHRzEiIKDXN1cmZf'
+    'cHRzX3JhbmsYGSABKANSC3N1cmZQdHNSYW5rEiQKDnN1cmZfcHRzX3RvdGFsGBogASgDUgxzdX'
+    'JmUHRzVG90YWwSGQoIYmhvcF9wdHMYGyABKANSB2Job3BQdHMSIgoNYmhvcF9wdHNfcmFuaxgc'
+    'IAEoA1ILYmhvcFB0c1JhbmsSJAoOYmhvcF9wdHNfdG90YWwYHSABKANSDGJob3BQdHNUb3RhbB'
+    'IVCgZrel9wdHMYHiABKANSBWt6UHRzEh4KC2t6X3B0c19yYW5rGB8gASgDUglrelB0c1JhbmsS'
+    'IAoMa3pfcHRzX3RvdGFsGCAgASgDUgprelB0c1RvdGFsEigKEGNzZ29fb25saW5lX3RpbWUYIS'
+    'ABKANSDmNzZ29PbmxpbmVUaW1lEiYKD2NzZ29fem9tYmllX3B0cxgiIAEoA1INY3Nnb1pvbWJp'
+    'ZVB0cxIoChBjc2dvX3pvbWJpZV9raWxsGCMgASgDUg5jc2dvWm9tYmllS2lsbBIqChFjc2dvX3'
+    'pvbWJpZV9rbmlmZRgkIAEoA1IPY3Nnb1pvbWJpZUtuaWZlEi8KFGNzZ29fem9tYmllX2tpY2tf'
+    'YXNzGCUgASgDUhFjc2dvWm9tYmllS2lja0FzcxIvChRjc2dvX3pvbWJpZV9sb3N0X2FzcxgmIA'
+    'EoA1IRY3Nnb1pvbWJpZUxvc3RBc3MSMQoVY3Nnb196b21iaWVfcHJvX2xldmVsGCcgASgDUhJj'
+    'c2dvWm9tYmllUHJvTGV2ZWwSHgoLY3Nnb19tZ19wdHMYKCABKANSCWNzZ29NZ1B0cxIiCg1jc2'
+    'dvX3N1cmZfcHRzGCkgASgDUgtjc2dvU3VyZlB0cxIiCg1jc2dvX2Job3BfcHRzGCogASgDUgtj'
+    'c2dvQmhvcFB0cxIeCgtjc2dvX2t6X3B0cxgrIAEoA1IJY3Nnb0t6UHRzEjEKFWNzZ29fdHR0X2'
+    'lubm9jZW50X3B0cxgsIAEoA1ISY3Nnb1R0dElubm9jZW50UHRzEjMKFmNzZ29fdHR0X2RldGVj'
+    'dGl2ZV9wdHMYLSABKANSE2NzZ29UdHREZXRlY3RpdmVQdHMSLwoUY3Nnb190dHRfdHJhaXRvcl'
+    '9wdHMYLiABKANSEWNzZ29UdHRUcmFpdG9yUHRzEiQKDmNzc196b21iaWVfcHRzGC8gASgDUgxj'
+    'c3Nab21iaWVQdHMSJgoPY3NzX3pvbWJpZV9raWxsGDAgASgDUg1jc3Nab21iaWVLaWxsEigKEG'
+    'Nzc196b21iaWVfa25pZmUYMSABKANSDmNzc1pvbWJpZUtuaWZlEi0KE2Nzc196b21iaWVfa2lj'
+    'a19hc3MYMiABKANSEGNzc1pvbWJpZUtpY2tBc3MSLwoUY3NzX3pvbWJpZV9wcm9fbGV2ZWwYMy'
+    'ABKANSEWNzc1pvbWJpZVByb0xldmVsEiIKDWNzc190aXRhbl9wdHMYNCABKANSC2Nzc1RpdGFu'
+    'UHRzEiYKD2Nzc190aXRhbl9raWxscxg1IAEoA1INY3NzVGl0YW5LaWxscxI1Chdjc3NfdGl0YW'
+    '5fc3BlY2lhbF9raWxscxg2IAEoA1IUY3NzVGl0YW5TcGVjaWFsS2lsbHMSMQoVY3NzX3RpdGFu'
+    'X2h1bWFuX2tpbGxzGDcgASgDUhJjc3NUaXRhbkh1bWFuS2lsbHMSKgoRY3NzX3RpdGFuX2Fzc2'
+    'lzdHMYOCABKANSD2Nzc1RpdGFuQXNzaXN0cxIeCgtjc3NfdHR0X3B0cxg5IAEoA1IJY3NzVHR0'
+    'UHRzEisKEmNzc190dHRfd3Jvbmdfa2lsbBg6IAEoA1IPY3NzVHR0V3JvbmdLaWxsEiIKDWNzc1'
+    '90dHRfa2FybWEYOyABKANSC2Nzc1R0dEthcm1h');
 
 @$core.Deprecated('Use matchSignalDescriptor instead')
 const MatchSignal$json = {
