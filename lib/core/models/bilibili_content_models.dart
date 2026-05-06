@@ -16,6 +16,7 @@ class LiveRoom {
   final String? title;
   final String? coverUrl;
   final int liveStatus;
+  final int popularity;
   final int viewCount;
   final int followerCount;
   final DateTime createdAt;
@@ -31,6 +32,7 @@ class LiveRoom {
     this.title,
     this.coverUrl,
     this.liveStatus = 0,
+    this.popularity = 0,
     this.viewCount = 0,
     this.followerCount = 0,
     required this.createdAt,
@@ -81,6 +83,7 @@ class LiveRoom {
     String? title,
     String? coverUrl,
     int? liveStatus,
+    int? popularity,
     int? viewCount,
     int? followerCount,
     DateTime? createdAt,
@@ -96,6 +99,7 @@ class LiveRoom {
       title: title ?? this.title,
       coverUrl: coverUrl ?? this.coverUrl,
       liveStatus: liveStatus ?? this.liveStatus,
+      popularity: popularity ?? this.popularity,
       viewCount: viewCount ?? this.viewCount,
       followerCount: followerCount ?? this.followerCount,
       createdAt: createdAt ?? this.createdAt,
@@ -114,6 +118,7 @@ class BilibiliVideo {
   final String bvid;
   final String? title;
   final String? coverUrl;
+  final int playCount;
   final int viewCount;
   final int likeCount;
   final int coinCount;
@@ -141,6 +146,7 @@ class BilibiliVideo {
     required this.bvid,
     this.title,
     this.coverUrl,
+    this.playCount = 0,
     this.viewCount = 0,
     this.likeCount = 0,
     this.coinCount = 0,
@@ -202,6 +208,7 @@ class BilibiliVideo {
     String? bvid,
     String? title,
     String? coverUrl,
+    int? playCount,
     int? viewCount,
     int? likeCount,
     int? coinCount,
@@ -225,6 +232,7 @@ class BilibiliVideo {
       bvid: bvid ?? this.bvid,
       title: title ?? this.title,
       coverUrl: coverUrl ?? this.coverUrl,
+      playCount: playCount ?? this.playCount,
       viewCount: viewCount ?? this.viewCount,
       likeCount: likeCount ?? this.likeCount,
       coinCount: coinCount ?? this.coinCount,

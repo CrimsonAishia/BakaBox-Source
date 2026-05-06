@@ -59,7 +59,23 @@ class BilibiliContentAddRequested extends BilibiliContentEvent {
     this.publishedAt,
     this.duration,
     this.categoryId,
+    this.liveStatus,
+    this.popularity,
+    this.followerCount,
+    this.playCount,
+    this.likeCount,
+    this.coinCount,
+    this.favoriteCount,
   });
+
+  final int? liveStatus;
+  final int? popularity;
+  final int? followerCount;
+
+  final int? playCount;
+  final int? likeCount;
+  final int? coinCount;
+  final int? favoriteCount;
 
   @override
   List<Object?> get props => [
@@ -73,6 +89,13 @@ class BilibiliContentAddRequested extends BilibiliContentEvent {
     publishedAt,
     duration,
     categoryId,
+    liveStatus,
+    popularity,
+    followerCount,
+    playCount,
+    likeCount,
+    coinCount,
+    favoriteCount,
   ];
 }
 
@@ -106,7 +129,23 @@ class BilibiliContentUpdateRequested extends BilibiliContentEvent {
     this.publishedAt,
     this.duration,
     this.categoryId,
+    this.liveStatus,
+    this.popularity,
+    this.followerCount,
+    this.playCount,
+    this.likeCount,
+    this.coinCount,
+    this.favoriteCount,
   });
+
+  final int? liveStatus;
+  final int? popularity;
+  final int? followerCount;
+
+  final int? playCount;
+  final int? likeCount;
+  final int? coinCount;
+  final int? favoriteCount;
 
   @override
   List<Object?> get props => [
@@ -122,6 +161,13 @@ class BilibiliContentUpdateRequested extends BilibiliContentEvent {
     publishedAt,
     duration,
     categoryId,
+    liveStatus,
+    popularity,
+    followerCount,
+    playCount,
+    likeCount,
+    coinCount,
+    favoriteCount,
   ];
 }
 
@@ -142,16 +188,6 @@ class BilibiliContentToggleLiveRoomRequested extends BilibiliContentEvent {
 /// 刷新直播状态
 class BilibiliContentRefreshStatusRequested extends BilibiliContentEvent {
   const BilibiliContentRefreshStatusRequested();
-}
-
-/// 更新直播间状态（内部使用）
-class BilibiliContentRoomStatusUpdated extends BilibiliContentEvent {
-  final List<LiveRoom> rooms;
-
-  const BilibiliContentRoomStatusUpdated(this.rooms);
-
-  @override
-  List<Object?> get props => [rooms];
 }
 
 /// 搜索过滤
@@ -194,16 +230,6 @@ class BilibiliContentFetchMyRequested extends BilibiliContentEvent {
   const BilibiliContentFetchMyRequested();
 }
 
-/// 从B站API获取直播间详情（标题、封面等）
-class BilibiliContentFetchRoomInfoRequested extends BilibiliContentEvent {
-  final List<String> roomIds;
-
-  const BilibiliContentFetchRoomInfoRequested(this.roomIds);
-
-  @override
-  List<Object?> get props => [roomIds];
-}
-
 /// 增加直播间点击数
 class BilibiliContentIncreaseLiveRoomViewRequested
     extends BilibiliContentEvent {
@@ -228,16 +254,6 @@ class BilibiliContentIncreaseVideoViewRequested extends BilibiliContentEvent {
 /// 清除操作结果状态（用于Toast显示后重置）
 class BilibiliContentClearOperationResult extends BilibiliContentEvent {
   const BilibiliContentClearOperationResult();
-}
-
-/// 更新视频信息（内部使用）
-class BilibiliContentVideoInfoUpdated extends BilibiliContentEvent {
-  final List<BilibiliVideo> videos;
-
-  const BilibiliContentVideoInfoUpdated(this.videos);
-
-  @override
-  List<Object?> get props => [videos];
 }
 
 /// 删除内容

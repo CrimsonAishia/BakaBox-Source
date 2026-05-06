@@ -16,14 +16,12 @@ class BilibiliContentBloc
   BilibiliContentBloc() : super(const BilibiliContentState()) {
     on<BilibiliContentFetchRequested>(_onFetch);
     on<BilibiliContentFetchMyRequested>(_onFetchMy);
-    on<BilibiliContentFetchRoomInfoRequested>(_onFetchRoomInfo);
     on<BilibiliContentTabChanged>(_onTabChanged);
     on<BilibiliContentAddRequested>(_onAdd);
     on<BilibiliContentUpdateRequested>(_onUpdate);
     on<BilibiliContentDeleteRequested>(_onDelete);
     on<BilibiliContentToggleLiveRoomRequested>(_onToggleLiveRoom);
     on<BilibiliContentRefreshStatusRequested>(_onRefreshStatus);
-    on<BilibiliContentRoomStatusUpdated>(_onRoomStatusUpdated);
     on<BilibiliContentSearchChanged>(_onSearch);
     on<BilibiliContentVideoAuditFilterChanged>(_onVideoAuditFilterChanged);
     on<BilibiliContentVideoCategoryFilterChanged>(
@@ -32,7 +30,6 @@ class BilibiliContentBloc
     on<BilibiliContentIncreaseLiveRoomViewRequested>(_onIncreaseLiveRoomView);
     on<BilibiliContentIncreaseVideoViewRequested>(_onIncreaseVideoView);
     on<BilibiliContentClearOperationResult>(_onClearOperationResult);
-    on<BilibiliContentVideoInfoUpdated>(_onVideoInfoUpdated);
     on<BilibiliContentVideoSortChanged>(_onVideoSortChanged);
     on<BilibiliContentFetchCategoriesRequested>(_onFetchCategories);
   }
@@ -65,7 +62,7 @@ class BilibiliContentBloc
         // 直播间tab
         final liveRoomResult = await _api.getLiveRooms(
           pageIndex: targetPageIndex,
-          pageSize: 8,
+          pageSize: 16,
           keyword: state.searchQuery.isNotEmpty ? state.searchQuery : null,
         );
 
@@ -75,27 +72,17 @@ class BilibiliContentBloc
         emit(
           state.copyWith(
             status: BilibiliContentStatus.loaded,
-            liveRooms: liveRooms,
+            liveRooms: targetPageIndex == 1 ? liveRooms : [...state.liveRooms, ...liveRooms],
             liveRoomsTotal: liveRoomsTotal,
             isRefreshing: false,
-            isLoadingBilibiliData: liveRooms.isNotEmpty,
+            hasLoadedLiveRooms: true,
           ),
         );
-
-        // 刷新B站实时信息（非强制刷新时使用缓存）
-        // 不await，让它在后台运行，UI先显示出来
-        if (liveRooms.isNotEmpty) {
-          _refreshRoomInfoFromBilibili(liveRooms, bypassCache: isForceRefresh);
-        }
-
-        // 立即标记B站数据加载完成，让UI不显示加载状态
-        // 数据会在后台异步更新后通过事件回调更新
-        emit(state.copyWith(isLoadingBilibiliData: false));
       } else {
         // 视频tab
         final videoResult = await _api.getVideos(
           pageIndex: targetPageIndex,
-          pageSize: 8,
+          pageSize: 16,
           sort: state.videoSort,
           categoryId: state.videoCategoryFilter,
           keyword: state.searchQuery.isNotEmpty ? state.searchQuery : null,
@@ -107,22 +94,12 @@ class BilibiliContentBloc
         emit(
           state.copyWith(
             status: BilibiliContentStatus.loaded,
-            videos: videos,
+            videos: targetPageIndex == 1 ? videos : [...state.videos, ...videos],
             videosTotal: videosTotal,
             isRefreshing: false,
-            isLoadingBilibiliData: videos.isNotEmpty,
+            hasLoadedVideos: true,
           ),
         );
-
-        // 刷新B站实时信息（非强制刷新时使用缓存）
-        // 不await，让它在后台运行，UI先显示出来
-        if (videos.isNotEmpty) {
-          _refreshVideoInfoFromBilibili(videos, bypassCache: isForceRefresh);
-        }
-
-        // 立即标记B站数据加载完成，让UI不显示加载状态
-        // 数据会在后台异步更新后通过事件回调更新
-        emit(state.copyWith(isLoadingBilibiliData: false));
       }
     } catch (e) {
       LogService.e('获取B站内容失败: $e');
@@ -130,117 +107,8 @@ class BilibiliContentBloc
         state.copyWith(
           status: BilibiliContentStatus.error,
           errorMessage: ErrorUtils.getErrorMessage(e, defaultMessage: '获取内容失败'),
-          isLoadingBilibiliData: false,
         ),
       );
-    }
-  }
-
-  /// 从B站API获取直播间详细信息（标题、封面、头像、粉丝数、直播状态、观看人数）
-  Future<void> _refreshRoomInfoFromBilibili(
-    List<LiveRoom> rooms, {
-    bool bypassCache = false,
-  }) async {
-    if (rooms.isEmpty) return;
-
-    try {
-      // 提取所有 ownerUid，使用批量接口查询直播状态
-      final uids = rooms.map((r) => r.ownerUid).toList();
-
-      // 使用新的 UID 批量接口获取直播状态
-      final liveStatusMap = await _bilibiliService.getLiveStatusByUids(
-        uids,
-        bypassCache: bypassCache,
-      );
-
-      // 收集所有 UID，批量获取用户信息（头像和粉丝数）
-      // 注意：批量直播状态接口不返回头像，需要单独获取
-      final userInfoMap = <String, BilibiliUserInfo>{};
-      for (final uid in uids) {
-        final userInfo = await _bilibiliService.getUserInfo(
-          uid,
-          bypassCache: bypassCache,
-        );
-        if (userInfo != null) {
-          userInfoMap[uid] = userInfo;
-        }
-      }
-
-      final updatedRooms = rooms.map((room) {
-        final liveStatus = liveStatusMap[room.ownerUid];
-        // 优先使用批量接口返回的数据，如果没有则尝试使用用户信息
-        final userInfo = userInfoMap[room.ownerUid];
-
-        return room.copyWith(
-          title: liveStatus?.title ?? room.title,
-          // 优先使用 B 站封面，其次使用用户头像作为头像
-          coverUrl: liveStatus?.coverFromUser ?? room.coverUrl,
-          ownerFace: userInfo?.face ?? room.ownerFace,
-          ownerName: liveStatus?.uname ?? userInfo?.name ?? room.ownerName,
-          followerCount: userInfo?.follower ?? room.followerCount,
-          liveStatus: liveStatus?.liveStatus ?? room.liveStatus,
-          viewCount: liveStatus?.online ?? room.viewCount,
-        );
-      }).toList();
-
-      add(BilibiliContentRoomStatusUpdated(updatedRooms));
-    } catch (e) {
-      // 静默失败
-    }
-  }
-
-  /// 从B站API获取视频详细信息（播放量、点赞数等）
-  Future<void> _refreshVideoInfoFromBilibili(
-    List<BilibiliVideo> videos, {
-    bool bypassCache = false,
-  }) async {
-    if (videos.isEmpty) return;
-
-    try {
-      final updatedVideos = <BilibiliVideo>[];
-
-      // 逐个获取视频信息（B站API没有批量接口）
-      for (final video in videos) {
-        final videoInfo = await _bilibiliService.getVideoInfo(
-          video.bvid,
-          bypassCache: bypassCache,
-        );
-        if (videoInfo != null) {
-          updatedVideos.add(
-            video.copyWith(
-              viewCount: videoInfo.viewCount,
-              likeCount: videoInfo.likeCount,
-              coinCount: videoInfo.coinCount,
-              favoriteCount: videoInfo.favoriteCount,
-              title: videoInfo.title,
-              coverUrl: videoInfo.coverUrl,
-              ownerFace: videoInfo.ownerFace,
-              ownerName: videoInfo.author ?? video.ownerName,
-            ),
-          );
-        } else {
-          // 如果获取失败，保留原数据
-          updatedVideos.add(video);
-        }
-      }
-
-      if (updatedVideos.isNotEmpty) {
-        // 更新状态中的视频列表
-        // Tips：这里需要触发状态更新
-        final currentVideos = state.videos;
-        final mergedVideos = currentVideos.map((video) {
-          final updated = updatedVideos.firstWhere(
-            (v) => v.bvid == video.bvid,
-            orElse: () => video,
-          );
-          return updated;
-        }).toList();
-
-        // 使用内部事件更新状态
-        add(BilibiliContentVideoInfoUpdated(mergedVideos));
-      }
-    } catch (e) {
-      // 静默失败
     }
   }
 
@@ -284,29 +152,6 @@ class BilibiliContentBloc
       }
     } catch (e) {
       LogService.e('获取我的内容失败: $e');
-    }
-  }
-
-  /// 从B站API获取直播间详情
-  Future<void> _onFetchRoomInfo(
-    BilibiliContentFetchRoomInfoRequested event,
-    Emitter<BilibiliContentState> emit,
-  ) async {
-    if (event.roomIds.isEmpty) return;
-
-    try {
-      final infoMap = await _bilibiliService.getRoomInfoBatch(event.roomIds);
-
-      final updatedRooms = state.liveRooms.map((room) {
-        final info = infoMap[room.roomId];
-        if (info == null) return room;
-
-        return room.copyWith(title: info.title, coverUrl: info.coverUrl);
-      }).toList();
-
-      emit(state.copyWith(liveRooms: updatedRooms));
-    } catch (e) {
-      LogService.w('获取直播间信息失败: $e');
     }
   }
 
@@ -373,12 +218,29 @@ class BilibiliContentBloc
           return;
         }
 
+        // 如果事件中没有提供额外数据，且我们需要它们作为兜底
+        int? popularity = event.popularity;
+        int? followerCount = event.followerCount;
+        
+        if (popularity == null) {
+          final roomStatus = await _bilibiliService.getRoomStatus(roomId);
+          popularity = roomStatus?.viewCount;
+        }
+        
+        if (followerCount == null && roomInfo.userId != null) {
+          final userInfo = await _bilibiliService.getUserInfo(roomInfo.userId!);
+          followerCount = userInfo?.follower;
+        }
+
         final newRoom = await _api.addLiveRoom(
           roomId: roomId,
           title: event.title ?? roomInfo.title,
           coverUrl: event.coverUrl ?? roomInfo.coverUrl,
           ownerUid: event.ownerUid ?? roomInfo.userId,
           ownerName: event.ownerName ?? roomInfo.userName,
+          liveStatus: event.liveStatus ?? roomInfo.liveStatus,
+          popularity: popularity,
+          followerCount: followerCount,
         );
 
         emit(
@@ -416,6 +278,10 @@ class BilibiliContentBloc
               event.publishedAt ?? videoInfo.publishedAt?.toIso8601String(),
           duration: event.duration ?? videoInfo.duration,
           categoryId: event.categoryId,
+          playCount: event.playCount ?? videoInfo.viewCount,
+          likeCount: event.likeCount ?? videoInfo.likeCount,
+          coinCount: event.coinCount ?? videoInfo.coinCount,
+          favoriteCount: event.favoriteCount ?? videoInfo.favoriteCount,
         );
 
         emit(
@@ -452,6 +318,19 @@ class BilibiliContentBloc
     );
     try {
       if (event.contentType == BilibiliContentType.liveRoom) {
+        int? popularity = event.popularity;
+        int? followerCount = event.followerCount;
+        
+        // 当更新直播间但缺乏新数据时，尝试拉取一下
+        if (event.roomId != null && popularity == null) {
+          final roomStatus = await _bilibiliService.getRoomStatus(event.roomId!);
+          popularity = roomStatus?.viewCount;
+        }
+        if (event.ownerUid != null && followerCount == null) {
+          final userInfo = await _bilibiliService.getUserInfo(event.ownerUid!);
+          followerCount = userInfo?.follower;
+        }
+
         final updatedRoom = await _api.updateLiveRoom(
           id: event.id,
           roomId: event.roomId,
@@ -459,6 +338,9 @@ class BilibiliContentBloc
           coverUrl: event.coverUrl,
           ownerUid: event.ownerUid,
           ownerName: event.ownerName,
+          liveStatus: event.liveStatus,
+          popularity: popularity ?? event.popularity,
+          followerCount: followerCount ?? event.followerCount,
         );
 
         final updatedList = state.liveRooms.map((room) {
@@ -480,6 +362,22 @@ class BilibiliContentBloc
           ),
         );
       } else {
+        int? playCount = event.playCount;
+        int? likeCount = event.likeCount;
+        int? coinCount = event.coinCount;
+        int? favoriteCount = event.favoriteCount;
+        
+        // 当更新视频且有 bvid 时，作为兜底拉取最新统计
+        if (event.bvid != null && playCount == null) {
+          final videoInfo = await _bilibiliService.getVideoInfo(event.bvid!);
+          if (videoInfo != null) {
+            playCount = videoInfo.viewCount;
+            likeCount = videoInfo.likeCount;
+            coinCount = videoInfo.coinCount;
+            favoriteCount = videoInfo.favoriteCount;
+          }
+        }
+
         final updatedVideo = await _api.updateVideo(
           id: event.id,
           bvid: event.bvid,
@@ -491,6 +389,10 @@ class BilibiliContentBloc
           publishedAt: event.publishedAt,
           duration: event.duration,
           categoryId: event.categoryId,
+          playCount: playCount ?? event.playCount,
+          likeCount: likeCount ?? event.likeCount,
+          coinCount: coinCount ?? event.coinCount,
+          favoriteCount: favoriteCount ?? event.favoriteCount,
         );
 
         final updatedList = state.videos.map((video) {
@@ -643,61 +545,11 @@ class BilibiliContentBloc
     emit(state.copyWith(isRefreshing: true));
 
     try {
-      // 提取所有 ownerUid，使用批量接口查询直播状态
-      final uids = state.liveRooms.map((r) => r.ownerUid).toList();
-
-      // 使用新的 UID 批量接口获取直播状态（更高效，减少请求次数）
-      // 手动刷新时强制获取最新数据
-      final liveStatusMap = await _bilibiliService.getLiveStatusByUids(
-        uids,
-        bypassCache: true,
-      );
-
-      // 收集所有 UID，批量获取用户信息（头像和粉丝数）
-      // 注意：批量直播状态接口不返回头像，需要单独获取
-      final userInfoMap = <String, BilibiliUserInfo>{};
-      for (final uid in uids) {
-        final userInfo = await _bilibiliService.getUserInfo(
-          uid,
-          bypassCache: true,
-        );
-        if (userInfo != null) {
-          userInfoMap[uid] = userInfo;
-        }
-      }
-
-      // 更新直播间状态
-      final updatedRooms = state.liveRooms.map((room) {
-        final liveStatus = liveStatusMap[room.ownerUid];
-        final userInfo = userInfoMap[room.ownerUid];
-
-        return room.copyWith(
-          title: liveStatus?.title ?? room.title,
-          coverUrl: liveStatus?.coverFromUser ?? room.coverUrl,
-          ownerFace: userInfo?.face ?? room.ownerFace,
-          ownerName: liveStatus?.uname ?? userInfo?.name ?? room.ownerName,
-          liveStatus: liveStatus?.liveStatus ?? room.liveStatus,
-          viewCount: liveStatus?.online ?? room.viewCount,
-          // 保留原有的粉丝数，只在成功获取新数据时更新
-          followerCount: userInfo != null
-              ? userInfo.follower
-              : room.followerCount,
-        );
-      }).toList();
-
-      emit(state.copyWith(liveRooms: updatedRooms, isRefreshing: false));
+      add(const BilibiliContentFetchRequested(tabIndex: 0, refresh: true));
     } catch (e) {
       // 静默失败，不影响用户体验
       emit(state.copyWith(isRefreshing: false));
     }
-  }
-
-  /// 更新直播间状态（内部事件处理）
-  void _onRoomStatusUpdated(
-    BilibiliContentRoomStatusUpdated event,
-    Emitter<BilibiliContentState> emit,
-  ) {
-    emit(state.copyWith(liveRooms: event.rooms, isRefreshing: false));
   }
 
   void _onSearch(
@@ -775,14 +627,6 @@ class BilibiliContentBloc
     Emitter<BilibiliContentState> emit,
   ) async {
     emit(state.copyWith(clearLastOperation: true));
-  }
-
-  /// 更新视频信息（内部事件处理）
-  Future<void> _onVideoInfoUpdated(
-    BilibiliContentVideoInfoUpdated event,
-    Emitter<BilibiliContentState> emit,
-  ) async {
-    emit(state.copyWith(videos: event.videos, isRefreshing: false));
   }
 
   void _onVideoSortChanged(

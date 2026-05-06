@@ -71,6 +71,15 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
   String? _fetchedOwnerName;
   String? _validationError;
 
+  int? _fetchedLiveStatus;
+  int? _fetchedPopularity;
+  int? _fetchedFollowerCount;
+
+  int? _fetchedPlayCount;
+  int? _fetchedLikeCount;
+  int? _fetchedCoinCount;
+  int? _fetchedFavoriteCount;
+
   // 表单提交中状态
   bool _isSubmitting = false;
 
@@ -189,13 +198,18 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
           return;
         }
 
-        // 获取主播头像
+        // 获取直播状态（包含人气值）
+        final roomStatus = await BilibiliService().getRoomStatus(roomId);
+
+        // 获取主播头像和粉丝数
         String? ownerFace;
+        int? followerCount;
         if (roomInfo.userId != null) {
           final userInfo = await BilibiliService().getUserInfo(
             roomInfo.userId!,
           );
           ownerFace = userInfo?.face;
+          followerCount = userInfo?.follower;
         }
 
         if (!mounted) return;
@@ -206,6 +220,10 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
           _fetchedOwnerUid = roomInfo.userId;
           _fetchedOwnerName = roomInfo.userName;
           _fetchedOwnerFace = ownerFace;
+
+          _fetchedLiveStatus = roomInfo.liveStatus;
+          _fetchedPopularity = roomStatus?.viewCount;
+          _fetchedFollowerCount = followerCount;
         });
       } else {
         final bvid = BilibiliService.extractBvid(contentId);
@@ -244,6 +262,11 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
           _fetchedOwnerFace = videoInfo.ownerFace;
           _fetchedOwnerUid = videoInfo.mid;
           _fetchedOwnerName = videoInfo.author;
+
+          _fetchedPlayCount = videoInfo.viewCount;
+          _fetchedLikeCount = videoInfo.likeCount;
+          _fetchedCoinCount = videoInfo.coinCount;
+          _fetchedFavoriteCount = videoInfo.favoriteCount;
         });
       }
     } catch (e) {
@@ -311,6 +334,9 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
             coverUrl: _fetchedCoverUrl,
             ownerUid: ownerUid,
             ownerName: ownerName,
+            liveStatus: _fetchedLiveStatus,
+            popularity: _fetchedPopularity,
+            followerCount: _fetchedFollowerCount,
           ),
         );
       } else {
@@ -341,6 +367,10 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
             publishedAt: currentVideo.publishedAt?.toIso8601String(),
             duration: currentVideo.duration,
             categoryId: _selectedCategoryId,
+            playCount: _fetchedPlayCount,
+            likeCount: _fetchedLikeCount,
+            coinCount: _fetchedCoinCount,
+            favoriteCount: _fetchedFavoriteCount,
           ),
         );
       }
@@ -359,6 +389,13 @@ class _BilibiliContentFormPageState extends State<BilibiliContentFormPage> {
           publishedAt: null,
           duration: null,
           categoryId: _selectedCategoryId,
+          liveStatus: _fetchedLiveStatus,
+          popularity: _fetchedPopularity,
+          followerCount: _fetchedFollowerCount,
+          playCount: _fetchedPlayCount,
+          likeCount: _fetchedLikeCount,
+          coinCount: _fetchedCoinCount,
+          favoriteCount: _fetchedFavoriteCount,
         ),
       );
     }
