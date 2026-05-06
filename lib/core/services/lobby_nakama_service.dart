@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:nakama/nakama.dart';
 import 'package:uuid/uuid.dart';
@@ -825,7 +826,7 @@ class LobbyNakamaService {
 
     // 构造 LobbyJoinRequest，携带 deviceType（"mobile" 或 "pc"）
     final reqBytes = (pb.LobbyJoinRequest()..deviceType = _deviceType).writeToBuffer();
-    // Nakama RPC payload 需要 base64 编码的字符串
+    // 服务端期望原始 Protobuf 二进制字节转成字符串
     final payload = String.fromCharCodes(reqBytes);
 
     for (var i = 0; i < maxRetries; i++) {
@@ -1072,6 +1073,53 @@ class LobbyNakamaService {
         ..customName = customName
         ..steamName = steamName);
     _sendEnvelope(envelope);
+  }
+
+  /// 绑定 Steam ID
+  ///
+  /// 文档协议：将 Steam 64位 ID 与当前账号绑定，同时可选更新 Steam 昵称。
+  /// 必须是已登录的实名用户。
+  void bindSteam({required String steamId64, String steamName = ''}) {
+    final envelope = pb.LobbyEnvelope()
+      ..v = 1
+      ..type = 'profile.steam.bind'
+      ..traceId = _generateTraceId()
+      ..profileSteamBind = (pb.ProfileSteamBindRequest()
+        ..steamId = steamId64
+        ..steamName = steamName);
+    _sendEnvelope(envelope);
+  }
+
+  /// RPC 查询 Steam 玩家信息
+  ///
+  /// 根据目标用户的 Nakama UUID 查询其论坛账号、游戏数据等信息。
+  /// 服务端会自动查询该用户绑定的 Steam64 ID，无需客户端传递 Steam ID。
+  Future<pb.SteamUserInfoResponse?> rpcSteamUserInfo(String nakamaUserId) async {
+    try {
+      LogService.d('[LobbyNakamaService] RPC steam_user_info: userId=$nakamaUserId');
+      final reqBytes = (pb.SteamUserInfoRequest()..userId = nakamaUserId).writeToBuffer();
+      // 服务端期望原始 Protobuf 二进制字节转成字符串（与 lobby_join 一致）
+      final payload = String.fromCharCodes(reqBytes);
+      final result = await _clientManager.rpc('steam_user_info', payload: payload);
+      if (result != null && result.isNotEmpty) {
+        // 响应是 base64 编码的 proto 二进制，需要先 decode
+        final bytes = base64Decode(result);
+        return pb.SteamUserInfoResponse.fromBuffer(bytes);
+      }
+      return null;
+    } catch (e) {
+      final errStr = e.toString();
+      // 服务端序列化响应时出错（通常是数据库中存有非 UTF-8 编码的字段，如 GBK 中文）
+      // 这是服务端 bug，客户端无法修复，返回特殊响应让 UI 显示友好提示
+      if (errStr.contains('invalid UTF-8') || errStr.contains('marshaling')) {
+        LogService.w('[LobbyNakamaService] RPC steam_user_info 服务端响应含非 UTF-8 数据: $e');
+        return pb.SteamUserInfoResponse()
+          ..code = -1
+          ..message = '该用户的数据包含特殊字符，暂时无法显示';
+      }
+      LogService.e('[LobbyNakamaService] RPC steam_user_info 失败: $e');
+      return null;
+    }
   }
 
   // =========================================================================

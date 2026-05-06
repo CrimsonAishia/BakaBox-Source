@@ -29,6 +29,7 @@ message LobbyEnvelope {
     BroadcastCDRequest broadcast_cd_request = 21;
     PortalUseRequest portal_use_request = 22;
     OnlineStatsRequest online_stats_request = 23;
+    ProfileSteamBindRequest profile_steam_bind = 24;
     
     // 服务端 -> 客户端
     LoginSuccessResponse login_success_response = 50;
@@ -59,6 +60,7 @@ message LobbyEnvelope {
     SystemErrorResponse system_error_response = 75;
     SystemNoticeResponse system_notice_response = 76;
     SystemKickedResponse system_kicked_response = 77;
+    SteamBindSuccessResponse steam_bind_success = 78;
   }
 }
 
@@ -78,6 +80,7 @@ message LobbyUser {
   bool is_anonymous = 10;
   string status_text = 11;
   string last_message = 12;
+  string steam_id = 13;  // Steam 唯一 ID（仅自身可见，不广播给其他用户）
 }
 
 // LobbyMessage 聊天消息
@@ -185,6 +188,11 @@ message ProfileStatusTextUpdateRequest {
 message ProfileDisplayNameUpdateRequest {
   string custom_name = 1;
   string steam_name = 2;
+}
+
+message ProfileSteamBindRequest {
+  string steam_id = 1;   // Steam 唯一 ID（64位数字字符串，如 "76561198xxxxxxxxx"）
+  string steam_name = 2; // Steam 昵称（可选，同步更新显示名）
 }
 
 message SnapshotRequest {
@@ -365,6 +373,12 @@ message SystemKickedResponse {
   string message = 2;
 }
 
+message SteamBindSuccessResponse {
+  string steam_id = 1;
+  string steam_name = 2;
+  string display_nickname = 3; // 绑定后的最终显示昵称
+}
+
 // ==================== RPC 请求/响应 ====================
 
 // LobbyJoinRequest 加入大厅请求
@@ -376,6 +390,82 @@ message LobbyJoinRequest {
 message LobbyJoinResponse {
   string match_id = 1;  // 分配的 Match ID
   string map_id = 2;    // 分配的地图 ID
+}
+
+// SteamUserInfoRequest 查询 Steam 用户信息请求
+message SteamUserInfoRequest {
+  string user_id = 1;  // 目标用户的 Nakama UUID，服务端自动查询其绑定的 Steam64 ID
+}
+
+// SteamUserInfoResponse 查询 Steam 用户信息响应
+message SteamUserInfoResponse {
+  int32  code    = 1;  // 0=成功，非0=失败
+  string message = 2;  // 错误描述
+
+  // 以下字段仅 code=0 时有效
+  int64  forum_uid          = 3;
+  string forum_username     = 4;
+  string forum_avatar_url   = 5;
+  string steam_id           = 6;   // STEAM_x:x:xxxxxxx 格式
+  string steam_id64         = 7;   // 64位数字字符串
+  string avatar_url         = 8;
+  string steam_name         = 9;
+  string in_game_name       = 10;
+  string join_date          = 11;
+  int32  vip_level          = 12;
+  string vip_date           = 13;
+  string vip_end            = 14;  // 空字符串表示 null
+  int64  csgo_gold          = 15;
+  int64  online_time_total  = 16;
+  int64  online_time_day    = 17;
+  int64  cs2_gold           = 18;
+  int64  cs2_point          = 19;
+  int64  cs2_spent_point    = 20;
+
+  // 各模式当前积分（null 时为 0）
+  int64  mg_pts             = 21;
+  int64  mg_pts_rank        = 22;
+  int64  mg_pts_total       = 23;
+  int64  surf_pts           = 24;
+  int64  surf_pts_rank      = 25;
+  int64  surf_pts_total     = 26;
+  int64  bhop_pts           = 27;
+  int64  bhop_pts_rank      = 28;
+  int64  bhop_pts_total     = 29;
+  int64  kz_pts             = 30;
+  int64  kz_pts_rank        = 31;
+  int64  kz_pts_total       = 32;
+
+  // CSGO 数据
+  int64  csgo_online_time        = 33;
+  int64  csgo_zombie_pts         = 34;
+  int64  csgo_zombie_kill        = 35;
+  int64  csgo_zombie_knife       = 36;
+  int64  csgo_zombie_kick_ass    = 37;
+  int64  csgo_zombie_lost_ass    = 38;
+  int64  csgo_zombie_pro_level   = 39;
+  int64  csgo_mg_pts             = 40;
+  int64  csgo_surf_pts           = 41;
+  int64  csgo_bhop_pts           = 42;
+  int64  csgo_kz_pts             = 43;
+  int64  csgo_ttt_innocent_pts   = 44;
+  int64  csgo_ttt_detective_pts  = 45;
+  int64  csgo_ttt_traitor_pts    = 46;
+
+  // CSS 数据
+  int64  css_zombie_pts          = 47;
+  int64  css_zombie_kill         = 48;
+  int64  css_zombie_knife        = 49;
+  int64  css_zombie_kick_ass     = 50;
+  int64  css_zombie_pro_level    = 51;
+  int64  css_titan_pts           = 52;
+  int64  css_titan_kills         = 53;
+  int64  css_titan_special_kills = 54;
+  int64  css_titan_human_kills   = 55;
+  int64  css_titan_assists       = 56;
+  int64  css_ttt_pts             = 57;
+  int64  css_ttt_wrong_kill      = 58;
+  int64  css_ttt_karma           = 59;
 }
 
 // ==================== Match Signal ====================
