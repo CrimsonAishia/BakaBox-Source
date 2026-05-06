@@ -233,12 +233,14 @@ MapListRequest _$MapListRequestFromJson(Map<String, dynamic> json) =>
         json['pagination'] as Map<String, dynamic>,
       ),
       mapName: json['mapName'] as String?,
+      mapType: json['mapType'] as String?,
     );
 
 Map<String, dynamic> _$MapListRequestToJson(MapListRequest instance) =>
     <String, dynamic>{
       'pagination': instance.pagination,
       'mapName': instance.mapName,
+      'mapType': instance.mapType,
     };
 
 MapHistoryPlayerInfo _$MapHistoryPlayerInfoFromJson(

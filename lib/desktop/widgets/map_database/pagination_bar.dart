@@ -32,7 +32,7 @@ class PaginationBar extends StatelessWidget {
     // }
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

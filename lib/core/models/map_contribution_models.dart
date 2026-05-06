@@ -507,14 +507,17 @@ class MapListRequest extends Equatable {
   final PaginationParams pagination;
   final String? mapName;
 
-  const MapListRequest({required this.pagination, this.mapName});
+  /// 地图类型前缀筛选（如 ze_、zm_ 等）
+  final String? mapType;
+
+  const MapListRequest({required this.pagination, this.mapName, this.mapType});
 
   factory MapListRequest.fromJson(Map<String, dynamic> json) =>
       _$MapListRequestFromJson(json);
   Map<String, dynamic> toJson() => _$MapListRequestToJson(this);
 
   @override
-  List<Object?> get props => [pagination, mapName];
+  List<Object?> get props => [pagination, mapName, mapType];
 }
 
 /// 地图历史记录中的玩家数据点
