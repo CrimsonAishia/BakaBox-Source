@@ -1004,7 +1004,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   /// 优先级（从高到低）：
   /// 1. 挤服中
   /// 2. GSI 游戏状态（有意义的状态：主菜单、热身、游戏中）
-  /// 3. 所在服务器（ConsoleLogService.isInServer → 服务器地址）
+  /// 3. 所在服务器（ConsoleLogService.isInServer → 服务器地址 + 地图）
   /// 4. 游戏运行中（isGameRunning → "游戏中"）
   /// 5. 其他（pageActivityText）
   Future<void> _updateStatusTextByGameStatus(
@@ -1025,9 +1025,17 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       final gsiText = _resolveGsiStatusText(gsiState);
       if (gsiText != null) {
         newStatusText = gsiText;
-      } else if (consoleState.isInServer && consoleState.serverAddress.isNotEmpty) {
-        final displayAddress = ServerAddressMappingService().getDomainAddress(consoleState.serverAddress);
-        newStatusText = '在 $displayAddress';
+      } else if (isGameRunning && consoleState.isInServer && consoleState.serverAddress.isNotEmpty) {
+        // 必须同时满足 isGameRunning 才使用 consoleState，
+        // 避免游戏关闭后 ConsoleLogService 状态延迟重置导致残留显示
+        // 优先显示地图名，无地图时降级显示 IP
+        final mapName = _resolveMapNameForServer(consoleState, gsiState);
+        if (mapName != null) {
+          newStatusText = '游戏中 · $mapName';
+        } else {
+          final displayAddress = ServerAddressMappingService().getDomainAddress(consoleState.serverAddress);
+          newStatusText = '游戏中 · $displayAddress';
+        }
       } else if (isGameRunning) {
         newStatusText = '游戏中';
       } else {
@@ -1094,10 +1102,40 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       // 回合结束/游戏结束阶段无意义，跳过让下层处理
       if (mapPhase == 'gameover') return null;
 
-      final displayMap = _getMapDisplayName(mapName);
+      // 优先从 GSI 获取地图名，如果 GSI 没有则尝试从 ConsoleLog 获取
+      String? effectiveMapName = mapName;
+      if (effectiveMapName == null || effectiveMapName.isEmpty) {
+        effectiveMapName = ConsoleLogService().currentState.mapName;
+      }
+      final displayMap = _getMapDisplayName(
+        effectiveMapName.isNotEmpty ? effectiveMapName : null,
+      );
 
       // live / intermission / warmup / freezetime 等阶段
       return displayMap != null ? '游戏中 · $displayMap' : '游戏中';
+    }
+
+    return null;
+  }
+
+  /// 解析服务器场景下的地图名称
+  ///
+  /// 当 GSI 未提供有意义的状态（_resolveGsiStatusText 返回 null），
+  /// 但 ConsoleLogService 显示用户在服务器中时，尝试从多个来源获取地图名：
+  /// 1. ConsoleLogService.currentState.mapName
+  /// 2. GSI 的 map.name（即使 activity 不是 playing，map 数据可能仍然有效）
+  String? _resolveMapNameForServer(ConsoleLogState consoleState, GsiGameState? gsiState) {
+    // 优先使用 ConsoleLog 的地图名（最可靠，直接从控制台日志解析）
+    if (consoleState.mapName.isNotEmpty) {
+      return _getMapDisplayName(consoleState.mapName);
+    }
+
+    // 其次尝试 GSI 的地图名（GSI 可能有延迟或处于过渡状态）
+    if (gsiState != null) {
+      final gsiMapName = gsiState.map?.name;
+      if (gsiMapName != null && gsiMapName.isNotEmpty) {
+        return _getMapDisplayName(gsiMapName);
+      }
     }
 
     return null;

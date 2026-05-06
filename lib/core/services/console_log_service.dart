@@ -1054,6 +1054,7 @@ class ConsoleLogService {
         _updateConnectionState(
           GameState.connecting,
           serverAddress: newServer,
+          mapName: '',  // 新连接清空旧地图，避免残留上一个服务器的地图名
           rawLine: line,
         );
       }
@@ -1086,6 +1087,7 @@ class ConsoleLogService {
       _updateConnectionState(
         state,
         serverAddress: '',
+        mapName: '',  // 断开连接清空地图名
         rawLine: line,
       );
     } else if (event is EvMapLoaded) {
@@ -1100,6 +1102,7 @@ class ConsoleLogService {
       _updateConnectionState(
         GameState.mainMenu,
         serverAddress: '',
+        mapName: '',  // 回到主菜单清空地图名
         rawLine: line,
       );
       _targetServer = '';
