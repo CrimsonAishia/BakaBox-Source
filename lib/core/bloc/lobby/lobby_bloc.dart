@@ -2016,6 +2016,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         final reject = LobbyPortalReject.fromProtobuf(portalRejectResp);
         LogService.w('[LobbyBloc] 传送门请求被拒绝: ${reject.reasonType.displayText}');
         emit(state.copyWith(
+          // 乐观传送被拒绝，重置传送状态
+          isTeleporting: false,
+          clearTeleportTarget: true,
           transientNotice: reject.reasonType.displayText,
           clearNearbyPortal: true,
           clearPendingPortal: true,
@@ -2848,10 +2851,33 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     LobbyPortalConfirmRequested event,
     Emitter<LobbyState> emit,
   ) async {
+    // 立即设置传送中状态，让动画立即开始，无需等待服务器响应
+    // 用 nearbyPortal 的信息构造临时 teleportTarget（服务器返回 portal.teleport 后会覆盖）
+    final portal = state.nearbyPortal;
+    if (portal != null) {
+      final optimisticTarget = LobbyTeleportTarget(
+        portalKey: portal.key,
+        label: portal.label,
+        sourceMapId: _selfMapId ?? '',
+        targetMapId: portal.targetMapId,
+        targetX: portal.targetX,
+        targetY: portal.targetY,
+      );
+      emit(state.copyWith(
+        isTeleporting: true,
+        teleportTarget: optimisticTarget,
+        clearNearbyPortal: true,
+        transientNotice: '正在传送到 ${portal.label}...',
+      ));
+    }
+
     // 发送传送门使用请求
     await _service.usePortal(event.portalKey);
-    // 请求发送后清除对话框状态
-    emit(state.copyWith(clearNearbyPortal: true));
+
+    // 如果 nearbyPortal 为 null（不应发生），仅清除对话框
+    if (portal == null) {
+      emit(state.copyWith(clearNearbyPortal: true));
+    }
   }
 
   void _onPortalClicked(

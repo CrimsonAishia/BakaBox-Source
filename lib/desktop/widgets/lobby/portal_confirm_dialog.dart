@@ -60,9 +60,8 @@ class _PortalConfirmDialogState extends State<PortalConfirmDialog>
   }
 
   void _handleConfirm() {
-    _controller.reverse().then((_) {
-      widget.onConfirm();
-    });
+    // 立即触发确认，不等关闭动画，让传送动画和对话框消失同时发生
+    widget.onConfirm();
   }
 
   void _handleCancel() {
