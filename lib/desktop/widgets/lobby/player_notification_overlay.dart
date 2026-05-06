@@ -83,13 +83,13 @@ class _PlayerNotificationItemState extends State<_PlayerNotificationItem>
   /// 获取类型对应的颜色
   Color get _typeColor {
     switch (widget.type) {
-      case 0:
+      case 0: // online
         return _joinColor;
-      case 1:
+      case 1: // offline
         return _leaveColor;
-      case 2:
+      case 2: // teleport
         return _teleportColor;
-      case 3:
+      case 3: // teleportIn
         return _teleportColor;
       default:
         return _textColor;
@@ -99,14 +99,14 @@ class _PlayerNotificationItemState extends State<_PlayerNotificationItem>
   /// 获取类型对应的符号
   String get _typeSymbol {
     switch (widget.type) {
-      case 0:
-        return '+';  // 加号表示加入
-      case 1:
-        return '-';  // 减号表示离开
-      case 2:
-        return '>';  // 箭头表示传送离开
-      case 3:
-        return '<';  // 箭头表示传送进入
+      case 0: // online
+        return '+';
+      case 1: // offline
+        return '-';
+      case 2: // teleport
+        return '>';
+      case 3: // teleportIn
+        return '<';
       default:
         return '';
     }
@@ -115,13 +115,13 @@ class _PlayerNotificationItemState extends State<_PlayerNotificationItem>
   /// 获取动作文字
   String get _actionText {
     switch (widget.type) {
-      case 0:
-        return '进入大厅';
-      case 1:
-        return '离开';
-      case 2:
+      case 0: // online
+        return '上线了';
+      case 1: // offline
+        return '下线了';
+      case 2: // teleport（传送离开）
         return '传送';
-      case 3:
+      case 3: // teleportIn（传送进入）
         return '传送过来';
       default:
         return '';

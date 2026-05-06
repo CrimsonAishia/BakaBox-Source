@@ -1652,8 +1652,28 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         final presenceJoinResp = envelope.presenceJoinResponse;
         final rawUserId = presenceJoinResp.user.userId;
         final isSelfUser = rawUserId.isNotEmpty && _selfServerUserId == rawUserId;
+        final isCrossMap = presenceJoinResp.isCrossMapNotification;
         LogService.d('[LobbyBloc] presence.join: rawUserId=$rawUserId _selfServerUserId=$_selfServerUserId '
-            'isSelfUser=$isSelfUser users=${state.users.map((u) => '${u.userId}:serverId=${u.serverUserId}:${u.nickname}').toList()}');
+            'isSelfUser=$isSelfUser isCrossMap=$isCrossMap users=${state.users.map((u) => '${u.userId}:serverId=${u.serverUserId}:${u.nickname}').toList()}');
+
+        if (isCrossMap) {
+          // 跨地图通知：只显示"XX 上线了"，不渲染角色，坐标字段无效
+          if (!isSelfUser) {
+            final nickname = presenceJoinResp.user.nickname;
+            final displayName = nickname.isNotEmpty ? nickname : rawUserId;
+            final newNotification = PlayerNotification(
+              id: 'online_notice_${DateTime.now().microsecondsSinceEpoch}',
+              type: PlayerNotificationType.online,
+              playerName: displayName,
+              createdAt: DateTime.now(),
+            );
+            final updatedNotifications =
+                [...state.playerNotifications, newNotification].take(20).toList();
+            emit(state.copyWith(playerNotifications: updatedNotifications));
+          }
+          break;
+        }
+
         final user = _parseLobbyUser(
           presenceJoinResp.user,
           isSelf: isSelfUser,
@@ -1682,7 +1702,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           } else {
             newNotification = PlayerNotification(
               id: 'join_${DateTime.now().microsecondsSinceEpoch}',
-              type: PlayerNotificationType.join,
+              type: PlayerNotificationType.online,
               playerName: user.displayName,
               createdAt: DateTime.now(),
             );
@@ -1708,39 +1728,49 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         if (serverUserId.isEmpty) break;
         // 通过 serverUserId 或 userId 查找离开的用户
         final leavingUser = _findUserById(state.users, serverUserId);
-        final updatedUsers = state.users
-            .where((user) => user.serverUserId != serverUserId && user.userId != serverUserId)
-            .toList(growable: false);
 
         // 获取 targetMapId 判断是传送离开还是断线离开
         final targetMapId = presenceLeaveResp.targetMapId;
         PlayerNotification? newNotification;
-        if (leavingUser != null) {
-          if (targetMapId.isNotEmpty) {
-            // 传送离开：获取目标地图名称
-            final targetMapName = state.assets.getMapById(targetMapId)?.displayName ?? targetMapId;
-            newNotification = PlayerNotification(
-              id: 'teleport_${DateTime.now().microsecondsSinceEpoch}',
-              type: PlayerNotificationType.teleport,
-              playerName: leavingUser.displayName,
-              targetMapName: targetMapName,
-              createdAt: DateTime.now(),
-            );
-          } else {
-            // 断线/正常离开
-            newNotification = PlayerNotification(
-              id: 'leave_${DateTime.now().microsecondsSinceEpoch}',
-              type: PlayerNotificationType.leave,
-              playerName: leavingUser.displayName,
-              createdAt: DateTime.now(),
-            );
-          }
+
+        if (leavingUser == null) {
+          // 该用户不在本地图场景中 → 跨地图离线通知，只显示提示
+          // 尝试用 serverUserId 作为显示名（无法获取昵称时降级显示 ID）
+          // 实际上跨地图用户不在 users 列表中，所以只能显示简单提示
+          LogService.d('[LobbyBloc] presence.leave: 跨地图离线通知 serverUserId=$serverUserId');
+          // 跨地图离线通知不显示（无法获取昵称，且用户本就不在场景中，通知意义不大）
+          // 如需显示，可在此处创建 offlineNotice 通知
+          break;
+        }
+
+        // 用户在本地图场景中，正常移除
+        final updatedUsers = state.users
+            .where((user) => user.serverUserId != serverUserId && user.userId != serverUserId)
+            .toList(growable: false);
+
+        if (targetMapId.isNotEmpty) {
+          // 传送离开：获取目标地图名称
+          final targetMapName = state.assets.getMapById(targetMapId)?.displayName ?? targetMapId;
+          newNotification = PlayerNotification(
+            id: 'teleport_${DateTime.now().microsecondsSinceEpoch}',
+            type: PlayerNotificationType.teleport,
+            playerName: leavingUser.displayName,
+            targetMapName: targetMapName,
+            createdAt: DateTime.now(),
+          );
+        } else {
+          // 断线/正常离开
+          newNotification = PlayerNotification(
+            id: 'leave_${DateTime.now().microsecondsSinceEpoch}',
+            type: PlayerNotificationType.offline,
+            playerName: leavingUser.displayName,
+            createdAt: DateTime.now(),
+          );
         }
 
         // 更新通知列表（限制最多保留20条）
-        final updatedNotifications = newNotification != null
-            ? [...state.playerNotifications, newNotification].take(20).toList()
-            : state.playerNotifications;
+        final updatedNotifications =
+            [...state.playerNotifications, newNotification].take(20).toList();
 
         emit(
           state.copyWith(

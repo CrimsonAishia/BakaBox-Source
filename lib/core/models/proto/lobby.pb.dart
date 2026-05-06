@@ -3132,6 +3132,7 @@ class PresenceJoinResponse extends $pb.GeneratedMessage {
   factory PresenceJoinResponse({
     LobbyUser? user,
     $core.String? sourceMapId,
+    $core.bool? isCrossMapNotification,
   }) {
     final $result = create();
     if (user != null) {
@@ -3139,6 +3140,9 @@ class PresenceJoinResponse extends $pb.GeneratedMessage {
     }
     if (sourceMapId != null) {
       $result.sourceMapId = sourceMapId;
+    }
+    if (isCrossMapNotification != null) {
+      $result.isCrossMapNotification = isCrossMapNotification;
     }
     return $result;
   }
@@ -3149,6 +3153,7 @@ class PresenceJoinResponse extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PresenceJoinResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
     ..aOM<LobbyUser>(1, _omitFieldNames ? '' : 'user', subBuilder: LobbyUser.create)
     ..aOS(2, _omitFieldNames ? '' : 'sourceMapId')
+    ..aOB(3, _omitFieldNames ? '' : 'isCrossMapNotification')
     ..hasRequiredFields = false
   ;
 
@@ -3192,6 +3197,15 @@ class PresenceJoinResponse extends $pb.GeneratedMessage {
   $core.bool hasSourceMapId() => $_has(1);
   @$pb.TagNumber(2)
   void clearSourceMapId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.bool get isCrossMapNotification => $_getBF(2);
+  @$pb.TagNumber(3)
+  set isCrossMapNotification($core.bool v) { $_setBool(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasIsCrossMapNotification() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearIsCrossMapNotification() => clearField(3);
 }
 
 class PresenceLeaveResponse extends $pb.GeneratedMessage {
@@ -5830,6 +5844,7 @@ enum MatchSignal_Payload {
   anonymousChanged, 
   displayNameChanged, 
   onlineCountChanged, 
+  presenceJoin, 
   notSet
 }
 
@@ -5846,6 +5861,7 @@ class MatchSignal extends $pb.GeneratedMessage {
     AnonymousChangedSignal? anonymousChanged,
     DisplayNameChangedSignal? displayNameChanged,
     OnlineCountChangedSignal? onlineCountChanged,
+    PresenceJoinSignal? presenceJoin,
   }) {
     final $result = create();
     if (action != null) {
@@ -5878,6 +5894,9 @@ class MatchSignal extends $pb.GeneratedMessage {
     if (onlineCountChanged != null) {
       $result.onlineCountChanged = onlineCountChanged;
     }
+    if (presenceJoin != null) {
+      $result.presenceJoin = presenceJoin;
+    }
     return $result;
   }
   MatchSignal._() : super();
@@ -5894,10 +5913,11 @@ class MatchSignal extends $pb.GeneratedMessage {
     16 : MatchSignal_Payload.anonymousChanged,
     17 : MatchSignal_Payload.displayNameChanged,
     18 : MatchSignal_Payload.onlineCountChanged,
+    19 : MatchSignal_Payload.presenceJoin,
     0 : MatchSignal_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'MatchSignal', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
-    ..oo(0, [10, 11, 12, 13, 14, 15, 16, 17, 18])
+    ..oo(0, [10, 11, 12, 13, 14, 15, 16, 17, 18, 19])
     ..aOS(1, _omitFieldNames ? '' : 'action')
     ..aOM<KickSignal>(10, _omitFieldNames ? '' : 'kick', subBuilder: KickSignal.create)
     ..aOM<AssetsUpdatedSignal>(11, _omitFieldNames ? '' : 'assetsUpdated', subBuilder: AssetsUpdatedSignal.create)
@@ -5908,6 +5928,7 @@ class MatchSignal extends $pb.GeneratedMessage {
     ..aOM<AnonymousChangedSignal>(16, _omitFieldNames ? '' : 'anonymousChanged', subBuilder: AnonymousChangedSignal.create)
     ..aOM<DisplayNameChangedSignal>(17, _omitFieldNames ? '' : 'displayNameChanged', subBuilder: DisplayNameChangedSignal.create)
     ..aOM<OnlineCountChangedSignal>(18, _omitFieldNames ? '' : 'onlineCountChanged', subBuilder: OnlineCountChangedSignal.create)
+    ..aOM<PresenceJoinSignal>(19, _omitFieldNames ? '' : 'presenceJoin', subBuilder: PresenceJoinSignal.create)
     ..hasRequiredFields = false
   ;
 
@@ -6042,6 +6063,124 @@ class MatchSignal extends $pb.GeneratedMessage {
   void clearOnlineCountChanged() => clearField(18);
   @$pb.TagNumber(18)
   OnlineCountChangedSignal ensureOnlineCountChanged() => $_ensure(9);
+
+  @$pb.TagNumber(19)
+  PresenceJoinSignal get presenceJoin => $_getN(10);
+  @$pb.TagNumber(19)
+  set presenceJoin(PresenceJoinSignal v) { setField(19, v); }
+  @$pb.TagNumber(19)
+  $core.bool hasPresenceJoin() => $_has(10);
+  @$pb.TagNumber(19)
+  void clearPresenceJoin() => clearField(19);
+  @$pb.TagNumber(19)
+  PresenceJoinSignal ensurePresenceJoin() => $_ensure(10);
+}
+
+/// PresenceJoinSignal 跨 Match 用户进入通知信号（仅通知，不含坐标，不渲染）
+class PresenceJoinSignal extends $pb.GeneratedMessage {
+  factory PresenceJoinSignal({
+    $core.String? userId,
+    $core.String? nickname,
+    $core.String? avatarUrl,
+    $core.bool? isAnonymous,
+    $core.String? mapId,
+  }) {
+    final $result = create();
+    if (userId != null) {
+      $result.userId = userId;
+    }
+    if (nickname != null) {
+      $result.nickname = nickname;
+    }
+    if (avatarUrl != null) {
+      $result.avatarUrl = avatarUrl;
+    }
+    if (isAnonymous != null) {
+      $result.isAnonymous = isAnonymous;
+    }
+    if (mapId != null) {
+      $result.mapId = mapId;
+    }
+    return $result;
+  }
+  PresenceJoinSignal._() : super();
+  factory PresenceJoinSignal.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PresenceJoinSignal.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PresenceJoinSignal', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'userId')
+    ..aOS(2, _omitFieldNames ? '' : 'nickname')
+    ..aOS(3, _omitFieldNames ? '' : 'avatarUrl')
+    ..aOB(4, _omitFieldNames ? '' : 'isAnonymous')
+    ..aOS(5, _omitFieldNames ? '' : 'mapId')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PresenceJoinSignal clone() => PresenceJoinSignal()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PresenceJoinSignal copyWith(void Function(PresenceJoinSignal) updates) => super.copyWith((message) => updates(message as PresenceJoinSignal)) as PresenceJoinSignal;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PresenceJoinSignal create() => PresenceJoinSignal._();
+  PresenceJoinSignal createEmptyInstance() => create();
+  static $pb.PbList<PresenceJoinSignal> createRepeated() => $pb.PbList<PresenceJoinSignal>();
+  @$core.pragma('dart2js:noInline')
+  static PresenceJoinSignal getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PresenceJoinSignal>(create);
+  static PresenceJoinSignal? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get userId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set userId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasUserId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearUserId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get nickname => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set nickname($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasNickname() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearNickname() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get avatarUrl => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set avatarUrl($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasAvatarUrl() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearAvatarUrl() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.bool get isAnonymous => $_getBF(3);
+  @$pb.TagNumber(4)
+  set isAnonymous($core.bool v) { $_setBool(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasIsAnonymous() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearIsAnonymous() => clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.String get mapId => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set mapId($core.String v) { $_setString(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasMapId() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearMapId() => clearField(5);
 }
 
 /// KickSignal 踢人信号

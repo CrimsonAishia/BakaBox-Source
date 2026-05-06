@@ -259,6 +259,7 @@ message SnapshotResponse {
 message PresenceJoinResponse {
   LobbyUser user = 1;
   string source_map_id = 2;  // 非空表示用户是从该地图传送过来的（空 = 正常加入）
+  bool is_cross_map_notification = 3;  // true = 跨地图通知（用户在其他地图，不渲染），false = 本地图用户（渲染）
 }
 
 message PresenceLeaveResponse {
@@ -491,7 +492,17 @@ message MatchSignal {
     AnonymousChangedSignal anonymous_changed = 16;
     DisplayNameChangedSignal display_name_changed = 17;
     OnlineCountChangedSignal online_count_changed = 18;
+    PresenceJoinSignal presence_join = 19;
   }
+}
+
+// PresenceJoinSignal 跨 Match 用户进入通知信号（仅通知，不含坐标，不渲染）
+message PresenceJoinSignal {
+  string user_id = 1;
+  string nickname = 2;
+  string avatar_url = 3;
+  bool is_anonymous = 4;
+  string map_id = 5;  // 用户进入的地图 ID
 }
 
 // KickSignal 踢人信号
