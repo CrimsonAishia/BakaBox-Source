@@ -31,6 +31,7 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
   int _currentPage = 1;
   static const int _pageSize = 6;
   String? _selectedStatus; // 添加状态筛选变量
+  String _selectedMapType = 'ze_'; // 地图类型筛选，默认僵尸逃跑
 
   @override
   void initState() {
@@ -80,6 +81,7 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
     final request = MapListRequest(
       pagination: PaginationParams(pageIndex: page, pageSize: _pageSize),
       mapName: _searchKeyword.isEmpty ? null : _searchKeyword,
+      mapType: _selectedMapType,
     );
 
     setState(() {
@@ -113,6 +115,14 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
       _currentPage = 1;
     });
     _loadMyMaps(page: 1);
+  }
+
+  void _onMapTypeChanged(String mapType) {
+    setState(() {
+      _selectedMapType = mapType;
+      _currentPage = 1;
+    });
+    _loadAllMaps(page: 1);
   }
 
   void _onPageChanged(int page) {
@@ -150,6 +160,113 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
     } else {
       _loadMyMaps(page: 1);
     }
+  }
+
+  /// 地图类型筛选工具栏（chip 样式，仅在"全部地图" tab 显示）
+  Widget _buildMapTypeBar(bool isDark) {
+    const mapTypeOptions = [
+      ('ze_', '僵尸逃跑'),
+      ('zm_', '僵尸感染'),
+      ('surf_', '滑翔'),
+      ('bhop_', '连跳'),
+      ('kz_', '攀爬'),
+      ('mg_', '闯关'),
+      ('bkz_', '攀岩'),
+      ('', '其他'),
+    ];
+
+    final activeColor = const Color(0xFF0080FF);
+
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      child: _tabController.index == 0
+          ? Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.03)
+                    : Colors.black.withValues(alpha: 0.02),
+                border: Border(
+                  bottom: BorderSide(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.07)
+                        : Colors.black.withValues(alpha: 0.05),
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    '地图类型',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.45)
+                          : Colors.black.withValues(alpha: 0.45),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: mapTypeOptions.map((option) {
+                          final (value, label) = option;
+                          final isSelected = _selectedMapType == value;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: InkWell(
+                              onTap: () => _onMapTypeChanged(value),
+                              borderRadius: BorderRadius.circular(20),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? activeColor
+                                      : (isDark
+                                            ? Colors.white.withValues(alpha: 0.07)
+                                            : Colors.black.withValues(alpha: 0.05)),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? activeColor
+                                        : Colors.transparent,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Text(
+                                  label,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : (isDark
+                                              ? Colors.white.withValues(alpha: 0.7)
+                                              : Colors.black.withValues(alpha: 0.65)),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : const SizedBox.shrink(),
+    );
   }
 
   Widget _buildStatusDropdown(bool isDark) {
@@ -382,6 +499,9 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
                 ],
               ),
             ),
+
+            // 地图类型筛选栏（仅全部地图 tab 显示）
+            _buildMapTypeBar(isDark),
 
             // Tab 内容
             Expanded(
