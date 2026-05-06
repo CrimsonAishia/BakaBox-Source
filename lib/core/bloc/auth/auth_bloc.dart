@@ -68,7 +68,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(state.copyWith(status: AuthStatus.loading));
 
     try {
-      final result = await _authService.login(event.username, event.password);
+      final result = await _authService.login(
+        event.username,
+        event.password,
+        captchaToken: event.captchaToken,
+      );
 
       if (result.success) {
         emit(

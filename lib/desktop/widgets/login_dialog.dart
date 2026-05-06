@@ -6,6 +6,7 @@ import '../../core/bloc/auth/auth_bloc.dart';
 import '../../core/bloc/auth/auth_event.dart';
 import '../../core/bloc/auth/auth_state.dart';
 import '../../core/utils/toast_utils.dart';
+import 'captcha_dialog.dart';
 import 'qq_login_dialog.dart';
 
 /// 关联论坛账户对话框
@@ -29,6 +30,7 @@ class _LoginDialogState extends State<LoginDialog> {
   final _passwordController = TextEditingController();
   final _usernameFocus = FocusNode();
   bool _isLoading = false;
+  String? _captchaToken;
 
   @override
   void initState() {
@@ -46,7 +48,7 @@ class _LoginDialogState extends State<LoginDialog> {
     super.dispose();
   }
 
-  void _handleBind() {
+  void _handleBind() async {
     final username = _usernameController.text.trim();
     final password = _passwordController.text;
 
@@ -55,9 +57,36 @@ class _LoginDialogState extends State<LoginDialog> {
       return;
     }
 
+    // 验证码是必须的
+    if (_captchaToken == null || _captchaToken!.isEmpty) {
+      ToastUtils.showWarning(context, '请先获取验证码');
+      return;
+    }
+
+    // 使用验证码 token 登录
     context.read<AuthBloc>().add(
-      AuthLoginRequested(username: username, password: password),
+      AuthLoginRequested(
+        username: username,
+        password: password,
+        captchaToken: _captchaToken,
+      ),
     );
+  }
+
+  Future<void> _handleGetCaptcha() async {
+    // 主动打开验证码对话框
+    final captchaToken = await CaptchaDialog.show(context);
+    
+    if (!mounted) return;
+    
+    if (captchaToken != null && captchaToken.isNotEmpty) {
+      setState(() {
+        _captchaToken = captchaToken;
+      });
+      ToastUtils.showSuccess(context, '验证成功');
+    } else {
+      ToastUtils.showWarning(context, '验证失败或已取消');
+    }
   }
 
   void _openRegister() {
@@ -103,6 +132,7 @@ class _LoginDialogState extends State<LoginDialog> {
           ToastUtils.showSuccess(context, '关联成功');
         } else if (state.status == AuthStatus.error &&
             state.errorMessage != null) {
+          // 显示错误信息
           ToastUtils.showError(context, state.errorMessage!);
         }
 
@@ -253,13 +283,47 @@ class _LoginDialogState extends State<LoginDialog> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 8),
+
+                // 获取验证码按钮
+                SizedBox(
+                  height: 40,
+                  child: OutlinedButton.icon(
+                    onPressed: _isLoading ? null : _handleGetCaptcha,
+                    icon: Icon(
+                      _captchaToken != null ? Icons.check_circle : Icons.security,
+                      size: 18,
+                      color: _captchaToken != null ? Colors.green : null,
+                    ),
+                    label: Text(
+                      _captchaToken != null ? '验证码已获取' : '获取验证码',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: _captchaToken != null ? Colors.green : null,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: textColor,
+                      side: BorderSide(
+                        color: _captchaToken != null
+                            ? Colors.green
+                            : borderColor,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 16),
 
-                // 关联按钮
+                // 关联按钮（验证码是必须的，没有验证码时禁用）
                 SizedBox(
                   height: 44,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleBind,
+                    onPressed: (_isLoading || _captchaToken == null || _captchaToken!.isEmpty) 
+                        ? null 
+                        : _handleBind,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0080FF),
                       foregroundColor: Colors.white,
@@ -268,7 +332,8 @@ class _LoginDialogState extends State<LoginDialog> {
                       ),
                       disabledBackgroundColor: const Color(
                         0xFF0080FF,
-                      ).withValues(alpha: 0.5),
+                      ).withValues(alpha: 0.3),
+                      disabledForegroundColor: Colors.white.withValues(alpha: 0.5),
                     ),
                     child: _isLoading
                         ? const SizedBox(

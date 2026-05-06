@@ -16,11 +16,16 @@ class AuthCheckRequested extends AuthEvent {
 class AuthLoginRequested extends AuthEvent {
   final String username;
   final String password;
+  final String? captchaToken;
 
-  const AuthLoginRequested({required this.username, required this.password});
+  const AuthLoginRequested({
+    required this.username,
+    required this.password,
+    this.captchaToken,
+  });
 
   @override
-  List<Object?> get props => [username, password];
+  List<Object?> get props => [username, password, captchaToken];
 }
 
 /// 退出登录
