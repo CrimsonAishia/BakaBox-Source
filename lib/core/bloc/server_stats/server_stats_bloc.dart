@@ -15,13 +15,16 @@ class ServerStatsBloc extends Bloc<ServerStatsEvent, ServerStatsState> {
     Emitter<ServerStatsState> emit,
   ) async {
     if (state.isLoading) return;
-    if (state.stats != null) return; // 已有数据不重复请求
 
     emit(state.copyWith(isLoading: true));
 
     try {
       final stats = await ServerStatsApi.getDailyStats();
-      emit(state.copyWith(isLoading: false, stats: stats));
+      emit(state.copyWith(
+        isLoading: false,
+        stats: stats,
+        lastFetched: DateTime.now(),
+      ));
     } catch (e) {
       LogService.e('获取服务器统计失败', e);
       emit(state.copyWith(isLoading: false, error: e.toString()));
@@ -38,7 +41,11 @@ class ServerStatsBloc extends Bloc<ServerStatsEvent, ServerStatsState> {
 
     try {
       final stats = await ServerStatsApi.getDailyStats();
-      emit(state.copyWith(isLoading: false, stats: stats));
+      emit(state.copyWith(
+        isLoading: false,
+        stats: stats,
+        lastFetched: DateTime.now(),
+      ));
     } catch (e) {
       LogService.e('刷新服务器统计失败', e);
       emit(state.copyWith(isLoading: false, error: e.toString()));

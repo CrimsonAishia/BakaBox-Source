@@ -9,6 +9,7 @@ class UpdateLogState extends Equatable {
   final int totalCount;
   final String keyword; // 当前搜索关键字
   final String? error;
+  final DateTime? lastFetched;
 
   const UpdateLogState({
     this.logs = const [],
@@ -18,6 +19,7 @@ class UpdateLogState extends Equatable {
     this.totalCount = 0,
     this.keyword = '',
     this.error,
+    this.lastFetched,
   });
 
   UpdateLogState copyWith({
@@ -29,6 +31,7 @@ class UpdateLogState extends Equatable {
     String? keyword,
     String? error,
     bool clearError = false,
+    DateTime? lastFetched,
   }) {
     return UpdateLogState(
       logs: logs ?? this.logs,
@@ -38,6 +41,7 @@ class UpdateLogState extends Equatable {
       totalCount: totalCount ?? this.totalCount,
       keyword: keyword ?? this.keyword,
       error: clearError ? null : (error ?? this.error),
+      lastFetched: lastFetched ?? this.lastFetched,
     );
   }
 
@@ -50,5 +54,6 @@ class UpdateLogState extends Equatable {
     totalCount,
     keyword,
     error,
+    lastFetched,
   ];
 }

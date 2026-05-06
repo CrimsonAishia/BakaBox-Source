@@ -38,6 +38,7 @@ class UpdateLogBloc extends Bloc<UpdateLogEvent, UpdateLogState> {
           totalCount: response.total,
           hasMore: response.items.length < response.total,
           keyword: event.keyword,
+          lastFetched: DateTime.now(),
         ),
       );
     } on ApiException catch (e) {

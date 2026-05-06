@@ -117,6 +117,7 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
           announcements: announcements,
           readIds: readIds,
           isLoading: false,
+          lastFetched: DateTime.now(),
         ),
       );
 
@@ -165,6 +166,7 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
           announcements: announcements,
           readIds: readIds,
           isLoading: false,
+          lastFetched: DateTime.now(),
         ),
       );
 

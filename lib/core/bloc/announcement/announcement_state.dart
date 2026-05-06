@@ -21,6 +21,9 @@ class AnnouncementState extends Equatable {
   /// 是否正在加载详情
   final bool isLoadingDetail;
 
+  /// 最后一次加载时间
+  final DateTime? lastFetched;
+
   const AnnouncementState({
     this.announcements = const [],
     this.readIds = const {},
@@ -28,6 +31,7 @@ class AnnouncementState extends Equatable {
     this.error,
     this.currentDetail,
     this.isLoadingDetail = false,
+    this.lastFetched,
   });
 
   /// 未读公告数量
@@ -48,6 +52,7 @@ class AnnouncementState extends Equatable {
     AnnouncementItem? currentDetail,
     bool clearDetail = false,
     bool? isLoadingDetail,
+    DateTime? lastFetched,
   }) {
     return AnnouncementState(
       announcements: announcements ?? this.announcements,
@@ -56,6 +61,7 @@ class AnnouncementState extends Equatable {
       error: clearError ? null : (error ?? this.error),
       currentDetail: clearDetail ? null : (currentDetail ?? this.currentDetail),
       isLoadingDetail: isLoadingDetail ?? this.isLoadingDetail,
+      lastFetched: lastFetched ?? this.lastFetched,
     );
   }
 
@@ -67,5 +73,6 @@ class AnnouncementState extends Equatable {
     error,
     currentDetail,
     isLoadingDetail,
+    lastFetched,
   ];
 }

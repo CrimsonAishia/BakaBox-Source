@@ -76,6 +76,8 @@ class BilibiliContentBloc
             liveRoomsTotal: liveRoomsTotal,
             isRefreshing: false,
             hasLoadedLiveRooms: true,
+            liveRoomsLastFetched: DateTime.now(),
+            isLoadingLiveRooms: false,
           ),
         );
       } else {
@@ -98,6 +100,8 @@ class BilibiliContentBloc
             videosTotal: videosTotal,
             isRefreshing: false,
             hasLoadedVideos: true,
+            videosLastFetched: DateTime.now(),
+            isLoadingVideos: false,
           ),
         );
       }
