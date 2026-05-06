@@ -55,7 +55,7 @@ class _LobbyDesktopState extends State<LobbyDesktop>
     WidgetsBinding.instance.addObserver(this);
 
     _teleportController = AnimationController(
-      duration: const Duration(milliseconds: _teleportDurationMs),
+      duration: const Duration(milliseconds: _phase1DurationMs),
       vsync: this,
     );
     _teleportAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -137,6 +137,7 @@ class _LobbyDesktopState extends State<LobbyDesktop>
     _playersDrawerController.dispose();
     _transientNoticeTimer?.cancel();
     _teleportHideTimer?.cancel();
+    _minDurationTimer?.cancel();
     super.dispose();
   }
 
@@ -156,11 +157,29 @@ class _LobbyDesktopState extends State<LobbyDesktop>
   /// 上一次检测到的传送状态
   bool? _lastTeleportingState;
 
-  /// 动画时长（毫秒）
-  static const int _teleportDurationMs = 3000;
+  /// 传送动画开始时间（用于保证最小动画时长）
+  DateTime? _teleportStartTime;
+
+  /// 最小传送动画时长（毫秒）
+  static const int _minTeleportDurationMs = 2000;
+
+  /// 阶段1动画时长（等待传送完成时，缓慢推进到 70%）
+  static const int _phase1DurationMs = 4000;
+
+  /// 阶段2动画时长（传送完成后，快速推进到 100%）
+  static const int _phase2DurationMs = 500;
+
+  /// 阶段1目标进度（等待传送完成时最多推进到此值）
+  static const double _phase1TargetProgress = 0.7;
 
   /// 动画完成后额外显示时长（毫秒）
   static const int _holdDurationMs = 1500;
+
+  /// 等待最小动画时间的定时器
+  Timer? _minDurationTimer;
+
+  /// 标记传送数据是否已就绪（等待最小动画时间后再进入阶段2）
+  bool _teleportDataReady = false;
 
   /// 同步传送动画状态
   void _syncTeleportAnimation(LobbyState state) {
@@ -179,54 +198,114 @@ class _LobbyDesktopState extends State<LobbyDesktop>
     }
 
     if (state.isTeleporting && !_lastTeleportingState!) {
-      // 开始传送
+      // 开始传送 — 立即显示动画（阶段1：缓慢推进到 70%）
       LogService.d('[LobbyDesktop] _syncTeleportAnimation: 检测到传送开始，启动动画');
       _showTeleportOverlay = true;
       _teleportHideTimer?.cancel();
+      _minDurationTimer?.cancel();
+      _teleportDataReady = false;
       _targetMapConfig = _findTargetMapConfig(state);
       _startTeleportAnimation();
       _lastTeleportingState = true;
     } else if (!state.isTeleporting && _lastTeleportingState!) {
-      // 传送结束 - 取消隐藏定时器，重新计算隐藏时间
+      // 传送数据就绪 — 检查是否满足最小动画时间
       LogService.d('[LobbyDesktop] _syncTeleportAnimation: 检测到传送结束');
       _lastTeleportingState = false;
-      _scheduleHideOverlay();
+      _onTeleportDataReady();
     }
   }
 
-  /// 启动传送动画
+  /// 启动传送动画（阶段1：缓慢推进到 70%）
   void _startTeleportAnimation() {
     LogService.d(
-      '[LobbyDesktop] _startTeleportAnimation: 开始启动动画, controller=$_teleportController',
+      '[LobbyDesktop] _startTeleportAnimation: 开始阶段1动画, controller=$_teleportController',
     );
+    _teleportStartTime = DateTime.now();
+    _teleportDataReady = false;
+
+    // 阶段1：用较长时间推进到 70%
+    // animateTo 的实际时间 = duration * (target - current) / range
+    // 要让实际时间 = _phase1DurationMs，需要 duration = _phase1DurationMs / 0.7
     _teleportController?.removeStatusListener(_onTeleportAnimationStatus);
-    _teleportController?.addStatusListener(_onTeleportAnimationStatus);
-    final result = _teleportController?.forward(from: 0);
-    LogService.d(
-      '[LobbyDesktop] _startTeleportAnimation: forward() 返回 $result',
+    _teleportController?.duration = Duration(
+      milliseconds: (_phase1DurationMs / _phase1TargetProgress).round(),
     );
+    _teleportController?.addStatusListener(_onTeleportAnimationStatus);
+    _teleportController?.value = 0;
+    _teleportController?.animateTo(_phase1TargetProgress);
+    LogService.d(
+      '[LobbyDesktop] _startTeleportAnimation: 阶段1开始，目标 ${(_phase1TargetProgress * 100).toInt()}%',
+    );
+  }
+
+  /// 传送数据就绪时调用
+  void _onTeleportDataReady() {
+    final startTime = _teleportStartTime;
+    if (startTime == null) {
+      // 异常情况：没有开始时间，直接完成
+      _startPhase2();
+      return;
+    }
+
+    final elapsed = DateTime.now().difference(startTime).inMilliseconds;
+    final remaining = _minTeleportDurationMs - elapsed;
+
+    if (remaining <= 0) {
+      // 已满足最小动画时间，立即进入阶段2
+      LogService.d('[LobbyDesktop] _onTeleportDataReady: 已满足最小时间(${elapsed}ms)，进入阶段2');
+      _startPhase2();
+    } else {
+      // 未满足最小动画时间，等待剩余时间后再进入阶段2
+      LogService.d('[LobbyDesktop] _onTeleportDataReady: 未满足最小时间(${elapsed}ms)，等待${remaining}ms');
+      _teleportDataReady = true;
+      _minDurationTimer?.cancel();
+      _minDurationTimer = Timer(Duration(milliseconds: remaining), () {
+        if (mounted && _teleportDataReady) {
+          _startPhase2();
+        }
+      });
+    }
+  }
+
+  /// 启动阶段2动画（快速推进到 100%）
+  void _startPhase2() {
+    LogService.d(
+      '[LobbyDesktop] _startPhase2: 从 ${_teleportController?.value ?? 0} 快速推进到 100%',
+    );
+    _teleportDataReady = false;
+    _minDurationTimer?.cancel();
+
+    // 阶段2：快速推进到 100%
+    // animateTo 的实际时间 = duration * (target - current) / range
+    // 要让实际时间 = _phase2DurationMs，需要 duration = _phase2DurationMs / (1.0 - current)
+    final currentValue = _teleportController?.value ?? 0.0;
+    final remaining = 1.0 - currentValue;
+    if (remaining <= 0) {
+      // 已经到达或超过 1.0，直接触发完成
+      _scheduleHideOverlay();
+      return;
+    }
+    _teleportController?.duration = Duration(
+      milliseconds: (_phase2DurationMs / remaining).round(),
+    );
+    _teleportController?.animateTo(1.0);
   }
 
   /// 调度隐藏覆盖层（在动画完成后延迟）
   void _scheduleHideOverlay() {
     _teleportHideTimer?.cancel();
 
-    // 计算动画剩余时间
-    final animationValue = _teleportController?.value ?? 0.0;
-    final remainingMs = ((1.0 - animationValue) * _teleportDurationMs).round();
-
-    // 等待动画完成 + 额外显示时间
-    final delayMs = remainingMs + _holdDurationMs;
     LogService.d(
-      '[LobbyDesktop] 计划 ${delayMs}ms 后隐藏覆盖层（动画剩余 ${remainingMs}ms）',
+      '[LobbyDesktop] 计划 ${_holdDurationMs}ms 后隐藏覆盖层',
     );
 
-    _teleportHideTimer = Timer(Duration(milliseconds: delayMs), () {
+    _teleportHideTimer = Timer(Duration(milliseconds: _holdDurationMs), () {
       if (mounted) {
         _showTeleportOverlay = false;
         _targetMapConfig = null;
         _teleportController?.removeStatusListener(_onTeleportAnimationStatus);
         _teleportController?.reset();
+        _teleportStartTime = null;
         setState(() {});
       }
     });
@@ -235,7 +314,19 @@ class _LobbyDesktopState extends State<LobbyDesktop>
   /// 动画状态监听
   void _onTeleportAnimationStatus(AnimationStatus status) {
     if (status == AnimationStatus.completed) {
-      LogService.d('[LobbyDesktop] 传送动画播放完成');
+      final value = _teleportController?.value ?? 0.0;
+      if (value >= 1.0) {
+        // 阶段2完成（进度到达 100%），调度隐藏
+        LogService.d('[LobbyDesktop] 传送动画播放完成（100%），调度隐藏');
+        _scheduleHideOverlay();
+      } else {
+        // 阶段1完成（停在 70%），等待传送数据就绪
+        LogService.d('[LobbyDesktop] 阶段1动画完成（${(value * 100).toInt()}%），等待传送数据');
+        // 如果数据已经就绪（在阶段1动画期间到达），立即进入阶段2
+        if (_teleportDataReady) {
+          _startPhase2();
+        }
+      }
     } else if (status == AnimationStatus.dismissed) {
       // 动画被重置
     }
@@ -308,6 +399,9 @@ class _LobbyDesktopState extends State<LobbyDesktop>
           _showTeleportOverlay = false;
           _targetMapConfig = null;
           _teleportHideTimer?.cancel();
+          _minDurationTimer?.cancel();
+          _teleportDataReady = false;
+          _teleportStartTime = null;
           _teleportController?.reset();
         }
 
