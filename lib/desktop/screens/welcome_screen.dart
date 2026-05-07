@@ -3,13 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/core.dart';
-import '../widgets/welcome_v2/stats_cards_row.dart';
-import '../widgets/welcome_v2/server_categories_panel.dart';
-import '../widgets/welcome_v2/announcements_panel.dart';
-import '../widgets/welcome_v2/update_logs_panel.dart';
-import '../widgets/welcome_v2/online_trend_chart.dart';
-import '../widgets/welcome_v2/live_rooms_section.dart';
-import '../widgets/welcome_v2/videos_section.dart';
+import '../widgets/welcome/stats_cards_row.dart';
+import '../widgets/welcome/announcements_panel.dart';
+import '../widgets/welcome/update_logs_panel.dart';
+import '../widgets/welcome/online_trend_chart.dart';
+import '../widgets/welcome/live_rooms_section.dart';
+import '../widgets/welcome/videos_section.dart';
 
 /// 欢迎界面回调类型
 typedef OnNavigateToServers = void Function();
@@ -34,7 +33,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   /// 各数据源的缓存时长
-  static const _serverOnlineCountsTtl = Duration(minutes: 2);
   static const _statsTtl = Duration(minutes: 5);
   static const _announcementsTtl = Duration(minutes: 30);
   static const _updateLogsTtl = Duration(hours: 1);
@@ -57,11 +55,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     if (serverBloc.state.serverCategories.isEmpty &&
         !serverBloc.state.isLoading) {
       serverBloc.add(ServerFetchList());
-    }
-    // 服务器在线人数：每 2 分钟刷新一次
-    if (serverBloc.state.serverCategories.isNotEmpty &&
-        _isStale(serverBloc.state.onlineCountsLastFetched, _serverOnlineCountsTtl)) {
-      serverBloc.add(ServerUpdateCategoryOnlineCounts());
     }
 
     // 统计数据：每 5 分钟刷新一次
@@ -98,91 +91,70 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return BlocListener<ServerBloc, ServerState>(
-      listenWhen: (previous, current) {
-        return previous.serverCategories.isEmpty &&
-            current.serverCategories.isNotEmpty;
-      },
-      listener: (context, state) {
-        context.read<ServerBloc>().add(ServerUpdateCategoryOnlineCounts());
-      },
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isDark
-                  ? [
-                      const Color(0xFF0F172A),
-                      const Color(0xFF1E293B),
-                      const Color(0xFF1A1A2E),
-                    ]
-                  : [
-                      const Color(0xFFE3F2FD),
-                      const Color(0xFFE0F7FA),
-                      const Color(0xFFEDE7F6),
-                      const Color(0xFFFFF3E0),
-                    ],
-              stops: isDark ? [0.0, 0.5, 1.0] : [0.0, 0.35, 0.7, 1.0],
-            ),
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? [
+                    const Color(0xFF0F172A),
+                    const Color(0xFF1E293B),
+                    const Color(0xFF1A1A2E),
+                  ]
+                : [
+                    const Color(0xFFE3F2FD),
+                    const Color(0xFFE0F7FA),
+                    const Color(0xFFEDE7F6),
+                    const Color(0xFFFFF3E0),
+                  ],
+            stops: isDark ? [0.0, 0.5, 1.0] : [0.0, 0.35, 0.7, 1.0],
           ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 36, 24, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 顶部欢迎语 + 数据卡片行
-                _WelcomeHeader(isDark: isDark),
-                const SizedBox(height: 16),
-                StatsCardsRow(isDark: isDark),
-                const SizedBox(height: 24),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 36, 24, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 顶部欢迎语 + 数据卡片行
+              _WelcomeHeader(isDark: isDark),
+              const SizedBox(height: 12),
+              StatsCardsRow(isDark: isDark),
+              const SizedBox(height: 12),
 
-                // 上半区：服务器分类（左）+ 公告/更新日志（右）
-                SizedBox(
-                  height: 420, // 固定高度，左右等高
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // 左侧：服务器分类
-                      Expanded(
-                        flex: 4,
-                        child: ServerCategoriesPanel(
-                          isDark: isDark,
-                          onNavigateToServers: widget.onNavigateToServers,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
+              // 上半区：在线趋势（左）+ 公告/更新日志（右）
+              SizedBox(
+                height: 420, // 固定高度，左右等高
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // 左侧：在线趋势
+                    Expanded(flex: 4, child: OnlineTrendChart(isDark: isDark)),
+                    const SizedBox(width: 16),
 
-                      // 右侧：公告 + 更新日志
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: AnnouncementsPanel(isDark: isDark),
-                            ),
-                            const SizedBox(height: 16),
-                            Expanded(
-                              child: UpdateLogsPanel(isDark: isDark),
-                            ),
-                          ],
-                        ),
+                    // 右侧：公告 + 更新日志
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        children: [
+                          Expanded(child: AnnouncementsPanel(isDark: isDark)),
+                          const SizedBox(height: 16),
+                          Expanded(child: UpdateLogsPanel(isDark: isDark)),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                OnlineTrendChart(isDark: isDark),
-                const SizedBox(height: 24),
+              ),
+              const SizedBox(height: 12),
 
-                // 下半区：直播 + 视频
-                LiveRoomsSection(isDark: isDark),
-                const SizedBox(height: 16),
-                VideosSection(isDark: isDark),
-              ],
-            ),
+              // 下半区：直播 + 视频
+              LiveRoomsSection(isDark: isDark),
+              const SizedBox(height: 12),
+              VideosSection(isDark: isDark),
+            ],
           ),
         ),
       ),
@@ -207,18 +179,21 @@ class _WelcomeHeader extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              username != null ? '$greeting，$username 👋' : '$greeting 👋',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : const Color(0xFF1E293B),
-              ),
-            ).animate().fadeIn(duration: 400.ms).slideX(
-              begin: -0.1,
-              end: 0,
-              duration: 400.ms,
-              curve: Curves.easeOutCubic,
-            ),
+                  username != null ? '$greeting，$username 👋' : '$greeting 👋',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  ),
+                )
+                .animate()
+                .fadeIn(duration: 400.ms)
+                .slideX(
+                  begin: -0.1,
+                  end: 0,
+                  duration: 400.ms,
+                  curve: Curves.easeOutCubic,
+                ),
             const SizedBox(height: 4),
             Text(
               _getSubtitle(),
