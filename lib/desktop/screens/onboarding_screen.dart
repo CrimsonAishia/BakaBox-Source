@@ -12,6 +12,7 @@ import '../../core/services/game_launcher_service.dart';
 import '../../core/services/onboarding_service.dart';
 import '../../core/services/policy_service.dart';
 import '../../core/services/game_path_service.dart';
+import '../widgets/captcha_dialog.dart';
 import '../widgets/qq_login_dialog.dart';
 
 /// 引导完成回调
@@ -50,6 +51,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoggingIn = false;
+  String? _captchaToken;
 
   @override
   void initState() {
@@ -901,7 +903,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
-        setState(() => _isLoggingIn = state.status == AuthStatus.loading);
+        setState(() {
+          _isLoggingIn = state.status == AuthStatus.loading;
+          if (state.status == AuthStatus.error) {
+            _captchaToken = null;
+          }
+        });
 
         // 登录成功后触发每日任务状态检查
         if (state.isAuthenticated && state.userInfo != null) {
@@ -1153,7 +1160,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               // 密码输入
               TextField(
                 controller: _passwordController,
@@ -1181,12 +1188,46 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
                 onSubmitted: (_) => _handleLogin(),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
+              // 获取验证码按钮
+              SizedBox(
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: _isLoggingIn ? null : _handleGetCaptcha,
+                  icon: Icon(
+                    _captchaToken != null ? Icons.check_circle : Icons.security,
+                    size: 20,
+                    color: _captchaToken != null ? Colors.green : null,
+                  ),
+                  label: Text(
+                    _captchaToken != null ? '验证码已获取' : '获取验证码',
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: _captchaToken != null ? Colors.green : null,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: textColor,
+                    side: BorderSide(
+                      color: _captchaToken != null ? Colors.green : borderColor,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               // 登录按钮
               SizedBox(
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _isLoggingIn ? null : _handleLogin,
+                  onPressed:
+                      (_isLoggingIn ||
+                          _captchaToken == null ||
+                          _captchaToken!.isEmpty)
+                      ? null
+                      : _handleLogin,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8B5CF6),
                     foregroundColor: Colors.white,
@@ -1272,11 +1313,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final username = _usernameController.text.trim();
     final password = _passwordController.text;
 
-    if (username.isEmpty || password.isEmpty) return;
+    if (username.isEmpty || password.isEmpty) {
+      ToastUtils.showWarning(context, '请输入用户名和密码');
+      return;
+    }
+
+    if (_captchaToken == null || _captchaToken!.isEmpty) {
+      ToastUtils.showWarning(context, '请先获取验证码');
+      return;
+    }
 
     context.read<AuthBloc>().add(
-      AuthLoginRequested(username: username, password: password),
+      AuthLoginRequested(
+        username: username,
+        password: password,
+        captchaToken: _captchaToken,
+      ),
     );
+  }
+
+  Future<void> _handleGetCaptcha() async {
+    final captchaToken = await CaptchaDialog.show(context);
+
+    if (!mounted) return;
+
+    if (captchaToken != null && captchaToken.isNotEmpty) {
+      setState(() {
+        _captchaToken = captchaToken;
+      });
+      ToastUtils.showSuccess(context, '验证成功');
+    } else {
+      ToastUtils.showWarning(context, '验证失败或已取消');
+    }
   }
 
   // ==================== 第四步：完成页面（含隐私政策同意） ====================
