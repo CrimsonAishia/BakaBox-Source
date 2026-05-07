@@ -338,37 +338,69 @@ class UpdateService {
     required String savePath,
     required void Function(DownloadProgress) onProgress,
   }) async {
-    // 主地址优先，没有则直接用备用地址
     final primaryUrl = updateInfo.downloadUrl;
     final fallbackUrl = updateInfo.fallbackDownloadUrl;
 
-    if (primaryUrl == null) {
-      // 只有备用地址，直接下载
-      return await _updateApi.downloadUpdate(fallbackUrl!, savePath, onProgress);
+    if ((primaryUrl == null || primaryUrl.isEmpty) && 
+        (fallbackUrl == null || fallbackUrl.isEmpty)) {
+      throw const UpdateException('下载地址不可用');
     }
 
-    Object? primaryError;
-    try {
-      return await _updateApi.downloadUpdate(primaryUrl, savePath, onProgress);
-    } catch (e) {
-      primaryError = e;
-      if (fallbackUrl == null || fallbackUrl.isEmpty) rethrow;
+    Object? firstTryError;
 
-      LogService.e('[UpdateService] 主下载地址失败，切换备用地址', e);
+    // 第一阶段：尝试使用当前已有的地址进行下载（优先主地址）
+    try {
+      final initialUrl = (primaryUrl != null && primaryUrl.isNotEmpty) ? primaryUrl : fallbackUrl!;
+      return await _updateApi.downloadUpdate(initialUrl, savePath, onProgress);
+    } catch (e) {
+      firstTryError = e;
+      LogService.w('[UpdateService] 首次下载尝试失败', e);
 
       // 删除可能存在的不完整文件
       try {
         await File(savePath).delete();
       } catch (_) {}
+    }
 
-      try {
-        return await _updateApi.downloadUpdate(fallbackUrl, savePath, onProgress);
-      } catch (e2) {
-        LogService.e('[UpdateService] 备用下载地址也失败', e2);
-        throw UpdateException(
-          '主地址失败: ${_getErrorMessageForReport(primaryError)}\n备用地址失败: ${_getErrorMessageForReport(e2)}',
-        );
+    // 第二阶段：重新获取更新信息以刷新链接，进行最后一次尝试
+    try {
+      LogService.i('[UpdateService] 重新获取更新信息以刷新备用地址鉴权');
+      final freshUpdateInfo = await _updateApi.checkForUpdate();
+      
+      // 如果应用更新被后端紧急撤回
+      if (!freshUpdateInfo.hasUpdate) {
+        throw const UpdateException('当前更新已被服务器撤回，请稍后再试');
       }
+
+      String? urlToUse;
+      
+      if (primaryUrl != null && primaryUrl.isNotEmpty) {
+        // 如果刚才失败的是主地址，这次优先尝试新的备用地址
+        urlToUse = freshUpdateInfo.fallbackDownloadUrl;
+        // 如果新备用地址为空，兜底试试新主地址
+        if (urlToUse == null || urlToUse.isEmpty) {
+          urlToUse = freshUpdateInfo.downloadUrl;
+        }
+      } else {
+        // 如果刚才失败的直接就是备用地址，那依然尝试刷新后的新备用地址
+        urlToUse = freshUpdateInfo.fallbackDownloadUrl;
+      }
+      
+      // 极端兜底
+      if (urlToUse == null || urlToUse.isEmpty) {
+        urlToUse = fallbackUrl ?? primaryUrl; 
+      }
+
+      if (urlToUse == null || urlToUse.isEmpty) {
+        throw const UpdateException('无法获取有效的备用下载地址');
+      }
+
+      return await _updateApi.downloadUpdate(urlToUse, savePath, onProgress);
+    } catch (e2) {
+      LogService.e('[UpdateService] 刷新地址后下载依然失败', e2);
+      throw UpdateException(
+        '首次尝试失败: ${_getErrorMessageForReport(firstTryError)}\n重试也失败: ${_getErrorMessageForReport(e2)}',
+      );
     }
   }
 
