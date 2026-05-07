@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -7,13 +8,68 @@ import '../../../core/core.dart';
 import '../bilibili_content/live_room_card.dart';
 
 /// 直播间展示区
-class LiveRoomsSection extends StatelessWidget {
+class LiveRoomsSection extends StatefulWidget {
   final bool isDark;
 
   const LiveRoomsSection({super.key, required this.isDark});
 
   @override
+  State<LiveRoomsSection> createState() => _LiveRoomsSectionState();
+}
+
+class _LiveRoomsSectionState extends State<LiveRoomsSection> {
+  final ScrollController _scrollController = ScrollController();
+  bool _canScrollLeft = false;
+  bool _canScrollRight = false;
+  bool _isHovering = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_updateScrollState);
+    // 初始化后检查一次
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollState());
+  }
+
+  void _updateScrollState() {
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    final canLeft = pos.pixels > 0;
+    final canRight = pos.pixels < pos.maxScrollExtent;
+    if (canLeft != _canScrollLeft || canRight != _canScrollRight) {
+      setState(() {
+        _canScrollLeft = canLeft;
+        _canScrollRight = canRight;
+      });
+    }
+  }
+
+  void _scrollLeft() {
+    _scrollController.animateTo(
+      (_scrollController.offset - 200).clamp(0, _scrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _scrollRight() {
+    _scrollController.animateTo(
+      (_scrollController.offset + 200).clamp(0, _scrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_updateScrollState);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isDark = widget.isDark;
     return BlocBuilder<BilibiliContentBloc, BilibiliContentState>(
       builder: (context, state) {
         // 优先展示直播中的，再补充其他
@@ -126,32 +182,100 @@ class LiveRoomsSection extends StatelessWidget {
                   else if (displayRooms.isEmpty)
                     _buildEmpty()
                   else
-                    SizedBox(
-                      height: 260,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: displayRooms.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(width: 12),
-                        itemBuilder: (context, index) {
-                          final room = displayRooms[index];
-                          return SizedBox(
-                            width: 180,
-                            child: LiveRoomCard(
-                              room: room,
-                              coverUrl: room.displayCover,
-                              title: room.displayTitle,
-                              isRefreshing: state.isRefreshing,
-                              onTap: () {
-                                context.read<BilibiliContentBloc>().add(
-                                  BilibiliContentIncreaseLiveRoomViewRequested(
-                                    id: room.id,
-                                  ),
-                                );
+                    MouseRegion(
+                      onEnter: (_) => setState(() => _isHovering = true),
+                      onExit: (_) => setState(() => _isHovering = false),
+                      child: SizedBox(
+                        height: 270, // 加 10 留给 Scrollbar 空间
+                        child: Stack(
+                          children: [
+                            // 鼠标滚轮 → 横向滚动
+                            Listener(
+                              onPointerSignal: (event) {
+                                if (event is PointerScrollEvent) {
+                                  final delta = event.scrollDelta.dy != 0
+                                      ? event.scrollDelta.dy
+                                      : event.scrollDelta.dx;
+                                  _scrollController.animateTo(
+                                    (_scrollController.offset + delta).clamp(
+                                      0.0,
+                                      _scrollController.position.maxScrollExtent,
+                                    ),
+                                    duration: const Duration(milliseconds: 80),
+                                    curve: Curves.linear,
+                                  );
+                                }
                               },
+                              child: Scrollbar(
+                                controller: _scrollController,
+                                thumbVisibility: true,
+                                trackVisibility: true,
+                                child: Padding(
+                                  // Scrollbar 占底部约 10px，卡片区保持 260
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: ListView.separated(
+                                    controller: _scrollController,
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: displayRooms.length,
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(width: 12),
+                                    itemBuilder: (context, index) {
+                                      final room = displayRooms[index];
+                                      return SizedBox(
+                                        width: 180,
+                                        child: LiveRoomCard(
+                                          room: room,
+                                          coverUrl: room.displayCover,
+                                          title: room.displayTitle,
+                                          isRefreshing: state.isRefreshing,
+                                          onTap: () {
+                                            context.read<BilibiliContentBloc>().add(
+                                              BilibiliContentIncreaseLiveRoomViewRequested(
+                                                id: room.id,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
                             ),
-                          );
-                        },
+                            // 左侧翻页按钮
+                            if (_canScrollLeft)
+                              Positioned(
+                                left: 0,
+                                top: 0,
+                                bottom: 10,
+                                child: AnimatedOpacity(
+                                  opacity: _isHovering ? 1.0 : 0.0,
+                                  duration: const Duration(milliseconds: 200),
+                                  child: _ScrollArrowButton(
+                                    isDark: isDark,
+                                    icon: Icons.chevron_left_rounded,
+                                    onTap: _scrollLeft,
+                                  ),
+                                ),
+                              ),
+                            // 右侧翻页按钮
+                            if (_canScrollRight)
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                bottom: 10,
+                                child: AnimatedOpacity(
+                                  opacity: _isHovering ? 1.0 : 0.0,
+                                  duration: const Duration(milliseconds: 200),
+                                  child: _ScrollArrowButton(
+                                    isDark: isDark,
+                                    icon: Icons.chevron_right_rounded,
+                                    onTap: _scrollRight,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                 ],
@@ -170,6 +294,7 @@ class LiveRoomsSection extends StatelessWidget {
   }
 
   Widget _buildEmpty() {
+    final isDark = widget.isDark;
     return SizedBox(
       height: 100,
       child: Center(
@@ -187,6 +312,7 @@ class LiveRoomsSection extends StatelessWidget {
   }
 
   Widget _buildSkeleton() {
+    final isDark = widget.isDark;
     return SizedBox(
       height: 260,
       child: ListView.separated(
@@ -199,6 +325,64 @@ class LiveRoomsSection extends StatelessWidget {
             child: _SkeletonCard(isDark: isDark),
           );
         },
+      ),
+    );
+  }
+}
+
+/// 横向滚动箭头按钮
+class _ScrollArrowButton extends StatefulWidget {
+  final bool isDark;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _ScrollArrowButton({
+    required this.isDark,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  State<_ScrollArrowButton> createState() => _ScrollArrowButtonState();
+}
+
+class _ScrollArrowButtonState extends State<_ScrollArrowButton> {
+  bool _hovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovering = true),
+      onExit: (_) => setState(() => _hovering = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 36,
+          margin: const EdgeInsets.symmetric(vertical: 60),
+          decoration: BoxDecoration(
+            color: _hovering
+                ? (widget.isDark
+                    ? Colors.black.withValues(alpha: 0.7)
+                    : Colors.white.withValues(alpha: 0.95))
+                : (widget.isDark
+                    ? Colors.black.withValues(alpha: 0.45)
+                    : Colors.white.withValues(alpha: 0.75)),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Icon(
+            widget.icon,
+            size: 22,
+            color: widget.isDark ? Colors.white : const Color(0xFF1E293B),
+          ),
+        ),
       ),
     );
   }
