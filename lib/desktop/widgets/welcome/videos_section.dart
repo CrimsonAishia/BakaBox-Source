@@ -90,7 +90,7 @@ class VideosSection extends StatelessWidget {
                     _buildEmpty(isDark)
                   else
                     SizedBox(
-                      height: 240,
+                      height: 260,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: displayVideos.length,
@@ -149,7 +149,7 @@ class VideosSection extends StatelessWidget {
 
   Widget _buildSkeleton(bool isDark) {
     return SizedBox(
-      height: 240,
+      height: 260,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: 4,

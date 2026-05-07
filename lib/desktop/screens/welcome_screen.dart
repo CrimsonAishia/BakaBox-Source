@@ -175,35 +175,59 @@ class _WelcomeHeader extends StatelessWidget {
         final username = authState.userInfo?.username;
         final greeting = _getGreeting();
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-                  username != null ? '$greeting，$username 👋' : '$greeting 👋',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : const Color(0xFF1E293B),
-                  ),
-                )
-                .animate()
-                .fadeIn(duration: 400.ms)
-                .slideX(
-                  begin: -0.1,
-                  end: 0,
-                  duration: 400.ms,
-                  curve: Curves.easeOutCubic,
-                ),
-            const SizedBox(height: 4),
-            Text(
-              _getSubtitle(),
-              style: TextStyle(
-                fontSize: 13,
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.5)
-                    : const Color(0xFF64748B),
+            // 项目 Logo
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                'assets/images/logo.png',
+                width: 48,
+                height: 48,
+                fit: BoxFit.cover,
               ),
-            ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
+            ).animate().fadeIn(duration: 400.ms).scale(
+                  begin: const Offset(0.8, 0.8),
+                  end: const Offset(1.0, 1.0),
+                  duration: 400.ms,
+                  curve: Curves.easeOutBack,
+                ),
+            const SizedBox(width: 16),
+            // 欢迎语
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                        username != null ? '$greeting，$username 👋' : '$greeting 👋',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : const Color(0xFF1E293B),
+                        ),
+                      )
+                      .animate()
+                      .fadeIn(duration: 400.ms)
+                      .slideX(
+                        begin: -0.1,
+                        end: 0,
+                        duration: 400.ms,
+                        curve: Curves.easeOutCubic,
+                      ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _getSubtitle(),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.5)
+                          : const Color(0xFF64748B),
+                    ),
+                  ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
+                ],
+              ),
+            ),
           ],
         );
       },
