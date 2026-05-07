@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/bloc/map_cd/map_cd_bloc.dart';
-import '../../../core/bloc/map_cd/map_cd_event.dart';
 import '../../../core/models/map_contribution_models.dart';
 import '../../../core/models/map_tag_models.dart' show MapTagSimple;
 import '../../../core/services/image_url_service.dart';
 import '../../../core/widgets/disk_cached_image.dart';
 import '../../../core/widgets/marquee_text.dart';
-import 'cd_badge.dart';
+import '../cd_badge.dart';
 import 'map_history_dialog.dart';
 
 /// 地图大卡片组件
@@ -73,14 +70,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
     final mapInfo = widget.group.mapInfo;
 
     return MouseRegion(
-      onEnter: (_) {
-        setState(() => _isHovered = true);
-        // Hover时加载CD信息
-        final mapCdBloc = context.read<MapCdBloc>();
-        if (mapCdBloc.state.shouldLoad(widget.group.mapInfo.mapName)) {
-          mapCdBloc.add(LoadMapCd(widget.group.mapInfo.mapName));
-        }
-      },
+      onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -120,11 +110,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
                 _buildMapBackground(mapInfo, isDark),
 
                 // CD徽章（右上角）
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: _buildCdBadge(isDark),
-                ),
+                Positioned(top: 8, right: 8, child: _buildCdBadge(isDark)),
 
                 // 审核状态标签（右上角，CD下方）
                 if (widget.showAuditStatus && widget.group.items.isNotEmpty)
@@ -454,7 +440,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
   Widget _buildCdBadge(bool isDark) {
     return MapCdBadge(
       mapName: widget.group.mapInfo.mapName,
-      triggerOnHover: true,
+      triggerOnHover: false,
     );
   }
 }
@@ -547,17 +533,17 @@ class _MapTagRowState extends State<_MapTagRow> {
 
   // 标签样式（与 _buildTagChip 保持一致）
   TextStyle get _tagTextStyle => TextStyle(
-        color: Colors.white.withValues(alpha: 0.9),
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        shadows: [
-          Shadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 2,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      );
+    color: Colors.white.withValues(alpha: 0.9),
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+    shadows: [
+      Shadow(
+        color: Colors.black.withValues(alpha: 0.4),
+        blurRadius: 2,
+        offset: const Offset(0, 1),
+      ),
+    ],
+  );
 
   @override
   void initState() {

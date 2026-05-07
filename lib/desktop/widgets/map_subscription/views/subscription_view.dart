@@ -6,7 +6,7 @@ import '../../../../core/models/map_subscription_models.dart';
 import '../../../../core/widgets/map_contribution_dialog.dart';
 import '../../common_scroll_indicator.dart';
 import '../../map_subscription_card.dart';
-import '../../map_database/cd_badge.dart';
+import '../../cd_badge.dart';
 import 'subscription_scope_dialog.dart';
 
 /// 订阅管理视图（已订阅列表）
@@ -347,18 +347,9 @@ class _SubscriptionViewState extends State<SubscriptionView> {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          MapCdBadge(
-            mapName: sub.mapName,
-            triggerOnHover: false,
-          ),
+          MapCdBadge(mapName: sub.mapName, triggerOnHover: false),
           const SizedBox(width: 8),
-          _buildScopeButtons(
-            context,
-            isDark,
-            sub,
-            categoryText,
-            serverText,
-          ),
+          _buildScopeButtons(context, isDark, sub, categoryText, serverText),
         ],
       ),
     );
