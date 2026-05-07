@@ -1191,7 +1191,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               const SizedBox(height: 12),
               // 获取验证码按钮
               SizedBox(
-                height: 48,
+                height: 36,
                 child: OutlinedButton.icon(
                   onPressed: _isLoggingIn ? null : _handleGetCaptcha,
                   icon: Icon(
@@ -1220,7 +1220,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               const SizedBox(height: 12),
               // 登录按钮
               SizedBox(
-                height: 48,
+                height: 36,
                 child: ElevatedButton(
                   onPressed:
                       (_isLoggingIn ||
@@ -1258,7 +1258,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               // QQ 登录（仅 Windows）
               if (Platform.isWindows) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: 5),
                 Row(
                   children: [
                     Expanded(child: Divider(color: borderColor)),
@@ -1275,9 +1275,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     Expanded(child: Divider(color: borderColor)),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 5),
                 SizedBox(
-                  height: 48,
+                  height: 36,
                   child: OutlinedButton.icon(
                     onPressed: _isLoggingIn
                         ? null
