@@ -326,6 +326,23 @@ class _ServersDesktopState extends State<ServersDesktop> {
     // 防止重复触发：检查是否已选中分类或正在加载
     if (!mounted || state.selectedCategory != null || state.isLoading) return;
     if (state.serverCategories.isNotEmpty) {
+      // 恢复上次选择的分类
+      final lastCategoryName = StorageUtils.getString('last_selected_category');
+      if (lastCategoryName != null) {
+        try {
+          final lastCategory = state.serverCategories.firstWhere(
+            (c) => c.modelName == lastCategoryName,
+          );
+          if (lastCategory.isCustom) {
+            context.read<ServerBloc>().add(const ServerSwitchTab(1));
+          }
+          context.read<ServerBloc>().add(ServerSelectCategory(lastCategory));
+          return;
+        } catch (_) {
+          // 找不到保存的分类时忽略，继续走默认逻辑
+        }
+      }
+
       // 优先选择默认分类（API 分类）的第一个
       final defaultCategories = state.serverCategories
           .where((c) => !c.isCustom)
@@ -356,6 +373,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
     // 切换到不同分类时，清理图片内存缓存
     if (currentCategory?.modelName != category.modelName) {
       PaintingBinding.instance.imageCache.clear();
+      if (category.modelName != null) {
+        StorageUtils.setString('last_selected_category', category.modelName!);
+      }
     }
     context.read<ServerBloc>().add(ServerSelectCategory(category));
   }

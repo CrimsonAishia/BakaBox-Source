@@ -1605,6 +1605,7 @@ class _MarqueeTextState extends State<_MarqueeText> {
   bool _needsScroll = false;
   bool _isScrolling = false;
   double _measuredOverflowWidth = 0;
+  bool _isHovered = false;
 
   @override
   void initState() {
@@ -1725,30 +1726,53 @@ class _MarqueeTextState extends State<_MarqueeText> {
 
   @override
   Widget build(BuildContext context) {
+    final currentStyle = _isHovered
+        ? widget.style.copyWith(
+            color: const Color(0xFF0080FF),
+            decoration: TextDecoration.underline,
+            decorationColor: const Color(0xFF0080FF),
+          )
+        : widget.style;
+
+    Widget content;
     // 离屏渲染（如 screenshot captureFromLongWidget）时没有 View ancestor，
     // SingleChildScrollView 内部会调用 View.of(context) 导致断言失败，
     // 此时降级为普通 Text
     if (View.maybeOf(context) == null) {
-      return Text(
+      content = Text(
         widget.text,
-        style: widget.style,
+        style: currentStyle,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       );
+    } else {
+      content = LayoutBuilder(
+        builder: (context, constraints) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
+          return SingleChildScrollView(
+            controller: _scrollController,
+            scrollDirection: Axis.horizontal,
+            physics: const NeverScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: Text(widget.text, style: currentStyle, maxLines: 1),
+            ),
+          );
+        },
+      );
     }
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
-        return SingleChildScrollView(
-          controller: _scrollController,
-          scrollDirection: Axis.horizontal,
-          physics: const NeverScrollableScrollPhysics(),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minWidth: constraints.maxWidth),
-            child: Text(widget.text, style: widget.style, maxLines: 1),
-          ),
-        );
-      },
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: () {
+          Clipboard.setData(ClipboardData(text: widget.text));
+          ToastUtils.showSuccess(context, '已复制地图名称');
+        },
+        child: content,
+      ),
     );
   }
 }

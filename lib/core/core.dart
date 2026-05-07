@@ -86,6 +86,7 @@ export 'utils/formatters.dart';
 export 'utils/log_service.dart';
 export 'utils/platform_utils.dart';
 export 'utils/server_item_utils.dart';
+export 'utils/storage_utils.dart';
 export 'utils/time_utils.dart';
 export 'utils/toast_utils.dart';
 export 'utils/screen_wakelock.dart';

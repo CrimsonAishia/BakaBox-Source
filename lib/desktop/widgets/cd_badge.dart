@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/bloc/map_cd/map_cd_bloc.dart';
-import '../../../core/bloc/map_cd/map_cd_event.dart';
-import '../../../core/bloc/map_cd/map_cd_state.dart';
+import '../../core/bloc/map_cd/map_cd_bloc.dart';
+import '../../core/bloc/map_cd/map_cd_event.dart';
+import '../../core/bloc/map_cd/map_cd_state.dart';
 
 /// 地图CD徽章
 ///
@@ -143,7 +143,11 @@ class MapCdBadge extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.remove_circle_outline, size: 15, color: Colors.white38),
+                Icon(
+                  Icons.remove_circle_outline,
+                  size: 15,
+                  color: Colors.white38,
+                ),
                 const SizedBox(width: 5),
                 _CdBadgeText(
                   label: '无数据',
@@ -157,8 +161,9 @@ class MapCdBadge extends StatelessWidget {
         // 显示CD信息
         final cd = cdInfo.currentCd;
         final isAvailable = cd == 0;
-        final accentColor =
-            isAvailable ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+        final accentColor = isAvailable
+            ? const Color(0xFF10B981)
+            : const Color(0xFFEF4444);
 
         return _CdBadgeShell(
           borderColor: accentColor.withValues(alpha: 0.8),
@@ -223,8 +228,8 @@ class _CdBadgeShellState extends State<_CdBadgeShell> {
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
           decoration: BoxDecoration(
             color: hovered
-                ? Colors.black.withValues(alpha: 0.45)
-                : Colors.black.withValues(alpha: 0.1),
+                ? Colors.black.withValues(alpha: 0.55)
+                : Colors.black.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: hovered
@@ -236,10 +241,11 @@ class _CdBadgeShellState extends State<_CdBadgeShell> {
               if (widget.glowColor != Colors.transparent)
                 BoxShadow(
                   color: hovered
-                      ? widget.glowColor.withValues(alpha:
-                          widget.glowColor.a * 1.6 > 1.0
+                      ? widget.glowColor.withValues(
+                          alpha: widget.glowColor.a * 1.6 > 1.0
                               ? 1.0
-                              : widget.glowColor.a * 1.6)
+                              : widget.glowColor.a * 1.6,
+                        )
                       : widget.glowColor,
                   blurRadius: hovered ? 14 : 10,
                   spreadRadius: hovered ? 2 : 1,
