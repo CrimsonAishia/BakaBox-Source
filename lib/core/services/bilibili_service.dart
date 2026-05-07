@@ -256,7 +256,7 @@ class BilibiliService {
   /// 使用 B站官方批量接口: /room/v1/Room/get_status_info_by_uids
   /// [uids] 主播UID列表
   /// [bypassCache] 为 true 时强制从API获取最新数据
-  /// 返回: Map<uid, BilibiliLiveStatus>
+  /// 返回: `Map<uid, BilibiliLiveStatus>`
   Future<Map<String, BilibiliLiveStatus>> getLiveStatusByUids(
     List<String> uids, {
     bool bypassCache = false,

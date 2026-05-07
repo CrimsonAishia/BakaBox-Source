@@ -30,11 +30,11 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
   static const kBilibiliBlue = Color(0xFF00A1D6);
 
   // 卡片固定尺寸与间距
-  static const double _cardWidth = 200;   // 卡片固定宽度
-  static const double _cardHeight = 255;  // 卡片固定高度
-  static const double _cardGap = 8;       // 卡片间距
-  static const int _minColumns = 2;       // 最少列数
-  static const int _apiPageSize = 16;     // 每次 API 加载条数（与 bloc 一致）
+  static const double _cardWidth = 200; // 卡片固定宽度
+  static const double _cardHeight = 255; // 卡片固定高度
+  static const double _cardGap = 8; // 卡片间距
+  static const int _minColumns = 2; // 最少列数
+  static const int _apiPageSize = 16; // 每次 API 加载条数（与 bloc 一致）
 
   // 滚动控制器
   final ScrollController _liveRoomScrollController = ScrollController();
@@ -157,16 +157,6 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
         bloc.add(BilibiliContentFetchRequested(tabIndex: _tabController.index));
       }
     }
-  }
-
-  // ===== 主题颜色辅助方法 =====
-  static const _inkColorLight = Color(0xFF2C1810);
-  static const _inkColorDark = Color(0xFFE8E0D8);
-
-  Color _getInkColor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark
-        ? _inkColorDark
-        : _inkColorLight;
   }
 
   @override
@@ -440,7 +430,6 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
     );
   }
 
-
   Widget _buildLiveRoomCard(
     BuildContext context,
     BilibiliContentState state,
@@ -515,7 +504,8 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
                                     onTap: () {
                                       context.read<BilibiliContentBloc>().add(
                                         BilibiliContentIncreaseVideoViewRequested(
-                                          id: videos[rowIndex * columns + col].id,
+                                          id: videos[rowIndex * columns + col]
+                                              .id,
                                         ),
                                       );
                                     },
@@ -960,9 +950,10 @@ class _BouncingArrowState extends State<_BouncingArrow>
       vsync: this,
       duration: const Duration(milliseconds: 550),
     )..repeat(reverse: true);
-    _animation = Tween<double>(begin: -2, end: 2).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _animation = Tween<double>(
+      begin: -2,
+      end: 2,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override

@@ -5,7 +5,6 @@ import 'package:flutter_quill/flutter_quill.dart';
 
 import '../core/core.dart';
 import '../core/services/app_info_service.dart';
-import '../core/utils/storage_utils.dart';
 import 'router/mobile_router.dart';
 import 'theme/mobile_theme.dart';
 import 'screens/mobile_home_screen.dart';
