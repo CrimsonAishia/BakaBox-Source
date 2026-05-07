@@ -27,7 +27,11 @@ class ContributionValidationUtils {
   /// - 带圈数字：①②③④⑤⑥⑦⑧⑨⑩ 等 (U+2460-U+2473)
   /// - 带圈字母和其他符号 (U+24B6-U+24FF)
   static final RegExp _allowedCharsRegex = RegExp(
-    r'^[\u4e00-\u9fa5a-zA-Z0-9\s\-_·:：!！()（）\u2460-\u24FF]+$',
+    r'^[\u4e00-\u9fa5a-zA-Z0-9\s\-_·:：!！()（）\u2460-\u24FF'
+    r'，。、？；‘’“”【】《》\[\]{}<>\\/|+=*&\^%$#@~,.'
+    r'\u0400-\u04FF\u00C0-\u00FF'
+    r"'"
+    r'"]+$',
   );
 
   /// 验证地图名称贡献
