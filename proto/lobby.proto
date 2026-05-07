@@ -159,6 +159,7 @@ message PageInfo {
 message LoginRequest {
   string token = 1;
   string device_type = 2;
+  bool is_anonymous = 3;
 }
 
 // EnterRequest 客户端完成身份确认后，主动宣告进入大厅（两阶段进入协议第二阶段）
