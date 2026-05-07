@@ -79,10 +79,7 @@ class _OnlineTrendChartState extends State<OnlineTrendChart> {
                   const SizedBox(height: 16),
 
                   // 图表内容
-                  SizedBox(
-                    height: 160,
-                    child: _buildContent(state),
-                  ),
+                  Expanded(child: _buildContent(state)),
                 ],
               ),
             )
@@ -292,10 +289,11 @@ class _DailyTrendChart extends StatelessWidget {
                 ),
               ],
               lineTouchData: LineTouchData(
+                handleBuiltInTouches: true,
+                touchSpotThreshold: 50,
                 touchTooltipData: LineTouchTooltipData(
-                  getTooltipColor: (_) => isDark
-                      ? const Color(0xFF1E293B)
-                      : Colors.white,
+                  getTooltipColor: (_) =>
+                      isDark ? const Color(0xFF1E293B) : Colors.white,
                   getTooltipItems: (spots) {
                     return spots.map((spot) {
                       final label = spot.barIndex == 0 ? '峰值' : '均值';
@@ -442,84 +440,203 @@ class _TopMapsList extends StatelessWidget {
 
     return ListView.separated(
       padding: EdgeInsets.zero,
-      itemCount: math.min(maps.length, 5),
+      itemCount: math.min(maps.length, 10),
       separatorBuilder: (_, __) => const SizedBox(height: 6),
       itemBuilder: (context, index) {
         final map = maps[index];
         final progress = maxPlay > 0 ? map.playCount / maxPlay : 0.0;
-        return Row(
-          children: [
-            // 排名
-            SizedBox(
-              width: 20,
-              child: Text(
-                '${index + 1}',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: index == 0
-                      ? const Color(0xFFF59E0B)
-                      : (isDark
-                            ? Colors.white.withValues(alpha: 0.4)
-                            : const Color(0xFF94A3B8)),
+
+        return _TopMapItem(index: index, map: map, progress: progress);
+      },
+    );
+  }
+}
+
+class _TopMapItem extends StatefulWidget {
+  final int index;
+  final TopMap map;
+  final double progress;
+
+  const _TopMapItem({
+    required this.index,
+    required this.map,
+    required this.progress,
+  });
+
+  @override
+  State<_TopMapItem> createState() => _TopMapItemState();
+}
+
+class _TopMapItemState extends State<_TopMapItem> {
+  MapData? _mapData;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMapInfo();
+  }
+
+  Future<void> _fetchMapInfo() async {
+    try {
+      final data = await ServerApi().getMapInfo(widget.map.mapName);
+      if (mounted) {
+        setState(() {
+          _mapData = data;
+        });
+      }
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mapLabel = _mapData?.mapLabel;
+    final mapUrl = _mapData?.mapUrl;
+
+    final displayMapName =
+        mapLabel != null &&
+            mapLabel.isNotEmpty &&
+            mapLabel != widget.map.mapName
+        ? '$mapLabel (${widget.map.mapName})'
+        : widget.map.mapName;
+
+    return SizedBox(
+      height: 56,
+      child: Stack(
+        children: [
+          // 地图背景
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: MapBackground(
+                mapName: widget.map.mapName,
+                imageUrl: mapUrl,
+                cacheWidth: 400,
+                cacheHeight: 112,
+              ),
+            ),
+          ),
+          // 渐变遮罩 (让左侧和下方有阴影，方便看字)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.85),
+                    Colors.black.withValues(alpha: 0.4),
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.6), // 右侧稍微深一点方便看游玩次数
+                  ],
+                  stops: const [0.0, 0.4, 0.7, 1.0],
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            // 地图名 + 进度条
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          // 内容
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          map.mapName,
+                  // 排名角标
+                  Container(
+                    width: 24,
+                    height: 24,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: widget.index == 0
+                          ? const Color(0xFFF59E0B)
+                          : (widget.index == 1
+                                ? const Color(0xFF94A3B8)
+                                : (widget.index == 2
+                                      ? const Color(0xFFB45309)
+                                      : Colors.black.withValues(alpha: 0.4))),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: Text(
+                      '${widget.index + 1}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // 地图名与进度条
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          displayMapName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.85)
-                                : const Color(0xFF334155),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(color: Colors.black, blurRadius: 2),
+                            ],
                           ),
+                        ),
+                        const SizedBox(height: 6),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(2),
+                          child: LinearProgressIndicator(
+                            value: widget.progress,
+                            minHeight: 4,
+                            backgroundColor: Colors.black.withValues(
+                              alpha: 0.4,
+                            ),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              widget.index == 0
+                                  ? const Color(0xFFF59E0B)
+                                  : const Color(
+                                      0xFF8B5CF6,
+                                    ).withValues(alpha: 0.9),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // 游玩次数
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${widget.map.playCount}',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
                         ),
                       ),
                       Text(
-                        '${map.playCount}局',
+                        '局',
                         style: TextStyle(
-                          fontSize: 11,
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.4)
-                              : const Color(0xFF94A3B8),
+                          fontSize: 10,
+                          color: Colors.white.withValues(alpha: 0.7),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 3),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(2),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 4,
-                      backgroundColor: isDark
-                          ? Colors.white.withValues(alpha: 0.08)
-                          : Colors.black.withValues(alpha: 0.05),
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        index == 0
-                            ? const Color(0xFFF59E0B)
-                            : const Color(0xFF8B5CF6).withValues(alpha: 0.7),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
     );
   }
 }
@@ -549,7 +666,7 @@ class _LegendDot extends StatelessWidget {
             fontSize: 11,
             color: isDark
                 ? Colors.white.withValues(alpha: 0.5)
-                : const Color(0xFF94A3B8),
+                : const Color(0xFF64748B),
           ),
         ),
       ],

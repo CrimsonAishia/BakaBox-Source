@@ -127,7 +127,7 @@ class LiveRoomsSection extends StatelessWidget {
                     _buildEmpty()
                   else
                     SizedBox(
-                      height: 240,
+                      height: 260,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: displayRooms.length,
@@ -188,7 +188,7 @@ class LiveRoomsSection extends StatelessWidget {
 
   Widget _buildSkeleton() {
     return SizedBox(
-      height: 240,
+      height: 260,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: 4,
