@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -7,13 +8,67 @@ import '../../../core/core.dart';
 import '../bilibili_content/video_card.dart';
 
 /// 视频展示区
-class VideosSection extends StatelessWidget {
+class VideosSection extends StatefulWidget {
   final bool isDark;
 
   const VideosSection({super.key, required this.isDark});
 
   @override
+  State<VideosSection> createState() => _VideosSectionState();
+}
+
+class _VideosSectionState extends State<VideosSection> {
+  final ScrollController _scrollController = ScrollController();
+  bool _canScrollLeft = false;
+  bool _canScrollRight = false;
+  bool _isHovering = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_updateScrollState);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollState());
+  }
+
+  void _updateScrollState() {
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    final canLeft = pos.pixels > 0;
+    final canRight = pos.pixels < pos.maxScrollExtent;
+    if (canLeft != _canScrollLeft || canRight != _canScrollRight) {
+      setState(() {
+        _canScrollLeft = canLeft;
+        _canScrollRight = canRight;
+      });
+    }
+  }
+
+  void _scrollLeft() {
+    _scrollController.animateTo(
+      (_scrollController.offset - 220).clamp(0, _scrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _scrollRight() {
+    _scrollController.animateTo(
+      (_scrollController.offset + 220).clamp(0, _scrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_updateScrollState);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isDark = widget.isDark;
     return BlocBuilder<BilibiliContentBloc, BilibiliContentState>(
       builder: (context, state) {
         // 只展示审核通过的视频，按创建时间降序（新添加的优先）
@@ -89,30 +144,98 @@ class VideosSection extends StatelessWidget {
                   else if (displayVideos.isEmpty)
                     _buildEmpty(isDark)
                   else
-                    SizedBox(
-                      height: 260,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: displayVideos.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(width: 12),
-                        itemBuilder: (context, index) {
-                          final video = displayVideos[index];
-                          return SizedBox(
-                            width: 200,
-                            child: VideoCard(
-                              video: video,
-                              isRefreshing: state.isRefreshing,
-                              onTap: () {
-                                context.read<BilibiliContentBloc>().add(
-                                  BilibiliContentIncreaseVideoViewRequested(
-                                    id: video.id,
-                                  ),
-                                );
+                    MouseRegion(
+                      onEnter: (_) => setState(() => _isHovering = true),
+                      onExit: (_) => setState(() => _isHovering = false),
+                      child: SizedBox(
+                        height: 270, // 加 10 留给 Scrollbar 空间
+                        child: Stack(
+                          children: [
+                            // 鼠标滚轮 → 横向滚动
+                            Listener(
+                              onPointerSignal: (event) {
+                                if (event is PointerScrollEvent) {
+                                  final delta = event.scrollDelta.dy != 0
+                                      ? event.scrollDelta.dy
+                                      : event.scrollDelta.dx;
+                                  _scrollController.animateTo(
+                                    (_scrollController.offset + delta).clamp(
+                                      0.0,
+                                      _scrollController.position.maxScrollExtent,
+                                    ),
+                                    duration: const Duration(milliseconds: 80),
+                                    curve: Curves.linear,
+                                  );
+                                }
                               },
+                              child: Scrollbar(
+                                controller: _scrollController,
+                                thumbVisibility: true,
+                                trackVisibility: true,
+                                child: Padding(
+                                  // Scrollbar 占底部约 10px，卡片区保持 260
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: ListView.separated(
+                                    controller: _scrollController,
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: displayVideos.length,
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(width: 12),
+                                    itemBuilder: (context, index) {
+                                      final video = displayVideos[index];
+                                      return SizedBox(
+                                        width: 200,
+                                        child: VideoCard(
+                                          video: video,
+                                          isRefreshing: state.isRefreshing,
+                                          onTap: () {
+                                            context.read<BilibiliContentBloc>().add(
+                                              BilibiliContentIncreaseVideoViewRequested(
+                                                id: video.id,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
                             ),
-                          );
-                        },
+                            // 左侧翻页按钮
+                            if (_canScrollLeft)
+                              Positioned(
+                                left: 0,
+                                top: 0,
+                                bottom: 10,
+                                child: AnimatedOpacity(
+                                  opacity: _isHovering ? 1.0 : 0.0,
+                                  duration: const Duration(milliseconds: 200),
+                                  child: _ScrollArrowButton(
+                                    isDark: isDark,
+                                    icon: Icons.chevron_left_rounded,
+                                    onTap: _scrollLeft,
+                                  ),
+                                ),
+                              ),
+                            // 右侧翻页按钮
+                            if (_canScrollRight)
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                bottom: 10,
+                                child: AnimatedOpacity(
+                                  opacity: _isHovering ? 1.0 : 0.0,
+                                  duration: const Duration(milliseconds: 200),
+                                  child: _ScrollArrowButton(
+                                    isDark: isDark,
+                                    icon: Icons.chevron_right_rounded,
+                                    onTap: _scrollRight,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                 ],
@@ -160,6 +283,64 @@ class VideosSection extends StatelessWidget {
             child: _SkeletonCard(isDark: isDark),
           );
         },
+      ),
+    );
+  }
+}
+
+/// 横向滚动箭头按钮
+class _ScrollArrowButton extends StatefulWidget {
+  final bool isDark;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _ScrollArrowButton({
+    required this.isDark,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  State<_ScrollArrowButton> createState() => _ScrollArrowButtonState();
+}
+
+class _ScrollArrowButtonState extends State<_ScrollArrowButton> {
+  bool _hovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovering = true),
+      onExit: (_) => setState(() => _hovering = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 36,
+          margin: const EdgeInsets.symmetric(vertical: 60),
+          decoration: BoxDecoration(
+            color: _hovering
+                ? (widget.isDark
+                    ? Colors.black.withValues(alpha: 0.7)
+                    : Colors.white.withValues(alpha: 0.95))
+                : (widget.isDark
+                    ? Colors.black.withValues(alpha: 0.45)
+                    : Colors.white.withValues(alpha: 0.75)),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Icon(
+            widget.icon,
+            size: 22,
+            color: widget.isDark ? Colors.white : const Color(0xFF1E293B),
+          ),
+        ),
       ),
     );
   }

@@ -510,8 +510,10 @@ class _TopMapItemState extends State<_TopMapItem> {
               child: MapBackground(
                 mapName: widget.map.mapName,
                 imageUrl: mapUrl,
+                fit: BoxFit.cover,
                 cacheWidth: 400,
-                cacheHeight: 112,
+                // 不限制 cacheHeight：同时指定宽高会强制解码比例，
+                // 若与原图比例不符则导致拉伸；仅限宽度可保留原始比例。
               ),
             ),
           ),
