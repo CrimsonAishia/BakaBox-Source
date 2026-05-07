@@ -138,6 +138,9 @@ class _LoginDialogState extends State<LoginDialog> {
 
         setState(() {
           _isLoading = state.status == AuthStatus.loading;
+          if (state.status == AuthStatus.error) {
+            _captchaToken = null;
+          }
         });
       },
       builder: (context, state) {
