@@ -520,6 +520,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
             Expanded(
               child: _MarqueeText(
                 text: displayMapName,
+                copyText: mapName,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
@@ -630,9 +631,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
           color: Colors.white.withValues(alpha: 0.8),
         ),
         const SizedBox(width: 6),
-        Expanded(
-          child: _MarqueeTagRow(tags: tags),
-        ),
+        Expanded(child: _MarqueeTagRow(tags: tags)),
       ],
     );
   }
@@ -1593,8 +1592,9 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 class _MarqueeText extends StatefulWidget {
   final String text;
   final TextStyle style;
+  final String? copyText;
 
-  const _MarqueeText({required this.text, required this.style});
+  const _MarqueeText({required this.text, required this.style, this.copyText});
 
   @override
   State<_MarqueeText> createState() => _MarqueeTextState();
@@ -1639,7 +1639,9 @@ class _MarqueeTextState extends State<_MarqueeText> {
 
   double _measureOverflowWidth(BuildContext context) {
     final renderObject = context.findRenderObject();
-    final viewportWidth = renderObject is RenderBox ? renderObject.size.width : 0.0;
+    final viewportWidth = renderObject is RenderBox
+        ? renderObject.size.width
+        : 0.0;
     if (viewportWidth <= 0) return 0;
 
     final textPainter = TextPainter(
@@ -1768,7 +1770,9 @@ class _MarqueeTextState extends State<_MarqueeText> {
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
         onTap: () {
-          Clipboard.setData(ClipboardData(text: widget.text));
+          Clipboard.setData(
+            ClipboardData(text: widget.copyText ?? widget.text),
+          );
           ToastUtils.showSuccess(context, '已复制地图名称');
         },
         child: content,
@@ -1799,17 +1803,17 @@ class _MarqueeTagRowState extends State<_MarqueeTagRow> {
 
   // 标签样式（与 _buildTagChip 保持一致）
   TextStyle get _tagTextStyle => TextStyle(
-        color: Colors.white.withValues(alpha: 0.9),
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        shadows: [
-          Shadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 2,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      );
+    color: Colors.white.withValues(alpha: 0.9),
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+    shadows: [
+      Shadow(
+        color: Colors.black.withValues(alpha: 0.4),
+        blurRadius: 2,
+        offset: const Offset(0, 1),
+      ),
+    ],
+  );
 
   @override
   void initState() {
@@ -1917,10 +1921,7 @@ class _MarqueeTagRowState extends State<_MarqueeTagRow> {
           width: 1,
         ),
       ),
-      child: Text(
-        tag.name,
-        style: _tagTextStyle,
-      ),
+      child: Text(tag.name, style: _tagTextStyle),
     );
   }
 
@@ -2030,10 +2031,7 @@ class _MarqueeTagRowState extends State<_MarqueeTagRow> {
         children: [
           ..._buildTagRow().take(5), // 最多显示 5 个标签
           if (widget.tags.length > 5)
-            Text(
-              '...',
-              style: _tagTextStyle.copyWith(color: Colors.white54),
-            ),
+            Text('...', style: _tagTextStyle.copyWith(color: Colors.white54)),
         ],
       );
     }
@@ -2053,9 +2051,7 @@ class _MarqueeTagRowState extends State<_MarqueeTagRow> {
                 : const NeverScrollableScrollPhysics(),
             child: ConstrainedBox(
               constraints: BoxConstraints(minWidth: constraints.maxWidth),
-              child: Row(
-                children: _buildTagRow(),
-              ),
+              child: Row(children: _buildTagRow()),
             ),
           ),
         );
