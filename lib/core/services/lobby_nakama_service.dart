@@ -505,11 +505,11 @@ class LobbyNakamaService {
     if (!isLoggedIn) {
       LogService.i('[LobbyNakamaService] 检测到用户登出，发送 logout 事件');
       unawaited(logout(force: false));
-    } else if (_isConnected && hasValidToken && !loadAnonymousMode()) {
+    } else if (_isConnected && hasValidToken) {
       // 已连接且已进入大厅（_hasEnteredLobby=true）：大厅内 login，直接发送
       // 还在前厅（_hasEnteredLobby=false）：join.success 流程会处理，此处不重复发送
       if (_hasEnteredLobby) {
-        LogService.i('[LobbyNakamaService] 检测到用户登录（已连接，已进入大厅，非匿名模式），发送 login 事件');
+        LogService.i('[LobbyNakamaService] 检测到用户登录（已连接，已进入大厅），发送 login 事件（匿名=${loadAnonymousMode()}）');
         unawaited(login());
       } else {
         LogService.d('[LobbyNakamaService] 检测到用户登录（已连接，前厅中），等待 join.success 流程处理');
@@ -742,12 +742,11 @@ class LobbyNakamaService {
         _hasEnteredLobby = true; // 视为已进入大厅
         LogService.d('[LobbyNakamaService] 传送到达，跳过 enter，直接请求 snapshot');
         unawaited(requestSnapshot());
-      } else if (AuthService.instance.isLoggedIn && hasValidToken && !loadAnonymousMode()) {
-        // 已登录且非匿名：先发 login，等待 login.success 后再发 enter + snapshot.request
-        LogService.d('[LobbyNakamaService] 用户已登录（非匿名模式），发送 login，等待 login.success 后发 enter');
+      } else if (AuthService.instance.isLoggedIn && hasValidToken) {
+        // 已登录：先发 login（携带匿名标志），等待 login.success 后再发 enter + snapshot.request
+        LogService.d('[LobbyNakamaService] 用户已登录，发送 login（匿名=${loadAnonymousMode()}），等待 login.success 后发 enter');
         _isLoginPending = true;
         unawaited(login());
-        // enter 和 snapshot.request 在收到 login.success 时发送（见下方处理逻辑）
       } else {
         // 匿名用户或未登录：直接发 enter，然后请求 snapshot
         LogService.d('[LobbyNakamaService] 匿名用户，发送 enter 进入大厅');
@@ -1028,6 +1027,11 @@ class LobbyNakamaService {
       ..traceId = _generateTraceId()
       ..profileAnonymousChangeRequest = (pb.ProfileAnonymousChangeRequest()..isAnonymous = value);
     _sendEnvelope(envelope);
+
+    // 如果是关闭匿名模式，且启用了 Steam 名称，主动同步一次
+    if (!value && loadUseSteamName()) {
+      unawaited(_syncDisplayName());
+    }
   }
 
   /// 更新状态文本
@@ -1097,12 +1101,13 @@ class LobbyNakamaService {
       ..traceId = _generateTraceId()
       ..loginRequest = (pb.LoginRequest()
         ..token = token
-        ..deviceType = _deviceType);
+        ..deviceType = _deviceType
+        ..isAnonymous = loadAnonymousMode());
     _sendEnvelope(envelope);
 
     // 开启的情况才主动同步显示名称
     if (loadUseSteamName()) {
-      _syncDisplayName();
+      unawaited(_syncDisplayName());
     }
   }
 
@@ -1242,7 +1247,7 @@ class LobbyNakamaService {
   Future<void> setUseSteamName(bool value) async {
     await StorageUtils.setBool(keyUseSteamName, value);
     if (AuthService.instance.isLoggedIn && !loadAnonymousMode()) {
-      _syncDisplayName();
+      unawaited(_syncDisplayName());
     }
   }
 

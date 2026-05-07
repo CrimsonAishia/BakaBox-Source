@@ -321,13 +321,14 @@ const LoginRequest$json = {
   '2': [
     {'1': 'token', '3': 1, '4': 1, '5': 9, '10': 'token'},
     {'1': 'device_type', '3': 2, '4': 1, '5': 9, '10': 'deviceType'},
+    {'1': 'is_anonymous', '3': 3, '4': 1, '5': 8, '10': 'isAnonymous'},
   ],
 };
 
 /// Descriptor for `LoginRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List loginRequestDescriptor = $convert.base64Decode(
     'CgxMb2dpblJlcXVlc3QSFAoFdG9rZW4YASABKAlSBXRva2VuEh8KC2RldmljZV90eXBlGAIgAS'
-    'gJUgpkZXZpY2VUeXBl');
+    'gJUgpkZXZpY2VUeXBlEiEKDGlzX2Fub255bW91cxgDIAEoCFILaXNBbm9ueW1vdXM=');
 
 @$core.Deprecated('Use enterRequestDescriptor instead')
 const EnterRequest$json = {

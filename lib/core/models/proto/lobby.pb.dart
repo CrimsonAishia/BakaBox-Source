@@ -1988,6 +1988,7 @@ class LoginRequest extends $pb.GeneratedMessage {
   factory LoginRequest({
     $core.String? token,
     $core.String? deviceType,
+    $core.bool? isAnonymous,
   }) {
     final $result = create();
     if (token != null) {
@@ -1995,6 +1996,9 @@ class LoginRequest extends $pb.GeneratedMessage {
     }
     if (deviceType != null) {
       $result.deviceType = deviceType;
+    }
+    if (isAnonymous != null) {
+      $result.isAnonymous = isAnonymous;
     }
     return $result;
   }
@@ -2005,6 +2009,7 @@ class LoginRequest extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'LoginRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'token')
     ..aOS(2, _omitFieldNames ? '' : 'deviceType')
+    ..aOB(3, _omitFieldNames ? '' : 'isAnonymous')
     ..hasRequiredFields = false
   ;
 
@@ -2046,6 +2051,15 @@ class LoginRequest extends $pb.GeneratedMessage {
   $core.bool hasDeviceType() => $_has(1);
   @$pb.TagNumber(2)
   void clearDeviceType() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.bool get isAnonymous => $_getBF(2);
+  @$pb.TagNumber(3)
+  set isAnonymous($core.bool v) { $_setBool(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasIsAnonymous() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearIsAnonymous() => clearField(3);
 }
 
 /// EnterRequest 客户端完成身份确认后，主动宣告进入大厅（两阶段进入协议第二阶段）

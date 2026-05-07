@@ -214,11 +214,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     if (_isDisposed) return;
     // 防止与 snapshot 中的登录逻辑重复触发
     if (_authAttemptedAfterConnect) return;
-    // 用户开启了匿名模式，不发送 login（保持匿名身份）
-    if (_service.loadAnonymousMode()) {
-      LogService.i('[LobbyBloc] 用户已开启匿名模式，跳过 login 事件');
-      return;
-    }
     // service 层已进入大厅（_hasEnteredLobby=true）时，由 service._onAuthStateChanged 处理大厅内 login
     // 避免 bloc 层与 service 层重复发送
     if (_service.hasEnteredLobby) {
@@ -301,7 +296,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     //   - 还在前厅（hasEnteredLobby=false）：直接发送 login，等待 login.success 后 service 层发 enter
     // - token 未就绪：等待 token 就绪后发送（_waitAndLogin 内部也会检查匿名模式和 hasEnteredLobby）
     if (AuthService.instance.isLoggedIn) {
-      if (_service.hasValidToken && _service.isConnected && !_service.loadAnonymousMode()) {
+      if (_service.hasValidToken && _service.isConnected) {
         if (!_service.hasEnteredLobby) {
           // 前厅中：直接发 login，service 层 login.success 会触发 enter
           // 但如果 service 层已经在等待 login 响应（isLoginPending），不重复发送
@@ -1601,14 +1596,13 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             mergedUsers = snapshotState.users;
           }
 
-          // 如果用户已登录、token 有效、未开启匿名模式，且还没发送过 login，则补发。
+          // 如果用户已登录、token 有效，且还没发送过 login，则补发。
           // 不依赖 snapshotState.isAnonymous：服务端可能因 UUID 关联账号返回 isAnonymous=false，
           // 但客户端实际上还没发过 login（例如 WS 连接时 token 尚未就绪）。
           // 同时检查 isLoginPending：service 层已在等待 login 响应时不重复发送。
           if (!_authAttemptedAfterConnect &&
               AuthService.instance.isLoggedIn &&
               _service.hasValidToken &&
-              !_service.loadAnonymousMode() &&
               !_service.isLoginPending) {
             _authAttemptedAfterConnect = true;
             LogService.i('[LobbyBloc] snapshot 补发 login（isAnonymous=${snapshotState.isAnonymous}）');
