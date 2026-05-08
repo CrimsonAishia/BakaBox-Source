@@ -102,10 +102,11 @@ class StatsCardsRow extends StatelessWidget {
   }
 
   String _getTotalOnlinePlayers(ServerState state) {
-    // 累加所有分类的在线人数
-    final total = state.categoryOnlineCounts.values.fold<int>(
+    // 只累加官方分类（排除自定义服务器）的在线人数
+    final officialCategories = state.serverCategories.where((cat) => !cat.isCustom);
+    final total = officialCategories.fold<int>(
       0,
-      (sum, count) => sum + count,
+      (sum, cat) => sum + (state.categoryOnlineCounts[cat.modelName ?? ''] ?? 0),
     );
     return total.toString();
   }
