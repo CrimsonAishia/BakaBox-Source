@@ -1701,7 +1701,22 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             );
             final updatedNotifications =
                 [...state.playerNotifications, newNotification].take(20).toList();
-            emit(state.copyWith(playerNotifications: updatedNotifications));
+
+            // 跨地图用户也需要同步到 allOnlineUsers（面板显示全服用户）
+            if (state.allOnlineUsers.isNotEmpty) {
+              final crossMapUser = _parseLobbyUser(
+                presenceJoinResp.user,
+                isSelf: false,
+                serverUserId: rawUserId,
+              );
+              final crossMapUpdatedAll = _upsertUserInList(state.allOnlineUsers, crossMapUser);
+              emit(state.copyWith(
+                playerNotifications: updatedNotifications,
+                allOnlineUsers: crossMapUpdatedAll,
+              ));
+            } else {
+              emit(state.copyWith(playerNotifications: updatedNotifications));
+            }
           }
           break;
         }
@@ -1746,11 +1761,15 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             ? [...state.playerNotifications, newNotification].take(20).toList()
             : state.playerNotifications;
 
+        // 同步更新 allOnlineUsers：将新加入的用户插入列表（如果面板已打开）
+        final updatedAllOnlineUsers = _upsertUserInList(state.allOnlineUsers, user);
+
         emit(
           state.copyWith(
             users: _upsertUser(state.users, user),
             selectedSpriteId: newSelectedSpriteId,
             playerNotifications: updatedNotifications,
+            allOnlineUsers: updatedAllOnlineUsers,
           ),
         );
         break;
@@ -1770,8 +1789,15 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           // 尝试用 serverUserId 作为显示名（无法获取昵称时降级显示 ID）
           // 实际上跨地图用户不在 users 列表中，所以只能显示简单提示
           LogService.d('[LobbyBloc] presence.leave: 跨地图离线通知 serverUserId=$serverUserId');
-          // 跨地图离线通知不显示（无法获取昵称，且用户本就不在场景中，通知意义不大）
-          // 如需显示，可在此处创建 offlineNotice 通知
+          // 跨地图用户虽然不在场景中，但可能在 allOnlineUsers 中，需要同步移除
+          if (state.allOnlineUsers.isNotEmpty) {
+            final crossMapUpdatedAll = state.allOnlineUsers
+                .where((u) => u.serverUserId != serverUserId && u.userId != serverUserId)
+                .toList(growable: false);
+            if (crossMapUpdatedAll.length != state.allOnlineUsers.length) {
+              emit(state.copyWith(allOnlineUsers: crossMapUpdatedAll));
+            }
+          }
           break;
         }
 
@@ -1804,10 +1830,16 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         final updatedNotifications =
             [...state.playerNotifications, newNotification].take(20).toList();
 
+        // 同步更新 allOnlineUsers：移除离开的用户
+        final updatedAllOnlineUsers = state.allOnlineUsers
+            .where((u) => u.serverUserId != serverUserId && u.userId != serverUserId)
+            .toList(growable: false);
+
         emit(
           state.copyWith(
             users: updatedUsers,
             playerNotifications: updatedNotifications,
+            allOnlineUsers: updatedAllOnlineUsers,
           ),
         );
         break;
@@ -2296,6 +2328,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       return [...users, targetUser];
     }
     return _replaceUser(users, targetUser);
+  }
+
+  /// 在 allOnlineUsers 列表中插入或更新用户（用于 presence.join 实时同步）
+  List<LobbyUser> _upsertUserInList(List<LobbyUser> users, LobbyUser targetUser) {
+    if (users.isEmpty) return users; // 面板未加载过数据时不主动插入
+    return _upsertUser(users, targetUser);
   }
 
   // ---------------------------------------------------------------------------
