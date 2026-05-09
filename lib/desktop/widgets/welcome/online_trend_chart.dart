@@ -84,7 +84,7 @@ class _OnlineTrendChartState extends State<OnlineTrendChart> {
               ),
             )
             .animate()
-            .fadeIn(duration: 500.ms, delay: 800.ms)
+            .fadeIn(duration: 500.ms, delay: 500.ms)
             .slideY(
               begin: 0.2,
               end: 0,
