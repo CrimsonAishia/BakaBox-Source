@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/core.dart';
 
@@ -105,7 +107,7 @@ class AnnouncementsPanel extends StatelessWidget {
                         itemBuilder: (context, index) {
                           final item = state.announcements[index];
                           return Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.only(bottom: 6),
                             child: _AnnouncementItem(
                               item: item,
                               isRead: state.isRead(item.id),
@@ -125,7 +127,7 @@ class AnnouncementsPanel extends StatelessWidget {
               ),
             )
             .animate()
-            .fadeIn(duration: 500.ms, delay: 600.ms)
+            .fadeIn(duration: 500.ms, delay: 650.ms)
             .slideY(
               begin: 0.2,
               end: 0,
@@ -190,76 +192,103 @@ class _AnnouncementItemState extends State<_AnnouncementItem> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: _hovered
                 ? (widget.isDark
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : Colors.black.withValues(alpha: 0.04))
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            border: Border(
-              left: BorderSide(color: typeColor, width: 3),
+                      ? typeColor.withValues(alpha: 0.08)
+                      : typeColor.withValues(alpha: 0.05))
+                : (widget.isDark
+                      ? Colors.white.withValues(alpha: 0.02)
+                      : Colors.white.withValues(alpha: 0.6)),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: _hovered
+                  ? typeColor.withValues(alpha: 0.3)
+                  : (widget.isDark
+                        ? Colors.white.withValues(alpha: 0.06)
+                        : Colors.black.withValues(alpha: 0.04)),
             ),
           ),
           child: Row(
             children: [
-              // 未读指示点
-              if (!widget.isRead)
-                Container(
-                  width: 6,
-                  height: 6,
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: typeColor,
-                    shape: BoxShape.circle,
-                  ),
-                )
-              else
-                const SizedBox(width: 14),
-
-              // 置顶图标
-              if (widget.item.isSticky)
-                Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child: Icon(
-                    MdiIcons.pin,
-                    size: 12,
-                    color: typeColor,
-                  ),
+              // 类型图标
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: typeColor.withValues(alpha: widget.isRead ? 0.08 : 0.15),
+                  borderRadius: BorderRadius.circular(7),
                 ),
+                child: Icon(
+                  widget.item.isSticky ? MdiIcons.pin : MdiIcons.bullhornOutline,
+                  size: 14,
+                  color: widget.isRead
+                      ? typeColor.withValues(alpha: 0.5)
+                      : typeColor,
+                ),
+              ),
+              const SizedBox(width: 10),
 
-              // 标题
+              // 标题 + 时间
               Expanded(
-                child: Text(
-                  widget.item.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: widget.isRead
-                        ? FontWeight.w400
-                        : FontWeight.w600,
-                    color: widget.isDark
-                        ? Colors.white.withValues(
-                            alpha: widget.isRead ? 0.6 : 0.9,
-                          )
-                        : (widget.isRead
-                              ? const Color(0xFF64748B)
-                              : const Color(0xFF1E293B)),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        if (!widget.isRead)
+                          Container(
+                            width: 5,
+                            height: 5,
+                            margin: const EdgeInsets.only(right: 5),
+                            decoration: BoxDecoration(
+                              color: typeColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        Expanded(
+                          child: Text(
+                            widget.item.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: widget.isRead ? FontWeight.w400 : FontWeight.w600,
+                              color: widget.isDark
+                                  ? Colors.white.withValues(alpha: widget.isRead ? 0.5 : 0.9)
+                                  : (widget.isRead
+                                        ? const Color(0xFF94A3B8)
+                                        : const Color(0xFF1E293B)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      _formatTime(widget.item.createdAt),
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: widget.isDark
+                            ? Colors.white.withValues(alpha: 0.3)
+                            : const Color(0xFFB0B8C4),
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
-              // 时间
-              Text(
-                _formatTime(widget.item.createdAt),
-                style: TextStyle(
-                  fontSize: 11,
-                  color: widget.isDark
-                      ? Colors.white.withValues(alpha: 0.35)
-                      : const Color(0xFFCBD5E1),
+              // hover 时显示箭头
+              AnimatedOpacity(
+                duration: const Duration(milliseconds: 150),
+                opacity: _hovered ? 1.0 : 0.0,
+                child: Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 12,
+                  color: typeColor.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -309,65 +338,82 @@ class _AnnouncementDetailDialog extends StatelessWidget {
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
       child: Container(
-        width: 480,
-        constraints: const BoxConstraints(maxHeight: 520),
-        padding: const EdgeInsets.all(24),
+        width: 560,
+        constraints: const BoxConstraints(maxHeight: 560),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 标题行
-            Row(
-              children: [
-                Container(
-                  width: 4,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    color: typeColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    item.title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+            // 标题区
+            Container(
+              padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
+              decoration: BoxDecoration(
+                color: typeColor.withValues(alpha: 0.06),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 4,
+                    height: 20,
+                    margin: const EdgeInsets.only(top: 2),
+                    decoration: BoxDecoration(
+                      color: typeColor,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close),
-                  iconSize: 20,
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              _formatFullTime(item.createdAt),
-              style: TextStyle(
-                fontSize: 12,
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.4)
-                    : const Color(0xFF94A3B8),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _formatFullTime(item.createdAt),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.4)
+                                : const Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Icon(
+                      Icons.close,
+                      size: 18,
+                      color: isDark ? Colors.white54 : const Color(0xFF9CA3AF),
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  ),
+                ],
               ),
             ),
-            const Divider(height: 24),
+            // 内容区（Markdown 渲染）
             Flexible(
               child: SingleChildScrollView(
-                child: Text(
-                  item.content,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.7,
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.85)
-                        : const Color(0xFF334155),
-                  ),
+                padding: const EdgeInsets.all(20),
+                child: MarkdownBody(
+                  data: item.content,
+                  selectable: true,
+                  onTapLink: (text, href, title) {
+                    if (href != null) _launchUrl(href);
+                  },
+                  styleSheet: _buildMarkdownStyle(isDark, typeColor),
                 ),
               ),
             ),
@@ -391,5 +437,60 @@ class _AnnouncementDetailDialog extends StatelessWidget {
     final dt = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
     return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
         '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri != null && await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  MarkdownStyleSheet _buildMarkdownStyle(bool isDark, Color accentColor) {
+    return MarkdownStyleSheet(
+      p: TextStyle(
+        fontSize: 14,
+        height: 1.7,
+        color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
+      ),
+      h1: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: isDark ? Colors.white : const Color(0xFF111827),
+      ),
+      h2: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: isDark ? Colors.white : const Color(0xFF1F2937),
+      ),
+      h3: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF374151),
+      ),
+      code: TextStyle(
+        backgroundColor: isDark
+            ? const Color(0xFF374151)
+            : const Color(0xFFF3F4F6),
+        color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFDC2626),
+        fontSize: 13,
+      ),
+      codeblockDecoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+        ),
+      ),
+      blockquoteDecoration: BoxDecoration(
+        color: accentColor.withValues(alpha: 0.05),
+        border: Border(left: BorderSide(color: accentColor, width: 3)),
+      ),
+      a: TextStyle(color: accentColor, decoration: TextDecoration.underline),
+      listBullet: TextStyle(
+        fontSize: 14,
+        color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
+      ),
+    );
   }
 }
