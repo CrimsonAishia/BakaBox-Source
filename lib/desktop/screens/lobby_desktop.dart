@@ -122,8 +122,19 @@ class _LobbyDesktopState extends State<LobbyDesktop>
   }
 
   @override
-  void didUpdateWidget(LobbyDesktop oldWidget) {
-    super.didUpdateWidget(oldWidget);
+  void deactivate() {
+    // 页面离开时关闭面板和聊天，避免返回时按钮仍显示选中状态
+    final bloc = context.read<LobbyBloc>();
+    if (bloc.state.isPlayersPanelOpen ||
+        bloc.state.isSettingsPanelOpen ||
+        bloc.state.isChatActive) {
+      bloc.add(const LobbyPanelsDismissed());
+    }
+    // 广播弹窗单独关闭
+    if (bloc.state.isBroadcastDialogOpen) {
+      bloc.add(const LobbyBroadcastDialogToggled());
+    }
+    super.deactivate();
   }
 
   @override
@@ -450,7 +461,7 @@ class _LobbyDesktopState extends State<LobbyDesktop>
           // 取消之前的定时器
           _transientNoticeTimer?.cancel();
           _transientNoticeTimer = Timer(const Duration(seconds: 2), () {
-            if (mounted && currentSeq == context.read<LobbyBloc>().state.transientNoticeSeq) {
+            if (mounted && currentSeq == bloc.state.transientNoticeSeq) {
               bloc.add(const LobbyTransientNoticeShown());
             }
           });
