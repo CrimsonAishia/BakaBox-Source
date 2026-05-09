@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/widgets/map_background.dart';
+
 /// 地图订阅卡片组件
 ///
 /// 统一用于订阅列表和搜索结果的地图卡片样式
@@ -106,14 +108,11 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                   // 全宽地图背景
                   if (hasBackground)
                     Positioned.fill(
-                      child: Image.network(
-                        widget.mapBackground!,
+                      child: MapBackground(
+                        mapName: widget.mapName,
+                        imageUrl: widget.mapBackground,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: isDark
-                              ? const Color(0xFF1A1A2E)
-                              : const Color(0xFFF3F4F6),
-                        ),
+                        cacheWidth: 800,
                       ),
                     ),
                   // 无背景时的底色
