@@ -26,6 +26,13 @@ class MapCdBadge extends StatelessWidget {
     }
   }
 
+  /// 强制刷新：清除缓存后重新加载
+  void _refresh(BuildContext context) {
+    final bloc = context.read<MapCdBloc>();
+    bloc.add(ClearMapCdCache(mapName));
+    bloc.add(LoadMapCd(mapName));
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<MapCdBloc, MapCdState>(
@@ -159,29 +166,33 @@ class MapCdBadge extends StatelessWidget {
         }
 
         // 显示CD信息
-        final cd = cdInfo.currentCd;
+        final cd = cdInfo.currentNominateCd;
         final isAvailable = cd == 0;
         final accentColor = isAvailable
             ? const Color(0xFF10B981)
             : const Color(0xFFEF4444);
 
-        return _CdBadgeShell(
-          borderColor: accentColor.withValues(alpha: 0.8),
-          glowColor: accentColor.withValues(alpha: 0.3),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isAvailable ? Icons.check_circle_rounded : Icons.schedule,
-                size: 15,
-                color: accentColor,
-              ),
-              const SizedBox(width: 5),
-              _CdBadgeText(
-                label: isAvailable ? '可预订' : 'CD：$cd',
-                color: accentColor,
-              ),
-            ],
+        return GestureDetector(
+          onTap: () => _refresh(context),
+          child: _CdBadgeShell(
+            borderColor: accentColor.withValues(alpha: 0.8),
+            glowColor: accentColor.withValues(alpha: 0.3),
+            clickable: true,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isAvailable ? Icons.check_circle_rounded : Icons.schedule,
+                  size: 15,
+                  color: accentColor,
+                ),
+                const SizedBox(width: 5),
+                _CdBadgeText(
+                  label: isAvailable ? '可预订' : 'CD：$cd',
+                  color: accentColor,
+                ),
+              ],
+            ),
           ),
         );
       },
