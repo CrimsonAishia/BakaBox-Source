@@ -475,6 +475,14 @@ message SteamUserInfoResponse {
   int64  css_ttt_pts             = 57;
   int64  css_ttt_wrong_kill      = 58;
   int64  css_ttt_karma           = 59;
+
+  // 新捐助者字段（API 更新后 vip_* 字段已被 donator_* 替代）
+  // 旧字段 vip_level/vip_date/vip_end 保持兼容（自动从 donator 字段回填）
+  int32  donator_level           = 60;
+  string donate_date             = 61;
+  string donate_end              = 62;  // 空字符串表示 null（永久）
+  bool   donator_sign_today      = 63;
+  string current_date            = 64;
 }
 
 // ==================== Match Signal ====================
@@ -489,9 +497,6 @@ message MatchSignal {
     BroadcastMessageSignal broadcast_message = 12;
     TeleportArrivalSignal teleport_arrival = 13;
     ChatMessageSignal chat_message = 14;
-    StatusTextChangedSignal status_text_changed = 15;
-    AnonymousChangedSignal anonymous_changed = 16;
-    DisplayNameChangedSignal display_name_changed = 17;
     OnlineCountChangedSignal online_count_changed = 18;
     PresenceJoinSignal presence_join = 19;
   }
@@ -549,25 +554,6 @@ message ChatMessageSignal {
   string message_type = 5;
   bool is_anonymous = 6;
   int64 timestamp = 7;
-}
-
-// StatusTextChangedSignal 跨 Match 状态文本变更信号
-message StatusTextChangedSignal {
-  string user_id = 1;
-  string status_text = 2;
-}
-
-// AnonymousChangedSignal 跨 Match 匿名状态变更信号
-message AnonymousChangedSignal {
-  string user_id = 1;
-  bool is_anonymous = 2;
-  string display_nickname = 3;
-}
-
-// DisplayNameChangedSignal 跨 Match 昵称变更信号
-message DisplayNameChangedSignal {
-  string user_id = 1;
-  string nickname = 2;
 }
 
 // OnlineCountChangedSignal 全服在线人数变更信号

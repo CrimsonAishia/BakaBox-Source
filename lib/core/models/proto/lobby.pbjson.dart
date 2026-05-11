@@ -1052,6 +1052,11 @@ const SteamUserInfoResponse$json = {
     {'1': 'css_ttt_pts', '3': 57, '4': 1, '5': 3, '10': 'cssTttPts'},
     {'1': 'css_ttt_wrong_kill', '3': 58, '4': 1, '5': 3, '10': 'cssTttWrongKill'},
     {'1': 'css_ttt_karma', '3': 59, '4': 1, '5': 3, '10': 'cssTttKarma'},
+    {'1': 'donator_level', '3': 60, '4': 1, '5': 5, '10': 'donatorLevel'},
+    {'1': 'donate_date', '3': 61, '4': 1, '5': 9, '10': 'donateDate'},
+    {'1': 'donate_end', '3': 62, '4': 1, '5': 9, '10': 'donateEnd'},
+    {'1': 'donator_sign_today', '3': 63, '4': 1, '5': 8, '10': 'donatorSignToday'},
+    {'1': 'current_date', '3': 64, '4': 1, '5': 9, '10': 'currentDate'},
   ],
 };
 
@@ -1096,7 +1101,10 @@ final $typed_data.Uint8List steamUserInfoResponseDescriptor = $convert.base64Dec
     'X2h1bWFuX2tpbGxzGDcgASgDUhJjc3NUaXRhbkh1bWFuS2lsbHMSKgoRY3NzX3RpdGFuX2Fzc2'
     'lzdHMYOCABKANSD2Nzc1RpdGFuQXNzaXN0cxIeCgtjc3NfdHR0X3B0cxg5IAEoA1IJY3NzVHR0'
     'UHRzEisKEmNzc190dHRfd3Jvbmdfa2lsbBg6IAEoA1IPY3NzVHR0V3JvbmdLaWxsEiIKDWNzc1'
-    '90dHRfa2FybWEYOyABKANSC2Nzc1R0dEthcm1h');
+    '90dHRfa2FybWEYOyABKANSC2Nzc1R0dEthcm1hEiMKDWRvbmF0b3JfbGV2ZWwYPCABKAVSDGRv'
+    'bmF0b3JMZXZlbBIfCgtkb25hdGVfZGF0ZRg9IAEoCVIKZG9uYXRlRGF0ZRIdCgpkb25hdGVfZW'
+    '5kGD4gASgJUglkb25hdGVFbmQSLAoSZG9uYXRvcl9zaWduX3RvZGF5GD8gASgIUhBkb25hdG9y'
+    'U2lnblRvZGF5EiEKDGN1cnJlbnRfZGF0ZRhAIAEoCVILY3VycmVudERhdGU=');
 
 @$core.Deprecated('Use matchSignalDescriptor instead')
 const MatchSignal$json = {
@@ -1108,9 +1116,6 @@ const MatchSignal$json = {
     {'1': 'broadcast_message', '3': 12, '4': 1, '5': 11, '6': '.lobby.BroadcastMessageSignal', '9': 0, '10': 'broadcastMessage'},
     {'1': 'teleport_arrival', '3': 13, '4': 1, '5': 11, '6': '.lobby.TeleportArrivalSignal', '9': 0, '10': 'teleportArrival'},
     {'1': 'chat_message', '3': 14, '4': 1, '5': 11, '6': '.lobby.ChatMessageSignal', '9': 0, '10': 'chatMessage'},
-    {'1': 'status_text_changed', '3': 15, '4': 1, '5': 11, '6': '.lobby.StatusTextChangedSignal', '9': 0, '10': 'statusTextChanged'},
-    {'1': 'anonymous_changed', '3': 16, '4': 1, '5': 11, '6': '.lobby.AnonymousChangedSignal', '9': 0, '10': 'anonymousChanged'},
-    {'1': 'display_name_changed', '3': 17, '4': 1, '5': 11, '6': '.lobby.DisplayNameChangedSignal', '9': 0, '10': 'displayNameChanged'},
     {'1': 'online_count_changed', '3': 18, '4': 1, '5': 11, '6': '.lobby.OnlineCountChangedSignal', '9': 0, '10': 'onlineCountChanged'},
     {'1': 'presence_join', '3': 19, '4': 1, '5': 11, '6': '.lobby.PresenceJoinSignal', '9': 0, '10': 'presenceJoin'},
   ],
@@ -1127,14 +1132,10 @@ final $typed_data.Uint8List matchSignalDescriptor = $convert.base64Decode(
     'dlGAwgASgLMh0ubG9iYnkuQnJvYWRjYXN0TWVzc2FnZVNpZ25hbEgAUhBicm9hZGNhc3RNZXNz'
     'YWdlEkkKEHRlbGVwb3J0X2Fycml2YWwYDSABKAsyHC5sb2JieS5UZWxlcG9ydEFycml2YWxTaW'
     'duYWxIAFIPdGVsZXBvcnRBcnJpdmFsEj0KDGNoYXRfbWVzc2FnZRgOIAEoCzIYLmxvYmJ5LkNo'
-    'YXRNZXNzYWdlU2lnbmFsSABSC2NoYXRNZXNzYWdlElAKE3N0YXR1c190ZXh0X2NoYW5nZWQYDy'
-    'ABKAsyHi5sb2JieS5TdGF0dXNUZXh0Q2hhbmdlZFNpZ25hbEgAUhFzdGF0dXNUZXh0Q2hhbmdl'
-    'ZBJMChFhbm9ueW1vdXNfY2hhbmdlZBgQIAEoCzIdLmxvYmJ5LkFub255bW91c0NoYW5nZWRTaW'
-    'duYWxIAFIQYW5vbnltb3VzQ2hhbmdlZBJTChRkaXNwbGF5X25hbWVfY2hhbmdlZBgRIAEoCzIf'
-    'LmxvYmJ5LkRpc3BsYXlOYW1lQ2hhbmdlZFNpZ25hbEgAUhJkaXNwbGF5TmFtZUNoYW5nZWQSUw'
-    'oUb25saW5lX2NvdW50X2NoYW5nZWQYEiABKAsyHy5sb2JieS5PbmxpbmVDb3VudENoYW5nZWRT'
-    'aWduYWxIAFISb25saW5lQ291bnRDaGFuZ2VkEkAKDXByZXNlbmNlX2pvaW4YEyABKAsyGS5sb2'
-    'JieS5QcmVzZW5jZUpvaW5TaWduYWxIAFIMcHJlc2VuY2VKb2luQgkKB3BheWxvYWQ=');
+    'YXRNZXNzYWdlU2lnbmFsSABSC2NoYXRNZXNzYWdlElMKFG9ubGluZV9jb3VudF9jaGFuZ2VkGB'
+    'IgASgLMh8ubG9iYnkuT25saW5lQ291bnRDaGFuZ2VkU2lnbmFsSABSEm9ubGluZUNvdW50Q2hh'
+    'bmdlZBJACg1wcmVzZW5jZV9qb2luGBMgASgLMhkubG9iYnkuUHJlc2VuY2VKb2luU2lnbmFsSA'
+    'BSDHByZXNlbmNlSm9pbkIJCgdwYXlsb2Fk');
 
 @$core.Deprecated('Use presenceJoinSignalDescriptor instead')
 const PresenceJoinSignal$json = {
@@ -1242,50 +1243,6 @@ final $typed_data.Uint8List chatMessageSignalDescriptor = $convert.base64Decode(
     'ZW50GAQgASgJUgdjb250ZW50EiEKDG1lc3NhZ2VfdHlwZRgFIAEoCVILbWVzc2FnZVR5cGUSIQ'
     'oMaXNfYW5vbnltb3VzGAYgASgIUgtpc0Fub255bW91cxIcCgl0aW1lc3RhbXAYByABKANSCXRp'
     'bWVzdGFtcA==');
-
-@$core.Deprecated('Use statusTextChangedSignalDescriptor instead')
-const StatusTextChangedSignal$json = {
-  '1': 'StatusTextChangedSignal',
-  '2': [
-    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
-    {'1': 'status_text', '3': 2, '4': 1, '5': 9, '10': 'statusText'},
-  ],
-};
-
-/// Descriptor for `StatusTextChangedSignal`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List statusTextChangedSignalDescriptor = $convert.base64Decode(
-    'ChdTdGF0dXNUZXh0Q2hhbmdlZFNpZ25hbBIXCgd1c2VyX2lkGAEgASgJUgZ1c2VySWQSHwoLc3'
-    'RhdHVzX3RleHQYAiABKAlSCnN0YXR1c1RleHQ=');
-
-@$core.Deprecated('Use anonymousChangedSignalDescriptor instead')
-const AnonymousChangedSignal$json = {
-  '1': 'AnonymousChangedSignal',
-  '2': [
-    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
-    {'1': 'is_anonymous', '3': 2, '4': 1, '5': 8, '10': 'isAnonymous'},
-    {'1': 'display_nickname', '3': 3, '4': 1, '5': 9, '10': 'displayNickname'},
-  ],
-};
-
-/// Descriptor for `AnonymousChangedSignal`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List anonymousChangedSignalDescriptor = $convert.base64Decode(
-    'ChZBbm9ueW1vdXNDaGFuZ2VkU2lnbmFsEhcKB3VzZXJfaWQYASABKAlSBnVzZXJJZBIhCgxpc1'
-    '9hbm9ueW1vdXMYAiABKAhSC2lzQW5vbnltb3VzEikKEGRpc3BsYXlfbmlja25hbWUYAyABKAlS'
-    'D2Rpc3BsYXlOaWNrbmFtZQ==');
-
-@$core.Deprecated('Use displayNameChangedSignalDescriptor instead')
-const DisplayNameChangedSignal$json = {
-  '1': 'DisplayNameChangedSignal',
-  '2': [
-    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
-    {'1': 'nickname', '3': 2, '4': 1, '5': 9, '10': 'nickname'},
-  ],
-};
-
-/// Descriptor for `DisplayNameChangedSignal`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List displayNameChangedSignalDescriptor = $convert.base64Decode(
-    'ChhEaXNwbGF5TmFtZUNoYW5nZWRTaWduYWwSFwoHdXNlcl9pZBgBIAEoCVIGdXNlcklkEhoKCG'
-    '5pY2tuYW1lGAIgASgJUghuaWNrbmFtZQ==');
 
 @$core.Deprecated('Use onlineCountChangedSignalDescriptor instead')
 const OnlineCountChangedSignal$json = {
