@@ -5043,6 +5043,11 @@ class SteamUserInfoResponse extends $pb.GeneratedMessage {
     $fixnum.Int64? cssTttPts,
     $fixnum.Int64? cssTttWrongKill,
     $fixnum.Int64? cssTttKarma,
+    $core.int? donatorLevel,
+    $core.String? donateDate,
+    $core.String? donateEnd,
+    $core.bool? donatorSignToday,
+    $core.String? currentDate,
   }) {
     final $result = create();
     if (code != null) {
@@ -5222,6 +5227,21 @@ class SteamUserInfoResponse extends $pb.GeneratedMessage {
     if (cssTttKarma != null) {
       $result.cssTttKarma = cssTttKarma;
     }
+    if (donatorLevel != null) {
+      $result.donatorLevel = donatorLevel;
+    }
+    if (donateDate != null) {
+      $result.donateDate = donateDate;
+    }
+    if (donateEnd != null) {
+      $result.donateEnd = donateEnd;
+    }
+    if (donatorSignToday != null) {
+      $result.donatorSignToday = donatorSignToday;
+    }
+    if (currentDate != null) {
+      $result.currentDate = currentDate;
+    }
     return $result;
   }
   SteamUserInfoResponse._() : super();
@@ -5288,6 +5308,11 @@ class SteamUserInfoResponse extends $pb.GeneratedMessage {
     ..aInt64(57, _omitFieldNames ? '' : 'cssTttPts')
     ..aInt64(58, _omitFieldNames ? '' : 'cssTttWrongKill')
     ..aInt64(59, _omitFieldNames ? '' : 'cssTttKarma')
+    ..a<$core.int>(60, _omitFieldNames ? '' : 'donatorLevel', $pb.PbFieldType.O3)
+    ..aOS(61, _omitFieldNames ? '' : 'donateDate')
+    ..aOS(62, _omitFieldNames ? '' : 'donateEnd')
+    ..aOB(63, _omitFieldNames ? '' : 'donatorSignToday')
+    ..aOS(64, _omitFieldNames ? '' : 'currentDate')
     ..hasRequiredFields = false
   ;
 
@@ -5846,6 +5871,53 @@ class SteamUserInfoResponse extends $pb.GeneratedMessage {
   $core.bool hasCssTttKarma() => $_has(58);
   @$pb.TagNumber(59)
   void clearCssTttKarma() => clearField(59);
+
+  /// 新捐助者字段（API 更新后 vip_* 字段已被 donator_* 替代）
+  /// 旧字段 vip_level/vip_date/vip_end 保持兼容（自动从 donator 字段回填）
+  @$pb.TagNumber(60)
+  $core.int get donatorLevel => $_getIZ(59);
+  @$pb.TagNumber(60)
+  set donatorLevel($core.int v) { $_setSignedInt32(59, v); }
+  @$pb.TagNumber(60)
+  $core.bool hasDonatorLevel() => $_has(59);
+  @$pb.TagNumber(60)
+  void clearDonatorLevel() => clearField(60);
+
+  @$pb.TagNumber(61)
+  $core.String get donateDate => $_getSZ(60);
+  @$pb.TagNumber(61)
+  set donateDate($core.String v) { $_setString(60, v); }
+  @$pb.TagNumber(61)
+  $core.bool hasDonateDate() => $_has(60);
+  @$pb.TagNumber(61)
+  void clearDonateDate() => clearField(61);
+
+  @$pb.TagNumber(62)
+  $core.String get donateEnd => $_getSZ(61);
+  @$pb.TagNumber(62)
+  set donateEnd($core.String v) { $_setString(61, v); }
+  @$pb.TagNumber(62)
+  $core.bool hasDonateEnd() => $_has(61);
+  @$pb.TagNumber(62)
+  void clearDonateEnd() => clearField(62);
+
+  @$pb.TagNumber(63)
+  $core.bool get donatorSignToday => $_getBF(62);
+  @$pb.TagNumber(63)
+  set donatorSignToday($core.bool v) { $_setBool(62, v); }
+  @$pb.TagNumber(63)
+  $core.bool hasDonatorSignToday() => $_has(62);
+  @$pb.TagNumber(63)
+  void clearDonatorSignToday() => clearField(63);
+
+  @$pb.TagNumber(64)
+  $core.String get currentDate => $_getSZ(63);
+  @$pb.TagNumber(64)
+  set currentDate($core.String v) { $_setString(63, v); }
+  @$pb.TagNumber(64)
+  $core.bool hasCurrentDate() => $_has(63);
+  @$pb.TagNumber(64)
+  void clearCurrentDate() => clearField(64);
 }
 
 enum MatchSignal_Payload {
@@ -5854,9 +5926,6 @@ enum MatchSignal_Payload {
   broadcastMessage, 
   teleportArrival, 
   chatMessage, 
-  statusTextChanged, 
-  anonymousChanged, 
-  displayNameChanged, 
   onlineCountChanged, 
   presenceJoin, 
   notSet
@@ -5871,9 +5940,6 @@ class MatchSignal extends $pb.GeneratedMessage {
     BroadcastMessageSignal? broadcastMessage,
     TeleportArrivalSignal? teleportArrival,
     ChatMessageSignal? chatMessage,
-    StatusTextChangedSignal? statusTextChanged,
-    AnonymousChangedSignal? anonymousChanged,
-    DisplayNameChangedSignal? displayNameChanged,
     OnlineCountChangedSignal? onlineCountChanged,
     PresenceJoinSignal? presenceJoin,
   }) {
@@ -5896,15 +5962,6 @@ class MatchSignal extends $pb.GeneratedMessage {
     if (chatMessage != null) {
       $result.chatMessage = chatMessage;
     }
-    if (statusTextChanged != null) {
-      $result.statusTextChanged = statusTextChanged;
-    }
-    if (anonymousChanged != null) {
-      $result.anonymousChanged = anonymousChanged;
-    }
-    if (displayNameChanged != null) {
-      $result.displayNameChanged = displayNameChanged;
-    }
     if (onlineCountChanged != null) {
       $result.onlineCountChanged = onlineCountChanged;
     }
@@ -5923,24 +5980,18 @@ class MatchSignal extends $pb.GeneratedMessage {
     12 : MatchSignal_Payload.broadcastMessage,
     13 : MatchSignal_Payload.teleportArrival,
     14 : MatchSignal_Payload.chatMessage,
-    15 : MatchSignal_Payload.statusTextChanged,
-    16 : MatchSignal_Payload.anonymousChanged,
-    17 : MatchSignal_Payload.displayNameChanged,
     18 : MatchSignal_Payload.onlineCountChanged,
     19 : MatchSignal_Payload.presenceJoin,
     0 : MatchSignal_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'MatchSignal', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
-    ..oo(0, [10, 11, 12, 13, 14, 15, 16, 17, 18, 19])
+    ..oo(0, [10, 11, 12, 13, 14, 18, 19])
     ..aOS(1, _omitFieldNames ? '' : 'action')
     ..aOM<KickSignal>(10, _omitFieldNames ? '' : 'kick', subBuilder: KickSignal.create)
     ..aOM<AssetsUpdatedSignal>(11, _omitFieldNames ? '' : 'assetsUpdated', subBuilder: AssetsUpdatedSignal.create)
     ..aOM<BroadcastMessageSignal>(12, _omitFieldNames ? '' : 'broadcastMessage', subBuilder: BroadcastMessageSignal.create)
     ..aOM<TeleportArrivalSignal>(13, _omitFieldNames ? '' : 'teleportArrival', subBuilder: TeleportArrivalSignal.create)
     ..aOM<ChatMessageSignal>(14, _omitFieldNames ? '' : 'chatMessage', subBuilder: ChatMessageSignal.create)
-    ..aOM<StatusTextChangedSignal>(15, _omitFieldNames ? '' : 'statusTextChanged', subBuilder: StatusTextChangedSignal.create)
-    ..aOM<AnonymousChangedSignal>(16, _omitFieldNames ? '' : 'anonymousChanged', subBuilder: AnonymousChangedSignal.create)
-    ..aOM<DisplayNameChangedSignal>(17, _omitFieldNames ? '' : 'displayNameChanged', subBuilder: DisplayNameChangedSignal.create)
     ..aOM<OnlineCountChangedSignal>(18, _omitFieldNames ? '' : 'onlineCountChanged', subBuilder: OnlineCountChangedSignal.create)
     ..aOM<PresenceJoinSignal>(19, _omitFieldNames ? '' : 'presenceJoin', subBuilder: PresenceJoinSignal.create)
     ..hasRequiredFields = false
@@ -6034,60 +6085,27 @@ class MatchSignal extends $pb.GeneratedMessage {
   @$pb.TagNumber(14)
   ChatMessageSignal ensureChatMessage() => $_ensure(5);
 
-  @$pb.TagNumber(15)
-  StatusTextChangedSignal get statusTextChanged => $_getN(6);
-  @$pb.TagNumber(15)
-  set statusTextChanged(StatusTextChangedSignal v) { setField(15, v); }
-  @$pb.TagNumber(15)
-  $core.bool hasStatusTextChanged() => $_has(6);
-  @$pb.TagNumber(15)
-  void clearStatusTextChanged() => clearField(15);
-  @$pb.TagNumber(15)
-  StatusTextChangedSignal ensureStatusTextChanged() => $_ensure(6);
-
-  @$pb.TagNumber(16)
-  AnonymousChangedSignal get anonymousChanged => $_getN(7);
-  @$pb.TagNumber(16)
-  set anonymousChanged(AnonymousChangedSignal v) { setField(16, v); }
-  @$pb.TagNumber(16)
-  $core.bool hasAnonymousChanged() => $_has(7);
-  @$pb.TagNumber(16)
-  void clearAnonymousChanged() => clearField(16);
-  @$pb.TagNumber(16)
-  AnonymousChangedSignal ensureAnonymousChanged() => $_ensure(7);
-
-  @$pb.TagNumber(17)
-  DisplayNameChangedSignal get displayNameChanged => $_getN(8);
-  @$pb.TagNumber(17)
-  set displayNameChanged(DisplayNameChangedSignal v) { setField(17, v); }
-  @$pb.TagNumber(17)
-  $core.bool hasDisplayNameChanged() => $_has(8);
-  @$pb.TagNumber(17)
-  void clearDisplayNameChanged() => clearField(17);
-  @$pb.TagNumber(17)
-  DisplayNameChangedSignal ensureDisplayNameChanged() => $_ensure(8);
-
   @$pb.TagNumber(18)
-  OnlineCountChangedSignal get onlineCountChanged => $_getN(9);
+  OnlineCountChangedSignal get onlineCountChanged => $_getN(6);
   @$pb.TagNumber(18)
   set onlineCountChanged(OnlineCountChangedSignal v) { setField(18, v); }
   @$pb.TagNumber(18)
-  $core.bool hasOnlineCountChanged() => $_has(9);
+  $core.bool hasOnlineCountChanged() => $_has(6);
   @$pb.TagNumber(18)
   void clearOnlineCountChanged() => clearField(18);
   @$pb.TagNumber(18)
-  OnlineCountChangedSignal ensureOnlineCountChanged() => $_ensure(9);
+  OnlineCountChangedSignal ensureOnlineCountChanged() => $_ensure(6);
 
   @$pb.TagNumber(19)
-  PresenceJoinSignal get presenceJoin => $_getN(10);
+  PresenceJoinSignal get presenceJoin => $_getN(7);
   @$pb.TagNumber(19)
   set presenceJoin(PresenceJoinSignal v) { setField(19, v); }
   @$pb.TagNumber(19)
-  $core.bool hasPresenceJoin() => $_has(10);
+  $core.bool hasPresenceJoin() => $_has(7);
   @$pb.TagNumber(19)
   void clearPresenceJoin() => clearField(19);
   @$pb.TagNumber(19)
-  PresenceJoinSignal ensurePresenceJoin() => $_ensure(10);
+  PresenceJoinSignal ensurePresenceJoin() => $_ensure(7);
 }
 
 /// PresenceJoinSignal 跨 Match 用户进入通知信号（仅通知，不含坐标，不渲染）
@@ -6691,215 +6709,6 @@ class ChatMessageSignal extends $pb.GeneratedMessage {
   $core.bool hasTimestamp() => $_has(6);
   @$pb.TagNumber(7)
   void clearTimestamp() => clearField(7);
-}
-
-/// StatusTextChangedSignal 跨 Match 状态文本变更信号
-class StatusTextChangedSignal extends $pb.GeneratedMessage {
-  factory StatusTextChangedSignal({
-    $core.String? userId,
-    $core.String? statusText,
-  }) {
-    final $result = create();
-    if (userId != null) {
-      $result.userId = userId;
-    }
-    if (statusText != null) {
-      $result.statusText = statusText;
-    }
-    return $result;
-  }
-  StatusTextChangedSignal._() : super();
-  factory StatusTextChangedSignal.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory StatusTextChangedSignal.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
-
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'StatusTextChangedSignal', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
-    ..aOS(1, _omitFieldNames ? '' : 'userId')
-    ..aOS(2, _omitFieldNames ? '' : 'statusText')
-    ..hasRequiredFields = false
-  ;
-
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
-  'Will be removed in next major version')
-  StatusTextChangedSignal clone() => StatusTextChangedSignal()..mergeFromMessage(this);
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
-  'Will be removed in next major version')
-  StatusTextChangedSignal copyWith(void Function(StatusTextChangedSignal) updates) => super.copyWith((message) => updates(message as StatusTextChangedSignal)) as StatusTextChangedSignal;
-
-  $pb.BuilderInfo get info_ => _i;
-
-  @$core.pragma('dart2js:noInline')
-  static StatusTextChangedSignal create() => StatusTextChangedSignal._();
-  StatusTextChangedSignal createEmptyInstance() => create();
-  static $pb.PbList<StatusTextChangedSignal> createRepeated() => $pb.PbList<StatusTextChangedSignal>();
-  @$core.pragma('dart2js:noInline')
-  static StatusTextChangedSignal getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<StatusTextChangedSignal>(create);
-  static StatusTextChangedSignal? _defaultInstance;
-
-  @$pb.TagNumber(1)
-  $core.String get userId => $_getSZ(0);
-  @$pb.TagNumber(1)
-  set userId($core.String v) { $_setString(0, v); }
-  @$pb.TagNumber(1)
-  $core.bool hasUserId() => $_has(0);
-  @$pb.TagNumber(1)
-  void clearUserId() => clearField(1);
-
-  @$pb.TagNumber(2)
-  $core.String get statusText => $_getSZ(1);
-  @$pb.TagNumber(2)
-  set statusText($core.String v) { $_setString(1, v); }
-  @$pb.TagNumber(2)
-  $core.bool hasStatusText() => $_has(1);
-  @$pb.TagNumber(2)
-  void clearStatusText() => clearField(2);
-}
-
-/// AnonymousChangedSignal 跨 Match 匿名状态变更信号
-class AnonymousChangedSignal extends $pb.GeneratedMessage {
-  factory AnonymousChangedSignal({
-    $core.String? userId,
-    $core.bool? isAnonymous,
-    $core.String? displayNickname,
-  }) {
-    final $result = create();
-    if (userId != null) {
-      $result.userId = userId;
-    }
-    if (isAnonymous != null) {
-      $result.isAnonymous = isAnonymous;
-    }
-    if (displayNickname != null) {
-      $result.displayNickname = displayNickname;
-    }
-    return $result;
-  }
-  AnonymousChangedSignal._() : super();
-  factory AnonymousChangedSignal.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory AnonymousChangedSignal.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
-
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'AnonymousChangedSignal', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
-    ..aOS(1, _omitFieldNames ? '' : 'userId')
-    ..aOB(2, _omitFieldNames ? '' : 'isAnonymous')
-    ..aOS(3, _omitFieldNames ? '' : 'displayNickname')
-    ..hasRequiredFields = false
-  ;
-
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
-  'Will be removed in next major version')
-  AnonymousChangedSignal clone() => AnonymousChangedSignal()..mergeFromMessage(this);
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
-  'Will be removed in next major version')
-  AnonymousChangedSignal copyWith(void Function(AnonymousChangedSignal) updates) => super.copyWith((message) => updates(message as AnonymousChangedSignal)) as AnonymousChangedSignal;
-
-  $pb.BuilderInfo get info_ => _i;
-
-  @$core.pragma('dart2js:noInline')
-  static AnonymousChangedSignal create() => AnonymousChangedSignal._();
-  AnonymousChangedSignal createEmptyInstance() => create();
-  static $pb.PbList<AnonymousChangedSignal> createRepeated() => $pb.PbList<AnonymousChangedSignal>();
-  @$core.pragma('dart2js:noInline')
-  static AnonymousChangedSignal getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<AnonymousChangedSignal>(create);
-  static AnonymousChangedSignal? _defaultInstance;
-
-  @$pb.TagNumber(1)
-  $core.String get userId => $_getSZ(0);
-  @$pb.TagNumber(1)
-  set userId($core.String v) { $_setString(0, v); }
-  @$pb.TagNumber(1)
-  $core.bool hasUserId() => $_has(0);
-  @$pb.TagNumber(1)
-  void clearUserId() => clearField(1);
-
-  @$pb.TagNumber(2)
-  $core.bool get isAnonymous => $_getBF(1);
-  @$pb.TagNumber(2)
-  set isAnonymous($core.bool v) { $_setBool(1, v); }
-  @$pb.TagNumber(2)
-  $core.bool hasIsAnonymous() => $_has(1);
-  @$pb.TagNumber(2)
-  void clearIsAnonymous() => clearField(2);
-
-  @$pb.TagNumber(3)
-  $core.String get displayNickname => $_getSZ(2);
-  @$pb.TagNumber(3)
-  set displayNickname($core.String v) { $_setString(2, v); }
-  @$pb.TagNumber(3)
-  $core.bool hasDisplayNickname() => $_has(2);
-  @$pb.TagNumber(3)
-  void clearDisplayNickname() => clearField(3);
-}
-
-/// DisplayNameChangedSignal 跨 Match 昵称变更信号
-class DisplayNameChangedSignal extends $pb.GeneratedMessage {
-  factory DisplayNameChangedSignal({
-    $core.String? userId,
-    $core.String? nickname,
-  }) {
-    final $result = create();
-    if (userId != null) {
-      $result.userId = userId;
-    }
-    if (nickname != null) {
-      $result.nickname = nickname;
-    }
-    return $result;
-  }
-  DisplayNameChangedSignal._() : super();
-  factory DisplayNameChangedSignal.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory DisplayNameChangedSignal.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
-
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DisplayNameChangedSignal', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
-    ..aOS(1, _omitFieldNames ? '' : 'userId')
-    ..aOS(2, _omitFieldNames ? '' : 'nickname')
-    ..hasRequiredFields = false
-  ;
-
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
-  'Will be removed in next major version')
-  DisplayNameChangedSignal clone() => DisplayNameChangedSignal()..mergeFromMessage(this);
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
-  'Will be removed in next major version')
-  DisplayNameChangedSignal copyWith(void Function(DisplayNameChangedSignal) updates) => super.copyWith((message) => updates(message as DisplayNameChangedSignal)) as DisplayNameChangedSignal;
-
-  $pb.BuilderInfo get info_ => _i;
-
-  @$core.pragma('dart2js:noInline')
-  static DisplayNameChangedSignal create() => DisplayNameChangedSignal._();
-  DisplayNameChangedSignal createEmptyInstance() => create();
-  static $pb.PbList<DisplayNameChangedSignal> createRepeated() => $pb.PbList<DisplayNameChangedSignal>();
-  @$core.pragma('dart2js:noInline')
-  static DisplayNameChangedSignal getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<DisplayNameChangedSignal>(create);
-  static DisplayNameChangedSignal? _defaultInstance;
-
-  @$pb.TagNumber(1)
-  $core.String get userId => $_getSZ(0);
-  @$pb.TagNumber(1)
-  set userId($core.String v) { $_setString(0, v); }
-  @$pb.TagNumber(1)
-  $core.bool hasUserId() => $_has(0);
-  @$pb.TagNumber(1)
-  void clearUserId() => clearField(1);
-
-  @$pb.TagNumber(2)
-  $core.String get nickname => $_getSZ(1);
-  @$pb.TagNumber(2)
-  set nickname($core.String v) { $_setString(1, v); }
-  @$pb.TagNumber(2)
-  $core.bool hasNickname() => $_has(1);
-  @$pb.TagNumber(2)
-  void clearNickname() => clearField(2);
 }
 
 /// OnlineCountChangedSignal 全服在线人数变更信号
