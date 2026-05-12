@@ -51,6 +51,30 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   String _currentSpriteId;
   bool _showNameplate;
   bool _showChatBubble;
+  bool _isFollowed = false;
+
+  /// 公开用户数据（供 LobbyGame 右键菜单使用）
+  LobbyUser get user => _user;
+
+  /// 是否被关注（橙名 + 最高层级）
+  bool get isFollowed => _isFollowed;
+  set isFollowed(bool value) {
+    if (_isFollowed != value) {
+      _isFollowed = value;
+      // 关注的用户层级最高（200），普通用户为 1，悬停为 100
+      if (value && !_isHovered) {
+        priority = 200;
+      } else if (!value && !_isHovered) {
+        priority = 1;
+      }
+      // 名字缓存失效，下次 render 时重建
+      _cachedDisplayName = null;
+      _cachedNamePainter?.dispose();
+      _cachedNamePainter = null;
+      _cachedNameStrokePainter?.dispose();
+      _cachedNameStrokePainter = null;
+    }
+  }
 
   /// 到达目标时的回调（用于通知 Bloc 更新状态）
   final void Function(String userId, LobbyPosition arrivedPosition) _onArrived;
@@ -65,6 +89,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   SpriteAnimationComponent? _animComponent; // 当前显示的动画组件（图集动画）
 
   bool _isHovered = false;
+  bool _isContextMenuTarget = false;
+  double _contextMenuPulse = 0.0; // 0~1 脉冲动画进度
 
   // ========== 聊天气泡动画系统 ==========
   /// 气泡整体透明度
@@ -403,6 +429,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       nickname: user.nickname,
       isAnonymous: user.isAnonymous,
       serverUserId: user.serverUserId,
+      businessUserId: user.businessUserId,
       avatarUrl: user.avatarUrl ?? _user.avatarUrl,
       isMoving: user.isMoving,
       isOnline: user.isOnline,
@@ -608,14 +635,36 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   void handleHoverEnter() {
     if (!_isHovered) {
       _isHovered = true;
-      priority = 100; // 悬停时提升层级，信息不会被遮挡
+      if (!_isContextMenuTarget) {
+        priority = 100; // 悬停时提升层级，信息不会被遮挡
+      }
     }
   }
 
   void handleHoverExit() {
     if (_isHovered) {
       _isHovered = false;
-      priority = 1; // 恢复原来层级
+      if (!_isContextMenuTarget) {
+        priority = _isFollowed ? 200 : 1; // 关注用户保持高层级
+      }
+    }
+  }
+
+  /// 设置为右键菜单目标（边框闪动）
+  void setContextMenuTarget(bool value) {
+    if (_isContextMenuTarget != value) {
+      _isContextMenuTarget = value;
+      if (value) {
+        _contextMenuPulse = 0.0;
+        priority = 100; // 提升层级
+      } else {
+        // 恢复层级
+        if (_isHovered) {
+          priority = 100;
+        } else {
+          priority = _isFollowed ? 200 : 1;
+        }
+      }
     }
   }
 
@@ -648,6 +697,12 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
     // 更新行走节奏动画（方案一）
     _updateWalkCycle(dt);
+
+    // 更新右键菜单目标脉冲动画
+    if (_isContextMenuTarget) {
+      _contextMenuPulse += dt * 4.0; // 约 0.25 秒一个周期
+      if (_contextMenuPulse > 1.0) _contextMenuPulse -= 1.0;
+    }
   }
 
   /// ========== 行走节奏动画实现（方案一）==========
@@ -959,11 +1014,47 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
   @override
   void render(Canvas canvas) {
-    // 如果被悬停，绘制描边高亮效果
-    if (_isHovered) {
+    // 右键菜单目标：绘制脉冲闪动边框
+    if (_isContextMenuTarget) {
       canvas.save();
       if (scale.x < 0) {
-        // 让高亮的左右对称性不再受组件翻转影响，不过对于矩形一般无所谓，还是规范下
+        final centerX = size.x / 2;
+        canvas.translate(centerX, 0);
+        canvas.scale(-1, 1);
+        canvas.translate(-centerX, 0);
+      }
+
+      final charX = (_spriteWidth - _characterDisplayWidth) / 2;
+      final charY = _characterSlotTopY;
+
+      final rect = Rect.fromLTWH(
+        charX - 4,
+        charY - 4,
+        _characterDisplayWidth + 8,
+        _characterDisplayHeight + 8,
+      );
+      final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(8));
+
+      // 脉冲效果：透明度在 0.4~1.0 之间循环
+      final pulse = (math.sin(_contextMenuPulse * math.pi * 2) + 1.0) / 2.0;
+      final alpha = 0.4 + pulse * 0.6;
+
+      final glowPaint = Paint()
+        ..color = Colors.orangeAccent.withValues(alpha: alpha * 0.7)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.outer, 10.0);
+
+      final strokePaint = Paint()
+        ..color = Colors.orangeAccent.withValues(alpha: alpha)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+
+      canvas.drawRRect(rrect, glowPaint);
+      canvas.drawRRect(rrect, strokePaint);
+      canvas.restore();
+    } else if (_isHovered) {
+      // 普通悬停高亮（仅在非右键菜单目标时显示）
+      canvas.save();
+      if (scale.x < 0) {
         final centerX = size.x / 2;
         canvas.translate(centerX, 0);
         canvas.scale(-1, 1);
@@ -1032,11 +1123,16 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     if (_cachedDisplayName != currentName || _cachedNamePainter == null) {
       _cachedDisplayName = currentName;
 
+      // 关注用户使用橙色名字
+      final nameColor = _isFollowed
+          ? const Color(0xFFFF8C00) // 橙色
+          : Colors.white;
+
       final pixelTextStyle = TextStyle(
         fontFamily: null,
         fontSize: 12,
         fontWeight: FontWeight.w600,
-        color: Colors.white,
+        color: nameColor,
       );
 
       final displayName = _truncateText(currentName, pixelTextStyle, 120);
@@ -1045,6 +1141,10 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         textDirection: TextDirection.ltr,
       )..layout();
 
+      final strokeColor = _isFollowed
+          ? Colors.black.withValues(alpha: 0.85)
+          : Colors.black.withValues(alpha: 0.7);
+
       final strokeStyle = TextStyle(
         fontFamily: null,
         fontSize: 12,
@@ -1052,7 +1152,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         foreground: Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 3.0
-          ..color = Colors.black.withValues(alpha: 0.7),
+          ..color = strokeColor,
       );
       _cachedNameStrokePainter = TextPainter(
         text: TextSpan(text: displayName, style: strokeStyle),

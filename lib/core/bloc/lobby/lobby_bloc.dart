@@ -1853,9 +1853,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         final identityAvatarUrl = identityResp.avatarUrl;
         final identitySpriteId = identityResp.spriteId;
         final identityIsAnonymous = identityResp.isAnonymous;
+        final identityBusinessUserId = identityResp.businessUserId;
 
         LogService.d('[LobbyBloc] identity.changed: oldUserId=$oldUserId newUserId=$newUserId '
-            'nickname=$identityNickname isAnonymous=$identityIsAnonymous');
+            'nickname=$identityNickname isAnonymous=$identityIsAnonymous businessUserId=$identityBusinessUserId');
 
         if (oldUserId.isEmpty && newUserId.isEmpty) break;
 
@@ -1873,6 +1874,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             isAnonymous: identityIsAnonymous,
             // 更新 serverUserId 为新的 userId（退出登录后变为匿名 UUID）
             serverUserId: newUserId.isNotEmpty ? newUserId : user.serverUserId,
+            // 更新 businessUserId（登出时为空字符串，登录时为新业务 ID）
+            businessUserId: identityBusinessUserId.isEmpty ? null : identityBusinessUserId,
           );
         }).toList(growable: false);
 
@@ -2516,6 +2519,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     return LobbyUser(
       userId: isSelf ? _selfUserId : pbUser.userId,
       serverUserId: serverUserId,
+      businessUserId: pbUser.businessUserId.isEmpty ? null : pbUser.businessUserId,
       nickname: pbUser.nickname,
       spriteId: pbUser.spriteId,
       avatarUrl: pbUser.avatarUrl.isEmpty ? null : pbUser.avatarUrl,

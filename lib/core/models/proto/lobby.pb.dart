@@ -946,6 +946,7 @@ class LobbyUser extends $pb.GeneratedMessage {
     $core.String? statusText,
     $core.String? lastMessage,
     $core.String? steamId,
+    $core.String? businessUserId,
   }) {
     final $result = create();
     if (userId != null) {
@@ -987,6 +988,9 @@ class LobbyUser extends $pb.GeneratedMessage {
     if (steamId != null) {
       $result.steamId = steamId;
     }
+    if (businessUserId != null) {
+      $result.businessUserId = businessUserId;
+    }
     return $result;
   }
   LobbyUser._() : super();
@@ -1007,6 +1011,7 @@ class LobbyUser extends $pb.GeneratedMessage {
     ..aOS(11, _omitFieldNames ? '' : 'statusText')
     ..aOS(12, _omitFieldNames ? '' : 'lastMessage')
     ..aOS(13, _omitFieldNames ? '' : 'steamId')
+    ..aOS(14, _omitFieldNames ? '' : 'businessUserId')
     ..hasRequiredFields = false
   ;
 
@@ -1147,6 +1152,15 @@ class LobbyUser extends $pb.GeneratedMessage {
   $core.bool hasSteamId() => $_has(12);
   @$pb.TagNumber(13)
   void clearSteamId() => clearField(13);
+
+  @$pb.TagNumber(14)
+  $core.String get businessUserId => $_getSZ(13);
+  @$pb.TagNumber(14)
+  set businessUserId($core.String v) { $_setString(13, v); }
+  @$pb.TagNumber(14)
+  $core.bool hasBusinessUserId() => $_has(13);
+  @$pb.TagNumber(14)
+  void clearBusinessUserId() => clearField(14);
 }
 
 /// LobbyMessage 聊天消息
@@ -3295,6 +3309,7 @@ class IdentityChangedResponse extends $pb.GeneratedMessage {
     $core.String? avatarUrl,
     $core.String? spriteId,
     $core.bool? isAnonymous,
+    $core.String? businessUserId,
   }) {
     final $result = create();
     if (sessionKey != null) {
@@ -3318,6 +3333,9 @@ class IdentityChangedResponse extends $pb.GeneratedMessage {
     if (isAnonymous != null) {
       $result.isAnonymous = isAnonymous;
     }
+    if (businessUserId != null) {
+      $result.businessUserId = businessUserId;
+    }
     return $result;
   }
   IdentityChangedResponse._() : super();
@@ -3332,6 +3350,7 @@ class IdentityChangedResponse extends $pb.GeneratedMessage {
     ..aOS(5, _omitFieldNames ? '' : 'avatarUrl')
     ..aOS(6, _omitFieldNames ? '' : 'spriteId')
     ..aOB(7, _omitFieldNames ? '' : 'isAnonymous')
+    ..aOS(8, _omitFieldNames ? '' : 'businessUserId')
     ..hasRequiredFields = false
   ;
 
@@ -3418,6 +3437,15 @@ class IdentityChangedResponse extends $pb.GeneratedMessage {
   $core.bool hasIsAnonymous() => $_has(6);
   @$pb.TagNumber(7)
   void clearIsAnonymous() => clearField(7);
+
+  @$pb.TagNumber(8)
+  $core.String get businessUserId => $_getSZ(7);
+  @$pb.TagNumber(8)
+  set businessUserId($core.String v) { $_setString(7, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasBusinessUserId() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearBusinessUserId() => clearField(8);
 }
 
 class MoveBroadcastResponse extends $pb.GeneratedMessage {

@@ -11,6 +11,7 @@ import 'package:flutter/gestures.dart';
 
 import '../../core/core.dart';
 import 'lobby_player_component.dart';
+import 'lobby_context_menu_component.dart';
 
 /// 大厅场景游戏引擎
 /// 负责高效渲染地图背景、渐变叠加层和角色节点
@@ -63,6 +64,24 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
   /// 传送门更新锁，防止并发更新
   bool _portalUpdateInProgress = false;
 
+  /// 右键菜单组件
+  LobbyContextMenuComponent? _contextMenu;
+
+  /// 右键菜单目标玩家（用于闪动边框和抑制其他 hover）
+  LobbyPlayerComponent? _contextMenuTarget;
+
+  /// 右键菜单打开时目标玩家的位置（用于距离检测自动关闭）
+  LobbyPosition? _contextMenuTargetOriginPos;
+
+  /// 目标玩家移动超过此距离时自动关闭菜单
+  static const double _contextMenuAutoCloseDistance = 40.0;
+
+  /// 关注用户 ID 集合（本地持久化）
+  Set<String> _followedUserIds = {};
+
+  /// 右键菜单回调：调查用户
+  void Function(LobbyUser user)? onInvestigateUser;
+
   /// 目标位置标记组件（显示红色叉号）
   TargetMarkerComponent? _targetMarker;
 
@@ -86,6 +105,9 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+
+    // 加载关注列表
+    _loadFollowedUsers();
 
     // 初始化状态
     _mapConfig = _initialMapConfig;
@@ -322,6 +344,10 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     for (final userId in leavingUserIds) {
       final component = _playerComponents.remove(userId);
       if (component != null) {
+        // 如果离开的用户是右键菜单目标，关闭菜单
+        if (_contextMenuTarget == component) {
+          _dismissContextMenu();
+        }
         component.removeFromParent();
       }
     }
@@ -331,6 +357,9 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
       if (_playerComponents.containsKey(user.userId)) {
         // 更新现有用户
         _playerComponents[user.userId]!.updateUser(user, _sprites);
+        // 刷新关注状态（基于 businessUserId，用户登出后 businessUserId 会变空）
+        _playerComponents[user.userId]!.isFollowed =
+            isBusinessUserFollowed(user.businessUserId);
       } else if (!_pendingUserIds.contains(user.userId)) {
         // 添加新用户（但不在待处理队列中）
         _addPlayerComponent(user);
@@ -390,6 +419,8 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
       }
 
       _playerComponents[user.userId] = component;
+      // 应用关注状态（基于 businessUserId）
+      component.isFollowed = isBusinessUserFollowed(user.businessUserId);
     } finally {
       _pendingUserIds.remove(user.userId);
     }
@@ -399,6 +430,195 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
   void _onPlayerArrived(String userId, LobbyPosition arrivedPosition) {
     // 通知 Bloc 更新状态（设置 isMoving = false），避免其他角色误判
     _bloc.add(LobbyPlayerArrived(userId, arrivedPosition));
+  }
+
+  // ========== 关注用户管理 ==========
+
+  static const String _followedUsersKey = 'lobby_followed_user_ids';
+
+  /// 加载关注列表
+  void _loadFollowedUsers() {
+    final list = StorageUtils.getStringList(_followedUsersKey);
+    _followedUserIds = list.toSet();
+    // 更新已有组件的关注状态
+    _applyFollowStates();
+  }
+
+  /// 保存关注列表
+  Future<void> _saveFollowedUsers() async {
+    await StorageUtils.setStringList(
+      _followedUsersKey,
+      _followedUserIds.toList(),
+    );
+  }
+
+  /// 应用关注状态到所有玩家组件
+  /// 使用 businessUserId（账户级 ID）判断关注，只有已登录用户才有此字段
+  void _applyFollowStates() {
+    for (final component in _playerComponents.values) {
+      final user = component.user;
+      final bizId = user.businessUserId;
+      if (bizId == null || bizId.isEmpty) {
+        component.isFollowed = false;
+      } else {
+        component.isFollowed = _followedUserIds.contains(bizId);
+      }
+    }
+  }
+
+  /// 关注/取消关注用户
+  void toggleFollowUser(String userId) {
+    // 使用 businessUserId（账户级 ID）作为持久化标识
+    final component = _playerComponents[userId];
+    final bizId = component?.user.businessUserId;
+    if (bizId == null || bizId.isEmpty) return;
+
+    if (_followedUserIds.contains(bizId)) {
+      _followedUserIds.remove(bizId);
+    } else {
+      _followedUserIds.add(bizId);
+    }
+    _saveFollowedUsers();
+    // 更新所有组件的关注状态
+    _applyFollowStates();
+  }
+
+  /// 检查用户是否被关注（基于 businessUserId）
+  bool isUserFollowed(String userId) {
+    final component = _playerComponents[userId];
+    final bizId = component?.user.businessUserId;
+    if (bizId == null || bizId.isEmpty) return false;
+    return _followedUserIds.contains(bizId);
+  }
+
+  /// 通过 businessUserId 检查是否被关注
+  bool isBusinessUserFollowed(String? businessUserId) {
+    if (businessUserId == null || businessUserId.isEmpty) return false;
+    return _followedUserIds.contains(businessUserId);
+  }
+
+  /// 直接通过 businessUserId 切换关注状态（用于右键菜单闭包，避免依赖组件引用）
+  void _toggleFollowByBusinessUserId(String businessUserId) {
+    if (businessUserId.isEmpty) return;
+
+    if (_followedUserIds.contains(businessUserId)) {
+      _followedUserIds.remove(businessUserId);
+    } else {
+      _followedUserIds.add(businessUserId);
+    }
+    _saveFollowedUsers();
+    _applyFollowStates();
+  }
+
+  // ========== 右键菜单 ==========
+
+  /// 处理右键点击（由 LobbyScene 转发）
+  void handleSecondaryTapDown(PointerEvent event) {
+    if (_mapConfig == null) return;
+
+    // 先关闭已有菜单
+    _dismissContextMenu();
+
+    // 获取相机偏移量
+    final cameraOffset = _cameraComponent.viewfinder.position;
+
+    // 将点击坐标转换为世界坐标
+    final dx = event.localPosition.dx + cameraOffset.x;
+    final dy = event.localPosition.dy + cameraOffset.y;
+    final worldPoint = Vector2(dx, dy);
+
+    // 查找右键点击的玩家
+    LobbyPlayerComponent? targetPlayer;
+    for (final player in _playerComponents.values) {
+      if (player.containsPoint(worldPoint)) {
+        targetPlayer = player;
+      }
+    }
+
+    if (targetPlayer == null) return;
+
+    final user = targetPlayer.user;
+
+    // 只允许对已登录的用户操作（有 businessUserId 表示是真实账户）
+    if (user.businessUserId == null || user.businessUserId!.isEmpty) return;
+
+    // 不对自己操作
+    if (user.isSelf) return;
+
+    // 设置右键菜单目标（闪动边框）
+    _contextMenuTarget = targetPlayer;
+    _contextMenuTargetOriginPos = targetPlayer.currentRenderPosition;
+    targetPlayer.setContextMenuTarget(true);
+    // 清除其他玩家的 hover 状态
+    if (_hoveredPlayer != null && _hoveredPlayer != targetPlayer) {
+      _hoveredPlayer!.handleHoverExit();
+      _hoveredPlayer = null;
+    }
+
+    // 构建菜单项
+    final isFollowed = isBusinessUserFollowed(user.businessUserId);
+    final items = [
+      const ContextMenuItem(id: 'investigate', label: '调查'),
+      ContextMenuItem(
+        id: 'follow',
+        label: isFollowed ? '取消关注' : '关注',
+      ),
+    ];
+
+    // 计算菜单位置（在点击位置附近显示）
+    final menuPosition = Vector2(dx + 4, dy + 4);
+
+    _contextMenu = LobbyContextMenuComponent(
+      items: items,
+      worldPosition: menuPosition,
+      onItemSelected: (itemId) {
+        if (itemId == 'investigate') {
+          // 触发调查回调
+          onInvestigateUser?.call(user);
+        } else if (itemId == 'follow') {
+          // 直接使用捕获的 businessUserId，避免用户离开后组件被移除导致无法获取
+          _toggleFollowByBusinessUserId(user.businessUserId!);
+        }
+      },
+      onDismiss: _dismissContextMenu,
+    );
+
+    _world.add(_contextMenu!);
+  }
+
+  /// 关闭右键菜单
+  void _dismissContextMenu() {
+    if (_contextMenu != null) {
+      _contextMenu!.removeFromParent();
+      _contextMenu = null;
+    }
+    // 清除目标闪动状态
+    if (_contextMenuTarget != null) {
+      if (!_contextMenuTarget!.isRemoved) {
+        _contextMenuTarget!.setContextMenuTarget(false);
+      }
+      _contextMenuTarget = null;
+    }
+    _contextMenuTargetOriginPos = null;
+  }
+
+  /// 处理鼠标悬停时更新菜单状态
+  void _updateContextMenuHover(Vector2 worldPoint) {
+    if (_contextMenu == null) return;
+
+    // 将世界坐标转换为菜单本地坐标
+    final menuPos = _contextMenu!.position;
+    final localPoint = Vector2(
+      worldPoint.x - menuPos.x,
+      worldPoint.y - menuPos.y,
+    );
+    _contextMenu!.handleHoverAt(localPoint);
+  }
+
+  /// 检查点击是否在菜单内
+  bool _isPointInContextMenu(Vector2 worldPoint) {
+    if (_contextMenu == null) return false;
+    return _contextMenu!.containsPoint(worldPoint);
   }
 
   @override
@@ -419,12 +639,30 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     final cameraOffset = _cameraComponent.viewfinder.position;
 
     // 将点击坐标转换为世界坐标
-    // 组件锚点在脚底（bottomCenter），状态文字在脚底上方 statusTextAreaHeight 高度内，
-    // 所以点击sprite脚底时 localY = size.y - statusTextAreaHeight，
-    // 对应 worldY = 脚底 + statusTextAreaHeight，
-    // 直接加上 statusTextAreaHeight 将坐标对齐到角色脚底
     final dx = event.localPosition.x + cameraOffset.x;
     final dy = event.localPosition.y + cameraOffset.y + LobbyPlayerComponent.statusTextAreaHeight;
+
+    // 如果右键菜单打开，检查点击是否在菜单内
+    if (_contextMenu != null) {
+      final menuWorldPoint = Vector2(
+        event.localPosition.x + cameraOffset.x,
+        event.localPosition.y + cameraOffset.y,
+      );
+      if (_isPointInContextMenu(menuWorldPoint)) {
+        // 点击在菜单内，处理菜单点击
+        final menuPos = _contextMenu!.position;
+        final localPoint = Vector2(
+          menuWorldPoint.x - menuPos.x,
+          menuWorldPoint.y - menuPos.y,
+        );
+        _contextMenu!.handleTapAt(localPoint);
+        return;
+      } else {
+        // 点击在菜单外，关闭菜单
+        _dismissContextMenu();
+        return;
+      }
+    }
 
     // 验证点击在世界范围内
     if (dx < 0 || dx > _worldSize.x || dy < 0 || dy > _worldSize.y) {
@@ -464,6 +702,9 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     final dy = localPosition.y + cameraOffset.y;
     final worldPoint = Vector2(dx, dy);
 
+    // 更新右键菜单悬停状态
+    _updateContextMenuHover(worldPoint);
+
     // 查找是否有传送门在鼠标位置
     PortalComponent? hoveredPortal;
     for (final portal in _portalComponents) {
@@ -496,6 +737,9 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     }
 
     // 查找玩家角色
+    // 右键菜单打开时，不对其他玩家显示 hover 效果
+    if (_contextMenu != null) return;
+
     LobbyPlayerComponent? hoveredPlayer;
     for (final player in _playerComponents.values) {
       if (player.containsPoint(worldPoint)) {
@@ -530,11 +774,31 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     if (_isInitialized) {
       _followCurrentPlayer();
     }
+    // 检查右键菜单目标是否移动过远，自动关闭
+    _checkContextMenuDistance();
+  }
+
+  /// 检查右键菜单目标玩家是否移动超出范围
+  void _checkContextMenuDistance() {
+    if (_contextMenuTarget == null || _contextMenuTargetOriginPos == null) return;
+
+    final currentPos = _contextMenuTarget!.currentRenderPosition;
+    final originPos = _contextMenuTargetOriginPos!;
+    final dx = currentPos.x - originPos.x;
+    final dy = currentPos.y - originPos.y;
+    final distSq = dx * dx + dy * dy;
+
+    if (distSq > _contextMenuAutoCloseDistance * _contextMenuAutoCloseDistance) {
+      _dismissContextMenu();
+    }
   }
 
   @override
   void onRemove() {
     _stateSubscription.cancel();
+    // 关闭右键菜单（清理引用）
+    _contextMenu = null;
+    _contextMenuTarget = null;
     // 清理待处理队列中的所有用户
     for (final userId in _pendingUserIds) {
       _playerComponents.remove(userId);
