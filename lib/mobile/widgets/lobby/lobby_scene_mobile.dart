@@ -149,9 +149,11 @@ class _LobbySceneMobileState extends State<LobbySceneMobile> {
     }
 
     return RepaintBoundary(
-      child: GameWidget<LobbyGame>.controlled(
-        gameFactory: () => _game!,
-        backgroundBuilder: (_) => const SizedBox.expand(),
+      child: ExcludeFocus(
+        child: GameWidget<LobbyGame>.controlled(
+          gameFactory: () => _game!,
+          backgroundBuilder: (_) => const SizedBox.expand(),
+        ),
       ),
     );
   }

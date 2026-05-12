@@ -800,6 +800,16 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   void _updateBubbleAnimation(double dt) {
     final hasVisibleMessage = _user.hasVisibleMessage;
 
+    // 修复：后台恢复时气泡卡住的问题
+    // 当气泡处于活跃阶段（entering/visible）但消息已过期，且 _bubbleWasVisible
+    // 未被正确更新时（例如 app 在后台期间收到消息，updateUser 设置了 phase
+    // 但游戏循环未运行导致 _bubbleWasVisible 未同步），强制触发退场动画。
+    if (!hasVisibleMessage && !_bubbleWasVisible &&
+        (_bubblePhase == 1 || _bubblePhase == 2)) {
+      _bubblePhase = 3; // exiting
+      _bubbleScaleVelocity = 1.5;
+    }
+
     // 状态转换检测
     if (hasVisibleMessage && !_bubbleWasVisible) {
       // 消息刚出现 → 入场（仅在 updateUser 未处理时）
