@@ -40,6 +40,15 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
   late Animation<double> _rippleScale;
   late Animation<double> _rippleOpacity;
 
+  /// Connection state transition animation controller.
+  late AnimationController _connectionController;
+  late Animation<Color?> _buttonColorAnimation;
+  late Animation<Color?> _shadowColorAnimation;
+  late Animation<double> _connectionIconOpacity;
+
+  /// Pulsing animation for connecting state.
+  late AnimationController _connectingPulseController;
+
   /// Minimum opacity — button is always visible enough to locate.
   static const double _minOpacity = 0.35;
 
@@ -57,8 +66,18 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
 
   Timer? _activeHoldTimer;
   Timer? _bounceTimer;
+  Timer? _connectingTimeoutTimer;
   bool _hasUnread = false;
   bool _isHovered = false;
+
+  /// Track the current connection status for animation transitions.
+  LobbyConnectionStatus _currentConnectionStatus =
+      LobbyConnectionStatus.connecting;
+
+  // Color constants for connection states.
+  static const Color _disconnectedColor = Color(0xFF6B7280);
+  static const Color _connectingColor = Color(0xFF38BDF8);
+  static const Color _connectedColor = Color(0xFF0080FF);
 
   /// Prevent double-firing the notify animation from both _addBubble and
   /// the FloatingChatCubit unreadCount listener in the same frame.
@@ -91,6 +110,7 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
   bool _seeded = false;
   // Ignore bubbles for messages arriving within 2s of mount (initial load)
   late final DateTime _mountedAt;
+  bool _didSyncInitialConnectionStatus = false;
 
   @override
   void initState() {
@@ -146,8 +166,78 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
       ),
     ]).animate(_notifyController);
 
+    // Connection state transition animation (color morph).
+    _connectionController = AnimationController(
+      vsync: this,
+      value: 0.5, // start at connecting midpoint
+      duration: const Duration(milliseconds: 600),
+    );
+    _buttonColorAnimation = ColorTween(
+      begin: _disconnectedColor,
+      end: _connectedColor,
+    ).animate(CurvedAnimation(
+      parent: _connectionController,
+      curve: Curves.easeInOut,
+    ));
+    _shadowColorAnimation = ColorTween(
+      begin: _disconnectedColor.withValues(alpha: 0.3),
+      end: _connectedColor.withValues(alpha: 0.3),
+    ).animate(CurvedAnimation(
+      parent: _connectionController,
+      curve: Curves.easeInOut,
+    ));
+    _connectionIconOpacity = Tween<double>(begin: 0.6, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _connectionController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    // Pulsing animation for connecting/reconnecting state.
+    _connectingPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    // Initial state is connecting, start pulsing immediately.
+    _connectingPulseController.repeat(reverse: true);
+    // Start timeout for initial connecting state.
+    _connectingTimeoutTimer = Timer(const Duration(seconds: 10), () {
+      if (_isDisposed) return;
+      if (_currentConnectionStatus == LobbyConnectionStatus.connecting ||
+          _currentConnectionStatus == LobbyConnectionStatus.reconnecting) {
+        _connectingPulseController.stop();
+        _connectingPulseController.value = 0.0;
+        _connectionController.animateTo(
+          0.0,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeIn,
+        );
+        _currentConnectionStatus = LobbyConnectionStatus.disconnected;
+        _updateOpacityForState(
+          hasUnread: _hasUnread,
+          isDisconnected: true,
+        );
+        setState(() {});
+      }
+    });
+
     // Begin the initial fade-out after a short grace period (hold 3s first).
     _activeHoldTimer = Timer(_activeHoldDuration, _scheduleIdleFade);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_didSyncInitialConnectionStatus) {
+      _didSyncInitialConnectionStatus = true;
+      final status = context.read<LobbyBloc>().state.connectionStatus;
+      // If already connected or in a non-initial state, sync immediately.
+      // If still disconnected (startup default), keep the connecting appearance
+      // since LobbyStarted will fire momentarily.
+      if (status != LobbyConnectionStatus.disconnected) {
+        _animateConnectionTransition(status);
+      }
+    }
   }
 
   @override
@@ -155,9 +245,12 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
     _isDisposed = true;
     _activeHoldTimer?.cancel();
     _bounceTimer?.cancel();
+    _connectingTimeoutTimer?.cancel();
     _hoverController.dispose();
     _opacityController.dispose();
     _notifyController.dispose();
+    _connectionController.dispose();
+    _connectingPulseController.dispose();
     for (final entry in _bubbles) {
       entry.controller.dispose();
       entry.expireTimer.cancel();
@@ -208,6 +301,82 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
     _bounceTimer = null;
   }
 
+  /// Animate the button appearance based on connection status transitions.
+  void _animateConnectionTransition(LobbyConnectionStatus newStatus) {
+    if (newStatus == _currentConnectionStatus) return;
+    final oldStatus = _currentConnectionStatus;
+    _currentConnectionStatus = newStatus;
+
+    // Cancel any pending connecting timeout.
+    _connectingTimeoutTimer?.cancel();
+    _connectingTimeoutTimer = null;
+
+    switch (newStatus) {
+      case LobbyConnectionStatus.connected:
+        // Stop pulsing, animate to connected color.
+        _connectingPulseController.stop();
+        _connectingPulseController.value = 0.0;
+        // If coming from connecting/reconnecting, animate from midpoint.
+        if (oldStatus == LobbyConnectionStatus.connecting ||
+            oldStatus == LobbyConnectionStatus.reconnecting) {
+          _connectionController.animateTo(
+            1.0,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeOutCubic,
+          );
+        } else {
+          _connectionController.animateTo(
+            1.0,
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeInOut,
+          );
+        }
+        break;
+      case LobbyConnectionStatus.connecting:
+      case LobbyConnectionStatus.reconnecting:
+        // Animate to midpoint color and start pulsing.
+        _connectionController.animateTo(
+          0.5,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOut,
+        );
+        _connectingPulseController.repeat(reverse: true);
+        // If still connecting after 10s, fall back to disconnected appearance.
+        _connectingTimeoutTimer = Timer(const Duration(seconds: 10), () {
+          if (_isDisposed) return;
+          if (_currentConnectionStatus == LobbyConnectionStatus.connecting ||
+              _currentConnectionStatus == LobbyConnectionStatus.reconnecting) {
+            _connectingPulseController.stop();
+            _connectingPulseController.value = 0.0;
+            _connectionController.animateTo(
+              0.0,
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.easeIn,
+            );
+            _currentConnectionStatus = LobbyConnectionStatus.disconnected;
+            // Fade out the button since we're now in disconnected state.
+            _updateOpacityForState(
+              hasUnread: _hasUnread,
+              isDisconnected: true,
+            );
+            setState(() {});
+          }
+        });
+        break;
+      case LobbyConnectionStatus.disconnected:
+      case LobbyConnectionStatus.failed:
+        // Stop pulsing, animate back to disconnected color.
+        _connectingPulseController.stop();
+        _connectingPulseController.value = 0.0;
+        _connectionController.animateTo(
+          0.0,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeIn,
+        );
+        break;
+    }
+  }
+
   /// Called whenever the unread / connection state changes so we can decide
   /// whether to keep the button fully visible or let it fade.
   void _updateOpacityForState({
@@ -227,8 +396,11 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
       _startBounceTimer();
     } else {
       _stopBounceTimer();
-      if (isDisconnected) {
-        // Disconnected and no unread — cancel any hold and fade to min.
+      // Only fade out when truly disconnected/failed (not connecting/reconnecting).
+      final shouldFade = isDisconnected &&
+          _currentConnectionStatus != LobbyConnectionStatus.connecting &&
+          _currentConnectionStatus != LobbyConnectionStatus.reconnecting;
+      if (shouldFade) {
         _activeHoldTimer?.cancel();
         _activeHoldTimer = null;
         _opacityController.animateTo(
@@ -236,9 +408,10 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
           duration: const Duration(seconds: 2),
           curve: Curves.easeInOut,
         );
+      } else if (!isDisconnected) {
+        // Just connected — briefly show fully visible then start idle timer.
+        _activateOpacity();
       }
-      // If connected with no unread, let the existing hold-timer / idle-fade
-      // handle the transition naturally.
     }
   }
 
@@ -490,6 +663,8 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
                   hasUnread: chatState.unreadCount > 0,
                   isDisconnected: isDisconnected,
                 );
+                // Animate the button color/icon based on connection state.
+                _animateConnectionTransition(lobbyState.connectionStatus);
               },
               child: LayoutBuilder(
                 builder: (context, constraints) {
@@ -593,6 +768,10 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
       CurvedAnimation(parent: _hoverController, curve: Curves.easeOut),
     );
 
+    final isConnecting =
+        _currentConnectionStatus == LobbyConnectionStatus.connecting ||
+        _currentConnectionStatus == LobbyConnectionStatus.reconnecting;
+
     return MouseRegion(
       cursor: _isDragging
           ? SystemMouseCursors.grabbing
@@ -658,18 +837,22 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
                       Positioned.fill(
                         child: Transform.scale(
                           scale: _rippleScale.value,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: (isDisconnected
-                                        ? const Color(0xFF6B7280)
-                                        : const Color(0xFF0080FF))
-                                    .withValues(
-                                        alpha: _rippleOpacity.value),
-                                width: 2.5,
-                              ),
-                            ),
+                          child: AnimatedBuilder(
+                            animation: _buttonColorAnimation,
+                            builder: (context, _) {
+                              return Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: (_buttonColorAnimation.value ??
+                                            _disconnectedColor)
+                                        .withValues(
+                                            alpha: _rippleOpacity.value),
+                                    width: 2.5,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ),
@@ -681,66 +864,156 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
                   ],
                 );
               },
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: _buttonSize,
-                    height: _buttonSize,
-                    decoration: BoxDecoration(
-                      color: isDisconnected
-                          ? const Color(0xFF6B7280)
-                          : const Color(0xFF0080FF),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: isDisconnected
-                              ? const Color(0xFF6B7280).withValues(alpha: 0.3)
-                              : const Color(0xFF0080FF).withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          spreadRadius: 1,
+              child: AnimatedBuilder(
+                animation: Listenable.merge([
+                  _connectionController,
+                  _connectingPulseController,
+                ]),
+                builder: (context, _) {
+                  // Compute the current button color based on connection animation.
+                  final baseColor =
+                      _buttonColorAnimation.value ?? _disconnectedColor;
+                  // Apply pulse effect during connecting state.
+                  final pulseT = _connectingPulseController.value;
+                  final buttonColor = isConnecting
+                      ? Color.lerp(
+                          baseColor,
+                          baseColor.withValues(alpha: 0.6),
+                          pulseT,
+                        )!
+                      : baseColor;
+                  final shadowColor =
+                      _shadowColorAnimation.value ??
+                      _disconnectedColor.withValues(alpha: 0.3);
+                  final iconOpacity = _connectionIconOpacity.value;
+
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // Connecting pulse ring
+                      if (isConnecting)
+                        Positioned.fill(
+                          child: Transform.scale(
+                            scale: 1.0 + pulseT * 0.3,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: _connectingColor
+                                      .withValues(alpha: 0.4 * (1 - pulseT)),
+                                  width: 2.0,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
-                    child: Icon(
-                      isDisconnected
-                          ? Icons.chat_bubble_outline
-                          : Icons.chat_bubble,
-                      color: isDisconnected
-                          ? Colors.white.withValues(alpha: 0.6)
-                          : Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  if (!isDisconnected)
-                    Positioned(
-                      top: -4,
-                      right: -4,
-                      child: UnreadBadge(count: floatingState.unreadCount),
-                    ),
-                  if (isDisconnected)
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        width: 16,
-                        height: 16,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFEF4444),
+                      Container(
+                        width: _buttonSize,
+                        height: _buttonSize,
+                        decoration: BoxDecoration(
+                          color: buttonColor,
                           shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: shadowColor,
+                              blurRadius: 12,
+                              spreadRadius: 1,
+                            ),
+                          ],
                         ),
-                        child: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 10,
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          switchInCurve: Curves.easeOut,
+                          switchOutCurve: Curves.easeIn,
+                          child: _buildButtonIcon(
+                            isDisconnected: isDisconnected,
+                            isConnecting: isConnecting,
+                            iconOpacity: iconOpacity,
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                      // Status indicator badge
+                      if (!isDisconnected && !isConnecting)
+                        Positioned(
+                          top: -4,
+                          right: -4,
+                          child: UnreadBadge(
+                              count: floatingState.unreadCount),
+                        ),
+                      if (isConnecting)
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: _buildConnectingBadge(),
+                        ),
+                      if (isDisconnected && !isConnecting)
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: _buildDisconnectedBadge(),
+                        ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildButtonIcon({
+    required bool isDisconnected,
+    required bool isConnecting,
+    required double iconOpacity,
+  }) {
+    if (isDisconnected) {
+      return Icon(
+        Icons.chat_bubble_outline,
+        key: const ValueKey('disconnected'),
+        color: Colors.white.withValues(alpha: iconOpacity),
+        size: 24,
+      );
+    }
+    return Icon(
+      Icons.chat_bubble,
+      key: const ValueKey('connected'),
+      color: Colors.white.withValues(alpha: iconOpacity),
+      size: 24,
+    );
+  }
+
+  Widget _buildConnectingBadge() {
+    return Container(
+      width: 16,
+      height: 16,
+      decoration: const BoxDecoration(
+        color: Color(0xFFF59E0B),
+        shape: BoxShape.circle,
+      ),
+      child: const Padding(
+        padding: EdgeInsets.all(3),
+        child: CircularProgressIndicator(
+          strokeWidth: 1.5,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDisconnectedBadge() {
+    return Container(
+      width: 16,
+      height: 16,
+      decoration: const BoxDecoration(
+        color: Color(0xFFEF4444),
+        shape: BoxShape.circle,
+      ),
+      child: const Icon(
+        Icons.close,
+        color: Colors.white,
+        size: 10,
       ),
     );
   }

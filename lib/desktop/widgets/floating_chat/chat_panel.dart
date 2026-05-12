@@ -155,7 +155,7 @@ class _ChatPanelState extends State<ChatPanel>
                     child: Column(
                       children: [
                         _buildHeader(lobbyState),
-                        Expanded(child: _buildMessageList(messages)),
+                        Expanded(child: _buildMessageList(messages, lobbyState)),
                         if (!isConnected) _buildDisconnectedBanner(),
                         _buildInputRow(
                           isConnected: isConnected,
@@ -235,8 +235,53 @@ class _ChatPanelState extends State<ChatPanel>
     );
   }
 
-  Widget _buildMessageList(List<LobbyMessage> messages) {
+  Widget _buildMessageList(List<LobbyMessage> messages, LobbyState lobbyState) {
     if (messages.isEmpty) {
+      // 已连接但快照还没到（非排队状态），显示加载中
+      final isLoadingSnapshot =
+          lobbyState.pageStatus == LobbyPageStatus.loading &&
+          lobbyState.connectionStatus == LobbyConnectionStatus.connected &&
+          !lobbyState.isQueueing;
+
+      if (isLoadingSnapshot) {
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white.withValues(alpha: 0.4),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                '正在加载消息...',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.4),
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      // 排队中
+      if (lobbyState.isQueueing) {
+        return Center(
+          child: Text(
+            '排队中，进入大厅后可查看消息',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.4),
+              fontSize: 13,
+            ),
+          ),
+        );
+      }
+
       return Center(
         child: Text(
           '暂无消息',
