@@ -13,6 +13,7 @@ import '../screens/settings_page_mobile.dart';
 import '../screens/character_gallery_mobile.dart';
 import '../screens/character_detail_mobile.dart';
 import '../screens/update_logs_mobile.dart';
+import '../screens/map_database_mobile.dart';
 import '../app.dart';
 
 /// 移动端路由路径
@@ -27,6 +28,7 @@ class MobileRoutes {
   static const String characterGallery = '/character-gallery';
   static const String characterDetail = '/character-gallery/:id';
   static const String updateLogs = '/update-logs';
+  static const String mapDatabase = '/map-database';
 }
 
 /// 移动端路由配置
@@ -121,6 +123,11 @@ class MobileRouter {
         path: MobileRoutes.updateLogs,
         name: 'updateLogs',
         builder: (context, state) => const UpdateLogsMobile(),
+      ),
+      GoRoute(
+        path: MobileRoutes.mapDatabase,
+        name: 'mapDatabase',
+        builder: (context, state) => const MapDatabaseMobile(),
       ),
     ],
   );

@@ -618,6 +618,20 @@ class _ProfileMobileState extends State<ProfileMobile> {
           ),
           _buildListItem(
             context,
+            icon: Icons.map_outlined,
+            iconColor: const Color(0xFF0080FF),
+            title: '地图数据库',
+            subtitle: '浏览地图信息与运行历史',
+            onTap: () => context.push(MobileRoutes.mapDatabase),
+          ),
+          Divider(
+            height: 1,
+            indent: 62,
+            endIndent: 16,
+            color: theme.dividerColor.withValues(alpha: 0.3),
+          ),
+          _buildListItem(
+            context,
             icon: MdiIcons.messageTextOutline,
             iconColor: const Color(0xFF8B5CF6),
             title: '问题反馈',
