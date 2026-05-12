@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 /// 滚动文本组件 - 文本过长时自动滚动
+///
+/// 使用 LayoutBuilder 获取真实可用宽度，在 Stack/Positioned 等布局中
+/// 也能正确计算溢出量，不依赖 findRenderObject。
 class MarqueeText extends StatefulWidget {
   final String text;
   final TextStyle style;
@@ -11,18 +14,20 @@ class MarqueeText extends StatefulWidget {
   State<MarqueeText> createState() => _MarqueeTextState();
 }
 
-class _MarqueeTextState extends State<MarqueeText>
-    with SingleTickerProviderStateMixin {
+class _MarqueeTextState extends State<MarqueeText> {
   late ScrollController _scrollController;
   bool _needsScroll = false;
   bool _isScrolling = false;
   double _measuredOverflowWidth = 0;
 
+  /// LayoutBuilder 每次 build 时传入的最新宽度，用于 text 变化后重新检查
+  double _lastKnownWidth = 0;
+
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
+    // 首次检查在 LayoutBuilder 的 postFrameCallback 里触发，无需在此调用
   }
 
   @override
@@ -35,45 +40,48 @@ class _MarqueeTextState extends State<MarqueeText>
         } catch (_) {}
       }
       _isScrolling = false;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
+      _measuredOverflowWidth = 0;
+      _needsScroll = false;
+      // 用上次 LayoutBuilder 记录的宽度重新检查
+      if (_lastKnownWidth > 0) {
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _checkOverflow(_lastKnownWidth),
+        );
+      }
     }
   }
 
   @override
   void dispose() {
+    _isScrolling = false;
     _scrollController.dispose();
     super.dispose();
   }
 
-  double _measureOverflowWidth(BuildContext context) {
-    final renderObject = context.findRenderObject();
-    final viewportWidth = renderObject is RenderBox ? renderObject.size.width : 0.0;
-    if (viewportWidth <= 0) return 0;
-
+  double _measureTextWidth() {
     final textPainter = TextPainter(
       text: TextSpan(text: widget.text, style: widget.style),
       maxLines: 1,
-      textDirection: Directionality.of(context),
+      textDirection: TextDirection.ltr,
     )..layout();
-
-    return (textPainter.width - viewportWidth).clamp(0.0, double.infinity);
+    return textPainter.width;
   }
 
-  void _checkOverflow() {
-    if (!mounted || !_scrollController.hasClients) return;
+  void _checkOverflow(double viewportWidth) {
+    if (!mounted || !_scrollController.hasClients || viewportWidth <= 0) return;
 
-    final measuredOverflowWidth = _measureOverflowWidth(context);
+    final textWidth = _measureTextWidth();
+    final overflow = (textWidth - viewportWidth).clamp(0.0, double.infinity);
+    // maxScrollExtent 是 Flutter 实际允许滚动的距离，以它为准
     final maxScroll = _scrollController.position.maxScrollExtent;
-    final targetOverflowWidth = measuredOverflowWidth > maxScroll
-        ? measuredOverflowWidth
-        : maxScroll;
-    final needsScroll = targetOverflowWidth > 0;
+    final target = overflow > maxScroll ? overflow : maxScroll;
+    final needsScroll = target > 0;
 
     if (needsScroll != _needsScroll ||
-        (targetOverflowWidth - _measuredOverflowWidth).abs() > 0.5) {
+        (target - _measuredOverflowWidth).abs() > 0.5) {
       setState(() {
         _needsScroll = needsScroll;
-        _measuredOverflowWidth = targetOverflowWidth;
+        _measuredOverflowWidth = target;
       });
     }
     if (_needsScroll && !_isScrolling) {
@@ -90,17 +98,15 @@ class _MarqueeTextState extends State<MarqueeText>
       if (!mounted || !_needsScroll || !_scrollController.hasClients) break;
 
       final maxScroll = _scrollController.position.maxScrollExtent;
-      final targetOffset = _measuredOverflowWidth > maxScroll
-          ? _measuredOverflowWidth
-          : maxScroll;
-      if (targetOffset <= 0) break;
+      final target =
+          _measuredOverflowWidth > maxScroll ? _measuredOverflowWidth : maxScroll;
+      if (target <= 0) break;
 
-      // 滚动到末尾
       try {
         await _scrollController.animateTo(
-          targetOffset,
+          target,
           duration: Duration(
-            milliseconds: (targetOffset * 30).toInt().clamp(1000, 5000),
+            milliseconds: (target * 30).toInt().clamp(1000, 5000),
           ),
           curve: Curves.linear,
         );
@@ -112,7 +118,6 @@ class _MarqueeTextState extends State<MarqueeText>
       await Future.delayed(const Duration(seconds: 1));
       if (!mounted || !_scrollController.hasClients) break;
 
-      // 滚动回开头
       try {
         await _scrollController.animateTo(
           0,
@@ -142,13 +147,19 @@ class _MarqueeTextState extends State<MarqueeText>
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
+        final width = constraints.maxWidth;
+        // 记录最新宽度，供 text 变化时复用
+        _lastKnownWidth = width;
+        // 每帧 build 后用准确宽度检查一次
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _checkOverflow(width),
+        );
         return SingleChildScrollView(
           controller: _scrollController,
           scrollDirection: Axis.horizontal,
           physics: const NeverScrollableScrollPhysics(),
           child: ConstrainedBox(
-            constraints: BoxConstraints(minWidth: constraints.maxWidth),
+            constraints: BoxConstraints(minWidth: width),
             child: Text(widget.text, style: widget.style, maxLines: 1),
           ),
         );
