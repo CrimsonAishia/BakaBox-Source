@@ -588,7 +588,8 @@ class _BroadcastNotificationTypeSelector extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        _BroadcastNotificationTestButton(settingsState: settingsState),
+        if (current != BroadcastNotificationType.disabled)
+          _BroadcastNotificationTestButton(settingsState: settingsState),
       ],
     );
   }
@@ -599,6 +600,8 @@ class _BroadcastNotificationTypeSelector extends StatelessWidget {
         return MdiIcons.bellOutline;
       case BroadcastNotificationType.system:
         return MdiIcons.microsoftWindows;
+      case BroadcastNotificationType.disabled:
+        return MdiIcons.bellOffOutline;
     }
   }
 }
@@ -624,6 +627,7 @@ class _BroadcastNotificationTestButtonState
 
     try {
       final type = widget.settingsState.broadcastNotificationType;
+      if (type == BroadcastNotificationType.disabled) return;
       if (type == BroadcastNotificationType.system) {
         await BroadcastNotificationService.instance.showBroadcastNotification(
           sender: 'BakaBox',
