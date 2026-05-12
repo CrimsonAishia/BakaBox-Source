@@ -88,7 +88,7 @@ class UpdateLogsPanel extends StatelessWidget {
                         itemBuilder: (context, index) {
                           final log = state.logs[index];
                           return Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
+                            padding: const EdgeInsets.only(bottom: 2),
                             child: _UpdateLogItem(
                               log: log,
                               isDark: isDark,
@@ -172,7 +172,7 @@ class _UpdateLogItemState extends State<_UpdateLogItem> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
             color: _hovered
                 ? (widget.isDark
