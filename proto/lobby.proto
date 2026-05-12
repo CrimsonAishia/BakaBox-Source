@@ -29,9 +29,9 @@ message LobbyEnvelope {
     BroadcastCDRequest broadcast_cd_request = 21;
     PortalUseRequest portal_use_request = 22;
     OnlineStatsRequest online_stats_request = 23;
-    ProfileSteamBindRequest profile_steam_bind = 24;
-    EnterRequest enter = 25;
-    
+    ProfileSteamBindRequest profile_steam_bind_request = 24;
+    EnterRequest enter_request = 25;
+
     // 服务端 -> 客户端
     LoginSuccessResponse login_success_response = 50;
     LoginFailedResponse login_failed_response = 51;
@@ -61,7 +61,7 @@ message LobbyEnvelope {
     SystemErrorResponse system_error_response = 75;
     SystemNoticeResponse system_notice_response = 76;
     SystemKickedResponse system_kicked_response = 77;
-    SteamBindSuccessResponse steam_bind_success = 78;
+    SteamBindSuccessResponse steam_bind_success_response = 78;
   }
 }
 
@@ -159,7 +159,7 @@ message PageInfo {
 message LoginRequest {
   string token = 1;
   string device_type = 2;
-  bool is_anonymous = 3;
+  bool is_anonymous = 3;  // 是否以匿名模式登录（true = 登录但对外隐藏真实身份）
 }
 
 // EnterRequest 客户端完成身份确认后，主动宣告进入大厅（两阶段进入协议第二阶段）
@@ -485,6 +485,29 @@ message SteamUserInfoResponse {
   string current_date            = 64;
 }
 
+// InventoryStatsRequest 查询玩家库存统计请求
+message InventoryStatsRequest {
+  string user_id = 1;  // 目标用户的 Nakama UUID，服务端自动查询其绑定的 Steam64 ID
+}
+
+// InventoryStatsResponse 查询玩家库存统计响应
+message InventoryStatsResponse {
+  int32  code    = 1;  // 0=成功，非0=失败
+  string message = 2;  // 错误描述
+
+  // 以下字段仅 code=0 时有效
+  int32 skin_count        = 3;  // 皮肤数量
+  int32 spell_count       = 4;  // 法术数量
+  int32 danmaku_count     = 5;  // 弹幕数量
+  int32 skill_count       = 6;  // 技能数量
+  int32 knife_count       = 7;  // 刀具数量
+  int32 weapon_count      = 8;  // 武器数量
+  int32 cheer_count       = 9;  // 喝彩数量
+  int32 skinmenu_count    = 10; // 皮肤菜单数量
+  int64 total_gold_value  = 11; // 总金币价值
+  int64 total_point_value = 12; // 总积分价值
+}
+
 // ==================== Match Signal ====================
 
 // MatchSignal 管理后台发送的信号
@@ -499,6 +522,7 @@ message MatchSignal {
     ChatMessageSignal chat_message = 14;
     OnlineCountChangedSignal online_count_changed = 18;
     PresenceJoinSignal presence_join = 19;
+    PresenceLeaveSignal presence_leave = 20;
   }
 }
 
@@ -509,6 +533,13 @@ message PresenceJoinSignal {
   string avatar_url = 3;
   bool is_anonymous = 4;
   string map_id = 5;  // 用户进入的地图 ID
+}
+
+// PresenceLeaveSignal 跨 Match 用户离开通知信号
+message PresenceLeaveSignal {
+  string user_id = 1;
+  string map_id = 2;         // 用户离开的地图 ID
+  string target_map_id = 3;  // 传送目标地图（传送离开时有值，正常断线时为空）
 }
 
 // KickSignal 踢人信号
