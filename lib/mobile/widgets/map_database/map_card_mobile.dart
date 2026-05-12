@@ -94,11 +94,11 @@ class _MapCardMobileState extends State<MapCardMobile> {
                 child: _MapCdBadgeMobile(mapName: mapInfo.mapName),
               ),
 
-              // 地图名称 + 译名 + 标签（左下角，右侧留出 CD 徽章空间）
+              // 地图名称 + 译名（左下角，右侧留出 CD 徽章空间）
               Positioned(
                 left: 10,
-                right: 110, // 为右上角 CD 徽章留出空间
-                bottom: 10,
+                right: 110,
+                bottom: 26,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -128,11 +128,16 @@ class _MapCardMobileState extends State<MapCardMobile> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    // 标签行（自动滚动）
-                    _buildTagRow(mapInfo.tags),
                   ],
                 ),
+              ),
+
+              // 标签行（占满整行宽度，不受 CD 徽章影响）
+              Positioned(
+                left: 10,
+                right: 10,
+                bottom: 8,
+                child: _buildTagRow(mapInfo.tags),
               ),
             ],
           ),
