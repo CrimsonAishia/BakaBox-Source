@@ -29,8 +29,8 @@ enum LobbyEnvelope_Payload {
   broadcastCdRequest, 
   portalUseRequest, 
   onlineStatsRequest, 
-  profileSteamBind, 
-  enter, 
+  profileSteamBindRequest, 
+  enterRequest, 
   loginSuccessResponse, 
   loginFailedResponse, 
   logoutSuccessResponse, 
@@ -59,7 +59,7 @@ enum LobbyEnvelope_Payload {
   systemErrorResponse, 
   systemNoticeResponse, 
   systemKickedResponse, 
-  steamBindSuccess, 
+  steamBindSuccessResponse, 
   notSet
 }
 
@@ -84,8 +84,8 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     BroadcastCDRequest? broadcastCdRequest,
     PortalUseRequest? portalUseRequest,
     OnlineStatsRequest? onlineStatsRequest,
-    ProfileSteamBindRequest? profileSteamBind,
-    EnterRequest? enter,
+    ProfileSteamBindRequest? profileSteamBindRequest,
+    EnterRequest? enterRequest,
     LoginSuccessResponse? loginSuccessResponse,
     LoginFailedResponse? loginFailedResponse,
     LogoutSuccessResponse? logoutSuccessResponse,
@@ -114,7 +114,7 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     SystemErrorResponse? systemErrorResponse,
     SystemNoticeResponse? systemNoticeResponse,
     SystemKickedResponse? systemKickedResponse,
-    SteamBindSuccessResponse? steamBindSuccess,
+    SteamBindSuccessResponse? steamBindSuccessResponse,
   }) {
     final $result = create();
     if (v != null) {
@@ -171,11 +171,11 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     if (onlineStatsRequest != null) {
       $result.onlineStatsRequest = onlineStatsRequest;
     }
-    if (profileSteamBind != null) {
-      $result.profileSteamBind = profileSteamBind;
+    if (profileSteamBindRequest != null) {
+      $result.profileSteamBindRequest = profileSteamBindRequest;
     }
-    if (enter != null) {
-      $result.enter = enter;
+    if (enterRequest != null) {
+      $result.enterRequest = enterRequest;
     }
     if (loginSuccessResponse != null) {
       $result.loginSuccessResponse = loginSuccessResponse;
@@ -261,8 +261,8 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     if (systemKickedResponse != null) {
       $result.systemKickedResponse = systemKickedResponse;
     }
-    if (steamBindSuccess != null) {
-      $result.steamBindSuccess = steamBindSuccess;
+    if (steamBindSuccessResponse != null) {
+      $result.steamBindSuccessResponse = steamBindSuccessResponse;
     }
     return $result;
   }
@@ -285,8 +285,8 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     21 : LobbyEnvelope_Payload.broadcastCdRequest,
     22 : LobbyEnvelope_Payload.portalUseRequest,
     23 : LobbyEnvelope_Payload.onlineStatsRequest,
-    24 : LobbyEnvelope_Payload.profileSteamBind,
-    25 : LobbyEnvelope_Payload.enter,
+    24 : LobbyEnvelope_Payload.profileSteamBindRequest,
+    25 : LobbyEnvelope_Payload.enterRequest,
     50 : LobbyEnvelope_Payload.loginSuccessResponse,
     51 : LobbyEnvelope_Payload.loginFailedResponse,
     52 : LobbyEnvelope_Payload.logoutSuccessResponse,
@@ -315,7 +315,7 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     75 : LobbyEnvelope_Payload.systemErrorResponse,
     76 : LobbyEnvelope_Payload.systemNoticeResponse,
     77 : LobbyEnvelope_Payload.systemKickedResponse,
-    78 : LobbyEnvelope_Payload.steamBindSuccess,
+    78 : LobbyEnvelope_Payload.steamBindSuccessResponse,
     0 : LobbyEnvelope_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'LobbyEnvelope', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
@@ -338,8 +338,8 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     ..aOM<BroadcastCDRequest>(21, _omitFieldNames ? '' : 'broadcastCdRequest', subBuilder: BroadcastCDRequest.create)
     ..aOM<PortalUseRequest>(22, _omitFieldNames ? '' : 'portalUseRequest', subBuilder: PortalUseRequest.create)
     ..aOM<OnlineStatsRequest>(23, _omitFieldNames ? '' : 'onlineStatsRequest', subBuilder: OnlineStatsRequest.create)
-    ..aOM<ProfileSteamBindRequest>(24, _omitFieldNames ? '' : 'profileSteamBind', subBuilder: ProfileSteamBindRequest.create)
-    ..aOM<EnterRequest>(25, _omitFieldNames ? '' : 'enter', subBuilder: EnterRequest.create)
+    ..aOM<ProfileSteamBindRequest>(24, _omitFieldNames ? '' : 'profileSteamBindRequest', subBuilder: ProfileSteamBindRequest.create)
+    ..aOM<EnterRequest>(25, _omitFieldNames ? '' : 'enterRequest', subBuilder: EnterRequest.create)
     ..aOM<LoginSuccessResponse>(50, _omitFieldNames ? '' : 'loginSuccessResponse', subBuilder: LoginSuccessResponse.create)
     ..aOM<LoginFailedResponse>(51, _omitFieldNames ? '' : 'loginFailedResponse', subBuilder: LoginFailedResponse.create)
     ..aOM<LogoutSuccessResponse>(52, _omitFieldNames ? '' : 'logoutSuccessResponse', subBuilder: LogoutSuccessResponse.create)
@@ -368,7 +368,7 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     ..aOM<SystemErrorResponse>(75, _omitFieldNames ? '' : 'systemErrorResponse', subBuilder: SystemErrorResponse.create)
     ..aOM<SystemNoticeResponse>(76, _omitFieldNames ? '' : 'systemNoticeResponse', subBuilder: SystemNoticeResponse.create)
     ..aOM<SystemKickedResponse>(77, _omitFieldNames ? '' : 'systemKickedResponse', subBuilder: SystemKickedResponse.create)
-    ..aOM<SteamBindSuccessResponse>(78, _omitFieldNames ? '' : 'steamBindSuccess', subBuilder: SteamBindSuccessResponse.create)
+    ..aOM<SteamBindSuccessResponse>(78, _omitFieldNames ? '' : 'steamBindSuccessResponse', subBuilder: SteamBindSuccessResponse.create)
     ..hasRequiredFields = false
   ;
 
@@ -588,26 +588,26 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
   OnlineStatsRequest ensureOnlineStatsRequest() => $_ensure(17);
 
   @$pb.TagNumber(24)
-  ProfileSteamBindRequest get profileSteamBind => $_getN(18);
+  ProfileSteamBindRequest get profileSteamBindRequest => $_getN(18);
   @$pb.TagNumber(24)
-  set profileSteamBind(ProfileSteamBindRequest v) { setField(24, v); }
+  set profileSteamBindRequest(ProfileSteamBindRequest v) { setField(24, v); }
   @$pb.TagNumber(24)
-  $core.bool hasProfileSteamBind() => $_has(18);
+  $core.bool hasProfileSteamBindRequest() => $_has(18);
   @$pb.TagNumber(24)
-  void clearProfileSteamBind() => clearField(24);
+  void clearProfileSteamBindRequest() => clearField(24);
   @$pb.TagNumber(24)
-  ProfileSteamBindRequest ensureProfileSteamBind() => $_ensure(18);
+  ProfileSteamBindRequest ensureProfileSteamBindRequest() => $_ensure(18);
 
   @$pb.TagNumber(25)
-  EnterRequest get enter => $_getN(19);
+  EnterRequest get enterRequest => $_getN(19);
   @$pb.TagNumber(25)
-  set enter(EnterRequest v) { setField(25, v); }
+  set enterRequest(EnterRequest v) { setField(25, v); }
   @$pb.TagNumber(25)
-  $core.bool hasEnter() => $_has(19);
+  $core.bool hasEnterRequest() => $_has(19);
   @$pb.TagNumber(25)
-  void clearEnter() => clearField(25);
+  void clearEnterRequest() => clearField(25);
   @$pb.TagNumber(25)
-  EnterRequest ensureEnter() => $_ensure(19);
+  EnterRequest ensureEnterRequest() => $_ensure(19);
 
   /// 服务端 -> 客户端
   @$pb.TagNumber(50)
@@ -919,15 +919,15 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
   SystemKickedResponse ensureSystemKickedResponse() => $_ensure(47);
 
   @$pb.TagNumber(78)
-  SteamBindSuccessResponse get steamBindSuccess => $_getN(48);
+  SteamBindSuccessResponse get steamBindSuccessResponse => $_getN(48);
   @$pb.TagNumber(78)
-  set steamBindSuccess(SteamBindSuccessResponse v) { setField(78, v); }
+  set steamBindSuccessResponse(SteamBindSuccessResponse v) { setField(78, v); }
   @$pb.TagNumber(78)
-  $core.bool hasSteamBindSuccess() => $_has(48);
+  $core.bool hasSteamBindSuccessResponse() => $_has(48);
   @$pb.TagNumber(78)
-  void clearSteamBindSuccess() => clearField(78);
+  void clearSteamBindSuccessResponse() => clearField(78);
   @$pb.TagNumber(78)
-  SteamBindSuccessResponse ensureSteamBindSuccess() => $_ensure(48);
+  SteamBindSuccessResponse ensureSteamBindSuccessResponse() => $_ensure(48);
 }
 
 /// LobbyUser 用户信息
@@ -5920,6 +5920,263 @@ class SteamUserInfoResponse extends $pb.GeneratedMessage {
   void clearCurrentDate() => clearField(64);
 }
 
+/// InventoryStatsRequest 查询玩家库存统计请求
+class InventoryStatsRequest extends $pb.GeneratedMessage {
+  factory InventoryStatsRequest({
+    $core.String? userId,
+  }) {
+    final $result = create();
+    if (userId != null) {
+      $result.userId = userId;
+    }
+    return $result;
+  }
+  InventoryStatsRequest._() : super();
+  factory InventoryStatsRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory InventoryStatsRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'InventoryStatsRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'userId')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  InventoryStatsRequest clone() => InventoryStatsRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  InventoryStatsRequest copyWith(void Function(InventoryStatsRequest) updates) => super.copyWith((message) => updates(message as InventoryStatsRequest)) as InventoryStatsRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static InventoryStatsRequest create() => InventoryStatsRequest._();
+  InventoryStatsRequest createEmptyInstance() => create();
+  static $pb.PbList<InventoryStatsRequest> createRepeated() => $pb.PbList<InventoryStatsRequest>();
+  @$core.pragma('dart2js:noInline')
+  static InventoryStatsRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<InventoryStatsRequest>(create);
+  static InventoryStatsRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get userId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set userId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasUserId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearUserId() => clearField(1);
+}
+
+/// InventoryStatsResponse 查询玩家库存统计响应
+class InventoryStatsResponse extends $pb.GeneratedMessage {
+  factory InventoryStatsResponse({
+    $core.int? code,
+    $core.String? message,
+    $core.int? skinCount,
+    $core.int? spellCount,
+    $core.int? danmakuCount,
+    $core.int? skillCount,
+    $core.int? knifeCount,
+    $core.int? weaponCount,
+    $core.int? cheerCount,
+    $core.int? skinmenuCount,
+    $fixnum.Int64? totalGoldValue,
+    $fixnum.Int64? totalPointValue,
+  }) {
+    final $result = create();
+    if (code != null) {
+      $result.code = code;
+    }
+    if (message != null) {
+      $result.message = message;
+    }
+    if (skinCount != null) {
+      $result.skinCount = skinCount;
+    }
+    if (spellCount != null) {
+      $result.spellCount = spellCount;
+    }
+    if (danmakuCount != null) {
+      $result.danmakuCount = danmakuCount;
+    }
+    if (skillCount != null) {
+      $result.skillCount = skillCount;
+    }
+    if (knifeCount != null) {
+      $result.knifeCount = knifeCount;
+    }
+    if (weaponCount != null) {
+      $result.weaponCount = weaponCount;
+    }
+    if (cheerCount != null) {
+      $result.cheerCount = cheerCount;
+    }
+    if (skinmenuCount != null) {
+      $result.skinmenuCount = skinmenuCount;
+    }
+    if (totalGoldValue != null) {
+      $result.totalGoldValue = totalGoldValue;
+    }
+    if (totalPointValue != null) {
+      $result.totalPointValue = totalPointValue;
+    }
+    return $result;
+  }
+  InventoryStatsResponse._() : super();
+  factory InventoryStatsResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory InventoryStatsResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'InventoryStatsResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'code', $pb.PbFieldType.O3)
+    ..aOS(2, _omitFieldNames ? '' : 'message')
+    ..a<$core.int>(3, _omitFieldNames ? '' : 'skinCount', $pb.PbFieldType.O3)
+    ..a<$core.int>(4, _omitFieldNames ? '' : 'spellCount', $pb.PbFieldType.O3)
+    ..a<$core.int>(5, _omitFieldNames ? '' : 'danmakuCount', $pb.PbFieldType.O3)
+    ..a<$core.int>(6, _omitFieldNames ? '' : 'skillCount', $pb.PbFieldType.O3)
+    ..a<$core.int>(7, _omitFieldNames ? '' : 'knifeCount', $pb.PbFieldType.O3)
+    ..a<$core.int>(8, _omitFieldNames ? '' : 'weaponCount', $pb.PbFieldType.O3)
+    ..a<$core.int>(9, _omitFieldNames ? '' : 'cheerCount', $pb.PbFieldType.O3)
+    ..a<$core.int>(10, _omitFieldNames ? '' : 'skinmenuCount', $pb.PbFieldType.O3)
+    ..aInt64(11, _omitFieldNames ? '' : 'totalGoldValue')
+    ..aInt64(12, _omitFieldNames ? '' : 'totalPointValue')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  InventoryStatsResponse clone() => InventoryStatsResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  InventoryStatsResponse copyWith(void Function(InventoryStatsResponse) updates) => super.copyWith((message) => updates(message as InventoryStatsResponse)) as InventoryStatsResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static InventoryStatsResponse create() => InventoryStatsResponse._();
+  InventoryStatsResponse createEmptyInstance() => create();
+  static $pb.PbList<InventoryStatsResponse> createRepeated() => $pb.PbList<InventoryStatsResponse>();
+  @$core.pragma('dart2js:noInline')
+  static InventoryStatsResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<InventoryStatsResponse>(create);
+  static InventoryStatsResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get code => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set code($core.int v) { $_setSignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasCode() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearCode() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get message => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set message($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasMessage() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMessage() => clearField(2);
+
+  /// 以下字段仅 code=0 时有效
+  @$pb.TagNumber(3)
+  $core.int get skinCount => $_getIZ(2);
+  @$pb.TagNumber(3)
+  set skinCount($core.int v) { $_setSignedInt32(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasSkinCount() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearSkinCount() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.int get spellCount => $_getIZ(3);
+  @$pb.TagNumber(4)
+  set spellCount($core.int v) { $_setSignedInt32(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasSpellCount() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearSpellCount() => clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.int get danmakuCount => $_getIZ(4);
+  @$pb.TagNumber(5)
+  set danmakuCount($core.int v) { $_setSignedInt32(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasDanmakuCount() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearDanmakuCount() => clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.int get skillCount => $_getIZ(5);
+  @$pb.TagNumber(6)
+  set skillCount($core.int v) { $_setSignedInt32(5, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasSkillCount() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearSkillCount() => clearField(6);
+
+  @$pb.TagNumber(7)
+  $core.int get knifeCount => $_getIZ(6);
+  @$pb.TagNumber(7)
+  set knifeCount($core.int v) { $_setSignedInt32(6, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasKnifeCount() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearKnifeCount() => clearField(7);
+
+  @$pb.TagNumber(8)
+  $core.int get weaponCount => $_getIZ(7);
+  @$pb.TagNumber(8)
+  set weaponCount($core.int v) { $_setSignedInt32(7, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasWeaponCount() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearWeaponCount() => clearField(8);
+
+  @$pb.TagNumber(9)
+  $core.int get cheerCount => $_getIZ(8);
+  @$pb.TagNumber(9)
+  set cheerCount($core.int v) { $_setSignedInt32(8, v); }
+  @$pb.TagNumber(9)
+  $core.bool hasCheerCount() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearCheerCount() => clearField(9);
+
+  @$pb.TagNumber(10)
+  $core.int get skinmenuCount => $_getIZ(9);
+  @$pb.TagNumber(10)
+  set skinmenuCount($core.int v) { $_setSignedInt32(9, v); }
+  @$pb.TagNumber(10)
+  $core.bool hasSkinmenuCount() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearSkinmenuCount() => clearField(10);
+
+  @$pb.TagNumber(11)
+  $fixnum.Int64 get totalGoldValue => $_getI64(10);
+  @$pb.TagNumber(11)
+  set totalGoldValue($fixnum.Int64 v) { $_setInt64(10, v); }
+  @$pb.TagNumber(11)
+  $core.bool hasTotalGoldValue() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearTotalGoldValue() => clearField(11);
+
+  @$pb.TagNumber(12)
+  $fixnum.Int64 get totalPointValue => $_getI64(11);
+  @$pb.TagNumber(12)
+  set totalPointValue($fixnum.Int64 v) { $_setInt64(11, v); }
+  @$pb.TagNumber(12)
+  $core.bool hasTotalPointValue() => $_has(11);
+  @$pb.TagNumber(12)
+  void clearTotalPointValue() => clearField(12);
+}
+
 enum MatchSignal_Payload {
   kick, 
   assetsUpdated, 
@@ -5928,6 +6185,7 @@ enum MatchSignal_Payload {
   chatMessage, 
   onlineCountChanged, 
   presenceJoin, 
+  presenceLeave, 
   notSet
 }
 
@@ -5942,6 +6200,7 @@ class MatchSignal extends $pb.GeneratedMessage {
     ChatMessageSignal? chatMessage,
     OnlineCountChangedSignal? onlineCountChanged,
     PresenceJoinSignal? presenceJoin,
+    PresenceLeaveSignal? presenceLeave,
   }) {
     final $result = create();
     if (action != null) {
@@ -5968,6 +6227,9 @@ class MatchSignal extends $pb.GeneratedMessage {
     if (presenceJoin != null) {
       $result.presenceJoin = presenceJoin;
     }
+    if (presenceLeave != null) {
+      $result.presenceLeave = presenceLeave;
+    }
     return $result;
   }
   MatchSignal._() : super();
@@ -5982,10 +6244,11 @@ class MatchSignal extends $pb.GeneratedMessage {
     14 : MatchSignal_Payload.chatMessage,
     18 : MatchSignal_Payload.onlineCountChanged,
     19 : MatchSignal_Payload.presenceJoin,
+    20 : MatchSignal_Payload.presenceLeave,
     0 : MatchSignal_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'MatchSignal', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
-    ..oo(0, [10, 11, 12, 13, 14, 18, 19])
+    ..oo(0, [10, 11, 12, 13, 14, 18, 19, 20])
     ..aOS(1, _omitFieldNames ? '' : 'action')
     ..aOM<KickSignal>(10, _omitFieldNames ? '' : 'kick', subBuilder: KickSignal.create)
     ..aOM<AssetsUpdatedSignal>(11, _omitFieldNames ? '' : 'assetsUpdated', subBuilder: AssetsUpdatedSignal.create)
@@ -5994,6 +6257,7 @@ class MatchSignal extends $pb.GeneratedMessage {
     ..aOM<ChatMessageSignal>(14, _omitFieldNames ? '' : 'chatMessage', subBuilder: ChatMessageSignal.create)
     ..aOM<OnlineCountChangedSignal>(18, _omitFieldNames ? '' : 'onlineCountChanged', subBuilder: OnlineCountChangedSignal.create)
     ..aOM<PresenceJoinSignal>(19, _omitFieldNames ? '' : 'presenceJoin', subBuilder: PresenceJoinSignal.create)
+    ..aOM<PresenceLeaveSignal>(20, _omitFieldNames ? '' : 'presenceLeave', subBuilder: PresenceLeaveSignal.create)
     ..hasRequiredFields = false
   ;
 
@@ -6106,6 +6370,17 @@ class MatchSignal extends $pb.GeneratedMessage {
   void clearPresenceJoin() => clearField(19);
   @$pb.TagNumber(19)
   PresenceJoinSignal ensurePresenceJoin() => $_ensure(7);
+
+  @$pb.TagNumber(20)
+  PresenceLeaveSignal get presenceLeave => $_getN(8);
+  @$pb.TagNumber(20)
+  set presenceLeave(PresenceLeaveSignal v) { setField(20, v); }
+  @$pb.TagNumber(20)
+  $core.bool hasPresenceLeave() => $_has(8);
+  @$pb.TagNumber(20)
+  void clearPresenceLeave() => clearField(20);
+  @$pb.TagNumber(20)
+  PresenceLeaveSignal ensurePresenceLeave() => $_ensure(8);
 }
 
 /// PresenceJoinSignal 跨 Match 用户进入通知信号（仅通知，不含坐标，不渲染）
@@ -6213,6 +6488,85 @@ class PresenceJoinSignal extends $pb.GeneratedMessage {
   $core.bool hasMapId() => $_has(4);
   @$pb.TagNumber(5)
   void clearMapId() => clearField(5);
+}
+
+/// PresenceLeaveSignal 跨 Match 用户离开通知信号
+class PresenceLeaveSignal extends $pb.GeneratedMessage {
+  factory PresenceLeaveSignal({
+    $core.String? userId,
+    $core.String? mapId,
+    $core.String? targetMapId,
+  }) {
+    final $result = create();
+    if (userId != null) {
+      $result.userId = userId;
+    }
+    if (mapId != null) {
+      $result.mapId = mapId;
+    }
+    if (targetMapId != null) {
+      $result.targetMapId = targetMapId;
+    }
+    return $result;
+  }
+  PresenceLeaveSignal._() : super();
+  factory PresenceLeaveSignal.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PresenceLeaveSignal.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PresenceLeaveSignal', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'userId')
+    ..aOS(2, _omitFieldNames ? '' : 'mapId')
+    ..aOS(3, _omitFieldNames ? '' : 'targetMapId')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PresenceLeaveSignal clone() => PresenceLeaveSignal()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PresenceLeaveSignal copyWith(void Function(PresenceLeaveSignal) updates) => super.copyWith((message) => updates(message as PresenceLeaveSignal)) as PresenceLeaveSignal;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PresenceLeaveSignal create() => PresenceLeaveSignal._();
+  PresenceLeaveSignal createEmptyInstance() => create();
+  static $pb.PbList<PresenceLeaveSignal> createRepeated() => $pb.PbList<PresenceLeaveSignal>();
+  @$core.pragma('dart2js:noInline')
+  static PresenceLeaveSignal getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PresenceLeaveSignal>(create);
+  static PresenceLeaveSignal? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get userId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set userId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasUserId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearUserId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get mapId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set mapId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasMapId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMapId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get targetMapId => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set targetMapId($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasTargetMapId() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearTargetMapId() => clearField(3);
 }
 
 /// KickSignal 踢人信号

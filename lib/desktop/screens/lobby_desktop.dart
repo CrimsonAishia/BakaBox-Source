@@ -15,7 +15,7 @@ import '../widgets/lobby/lobby_broadcast_dialog.dart';
 import '../widgets/lobby/mosaic_reveal_effect.dart';
 import '../widgets/lobby/portal_confirm_dialog.dart';
 import '../widgets/lobby/player_notification_overlay.dart';
-import '../widgets/lobby/lobby_user_info_panel.dart';
+import '../widgets/lobby/lobby_user_profile_panel.dart';
 
 class LobbyDesktop extends StatefulWidget {
   const LobbyDesktop({super.key});
@@ -1382,8 +1382,8 @@ class _PlayerListTile extends StatelessWidget {
           onTap: user.isAnonymous
               ? null
               : () {
-                  // 点击已登录用户显示用户信息面板
-                  LobbyUserInfoPanel.show(context, user);
+                  // 点击已登录用户显示用户资料九宫格面板
+                  LobbyUserProfilePanel.show(context, user);
                 },
           borderRadius: BorderRadius.circular(10),
           child: Padding(

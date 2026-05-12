@@ -212,9 +212,26 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
                 if (_userInfo != null) ...[
                   Row(
                     children: [
-                      _buildVipBadge(_userInfo!.vipLevel),
+                      _buildVipBadge(_userInfo!.donatorLevel),
                       const SizedBox(width: 8),
-                      if (_userInfo!.joinDate.isNotEmpty)
+                      if (_userInfo!.donateEnd.isNotEmpty)
+                        Text(
+                          '到期 ${_userInfo!.donateEnd}',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.4),
+                            fontSize: 11,
+                          ),
+                        )
+                      else if (_userInfo!.donatorLevel > 0)
+                        Text(
+                          '永久',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.4),
+                            fontSize: 11,
+                          ),
+                        ),
+                      if (_userInfo!.joinDate.isNotEmpty) ...[
+                        const SizedBox(width: 8),
                         Text(
                           '加入于 ${_userInfo!.joinDate}',
                           style: TextStyle(
@@ -222,6 +239,7 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
                             fontSize: 11,
                           ),
                         ),
+                      ],
                     ],
                   ),
                 ] else
@@ -383,22 +401,6 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // VIP 信息
-          if (info.vipLevel > 0) ...[
-            _buildSectionTitle('捐助者信息', Icons.star),
-            const SizedBox(height: 8),
-            _buildInfoCard([
-              _InfoItem('捐助者等级', 'Lv.${info.vipLevel}'),
-              if (info.vipDate.isNotEmpty)
-                _InfoItem('生效日期', info.vipDate),
-              _InfoItem(
-                '截止日期',
-                info.vipEnd.isEmpty ? '永久' : info.vipEnd,
-              ),
-            ]),
-            const SizedBox(height: 16),
-          ],
-
           // CS2 游戏数据
           _buildSectionTitle('CS2 游戏数据', Icons.sports_esports),
           const SizedBox(height: 8),

@@ -956,7 +956,7 @@ class LobbyNakamaService {
       ..v = 1
       ..type = 'enter'
       ..traceId = _generateTraceId()
-      ..enter = pb.EnterRequest();
+      ..enterRequest = pb.EnterRequest();
     _sendEnvelope(envelope);
     LogService.i('[LobbyNakamaService] 已发送 enter，正式进入大厅');
   }
@@ -1165,7 +1165,7 @@ class LobbyNakamaService {
       ..v = 1
       ..type = 'profile.steam.bind'
       ..traceId = _generateTraceId()
-      ..profileSteamBind = (pb.ProfileSteamBindRequest()
+      ..profileSteamBindRequest = (pb.ProfileSteamBindRequest()
         ..steamId = steamId64
         ..steamName = steamName);
     _sendEnvelope(envelope);
@@ -1189,16 +1189,28 @@ class LobbyNakamaService {
       }
       return null;
     } catch (e) {
-      final errStr = e.toString();
-      // 服务端序列化响应时出错（通常是数据库中存有非 UTF-8 编码的字段，如 GBK 中文）
-      // 这是服务端 bug，客户端无法修复，返回特殊响应让 UI 显示友好提示
-      if (errStr.contains('invalid UTF-8') || errStr.contains('marshaling')) {
-        LogService.w('[LobbyNakamaService] RPC steam_user_info 服务端响应含非 UTF-8 数据: $e');
-        return pb.SteamUserInfoResponse()
-          ..code = -1
-          ..message = '该用户的数据包含特殊字符，暂时无法显示';
-      }
       LogService.e('[LobbyNakamaService] RPC steam_user_info 失败: $e');
+      return null;
+    }
+  }
+
+  /// RPC 查询玩家库存统计
+  ///
+  /// 根据目标用户的 Nakama UUID 查询其库存物品统计信息（皮肤、法术、弹幕等数量及总价值）。
+  /// 服务端会自动查询该用户绑定的 Steam64 ID，无需客户端传递 Steam ID。
+  Future<pb.InventoryStatsResponse?> rpcInventoryStats(String nakamaUserId) async {
+    try {
+      LogService.d('[LobbyNakamaService] RPC inventory_stats: userId=$nakamaUserId');
+      final reqBytes = (pb.InventoryStatsRequest()..userId = nakamaUserId).writeToBuffer();
+      final payload = String.fromCharCodes(reqBytes);
+      final result = await _clientManager.rpc('inventory_stats', payload: payload);
+      if (result != null && result.isNotEmpty) {
+        final bytes = base64Decode(result);
+        return pb.InventoryStatsResponse.fromBuffer(bytes);
+      }
+      return null;
+    } catch (e) {
+      LogService.e('[LobbyNakamaService] RPC inventory_stats 失败: $e');
       return null;
     }
   }

@@ -2258,7 +2258,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         }
         break;
       case 'profile.steam.bind.success':
-        final steamBindResp = envelope.steamBindSuccess;
+        final steamBindResp = envelope.steamBindSuccessResponse;
         final steamId = steamBindResp.steamId;
         final steamName = steamBindResp.steamName;
         final displayNickname = steamBindResp.displayNickname;
