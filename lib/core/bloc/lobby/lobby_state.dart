@@ -79,6 +79,8 @@ class LobbyState extends Equatable {
   final List<LobbyUser> users;
   final List<LobbyMessage> messages;
   final String selectedSpriteId;
+  /// 角色切换是否正在等待服务端响应
+  final bool isSpriteChangePending;
   final bool isAnonymous;
   final bool isChatActive;
   final bool isPlayersPanelOpen;
@@ -139,6 +141,7 @@ class LobbyState extends Equatable {
     required this.users,
     required this.messages,
     required this.selectedSpriteId,
+    this.isSpriteChangePending = false,
     required this.isAnonymous,
     required this.isChatActive,
     required this.isPlayersPanelOpen,
@@ -238,6 +241,7 @@ class LobbyState extends Equatable {
     List<LobbyUser>? users,
     List<LobbyMessage>? messages,
     String? selectedSpriteId,
+    bool? isSpriteChangePending,
     bool? isAnonymous,
     bool? isChatActive,
     bool? isPlayersPanelOpen,
@@ -285,6 +289,7 @@ class LobbyState extends Equatable {
       users: users ?? this.users,
       messages: messages ?? this.messages,
       selectedSpriteId: selectedSpriteId ?? this.selectedSpriteId,
+      isSpriteChangePending: isSpriteChangePending ?? this.isSpriteChangePending,
       isAnonymous: isAnonymous ?? this.isAnonymous,
       isChatActive: isChatActive ?? this.isChatActive,
       isPlayersPanelOpen: isPlayersPanelOpen ?? this.isPlayersPanelOpen,
@@ -371,6 +376,7 @@ class LobbyState extends Equatable {
     users,
     messages,
     selectedSpriteId,
+    isSpriteChangePending,
     isAnonymous,
     isChatActive,
     isPlayersPanelOpen,

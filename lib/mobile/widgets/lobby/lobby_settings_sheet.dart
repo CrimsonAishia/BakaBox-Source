@@ -59,6 +59,7 @@ class LobbySettingsSheet extends StatelessWidget {
                     selectedId: state.selectedSpriteId,
                     isLocked: state.isAnonymous &&
                         !AuthService.instance.isLoggedIn,
+                    isPending: state.isSpriteChangePending,
                     onSelect: (id) => context
                         .read<LobbyBloc>()
                         .add(LobbySpriteSelected(id)),
@@ -182,12 +183,14 @@ class _LobbySpriteRow extends StatefulWidget {
   final List<LobbySprite> sprites;
   final String? selectedId;
   final bool isLocked;
+  final bool isPending;
   final void Function(String id) onSelect;
 
   const _LobbySpriteRow({
     required this.sprites,
     required this.selectedId,
     required this.isLocked,
+    this.isPending = false,
     required this.onSelect,
   });
 
@@ -311,6 +314,26 @@ class _LobbySpriteRowState extends State<_LobbySpriteRow> {
                   Icons.chevron_right,
                   color: Colors.white54.withValues(alpha: 0.6),
                   size: 20,
+                ),
+              ),
+            ),
+          ),
+        // 切换中遮罩层
+        if (widget.isPending)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.45),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+                  ),
                 ),
               ),
             ),

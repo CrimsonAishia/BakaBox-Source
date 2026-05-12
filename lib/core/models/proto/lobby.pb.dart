@@ -60,6 +60,7 @@ enum LobbyEnvelope_Payload {
   systemNoticeResponse, 
   systemKickedResponse, 
   steamBindSuccessResponse, 
+  spriteChangeSuccessResponse, 
   notSet
 }
 
@@ -115,6 +116,7 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     SystemNoticeResponse? systemNoticeResponse,
     SystemKickedResponse? systemKickedResponse,
     SteamBindSuccessResponse? steamBindSuccessResponse,
+    SpriteChangeSuccessResponse? spriteChangeSuccessResponse,
   }) {
     final $result = create();
     if (v != null) {
@@ -264,6 +266,9 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     if (steamBindSuccessResponse != null) {
       $result.steamBindSuccessResponse = steamBindSuccessResponse;
     }
+    if (spriteChangeSuccessResponse != null) {
+      $result.spriteChangeSuccessResponse = spriteChangeSuccessResponse;
+    }
     return $result;
   }
   LobbyEnvelope._() : super();
@@ -316,10 +321,11 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     76 : LobbyEnvelope_Payload.systemNoticeResponse,
     77 : LobbyEnvelope_Payload.systemKickedResponse,
     78 : LobbyEnvelope_Payload.steamBindSuccessResponse,
+    79 : LobbyEnvelope_Payload.spriteChangeSuccessResponse,
     0 : LobbyEnvelope_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'LobbyEnvelope', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
-    ..oo(0, [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78])
+    ..oo(0, [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79])
     ..a<$core.int>(1, _omitFieldNames ? '' : 'v', $pb.PbFieldType.O3)
     ..aOS(2, _omitFieldNames ? '' : 'type')
     ..aInt64(3, _omitFieldNames ? '' : 'ts')
@@ -369,6 +375,7 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     ..aOM<SystemNoticeResponse>(76, _omitFieldNames ? '' : 'systemNoticeResponse', subBuilder: SystemNoticeResponse.create)
     ..aOM<SystemKickedResponse>(77, _omitFieldNames ? '' : 'systemKickedResponse', subBuilder: SystemKickedResponse.create)
     ..aOM<SteamBindSuccessResponse>(78, _omitFieldNames ? '' : 'steamBindSuccessResponse', subBuilder: SteamBindSuccessResponse.create)
+    ..aOM<SpriteChangeSuccessResponse>(79, _omitFieldNames ? '' : 'spriteChangeSuccessResponse', subBuilder: SpriteChangeSuccessResponse.create)
     ..hasRequiredFields = false
   ;
 
@@ -928,6 +935,17 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
   void clearSteamBindSuccessResponse() => clearField(78);
   @$pb.TagNumber(78)
   SteamBindSuccessResponse ensureSteamBindSuccessResponse() => $_ensure(48);
+
+  @$pb.TagNumber(79)
+  SpriteChangeSuccessResponse get spriteChangeSuccessResponse => $_getN(49);
+  @$pb.TagNumber(79)
+  set spriteChangeSuccessResponse(SpriteChangeSuccessResponse v) { setField(79, v); }
+  @$pb.TagNumber(79)
+  $core.bool hasSpriteChangeSuccessResponse() => $_has(49);
+  @$pb.TagNumber(79)
+  void clearSpriteChangeSuccessResponse() => clearField(79);
+  @$pb.TagNumber(79)
+  SpriteChangeSuccessResponse ensureSpriteChangeSuccessResponse() => $_ensure(49);
 }
 
 /// LobbyUser 用户信息
@@ -3860,6 +3878,56 @@ class SpriteChangedResponse extends $pb.GeneratedMessage {
   $core.bool hasSpriteId() => $_has(1);
   @$pb.TagNumber(2)
   void clearSpriteId() => clearField(2);
+}
+
+class SpriteChangeSuccessResponse extends $pb.GeneratedMessage {
+  factory SpriteChangeSuccessResponse({
+    $core.String? spriteId,
+  }) {
+    final $result = create();
+    if (spriteId != null) {
+      $result.spriteId = spriteId;
+    }
+    return $result;
+  }
+  SpriteChangeSuccessResponse._() : super();
+  factory SpriteChangeSuccessResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory SpriteChangeSuccessResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'SpriteChangeSuccessResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'spriteId')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  SpriteChangeSuccessResponse clone() => SpriteChangeSuccessResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  SpriteChangeSuccessResponse copyWith(void Function(SpriteChangeSuccessResponse) updates) => super.copyWith((message) => updates(message as SpriteChangeSuccessResponse)) as SpriteChangeSuccessResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static SpriteChangeSuccessResponse create() => SpriteChangeSuccessResponse._();
+  SpriteChangeSuccessResponse createEmptyInstance() => create();
+  static $pb.PbList<SpriteChangeSuccessResponse> createRepeated() => $pb.PbList<SpriteChangeSuccessResponse>();
+  @$core.pragma('dart2js:noInline')
+  static SpriteChangeSuccessResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<SpriteChangeSuccessResponse>(create);
+  static SpriteChangeSuccessResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get spriteId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set spriteId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasSpriteId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSpriteId() => clearField(1);
 }
 
 class SpriteChangeRejectResponse extends $pb.GeneratedMessage {

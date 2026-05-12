@@ -389,6 +389,7 @@ class _LobbyDesktopState extends State<LobbyDesktop>
           previous.anonymousSwitchCooldownSeconds != current.anonymousSwitchCooldownSeconds ||
           previous.steamNameSwitchCooldownSeconds != current.steamNameSwitchCooldownSeconds ||
           previous.pendingSettings != current.pendingSettings ||
+          previous.isSpriteChangePending != current.isSpriteChangePending ||
           previous.allOnlineUsers != current.allOnlineUsers ||
           previous.isLoadingAllOnlineUsers != current.isLoadingAllOnlineUsers,
       listenWhen: (previous, current) =>

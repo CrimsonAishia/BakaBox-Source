@@ -62,6 +62,7 @@ message LobbyEnvelope {
     SystemNoticeResponse system_notice_response = 76;
     SystemKickedResponse system_kicked_response = 77;
     SteamBindSuccessResponse steam_bind_success_response = 78;
+    SpriteChangeSuccessResponse sprite_change_success_response = 79;
   }
 }
 
@@ -310,6 +311,10 @@ message AnonymousChangedResponse {
 message SpriteChangedResponse {
   string user_id = 1;
   string sprite_id = 2;
+}
+
+message SpriteChangeSuccessResponse {
+  string sprite_id = 1;  // 切换成功的角色外观 ID
 }
 
 message SpriteChangeRejectResponse {

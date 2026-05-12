@@ -66,6 +66,7 @@ const LobbyEnvelope$json = {
     {'1': 'system_notice_response', '3': 76, '4': 1, '5': 11, '6': '.lobby.SystemNoticeResponse', '9': 0, '10': 'systemNoticeResponse'},
     {'1': 'system_kicked_response', '3': 77, '4': 1, '5': 11, '6': '.lobby.SystemKickedResponse', '9': 0, '10': 'systemKickedResponse'},
     {'1': 'steam_bind_success_response', '3': 78, '4': 1, '5': 11, '6': '.lobby.SteamBindSuccessResponse', '9': 0, '10': 'steamBindSuccessResponse'},
+    {'1': 'sprite_change_success_response', '3': 79, '4': 1, '5': 11, '6': '.lobby.SpriteChangeSuccessResponse', '9': 0, '10': 'spriteChangeSuccessResponse'},
   ],
   '8': [
     {'1': 'payload'},
@@ -145,7 +146,9 @@ final $typed_data.Uint8List lobbyEnvelopeDescriptor = $convert.base64Decode(
     'bV9raWNrZWRfcmVzcG9uc2UYTSABKAsyGy5sb2JieS5TeXN0ZW1LaWNrZWRSZXNwb25zZUgAUh'
     'RzeXN0ZW1LaWNrZWRSZXNwb25zZRJgChtzdGVhbV9iaW5kX3N1Y2Nlc3NfcmVzcG9uc2UYTiAB'
     'KAsyHy5sb2JieS5TdGVhbUJpbmRTdWNjZXNzUmVzcG9uc2VIAFIYc3RlYW1CaW5kU3VjY2Vzc1'
-    'Jlc3BvbnNlQgkKB3BheWxvYWQ=');
+    'Jlc3BvbnNlEmkKHnNwcml0ZV9jaGFuZ2Vfc3VjY2Vzc19yZXNwb25zZRhPIAEoCzIiLmxvYmJ5'
+    'LlNwcml0ZUNoYW5nZVN1Y2Nlc3NSZXNwb25zZUgAUhtzcHJpdGVDaGFuZ2VTdWNjZXNzUmVzcG'
+    '9uc2VCCQoHcGF5bG9hZA==');
 
 @$core.Deprecated('Use lobbyUserDescriptor instead')
 const LobbyUser$json = {
@@ -728,6 +731,19 @@ const SpriteChangedResponse$json = {
 final $typed_data.Uint8List spriteChangedResponseDescriptor = $convert.base64Decode(
     'ChVTcHJpdGVDaGFuZ2VkUmVzcG9uc2USFwoHdXNlcl9pZBgBIAEoCVIGdXNlcklkEhsKCXNwcm'
     'l0ZV9pZBgCIAEoCVIIc3ByaXRlSWQ=');
+
+@$core.Deprecated('Use spriteChangeSuccessResponseDescriptor instead')
+const SpriteChangeSuccessResponse$json = {
+  '1': 'SpriteChangeSuccessResponse',
+  '2': [
+    {'1': 'sprite_id', '3': 1, '4': 1, '5': 9, '10': 'spriteId'},
+  ],
+};
+
+/// Descriptor for `SpriteChangeSuccessResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List spriteChangeSuccessResponseDescriptor = $convert.base64Decode(
+    'ChtTcHJpdGVDaGFuZ2VTdWNjZXNzUmVzcG9uc2USGwoJc3ByaXRlX2lkGAEgASgJUghzcHJpdG'
+    'VJZA==');
 
 @$core.Deprecated('Use spriteChangeRejectResponseDescriptor instead')
 const SpriteChangeRejectResponse$json = {
