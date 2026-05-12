@@ -67,6 +67,7 @@ class _LobbyLoadingScreenMobileState extends State<LobbyLoadingScreenMobile>
   List<_LoadingStep> _buildSteps() {
     final phase = widget.state.loadingPhase;
     final connectionStatus = widget.state.connectionStatus;
+    final isQueueing = widget.state.isQueueing;
     final steps = <_LoadingStep>[];
 
     final isConnected = connectionStatus == LobbyConnectionStatus.connected;
@@ -76,6 +77,7 @@ class _LobbyLoadingScreenMobileState extends State<LobbyLoadingScreenMobile>
         connectionStatus == LobbyConnectionStatus.disconnected ||
         connectionStatus == LobbyConnectionStatus.failed;
 
+    // 步骤1：连接大厅
     steps.add(_LoadingStep(
       icon: Icons.cloud_done_outlined,
       label: '连接大厅',
@@ -88,9 +90,21 @@ class _LobbyLoadingScreenMobileState extends State<LobbyLoadingScreenMobile>
                   : _StepStatus.pending,
     ));
 
+    // 步骤1.5：排队（仅在排队时显示）
+    if (isQueueing) {
+      steps.add(_LoadingStep(
+        icon: Icons.hourglass_top,
+        label: '排队等待',
+        status: _StepStatus.loading,
+      ));
+    }
+
+    // 步骤2：加载素材
     final hasAssets = _checkAssetsReady();
     _StepStatus assetsStatus;
-    if (isDisconnected) {
+    if (isQueueing) {
+      assetsStatus = _StepStatus.pending;
+    } else if (isDisconnected) {
       assetsStatus = hasAssets ? _StepStatus.done : _StepStatus.failed;
     } else if (hasAssets) {
       assetsStatus = _StepStatus.done;
@@ -108,9 +122,12 @@ class _LobbyLoadingScreenMobileState extends State<LobbyLoadingScreenMobile>
       status: assetsStatus,
     ));
 
+    // 步骤3：获取大厅状态
     final hasSnapshot = widget.state.selfUser != null;
     _StepStatus snapshotStatus;
-    if (isDisconnected) {
+    if (isQueueing) {
+      snapshotStatus = _StepStatus.pending;
+    } else if (isDisconnected) {
       snapshotStatus = hasSnapshot ? _StepStatus.done : _StepStatus.failed;
     } else if (hasSnapshot) {
       snapshotStatus = _StepStatus.done;
