@@ -140,7 +140,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       child: Column(
                         children: [
                           Expanded(child: AnnouncementsPanel(isDark: isDark)),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 6),
                           Expanded(child: UpdateLogsPanel(isDark: isDark)),
                         ],
                       ),
