@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/bloc/lobby/lobby_bloc.dart';
@@ -9,6 +10,7 @@ import '../../../core/models/lobby_models.dart';
 import '../../../core/services/lobby_map_loader_service.dart';
 import '../../../core/utils/log_service.dart';
 import '../../games/lobby_game.dart';
+import 'lobby_user_profile_panel.dart';
 
 /// 大厅地图场景组件
 ///
@@ -181,6 +183,13 @@ class _LobbySceneState extends State<LobbyScene> with TickerProviderStateMixin {
       showNameplates: state.showNameplates,
       showChatBubbles: state.showChatBubbles,
     );
+
+    // 设置调查用户回调
+    _game!.onInvestigateUser = (user) {
+      if (mounted) {
+        LobbyUserProfilePanel.show(context, user);
+      }
+    };
   }
 
   @override
@@ -189,14 +198,22 @@ class _LobbySceneState extends State<LobbyScene> with TickerProviderStateMixin {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        return MouseRegion(
-          onHover: (event) {
-            _game?.handleHoverMove(event);
+        return Listener(
+          onPointerDown: (event) {
+            // 右键点击转发给游戏
+            if (event.buttons == kSecondaryMouseButton) {
+              _game?.handleSecondaryTapDown(event);
+            }
           },
-          onExit: (event) {
-            _game?.handleHoverExit();
-          },
-          child: _buildMainContent(isDark),
+          child: MouseRegion(
+            onHover: (event) {
+              _game?.handleHoverMove(event);
+            },
+            onExit: (event) {
+              _game?.handleHoverExit();
+            },
+            child: _buildMainContent(isDark),
+          ),
         );
       },
     );

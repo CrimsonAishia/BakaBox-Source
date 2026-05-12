@@ -98,6 +98,7 @@ class LobbyPosition extends Equatable {
 class LobbyUser extends Equatable {
   final String userId;
   final String? serverUserId;
+  final String? businessUserId;
   final String nickname;
   final String spriteId;
   final String? avatarUrl;
@@ -116,6 +117,7 @@ class LobbyUser extends Equatable {
   const LobbyUser({
     required this.userId,
     this.serverUserId,
+    this.businessUserId,
     required this.nickname,
     required this.spriteId,
     this.avatarUrl,
@@ -143,6 +145,7 @@ class LobbyUser extends Equatable {
   LobbyUser copyWith({
     String? userId,
     Object? serverUserId = _sentinel,
+    Object? businessUserId = _sentinel,
     String? nickname,
     String? spriteId,
     Object? avatarUrl = _sentinel,
@@ -163,6 +166,9 @@ class LobbyUser extends Equatable {
       serverUserId: identical(serverUserId, _sentinel)
           ? this.serverUserId
           : serverUserId as String?,
+      businessUserId: identical(businessUserId, _sentinel)
+          ? this.businessUserId
+          : businessUserId as String?,
       nickname: nickname ?? this.nickname,
       spriteId: spriteId ?? this.spriteId,
       avatarUrl: identical(avatarUrl, _sentinel)
@@ -194,6 +200,7 @@ class LobbyUser extends Equatable {
   List<Object?> get props => [
     userId,
     serverUserId,
+    businessUserId,
     nickname,
     spriteId,
     avatarUrl,

@@ -164,6 +164,7 @@ const LobbyUser$json = {
     {'1': 'status_text', '3': 11, '4': 1, '5': 9, '10': 'statusText'},
     {'1': 'last_message', '3': 12, '4': 1, '5': 9, '10': 'lastMessage'},
     {'1': 'steam_id', '3': 13, '4': 1, '5': 9, '10': 'steamId'},
+    {'1': 'business_user_id', '3': 14, '4': 1, '5': 9, '10': 'businessUserId'},
   ],
 };
 
@@ -175,7 +176,8 @@ final $typed_data.Uint8List lobbyUserDescriptor = $convert.base64Decode(
     'IBeBIMCgF5GAcgASgBUgF5EhYKBmZhY2luZxgIIAEoCVIGZmFjaW5nEhsKCWlzX29ubGluZRgJ'
     'IAEoCFIIaXNPbmxpbmUSIQoMaXNfYW5vbnltb3VzGAogASgIUgtpc0Fub255bW91cxIfCgtzdG'
     'F0dXNfdGV4dBgLIAEoCVIKc3RhdHVzVGV4dBIhCgxsYXN0X21lc3NhZ2UYDCABKAlSC2xhc3RN'
-    'ZXNzYWdlEhkKCHN0ZWFtX2lkGA0gASgJUgdzdGVhbUlk');
+    'ZXNzYWdlEhkKCHN0ZWFtX2lkGA0gASgJUgdzdGVhbUlkEigKEGJ1c2luZXNzX3VzZXJfaWQYDi'
+    'ABKAlSDmJ1c2luZXNzVXNlcklk');
 
 @$core.Deprecated('Use lobbyMessageDescriptor instead')
 const LobbyMessage$json = {
@@ -626,6 +628,7 @@ const IdentityChangedResponse$json = {
     {'1': 'avatar_url', '3': 5, '4': 1, '5': 9, '10': 'avatarUrl'},
     {'1': 'sprite_id', '3': 6, '4': 1, '5': 9, '10': 'spriteId'},
     {'1': 'is_anonymous', '3': 7, '4': 1, '5': 8, '10': 'isAnonymous'},
+    {'1': 'business_user_id', '3': 8, '4': 1, '5': 9, '10': 'businessUserId'},
   ],
 };
 
@@ -635,7 +638,8 @@ final $typed_data.Uint8List identityChangedResponseDescriptor = $convert.base64D
     'tleRIeCgtvbGRfdXNlcl9pZBgCIAEoCVIJb2xkVXNlcklkEh4KC25ld191c2VyX2lkGAMgASgJ'
     'UgluZXdVc2VySWQSGgoIbmlja25hbWUYBCABKAlSCG5pY2tuYW1lEh0KCmF2YXRhcl91cmwYBS'
     'ABKAlSCWF2YXRhclVybBIbCglzcHJpdGVfaWQYBiABKAlSCHNwcml0ZUlkEiEKDGlzX2Fub255'
-    'bW91cxgHIAEoCFILaXNBbm9ueW1vdXM=');
+    'bW91cxgHIAEoCFILaXNBbm9ueW1vdXMSKAoQYnVzaW5lc3NfdXNlcl9pZBgIIAEoCVIOYnVzaW'
+    '5lc3NVc2VySWQ=');
 
 @$core.Deprecated('Use moveBroadcastResponseDescriptor instead')
 const MoveBroadcastResponse$json = {
