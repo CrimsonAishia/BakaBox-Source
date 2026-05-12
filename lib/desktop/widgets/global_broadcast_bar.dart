@@ -6,10 +6,9 @@ import '../../core/bloc/lobby/lobby_bloc.dart';
 import '../../core/models/lobby_models.dart';
 
 /// 全局广播悬浮通知卡片
-/// - 收到广播时从右侧滑入，显示在右下角
-/// - 需用户手动关闭（点 ✕）
-/// - 新消息到来时先滑出再滑入替换内容
-/// - 内容过长自动滚动，用户拖动时暂停，停止拖动 2 秒后恢复
+/// - 收到广播时卡片从右侧弹入，显示在右下角
+/// - 卡片内最多同时显示 3 条广播，新的从底部滑入，超出时最旧的从顶部滑出
+/// - 所有广播都关闭后卡片整体退场
 class GlobalBroadcastBar extends StatefulWidget {
   const GlobalBroadcastBar({super.key});
 
@@ -19,120 +18,142 @@ class GlobalBroadcastBar extends StatefulWidget {
 
 class _GlobalBroadcastBarState extends State<GlobalBroadcastBar>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<Offset> _slideAnimation;
-  late final Animation<double> _fadeAnimation;
+  /// 卡片整体入场/退场动画
+  late final AnimationController _cardController;
+  late final Animation<Offset> _cardSlide;
+  late final Animation<double> _cardFade;
 
-  LobbyBroadcastMessage? _current;
+  /// 当前显示的广播列表（最旧在前，最新在后）
+  /// 注意：退出动画期间条目仍留在列表中，由 _leavingIds 标记
+  final List<LobbyBroadcastMessage> _messages = [];
 
-  /// 在 reverse 动画期间缓存下一条消息
-  LobbyBroadcastMessage? _pending;
+  /// 正在播放退出动画的消息 id
+  final Set<String> _leavingIds = {};
 
-  /// 标记当前是否正在执行 reverse（dismiss 或换消息）
-  /// 用于区分 _dismiss 和 _onBroadcast 的并发情况
-  bool _isReversing = false;
+  StreamSubscription<LobbyBroadcastMessage>? _sub;
 
-  StreamSubscription<LobbyBroadcastMessage>? _broadcastSubscription;
+  static const int _maxMessages = 3;
+  static const Duration _itemLeaveDuration = Duration(milliseconds: 300);
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+
+    _cardController = AnimationController(
       duration: const Duration(milliseconds: 450),
       vsync: this,
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(1.0, 0.0),
+    _cardSlide = Tween<Offset>(
+      begin: const Offset(1.2, 0.0),
       end: Offset.zero,
-    ).animate(
+    ).animate(CurvedAnimation(
+      parent: _cardController,
+      curve: Curves.elasticOut,
+      reverseCurve: Curves.easeInCubic,
+    ));
+    _cardFade = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-        parent: _controller,
-        curve: Curves.elasticOut,
-        reverseCurve: Curves.easeInCubic,
-      ),
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.4, curve: Curves.easeOut),
+        parent: _cardController,
+        curve: const Interval(0.0, 0.35, curve: Curves.easeOut),
+        reverseCurve: const Interval(0.0, 1.0, curve: Curves.easeIn),
       ),
     );
 
-    // 延迟到第一帧后订阅，确保 context 已挂载
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _broadcastSubscription =
-          context.read<LobbyBloc>().broadcastStream.listen(_onBroadcast);
+      _sub = context.read<LobbyBloc>().broadcastStream.listen(_onBroadcast);
     });
   }
 
   @override
   void dispose() {
-    _broadcastSubscription?.cancel();
-    _controller.dispose();
+    _sub?.cancel();
+    _cardController.dispose();
     super.dispose();
   }
+
+  // 有效消息数（不含正在退出的）
+  int get _activeCount => _messages.where((m) => !_leavingIds.contains(m.messageId)).length;
 
   void _onBroadcast(LobbyBroadcastMessage msg) {
     if (!mounted) return;
 
-    if (_current == null) {
-      // 没有卡片：直接入场
-      setState(() => _current = msg);
-      _controller.forward(from: 0);
-    } else if (_isReversing) {
-      // 正在 reverse（换消息或关闭中）：更新 pending，reverse 完成后会用最新的
-      _pending = msg;
-    } else {
-      // 有卡片且未在 reverse：先滑出再换内容
-      _pending = msg;
-      _isReversing = true;
-      _controller.reverse().then((_) {
+    // 卡片整体入场：仅当当前没有任何消息（包括正在退出的）时触发
+    final shouldEnter = _messages.isEmpty;
+
+    // 如果有效消息已满，驱逐最旧的一条（跳过已在退出的）
+    if (_activeCount >= _maxMessages) {
+      final oldest = _messages.firstWhere(
+        (m) => !_leavingIds.contains(m.messageId),
+        orElse: () => _messages.first,
+      );
+      _leavingIds.add(oldest.messageId);
+      Future.delayed(_itemLeaveDuration, () {
         if (!mounted) return;
-        _isReversing = false;
-        // 无论 _pending 是否被更新过，都取最新值
         setState(() {
-          _current = _pending;
-          _pending = null;
+          _messages.removeWhere((m) => m.messageId == oldest.messageId);
+          _leavingIds.remove(oldest.messageId);
         });
-        _controller.forward(from: 0);
       });
+    }
+
+    setState(() => _messages.add(msg));
+
+    if (shouldEnter) {
+      // 如果卡片正在退场中，从当前位置反向播放入场
+      _cardController.forward();
     }
   }
 
-  void _dismiss() {
-    if (!mounted || _isReversing) return;
-    _isReversing = true;
-    _controller.reverse().then((_) {
+  void _dismissMessage(String messageId) {
+    if (!mounted || _leavingIds.contains(messageId)) return;
+    setState(() => _leavingIds.add(messageId));
+
+    Future.delayed(_itemLeaveDuration, () {
       if (!mounted) return;
-      _isReversing = false;
-      if (_pending != null) {
-        // dismiss 期间来了新消息，直接显示
-        setState(() {
-          _current = _pending;
-          _pending = null;
-        });
-        _controller.forward(from: 0);
-      } else {
-        setState(() {
-          _current = null;
-        });
-      }
+      setState(() {
+        _messages.removeWhere((m) => m.messageId == messageId);
+        _leavingIds.remove(messageId);
+      });
+      _checkAndDismissCard();
     });
+  }
+
+  void _dismissAll() {
+    if (!mounted) return;
+    // 整体退场，动画结束后清空
+    _cardController.reverse().then((_) {
+      if (!mounted) return;
+      setState(() {
+        _messages.clear();
+        _leavingIds.clear();
+      });
+    });
+  }
+
+  void _checkAndDismissCard() {
+    // 所有消息（含正在退出的）都已移除，整体退场
+    if (_messages.isEmpty && mounted) {
+      _cardController.reverse();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_current == null) return const SizedBox.shrink();
+    // 卡片动画结束且无消息时，完全从树中移除
+    if (_messages.isEmpty && _cardController.isDismissed) {
+      return const SizedBox.shrink();
+    }
 
     return SlideTransition(
-      position: _slideAnimation,
+      position: _cardSlide,
       child: FadeTransition(
-        opacity: _fadeAnimation,
+        opacity: _cardFade,
         child: _BroadcastCard(
-          key: ValueKey(_current!.messageId),
-          message: _current!,
-          onClose: _dismiss,
+          messages: List.unmodifiable(_messages),
+          leavingIds: Set.unmodifiable(_leavingIds),
+          onDismissMessage: _dismissMessage,
+          onDismissAll: _dismissAll,
         ),
       ),
     );
@@ -141,123 +162,20 @@ class _GlobalBroadcastBarState extends State<GlobalBroadcastBar>
 
 // ---------------------------------------------------------------------------
 
-class _BroadcastCard extends StatefulWidget {
-  final LobbyBroadcastMessage message;
-  final VoidCallback onClose;
-
-  const _BroadcastCard({
-    super.key,
-    required this.message,
-    required this.onClose,
-  });
-
-  @override
-  State<_BroadcastCard> createState() => _BroadcastCardState();
-}
-
-class _BroadcastCardState extends State<_BroadcastCard> {
-  bool _closeHovered = false;
-
-  late final ScrollController _scrollController;
-  Timer? _autoScrollTimer;
-  bool _userScrolling = false;
-  bool _needsScroll = false;
+class _BroadcastCard extends StatelessWidget {
+  final List<LobbyBroadcastMessage> messages;
+  final Set<String> leavingIds;
+  final void Function(String messageId) onDismissMessage;
+  final VoidCallback onDismissAll;
 
   static const double _cardWidth = 300.0;
-  static const double _maxContentHeight = 100.0;
 
-  @override
-  void initState() {
-    super.initState();
-    _scrollController = ScrollController();
-    // 等布局完成后检测是否需要滚动
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAndStartScroll());
-  }
-
-  @override
-  void dispose() {
-    _autoScrollTimer?.cancel();
-    // 先 cancel timer，再 dispose controller，避免 timer 回调访问已 dispose 的 controller
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  // ── 滚动逻辑 ──────────────────────────────────────────────────────────────
-
-  void _checkAndStartScroll() {
-    if (!mounted) return;
-    if (!_scrollController.hasClients) return;
-    if (_scrollController.position.maxScrollExtent > 0) {
-      setState(() => _needsScroll = true);
-      _startAutoScroll();
-    }
-  }
-
-  void _startAutoScroll() {
-    _autoScrollTimer?.cancel();
-    // 延迟 1.5 秒后开始第一轮，给用户时间先读开头
-    _autoScrollTimer =
-        Timer(const Duration(milliseconds: 1500), _scrollToBottom);
-  }
-
-  /// 一次性匀速滚到底部（约 40px/s），到底后停顿再跳回顶部循环
-  void _scrollToBottom() {
-    if (!mounted || _userScrolling) return;
-    if (!_scrollController.hasClients) return;
-
-    final pos = _scrollController.position;
-    final remaining = pos.maxScrollExtent - pos.pixels;
-
-    if (remaining <= 1) {
-      // 已在底部（留 1px 容差），直接进入停顿逻辑
-      _pauseThenReturnToTop();
-      return;
-    }
-
-    final ms = (remaining / 40 * 1000).round().clamp(800, 12000);
-    _scrollController
-        .animateTo(
-          pos.maxScrollExtent,
-          duration: Duration(milliseconds: ms),
-          curve: Curves.linear,
-        )
-        .then((_) {
-          // 必须先检查 mounted 和 hasClients，animateTo 的 Future 在 dispose 后仍会 resolve
-          if (!mounted || !_scrollController.hasClients) return;
-          if (_userScrolling) return;
-          _pauseThenReturnToTop();
-        });
-  }
-
-  void _pauseThenReturnToTop() {
-    _autoScrollTimer?.cancel();
-    _autoScrollTimer = Timer(const Duration(milliseconds: 1500), () {
-      if (!mounted || !_scrollController.hasClients) return;
-      if (_userScrolling) return;
-      _scrollController.jumpTo(0);
-      _autoScrollTimer = Timer(const Duration(seconds: 1), _scrollToBottom);
-    });
-  }
-
-  void _onUserScrollStart() {
-    _userScrolling = true;
-    _autoScrollTimer?.cancel();
-    // 同时中断正在进行的 animateTo（通过 jumpTo 当前位置打断）
-    if (_scrollController.hasClients) {
-      _scrollController.jumpTo(_scrollController.position.pixels);
-    }
-  }
-
-  void _onUserScrollEnd() {
-    _autoScrollTimer?.cancel();
-    _autoScrollTimer = Timer(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      _userScrolling = false;
-      _scrollToBottom();
-    });
-  }
-
-  // ── Build ─────────────────────────────────────────────────────────────────
+  const _BroadcastCard({
+    required this.messages,
+    required this.leavingIds,
+    required this.onDismissMessage,
+    required this.onDismissAll,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -284,7 +202,7 @@ class _BroadcastCardState extends State<_BroadcastCard> {
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildHeader(),
-          _buildBody(),
+          _buildMessageList(),
         ],
       ),
     );
@@ -314,11 +232,7 @@ class _BroadcastCardState extends State<_BroadcastCard> {
               ),
               borderRadius: BorderRadius.circular(7),
             ),
-            child: const Icon(
-              Icons.campaign_rounded,
-              color: Colors.white,
-              size: 14,
-            ),
+            child: const Icon(Icons.campaign_rounded, color: Colors.white, size: 14),
           ),
           const SizedBox(width: 8),
           const Column(
@@ -346,42 +260,282 @@ class _BroadcastCardState extends State<_BroadcastCard> {
             ],
           ),
           const Spacer(),
-          MouseRegion(
-            onEnter: (_) => setState(() => _closeHovered = true),
-            onExit: (_) => setState(() => _closeHovered = false),
-            cursor: SystemMouseCursors.click,
-            child: GestureDetector(
-              onTap: widget.onClose,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
-                  color: _closeHovered
-                      ? Colors.white.withValues(alpha: 0.15)
-                      : Colors.white.withValues(alpha: 0.07),
-                  borderRadius: BorderRadius.circular(5),
-                  border: Border.all(
-                    color: _closeHovered
-                        ? Colors.white.withValues(alpha: 0.25)
-                        : Colors.transparent,
-                  ),
-                ),
-                child: Icon(
-                  Icons.close_rounded,
-                  color: _closeHovered ? Colors.white : Colors.white54,
-                  size: 13,
-                ),
-              ),
-            ),
-          ),
+          _CloseButton(onTap: onDismissAll),
         ],
       ),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildMessageList() {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (int i = 0; i < messages.length; i++) ...[
+            if (i > 0)
+              const Divider(
+                height: 1,
+                thickness: 1,
+                color: Color(0xFF2D3F55),
+                indent: 12,
+                endIndent: 12,
+              ),
+            _AnimatedMessageItem(
+              key: ValueKey(messages[i].messageId),
+              message: messages[i],
+              isLeaving: leavingIds.contains(messages[i].messageId),
+              // 最旧的条目（index 0）向上退出，其余向下退出
+              leaveUpward: i == 0,
+              onDismiss: () => onDismissMessage(messages[i].messageId),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+
+/// 单条广播消息，带独立的滑入/滑出动画
+class _AnimatedMessageItem extends StatefulWidget {
+  final LobbyBroadcastMessage message;
+  final bool isLeaving;
+  /// true = 向上退出（被新消息顶替的最旧条目），false = 向下退出（用户手动关闭）
+  final bool leaveUpward;
+  final VoidCallback onDismiss;
+
+  const _AnimatedMessageItem({
+    super.key,
+    required this.message,
+    required this.isLeaving,
+    required this.leaveUpward,
+    required this.onDismiss,
+  });
+
+  @override
+  State<_AnimatedMessageItem> createState() => _AnimatedMessageItemState();
+}
+
+class _AnimatedMessageItemState extends State<_AnimatedMessageItem>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  // 入场：从底部滑入到原位
+  static const Offset _enterFrom = Offset(0.0, 0.5);
+
+  // 退出偏移：向上退出（被顶替）或向下退出（手动关闭）
+  Offset get _leaveTo =>
+      widget.leaveUpward ? const Offset(0.0, -0.4) : const Offset(0.0, 0.4);
+
+  // 用两个独立 Animation 分别控制入场和退出的位移
+  late Animation<Offset> _enterSlide;
+  late Animation<Offset> _leaveSlide;
+  late Animation<double> _fade;
+  late Animation<double> _size;
+
+  // 标记当前是否处于退出阶段
+  bool _isLeaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _rebuildAnimations();
+    _ctrl.forward(from: 0);
+  }
+
+  void _rebuildAnimations() {
+    final curved = CurvedAnimation(
+      parent: _ctrl,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+
+    // 入场：enterFrom → zero（正向播放）
+    _enterSlide = Tween<Offset>(
+      begin: _enterFrom,
+      end: Offset.zero,
+    ).animate(curved);
+
+    // 退出：zero → leaveTo（正向播放，但我们用 reverse 触发，所以实际是 leaveTo→zero 反向）
+    // 为了让退出时从 zero 滑向 leaveTo，我们直接正向播放一个新的 controller 值
+    // 实现方式：退出时切换到 leaveSlide，并 forward 一个从 0→1 的新动画
+    _leaveSlide = Tween<Offset>(
+      begin: Offset.zero,
+      end: _leaveTo,
+    ).animate(curved);
+
+    _fade = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _ctrl,
+        curve: const Interval(0.0, 0.55, curve: Curves.easeOut),
+        reverseCurve: const Interval(0.3, 1.0, curve: Curves.easeIn),
+      ),
+    );
+
+    _size = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _ctrl,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      ),
+    );
+  }
+
+  @override
+  void didUpdateWidget(_AnimatedMessageItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isLeaving && !oldWidget.isLeaving) {
+      _isLeaving = true;
+      _rebuildAnimations(); // 用最新的 leaveUpward 重建退出动画
+      // 退出：从当前位置（应为 1.0）反向播放 size/fade，同时正向播放 leaveSlide
+      // 用 reverse 统一驱动：leaveSlide begin=zero end=leaveTo，reverse 时 t: 1→0，
+      // 即从 leaveTo→zero，方向反了。
+      // 正确做法：退出时 forward 一个新的 controller，但我们只有一个 controller。
+      // 最简单的解法：退出时直接 reverse()，leaveSlide 用 begin=leaveTo end=zero，
+      // reverse 时 t: 1→0，即从 zero→leaveTo，正好是我们想要的。
+      _leaveSlide = Tween<Offset>(
+        begin: _leaveTo, // reverse 时：end(zero) → begin(leaveTo)，即 zero→leaveTo ✓
+        end: Offset.zero,
+      ).animate(CurvedAnimation(
+        parent: _ctrl,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      ));
+      _ctrl.reverse();
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 入场时用 enterSlide，退出时用 leaveSlide
+    final slideAnim = _isLeaving ? _leaveSlide : _enterSlide;
+
+    return SizeTransition(
+      sizeFactor: _size,
+      axisAlignment: -1.0,
+      child: FadeTransition(
+        opacity: _fade,
+        child: SlideTransition(
+          position: slideAnim,
+          child: _MessageRow(
+            message: widget.message,
+            onDismiss: widget.onDismiss,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+
+class _MessageRow extends StatefulWidget {
+  final LobbyBroadcastMessage message;
+  final VoidCallback onDismiss;
+
+  const _MessageRow({required this.message, required this.onDismiss});
+
+  @override
+  State<_MessageRow> createState() => _MessageRowState();
+}
+
+class _MessageRowState extends State<_MessageRow> {
+  bool _dismissHovered = false;
+
+  late final ScrollController _scrollController;
+  Timer? _autoScrollTimer;
+  bool _userScrolling = false;
+  bool _needsScroll = false;
+
+  static const double _maxContentHeight = 80.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAndStartScroll());
+  }
+
+  @override
+  void dispose() {
+    _autoScrollTimer?.cancel();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _checkAndStartScroll() {
+    if (!mounted || !_scrollController.hasClients) return;
+    if (_scrollController.position.maxScrollExtent > 0) {
+      setState(() => _needsScroll = true);
+      _startAutoScroll();
+    }
+  }
+
+  void _startAutoScroll() {
+    _autoScrollTimer?.cancel();
+    _autoScrollTimer = Timer(const Duration(milliseconds: 1500), _scrollToBottom);
+  }
+
+  void _scrollToBottom() {
+    if (!mounted || _userScrolling || !_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    final remaining = pos.maxScrollExtent - pos.pixels;
+    if (remaining <= 1) {
+      _pauseThenReturnToTop();
+      return;
+    }
+    final ms = (remaining / 40 * 1000).round().clamp(800, 12000);
+    _scrollController
+        .animateTo(pos.maxScrollExtent,
+            duration: Duration(milliseconds: ms), curve: Curves.linear)
+        .then((_) {
+      if (!mounted || !_scrollController.hasClients || _userScrolling) return;
+      _pauseThenReturnToTop();
+    });
+  }
+
+  void _pauseThenReturnToTop() {
+    _autoScrollTimer?.cancel();
+    _autoScrollTimer = Timer(const Duration(milliseconds: 1500), () {
+      if (!mounted || !_scrollController.hasClients || _userScrolling) return;
+      _scrollController.jumpTo(0);
+      _autoScrollTimer = Timer(const Duration(seconds: 1), _scrollToBottom);
+    });
+  }
+
+  void _onUserScrollStart() {
+    _userScrolling = true;
+    _autoScrollTimer?.cancel();
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(_scrollController.position.pixels);
+    }
+  }
+
+  void _onUserScrollEnd() {
+    _autoScrollTimer?.cancel();
+    _autoScrollTimer = Timer(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      _userScrolling = false;
+      _scrollToBottom();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -402,11 +556,10 @@ class _BroadcastCardState extends State<_BroadcastCard> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 4),
                 NotificationListener<ScrollNotification>(
                   onNotification: (n) {
-                    if (n is ScrollStartNotification &&
-                        n.dragDetails != null) {
+                    if (n is ScrollStartNotification && n.dragDetails != null) {
                       _onUserScrollStart();
                     } else if (n is ScrollEndNotification) {
                       _onUserScrollEnd();
@@ -414,9 +567,7 @@ class _BroadcastCardState extends State<_BroadcastCard> {
                     return false;
                   },
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxHeight: _maxContentHeight,
-                    ),
+                    constraints: const BoxConstraints(maxHeight: _maxContentHeight),
                     child: RawScrollbar(
                       controller: _scrollController,
                       thumbVisibility: _needsScroll,
@@ -446,7 +597,67 @@ class _BroadcastCardState extends State<_BroadcastCard> {
               ],
             ),
           ),
+          const SizedBox(width: 4),
+          MouseRegion(
+            onEnter: (_) => setState(() => _dismissHovered = true),
+            onExit: (_) => setState(() => _dismissHovered = false),
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: widget.onDismiss,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 150),
+                opacity: _dismissHovered ? 1.0 : 0.4,
+                child: const Icon(Icons.close_rounded, color: Colors.white, size: 14),
+              ),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+
+class _CloseButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _CloseButton({required this.onTap});
+
+  @override
+  State<_CloseButton> createState() => _CloseButtonState();
+}
+
+class _CloseButtonState extends State<_CloseButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: _hovered
+                ? Colors.white.withValues(alpha: 0.15)
+                : Colors.white.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(5),
+            border: Border.all(
+              color: _hovered
+                  ? Colors.white.withValues(alpha: 0.25)
+                  : Colors.transparent,
+            ),
+          ),
+          child: Icon(
+            Icons.close_rounded,
+            color: _hovered ? Colors.white : Colors.white54,
+            size: 13,
+          ),
+        ),
       ),
     );
   }
@@ -462,8 +673,7 @@ class _Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const double size = 38;
-
+    const double size = 36;
     if (avatarUrl != null && avatarUrl!.isNotEmpty) {
       return ClipOval(
         child: Image.network(
@@ -489,7 +699,6 @@ class _Avatar extends StatelessWidget {
       Color(0xFFF59E0B),
     ];
     final color = colors[nickname.hashCode.abs() % colors.length];
-
     return Container(
       width: size,
       height: size,
@@ -499,7 +708,7 @@ class _Avatar extends StatelessWidget {
         initial,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 16,
+          fontSize: 15,
           fontWeight: FontWeight.w700,
         ),
       ),
