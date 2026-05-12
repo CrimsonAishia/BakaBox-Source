@@ -47,6 +47,9 @@ class _LobbySceneState extends State<LobbyScene> with TickerProviderStateMixin {
   /// 目标地图 ID（等待加载的）
   String? _targetMapId;
 
+  /// 当前鼠标光标
+  MouseCursor _currentCursor = SystemMouseCursors.basic;
+
   @override
   void initState() {
     super.initState();
@@ -206,17 +209,36 @@ class _LobbySceneState extends State<LobbyScene> with TickerProviderStateMixin {
             }
           },
           child: MouseRegion(
+            cursor: _currentCursor,
             onHover: (event) {
               _game?.handleHoverMove(event);
+              _updateCursor();
             },
             onExit: (event) {
               _game?.handleHoverExit();
+              if (_currentCursor != SystemMouseCursors.basic) {
+                setState(() {
+                  _currentCursor = SystemMouseCursors.basic;
+                });
+              }
             },
             child: _buildMainContent(isDark),
           ),
         );
       },
     );
+  }
+
+  /// 根据游戏 hover 状态更新鼠标光标
+  void _updateCursor() {
+    final newCursor = (_game != null && _game!.isHoveringInteractablePlayer)
+        ? SystemMouseCursors.click
+        : SystemMouseCursors.basic;
+    if (newCursor != _currentCursor) {
+      setState(() {
+        _currentCursor = newCursor;
+      });
+    }
   }
 
   Widget _buildMainContent(bool isDark) {

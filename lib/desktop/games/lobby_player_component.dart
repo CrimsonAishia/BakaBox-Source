@@ -670,14 +670,15 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
   @override
   bool containsLocalPoint(Vector2 point) {
-    // 设置合理的点击和悬停判定区域（以角色为中心的垂直矩形，包含名字和状态区域）
+    // 判定区域仅限角色贴图本身的范围（不含名字和状态文字区域的额外边距）
     final cx = _spriteWidth / 2;
-    final halfWidth =
-        math.max(_actualCharWidth, _characterDisplayWidth) / 2 + 16.0;
+    final halfWidth = _characterDisplayWidth / 2;
 
     if (point.x < cx - halfWidth || point.x > cx + halfWidth) return false;
-    // 从名字区域（大概是 SlotTopY - 40）到脚底信息区域
-    if (point.y < _characterSlotTopY - 40 || point.y > size.y) return false;
+    // 仅角色贴图的垂直范围
+    if (point.y < _characterSlotTopY || point.y > _characterSlotTopY + _characterDisplayHeight) {
+      return false;
+    }
 
     return true;
   }
@@ -1014,76 +1015,9 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
   @override
   void render(Canvas canvas) {
-    // 右键菜单目标：绘制脉冲闪动边框
-    if (_isContextMenuTarget) {
-      canvas.save();
-      if (scale.x < 0) {
-        final centerX = size.x / 2;
-        canvas.translate(centerX, 0);
-        canvas.scale(-1, 1);
-        canvas.translate(-centerX, 0);
-      }
-
-      final charX = (_spriteWidth - _characterDisplayWidth) / 2;
-      final charY = _characterSlotTopY;
-
-      final rect = Rect.fromLTWH(
-        charX - 4,
-        charY - 4,
-        _characterDisplayWidth + 8,
-        _characterDisplayHeight + 8,
-      );
-      final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(8));
-
-      // 脉冲效果：透明度在 0.4~1.0 之间循环
-      final pulse = (math.sin(_contextMenuPulse * math.pi * 2) + 1.0) / 2.0;
-      final alpha = 0.4 + pulse * 0.6;
-
-      final glowPaint = Paint()
-        ..color = Colors.orangeAccent.withValues(alpha: alpha * 0.7)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.outer, 10.0);
-
-      final strokePaint = Paint()
-        ..color = Colors.orangeAccent.withValues(alpha: alpha)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0;
-
-      canvas.drawRRect(rrect, glowPaint);
-      canvas.drawRRect(rrect, strokePaint);
-      canvas.restore();
-    } else if (_isHovered) {
-      // 普通悬停高亮（仅在非右键菜单目标时显示）
-      canvas.save();
-      if (scale.x < 0) {
-        final centerX = size.x / 2;
-        canvas.translate(centerX, 0);
-        canvas.scale(-1, 1);
-        canvas.translate(-centerX, 0);
-      }
-
-      final charX = (_spriteWidth - _characterDisplayWidth) / 2;
-      final charY = _characterSlotTopY;
-
-      final rect = Rect.fromLTWH(
-        charX - 4,
-        charY - 4,
-        _characterDisplayWidth + 8,
-        _characterDisplayHeight + 8,
-      );
-      final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(8));
-
-      final glowPaint = Paint()
-        ..color = Colors.white.withValues(alpha: 0.6)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.outer, 8.0);
-
-      final strokePaint = Paint()
-        ..color = Colors.white.withValues(alpha: 0.9)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0;
-
-      canvas.drawRRect(rrect, glowPaint);
-      canvas.drawRRect(rrect, strokePaint);
-      canvas.restore();
+    // 右键菜单目标或悬停高亮：使用多向偏移渲染法绘制角色轮廓描边
+    if (_isContextMenuTarget || _isHovered) {
+      _renderSpriteOutline(canvas);
     }
 
     // 渲染名字标签
@@ -1102,6 +1036,119 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     // 渲染聊天气泡
     if (_showChatBubble && _bubblePhase != 0) {
       _renderChatBubble(canvas);
+    }
+  }
+
+  /// 多向偏移渲染法：绘制角色精灵的轮廓描边高亮
+  /// 原理：用纯色滤镜将角色变为高亮色，向 8 个方向各偏移几像素绘制作为底色，
+  /// 最后在正中间绘制原始角色覆盖在上面，形成贴合角色形状的描边效果。
+  void _renderSpriteOutline(Canvas canvas) {
+    // 只有贴图加载完成才能使用此效果
+    if (!_spriteLoaded) return;
+
+    // 模型切换期间（淡出/淡入），描边也跟随透明度变化
+    if (_spriteOpacity <= 0.0) return;
+
+    // 确定描边颜色和宽度
+    Color outlineColor;
+    double outlineWidth;
+    double glowAlpha;
+
+    if (_isContextMenuTarget) {
+      // 右键菜单目标：橙色脉冲描边
+      final pulse = (math.sin(_contextMenuPulse * math.pi * 2) + 1.0) / 2.0;
+      final alpha = (0.6 + pulse * 0.4) * _spriteOpacity;
+      outlineColor = Colors.orangeAccent.withValues(alpha: alpha);
+      outlineWidth = 2.5;
+      glowAlpha = alpha * 0.5;
+    } else {
+      // 普通悬停：白色描边
+      outlineColor = Colors.white.withValues(alpha: 0.95 * _spriteOpacity);
+      outlineWidth = 2.0;
+      glowAlpha = 0.4 * _spriteOpacity;
+    }
+
+    // 创建纯色滤镜 Paint：保留图片透明度，将不透明像素替换为 outlineColor
+    final outlinePaint = Paint()
+      ..colorFilter = ColorFilter.mode(outlineColor, BlendMode.srcIn);
+
+    // 外发光 Paint（模糊效果增强视觉）
+    final glowPaint = Paint()
+      ..colorFilter = ColorFilter.mode(
+        outlineColor.withValues(alpha: glowAlpha),
+        BlendMode.srcIn,
+      )
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.0);
+
+    // 8 个方向的偏移量
+    final offsets = [
+      Offset(-outlineWidth, -outlineWidth),
+      Offset(0, -outlineWidth),
+      Offset(outlineWidth, -outlineWidth),
+      Offset(-outlineWidth, 0),
+      Offset(outlineWidth, 0),
+      Offset(-outlineWidth, outlineWidth),
+      Offset(0, outlineWidth),
+      Offset(outlineWidth, outlineWidth),
+    ];
+
+    // 获取当前精灵图的 Sprite 对象
+    final sprite = _spriteComponent?.sprite;
+    final animSprite = _animComponent?.animationTicker?.getSprite();
+
+    final activeSprite = sprite ?? animSprite;
+    if (activeSprite == null) return;
+
+    // 角色贴图在组件内的位置
+    final charX = (_spriteWidth - _characterDisplayWidth) / 2;
+    final charY = _characterSlotTopY;
+
+    // 应用行走偏移（与 _applySpriteWalkOffset 保持一致）
+    double walkOffsetX = 0;
+    double walkOffsetY = 0;
+    double walkAngle = 0;
+    if (_walkAmplitude > 0) {
+      final phase = _walkCycleTime * math.pi * 2;
+      walkOffsetY = -(math.sin(phase) * _walkBobAmplitude * _walkAmplitude);
+      walkOffsetX = math.cos(phase * 0.5) * _walkSwayAmplitude * _walkAmplitude;
+      walkAngle = math.sin(phase) * _walkTiltAngle * _walkAmplitude;
+    }
+
+    final baseX = charX + walkOffsetX;
+    final baseY = charY + walkOffsetY;
+
+    // 先绘制外发光层（8 方向偏移，带模糊）
+    for (final offset in offsets) {
+      canvas.save();
+      canvas.translate(baseX + offset.dx, baseY + offset.dy);
+      if (walkAngle != 0) {
+        canvas.translate(_characterDisplayWidth / 2, _characterDisplayHeight / 2);
+        canvas.rotate(walkAngle);
+        canvas.translate(-_characterDisplayWidth / 2, -_characterDisplayHeight / 2);
+      }
+      activeSprite.render(
+        canvas,
+        size: Vector2(_characterDisplayWidth, _characterDisplayHeight),
+        overridePaint: glowPaint,
+      );
+      canvas.restore();
+    }
+
+    // 再绘制纯色描边层（8 方向偏移，清晰边缘）
+    for (final offset in offsets) {
+      canvas.save();
+      canvas.translate(baseX + offset.dx, baseY + offset.dy);
+      if (walkAngle != 0) {
+        canvas.translate(_characterDisplayWidth / 2, _characterDisplayHeight / 2);
+        canvas.rotate(walkAngle);
+        canvas.translate(-_characterDisplayWidth / 2, -_characterDisplayHeight / 2);
+      }
+      activeSprite.render(
+        canvas,
+        size: Vector2(_characterDisplayWidth, _characterDisplayHeight),
+        overridePaint: outlinePaint,
+      );
+      canvas.restore();
     }
   }
 
