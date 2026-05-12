@@ -2297,13 +2297,14 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
               avatarUrl: broadcast.avatarUrl,
             ),
           );
-        } else {
+        } else if (broadcastNotificationType == BroadcastNotificationType.software) {
           // 软件内浮窗通知
           NotificationWindowService().showBroadcastNotification(
             nickname: broadcast.nickname,
             content: broadcast.content,
           );
         }
+        // disabled：不发送任何额外通知
 
         emit(state.copyWith(messages: updatedMessages));
         break;

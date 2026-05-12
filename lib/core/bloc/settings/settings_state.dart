@@ -109,6 +109,7 @@ extension ServerSortModeExtension on ServerSortMode {
 enum BroadcastNotificationType {
   software, // 软件内通知（浮窗）
   system, // 系统通知
+  disabled, // 关闭广播通知
 }
 
 /// 广播通知方式扩展
@@ -119,6 +120,8 @@ extension BroadcastNotificationTypeExtension on BroadcastNotificationType {
         return '软件通知';
       case BroadcastNotificationType.system:
         return '系统通知';
+      case BroadcastNotificationType.disabled:
+        return '关闭';
     }
   }
 
@@ -128,6 +131,8 @@ extension BroadcastNotificationTypeExtension on BroadcastNotificationType {
         return '在软件内以浮窗形式显示广播消息';
       case BroadcastNotificationType.system:
         return '使用系统通知栏显示广播消息（即使软件在后台也能收到）';
+      case BroadcastNotificationType.disabled:
+        return '不显示任何广播通知，浮动窗口和系统通知均关闭';
     }
   }
 }
