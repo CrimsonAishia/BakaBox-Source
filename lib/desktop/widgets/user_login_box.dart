@@ -164,6 +164,60 @@ class _LoginPromptView extends StatelessWidget {
               child: const Text('关联账户', style: TextStyle(fontSize: 13)),
             ),
           ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 32,
+                  child: OutlinedButton.icon(
+                    onPressed: () => launchUrl(
+                      Uri.parse('https://bbs.zombieden.cn/forum.php'),
+                    ),
+                    icon: Icon(Icons.forum_outlined, size: 14,
+                        color: _getSecondaryTextColor(isDark)),
+                    label: Text('论坛入口',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: _getSecondaryTextColor(isDark),
+                        )),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                          color: _getBorderColor(isDark)),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6)),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: SizedBox(
+                  height: 32,
+                  child: OutlinedButton.icon(
+                    onPressed: () => launchUrl(
+                      Uri.parse('https://baka.aishia.cc'),
+                    ),
+                    icon: Icon(Icons.language, size: 14,
+                        color: _getSecondaryTextColor(isDark)),
+                    label: Text('官方网站',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: _getSecondaryTextColor(isDark),
+                        )),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                          color: _getBorderColor(isDark)),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6)),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -182,8 +236,6 @@ class _LoggedInView extends StatelessWidget {
     required this.onToggleExpand,
   });
 
-  static const double _collapsedHeight = 120.0;
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -200,11 +252,10 @@ class _LoggedInView extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 折叠状态的主卡片 - 固定高度
+          // 折叠状态的主卡片
           InkWell(
             onTap: onToggleExpand,
-            child: Container(
-              height: _collapsedHeight,
+            child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
@@ -266,6 +317,61 @@ class _LoggedInView extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+          ),
+          // 论坛入口 & 官方网站 - 始终可见
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 32,
+                    child: OutlinedButton.icon(
+                      onPressed: () => launchUrl(
+                        Uri.parse('https://bbs.zombieden.cn/forum.php'),
+                      ),
+                      icon: Icon(Icons.forum_outlined, size: 14,
+                          color: _getSecondaryTextColor(isDark)),
+                      label: Text('论坛入口',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: _getSecondaryTextColor(isDark),
+                          )),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: _getBorderColor(isDark)),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6)),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SizedBox(
+                    height: 32,
+                    child: OutlinedButton.icon(
+                      onPressed: () => launchUrl(
+                        Uri.parse('https://baka.aishia.cc'),
+                      ),
+                      icon: Icon(Icons.language, size: 14,
+                          color: _getSecondaryTextColor(isDark)),
+                      label: Text('官方网站',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: _getSecondaryTextColor(isDark),
+                          )),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: _getBorderColor(isDark)),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6)),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           AnimatedCrossFade(
