@@ -604,6 +604,20 @@ class _ProfileMobileState extends State<ProfileMobile> {
         children: [
           _buildListItem(
             context,
+            icon: Icons.live_tv,
+            iconColor: const Color(0xFF00A1D6),
+            title: '直播 / 视频',
+            subtitle: '观看B站直播和视频',
+            onTap: () => context.push(MobileRoutes.bilibiliContent),
+          ),
+          Divider(
+            height: 1,
+            indent: 62,
+            endIndent: 16,
+            color: theme.dividerColor.withValues(alpha: 0.3),
+          ),
+          _buildListItem(
+            context,
             icon: MdiIcons.cardsOutline,
             iconColor: const Color(0xFFEC4899),
             title: '人物图鉴',
