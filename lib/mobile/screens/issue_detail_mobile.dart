@@ -22,6 +22,11 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   final _commentEditorKey = GlobalKey<RichTextEditorState>();
   List<String> _commentImageUrls = [];
   
+  // 回复相关
+  IssueComment? _replyToComment;
+  final Map<int, GlobalKey> _commentKeys = {};
+  int? _highlightedCommentId;
+  
   // 评论草稿相关
   bool _showCommentDraftPrompt = false;
   DraftData? _savedCommentDraft;
@@ -104,7 +109,11 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       return;
     }
     context.read<IssueDetailBloc>().add(IssueDetailSetUser(authState.userInfo));
-    context.read<IssueDetailBloc>().add(IssueDetailAddComment(content, images: _commentImageUrls));
+    context.read<IssueDetailBloc>().add(IssueDetailAddComment(
+      content,
+      images: _commentImageUrls,
+      replyToId: _replyToComment?.id,
+    ));
     
     // 提交后删除草稿
     DraftService().deleteDraft('comment_${widget.issueId}');
@@ -113,6 +122,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     _commentEditorKey.currentState?.clearImages();
     setState(() {
       _commentImageUrls = [];
+      _replyToComment = null;
     });
     FocusScope.of(context).unfocus();
   }
@@ -124,6 +134,21 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       return;
     }
     context.read<IssueDetailBloc>().add(const IssueDetailToggleVote());
+  }
+
+  void _setReplyTo(IssueComment comment) {
+    setState(() {
+      _replyToComment = comment;
+    });
+    // 打开评论面板
+    final state = context.read<IssueDetailBloc>().state;
+    _showCommentDialog(state);
+  }
+
+  void _cancelReply() {
+    setState(() {
+      _replyToComment = null;
+    });
   }
 
   Future<void> _saveCommentDraft() async {
@@ -1082,11 +1107,31 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   /// 构建评论项
   Widget _buildCommentItem(IssueComment comment, int index) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final isLast = index == context.read<IssueDetailBloc>().state.comments.length - 1;
+    final allComments = context.read<IssueDetailBloc>().state.comments;
+    final issue = context.read<IssueDetailBloc>().state.issue;
+    final isOpen = issue?.issueStatus.isOpen ?? false;
     
-    return Container(
+    // 查找被回复的评论
+    final replyTarget = comment.replyToId != null && comment.replyToId! > 0
+        ? allComments.where((c) => c.id == comment.replyToId).firstOrNull
+        : null;
+    
+    final commentKey = _commentKeys.putIfAbsent(comment.id, () => GlobalKey());
+    final isHighlighted = _highlightedCommentId == comment.id;
+    
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+      key: commentKey,
       padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: BoxDecoration(
+        color: isHighlighted
+            ? (isDark
+                ? const Color(0xFFEAB308).withValues(alpha: 0.15)
+                : const Color(0xFFFEF08A).withValues(alpha: 0.5))
+            : Colors.transparent,
         border: isLast
             ? null
             : Border(
@@ -1094,6 +1139,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                   color: theme.dividerColor.withValues(alpha: 0.5),
                 ),
               ),
+        borderRadius: isHighlighted ? BorderRadius.circular(8) : null,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1150,31 +1196,63 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 // 作者信息行
                 Row(
                   children: [
-                    Text(
-                      comment.authorName,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: theme.colorScheme.onSurface,
+                    Flexible(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              comment.authorName,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                          if (comment.isAdmin) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF0080FF), Color(0xFF0066CC)],
+                                ),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                '管理员',
+                                style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                          if (replyTarget != null) ...[
+                            const SizedBox(width: 6),
+                            Icon(
+                              MdiIcons.arrowRightThin,
+                              size: 14,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                replyTarget.authorName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF0080FF),
+                                  fontSize: 12,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                    if (comment.isAdmin) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF0080FF), Color(0xFF0066CC)],
-                          ),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          '管理员',
-                          style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ],
-                    const Spacer(),
+                    const SizedBox(width: 8),
                     Icon(
                       MdiIcons.clockOutline,
                       size: 12,
@@ -1190,6 +1268,11 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                     ),
                   ],
                 ),
+                // 回复引用
+                if (replyTarget != null) ...[
+                  const SizedBox(height: 6),
+                  _buildReplyQuote(replyTarget),
+                ],
                 const SizedBox(height: 8),
                 // 评论内容
                 RichTextViewer(
@@ -1212,10 +1295,120 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                     borderRadius: 6,
                   ),
                 ],
+                // 回复按钮 - 右下角
+                if (isOpen) ...[
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: _buildReplyButton(comment),
+                  ),
+                ],
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// 构建回复按钮
+  Widget _buildReplyButton(IssueComment comment) {
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _setReplyTo(comment),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: theme.dividerColor.withValues(alpha: 0.5),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                MdiIcons.replyOutline,
+                size: 16,
+                color: const Color(0xFF0080FF),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '回复',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF0080FF),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建回复引用
+  Widget _buildReplyQuote(IssueComment replyTarget) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    return GestureDetector(
+      onTap: () {
+        final context = _commentKeys[replyTarget.id]?.currentContext;
+        if (context != null) {
+          Scrollable.ensureVisible(
+            context,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            alignment: 0.3,
+          );
+          if (mounted) {
+            setState(() {
+              _highlightedCommentId = replyTarget.id;
+            });
+            Future.delayed(const Duration(milliseconds: 1500), () {
+              if (mounted && _highlightedCommentId == replyTarget.id) {
+                setState(() {
+                  _highlightedCommentId = null;
+                });
+              }
+            });
+          }
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isDark
+              ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
+              : const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.circular(6),
+          border: Border(
+            left: BorderSide(
+              width: 3,
+              color: isDark ? const Color(0xFF475569) : const Color(0xFFD1D5DB),
+            ),
+          ),
+        ),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 60),
+          child: ClipRect(
+            child: RichTextViewer(
+              content: replyTarget.content,
+              compact: true,
+              textStyle: TextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1442,210 +1635,295 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) {
-        final theme = Theme.of(context);
+      builder: (sheetContext) {
+        final theme = Theme.of(sheetContext);
+        final isDark = theme.brightness == Brightness.dark;
         
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: Container(
-            height: MediaQuery.of(context).size.height * 0.75,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            child: Column(
-              children: [
-                // 顶部拖动条
-                Container(
-                  margin: const EdgeInsets.only(top: 12, bottom: 8),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            final viewInsets = MediaQuery.of(sheetContext).viewInsets.bottom;
+            final screenHeight = MediaQuery.of(sheetContext).size.height;
+            final topPadding = MediaQuery.of(sheetContext).padding.top;
+            // 面板最大高度：屏幕高度减去键盘高度和顶部安全区，留一点间距
+            final maxSheetHeight = screenHeight - viewInsets - topPadding - 20;
+            
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: viewInsets,
+              ),
+              child: Container(
+                height: maxSheetHeight.clamp(300.0, screenHeight * 0.85),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                 ),
-                // 标题栏
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: theme.dividerColor.withValues(alpha: 0.5),
+                child: Column(
+                  children: [
+                    // 顶部拖动条
+                    Container(
+                      margin: const EdgeInsets.only(top: 12, bottom: 8),
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0080FF).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          MdiIcons.commentEditOutline,
-                          size: 18,
-                          color: const Color(0xFF0080FF),
+                    // 标题栏
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: theme.dividerColor.withValues(alpha: 0.5),
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Text(
-                        '写评论',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      const Spacer(),
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => Navigator.of(context).pop(),
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
+                      child: Row(
+                        children: [
+                          Container(
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest,
-                              shape: BoxShape.circle,
+                              color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
-                              Icons.close_rounded,
-                              size: 20,
-                              color: theme.colorScheme.onSurfaceVariant,
+                              MdiIcons.commentEditOutline,
+                              size: 18,
+                              color: const Color(0xFF0080FF),
                             ),
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // 编辑器
-                Expanded(
-                  child: Column(
-                    children: [
-                      // 评论草稿提示条
-                      if (_showCommentDraftPrompt) ...[
-                        _buildCommentDraftPrompt(),
-                        const SizedBox(height: 12),
-                      ],
-                      // 编辑器
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: RichTextEditor(
-                            key: _commentEditorKey,
-                            controller: _commentController,
-                            hintText: '写下你的评论...',
-                            maxLength: 500,
-                            maxImages: 5,
-                            compactMode: true,
-                            draftId: 'comment_${widget.issueId}',
-                            enableDraftManualSave: true,
-                            onImagesChanged: (urls) {
-                              setState(() {
-                                _commentImageUrls = urls;
-                              });
-                            },
+                          const SizedBox(width: 12),
+                          Text(
+                            _replyToComment != null ? '回复评论' : '写评论',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.onSurface,
+                            ),
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // 提交按钮
-                Container(
-                  padding: EdgeInsets.only(
-                    left: 16,
-                    right: 16,
-                    top: 12,
-                    bottom: MediaQuery.of(context).padding.bottom + 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
-                    border: Border(
-                      top: BorderSide(
-                        color: theme.dividerColor.withValues(alpha: 0.5),
+                          const Spacer(),
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.of(sheetContext).pop();
+                                _cancelReply();
+                              },
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.surfaceContainerHighest,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.close_rounded,
+                                  size: 20,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.colorScheme.shadow.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, -2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      // 保存草稿按钮
-                      OutlinedButton.icon(
-                        onPressed: state.isSubmitting ? null : _saveCommentDraft,
-                        icon: const Icon(Icons.save_outlined, size: 16),
-                        label: const Text('草稿'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF0080FF),
-                          side: const BorderSide(color: Color(0xFF0080FF)),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      // 发表评论按钮
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: state.isSubmitting
-                              ? null
-                              : () {
-                                  _submitComment();
-                                  Navigator.of(context).pop();
+                    // 编辑器
+                    Expanded(
+                      child: Column(
+                        children: [
+                          // 回复提示条
+                          if (_replyToComment != null)
+                            _buildReplyBar(isDark, setSheetState),
+                          // 评论草稿提示条
+                          if (_showCommentDraftPrompt) ...[
+                            _buildCommentDraftPrompt(),
+                            const SizedBox(height: 12),
+                          ],
+                          // 编辑器
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: RichTextEditor(
+                                key: _commentEditorKey,
+                                controller: _commentController,
+                                hintText: _replyToComment != null
+                                    ? '回复 ${_replyToComment!.authorName}...'
+                                    : '写下你的评论...',
+                                maxLength: 500,
+                                maxImages: 5,
+                                compactMode: true,
+                                draftId: 'comment_${widget.issueId}',
+                                enableDraftManualSave: true,
+                                onImagesChanged: (urls) {
+                                  setState(() {
+                                    _commentImageUrls = urls;
+                                  });
                                 },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0080FF),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
-                            elevation: 0,
                           ),
-                          child: state.isSubmitting
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(MdiIcons.send, size: 18),
-                                    const SizedBox(width: 8),
-                                    const Text(
-                                      '发表评论',
-                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                                    ),
-                                  ],
-                                ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    // 提交按钮
+                    Container(
+                      padding: EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                        top: 12,
+                        bottom: MediaQuery.of(sheetContext).padding.bottom + 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surface,
+                        border: Border(
+                          top: BorderSide(
+                            color: theme.dividerColor.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: theme.colorScheme.shadow.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, -2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          // 保存草稿按钮
+                          OutlinedButton.icon(
+                            onPressed: state.isSubmitting ? null : _saveCommentDraft,
+                            icon: const Icon(Icons.save_outlined, size: 16),
+                            label: const Text('草稿'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF0080FF),
+                              side: const BorderSide(color: Color(0xFF0080FF)),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // 发表评论按钮
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: state.isSubmitting
+                                  ? null
+                                  : () {
+                                      _submitComment();
+                                      Navigator.of(sheetContext).pop();
+                                    },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0080FF),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: state.isSubmitting
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(MdiIcons.send, size: 18),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          _replyToComment != null ? '回复' : '发表评论',
+                                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                                        ),
+                                      ],
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
+    ).then((_) {
+      // 面板关闭时清除回复状态
+      if (_replyToComment != null) {
+        _cancelReply();
+      }
+    });
+  }
+
+  /// 构建回复提示条
+  Widget _buildReplyBar(bool isDark, StateSetter setSheetState) {
+    if (_replyToComment == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF0080FF).withValues(alpha: 0.1)
+            : const Color(0xFFEFF6FF),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(MdiIcons.replyOutline, size: 16, color: const Color(0xFF0080FF)),
+          const SizedBox(width: 8),
+          Text(
+            '回复 ',
+            style: TextStyle(
+              fontSize: 13,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          Flexible(
+            child: Text(
+              _replyToComment!.authorName,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF0080FF),
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _replyToComment = null;
+              });
+              setSheetState(() {});
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Icon(
+                Icons.close,
+                size: 16,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -99,13 +99,33 @@ class RichTextEditorState extends State<RichTextEditor> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    if (widget.compactMode) {
+      // 在 compactMode 下使用 LayoutBuilder 动态决定是否显示底部栏
+      // 避免键盘弹出时 Column 溢出
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          // toolbar 约 44px, bottomBar 约 70px
+          // 如果可用高度不足以同时容纳三者，隐藏底部栏
+          final showBottomBar = constraints.maxHeight > 180;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildToolbar(context),
+              Expanded(child: _buildEditor(context)),
+              if (showBottomBar) _buildBottomBar(context, isDark),
+            ],
+          );
+        },
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildToolbar(context),
-        // 编辑器区域
+        // 编辑器区域 - 填充剩余空间
         Expanded(child: _buildEditor(context)),
-        // 底部栏（包含附件和状态信息，固定高度）
+        // 底部栏（包含附件和状态信息）
         _buildBottomBar(context, isDark),
       ],
     );
@@ -481,7 +501,7 @@ class RichTextEditorState extends State<RichTextEditor> {
           padding: const EdgeInsets.all(16),
           autoFocus: false,
           expands: true,
-          minHeight: widget.minHeight ?? 200,
+          minHeight: widget.compactMode ? null : (widget.minHeight ?? 200),
           customStyles: DefaultStyles(
             paragraph: DefaultTextBlockStyle(
               TextStyle(
