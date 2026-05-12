@@ -178,6 +178,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   /// AuthService 登录状态变化监听器回调
   late final LoginStateChangedCallback _authStateListener;
 
+  /// 模型切换前的 spriteId（用于 reject 时回滚）
+  String? _previousSpriteId;
+
   /// 处理 AuthService 登录状态变化
   void _onAuthStateChanged(bool isLoggedIn) {
     if (_isDisposed) return;
@@ -239,6 +242,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _selfServerUserId = null;
     _selfMapId = null;
     _lastSentStatusText = null;
+    _previousSpriteId = null;
     _isLobbyEntered = true;
     _isDisposed = false;
 
@@ -810,9 +814,14 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     LobbySpriteSelected event,
     Emitter<LobbyState> emit,
   ) async {
+    // _previousSpriteId 记录"最后一次服务端确认的 spriteId"
+    // 首次切换时初始化为当前值（即服务端已确认的值）
+    _previousSpriteId ??= state.selectedSpriteId;
+
     emit(
       state.copyWith(
         selectedSpriteId: event.spriteId,
+        isSpriteChangePending: true,
         users: state.users
             .map(
               (user) => user.isSelf ? user.copyWith(spriteId: event.spriteId) : user,
@@ -1957,6 +1966,36 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           ),
         );
         break;
+      case 'profile.sprite.change.success':
+        // 服务端确认切换成功，同步到服务端确认的 spriteId
+        final successResp = envelope.spriteChangeSuccessResponse;
+        final confirmedSpriteId = successResp.spriteId;
+
+        if (confirmedSpriteId.isNotEmpty) {
+          _previousSpriteId = confirmedSpriteId;
+
+          // 如果当前 state 与服务端确认的不一致（reject 回滚后又收到了之前的 success），
+          // 同步到服务端确认值
+          if (state.selectedSpriteId != confirmedSpriteId) {
+            emit(
+              state.copyWith(
+                selectedSpriteId: confirmedSpriteId,
+                isSpriteChangePending: false,
+                users: state.users
+                    .map(
+                      (user) => user.isSelf ? user.copyWith(spriteId: confirmedSpriteId) : user,
+                    )
+                    .toList(growable: false),
+              ),
+            );
+          } else {
+            emit(state.copyWith(isSpriteChangePending: false));
+          }
+        } else {
+          _previousSpriteId = state.selectedSpriteId;
+          emit(state.copyWith(isSpriteChangePending: false));
+        }
+        break;
       case 'profile.sprite.change.reject':
         final spriteRejectResp = envelope.spriteChangeRejectResponse;
         final reason = spriteRejectResp.reason;
@@ -1968,14 +2007,41 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           case 'invalid_payload':
             message = '角色外观切换请求格式错误';
             break;
+          case 'anonymous_user_not_allowed':
+            message = '匿名用户无法更换角色外观';
+            break;
+          case 'rate_limited':
+            message = '切换过于频繁，请稍后再试';
+            break;
           default:
             message = '角色外观切换失败';
         }
-        emit(
-          state.copyWith(
-            transientNotice: message,
-          ),
-        );
+
+        // 回滚到切换前的 spriteId
+        final rollbackSpriteId = _previousSpriteId;
+        _previousSpriteId = null;
+
+        if (rollbackSpriteId != null && rollbackSpriteId != state.selectedSpriteId) {
+          emit(
+            state.copyWith(
+              selectedSpriteId: rollbackSpriteId,
+              isSpriteChangePending: false,
+              users: state.users
+                  .map(
+                    (user) => user.isSelf ? user.copyWith(spriteId: rollbackSpriteId) : user,
+                  )
+                  .toList(growable: false),
+              transientNotice: message,
+            ),
+          );
+        } else {
+          emit(
+            state.copyWith(
+              isSpriteChangePending: false,
+              transientNotice: message,
+            ),
+          );
+        }
         break;
       case 'profile.anonymous.changed':
         final anonChangedResp = envelope.anonymousChangedResponse;
