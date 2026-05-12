@@ -63,6 +63,7 @@ message LobbyEnvelope {
     SystemKickedResponse system_kicked_response = 77;
     SteamBindSuccessResponse steam_bind_success_response = 78;
     SpriteChangeSuccessResponse sprite_change_success_response = 79;
+    PresenceDeltaResponse presence_delta_response = 80;
   }
 }
 
@@ -168,6 +169,7 @@ message LoginRequest {
 // 客户端流程：joinMatch() → [可选 login] → enter → 服务端广播 presence.join
 message EnterRequest {
   // 无额外参数，服务端从 stagingMap 取当前身份
+  int32 protocol_features = 1;  // 位掩码：bit0=支持 presence.delta，bit1=支持排队
 }
 
 message LogoutRequest {
@@ -278,7 +280,7 @@ message IdentityChangedResponse {
   string avatar_url = 5;
   string sprite_id = 6;
   bool is_anonymous = 7;
-  string business_user_id = 8;  // 业务 ID（登出时为空字符串）
+  string business_user_id = 8;  // 新业务 ID（logout 时为空）
 }
 
 message MoveBroadcastResponse {
@@ -314,7 +316,7 @@ message SpriteChangedResponse {
 }
 
 message SpriteChangeSuccessResponse {
-  string sprite_id = 1;  // 切换成功的角色外观 ID
+  string sprite_id = 1;
 }
 
 message SpriteChangeRejectResponse {
@@ -399,13 +401,21 @@ message SteamBindSuccessResponse {
 
 // LobbyJoinRequest 加入大厅请求
 message LobbyJoinRequest {
-  string device_type = 1;  // "mobile" 或 "pc"，默认 "pc"
+  string device_type = 1;       // "mobile" 或 "pc"，默认 "pc"
+  int32 protocol_features = 2;  // 位掩码：bit0=支持 presence.delta，bit1=支持排队
 }
 
 // LobbyJoinResponse 加入大厅响应
 message LobbyJoinResponse {
-  string match_id = 1;  // 分配的 Match ID
-  string map_id = 2;    // 分配的地图 ID
+  string match_id = 1;          // 非空 = 立即可进入；空 = 进入排队
+  string map_id = 2;            // 分配的地图 ID
+
+  // 排队相关（match_id 为空时有效）
+  string ticket = 3;            // 排队令牌，后续查询用
+  int32 position = 4;           // 当前队列位置（1-based）
+  int32 queue_total = 5;        // 队列总长度
+  int32 eta_seconds = 6;        // 预计等待时间（秒）
+  int32 poll_interval_ms = 7;   // 建议的轮询间隔（毫秒）
 }
 
 // SteamUserInfoRequest 查询 Steam 用户信息请求
@@ -515,6 +525,68 @@ message InventoryStatsResponse {
   int64 total_point_value = 12; // 总积分价值
 }
 
+// PresenceDeltaResponse 增量 presence 帧（替代逐条 presence.join/leave）
+// 服务端每 tick 末尾合并本 tick 内所有 enter/leave 变化，一次性推送。
+// 客户端收到后批量更新本地用户列表，减少渲染抖动。
+message PresenceDeltaResponse {
+  repeated LobbyUser joined = 1;          // 本帧内新进入的用户
+  repeated string left_user_ids = 2;      // 本帧内离开的用户 ID
+  repeated CrossMapPresenceEvent cross_map_events = 3; // 跨地图通知（弱通知）
+}
+
+// CrossMapPresenceEvent 跨地图 presence 事件（弱通知，不渲染角色，仅 UI 提示）
+message CrossMapPresenceEvent {
+  string user_id = 1;
+  string nickname = 2;
+  string avatar_url = 3;
+  bool is_anonymous = 4;
+  string map_id = 5;           // 事件发生的地图
+  string event_type = 6;       // "join" 或 "leave"
+  string target_map_id = 7;    // leave 时的目标地图（传送场景）
+}
+
+// ==================== 惊群效应改造：排队系统 ====================
+
+// QueueStatusRequest 查询排队状态
+message QueueStatusRequest {
+  string ticket = 1;
+}
+
+// QueueStatusResponse 排队状态响应
+message QueueStatusResponse {
+  bool ready = 1;              // true = 可进入，使用 match_id 调 joinMatch
+  string match_id = 2;         // ready=true 时有效
+  string map_id = 3;
+
+  int32 position = 4;          // 当前位置
+  int32 queue_total = 5;
+  int32 eta_seconds = 6;
+  int32 poll_interval_ms = 7;
+
+  bool expired = 8;            // 令牌已过期（超时未轮询），需重新 lobby_join
+  string expire_reason = 9;    // "timeout" / "user_cancelled" / "kicked"
+}
+
+// QueueCancelRequest 取消排队
+message QueueCancelRequest {
+  string ticket = 1;
+}
+
+// QueueCancelResponse 取消排队响应
+message QueueCancelResponse {
+  bool success = 1;
+}
+
+// BatchPresenceJoinSignal 批量跨地图 presence.join 信号
+message BatchPresenceJoinSignal {
+  repeated PresenceJoinSignal joins = 1;
+}
+
+// BatchPresenceLeaveSignal 批量跨地图 presence.leave 信号
+message BatchPresenceLeaveSignal {
+  repeated PresenceLeaveSignal leaves = 1;
+}
+
 // ==================== Match Signal ====================
 
 // MatchSignal 管理后台发送的信号
@@ -530,6 +602,8 @@ message MatchSignal {
     OnlineCountChangedSignal online_count_changed = 18;
     PresenceJoinSignal presence_join = 19;
     PresenceLeaveSignal presence_leave = 20;
+    BatchPresenceJoinSignal batch_presence_join = 21;
+    BatchPresenceLeaveSignal batch_presence_leave = 22;
   }
 }
 
@@ -540,6 +614,7 @@ message PresenceJoinSignal {
   string avatar_url = 3;
   bool is_anonymous = 4;
   string map_id = 5;  // 用户进入的地图 ID
+  string business_user_id = 6;  // 业务 ID
 }
 
 // PresenceLeaveSignal 跨 Match 用户离开通知信号

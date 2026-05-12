@@ -67,6 +67,7 @@ const LobbyEnvelope$json = {
     {'1': 'system_kicked_response', '3': 77, '4': 1, '5': 11, '6': '.lobby.SystemKickedResponse', '9': 0, '10': 'systemKickedResponse'},
     {'1': 'steam_bind_success_response', '3': 78, '4': 1, '5': 11, '6': '.lobby.SteamBindSuccessResponse', '9': 0, '10': 'steamBindSuccessResponse'},
     {'1': 'sprite_change_success_response', '3': 79, '4': 1, '5': 11, '6': '.lobby.SpriteChangeSuccessResponse', '9': 0, '10': 'spriteChangeSuccessResponse'},
+    {'1': 'presence_delta_response', '3': 80, '4': 1, '5': 11, '6': '.lobby.PresenceDeltaResponse', '9': 0, '10': 'presenceDeltaResponse'},
   ],
   '8': [
     {'1': 'payload'},
@@ -148,7 +149,8 @@ final $typed_data.Uint8List lobbyEnvelopeDescriptor = $convert.base64Decode(
     'KAsyHy5sb2JieS5TdGVhbUJpbmRTdWNjZXNzUmVzcG9uc2VIAFIYc3RlYW1CaW5kU3VjY2Vzc1'
     'Jlc3BvbnNlEmkKHnNwcml0ZV9jaGFuZ2Vfc3VjY2Vzc19yZXNwb25zZRhPIAEoCzIiLmxvYmJ5'
     'LlNwcml0ZUNoYW5nZVN1Y2Nlc3NSZXNwb25zZUgAUhtzcHJpdGVDaGFuZ2VTdWNjZXNzUmVzcG'
-    '9uc2VCCQoHcGF5bG9hZA==');
+    '9uc2USVgoXcHJlc2VuY2VfZGVsdGFfcmVzcG9uc2UYUCABKAsyHC5sb2JieS5QcmVzZW5jZURl'
+    'bHRhUmVzcG9uc2VIAFIVcHJlc2VuY2VEZWx0YVJlc3BvbnNlQgkKB3BheWxvYWQ=');
 
 @$core.Deprecated('Use lobbyUserDescriptor instead')
 const LobbyUser$json = {
@@ -339,11 +341,15 @@ final $typed_data.Uint8List loginRequestDescriptor = $convert.base64Decode(
 @$core.Deprecated('Use enterRequestDescriptor instead')
 const EnterRequest$json = {
   '1': 'EnterRequest',
+  '2': [
+    {'1': 'protocol_features', '3': 1, '4': 1, '5': 5, '10': 'protocolFeatures'},
+  ],
 };
 
 /// Descriptor for `EnterRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List enterRequestDescriptor = $convert.base64Decode(
-    'CgxFbnRlclJlcXVlc3Q=');
+    'CgxFbnRlclJlcXVlc3QSKwoRcHJvdG9jb2xfZmVhdHVyZXMYASABKAVSEHByb3RvY29sRmVhdH'
+    'VyZXM=');
 
 @$core.Deprecated('Use logoutRequestDescriptor instead')
 const LogoutRequest$json = {
@@ -977,12 +983,14 @@ const LobbyJoinRequest$json = {
   '1': 'LobbyJoinRequest',
   '2': [
     {'1': 'device_type', '3': 1, '4': 1, '5': 9, '10': 'deviceType'},
+    {'1': 'protocol_features', '3': 2, '4': 1, '5': 5, '10': 'protocolFeatures'},
   ],
 };
 
 /// Descriptor for `LobbyJoinRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List lobbyJoinRequestDescriptor = $convert.base64Decode(
-    'ChBMb2JieUpvaW5SZXF1ZXN0Eh8KC2RldmljZV90eXBlGAEgASgJUgpkZXZpY2VUeXBl');
+    'ChBMb2JieUpvaW5SZXF1ZXN0Eh8KC2RldmljZV90eXBlGAEgASgJUgpkZXZpY2VUeXBlEisKEX'
+    'Byb3RvY29sX2ZlYXR1cmVzGAIgASgFUhBwcm90b2NvbEZlYXR1cmVz');
 
 @$core.Deprecated('Use lobbyJoinResponseDescriptor instead')
 const LobbyJoinResponse$json = {
@@ -990,13 +998,21 @@ const LobbyJoinResponse$json = {
   '2': [
     {'1': 'match_id', '3': 1, '4': 1, '5': 9, '10': 'matchId'},
     {'1': 'map_id', '3': 2, '4': 1, '5': 9, '10': 'mapId'},
+    {'1': 'ticket', '3': 3, '4': 1, '5': 9, '10': 'ticket'},
+    {'1': 'position', '3': 4, '4': 1, '5': 5, '10': 'position'},
+    {'1': 'queue_total', '3': 5, '4': 1, '5': 5, '10': 'queueTotal'},
+    {'1': 'eta_seconds', '3': 6, '4': 1, '5': 5, '10': 'etaSeconds'},
+    {'1': 'poll_interval_ms', '3': 7, '4': 1, '5': 5, '10': 'pollIntervalMs'},
   ],
 };
 
 /// Descriptor for `LobbyJoinResponse`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List lobbyJoinResponseDescriptor = $convert.base64Decode(
     'ChFMb2JieUpvaW5SZXNwb25zZRIZCghtYXRjaF9pZBgBIAEoCVIHbWF0Y2hJZBIVCgZtYXBfaW'
-    'QYAiABKAlSBW1hcElk');
+    'QYAiABKAlSBW1hcElkEhYKBnRpY2tldBgDIAEoCVIGdGlja2V0EhoKCHBvc2l0aW9uGAQgASgF'
+    'Ughwb3NpdGlvbhIfCgtxdWV1ZV90b3RhbBgFIAEoBVIKcXVldWVUb3RhbBIfCgtldGFfc2Vjb2'
+    '5kcxgGIAEoBVIKZXRhU2Vjb25kcxIoChBwb2xsX2ludGVydmFsX21zGAcgASgFUg5wb2xsSW50'
+    'ZXJ2YWxNcw==');
 
 @$core.Deprecated('Use steamUserInfoRequestDescriptor instead')
 const SteamUserInfoRequest$json = {
@@ -1169,6 +1185,132 @@ final $typed_data.Uint8List inventoryStatsResponseDescriptor = $convert.base64De
     'aW5tZW51Q291bnQSKAoQdG90YWxfZ29sZF92YWx1ZRgLIAEoA1IOdG90YWxHb2xkVmFsdWUSKg'
     'oRdG90YWxfcG9pbnRfdmFsdWUYDCABKANSD3RvdGFsUG9pbnRWYWx1ZQ==');
 
+@$core.Deprecated('Use presenceDeltaResponseDescriptor instead')
+const PresenceDeltaResponse$json = {
+  '1': 'PresenceDeltaResponse',
+  '2': [
+    {'1': 'joined', '3': 1, '4': 3, '5': 11, '6': '.lobby.LobbyUser', '10': 'joined'},
+    {'1': 'left_user_ids', '3': 2, '4': 3, '5': 9, '10': 'leftUserIds'},
+    {'1': 'cross_map_events', '3': 3, '4': 3, '5': 11, '6': '.lobby.CrossMapPresenceEvent', '10': 'crossMapEvents'},
+  ],
+};
+
+/// Descriptor for `PresenceDeltaResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List presenceDeltaResponseDescriptor = $convert.base64Decode(
+    'ChVQcmVzZW5jZURlbHRhUmVzcG9uc2USKAoGam9pbmVkGAEgAygLMhAubG9iYnkuTG9iYnlVc2'
+    'VyUgZqb2luZWQSIgoNbGVmdF91c2VyX2lkcxgCIAMoCVILbGVmdFVzZXJJZHMSRgoQY3Jvc3Nf'
+    'bWFwX2V2ZW50cxgDIAMoCzIcLmxvYmJ5LkNyb3NzTWFwUHJlc2VuY2VFdmVudFIOY3Jvc3NNYX'
+    'BFdmVudHM=');
+
+@$core.Deprecated('Use crossMapPresenceEventDescriptor instead')
+const CrossMapPresenceEvent$json = {
+  '1': 'CrossMapPresenceEvent',
+  '2': [
+    {'1': 'user_id', '3': 1, '4': 1, '5': 9, '10': 'userId'},
+    {'1': 'nickname', '3': 2, '4': 1, '5': 9, '10': 'nickname'},
+    {'1': 'avatar_url', '3': 3, '4': 1, '5': 9, '10': 'avatarUrl'},
+    {'1': 'is_anonymous', '3': 4, '4': 1, '5': 8, '10': 'isAnonymous'},
+    {'1': 'map_id', '3': 5, '4': 1, '5': 9, '10': 'mapId'},
+    {'1': 'event_type', '3': 6, '4': 1, '5': 9, '10': 'eventType'},
+    {'1': 'target_map_id', '3': 7, '4': 1, '5': 9, '10': 'targetMapId'},
+  ],
+};
+
+/// Descriptor for `CrossMapPresenceEvent`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List crossMapPresenceEventDescriptor = $convert.base64Decode(
+    'ChVDcm9zc01hcFByZXNlbmNlRXZlbnQSFwoHdXNlcl9pZBgBIAEoCVIGdXNlcklkEhoKCG5pY2'
+    'tuYW1lGAIgASgJUghuaWNrbmFtZRIdCgphdmF0YXJfdXJsGAMgASgJUglhdmF0YXJVcmwSIQoM'
+    'aXNfYW5vbnltb3VzGAQgASgIUgtpc0Fub255bW91cxIVCgZtYXBfaWQYBSABKAlSBW1hcElkEh'
+    '0KCmV2ZW50X3R5cGUYBiABKAlSCWV2ZW50VHlwZRIiCg10YXJnZXRfbWFwX2lkGAcgASgJUgt0'
+    'YXJnZXRNYXBJZA==');
+
+@$core.Deprecated('Use queueStatusRequestDescriptor instead')
+const QueueStatusRequest$json = {
+  '1': 'QueueStatusRequest',
+  '2': [
+    {'1': 'ticket', '3': 1, '4': 1, '5': 9, '10': 'ticket'},
+  ],
+};
+
+/// Descriptor for `QueueStatusRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List queueStatusRequestDescriptor = $convert.base64Decode(
+    'ChJRdWV1ZVN0YXR1c1JlcXVlc3QSFgoGdGlja2V0GAEgASgJUgZ0aWNrZXQ=');
+
+@$core.Deprecated('Use queueStatusResponseDescriptor instead')
+const QueueStatusResponse$json = {
+  '1': 'QueueStatusResponse',
+  '2': [
+    {'1': 'ready', '3': 1, '4': 1, '5': 8, '10': 'ready'},
+    {'1': 'match_id', '3': 2, '4': 1, '5': 9, '10': 'matchId'},
+    {'1': 'map_id', '3': 3, '4': 1, '5': 9, '10': 'mapId'},
+    {'1': 'position', '3': 4, '4': 1, '5': 5, '10': 'position'},
+    {'1': 'queue_total', '3': 5, '4': 1, '5': 5, '10': 'queueTotal'},
+    {'1': 'eta_seconds', '3': 6, '4': 1, '5': 5, '10': 'etaSeconds'},
+    {'1': 'poll_interval_ms', '3': 7, '4': 1, '5': 5, '10': 'pollIntervalMs'},
+    {'1': 'expired', '3': 8, '4': 1, '5': 8, '10': 'expired'},
+    {'1': 'expire_reason', '3': 9, '4': 1, '5': 9, '10': 'expireReason'},
+  ],
+};
+
+/// Descriptor for `QueueStatusResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List queueStatusResponseDescriptor = $convert.base64Decode(
+    'ChNRdWV1ZVN0YXR1c1Jlc3BvbnNlEhQKBXJlYWR5GAEgASgIUgVyZWFkeRIZCghtYXRjaF9pZB'
+    'gCIAEoCVIHbWF0Y2hJZBIVCgZtYXBfaWQYAyABKAlSBW1hcElkEhoKCHBvc2l0aW9uGAQgASgF'
+    'Ughwb3NpdGlvbhIfCgtxdWV1ZV90b3RhbBgFIAEoBVIKcXVldWVUb3RhbBIfCgtldGFfc2Vjb2'
+    '5kcxgGIAEoBVIKZXRhU2Vjb25kcxIoChBwb2xsX2ludGVydmFsX21zGAcgASgFUg5wb2xsSW50'
+    'ZXJ2YWxNcxIYCgdleHBpcmVkGAggASgIUgdleHBpcmVkEiMKDWV4cGlyZV9yZWFzb24YCSABKA'
+    'lSDGV4cGlyZVJlYXNvbg==');
+
+@$core.Deprecated('Use queueCancelRequestDescriptor instead')
+const QueueCancelRequest$json = {
+  '1': 'QueueCancelRequest',
+  '2': [
+    {'1': 'ticket', '3': 1, '4': 1, '5': 9, '10': 'ticket'},
+  ],
+};
+
+/// Descriptor for `QueueCancelRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List queueCancelRequestDescriptor = $convert.base64Decode(
+    'ChJRdWV1ZUNhbmNlbFJlcXVlc3QSFgoGdGlja2V0GAEgASgJUgZ0aWNrZXQ=');
+
+@$core.Deprecated('Use queueCancelResponseDescriptor instead')
+const QueueCancelResponse$json = {
+  '1': 'QueueCancelResponse',
+  '2': [
+    {'1': 'success', '3': 1, '4': 1, '5': 8, '10': 'success'},
+  ],
+};
+
+/// Descriptor for `QueueCancelResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List queueCancelResponseDescriptor = $convert.base64Decode(
+    'ChNRdWV1ZUNhbmNlbFJlc3BvbnNlEhgKB3N1Y2Nlc3MYASABKAhSB3N1Y2Nlc3M=');
+
+@$core.Deprecated('Use batchPresenceJoinSignalDescriptor instead')
+const BatchPresenceJoinSignal$json = {
+  '1': 'BatchPresenceJoinSignal',
+  '2': [
+    {'1': 'joins', '3': 1, '4': 3, '5': 11, '6': '.lobby.PresenceJoinSignal', '10': 'joins'},
+  ],
+};
+
+/// Descriptor for `BatchPresenceJoinSignal`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List batchPresenceJoinSignalDescriptor = $convert.base64Decode(
+    'ChdCYXRjaFByZXNlbmNlSm9pblNpZ25hbBIvCgVqb2lucxgBIAMoCzIZLmxvYmJ5LlByZXNlbm'
+    'NlSm9pblNpZ25hbFIFam9pbnM=');
+
+@$core.Deprecated('Use batchPresenceLeaveSignalDescriptor instead')
+const BatchPresenceLeaveSignal$json = {
+  '1': 'BatchPresenceLeaveSignal',
+  '2': [
+    {'1': 'leaves', '3': 1, '4': 3, '5': 11, '6': '.lobby.PresenceLeaveSignal', '10': 'leaves'},
+  ],
+};
+
+/// Descriptor for `BatchPresenceLeaveSignal`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List batchPresenceLeaveSignalDescriptor = $convert.base64Decode(
+    'ChhCYXRjaFByZXNlbmNlTGVhdmVTaWduYWwSMgoGbGVhdmVzGAEgAygLMhoubG9iYnkuUHJlc2'
+    'VuY2VMZWF2ZVNpZ25hbFIGbGVhdmVz');
+
 @$core.Deprecated('Use matchSignalDescriptor instead')
 const MatchSignal$json = {
   '1': 'MatchSignal',
@@ -1182,6 +1324,8 @@ const MatchSignal$json = {
     {'1': 'online_count_changed', '3': 18, '4': 1, '5': 11, '6': '.lobby.OnlineCountChangedSignal', '9': 0, '10': 'onlineCountChanged'},
     {'1': 'presence_join', '3': 19, '4': 1, '5': 11, '6': '.lobby.PresenceJoinSignal', '9': 0, '10': 'presenceJoin'},
     {'1': 'presence_leave', '3': 20, '4': 1, '5': 11, '6': '.lobby.PresenceLeaveSignal', '9': 0, '10': 'presenceLeave'},
+    {'1': 'batch_presence_join', '3': 21, '4': 1, '5': 11, '6': '.lobby.BatchPresenceJoinSignal', '9': 0, '10': 'batchPresenceJoin'},
+    {'1': 'batch_presence_leave', '3': 22, '4': 1, '5': 11, '6': '.lobby.BatchPresenceLeaveSignal', '9': 0, '10': 'batchPresenceLeave'},
   ],
   '8': [
     {'1': 'payload'},
@@ -1200,7 +1344,10 @@ final $typed_data.Uint8List matchSignalDescriptor = $convert.base64Decode(
     'IgASgLMh8ubG9iYnkuT25saW5lQ291bnRDaGFuZ2VkU2lnbmFsSABSEm9ubGluZUNvdW50Q2hh'
     'bmdlZBJACg1wcmVzZW5jZV9qb2luGBMgASgLMhkubG9iYnkuUHJlc2VuY2VKb2luU2lnbmFsSA'
     'BSDHByZXNlbmNlSm9pbhJDCg5wcmVzZW5jZV9sZWF2ZRgUIAEoCzIaLmxvYmJ5LlByZXNlbmNl'
-    'TGVhdmVTaWduYWxIAFINcHJlc2VuY2VMZWF2ZUIJCgdwYXlsb2Fk');
+    'TGVhdmVTaWduYWxIAFINcHJlc2VuY2VMZWF2ZRJQChNiYXRjaF9wcmVzZW5jZV9qb2luGBUgAS'
+    'gLMh4ubG9iYnkuQmF0Y2hQcmVzZW5jZUpvaW5TaWduYWxIAFIRYmF0Y2hQcmVzZW5jZUpvaW4S'
+    'UwoUYmF0Y2hfcHJlc2VuY2VfbGVhdmUYFiABKAsyHy5sb2JieS5CYXRjaFByZXNlbmNlTGVhdm'
+    'VTaWduYWxIAFISYmF0Y2hQcmVzZW5jZUxlYXZlQgkKB3BheWxvYWQ=');
 
 @$core.Deprecated('Use presenceJoinSignalDescriptor instead')
 const PresenceJoinSignal$json = {
@@ -1211,6 +1358,7 @@ const PresenceJoinSignal$json = {
     {'1': 'avatar_url', '3': 3, '4': 1, '5': 9, '10': 'avatarUrl'},
     {'1': 'is_anonymous', '3': 4, '4': 1, '5': 8, '10': 'isAnonymous'},
     {'1': 'map_id', '3': 5, '4': 1, '5': 9, '10': 'mapId'},
+    {'1': 'business_user_id', '3': 6, '4': 1, '5': 9, '10': 'businessUserId'},
   ],
 };
 
@@ -1218,7 +1366,8 @@ const PresenceJoinSignal$json = {
 final $typed_data.Uint8List presenceJoinSignalDescriptor = $convert.base64Decode(
     'ChJQcmVzZW5jZUpvaW5TaWduYWwSFwoHdXNlcl9pZBgBIAEoCVIGdXNlcklkEhoKCG5pY2tuYW'
     '1lGAIgASgJUghuaWNrbmFtZRIdCgphdmF0YXJfdXJsGAMgASgJUglhdmF0YXJVcmwSIQoMaXNf'
-    'YW5vbnltb3VzGAQgASgIUgtpc0Fub255bW91cxIVCgZtYXBfaWQYBSABKAlSBW1hcElk');
+    'YW5vbnltb3VzGAQgASgIUgtpc0Fub255bW91cxIVCgZtYXBfaWQYBSABKAlSBW1hcElkEigKEG'
+    'J1c2luZXNzX3VzZXJfaWQYBiABKAlSDmJ1c2luZXNzVXNlcklk');
 
 @$core.Deprecated('Use presenceLeaveSignalDescriptor instead')
 const PresenceLeaveSignal$json = {

@@ -61,6 +61,7 @@ enum LobbyEnvelope_Payload {
   systemKickedResponse, 
   steamBindSuccessResponse, 
   spriteChangeSuccessResponse, 
+  presenceDeltaResponse, 
   notSet
 }
 
@@ -117,6 +118,7 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     SystemKickedResponse? systemKickedResponse,
     SteamBindSuccessResponse? steamBindSuccessResponse,
     SpriteChangeSuccessResponse? spriteChangeSuccessResponse,
+    PresenceDeltaResponse? presenceDeltaResponse,
   }) {
     final $result = create();
     if (v != null) {
@@ -269,6 +271,9 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     if (spriteChangeSuccessResponse != null) {
       $result.spriteChangeSuccessResponse = spriteChangeSuccessResponse;
     }
+    if (presenceDeltaResponse != null) {
+      $result.presenceDeltaResponse = presenceDeltaResponse;
+    }
     return $result;
   }
   LobbyEnvelope._() : super();
@@ -322,10 +327,11 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     77 : LobbyEnvelope_Payload.systemKickedResponse,
     78 : LobbyEnvelope_Payload.steamBindSuccessResponse,
     79 : LobbyEnvelope_Payload.spriteChangeSuccessResponse,
+    80 : LobbyEnvelope_Payload.presenceDeltaResponse,
     0 : LobbyEnvelope_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'LobbyEnvelope', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
-    ..oo(0, [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79])
+    ..oo(0, [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80])
     ..a<$core.int>(1, _omitFieldNames ? '' : 'v', $pb.PbFieldType.O3)
     ..aOS(2, _omitFieldNames ? '' : 'type')
     ..aInt64(3, _omitFieldNames ? '' : 'ts')
@@ -376,6 +382,7 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     ..aOM<SystemKickedResponse>(77, _omitFieldNames ? '' : 'systemKickedResponse', subBuilder: SystemKickedResponse.create)
     ..aOM<SteamBindSuccessResponse>(78, _omitFieldNames ? '' : 'steamBindSuccessResponse', subBuilder: SteamBindSuccessResponse.create)
     ..aOM<SpriteChangeSuccessResponse>(79, _omitFieldNames ? '' : 'spriteChangeSuccessResponse', subBuilder: SpriteChangeSuccessResponse.create)
+    ..aOM<PresenceDeltaResponse>(80, _omitFieldNames ? '' : 'presenceDeltaResponse', subBuilder: PresenceDeltaResponse.create)
     ..hasRequiredFields = false
   ;
 
@@ -946,6 +953,17 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
   void clearSpriteChangeSuccessResponse() => clearField(79);
   @$pb.TagNumber(79)
   SpriteChangeSuccessResponse ensureSpriteChangeSuccessResponse() => $_ensure(49);
+
+  @$pb.TagNumber(80)
+  PresenceDeltaResponse get presenceDeltaResponse => $_getN(50);
+  @$pb.TagNumber(80)
+  set presenceDeltaResponse(PresenceDeltaResponse v) { setField(80, v); }
+  @$pb.TagNumber(80)
+  $core.bool hasPresenceDeltaResponse() => $_has(50);
+  @$pb.TagNumber(80)
+  void clearPresenceDeltaResponse() => clearField(80);
+  @$pb.TagNumber(80)
+  PresenceDeltaResponse ensurePresenceDeltaResponse() => $_ensure(50);
 }
 
 /// LobbyUser 用户信息
@@ -2097,12 +2115,21 @@ class LoginRequest extends $pb.GeneratedMessage {
 /// EnterRequest 客户端完成身份确认后，主动宣告进入大厅（两阶段进入协议第二阶段）
 /// 客户端流程：joinMatch() → [可选 login] → enter → 服务端广播 presence.join
 class EnterRequest extends $pb.GeneratedMessage {
-  factory EnterRequest() => create();
+  factory EnterRequest({
+    $core.int? protocolFeatures,
+  }) {
+    final $result = create();
+    if (protocolFeatures != null) {
+      $result.protocolFeatures = protocolFeatures;
+    }
+    return $result;
+  }
   EnterRequest._() : super();
   factory EnterRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
   factory EnterRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'EnterRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'protocolFeatures', $pb.PbFieldType.O3)
     ..hasRequiredFields = false
   ;
 
@@ -2126,6 +2153,16 @@ class EnterRequest extends $pb.GeneratedMessage {
   @$core.pragma('dart2js:noInline')
   static EnterRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<EnterRequest>(create);
   static EnterRequest? _defaultInstance;
+
+  /// 无额外参数，服务端从 stagingMap 取当前身份
+  @$pb.TagNumber(1)
+  $core.int get protocolFeatures => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set protocolFeatures($core.int v) { $_setSignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasProtocolFeatures() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearProtocolFeatures() => clearField(1);
 }
 
 class LogoutRequest extends $pb.GeneratedMessage {
@@ -4914,10 +4951,14 @@ class SteamBindSuccessResponse extends $pb.GeneratedMessage {
 class LobbyJoinRequest extends $pb.GeneratedMessage {
   factory LobbyJoinRequest({
     $core.String? deviceType,
+    $core.int? protocolFeatures,
   }) {
     final $result = create();
     if (deviceType != null) {
       $result.deviceType = deviceType;
+    }
+    if (protocolFeatures != null) {
+      $result.protocolFeatures = protocolFeatures;
     }
     return $result;
   }
@@ -4927,6 +4968,7 @@ class LobbyJoinRequest extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'LobbyJoinRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'deviceType')
+    ..a<$core.int>(2, _omitFieldNames ? '' : 'protocolFeatures', $pb.PbFieldType.O3)
     ..hasRequiredFields = false
   ;
 
@@ -4959,6 +5001,15 @@ class LobbyJoinRequest extends $pb.GeneratedMessage {
   $core.bool hasDeviceType() => $_has(0);
   @$pb.TagNumber(1)
   void clearDeviceType() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.int get protocolFeatures => $_getIZ(1);
+  @$pb.TagNumber(2)
+  set protocolFeatures($core.int v) { $_setSignedInt32(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasProtocolFeatures() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearProtocolFeatures() => clearField(2);
 }
 
 /// LobbyJoinResponse 加入大厅响应
@@ -4966,6 +5017,11 @@ class LobbyJoinResponse extends $pb.GeneratedMessage {
   factory LobbyJoinResponse({
     $core.String? matchId,
     $core.String? mapId,
+    $core.String? ticket,
+    $core.int? position,
+    $core.int? queueTotal,
+    $core.int? etaSeconds,
+    $core.int? pollIntervalMs,
   }) {
     final $result = create();
     if (matchId != null) {
@@ -4973,6 +5029,21 @@ class LobbyJoinResponse extends $pb.GeneratedMessage {
     }
     if (mapId != null) {
       $result.mapId = mapId;
+    }
+    if (ticket != null) {
+      $result.ticket = ticket;
+    }
+    if (position != null) {
+      $result.position = position;
+    }
+    if (queueTotal != null) {
+      $result.queueTotal = queueTotal;
+    }
+    if (etaSeconds != null) {
+      $result.etaSeconds = etaSeconds;
+    }
+    if (pollIntervalMs != null) {
+      $result.pollIntervalMs = pollIntervalMs;
     }
     return $result;
   }
@@ -4983,6 +5054,11 @@ class LobbyJoinResponse extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'LobbyJoinResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'matchId')
     ..aOS(2, _omitFieldNames ? '' : 'mapId')
+    ..aOS(3, _omitFieldNames ? '' : 'ticket')
+    ..a<$core.int>(4, _omitFieldNames ? '' : 'position', $pb.PbFieldType.O3)
+    ..a<$core.int>(5, _omitFieldNames ? '' : 'queueTotal', $pb.PbFieldType.O3)
+    ..a<$core.int>(6, _omitFieldNames ? '' : 'etaSeconds', $pb.PbFieldType.O3)
+    ..a<$core.int>(7, _omitFieldNames ? '' : 'pollIntervalMs', $pb.PbFieldType.O3)
     ..hasRequiredFields = false
   ;
 
@@ -5024,6 +5100,52 @@ class LobbyJoinResponse extends $pb.GeneratedMessage {
   $core.bool hasMapId() => $_has(1);
   @$pb.TagNumber(2)
   void clearMapId() => clearField(2);
+
+  /// 排队相关（match_id 为空时有效）
+  @$pb.TagNumber(3)
+  $core.String get ticket => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set ticket($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasTicket() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearTicket() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.int get position => $_getIZ(3);
+  @$pb.TagNumber(4)
+  set position($core.int v) { $_setSignedInt32(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasPosition() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearPosition() => clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.int get queueTotal => $_getIZ(4);
+  @$pb.TagNumber(5)
+  set queueTotal($core.int v) { $_setSignedInt32(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasQueueTotal() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearQueueTotal() => clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.int get etaSeconds => $_getIZ(5);
+  @$pb.TagNumber(6)
+  set etaSeconds($core.int v) { $_setSignedInt32(5, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasEtaSeconds() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearEtaSeconds() => clearField(6);
+
+  @$pb.TagNumber(7)
+  $core.int get pollIntervalMs => $_getIZ(6);
+  @$pb.TagNumber(7)
+  set pollIntervalMs($core.int v) { $_setSignedInt32(6, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasPollIntervalMs() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearPollIntervalMs() => clearField(7);
 }
 
 /// SteamUserInfoRequest 查询 Steam 用户信息请求
@@ -6273,6 +6395,610 @@ class InventoryStatsResponse extends $pb.GeneratedMessage {
   void clearTotalPointValue() => clearField(12);
 }
 
+/// PresenceDeltaResponse 增量 presence 帧（替代逐条 presence.join/leave）
+/// 服务端每 tick 末尾合并本 tick 内所有 enter/leave 变化，一次性推送。
+/// 客户端收到后批量更新本地用户列表，减少渲染抖动。
+class PresenceDeltaResponse extends $pb.GeneratedMessage {
+  factory PresenceDeltaResponse({
+    $core.Iterable<LobbyUser>? joined,
+    $core.Iterable<$core.String>? leftUserIds,
+    $core.Iterable<CrossMapPresenceEvent>? crossMapEvents,
+  }) {
+    final $result = create();
+    if (joined != null) {
+      $result.joined.addAll(joined);
+    }
+    if (leftUserIds != null) {
+      $result.leftUserIds.addAll(leftUserIds);
+    }
+    if (crossMapEvents != null) {
+      $result.crossMapEvents.addAll(crossMapEvents);
+    }
+    return $result;
+  }
+  PresenceDeltaResponse._() : super();
+  factory PresenceDeltaResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PresenceDeltaResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PresenceDeltaResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..pc<LobbyUser>(1, _omitFieldNames ? '' : 'joined', $pb.PbFieldType.PM, subBuilder: LobbyUser.create)
+    ..pPS(2, _omitFieldNames ? '' : 'leftUserIds')
+    ..pc<CrossMapPresenceEvent>(3, _omitFieldNames ? '' : 'crossMapEvents', $pb.PbFieldType.PM, subBuilder: CrossMapPresenceEvent.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PresenceDeltaResponse clone() => PresenceDeltaResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PresenceDeltaResponse copyWith(void Function(PresenceDeltaResponse) updates) => super.copyWith((message) => updates(message as PresenceDeltaResponse)) as PresenceDeltaResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PresenceDeltaResponse create() => PresenceDeltaResponse._();
+  PresenceDeltaResponse createEmptyInstance() => create();
+  static $pb.PbList<PresenceDeltaResponse> createRepeated() => $pb.PbList<PresenceDeltaResponse>();
+  @$core.pragma('dart2js:noInline')
+  static PresenceDeltaResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PresenceDeltaResponse>(create);
+  static PresenceDeltaResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<LobbyUser> get joined => $_getList(0);
+
+  @$pb.TagNumber(2)
+  $core.List<$core.String> get leftUserIds => $_getList(1);
+
+  @$pb.TagNumber(3)
+  $core.List<CrossMapPresenceEvent> get crossMapEvents => $_getList(2);
+}
+
+/// CrossMapPresenceEvent 跨地图 presence 事件（弱通知，不渲染角色，仅 UI 提示）
+class CrossMapPresenceEvent extends $pb.GeneratedMessage {
+  factory CrossMapPresenceEvent({
+    $core.String? userId,
+    $core.String? nickname,
+    $core.String? avatarUrl,
+    $core.bool? isAnonymous,
+    $core.String? mapId,
+    $core.String? eventType,
+    $core.String? targetMapId,
+  }) {
+    final $result = create();
+    if (userId != null) {
+      $result.userId = userId;
+    }
+    if (nickname != null) {
+      $result.nickname = nickname;
+    }
+    if (avatarUrl != null) {
+      $result.avatarUrl = avatarUrl;
+    }
+    if (isAnonymous != null) {
+      $result.isAnonymous = isAnonymous;
+    }
+    if (mapId != null) {
+      $result.mapId = mapId;
+    }
+    if (eventType != null) {
+      $result.eventType = eventType;
+    }
+    if (targetMapId != null) {
+      $result.targetMapId = targetMapId;
+    }
+    return $result;
+  }
+  CrossMapPresenceEvent._() : super();
+  factory CrossMapPresenceEvent.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory CrossMapPresenceEvent.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'CrossMapPresenceEvent', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'userId')
+    ..aOS(2, _omitFieldNames ? '' : 'nickname')
+    ..aOS(3, _omitFieldNames ? '' : 'avatarUrl')
+    ..aOB(4, _omitFieldNames ? '' : 'isAnonymous')
+    ..aOS(5, _omitFieldNames ? '' : 'mapId')
+    ..aOS(6, _omitFieldNames ? '' : 'eventType')
+    ..aOS(7, _omitFieldNames ? '' : 'targetMapId')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  CrossMapPresenceEvent clone() => CrossMapPresenceEvent()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  CrossMapPresenceEvent copyWith(void Function(CrossMapPresenceEvent) updates) => super.copyWith((message) => updates(message as CrossMapPresenceEvent)) as CrossMapPresenceEvent;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static CrossMapPresenceEvent create() => CrossMapPresenceEvent._();
+  CrossMapPresenceEvent createEmptyInstance() => create();
+  static $pb.PbList<CrossMapPresenceEvent> createRepeated() => $pb.PbList<CrossMapPresenceEvent>();
+  @$core.pragma('dart2js:noInline')
+  static CrossMapPresenceEvent getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<CrossMapPresenceEvent>(create);
+  static CrossMapPresenceEvent? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get userId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set userId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasUserId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearUserId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get nickname => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set nickname($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasNickname() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearNickname() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get avatarUrl => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set avatarUrl($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasAvatarUrl() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearAvatarUrl() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.bool get isAnonymous => $_getBF(3);
+  @$pb.TagNumber(4)
+  set isAnonymous($core.bool v) { $_setBool(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasIsAnonymous() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearIsAnonymous() => clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.String get mapId => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set mapId($core.String v) { $_setString(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasMapId() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearMapId() => clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.String get eventType => $_getSZ(5);
+  @$pb.TagNumber(6)
+  set eventType($core.String v) { $_setString(5, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasEventType() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearEventType() => clearField(6);
+
+  @$pb.TagNumber(7)
+  $core.String get targetMapId => $_getSZ(6);
+  @$pb.TagNumber(7)
+  set targetMapId($core.String v) { $_setString(6, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasTargetMapId() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearTargetMapId() => clearField(7);
+}
+
+/// QueueStatusRequest 查询排队状态
+class QueueStatusRequest extends $pb.GeneratedMessage {
+  factory QueueStatusRequest({
+    $core.String? ticket,
+  }) {
+    final $result = create();
+    if (ticket != null) {
+      $result.ticket = ticket;
+    }
+    return $result;
+  }
+  QueueStatusRequest._() : super();
+  factory QueueStatusRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory QueueStatusRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'QueueStatusRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'ticket')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  QueueStatusRequest clone() => QueueStatusRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  QueueStatusRequest copyWith(void Function(QueueStatusRequest) updates) => super.copyWith((message) => updates(message as QueueStatusRequest)) as QueueStatusRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static QueueStatusRequest create() => QueueStatusRequest._();
+  QueueStatusRequest createEmptyInstance() => create();
+  static $pb.PbList<QueueStatusRequest> createRepeated() => $pb.PbList<QueueStatusRequest>();
+  @$core.pragma('dart2js:noInline')
+  static QueueStatusRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<QueueStatusRequest>(create);
+  static QueueStatusRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get ticket => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set ticket($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasTicket() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearTicket() => clearField(1);
+}
+
+/// QueueStatusResponse 排队状态响应
+class QueueStatusResponse extends $pb.GeneratedMessage {
+  factory QueueStatusResponse({
+    $core.bool? ready,
+    $core.String? matchId,
+    $core.String? mapId,
+    $core.int? position,
+    $core.int? queueTotal,
+    $core.int? etaSeconds,
+    $core.int? pollIntervalMs,
+    $core.bool? expired,
+    $core.String? expireReason,
+  }) {
+    final $result = create();
+    if (ready != null) {
+      $result.ready = ready;
+    }
+    if (matchId != null) {
+      $result.matchId = matchId;
+    }
+    if (mapId != null) {
+      $result.mapId = mapId;
+    }
+    if (position != null) {
+      $result.position = position;
+    }
+    if (queueTotal != null) {
+      $result.queueTotal = queueTotal;
+    }
+    if (etaSeconds != null) {
+      $result.etaSeconds = etaSeconds;
+    }
+    if (pollIntervalMs != null) {
+      $result.pollIntervalMs = pollIntervalMs;
+    }
+    if (expired != null) {
+      $result.expired = expired;
+    }
+    if (expireReason != null) {
+      $result.expireReason = expireReason;
+    }
+    return $result;
+  }
+  QueueStatusResponse._() : super();
+  factory QueueStatusResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory QueueStatusResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'QueueStatusResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..aOB(1, _omitFieldNames ? '' : 'ready')
+    ..aOS(2, _omitFieldNames ? '' : 'matchId')
+    ..aOS(3, _omitFieldNames ? '' : 'mapId')
+    ..a<$core.int>(4, _omitFieldNames ? '' : 'position', $pb.PbFieldType.O3)
+    ..a<$core.int>(5, _omitFieldNames ? '' : 'queueTotal', $pb.PbFieldType.O3)
+    ..a<$core.int>(6, _omitFieldNames ? '' : 'etaSeconds', $pb.PbFieldType.O3)
+    ..a<$core.int>(7, _omitFieldNames ? '' : 'pollIntervalMs', $pb.PbFieldType.O3)
+    ..aOB(8, _omitFieldNames ? '' : 'expired')
+    ..aOS(9, _omitFieldNames ? '' : 'expireReason')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  QueueStatusResponse clone() => QueueStatusResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  QueueStatusResponse copyWith(void Function(QueueStatusResponse) updates) => super.copyWith((message) => updates(message as QueueStatusResponse)) as QueueStatusResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static QueueStatusResponse create() => QueueStatusResponse._();
+  QueueStatusResponse createEmptyInstance() => create();
+  static $pb.PbList<QueueStatusResponse> createRepeated() => $pb.PbList<QueueStatusResponse>();
+  @$core.pragma('dart2js:noInline')
+  static QueueStatusResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<QueueStatusResponse>(create);
+  static QueueStatusResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get ready => $_getBF(0);
+  @$pb.TagNumber(1)
+  set ready($core.bool v) { $_setBool(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasReady() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearReady() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get matchId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set matchId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasMatchId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMatchId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get mapId => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set mapId($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasMapId() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearMapId() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.int get position => $_getIZ(3);
+  @$pb.TagNumber(4)
+  set position($core.int v) { $_setSignedInt32(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasPosition() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearPosition() => clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.int get queueTotal => $_getIZ(4);
+  @$pb.TagNumber(5)
+  set queueTotal($core.int v) { $_setSignedInt32(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasQueueTotal() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearQueueTotal() => clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.int get etaSeconds => $_getIZ(5);
+  @$pb.TagNumber(6)
+  set etaSeconds($core.int v) { $_setSignedInt32(5, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasEtaSeconds() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearEtaSeconds() => clearField(6);
+
+  @$pb.TagNumber(7)
+  $core.int get pollIntervalMs => $_getIZ(6);
+  @$pb.TagNumber(7)
+  set pollIntervalMs($core.int v) { $_setSignedInt32(6, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasPollIntervalMs() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearPollIntervalMs() => clearField(7);
+
+  @$pb.TagNumber(8)
+  $core.bool get expired => $_getBF(7);
+  @$pb.TagNumber(8)
+  set expired($core.bool v) { $_setBool(7, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasExpired() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearExpired() => clearField(8);
+
+  @$pb.TagNumber(9)
+  $core.String get expireReason => $_getSZ(8);
+  @$pb.TagNumber(9)
+  set expireReason($core.String v) { $_setString(8, v); }
+  @$pb.TagNumber(9)
+  $core.bool hasExpireReason() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearExpireReason() => clearField(9);
+}
+
+/// QueueCancelRequest 取消排队
+class QueueCancelRequest extends $pb.GeneratedMessage {
+  factory QueueCancelRequest({
+    $core.String? ticket,
+  }) {
+    final $result = create();
+    if (ticket != null) {
+      $result.ticket = ticket;
+    }
+    return $result;
+  }
+  QueueCancelRequest._() : super();
+  factory QueueCancelRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory QueueCancelRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'QueueCancelRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'ticket')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  QueueCancelRequest clone() => QueueCancelRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  QueueCancelRequest copyWith(void Function(QueueCancelRequest) updates) => super.copyWith((message) => updates(message as QueueCancelRequest)) as QueueCancelRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static QueueCancelRequest create() => QueueCancelRequest._();
+  QueueCancelRequest createEmptyInstance() => create();
+  static $pb.PbList<QueueCancelRequest> createRepeated() => $pb.PbList<QueueCancelRequest>();
+  @$core.pragma('dart2js:noInline')
+  static QueueCancelRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<QueueCancelRequest>(create);
+  static QueueCancelRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get ticket => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set ticket($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasTicket() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearTicket() => clearField(1);
+}
+
+/// QueueCancelResponse 取消排队响应
+class QueueCancelResponse extends $pb.GeneratedMessage {
+  factory QueueCancelResponse({
+    $core.bool? success,
+  }) {
+    final $result = create();
+    if (success != null) {
+      $result.success = success;
+    }
+    return $result;
+  }
+  QueueCancelResponse._() : super();
+  factory QueueCancelResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory QueueCancelResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'QueueCancelResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..aOB(1, _omitFieldNames ? '' : 'success')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  QueueCancelResponse clone() => QueueCancelResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  QueueCancelResponse copyWith(void Function(QueueCancelResponse) updates) => super.copyWith((message) => updates(message as QueueCancelResponse)) as QueueCancelResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static QueueCancelResponse create() => QueueCancelResponse._();
+  QueueCancelResponse createEmptyInstance() => create();
+  static $pb.PbList<QueueCancelResponse> createRepeated() => $pb.PbList<QueueCancelResponse>();
+  @$core.pragma('dart2js:noInline')
+  static QueueCancelResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<QueueCancelResponse>(create);
+  static QueueCancelResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get success => $_getBF(0);
+  @$pb.TagNumber(1)
+  set success($core.bool v) { $_setBool(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasSuccess() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSuccess() => clearField(1);
+}
+
+/// BatchPresenceJoinSignal 批量跨地图 presence.join 信号
+class BatchPresenceJoinSignal extends $pb.GeneratedMessage {
+  factory BatchPresenceJoinSignal({
+    $core.Iterable<PresenceJoinSignal>? joins,
+  }) {
+    final $result = create();
+    if (joins != null) {
+      $result.joins.addAll(joins);
+    }
+    return $result;
+  }
+  BatchPresenceJoinSignal._() : super();
+  factory BatchPresenceJoinSignal.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory BatchPresenceJoinSignal.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'BatchPresenceJoinSignal', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..pc<PresenceJoinSignal>(1, _omitFieldNames ? '' : 'joins', $pb.PbFieldType.PM, subBuilder: PresenceJoinSignal.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  BatchPresenceJoinSignal clone() => BatchPresenceJoinSignal()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  BatchPresenceJoinSignal copyWith(void Function(BatchPresenceJoinSignal) updates) => super.copyWith((message) => updates(message as BatchPresenceJoinSignal)) as BatchPresenceJoinSignal;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static BatchPresenceJoinSignal create() => BatchPresenceJoinSignal._();
+  BatchPresenceJoinSignal createEmptyInstance() => create();
+  static $pb.PbList<BatchPresenceJoinSignal> createRepeated() => $pb.PbList<BatchPresenceJoinSignal>();
+  @$core.pragma('dart2js:noInline')
+  static BatchPresenceJoinSignal getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<BatchPresenceJoinSignal>(create);
+  static BatchPresenceJoinSignal? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<PresenceJoinSignal> get joins => $_getList(0);
+}
+
+/// BatchPresenceLeaveSignal 批量跨地图 presence.leave 信号
+class BatchPresenceLeaveSignal extends $pb.GeneratedMessage {
+  factory BatchPresenceLeaveSignal({
+    $core.Iterable<PresenceLeaveSignal>? leaves,
+  }) {
+    final $result = create();
+    if (leaves != null) {
+      $result.leaves.addAll(leaves);
+    }
+    return $result;
+  }
+  BatchPresenceLeaveSignal._() : super();
+  factory BatchPresenceLeaveSignal.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory BatchPresenceLeaveSignal.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'BatchPresenceLeaveSignal', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..pc<PresenceLeaveSignal>(1, _omitFieldNames ? '' : 'leaves', $pb.PbFieldType.PM, subBuilder: PresenceLeaveSignal.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  BatchPresenceLeaveSignal clone() => BatchPresenceLeaveSignal()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  BatchPresenceLeaveSignal copyWith(void Function(BatchPresenceLeaveSignal) updates) => super.copyWith((message) => updates(message as BatchPresenceLeaveSignal)) as BatchPresenceLeaveSignal;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static BatchPresenceLeaveSignal create() => BatchPresenceLeaveSignal._();
+  BatchPresenceLeaveSignal createEmptyInstance() => create();
+  static $pb.PbList<BatchPresenceLeaveSignal> createRepeated() => $pb.PbList<BatchPresenceLeaveSignal>();
+  @$core.pragma('dart2js:noInline')
+  static BatchPresenceLeaveSignal getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<BatchPresenceLeaveSignal>(create);
+  static BatchPresenceLeaveSignal? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<PresenceLeaveSignal> get leaves => $_getList(0);
+}
+
 enum MatchSignal_Payload {
   kick, 
   assetsUpdated, 
@@ -6282,6 +7008,8 @@ enum MatchSignal_Payload {
   onlineCountChanged, 
   presenceJoin, 
   presenceLeave, 
+  batchPresenceJoin, 
+  batchPresenceLeave, 
   notSet
 }
 
@@ -6297,6 +7025,8 @@ class MatchSignal extends $pb.GeneratedMessage {
     OnlineCountChangedSignal? onlineCountChanged,
     PresenceJoinSignal? presenceJoin,
     PresenceLeaveSignal? presenceLeave,
+    BatchPresenceJoinSignal? batchPresenceJoin,
+    BatchPresenceLeaveSignal? batchPresenceLeave,
   }) {
     final $result = create();
     if (action != null) {
@@ -6326,6 +7056,12 @@ class MatchSignal extends $pb.GeneratedMessage {
     if (presenceLeave != null) {
       $result.presenceLeave = presenceLeave;
     }
+    if (batchPresenceJoin != null) {
+      $result.batchPresenceJoin = batchPresenceJoin;
+    }
+    if (batchPresenceLeave != null) {
+      $result.batchPresenceLeave = batchPresenceLeave;
+    }
     return $result;
   }
   MatchSignal._() : super();
@@ -6341,10 +7077,12 @@ class MatchSignal extends $pb.GeneratedMessage {
     18 : MatchSignal_Payload.onlineCountChanged,
     19 : MatchSignal_Payload.presenceJoin,
     20 : MatchSignal_Payload.presenceLeave,
+    21 : MatchSignal_Payload.batchPresenceJoin,
+    22 : MatchSignal_Payload.batchPresenceLeave,
     0 : MatchSignal_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'MatchSignal', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
-    ..oo(0, [10, 11, 12, 13, 14, 18, 19, 20])
+    ..oo(0, [10, 11, 12, 13, 14, 18, 19, 20, 21, 22])
     ..aOS(1, _omitFieldNames ? '' : 'action')
     ..aOM<KickSignal>(10, _omitFieldNames ? '' : 'kick', subBuilder: KickSignal.create)
     ..aOM<AssetsUpdatedSignal>(11, _omitFieldNames ? '' : 'assetsUpdated', subBuilder: AssetsUpdatedSignal.create)
@@ -6354,6 +7092,8 @@ class MatchSignal extends $pb.GeneratedMessage {
     ..aOM<OnlineCountChangedSignal>(18, _omitFieldNames ? '' : 'onlineCountChanged', subBuilder: OnlineCountChangedSignal.create)
     ..aOM<PresenceJoinSignal>(19, _omitFieldNames ? '' : 'presenceJoin', subBuilder: PresenceJoinSignal.create)
     ..aOM<PresenceLeaveSignal>(20, _omitFieldNames ? '' : 'presenceLeave', subBuilder: PresenceLeaveSignal.create)
+    ..aOM<BatchPresenceJoinSignal>(21, _omitFieldNames ? '' : 'batchPresenceJoin', subBuilder: BatchPresenceJoinSignal.create)
+    ..aOM<BatchPresenceLeaveSignal>(22, _omitFieldNames ? '' : 'batchPresenceLeave', subBuilder: BatchPresenceLeaveSignal.create)
     ..hasRequiredFields = false
   ;
 
@@ -6477,6 +7217,28 @@ class MatchSignal extends $pb.GeneratedMessage {
   void clearPresenceLeave() => clearField(20);
   @$pb.TagNumber(20)
   PresenceLeaveSignal ensurePresenceLeave() => $_ensure(8);
+
+  @$pb.TagNumber(21)
+  BatchPresenceJoinSignal get batchPresenceJoin => $_getN(9);
+  @$pb.TagNumber(21)
+  set batchPresenceJoin(BatchPresenceJoinSignal v) { setField(21, v); }
+  @$pb.TagNumber(21)
+  $core.bool hasBatchPresenceJoin() => $_has(9);
+  @$pb.TagNumber(21)
+  void clearBatchPresenceJoin() => clearField(21);
+  @$pb.TagNumber(21)
+  BatchPresenceJoinSignal ensureBatchPresenceJoin() => $_ensure(9);
+
+  @$pb.TagNumber(22)
+  BatchPresenceLeaveSignal get batchPresenceLeave => $_getN(10);
+  @$pb.TagNumber(22)
+  set batchPresenceLeave(BatchPresenceLeaveSignal v) { setField(22, v); }
+  @$pb.TagNumber(22)
+  $core.bool hasBatchPresenceLeave() => $_has(10);
+  @$pb.TagNumber(22)
+  void clearBatchPresenceLeave() => clearField(22);
+  @$pb.TagNumber(22)
+  BatchPresenceLeaveSignal ensureBatchPresenceLeave() => $_ensure(10);
 }
 
 /// PresenceJoinSignal 跨 Match 用户进入通知信号（仅通知，不含坐标，不渲染）
@@ -6487,6 +7249,7 @@ class PresenceJoinSignal extends $pb.GeneratedMessage {
     $core.String? avatarUrl,
     $core.bool? isAnonymous,
     $core.String? mapId,
+    $core.String? businessUserId,
   }) {
     final $result = create();
     if (userId != null) {
@@ -6504,6 +7267,9 @@ class PresenceJoinSignal extends $pb.GeneratedMessage {
     if (mapId != null) {
       $result.mapId = mapId;
     }
+    if (businessUserId != null) {
+      $result.businessUserId = businessUserId;
+    }
     return $result;
   }
   PresenceJoinSignal._() : super();
@@ -6516,6 +7282,7 @@ class PresenceJoinSignal extends $pb.GeneratedMessage {
     ..aOS(3, _omitFieldNames ? '' : 'avatarUrl')
     ..aOB(4, _omitFieldNames ? '' : 'isAnonymous')
     ..aOS(5, _omitFieldNames ? '' : 'mapId')
+    ..aOS(6, _omitFieldNames ? '' : 'businessUserId')
     ..hasRequiredFields = false
   ;
 
@@ -6584,6 +7351,15 @@ class PresenceJoinSignal extends $pb.GeneratedMessage {
   $core.bool hasMapId() => $_has(4);
   @$pb.TagNumber(5)
   void clearMapId() => clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.String get businessUserId => $_getSZ(5);
+  @$pb.TagNumber(6)
+  set businessUserId($core.String v) { $_setString(5, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasBusinessUserId() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearBusinessUserId() => clearField(6);
 }
 
 /// PresenceLeaveSignal 跨 Match 用户离开通知信号

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -391,7 +392,11 @@ class _LobbyDesktopState extends State<LobbyDesktop>
           previous.pendingSettings != current.pendingSettings ||
           previous.isSpriteChangePending != current.isSpriteChangePending ||
           previous.allOnlineUsers != current.allOnlineUsers ||
-          previous.isLoadingAllOnlineUsers != current.isLoadingAllOnlineUsers,
+          previous.isLoadingAllOnlineUsers != current.isLoadingAllOnlineUsers ||
+          previous.queueTicket != current.queueTicket ||
+          previous.queuePosition != current.queuePosition ||
+          previous.queueTotal != current.queueTotal ||
+          previous.queueEtaSeconds != current.queueEtaSeconds,
       listenWhen: (previous, current) =>
           previous.isChatActive != current.isChatActive ||
           previous.transientNoticeSeq != current.transientNoticeSeq ||
@@ -495,8 +500,11 @@ class _LobbyDesktopState extends State<LobbyDesktop>
           );
         }
 
-        // Loading 阶段：显示加载界面
+        // Loading 阶段：显示加载界面或排队界面
         if (pageStatus == LobbyPageStatus.loading) {
+          if (state.isQueueing) {
+            return _LobbyQueueScreen(state: state);
+          }
           return LobbyLoadingScreen(state: state);
         }
 
@@ -1530,6 +1538,391 @@ class _PlayerAvatar extends StatelessWidget {
           : Colors.white.withValues(alpha: 0.1),
       child: const Icon(Icons.person, size: 22, color: Colors.white54),
     );
+  }
+}
+
+/// 排队等待界面
+class _LobbyQueueScreen extends StatefulWidget {
+  final LobbyState state;
+
+  const _LobbyQueueScreen({required this.state});
+
+  @override
+  State<_LobbyQueueScreen> createState() => _LobbyQueueScreenState();
+}
+
+class _LobbyQueueScreenState extends State<_LobbyQueueScreen>
+    with TickerProviderStateMixin {
+  late final AnimationController _pulseController;
+  late final AnimationController _rotateController;
+  late final AnimationController _progressGlowController;
+  late final Animation<double> _pulseAnimation;
+  late final Animation<double> _rotateAnimation;
+  late final Animation<double> _progressGlowAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 0.6, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    _rotateController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 6),
+    )..repeat();
+    _rotateAnimation = Tween<double>(begin: 0, end: 1.0).animate(
+      CurvedAnimation(parent: _rotateController, curve: Curves.linear),
+    );
+
+    _progressGlowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat(reverse: true);
+    _progressGlowAnimation = Tween<double>(begin: 0.3, end: 0.8).animate(
+      CurvedAnimation(parent: _progressGlowController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    _rotateController.dispose();
+    _progressGlowController.dispose();
+    super.dispose();
+  }
+
+  String _formatEta(int seconds) {
+    if (seconds <= 0) return '计算中...';
+    if (seconds < 60) return '$seconds 秒';
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    if (remainingSeconds == 0) return '$minutes 分钟';
+    return '$minutes 分 $remainingSeconds 秒';
+  }
+
+  double _calculateProgress() {
+    final position = widget.state.queuePosition;
+    final total = widget.state.queueTotal;
+    if (total <= 0 || position <= 0) return 0.0;
+    return ((total - position) / total).clamp(0.0, 1.0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1E293B);
+    final textSecondary = isDark ? Colors.white70 : const Color(0xFF475569);
+    final accentColor = const Color(0xFF38BDF8);
+    final successColor = const Color(0xFF22C55E);
+
+    final position = widget.state.queuePosition;
+    final total = widget.state.queueTotal;
+    final eta = widget.state.queueEtaSeconds;
+    final progress = _calculateProgress();
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(22),
+          bottomRight: Radius.circular(22),
+        ),
+        color: isDark ? const Color(0xFF0B1120) : const Color(0xFFDDE7F7),
+      ),
+      child: Center(
+        child: Container(
+          width: 400,
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 36),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.04)
+                : Colors.white.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.white.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 标题（带脉冲动画）
+              AnimatedBuilder(
+                animation: _pulseAnimation,
+                builder: (context, child) {
+                  return Opacity(
+                    opacity: 0.7 + 0.3 * _pulseAnimation.value,
+                    child: child,
+                  );
+                },
+                child: Text(
+                  '正在排队',
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // 中心圆环动画（与 loading screen 风格一致）
+              AnimatedBuilder(
+                animation: Listenable.merge([_pulseAnimation, _rotateAnimation]),
+                builder: (context, child) {
+                  return SizedBox(
+                    width: 100,
+                    height: 100,
+                    child: CustomPaint(
+                      painter: _QueueRingPainter(
+                        progress: progress,
+                        rotation: _rotateAnimation.value * 6.28,
+                        pulse: _pulseAnimation.value,
+                        ringBgColor: isDark
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : const Color(0xFFCBD5E1),
+                        accentColor: accentColor,
+                      ),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '${(position - 1).clamp(0, total)}',
+                              style: TextStyle(
+                                color: accentColor,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            Text(
+                              '人排队',
+                              style: TextStyle(
+                                color: textSecondary.withValues(alpha: 0.7),
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 24),
+
+              // 预计等待时间
+              Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.schedule,
+                      color: textSecondary.withValues(alpha: 0.6),
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '预计等待 ${_formatEta(eta)}',
+                      style: TextStyle(
+                        color: textSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // 进度条（带发光动画）
+                AnimatedBuilder(
+                  animation: _progressGlowAnimation,
+                  builder: (context, child) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                        boxShadow: progress > 0
+                            ? [
+                                BoxShadow(
+                                  color: accentColor.withValues(
+                                    alpha: 0.15 * _progressGlowAnimation.value,
+                                  ),
+                                  blurRadius: 12,
+                                  spreadRadius: 1,
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: SizedBox(
+                          height: 10,
+                          child: Stack(
+                            children: [
+                              // 背景
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.06)
+                                      : const Color(0xFFCBD5E1).withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                              ),
+                              // 进度
+                              FractionallySizedBox(
+                                widthFactor: progress,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [accentColor, successColor],
+                                    ),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                // 进度信息行
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '第 $position / $total 位',
+                      style: TextStyle(
+                        color: textSecondary.withValues(alpha: 0.7),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // 连接状态指示
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: successColor,
+                        boxShadow: [
+                          BoxShadow(
+                            color: successColor.withValues(alpha: 0.5),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '连接正常 · 排队中',
+                      style: TextStyle(
+                        color: textSecondary.withValues(alpha: 0.5),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 排队界面的圆环画笔（与 loading screen 风格一致）
+class _QueueRingPainter extends CustomPainter {
+  final double progress;
+  final double rotation;
+  final double pulse;
+  final Color ringBgColor;
+  final Color accentColor;
+
+  _QueueRingPainter({
+    required this.progress,
+    required this.rotation,
+    required this.pulse,
+    required this.ringBgColor,
+    required this.accentColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 8;
+
+    // 脉冲外环
+    final glowPaint = Paint()
+      ..color = accentColor.withValues(alpha: 0.12 * pulse)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5;
+    canvas.drawCircle(center, radius + 5 + pulse * 3, glowPaint);
+
+    // 背景圆环
+    final bgPaint = Paint()
+      ..color = ringBgColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4;
+    canvas.drawCircle(center, radius, bgPaint);
+
+    // 进度弧线
+    if (progress > 0) {
+      final progressPaint = Paint()
+        ..shader = SweepGradient(
+          startAngle: -1.57,
+          endAngle: 4.71,
+          colors: [
+            accentColor,
+            const Color(0xFF22C55E),
+            accentColor.withValues(alpha: 0.1),
+          ],
+          stops: const [0.0, 0.7, 1.0],
+        ).createShader(Rect.fromCircle(center: center, radius: radius))
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4
+        ..strokeCap = StrokeCap.round;
+
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -1.57,
+        progress * 6.28,
+        false,
+        progressPaint,
+      );
+    }
+
+    // 旋转装饰点（4个点围绕圆环旋转）
+    final dotPaint = Paint()
+      ..color = accentColor.withValues(alpha: 0.6 * pulse)
+      ..style = PaintingStyle.fill;
+
+    for (int i = 0; i < 4; i++) {
+      final angle = rotation + (i * 1.57); // 每 90 度一个点
+      final x = center.dx + (radius + 2) * math.cos(angle);
+      final y = center.dy + (radius + 2) * math.sin(angle);
+      canvas.drawCircle(Offset(x, y), 2 * pulse, dotPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _QueueRingPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.rotation != rotation ||
+        oldDelegate.pulse != pulse;
   }
 }
 
