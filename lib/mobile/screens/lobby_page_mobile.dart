@@ -30,7 +30,7 @@ class LobbyPageMobile extends StatefulWidget {
 }
 
 class _LobbyPageMobileState extends State<LobbyPageMobile>
-    with PageLifecycleMixin, TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with PageLifecycleMixin, TickerProviderStateMixin, AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   @override
   bool get wantKeepAlive => true;
   late final LobbyBloc _lobbyBloc;
@@ -98,6 +98,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _lobbyBloc = LobbyBloc(initialActivityText: '手机在线');
 
     _teleportController = AnimationController(
@@ -133,7 +134,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
     // 首次进入时不自动连接，等用户手动点击"加入大厅"按钮
   }
 
-  /// 从后台恢复时的处理：根据后台时长决定是否需要清除气泡和刷新 snapshot
+  /// 从后台恢复时的处理：根据后台时长决定是否需要刷新 snapshot
   void _checkForegroundRecovery() {
     final backgroundTime = _backgroundTimestamp;
     _backgroundTimestamp = null; // 重置
@@ -142,13 +143,12 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
 
     final duration = DateTime.now().difference(backgroundTime);
     if (duration < _backgroundRecoveryThreshold) {
-      // 后台时间较短，定时器还在正常工作，不需要额外处理
+      // 后台时间较短，不需要刷新 snapshot
       return;
     }
 
-    // 后台时间超过阈值，清除所有聊天气泡并刷新 snapshot
-    LogService.d('[LobbyPageMobile] 后台超过 ${_backgroundRecoveryThreshold.inMinutes} 分钟，触发完整恢复');
-    _lobbyBloc.add(const LobbyChatBubblesCleared());
+    // 后台时间超过阈值，刷新 snapshot 确保数据最新
+    LogService.d('[LobbyPageMobile] 后台超过 ${_backgroundRecoveryThreshold.inMinutes} 分钟，刷新 snapshot');
     _lobbyBloc.add(const LobbySnapshotRefreshRequested());
   }
 
@@ -193,6 +193,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _authWaitSubscription?.cancel();
     _teleportController?.removeStatusListener(_onTeleportAnimationStatus);
     _teleportController?.dispose();
@@ -208,6 +209,21 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
     }
     _lobbyBloc.close();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // 从后台恢复时，立即清除所有聊天气泡
+      // 避免后台期间收到的消息导致气泡卡住不消失
+      if (_started && _lobbyBloc.state.pageStatus == LobbyPageStatus.ready) {
+        _lobbyBloc.add(const LobbyChatBubblesCleared());
+      }
+    } else if (state == AppLifecycleState.paused) {
+      // 记录进入后台的时间
+      _backgroundTimestamp = DateTime.now();
+    }
   }
 
   // ─── 权限引导逻辑 ──────────────────────────────────────
