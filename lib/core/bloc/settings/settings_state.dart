@@ -128,11 +128,11 @@ extension BroadcastNotificationTypeExtension on BroadcastNotificationType {
   String get description {
     switch (this) {
       case BroadcastNotificationType.software:
-        return '在软件内以浮窗形式显示广播消息';
+        return '收到广播时，在屏幕上弹出独立的软件浮窗通知（位置可在"窗口位置设置"中调整）';
       case BroadcastNotificationType.system:
-        return '使用系统通知栏显示广播消息（即使软件在后台也能收到）';
+        return '收到广播时，通过系统通知栏推送提醒，即使软件在后台或最小化也能收到';
       case BroadcastNotificationType.disabled:
-        return '不显示任何广播通知，浮动窗口和系统通知均关闭';
+        return '仅在右下角浮动卡片中显示广播，不弹出任何额外通知窗口';
     }
   }
 }

@@ -49,7 +49,7 @@ class NotificationSettings extends StatelessWidget {
         ),
         SettingsItem(
           label: '收到广播时的通知方式',
-          description: '选择收到全服广播消息时的提醒方式。',
+          description: '收到全服广播时，右下角浮动卡片始终显示。此处控制是否额外弹出独立通知窗口或系统通知。',
           control: _BroadcastNotificationTypeSelector(settingsState: settingsState),
           alignTop: true,
         ),
