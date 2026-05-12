@@ -82,6 +82,16 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
   /// 右键菜单回调：调查用户
   void Function(LobbyUser user)? onInvestigateUser;
 
+  /// 当前是否悬停在可交互的玩家上（用于切换鼠标光标）
+  bool get isHoveringInteractablePlayer {
+    if (_hoveredPlayer == null) return false;
+    final user = _hoveredPlayer!.user;
+    // 有 businessUserId 且非自己才可交互
+    if (user.businessUserId == null || user.businessUserId!.isEmpty) return false;
+    if (user.isSelf) return false;
+    return true;
+  }
+
   /// 目标位置标记组件（显示红色叉号）
   TargetMarkerComponent? _targetMarker;
 
