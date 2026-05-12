@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -112,9 +113,15 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
 
   @override
   void onPageBecameActive() {
-    _ensureStarted();
-    // 切回大厅时重新开启屏幕常亮
+    // 已经连接过的情况下，切回大厅时恢复状态
     if (_started && _lobbyBloc.state.pageStatus == LobbyPageStatus.ready) {
+      // 检查登录状态是否与大厅数据一致
+      if (!AuthService.instance.isLoggedIn && !_lobbyBloc.state.isAnonymous) {
+        // 用户已登出但大厅仍显示登录身份，需要刷新
+        LogService.i('[LobbyPageMobile] 检测到用户登出，刷新大厅数据');
+        _lobbyBloc.add(const LobbyStarted());
+        return;
+      }
       ScreenWakelock.enable();
       // 检查保活服务是否还在运行，掉了就重启
       if (Platform.isAndroid) {
@@ -123,6 +130,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
       // 从后台恢复时，判断是否需要执行完整恢复
       _checkForegroundRecovery();
     }
+    // 首次进入时不自动连接，等用户手动点击"加入大厅"按钮
   }
 
   /// 从后台恢复时的处理：根据后台时长决定是否需要清除气泡和刷新 snapshot
@@ -396,11 +404,26 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
             previous.isTeleporting != current.isTeleporting ||
             previous.nearbyPortal != current.nearbyPortal ||
             previous.transientNotice != current.transientNotice ||
+            previous.transientNoticeSeq != current.transientNoticeSeq ||
             previous.playerNotifications != current.playerNotifications ||
             previous.users.length != current.users.length ||
             previous.serverOnlineCount != current.serverOnlineCount ||
-            previous.mapConfig != current.mapConfig,
+            previous.mapConfig != current.mapConfig ||
+            previous.queueTicket != current.queueTicket ||
+            previous.pageStatus != current.pageStatus,
         listener: (context, state) {
+          // 页面重新进入 loading 时重置传送动画状态（防止重连后状态残留）
+          if (state.pageStatus == LobbyPageStatus.loading) {
+            _lastTeleportingState = null;
+            _showTeleportOverlay = false;
+            _targetMapConfig = null;
+            _teleportHideTimer?.cancel();
+            _minDurationTimer?.cancel();
+            _teleportDataReady = false;
+            _teleportStartTime = null;
+            _teleportController?.reset();
+          }
+
           // 页面进入 ready 时主动请求在线人数
           if (state.pageStatus == LobbyPageStatus.ready &&
               state.serverOnlineCount == 0) {
@@ -467,8 +490,16 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
             previous.broadcastCooldownSeconds !=
                 current.broadcastCooldownSeconds ||
             previous.isAnonymous != current.isAnonymous ||
+            previous.anonymousSwitchCooldownSeconds !=
+                current.anonymousSwitchCooldownSeconds ||
+            previous.steamNameSwitchCooldownSeconds !=
+                current.steamNameSwitchCooldownSeconds ||
             previous.playerNotifications != current.playerNotifications ||
-            previous.kickedReason != current.kickedReason,
+            previous.kickedReason != current.kickedReason ||
+            previous.queueTicket != current.queueTicket ||
+            previous.queuePosition != current.queuePosition ||
+            previous.queueTotal != current.queueTotal ||
+            previous.queueEtaSeconds != current.queueEtaSeconds,
         builder: (context, state) {
           return Scaffold(
             body: _buildBody(context, state),
@@ -505,7 +536,15 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
 
     switch (state.pageStatus) {
       case LobbyPageStatus.idle:
+        return _buildIdleView(context);
       case LobbyPageStatus.loading:
+        // 排队中显示排队界面
+        if (state.isQueueing) {
+          return _LobbyQueueScreenMobile(
+            state: state,
+            onCancel: _cancelQueueAndReset,
+          );
+        }
         return LobbyLoadingScreenMobile(state: state);
       case LobbyPageStatus.error:
         return _buildErrorView(context);
@@ -689,6 +728,86 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
       builder: (_) => BlocProvider.value(
         value: _lobbyBloc,
         child: const BroadcastDialogMobile(),
+      ),
+    );
+  }
+
+  /// 移动端取消排队：通知服务端取消，然后重建 Bloc 回到 idle 状态
+  void _cancelQueueAndReset() {
+    // 直接调用 service 取消排队（不经过 Bloc 的 LobbyQueueCancelled，因为它会自动重连）
+    final service = LobbyNakamaService.instance;
+    service.rpcQueueCancel(_lobbyBloc.state.queueTicket ?? '');
+
+    // 关闭旧 Bloc 并重建，回到 idle 状态
+    _lobbyBloc.close();
+    setState(() {
+      _started = false;
+      _lobbyBloc = LobbyBloc(initialActivityText: '手机在线');
+    });
+  }
+
+  Widget _buildIdleView(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1E293B);
+    final textSecondary = isDark ? Colors.white70 : const Color(0xFF475569);
+
+    return Container(
+      color: isDark ? const Color(0xFF0B1120) : const Color(0xFFDDE7F7),
+      child: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.castle,
+                  size: 64,
+                  color: textSecondary.withValues(alpha: 0.4),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  '大厅',
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '与其他玩家实时互动、聊天、传送',
+                  style: TextStyle(
+                    color: textSecondary,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: 180,
+                  height: 44,
+                  child: ElevatedButton.icon(
+                    onPressed: _ensureStarted,
+                    icon: const Icon(Icons.login, size: 20),
+                    label: const Text('加入大厅'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF38BDF8),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                      textStyle: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -916,4 +1035,415 @@ class _PortalBorderPainter extends CustomPainter {
   @override
   bool shouldRepaint(_PortalBorderPainter oldDelegate) =>
       oldDelegate.opacity != opacity;
+}
+
+// ─── 排队等待界面（移动端） ──────────────────────────────────────
+
+/// 移动端排队等待界面
+class _LobbyQueueScreenMobile extends StatefulWidget {
+  final LobbyState state;
+  final VoidCallback? onCancel;
+
+  const _LobbyQueueScreenMobile({required this.state, this.onCancel});
+
+  @override
+  State<_LobbyQueueScreenMobile> createState() =>
+      _LobbyQueueScreenMobileState();
+}
+
+class _LobbyQueueScreenMobileState extends State<_LobbyQueueScreenMobile>
+    with TickerProviderStateMixin {
+  late final AnimationController _pulseController;
+  late final AnimationController _rotateController;
+  late final AnimationController _progressGlowController;
+  late final Animation<double> _pulseAnimation;
+  late final Animation<double> _rotateAnimation;
+  late final Animation<double> _progressGlowAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 0.6, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    _rotateController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 6),
+    )..repeat();
+    _rotateAnimation = Tween<double>(begin: 0, end: 1.0).animate(
+      CurvedAnimation(parent: _rotateController, curve: Curves.linear),
+    );
+
+    _progressGlowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat(reverse: true);
+    _progressGlowAnimation = Tween<double>(begin: 0.3, end: 0.8).animate(
+      CurvedAnimation(
+          parent: _progressGlowController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    _rotateController.dispose();
+    _progressGlowController.dispose();
+    super.dispose();
+  }
+
+  String _formatEta(int seconds) {
+    if (seconds <= 0) return '计算中...';
+    if (seconds < 60) return '$seconds 秒';
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    if (remainingSeconds == 0) return '$minutes 分钟';
+    return '$minutes 分 $remainingSeconds 秒';
+  }
+
+  double _calculateProgress() {
+    final position = widget.state.queuePosition;
+    final total = widget.state.queueTotal;
+    if (total <= 0 || position <= 0) return 0.0;
+    return ((total - position) / total).clamp(0.0, 1.0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1E293B);
+    final textSecondary = isDark ? Colors.white70 : const Color(0xFF475569);
+    final accentColor = const Color(0xFF38BDF8);
+    final successColor = const Color(0xFF22C55E);
+
+    final position = widget.state.queuePosition;
+    final total = widget.state.queueTotal;
+    final eta = widget.state.queueEtaSeconds;
+    final progress = _calculateProgress();
+
+    return Container(
+      color: isDark ? const Color(0xFF0B1120) : const Color(0xFFDDE7F7),
+      child: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 标题（带脉冲动画）
+                AnimatedBuilder(
+                  animation: _pulseAnimation,
+                  builder: (context, child) {
+                    return Opacity(
+                      opacity: 0.7 + 0.3 * _pulseAnimation.value,
+                      child: child,
+                    );
+                  },
+                  child: Text(
+                    '正在排队',
+                    style: TextStyle(
+                      color: textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // 中心圆环动画
+                AnimatedBuilder(
+                  animation: Listenable.merge(
+                      [_pulseAnimation, _rotateAnimation]),
+                  builder: (context, child) {
+                    return SizedBox(
+                      width: 90,
+                      height: 90,
+                      child: CustomPaint(
+                        painter: _QueueRingPainterMobile(
+                          progress: progress,
+                          rotation: _rotateAnimation.value * 6.28,
+                          pulse: _pulseAnimation.value,
+                          ringBgColor: isDark
+                              ? Colors.white.withValues(alpha: 0.1)
+                              : const Color(0xFFCBD5E1),
+                          accentColor: accentColor,
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '${(position - 1).clamp(0, total)}',
+                                style: TextStyle(
+                                  color: accentColor,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              Text(
+                                '人排队',
+                                style: TextStyle(
+                                  color:
+                                      textSecondary.withValues(alpha: 0.7),
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 24),
+
+                // 预计等待时间
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.schedule,
+                      color: textSecondary.withValues(alpha: 0.6),
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '预计等待 ${_formatEta(eta)}',
+                      style: TextStyle(
+                        color: textSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // 进度条（带发光动画）
+                AnimatedBuilder(
+                  animation: _progressGlowAnimation,
+                  builder: (context, child) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                        boxShadow: progress > 0
+                            ? [
+                                BoxShadow(
+                                  color: accentColor.withValues(
+                                    alpha: 0.15 *
+                                        _progressGlowAnimation.value,
+                                  ),
+                                  blurRadius: 12,
+                                  spreadRadius: 1,
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: SizedBox(
+                          height: 10,
+                          child: Stack(
+                            children: [
+                              // 背景
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? Colors.white
+                                          .withValues(alpha: 0.06)
+                                      : const Color(0xFFCBD5E1)
+                                          .withValues(alpha: 0.5),
+                                  borderRadius:
+                                      BorderRadius.circular(6),
+                                ),
+                              ),
+                              // 进度
+                              FractionallySizedBox(
+                                widthFactor: progress,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        accentColor,
+                                        successColor,
+                                      ],
+                                    ),
+                                    borderRadius:
+                                        BorderRadius.circular(6),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                // 进度信息行
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '第 $position / $total 位',
+                      style: TextStyle(
+                        color: textSecondary.withValues(alpha: 0.7),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // 连接状态指示
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: successColor,
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                successColor.withValues(alpha: 0.5),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '连接正常 · 排队中',
+                      style: TextStyle(
+                        color: textSecondary.withValues(alpha: 0.5),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // 取消排队按钮
+                SizedBox(
+                  width: 140,
+                  child: OutlinedButton(
+                    onPressed: widget.onCancel,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: textSecondary,
+                      side: BorderSide(
+                        color: textSecondary.withValues(alpha: 0.3),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text(
+                      '取消排队',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 移动端排队界面的圆环画笔
+class _QueueRingPainterMobile extends CustomPainter {
+  final double progress;
+  final double rotation;
+  final double pulse;
+  final Color ringBgColor;
+  final Color accentColor;
+
+  _QueueRingPainterMobile({
+    required this.progress,
+    required this.rotation,
+    required this.pulse,
+    required this.ringBgColor,
+    required this.accentColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 8;
+
+    // 脉冲外环
+    final glowPaint = Paint()
+      ..color = accentColor.withValues(alpha: 0.12 * pulse)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5;
+    canvas.drawCircle(center, radius + 5 + pulse * 3, glowPaint);
+
+    // 背景圆环
+    final bgPaint = Paint()
+      ..color = ringBgColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4;
+    canvas.drawCircle(center, radius, bgPaint);
+
+    // 进度弧线
+    if (progress > 0) {
+      final progressPaint = Paint()
+        ..shader = SweepGradient(
+          startAngle: -1.57,
+          endAngle: 4.71,
+          colors: [
+            accentColor,
+            const Color(0xFF22C55E),
+            accentColor.withValues(alpha: 0.1),
+          ],
+          stops: const [0.0, 0.7, 1.0],
+        ).createShader(Rect.fromCircle(center: center, radius: radius))
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4
+        ..strokeCap = StrokeCap.round;
+
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -1.57,
+        progress * 6.28,
+        false,
+        progressPaint,
+      );
+    }
+
+    // 旋转装饰点（4个点围绕圆环旋转）
+    final dotPaint = Paint()
+      ..color = accentColor.withValues(alpha: 0.6 * pulse)
+      ..style = PaintingStyle.fill;
+
+    for (int i = 0; i < 4; i++) {
+      final angle = rotation + (i * 1.57); // 每 90 度一个点
+      final x = center.dx + (radius + 2) * math.cos(angle);
+      final y = center.dy + (radius + 2) * math.sin(angle);
+      canvas.drawCircle(Offset(x, y), 2 * pulse, dotPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _QueueRingPainterMobile oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.rotation != rotation ||
+        oldDelegate.pulse != pulse;
+  }
 }
