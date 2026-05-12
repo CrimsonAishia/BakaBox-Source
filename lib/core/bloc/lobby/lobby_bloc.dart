@@ -124,6 +124,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     on<LobbyKickedDismissed>(_onKickedDismissed);
     on<LobbyChatBubblesCleared>(_onChatBubblesCleared);
     on<LobbySnapshotRefreshRequested>(_onSnapshotRefreshRequested);
+    on<_LobbyQueueStarted>(_onQueueStarted);
+    on<_LobbyQueueStatusUpdated>(_onQueueStatusUpdated);
+    on<_LobbyQueueReady>(_onQueueReady);
+    on<_LobbyQueueExpired>(_onQueueExpired);
+    on<LobbyQueueCancelled>(_onQueueCancelled);
   }
 
   static const double _moveSpeed = 2.8;
@@ -174,6 +179,20 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   Timer? _statusTextDebounceTimer;
   /// 状态文字上报防抖时间
   static const Duration _statusTextDebounceDuration = Duration(seconds: 3);
+
+  /// 排队轮询定时器
+  Timer? _queuePollTimer;
+  /// 当前排队令牌
+  String? _queueTicket;
+  /// 排队轮询失败计数
+  int _queuePollFailCount = 0;
+  /// 排队自动重试延迟定时器
+  Timer? _queueRetryTimer;
+  /// 当前排队轮询间隔（毫秒），用于避免重复重建定时器
+  int _queuePollIntervalMs = 0;
+
+  /// 定期 snapshot 对齐定时器（presence.delta 最终一致性保障）
+  Timer? _snapshotAlignTimer;
 
   /// AuthService 登录状态变化监听器回调
   late final LoginStateChangedCallback _authStateListener;
@@ -246,6 +265,17 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _isLobbyEntered = true;
     _isDisposed = false;
 
+    // 取消排队相关定时器
+    _queuePollTimer?.cancel();
+    _queuePollTimer = null;
+    _queueTicket = null;
+    _queuePollFailCount = 0;
+    _queueRetryTimer?.cancel();
+    _queueRetryTimer = null;
+    _queuePollIntervalMs = 0;
+    _snapshotAlignTimer?.cancel();
+    _snapshotAlignTimer = null;
+
     // 取消上一次可能残留的 assets 监听器和超时计时器
     _snapshotOnAssetsReceived?.cancel();
     _snapshotOnAssetsReceived = null;
@@ -281,6 +311,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             ? LobbyLoadingPhase.loadingAssets
             : LobbyLoadingPhase.connecting,
         transientNotice: '正在加载大厅数据...',
+        // 清除排队状态
+        clearQueue: true,
       ),
     );
 
@@ -1307,6 +1339,20 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         _handleConnectionEvent(status, error, emit);
       case LobbyServerEvent(:final type, :final envelope):
         LogService.d('[LobbyBloc] _onWsEventReceived: type=$type');
+        // 排队开始事件（由 service 层构造的虚拟事件，携带 queue 字段）
+        if (type == 'queue.started') {
+          final serverEvent = wsEvent as LobbyServerEvent;
+          if (serverEvent.queueTicket != null) {
+            add(_LobbyQueueStarted(
+              ticket: serverEvent.queueTicket!,
+              position: serverEvent.queuePosition ?? 0,
+              queueTotal: serverEvent.queueTotal ?? 0,
+              etaSeconds: serverEvent.queueEtaSeconds ?? 0,
+              pollIntervalMs: serverEvent.queuePollIntervalMs ?? 2000,
+            ));
+          }
+          return;
+        }
         _handleServerEvent(type, envelope, emit);
     }
   }
@@ -1340,7 +1386,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             }
 
             // 首次连接或重连成功后，只要大厅处于 loading 状态就重新请求 assets+snapshot。
-            if (_isLobbyEntered && state.pageStatus == LobbyPageStatus.loading) {
+            // 排队中不请求（尚未加入 Match，消息无法送达）
+            if (_isLobbyEntered && state.pageStatus == LobbyPageStatus.loading && _queueTicket == null) {
               _requestAssetsAndSnapshot();
             }
           }
@@ -1661,6 +1708,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
               assets: updatedAssets,
             ),
           );
+
+          // 首次进入 ready 时启动定期 snapshot 对齐（presence.delta 最终一致性保障）
+          if (isFirstSnapshot) {
+            _startSnapshotAlignTimer();
+          }
 
           // 如果地图发生变化且正在传送中，等待地图加载完成后完成传送
           if (mapChanged && wasTeleporting && snapshotState.mapConfig != null) {
@@ -2342,6 +2394,13 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           }).toList(growable: false);
           emit(state.copyWith(users: updatedUsers));
         }
+        break;
+      case 'presence.delta':
+        _handlePresenceDelta(envelope.presenceDeltaResponse, emit);
+        break;
+      case 'queue.started':
+        // 排队开始事件（由 service 层构造的虚拟事件）
+        // 实际处理在 _onWsEventReceived 中通过 LobbyServerEvent 的 queue 字段
         break;
     }
   }
@@ -3208,6 +3267,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _settingsTimeoutTimer?.cancel();
     _transientNoticeTimer?.cancel();
     _statusTextDebounceTimer?.cancel();
+    _queuePollTimer?.cancel();
+    _queuePollTimer = null;
+    _queueRetryTimer?.cancel();
+    _queueRetryTimer = null;
+    _snapshotAlignTimer?.cancel();
+    _snapshotAlignTimer = null;
     await _wsSubscription?.cancel();
     await _gameStatusSubscription?.cancel();
     await _broadcastController.close();
@@ -3300,6 +3365,302 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     LogService.d('[LobbyBloc] 从后台恢复，重新请求 snapshot');
     // 只请求 snapshot，不请求 assets（assets 一般不会变化）
     await _service.requestSnapshot();
+  }
+
+  // =========================================================================
+  // 排队系统处理
+  // =========================================================================
+
+  /// 启动定期 snapshot 对齐定时器（每 30 秒请求一次 snapshot，确保 delta 帧最终一致性）
+  void _startSnapshotAlignTimer() {
+    _snapshotAlignTimer?.cancel();
+    _snapshotAlignTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (_isDisposed || !_isLobbyEntered) return;
+      if (state.pageStatus != LobbyPageStatus.ready) return;
+      LogService.d('[LobbyBloc] 定期 snapshot 对齐');
+      _service.requestSnapshot();
+    });
+  }
+
+  /// 排队开始
+  void _onQueueStarted(
+    _LobbyQueueStarted event,
+    Emitter<LobbyState> emit,
+  ) {
+    _queueTicket = event.ticket;
+    _queuePollFailCount = 0;
+
+    emit(state.copyWith(
+      queueTicket: event.ticket,
+      queuePosition: event.position,
+      queueTotal: event.queueTotal,
+      queueEtaSeconds: event.etaSeconds,
+      queueExpired: false,
+      loadingPhase: LobbyLoadingPhase.connecting,
+      transientNotice: '服务器繁忙，正在排队中...',
+    ));
+
+    // 启动轮询定时器
+    _startQueuePolling(event.pollIntervalMs);
+  }
+
+  /// 启动排队轮询
+  void _startQueuePolling(int intervalMs) {
+    final clamped = intervalMs.clamp(1000, 10000);
+    // 避免相同间隔重复重建定时器
+    if (_queuePollTimer != null && _queuePollIntervalMs == clamped) return;
+    _queuePollTimer?.cancel();
+    _queuePollIntervalMs = clamped;
+    final interval = Duration(milliseconds: clamped);
+    _queuePollTimer = Timer.periodic(interval, (_) => _pollQueueStatus());
+  }
+
+  /// 轮询排队状态
+  Future<void> _pollQueueStatus() async {
+    final ticket = _queueTicket;
+    if (ticket == null || _isDisposed) return;
+
+    final resp = await _service.rpcQueueStatus(ticket);
+    if (resp == null) {
+      _queuePollFailCount++;
+      if (_queuePollFailCount >= 3) {
+        // 连续 3 次轮询失败，视为网络异常
+        add(const _LobbyQueueExpired('network_error'));
+      }
+      return;
+    }
+
+    _queuePollFailCount = 0;
+
+    if (resp.expired) {
+      add(_LobbyQueueExpired(resp.expireReason));
+      return;
+    }
+
+    if (resp.ready) {
+      add(_LobbyQueueReady(resp.matchId));
+      return;
+    }
+
+    // 更新排队状态
+    add(_LobbyQueueStatusUpdated(
+      position: resp.position,
+      queueTotal: resp.queueTotal,
+      etaSeconds: resp.etaSeconds,
+    ));
+
+    // 服务端可能调整轮询间隔
+    if (resp.pollIntervalMs > 0) {
+      _startQueuePolling(resp.pollIntervalMs);
+    }
+  }
+
+  /// 排队状态更新
+  void _onQueueStatusUpdated(
+    _LobbyQueueStatusUpdated event,
+    Emitter<LobbyState> emit,
+  ) {
+    emit(state.copyWith(
+      queuePosition: event.position,
+      queueTotal: event.queueTotal,
+      queueEtaSeconds: event.etaSeconds,
+    ));
+  }
+
+  /// 排队就绪，可以进入大厅
+  Future<void> _onQueueReady(
+    _LobbyQueueReady event,
+    Emitter<LobbyState> emit,
+  ) async {
+    _queuePollTimer?.cancel();
+    _queuePollTimer = null;
+    _queueTicket = null;
+
+    emit(state.copyWith(
+      clearQueue: true,
+      transientNotice: '排队完成，正在进入大厅...',
+      loadingPhase: LobbyLoadingPhase.loadingAssets,
+    ));
+
+    // 加入 Match
+    try {
+      await _service.joinMatchById(event.matchId);
+      LogService.i('[LobbyBloc] 排队完成，已加入 Match: ${event.matchId}');
+
+      // joinMatch 成功后，service 层会处理 join.success → enter → snapshot
+      // 但 assets 需要 bloc 层主动请求
+      _requestAssetsAndSnapshot();
+    } catch (e) {
+      LogService.e('[LobbyBloc] 排队完成后 joinMatch 失败: $e');
+      // joinMatch 失败，重新 lobby_join
+      emit(state.copyWith(
+        transientNotice: '进入大厅失败，正在重试...',
+      ));
+      add(const LobbyStarted());
+    }
+  }
+
+  /// 排队过期 — 自动重新加入（大厅是必进的，不允许用户主动退出）
+  void _onQueueExpired(
+    _LobbyQueueExpired event,
+    Emitter<LobbyState> emit,
+  ) {
+    _queuePollTimer?.cancel();
+    _queuePollTimer = null;
+    _queueTicket = null;
+    _queuePollIntervalMs = 0;
+
+    final reason = event.reason;
+    String message;
+    switch (reason) {
+      case 'timeout':
+        message = '排队超时，正在重新加入...';
+        break;
+      case 'network_error':
+        message = '网络异常，正在重新连接...';
+        break;
+      default:
+        message = '排队中断，正在重新加入...';
+    }
+
+    emit(state.copyWith(
+      clearQueue: true,
+      transientNotice: message,
+    ));
+
+    // 自动重新加入（延迟 2 秒避免频繁重试，使用可取消的 Timer）
+    _queueRetryTimer?.cancel();
+    _queueRetryTimer = Timer(const Duration(seconds: 2), () {
+      if (!_isDisposed && _isLobbyEntered) {
+        add(const LobbyStarted());
+      }
+    });
+  }
+
+  /// 用户取消排队（保留接口但不暴露 UI，仅供内部或极端情况使用）
+  Future<void> _onQueueCancelled(
+    LobbyQueueCancelled event,
+    Emitter<LobbyState> emit,
+  ) async {
+    final ticket = _queueTicket;
+    _queuePollTimer?.cancel();
+    _queuePollTimer = null;
+    _queueTicket = null;
+
+    emit(state.copyWith(
+      clearQueue: true,
+      transientNotice: '正在重新加入...',
+    ));
+
+    // 通知服务端取消
+    if (ticket != null) {
+      await _service.rpcQueueCancel(ticket);
+    }
+
+    // 自动重新加入
+    add(const LobbyStarted());
+  }
+
+  // =========================================================================
+  // presence.delta 处理
+  // =========================================================================
+
+  /// 处理 presence.delta 帧（批量用户进入/离开）
+  void _handlePresenceDelta(
+    pb.PresenceDeltaResponse delta,
+    Emitter<LobbyState> emit,
+  ) {
+    var updatedUsers = List<LobbyUser>.from(state.users);
+    final notifications = <PlayerNotification>[];
+
+    // 1. 批量添加新用户（缓存解析结果，避免重复解析）
+    final parsedJoined = <LobbyUser>[];
+    for (final pbUser in delta.joined) {
+      final rawUserId = pbUser.userId;
+      final isSelfUser = rawUserId.isNotEmpty && _selfServerUserId == rawUserId;
+      final user = _parseLobbyUser(pbUser, isSelf: isSelfUser, serverUserId: rawUserId);
+      parsedJoined.add(user);
+
+      updatedUsers = _upsertUser(updatedUsers, user);
+
+      // 生成通知（自己不通知）
+      if (!isSelfUser) {
+        notifications.add(PlayerNotification(
+          id: 'delta_join_${DateTime.now().microsecondsSinceEpoch}_$rawUserId',
+          type: PlayerNotificationType.online,
+          playerName: user.displayName,
+          createdAt: DateTime.now(),
+        ));
+      }
+    }
+
+    // 2. 批量移除离开的用户
+    for (final leftUserId in delta.leftUserIds) {
+      if (leftUserId.isEmpty) continue;
+      final leavingUser = _findUserById(updatedUsers, leftUserId);
+      if (leavingUser != null) {
+        updatedUsers = updatedUsers
+            .where((u) => u.serverUserId != leftUserId && u.userId != leftUserId)
+            .toList(growable: false);
+
+        notifications.add(PlayerNotification(
+          id: 'delta_leave_${DateTime.now().microsecondsSinceEpoch}_$leftUserId',
+          type: PlayerNotificationType.offline,
+          playerName: leavingUser.displayName,
+          createdAt: DateTime.now(),
+        ));
+      }
+    }
+
+    // 3. 跨地图通知
+    for (final crossEvent in delta.crossMapEvents) {
+      if (crossEvent.isAnonymous) continue; // 匿名用户不通知
+      final isSelf = crossEvent.userId.isNotEmpty && _selfServerUserId == crossEvent.userId;
+      if (isSelf) continue;
+
+      final displayName = crossEvent.nickname.isNotEmpty ? crossEvent.nickname : crossEvent.userId;
+      if (crossEvent.eventType == 'join') {
+        notifications.add(PlayerNotification(
+          id: 'delta_cross_join_${DateTime.now().microsecondsSinceEpoch}_${crossEvent.userId}',
+          type: PlayerNotificationType.online,
+          playerName: displayName,
+          createdAt: DateTime.now(),
+        ));
+      } else if (crossEvent.eventType == 'leave') {
+        final targetMapName = crossEvent.targetMapId.isNotEmpty
+            ? (state.assets.getMapById(crossEvent.targetMapId)?.displayName ?? crossEvent.targetMapId)
+            : null;
+        notifications.add(PlayerNotification(
+          id: 'delta_cross_leave_${DateTime.now().microsecondsSinceEpoch}_${crossEvent.userId}',
+          type: targetMapName != null ? PlayerNotificationType.teleport : PlayerNotificationType.offline,
+          playerName: displayName,
+          targetMapName: targetMapName,
+          createdAt: DateTime.now(),
+        ));
+      }
+    }
+
+    // 合并通知（限制最多 20 条）
+    final updatedNotifications = [...state.playerNotifications, ...notifications].take(20).toList();
+
+    // 同步更新 allOnlineUsers（复用已解析的 joined 用户）
+    var updatedAllOnline = List<LobbyUser>.from(state.allOnlineUsers);
+    if (updatedAllOnline.isNotEmpty) {
+      for (final user in parsedJoined) {
+        updatedAllOnline = _upsertUserInList(updatedAllOnline, user);
+      }
+      for (final leftUserId in delta.leftUserIds) {
+        updatedAllOnline = updatedAllOnline
+            .where((u) => u.serverUserId != leftUserId && u.userId != leftUserId)
+            .toList(growable: false);
+      }
+    }
+
+    emit(state.copyWith(
+      users: updatedUsers,
+      playerNotifications: updatedNotifications,
+      allOnlineUsers: updatedAllOnline,
+    ));
   }
 }
 

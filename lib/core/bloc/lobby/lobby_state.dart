@@ -132,6 +132,20 @@ class LobbyState extends Equatable {
   /// 被踢出时服务端附带的消息（admin_kick 时有管理员填写的原因）
   final String? kickedMessage;
 
+  /// ===== 排队系统相关 =====
+  /// 排队令牌（非空表示正在排队中）
+  final String? queueTicket;
+  /// 当前排队位置（1-based）
+  final int queuePosition;
+  /// 队列总长度
+  final int queueTotal;
+  /// 预计等待时间（秒）
+  final int queueEtaSeconds;
+  /// 排队是否已过期
+  final bool queueExpired;
+  /// 排队过期原因
+  final String? queueExpireReason;
+
   const LobbyState({
     required this.connectionStatus,
     required this.pageStatus,
@@ -173,6 +187,12 @@ class LobbyState extends Equatable {
     this.playerNotifications = const [],
     this.kickedReason,
     this.kickedMessage,
+    this.queueTicket,
+    this.queuePosition = 0,
+    this.queueTotal = 0,
+    this.queueEtaSeconds = 0,
+    this.queueExpired = false,
+    this.queueExpireReason,
   });
 
   factory LobbyState.initial() {
@@ -213,6 +233,12 @@ class LobbyState extends Equatable {
       playerNotifications: [],
       kickedReason: null,
       kickedMessage: null,
+      queueTicket: null,
+      queuePosition: 0,
+      queueTotal: 0,
+      queueEtaSeconds: 0,
+      queueExpired: false,
+      queueExpireReason: null,
     );
   }
 
@@ -222,6 +248,9 @@ class LobbyState extends Equatable {
     }
     return null;
   }
+
+  /// 是否正在排队中
+  bool get isQueueing => queueTicket != null && !queueExpired;
 
   LobbyMapConfig? get mapConfig => assets.mapConfig;
 
@@ -277,6 +306,13 @@ class LobbyState extends Equatable {
     Object? kickedReason = _stateSentinel,
     bool clearKicked = false,
     Object? kickedMessage = _stateSentinel,
+    Object? queueTicket = _stateSentinel,
+    bool clearQueue = false,
+    int? queuePosition,
+    int? queueTotal,
+    int? queueEtaSeconds,
+    bool? queueExpired,
+    Object? queueExpireReason = _stateSentinel,
   }) {
     return LobbyState(
       connectionStatus: connectionStatus ?? this.connectionStatus,
@@ -363,6 +399,20 @@ class LobbyState extends Equatable {
           : identical(kickedMessage, _stateSentinel)
           ? this.kickedMessage
           : kickedMessage as String?,
+      queueTicket: clearQueue
+          ? null
+          : identical(queueTicket, _stateSentinel)
+          ? this.queueTicket
+          : queueTicket as String?,
+      queuePosition: queuePosition ?? this.queuePosition,
+      queueTotal: queueTotal ?? this.queueTotal,
+      queueEtaSeconds: queueEtaSeconds ?? this.queueEtaSeconds,
+      queueExpired: clearQueue ? false : (queueExpired ?? this.queueExpired),
+      queueExpireReason: clearQueue
+          ? null
+          : identical(queueExpireReason, _stateSentinel)
+          ? this.queueExpireReason
+          : queueExpireReason as String?,
     );
   }
 
@@ -408,6 +458,12 @@ class LobbyState extends Equatable {
     playerNotifications,
     kickedReason,
     kickedMessage,
+    queueTicket,
+    queuePosition,
+    queueTotal,
+    queueEtaSeconds,
+    queueExpired,
+    queueExpireReason,
   ];
 }
 

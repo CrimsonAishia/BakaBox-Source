@@ -443,11 +443,23 @@ class LobbyServerEvent extends LobbyWsEvent {
   final String traceId;
   final pb.LobbyEnvelope envelope;
 
+  /// 排队相关字段（仅 type='queue.started' 或 'queue.status' 时有效）
+  final String? queueTicket;
+  final int? queuePosition;
+  final int? queueTotal;
+  final int? queueEtaSeconds;
+  final int? queuePollIntervalMs;
+
   const LobbyServerEvent({
     required this.type,
     required this.timestamp,
     required this.traceId,
     required this.envelope,
+    this.queueTicket,
+    this.queuePosition,
+    this.queueTotal,
+    this.queueEtaSeconds,
+    this.queuePollIntervalMs,
   });
 
   @override

@@ -332,3 +332,64 @@ class LobbyChatBubblesCleared extends LobbyEvent {
 class LobbySnapshotRefreshRequested extends LobbyEvent {
   const LobbySnapshotRefreshRequested();
 }
+
+/// 排队状态更新（内部事件，由轮询定时器触发）
+class _LobbyQueueStatusUpdated extends LobbyEvent {
+  final int position;
+  final int queueTotal;
+  final int etaSeconds;
+
+  const _LobbyQueueStatusUpdated({
+    required this.position,
+    required this.queueTotal,
+    required this.etaSeconds,
+  });
+
+  @override
+  List<Object?> get props => [position, queueTotal, etaSeconds];
+}
+
+/// 排队就绪（可以进入大厅）
+class _LobbyQueueReady extends LobbyEvent {
+  final String matchId;
+
+  const _LobbyQueueReady(this.matchId);
+
+  @override
+  List<Object?> get props => [matchId];
+}
+
+/// 排队过期
+class _LobbyQueueExpired extends LobbyEvent {
+  final String reason;
+
+  const _LobbyQueueExpired(this.reason);
+
+  @override
+  List<Object?> get props => [reason];
+}
+
+/// 用户取消排队
+class LobbyQueueCancelled extends LobbyEvent {
+  const LobbyQueueCancelled();
+}
+
+/// 排队开始（从 service 层收到排队响应）
+class _LobbyQueueStarted extends LobbyEvent {
+  final String ticket;
+  final int position;
+  final int queueTotal;
+  final int etaSeconds;
+  final int pollIntervalMs;
+
+  const _LobbyQueueStarted({
+    required this.ticket,
+    required this.position,
+    required this.queueTotal,
+    required this.etaSeconds,
+    required this.pollIntervalMs,
+  });
+
+  @override
+  List<Object?> get props => [ticket, position, queueTotal, etaSeconds, pollIntervalMs];
+}

@@ -668,28 +668,53 @@ class LobbyNakamaService {
       // 4. 监听 Match 消息和断开事件（在 joinMatch 之前设置，确保不丢失消息）
       _setupStreamListeners();
 
-      // 5. RPC lobby_join 获取 matchId（服务端自动分配地图）
-      final matchId = await _rpcLobbyJoin();
-      if (matchId == null) {
-        LogService.e('[LobbyNakamaService] RPC lobby_join 获取 matchId 失败');
+      // 5. RPC lobby_join 获取 matchId 或排队令牌（服务端自动分配地图）
+      final joinResponse = await _rpcLobbyJoin();
+      if (joinResponse == null) {
+        LogService.e('[LobbyNakamaService] RPC lobby_join 获取响应失败');
         _emitConnectionEvent(LobbyConnectionEventType.error, error: '获取 matchId 失败');
         _scheduleReconnect();
         return;
       }
 
-      // 6. 加入 Match
-      await _socketManager.joinMatch(matchId);
+      // 判断是立即进入还是排队
+      if (joinResponse.matchId.isNotEmpty) {
+        // 立即通过，走原有流程
+        final matchId = joinResponse.matchId;
 
-      // 7. 只有在 joinMatch 成功后才标记为已连接并发送 connected 事件
-      // 这样 LobbyBloc 收到 connected 事件时，matchId 已经有效，可以正常发送消息
-      _isConnected = true;
-      _emitConnectionEvent(LobbyConnectionEventType.connected);
+        // 6. 加入 Match
+        await _socketManager.joinMatch(matchId);
 
-      // 注意：不在此处主动发送 login 或 snapshot.request。
-      // 文档流程：joinMatch → 收到 join.success → 发送 snapshot.request
-      // login 事件在 _handleMatchEvent 收到 join.success 时触发（见下方处理逻辑）。
+        // 7. 只有在 joinMatch 成功后才标记为已连接并发送 connected 事件
+        _isConnected = true;
+        _emitConnectionEvent(LobbyConnectionEventType.connected);
 
-      LogService.i('[LobbyNakamaService] 初始化完成，已加入 Match: $matchId，等待 join.success');
+        LogService.i('[LobbyNakamaService] 初始化完成，已加入 Match: $matchId，等待 join.success');
+      } else if (joinResponse.ticket.isNotEmpty) {
+        // 进入排队，通知 Bloc 显示排队 UI
+        _isConnected = true;
+        _emitConnectionEvent(LobbyConnectionEventType.connected);
+
+        // 发送排队事件给 Bloc
+        _eventController.add(LobbyServerEvent(
+          type: 'queue.started',
+          timestamp: DateTime.now(),
+          traceId: '',
+          envelope: pb.LobbyEnvelope()..type = 'queue.started',
+          queueTicket: joinResponse.ticket,
+          queuePosition: joinResponse.position,
+          queueTotal: joinResponse.queueTotal,
+          queueEtaSeconds: joinResponse.etaSeconds,
+          queuePollIntervalMs: joinResponse.pollIntervalMs,
+        ));
+
+        LogService.i('[LobbyNakamaService] 进入排队: ticket=${joinResponse.ticket}, position=${joinResponse.position}/${joinResponse.queueTotal}');
+      } else {
+        LogService.e('[LobbyNakamaService] RPC lobby_join 返回无效响应（matchId 和 ticket 均为空）');
+        _emitConnectionEvent(LobbyConnectionEventType.error, error: '获取 matchId 失败');
+        _scheduleReconnect();
+        return;
+      }
     } catch (e, stackTrace) {
       LogService.e('[LobbyNakamaService] 连接失败', e, stackTrace);
       _emitConnectionEvent(LobbyConnectionEventType.error, error: e.toString());
@@ -873,18 +898,27 @@ class LobbyNakamaService {
     return delay.clamp(2, 30);
   }
 
-  /// RPC 调用 lobby_join 获取 Match ID（带重试）
+  /// 协议能力声明位掩码
+  /// bit0 (0x01) = 支持 presence.delta 帧
+  /// bit1 (0x02) = 支持排队协议
+  static const int protocolFeatures = 0x03;
+
+  /// RPC 调用 lobby_join 获取 Match ID 或排队令牌（带重试）
   ///
-  /// 文档协议：调用 RPC "lobby_join"，携带 LobbyJoinRequest { deviceType } 的 Protobuf 编码。
+  /// 文档协议：调用 RPC "lobby_join"，携带 LobbyJoinRequest { deviceType, protocolFeatures } 的 Protobuf 编码。
   /// 服务端自动分配地图（老用户恢复上次地图，新用户进入默认地图）。
-  /// 服务端在用户加入 Match 时读取 deviceType 并记录到用户状态中。
-  /// 返回 Protobuf 序列化的 LobbyJoinResponse { matchId, mapId }。
-  Future<String?> _rpcLobbyJoin() async {
+  /// 返回 Protobuf 序列化的 LobbyJoinResponse：
+  ///   - matchId 非空 = 立即可进入
+  ///   - matchId 为空 + ticket 非空 = 进入排队
+  Future<pb.LobbyJoinResponse?> _rpcLobbyJoin() async {
     const maxRetries = 3;
     const retryDelay = Duration(seconds: 2);
 
-    // 构造 LobbyJoinRequest，携带 deviceType（"mobile" 或 "pc"）
-    final reqBytes = (pb.LobbyJoinRequest()..deviceType = _deviceType).writeToBuffer();
+    // 构造 LobbyJoinRequest，携带 deviceType 和 protocolFeatures
+    final reqBytes = (pb.LobbyJoinRequest()
+      ..deviceType = _deviceType
+      ..protocolFeatures = protocolFeatures
+    ).writeToBuffer();
     // 服务端期望原始 Protobuf 二进制字节转成字符串
     final payload = String.fromCharCodes(reqBytes);
 
@@ -894,18 +928,17 @@ class LobbyNakamaService {
         LogService.d('[LobbyNakamaService] RPC lobby_join 返回: (length=${result?.length}, isNull=${result == null}, isEmpty=${result?.isEmpty})');
 
         if (result != null && result.isNotEmpty) {
-          // 服务端返回的是原始 Protobuf 二进制数据
-          // 将字符串的 codeUnits 转换为字节数组后解析
           try {
             final bytes = result.codeUnits;
             final response = pb.LobbyJoinResponse.fromBuffer(bytes);
             final matchId = response.matchId;
             final mapId = response.mapId;
-            LogService.d('[LobbyNakamaService] Protobuf 解析成功: matchId="$matchId", mapId="$mapId"');
-            if (matchId.isNotEmpty) {
-              return matchId;
+            final ticket = response.ticket;
+            LogService.d('[LobbyNakamaService] Protobuf 解析成功: matchId="$matchId", mapId="$mapId", ticket="$ticket"');
+            if (matchId.isNotEmpty || ticket.isNotEmpty) {
+              return response;
             } else {
-              LogService.w('[LobbyNakamaService] Protobuf 解析成功但 matchId 为空');
+              LogService.w('[LobbyNakamaService] Protobuf 解析成功但 matchId 和 ticket 均为空');
             }
           } catch (e) {
             LogService.e('[LobbyNakamaService] Protobuf 解析失败: $e', e);
@@ -925,6 +958,41 @@ class LobbyNakamaService {
     }
 
     return null;
+  }
+
+  /// RPC 调用 lobby_queue_status 查询排队状态
+  Future<pb.QueueStatusResponse?> rpcQueueStatus(String ticket) async {
+    try {
+      final reqBytes = (pb.QueueStatusRequest()..ticket = ticket).writeToBuffer();
+      final payload = String.fromCharCodes(reqBytes);
+      final result = await _clientManager.rpc('lobby_queue_status', payload: payload);
+      if (result != null && result.isNotEmpty) {
+        final bytes = result.codeUnits;
+        return pb.QueueStatusResponse.fromBuffer(bytes);
+      }
+    } catch (e) {
+      LogService.w('[LobbyNakamaService] RPC lobby_queue_status 失败: $e');
+    }
+    return null;
+  }
+
+  /// RPC 调用 lobby_queue_cancel 取消排队
+  Future<void> rpcQueueCancel(String ticket) async {
+    try {
+      final reqBytes = (pb.QueueCancelRequest()..ticket = ticket).writeToBuffer();
+      final payload = String.fromCharCodes(reqBytes);
+      await _clientManager.rpc('lobby_queue_cancel', payload: payload);
+      LogService.i('[LobbyNakamaService] 排队已取消: ticket=$ticket');
+    } catch (e) {
+      LogService.w('[LobbyNakamaService] RPC lobby_queue_cancel 失败: $e');
+    }
+  }
+
+  /// 排队完成后加入 Match（公开方法，供 Bloc 调用）
+  Future<void> joinMatchById(String matchId) async {
+    await _socketManager.joinMatch(matchId);
+    _isConnected = true;
+    LogService.i('[LobbyNakamaService] 排队完成，已加入 Match: $matchId');
   }
 
   /// 发送连接状态事件
@@ -956,9 +1024,9 @@ class LobbyNakamaService {
       ..v = 1
       ..type = 'enter'
       ..traceId = _generateTraceId()
-      ..enterRequest = pb.EnterRequest();
+      ..enterRequest = (pb.EnterRequest()..protocolFeatures = protocolFeatures);
     _sendEnvelope(envelope);
-    LogService.i('[LobbyNakamaService] 已发送 enter，正式进入大厅');
+    LogService.i('[LobbyNakamaService] 已发送 enter（protocolFeatures=0x${protocolFeatures.toRadixString(16)}），正式进入大厅');
   }
 
   /// 发送移动请求
