@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../core/core.dart';
+import 'captcha_dialog_mobile.dart';
 
 /// 移动端登录对话框
 ///
@@ -32,6 +33,7 @@ class _LoginDialogMobileState extends State<LoginDialogMobile> {
   final _usernameFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
   bool _isLoading = false;
+  String? _captchaToken;
 
   @override
   void dispose() {
@@ -51,9 +53,33 @@ class _LoginDialogMobileState extends State<LoginDialogMobile> {
       return;
     }
 
+    if (_captchaToken == null || _captchaToken!.isEmpty) {
+      ToastUtils.showError(context, '请先获取验证码');
+      return;
+    }
+
     context.read<AuthBloc>().add(
-      AuthLoginRequested(username: username, password: password),
+      AuthLoginRequested(
+        username: username,
+        password: password,
+        captchaToken: _captchaToken,
+      ),
     );
+  }
+
+  Future<void> _handleGetCaptcha() async {
+    final captchaToken = await CaptchaDialogMobile.show(context);
+
+    if (!mounted) return;
+
+    if (captchaToken != null && captchaToken.isNotEmpty) {
+      setState(() {
+        _captchaToken = captchaToken;
+      });
+      ToastUtils.showSuccess(context, '验证成功');
+    } else {
+      ToastUtils.showWarning(context, '验证失败或已取消');
+    }
   }
 
   void _openRegister() {
@@ -99,6 +125,9 @@ class _LoginDialogMobileState extends State<LoginDialogMobile> {
 
         setState(() {
           _isLoading = state.status == AuthStatus.loading;
+          if (state.status == AuthStatus.error) {
+            _captchaToken = null;
+          }
         });
       },
       builder: (context, state) {
@@ -235,14 +264,55 @@ class _LoginDialogMobileState extends State<LoginDialogMobile> {
                     ),
                     const SizedBox(height: 12),
 
-                    // 登录按钮
+                    // 获取验证码按钮
+                    SizedBox(
+                      height: 44,
+                      child: OutlinedButton.icon(
+                        onPressed: _isLoading ? null : _handleGetCaptcha,
+                        icon: Icon(
+                          _captchaToken != null
+                              ? Icons.check_circle
+                              : Icons.security,
+                          size: 18,
+                          color: _captchaToken != null ? Colors.green : null,
+                        ),
+                        label: Text(
+                          _captchaToken != null ? '验证码已获取' : '获取验证码',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: _captchaToken != null ? Colors.green : null,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: _captchaToken != null
+                                ? Colors.green
+                                : theme.colorScheme.outline,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // 登录按钮（验证码是必须的，没有验证码时禁用）
                     SizedBox(
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleLogin,
+                        onPressed: (_isLoading ||
+                                _captchaToken == null ||
+                                _captchaToken!.isEmpty)
+                            ? null
+                            : _handleLogin,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0080FF),
                           foregroundColor: Colors.white,
+                          disabledBackgroundColor:
+                              const Color(0xFF0080FF).withValues(alpha: 0.3),
+                          disabledForegroundColor:
+                              Colors.white.withValues(alpha: 0.5),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
