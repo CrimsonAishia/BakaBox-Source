@@ -81,6 +81,12 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       _cachedNamePainter = null;
       _cachedNameStrokePainter?.dispose();
       _cachedNameStrokePainter = null;
+      // 状态文字缓存失效（关注状态影响颜色）
+      _cachedStatusText = null;
+      _cachedStatusPainter?.dispose();
+      _cachedStatusPainter = null;
+      _cachedStatusStrokePainter?.dispose();
+      _cachedStatusStrokePainter = null;
     }
   }
 
@@ -1153,8 +1159,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
   @override
   void render(Canvas canvas) {
-    // 右键菜单目标或悬停高亮：使用多向偏移渲染法绘制角色轮廓描边
-    if (_isContextMenuTarget || _isHovered) {
+    // 关注用户常驻高亮描边、右键菜单目标或悬停高亮
+    if (_isContextMenuTarget || _isHovered || _isFollowed) {
       _renderSpriteOutline(canvas);
     }
 
@@ -1199,11 +1205,16 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       outlineColor = Colors.orangeAccent.withValues(alpha: alpha);
       outlineWidth = 2.5;
       glowAlpha = alpha * 0.5;
-    } else {
-      // 普通悬停：白色描边
+    } else if (_isHovered) {
+      // 悬停：白色描边
       outlineColor = Colors.white.withValues(alpha: 0.95 * _spriteOpacity);
       outlineWidth = 2.0;
       glowAlpha = 0.4 * _spriteOpacity;
+    } else {
+      // 关注用户：金黄色常驻描边
+      outlineColor = const Color(0xFFFFD740).withValues(alpha: 0.75 * _spriteOpacity);
+      outlineWidth = 1.5;
+      glowAlpha = 0.3 * _spriteOpacity;
     }
 
     // 创建纯色滤镜 Paint：保留图片透明度，将不透明像素替换为 outlineColor
@@ -1308,9 +1319,9 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     if (_cachedDisplayName != currentName || _cachedNamePainter == null) {
       _cachedDisplayName = currentName;
 
-      // 关注用户使用橙色名字
+      // 关注用户使用亮金橙色名字，普通用户白色
       final nameColor = _isFollowed
-          ? const Color(0xFFFF8C00) // 橙色
+          ? const Color(0xFFFFD740) // 亮金黄色
           : Colors.white;
 
       final pixelTextStyle = TextStyle(
@@ -1326,8 +1337,9 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         textDirection: TextDirection.ltr,
       )..layout();
 
+      // 关注用户使用橙色描边增强辨识度，普通用户黑色描边
       final strokeColor = _isFollowed
-          ? Colors.black.withValues(alpha: 0.85)
+          ? const Color(0xFF8B4500) // 深橙棕色描边
           : Colors.black.withValues(alpha: 0.7);
 
       final strokeStyle = TextStyle(
@@ -1479,9 +1491,14 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     if (_cachedStatusText != currentStatus || _cachedStatusPainter == null) {
       _cachedStatusText = currentStatus;
 
+      // 关注用户状态文字用浅金色，普通用户用灰白色
+      final statusColor = _isFollowed
+          ? const Color(0xFFFFD54F) // 浅金黄色
+          : const Color(0xFFE2E8F0);
+
       final textStyle = TextStyle(
         fontFamily: null,
-        color: const Color(0xFFE2E8F0),
+        color: statusColor,
         fontSize: 11,
       );
 
@@ -1491,13 +1508,18 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         textDirection: TextDirection.ltr,
       )..layout();
 
+      // 关注用户用深金色描边，普通用户用黑色描边
+      final strokeColor = _isFollowed
+          ? const Color(0xFF6D4C00) // 深金棕色描边
+          : Colors.black.withValues(alpha: 0.6);
+
       final strokeStyle = TextStyle(
         fontFamily: null,
         fontSize: 11,
         foreground: Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0
-          ..color = Colors.black.withValues(alpha: 0.6),
+          ..color = strokeColor,
       );
       _cachedStatusStrokePainter = TextPainter(
         text: TextSpan(text: displayStatus, style: strokeStyle),
