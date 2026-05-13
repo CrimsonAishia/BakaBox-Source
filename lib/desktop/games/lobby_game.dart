@@ -229,6 +229,8 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
 
   /// 当前是否悬停在可交互的玩家上（用于切换鼠标光标）
   bool get isHoveringInteractablePlayer {
+    // 菜单打开时，悬停在菜单项上也显示手型
+    if (_contextMenu != null && _contextMenu!.isHoveringItem) return true;
     if (_hoveredPlayer == null) return false;
     final user = _hoveredPlayer!.user;
     // 有 businessUserId 且非自己才可交互
