@@ -60,7 +60,7 @@ class _MapCardMobileState extends State<MapCardMobile> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: SizedBox(
-          height: 90,
+          height: 120,
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -98,7 +98,7 @@ class _MapCardMobileState extends State<MapCardMobile> {
               Positioned(
                 left: 10,
                 right: 110,
-                bottom: 26,
+                bottom: 38,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -115,7 +115,7 @@ class _MapCardMobileState extends State<MapCardMobile> {
                         shadows: [Shadow(color: Colors.black, blurRadius: 8)],
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 8),
                     // 译名
                     MarqueeText(
                       text: '译名：${mapInfo.mapLabel}',
@@ -136,7 +136,7 @@ class _MapCardMobileState extends State<MapCardMobile> {
               Positioned(
                 left: 10,
                 right: 10,
-                bottom: 8,
+                bottom: 10,
                 child: _buildTagRow(mapInfo.tags),
               ),
             ],
