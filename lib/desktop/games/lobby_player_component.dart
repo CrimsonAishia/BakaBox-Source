@@ -7,6 +7,7 @@ import 'package:flame_texturepacker/flame_texturepacker.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/core.dart';
+import 'lobby_game.dart';
 
 /// 模型切换特效状态
 enum SpriteSwitchState { idle, fadingOut, fadingIn }
@@ -144,6 +145,12 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   LobbyPosition? _targetPosition;
   bool _spriteLoaded = false;
 
+  /// 是否正在执行 fade-in 动画（贴图预加载完成后渐显）
+  bool _fadeInActive = false;
+
+  /// fade-in 动画速度（每秒增加的透明度，3.0 表示约 0.33 秒完成）
+  static const double _fadeInSpeed = 3.0;
+
   /// 当前渲染位置（插值中的实际位置，供外部相机跟随使用）
   LobbyPosition get currentRenderPosition => _currentRenderPosition;
 
@@ -227,8 +234,103 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         : FlipState.idleLeft;
     _applyScale();
 
-    await _loadCharacterSprite();
+    await _loadCharacterSpriteProgressive();
     _updatePosition();
+  }
+
+  /// 渐进式加载角色贴图
+  ///
+  /// 优先从 LobbyGame 的预加载注册表获取已缓存的图片，
+  /// 如果尚未加载完成则注册等待，由 Game 层统一加载后批量通知。
+  /// 图集模式仍走独立加载路径。
+  Future<void> _loadCharacterSpriteProgressive() async {
+    final url = _sprite.spriteUrl;
+    if (url == null || url.isEmpty) return;
+
+    try {
+      // 图集模式：仍走独立加载（图集逻辑复杂，不适合批量预加载）
+      if (_sprite.usesAtlas) {
+        await _loadAtlasSprite();
+        return;
+      }
+
+      // 检查 Game 层是否已经预加载了该 spriteId 的图片
+      final game = findGame();
+      if (game is LobbyGame) {
+        final preloaded = game.getPreloadedSpriteImage(_currentSpriteId);
+        if (preloaded != null) {
+          // 已预加载完成，直接使用并 fade-in
+          _applyPreloadedImage(preloaded);
+          return;
+        }
+
+        // 尚未加载完成，注册等待通知
+        // 由 Game 层的 _preloadSpritesProgressively 或 ensureSpriteLoaded 统一调度加载
+        game.registerSpriteWaiter(_currentSpriteId, this);
+
+        // 设置超时兜底：如果 5 秒后仍未收到通知，走独立加载
+        Future.delayed(const Duration(seconds: 5), () {
+          if (!_disposed && !isRemoved && !_spriteLoaded) {
+            LogService.w('[LobbyPlayerComponent] 等待预加载超时，走独立加载: $_currentSpriteId');
+            game.unregisterSpriteWaiter(_currentSpriteId, this);
+            _loadNetworkSprite();
+          }
+        });
+        return;
+      }
+
+      // fallback：如果无法获取 Game 引用，走原有独立加载路径
+      await _loadNetworkSprite();
+    } catch (_) {
+      // 加载失败，使用 fallback 色块
+    }
+  }
+
+  /// 当 Game 层预加载完成后调用此方法，批量通知所有使用该 spriteId 的玩家
+  void onSpritePreloaded(ui.Image image) {
+    if (_disposed || isRemoved) return;
+    // 如果已经加载过了（比如模型切换后重新加载），忽略
+    if (_spriteLoaded) return;
+    _applyPreloadedImage(image);
+  }
+
+  /// 当 Game 层预加载失败时调用，回退到独立加载路径
+  void onSpritePreloadFailed() {
+    if (_disposed || isRemoved) return;
+    if (_spriteLoaded) return;
+    // 回退到原有的独立加载路径
+    _loadNetworkSprite();
+  }
+
+  /// 应用预加载的图片，创建 SpriteComponent 并触发 fade-in
+  void _applyPreloadedImage(ui.Image image) {
+    _spriteLoaded = true;
+
+    // 计算图片实际宽高比，调整显示宽度（高度固定为 _characterDisplayHeight）
+    _characterDisplayWidth =
+        _characterDisplayHeight * (image.width / image.height);
+
+    // 角色身体在组件内的位置（居中显示）
+    final charX = (_spriteWidth - _characterDisplayWidth) / 2;
+    final charY = _characterSlotTopY;
+
+    // 实际用于文字计算的尺寸
+    _actualCharWidth = _characterDisplayWidth * 0.55;
+    _actualCharHeight = _characterDisplayHeight * 0.7;
+
+    final spriteComp = SpriteComponent(
+      sprite: Sprite(image),
+      size: Vector2(_characterDisplayWidth, _characterDisplayHeight),
+      position: Vector2(charX, charY),
+    );
+    // 初始完全透明，通过 update 中的 fade-in 逐渐显示
+    spriteComp.paint = Paint()..color = const Color(0x00FFFFFF);
+    add(spriteComp);
+    _spriteComponent = spriteComp;
+
+    // 触发 fade-in 动画
+    _spriteOpacity = 0.0;
+    _fadeInActive = true;
   }
 
   Future<void> _loadCharacterSprite() async {
@@ -321,6 +423,9 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     try {
       final imageInfo = await _loadCachedOrNetworkImage(url);
       if (imageInfo == null || isRemoved) return;
+
+      // 防止竞态：如果在 await 期间已经通过其他路径加载完成，跳过
+      if (_spriteLoaded) return;
 
       _spriteLoaded = true;
 
@@ -694,6 +799,16 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   void update(double dt) {
     super.update(dt);
 
+    // 贴图 fade-in 动画（预加载完成后渐显）
+    if (_fadeInActive) {
+      _spriteOpacity = (_spriteOpacity + dt * _fadeInSpeed).clamp(0.0, 1.0);
+      _spriteComponent?.paint = Paint()
+        ..color = Color.fromRGBO(255, 255, 255, _spriteOpacity);
+      if (_spriteOpacity >= 1.0) {
+        _fadeInActive = false;
+      }
+    }
+
     // 状态机驱动的翻转动画
     _updateFlipState(dt);
 
@@ -967,6 +1082,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     _animComponent?.removeFromParent();
     _animComponent = null;
     _spriteLoaded = false;
+    _fadeInActive = false; // 停止渐显动画，由 _updateSpriteSwitch 管理透明度
 
     // 应用待切换的模型配置
     if (_pendingSprite != null) {
@@ -1018,6 +1134,11 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   @override
   void onRemove() {
     _disposed = true;
+    // 取消贴图预加载等待注册
+    final game = findGame();
+    if (game is LobbyGame) {
+      game.unregisterSpriteWaiter(_currentSpriteId, this);
+    }
     // 释放缓存的 TextPainter 原生资源
     _cachedNamePainter?.dispose();
     _cachedNameStrokePainter?.dispose();
