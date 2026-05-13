@@ -1192,6 +1192,7 @@ const PresenceDeltaResponse$json = {
     {'1': 'joined', '3': 1, '4': 3, '5': 11, '6': '.lobby.LobbyUser', '10': 'joined'},
     {'1': 'left_user_ids', '3': 2, '4': 3, '5': 9, '10': 'leftUserIds'},
     {'1': 'cross_map_events', '3': 3, '4': 3, '5': 11, '6': '.lobby.CrossMapPresenceEvent', '10': 'crossMapEvents'},
+    {'1': 'seq', '3': 10, '4': 1, '5': 3, '10': 'seq'},
   ],
 };
 
@@ -1200,7 +1201,7 @@ final $typed_data.Uint8List presenceDeltaResponseDescriptor = $convert.base64Dec
     'ChVQcmVzZW5jZURlbHRhUmVzcG9uc2USKAoGam9pbmVkGAEgAygLMhAubG9iYnkuTG9iYnlVc2'
     'VyUgZqb2luZWQSIgoNbGVmdF91c2VyX2lkcxgCIAMoCVILbGVmdFVzZXJJZHMSRgoQY3Jvc3Nf'
     'bWFwX2V2ZW50cxgDIAMoCzIcLmxvYmJ5LkNyb3NzTWFwUHJlc2VuY2VFdmVudFIOY3Jvc3NNYX'
-    'BFdmVudHM=');
+    'BFdmVudHMSEAoDc2VxGAogASgDUgNzZXE=');
 
 @$core.Deprecated('Use crossMapPresenceEventDescriptor instead')
 const CrossMapPresenceEvent$json = {

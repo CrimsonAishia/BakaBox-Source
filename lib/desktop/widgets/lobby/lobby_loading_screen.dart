@@ -88,9 +88,20 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
 
     // 步骤1.5：排队（仅在排队时显示）
     if (isQueueing) {
+      final position = widget.state.queuePosition;
+      final total = widget.state.queueTotal;
+      final eta = widget.state.queueEtaSeconds;
+      String subtitle = '';
+      if (position > 0 && total > 0) {
+        subtitle = '前方 ${position - 1} 人';
+        if (eta > 0) {
+          subtitle += '，预计 ${eta >= 60 ? '${(eta / 60).ceil()} 分钟' : '$eta 秒'}';
+        }
+      }
       steps.add(_LoadingStep(
         icon: Icons.hourglass_top,
         label: '排队等待',
+        subtitle: subtitle.isNotEmpty ? subtitle : null,
         status: _StepStatus.loading,
       ));
     }
@@ -321,11 +332,13 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
 class _LoadingStep {
   final IconData icon;
   final String label;
+  final String? subtitle;
   final _StepStatus status;
 
   const _LoadingStep({
     required this.icon,
     required this.label,
+    this.subtitle,
     required this.status,
   });
 }
@@ -357,17 +370,34 @@ class _LoadingStepItem extends StatelessWidget {
             textSecondary: textSecondary,
           ),
           const SizedBox(width: 12),
-          Text(
-            step.label,
-            style: TextStyle(
-              color: step.status == _StepStatus.done
-                  ? textPrimary
-                  : step.status == _StepStatus.failed
-                      ? const Color(0xFFEF4444)
-                      : textSecondary,
-              fontSize: 14,
-              fontWeight: step.status == _StepStatus.done ? FontWeight.w600 : FontWeight.w400,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                step.label,
+                style: TextStyle(
+                  color: step.status == _StepStatus.done
+                      ? textPrimary
+                      : step.status == _StepStatus.failed
+                          ? const Color(0xFFEF4444)
+                          : textSecondary,
+                  fontSize: 14,
+                  fontWeight: step.status == _StepStatus.done ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+              if (step.subtitle != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    step.subtitle!,
+                    style: TextStyle(
+                      color: textSecondary.withValues(alpha: 0.7),
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),

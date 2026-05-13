@@ -528,10 +528,12 @@ message InventoryStatsResponse {
 // PresenceDeltaResponse 增量 presence 帧（替代逐条 presence.join/leave）
 // 服务端每 tick 末尾合并本 tick 内所有 enter/leave 变化，一次性推送。
 // 客户端收到后批量更新本地用户列表，减少渲染抖动。
+// seq 为单调递增序列号，客户端检测到 seq 不连续时应主动请求 snapshot 进行全量同步。
 message PresenceDeltaResponse {
   repeated LobbyUser joined = 1;          // 本帧内新进入的用户
   repeated string left_user_ids = 2;      // 本帧内离开的用户 ID
   repeated CrossMapPresenceEvent cross_map_events = 3; // 跨地图通知（弱通知）
+  int64 seq = 10;                         // 递增序列号，客户端检测不连续时请求 snapshot
 }
 
 // CrossMapPresenceEvent 跨地图 presence 事件（弱通知，不渲染角色，仅 UI 提示）

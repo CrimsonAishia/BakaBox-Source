@@ -142,6 +142,14 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
     if (backgroundTime == null) return;
 
     final duration = DateTime.now().difference(backgroundTime);
+
+    // 排队中：无论后台多久都立即确认状态（ticket 30 秒未轮询会过期）
+    if (_lobbyBloc.state.isQueueing) {
+      LogService.d('[LobbyPageMobile] 从后台恢复，排队中，立即确认排队状态');
+      _lobbyBloc.add(const LobbyAppResumed());
+      return;
+    }
+
     if (duration < _backgroundRecoveryThreshold) {
       // 后台时间较短，不需要刷新 snapshot
       return;
@@ -149,7 +157,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
 
     // 后台时间超过阈值，刷新 snapshot 确保数据最新
     LogService.d('[LobbyPageMobile] 后台超过 ${_backgroundRecoveryThreshold.inMinutes} 分钟，刷新 snapshot');
-    _lobbyBloc.add(const LobbySnapshotRefreshRequested());
+    _lobbyBloc.add(const LobbyAppResumed());
   }
 
   @override
@@ -752,10 +760,14 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
   void _cancelQueueAndReset() {
     // 直接调用 service 取消排队（不经过 Bloc 的 LobbyQueueCancelled，因为它会自动重连）
     final service = LobbyNakamaService.instance;
-    service.rpcQueueCancel(_lobbyBloc.state.queueTicket ?? '');
-
-    // 关闭旧 Bloc 并重建，回到 idle 状态
+    final ticket = _lobbyBloc.state.queueTicket ?? '';
+    // 先关闭 Bloc 停止轮询，再通知服务端取消（fire-and-forget）
     _lobbyBloc.close();
+    if (ticket.isNotEmpty) {
+      unawaited(service.rpcQueueCancel(ticket));
+    }
+
+    // 重建 Bloc，回到 idle 状态
     setState(() {
       _started = false;
       _lobbyBloc = LobbyBloc(initialActivityText: '手机在线');
@@ -1126,6 +1138,8 @@ class _LobbyQueueScreenMobileState extends State<_LobbyQueueScreenMobile>
     final position = widget.state.queuePosition;
     final total = widget.state.queueTotal;
     if (total <= 0 || position <= 0) return 0.0;
+    // position=1 表示下一个就是自己，显示较高进度
+    if (position == 1) return 0.9;
     return ((total - position) / total).clamp(0.0, 1.0);
   }
 

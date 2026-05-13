@@ -333,6 +333,11 @@ class LobbySnapshotRefreshRequested extends LobbyEvent {
   const LobbySnapshotRefreshRequested();
 }
 
+/// 应用从后台恢复时触发（检查排队状态 + snapshot 对齐）
+class LobbyAppResumed extends LobbyEvent {
+  const LobbyAppResumed();
+}
+
 /// 排队状态更新（内部事件，由轮询定时器触发）
 class _LobbyQueueStatusUpdated extends LobbyEvent {
   final int position;
