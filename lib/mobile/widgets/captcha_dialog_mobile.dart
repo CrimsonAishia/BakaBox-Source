@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 /// 移动端顶象验证码页面
 /// 加载论坛登录页面，通过 JS 注入隐藏其他元素只显示验证码，
@@ -23,13 +23,12 @@ class CaptchaDialogMobile extends StatefulWidget {
 }
 
 class _CaptchaDialogMobileState extends State<CaptchaDialogMobile> {
-  WebViewController? _controller;
+  InAppWebViewController? _controller;
   bool _isLoading = true;
   String? _errorMessage;
   String? _captchaToken;
   Timer? _tokenCheckTimer;
   bool _injected = false;
-  bool _initialized = false;
 
   // 隐藏页面其他元素，只保留验证码区域的 JS
   static const _injectJs = '''
@@ -84,68 +83,12 @@ class _CaptchaDialogMobileState extends State<CaptchaDialogMobile> {
 
   captchaDiv.style.setProperty('display', 'flex', 'important');
   captchaDiv.style.setProperty('justify-content', 'center', 'important');
-  captchaDiv.style.setProperty('align-items', 'flex-end', 'important');
+  captchaDiv.style.setProperty('align-items', 'center', 'important');
   captchaDiv.style.setProperty('height', '100vh', 'important');
-  captchaDiv.style.setProperty('padding', '0 10px 10px 10px', 'important');
+  captchaDiv.style.setProperty('padding', '0 10px', 'important');
   captchaDiv.style.setProperty('background', '#f5f5f5', 'important');
 })();
 ''';
-
-  @override
-  void initState() {
-    super.initState();
-    // 延迟初始化 WebView，确保页面已完全构建且 Platform Channel 就绪
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _initWebView();
-      }
-    });
-  }
-
-  void _initWebView() {
-    if (_initialized) return;
-    _initialized = true;
-
-    try {
-      final controller = WebViewController()
-        ..setJavaScriptMode(JavaScriptMode.unrestricted)
-        ..setNavigationDelegate(
-          NavigationDelegate(
-            onPageFinished: (url) {
-              if (!_injected) {
-                _injectAndStartPolling();
-              }
-            },
-            onWebResourceError: (error) {
-              if (mounted) {
-                setState(() {
-                  _errorMessage = '加载验证码失败: ${error.description}';
-                  _isLoading = false;
-                });
-              }
-            },
-          ),
-        )
-        ..loadRequest(
-          Uri.parse(
-            'https://bbs.zombieden.cn/member.php?mod=logging&action=login',
-          ),
-        );
-
-      if (mounted) {
-        setState(() {
-          _controller = controller;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = '初始化验证码失败: $e';
-          _isLoading = false;
-        });
-      }
-    }
-  }
 
   Future<void> _injectAndStartPolling() async {
     _injected = true;
@@ -155,9 +98,24 @@ class _CaptchaDialogMobileState extends State<CaptchaDialogMobile> {
 
     if (!mounted || _controller == null) return;
 
+    // 注入 viewport meta 标签，让桌面端 UA 的页面在手机上正常缩放显示
+    try {
+      await _controller!.evaluateJavascript(source: '''
+(function() {
+  var meta = document.querySelector('meta[name="viewport"]');
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.name = 'viewport';
+    document.head.appendChild(meta);
+  }
+  meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes';
+})();
+''');
+    } catch (_) {}
+
     // 注入 JS 隐藏其他元素
     try {
-      await _controller!.runJavaScript(_injectJs);
+      await _controller!.evaluateJavascript(source: _injectJs);
     } catch (_) {}
 
     if (!mounted) return;
@@ -179,7 +137,7 @@ class _CaptchaDialogMobileState extends State<CaptchaDialogMobile> {
           return;
         }
         try {
-          final result = await _controller!.runJavaScriptReturningResult('''
+          final result = await _controller!.evaluateJavascript(source: '''
 (function() {
   var el = document.getElementById('dx_captcha_verify_logging');
   if (el && el.value && el.value.length > 10) {
@@ -189,7 +147,7 @@ class _CaptchaDialogMobileState extends State<CaptchaDialogMobile> {
 })();
 ''');
 
-          final token = result.toString().trim().replaceAll('"', '');
+          final token = result?.toString().trim() ?? '';
           if (token.isNotEmpty && token != 'null' && token.length > 10) {
             timer.cancel();
             setState(() {
@@ -271,19 +229,52 @@ class _CaptchaDialogMobileState extends State<CaptchaDialogMobile> {
       );
     }
 
-    if (_isLoading || _controller == null) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('正在加载验证码...'),
-          ],
+    return Stack(
+      children: [
+        InAppWebView(
+          initialUrlRequest: URLRequest(
+            url: WebUri(
+              'https://bbs.zombieden.cn/member.php?mod=logging&action=login',
+            ),
+          ),
+          initialSettings: InAppWebViewSettings(
+            javaScriptEnabled: true,
+            domStorageEnabled: true,
+            userAgent:
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          ),
+          onWebViewCreated: (controller) {
+            _controller = controller;
+          },
+          onLoadStop: (controller, url) {
+            if (!_injected) {
+              _injectAndStartPolling();
+            }
+          },
+          onReceivedError: (controller, request, error) {
+            if (mounted && request.url.toString().contains('bbs.zombieden.cn')) {
+              setState(() {
+                _errorMessage = '加载验证码失败: ${error.description}';
+                _isLoading = false;
+              });
+            }
+          },
         ),
-      );
-    }
-
-    return WebViewWidget(controller: _controller!);
+        if (_isLoading)
+          Container(
+            color: theme.scaffoldBackgroundColor,
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('正在加载验证码...'),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }

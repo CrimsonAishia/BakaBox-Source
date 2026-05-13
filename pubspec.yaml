@@ -120,7 +120,7 @@ dependencies:
       ref: ff7488a79a310fd03e514dab489e06d67d5d4d37
   
   # WebView for mobile platforms
-  webview_flutter: ^4.10.0
+  flutter_inappwebview: ^6.1.5
   
   # Protobuf（与 nakama SDK 使用的 protobuf 4.x 保持一致）
   protobuf: ^4.0.0
