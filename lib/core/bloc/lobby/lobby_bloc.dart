@@ -550,34 +550,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   /// 预加载所有已缓存的图片到内存，加速后续渲染
   Future<void> _preloadCachedImages() async {
     try {
-      // 收集所有需要预加载的 URL
-      final urlsToPreload = <String>[];
-
-      // 从 URL 缓存中收集 sprites
-      for (final spriteId in LobbyAssetCacheService.instance.getCachedSpriteIds()) {
-        final spriteUrl = LobbyAssetCacheService.instance.getSpriteUrl(spriteId);
-        if (spriteUrl != null && spriteUrl.isNotEmpty) {
-          urlsToPreload.add(spriteUrl);
-        }
-        final previewUrl = LobbyAssetCacheService.instance.getPreviewUrl(spriteId);
-        if (previewUrl != null && previewUrl.isNotEmpty) {
-          urlsToPreload.add(previewUrl);
-        }
-      }
-
-      // 地图背景（支持多地图）
-      for (final mapId in LobbyAssetCacheService.instance.getCachedMapIds()) {
-        final backgroundUrl = LobbyAssetCacheService.instance.getBackgroundUrlByMapId(mapId);
-        if (backgroundUrl != null && backgroundUrl.isNotEmpty) {
-          urlsToPreload.add(backgroundUrl);
-        }
-      }
-
-      if (urlsToPreload.isEmpty) return;
-
-      // 预加载到内存（不去重，让 LobbyImageCacheService 处理）
-      await LobbyImageCacheService.instance.preDownloadImages(urlsToPreload);
-      LogService.d('[LobbyBloc] 预加载了 ${urlsToPreload.length} 个图片到内存');
+      // 直接将磁盘缓存预热到内存
+      // 新图片的下载由 _cacheAssets（收到 assets 时用带鉴权的 URL）处理
+      await LobbyImageCacheService.instance.warmupMemoryCache();
+      LogService.d('[LobbyBloc] 预加载磁盘缓存图片到内存完成');
     } catch (e) {
       LogService.e('[LobbyBloc] 预加载图片失败', e);
     }
