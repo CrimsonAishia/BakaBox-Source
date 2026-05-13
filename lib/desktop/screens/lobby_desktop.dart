@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/core.dart';
+import '../games/lobby_game.dart';
 import '../widgets/lobby/lobby_loading_screen.dart';
 import '../widgets/lobby/lobby_scene.dart';
 import '../widgets/lobby/lobby_chat_overlay.dart';
@@ -985,6 +986,73 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
   /// 状态筛选：null=全部, 'online'=在线, 'inGame'=游戏中, 'queuing'=挤服中
   String? _statusFilter;
 
+  /// 关注用户 ID 集合（从本地存储读取）
+  Set<String> _followedIds = {};
+
+  /// 当前高亮的用户 ID（点击弹出菜单时）
+  String? _highlightedUserId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFollowedIds();
+  }
+
+  void _loadFollowedIds() {
+    final list = StorageUtils.getStringList('lobby_followed_user_ids');
+    _followedIds = list.toSet();
+  }
+
+  @override
+  void didUpdateWidget(covariant _PlayersDrawer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 每次面板刷新时重新读取关注列表（用户可能刚通过菜单关注/取消关注）
+    _loadFollowedIds();
+  }
+
+  /// 显示玩家右键菜单
+  void _showPlayerContextMenu(BuildContext context, LobbyUser user, Offset globalPosition, bool isFollowed) {
+    setState(() {
+      _highlightedUserId = user.userId;
+    });
+
+    final overlay = Overlay.of(context);
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (ctx) => _PlayerPopupMenu(
+        position: globalPosition,
+        isFollowed: isFollowed,
+        onInvestigate: () {
+          entry.remove();
+          setState(() => _highlightedUserId = null);
+          LobbyUserProfilePanel.show(context, user);
+        },
+        onToggleFollow: () {
+          entry.remove();
+          // 切换关注状态
+          if (isFollowed) {
+            _followedIds.remove(user.businessUserId);
+          } else {
+            if (user.businessUserId != null && user.businessUserId!.isNotEmpty) {
+              _followedIds.add(user.businessUserId!);
+            }
+          }
+          StorageUtils.setStringList('lobby_followed_user_ids', _followedIds.toList());
+          // 通知游戏刷新角色关注状态
+          LobbyGame.activeInstance?.reloadFollowedUsers();
+          setState(() => _highlightedUserId = null);
+        },
+        onDismiss: () {
+          entry.remove();
+          setState(() => _highlightedUserId = null);
+        },
+      ),
+    );
+
+    overlay.insert(entry);
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -1056,6 +1124,11 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
       ..sort((a, b) {
         if (a.isSelf) return -1;
         if (b.isSelf) return 1;
+        // 关注用户排在前面
+        final aFollowed = _followedIds.contains(a.businessUserId);
+        final bFollowed = _followedIds.contains(b.businessUserId);
+        if (aFollowed && !bFollowed) return -1;
+        if (!aFollowed && bFollowed) return 1;
         return a.displayName.compareTo(b.displayName);
       });
 
@@ -1139,7 +1212,16 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
                         itemCount: displayUsers.length,
                         itemBuilder: (context, index) {
                           final user = displayUsers[index];
-                          return _PlayerListTile(user: user);
+                          final isFollowed = _followedIds.contains(user.businessUserId);
+                          final isHighlighted = _highlightedUserId == user.userId;
+                          return _PlayerListTile(
+                            user: user,
+                            isFollowed: isFollowed,
+                            isHighlighted: isHighlighted,
+                            onTapAt: user.isSelf || user.isAnonymous
+                                ? null
+                                : (offset) => _showPlayerContextMenu(context, user, offset, isFollowed),
+                          );
                         },
                       ),
               ),
@@ -1371,35 +1453,61 @@ class _DrawerHeader extends StatelessWidget {
 }
 
 /// 玩家列表项
-class _PlayerListTile extends StatelessWidget {
+class _PlayerListTile extends StatefulWidget {
   final LobbyUser user;
+  final bool isFollowed;
+  final bool isHighlighted;
+  final void Function(Offset globalPosition)? onTapAt;
 
-  const _PlayerListTile({required this.user});
+  const _PlayerListTile({
+    required this.user,
+    this.isFollowed = false,
+    this.isHighlighted = false,
+    this.onTapAt,
+  });
+
+  @override
+  State<_PlayerListTile> createState() => _PlayerListTileState();
+}
+
+class _PlayerListTileState extends State<_PlayerListTile> {
+  bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: user.isSelf
-              ? const Color(0xFF1D9BF0).withValues(alpha: 0.4)
-              : Colors.white.withValues(alpha: 0.05),
-          width: 1,
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: user.isAnonymous
-              ? null
-              : () {
-                  // 点击已登录用户显示用户资料九宫格面板
-                  LobbyUserProfilePanel.show(context, user);
-                },
-          borderRadius: BorderRadius.circular(10),
+    final user = widget.user;
+    final isFollowed = widget.isFollowed;
+    final isHighlighted = widget.isHighlighted;
+    final canInteract = widget.onTapAt != null;
+
+    return MouseRegion(
+      cursor: canInteract ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTapDown: canInteract
+            ? (details) => widget.onTapAt!(details.globalPosition)
+            : null,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: isHighlighted
+                ? Colors.white.withValues(alpha: 0.08)
+                : _isHovered
+                    ? Colors.white.withValues(alpha: 0.06)
+                    : Colors.white.withValues(alpha: 0.04),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isHighlighted
+                  ? const Color(0xFFFFD740).withValues(alpha: 0.6)
+                  : user.isSelf
+                      ? const Color(0xFF1D9BF0).withValues(alpha: 0.4)
+                      : _isHovered
+                          ? Colors.white.withValues(alpha: 0.12)
+                          : Colors.white.withValues(alpha: 0.05),
+              width: 1,
+            ),
+          ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
@@ -1414,8 +1522,10 @@ class _PlayerListTile extends StatelessWidget {
                     children: [
                       Text(
                         user.displayName,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: isFollowed
+                              ? const Color(0xFFFFD740)
+                              : Colors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                         ),
@@ -1481,6 +1591,136 @@ class _PlayerListTile extends StatelessWidget {
                     size: 18,
                   ),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 玩家交互弹出菜单（Overlay 实现）
+class _PlayerPopupMenu extends StatelessWidget {
+  final Offset position;
+  final bool isFollowed;
+  final VoidCallback onInvestigate;
+  final VoidCallback onToggleFollow;
+  final VoidCallback onDismiss;
+
+  const _PlayerPopupMenu({
+    required this.position,
+    required this.isFollowed,
+    required this.onInvestigate,
+    required this.onToggleFollow,
+    required this.onDismiss,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // 获取屏幕尺寸，计算菜单实际位置（防止溢出）
+    final screenSize = MediaQuery.of(context).size;
+    const menuWidth = 110.0;
+    const menuHeight = 76.0; // 2项 × 28 + padding 10 + 间距
+    final dx = (position.dx + menuWidth > screenSize.width)
+        ? position.dx - menuWidth
+        : position.dx;
+    final dy = (position.dy + menuHeight > screenSize.height)
+        ? position.dy - menuHeight
+        : position.dy;
+
+    return Stack(
+      children: [
+        // 背景遮罩（点击关闭）
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onDismiss,
+            child: Container(color: Colors.transparent),
+          ),
+        ),
+        // 菜单
+        Positioned(
+          left: dx,
+          top: dy,
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: 110,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D1117).withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.10),
+                  width: 0.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _PopupMenuItem(
+                    label: '调查',
+                    onTap: onInvestigate,
+                  ),
+                  _PopupMenuItem(
+                    label: isFollowed ? '取消关注' : '关注',
+                    onTap: onToggleFollow,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 弹出菜单项
+class _PopupMenuItem extends StatefulWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _PopupMenuItem({required this.label, required this.onTap});
+
+  @override
+  State<_PopupMenuItem> createState() => _PopupMenuItemState();
+}
+
+class _PopupMenuItemState extends State<_PopupMenuItem> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Container(
+          width: double.infinity,
+          margin: const EdgeInsets.symmetric(horizontal: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: _isHovered
+                ? Colors.white.withValues(alpha: 0.12)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            widget.label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.95),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),

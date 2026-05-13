@@ -16,6 +16,9 @@ import 'lobby_context_menu_component.dart';
 /// 大厅场景游戏引擎
 /// 负责高效渲染地图背景、渐变叠加层和角色节点
 class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, HoverCallbacks {
+  /// 当前活跃的 LobbyGame 实例（供面板等外部组件调用）
+  static LobbyGame? activeInstance;
+
   LobbyGame({
     required LobbyBloc bloc,
     required LobbyMapConfig mapConfig,
@@ -263,8 +266,11 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
   Future<void> onLoad() async {
     await super.onLoad();
 
+    // 设置活跃实例
+    activeInstance = this;
+
     // 加载关注列表
-    _loadFollowedUsers();
+    reloadFollowedUsers();
 
     // 初始化状态
     _mapConfig = _initialMapConfig;
@@ -600,8 +606,8 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
 
   static const String _followedUsersKey = 'lobby_followed_user_ids';
 
-  /// 加载关注列表
-  void _loadFollowedUsers() {
+  /// 加载关注列表（从本地存储刷新，外部修改关注状态后调用）
+  void reloadFollowedUsers() {
     final list = StorageUtils.getStringList(_followedUsersKey);
     _followedUserIds = list.toSet();
     // 更新已有组件的关注状态
@@ -972,6 +978,10 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
 
   @override
   void onRemove() {
+    // 清除活跃实例
+    if (activeInstance == this) {
+      activeInstance = null;
+    }
     _stateSubscription.cancel();
     // 关闭右键菜单（清理引用）
     _contextMenu = null;
