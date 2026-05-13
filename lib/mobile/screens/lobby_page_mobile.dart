@@ -804,7 +804,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '与其他玩家实时互动、聊天、传送',
+                  '与其他玩家实时互动、聊天',
                   style: TextStyle(
                     color: textSecondary,
                     fontSize: 14,
