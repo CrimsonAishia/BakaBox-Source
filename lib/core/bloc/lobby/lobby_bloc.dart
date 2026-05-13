@@ -1850,8 +1850,16 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         final presenceLeaveResp = envelope.presenceLeaveResponse;
         final serverUserId = presenceLeaveResp.userId;
         if (serverUserId.isEmpty) break;
+
+        // 跳过自己（登录/重连时服务端可能发送自己的 leave 帧）
+        final isSelfLeave = _selfServerUserId == serverUserId;
+        if (isSelfLeave) break;
+
         // 通过 serverUserId 或 userId 查找离开的用户
         final leavingUser = _findUserById(state.users, serverUserId);
+
+        // 兜底：如果 _selfServerUserId 尚未设置但用户对象标记为 isSelf，也跳过
+        if (leavingUser != null && leavingUser.isSelf) break;
 
         // 获取 targetMapId 判断是传送离开还是断线离开
         final targetMapId = presenceLeaveResp.targetMapId;
@@ -3703,8 +3711,15 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     // 2. 批量移除离开的用户
     for (final leftUserId in delta.leftUserIds) {
       if (leftUserId.isEmpty) continue;
+      // 跳过自己（登录时服务端会清理旧 session，产生自己的 leave 帧）
+      final isSelfLeaving = _selfServerUserId == leftUserId;
+      if (isSelfLeaving) continue;
+
       final leavingUser = _findUserById(updatedUsers, leftUserId);
       if (leavingUser != null) {
+        // 兜底：如果 _selfServerUserId 尚未设置但用户对象标记为 isSelf，也跳过
+        if (leavingUser.isSelf) continue;
+
         updatedUsers = updatedUsers
             .where((u) => u.serverUserId != leftUserId && u.userId != leftUserId)
             .toList(growable: false);
@@ -3759,6 +3774,15 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         updatedAllOnline = _upsertUserInList(updatedAllOnline, user);
       }
       for (final leftUserId in delta.leftUserIds) {
+        if (leftUserId.isEmpty) continue;
+        // 跳过自己（与上面 step 2 保持一致）
+        if (_selfServerUserId == leftUserId) continue;
+        // 兜底：检查 allOnlineUsers 中该用户是否标记为 isSelf
+        final leavingAllUser = updatedAllOnline.where(
+          (u) => u.serverUserId == leftUserId || u.userId == leftUserId,
+        ).firstOrNull;
+        if (leavingAllUser != null && leavingAllUser.isSelf) continue;
+
         updatedAllOnline = updatedAllOnline
             .where((u) => u.serverUserId != leftUserId && u.userId != leftUserId)
             .toList(growable: false);
