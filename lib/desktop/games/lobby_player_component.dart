@@ -40,11 +40,18 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
        _showChatBubble = showChatBubble,
        _onArrived = onArrived,
        super(
-         priority: 1,
+         // 自己的层级比普通玩家高，不会被遮挡；但低于悬停(100)和关注(200)
+         priority: user.isSelf ? _selfPriority : 1,
          // 必须与 _spriteWidth/_spriteHeight 一致，否则 anchor、翻转补偿与文字坐标会错位
          size: Vector2(_spriteWidth, _spriteHeight),
          anchor: Anchor.bottomCenter,
        );
+
+  /// 自己的默认层级：高于普通玩家(1)，低于悬停(100)和关注(200)
+  static const int _selfPriority = 50;
+
+  /// 当前组件的默认层级（自己为 50，其他玩家为 1）
+  int get _defaultPriority => _user.isSelf ? _selfPriority : 1;
 
   LobbyUser _user;
   LobbySprite _sprite;
@@ -61,11 +68,11 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   set isFollowed(bool value) {
     if (_isFollowed != value) {
       _isFollowed = value;
-      // 关注的用户层级最高（200），普通用户为 1，悬停为 100
+      // 关注的用户层级最高（200），普通用户为 1（自己为 50），悬停为 100
       if (value && !_isHovered) {
         priority = 200;
       } else if (!value && !_isHovered) {
-        priority = 1;
+        priority = _defaultPriority;
       }
       // 名字缓存失效，下次 render 时重建
       _cachedDisplayName = null;
@@ -645,7 +652,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     if (_isHovered) {
       _isHovered = false;
       if (!_isContextMenuTarget) {
-        priority = _isFollowed ? 200 : 1; // 关注用户保持高层级
+        priority = _isFollowed ? 200 : _defaultPriority; // 关注用户保持高层级
       }
     }
   }
@@ -662,7 +669,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         if (_isHovered) {
           priority = 100;
         } else {
-          priority = _isFollowed ? 200 : 1;
+          priority = _isFollowed ? 200 : _defaultPriority;
         }
       }
     }
