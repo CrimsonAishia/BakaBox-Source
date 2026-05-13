@@ -137,12 +137,14 @@ class NotificationData {
 class _NotificationWindowInfo {
   final String notificationId;
   final WindowController controller;
+  final double cardHeight;
   int position;
 
   _NotificationWindowInfo({
     required this.notificationId,
     required this.controller,
     required this.position,
+    required this.cardHeight,
   });
 }
 
@@ -174,6 +176,7 @@ class NotificationWindowService {
   /// 窗口配置
   static const double windowWidth = 300.0;
   static const double normalCardHeight = 72.0;
+  static const double mapCardHeight = 88.0;
   static const double updateLogCardHeight = 110.0;
   static const double cardSpacing = 8.0;
   static const double topPadding = 5.0;
@@ -185,8 +188,13 @@ class NotificationWindowService {
     // 热身通知固定从 topPadding 开始
     if (isWarmup) return topPadding;
 
-    // 其他通知从热身区域下方开始（topPadding + 热身卡片高度 + 间距）
-    double offset = topPadding + normalCardHeight + cardSpacing;
+    // 其他通知从热身区域下方开始
+    // 找到 position 0 的热身通知，使用其实际高度
+    final warmupInfo = _activeWindows.values
+        .where((w) => w.position == 0)
+        .firstOrNull;
+    final warmupHeight = warmupInfo?.cardHeight ?? mapCardHeight;
+    double offset = topPadding + warmupHeight + cardSpacing;
 
     final sortedWindows = _activeWindows.values.toList()
       ..sort((a, b) => a.position.compareTo(b.position));
@@ -195,13 +203,29 @@ class NotificationWindowService {
       // 跳过 position 0（热身区域）
       if (info.position == 0) continue;
       if (info.position >= targetPosition) break;
-      // 根据通知类型计算高度
-      final height = info.notificationId.startsWith('updatelog_')
-          ? updateLogCardHeight
-          : normalCardHeight;
-      offset += height + cardSpacing;
+      offset += info.cardHeight + cardSpacing;
     }
     return offset;
+  }
+
+  /// 计算通知的卡片高度
+  double _getCardHeight(NotificationData notification) {
+    if (notification.type == NotificationType.updateLog) {
+      return updateLogCardHeight;
+    }
+    if (_isMapNotification(notification)) {
+      return mapCardHeight;
+    }
+    return normalCardHeight;
+  }
+
+  /// 判断是否为需要分行显示地图名的通知
+  bool _isMapNotification(NotificationData notification) {
+    return (notification.type == NotificationType.warmup ||
+            notification.type == NotificationType.mapChange ||
+            notification.type == NotificationType.mapSubscription) &&
+        notification.mapName != null &&
+        notification.mapName!.isNotEmpty;
   }
 
   /// 导航回调（由主窗口设置）
@@ -372,6 +396,7 @@ class NotificationWindowService {
         notificationId: notification.id,
         controller: controller,
         position: position,
+        cardHeight: _getCardHeight(notification),
       );
     } catch (e, stack) {
       LogService.e('[NotificationWindow] Create window error: $e\n$stack');
