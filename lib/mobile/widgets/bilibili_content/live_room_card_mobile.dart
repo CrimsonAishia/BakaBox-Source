@@ -1,5 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../../../core/models/bilibili_content_models.dart';
 import '../../../core/widgets/disk_cached_image.dart';
 
@@ -23,15 +24,7 @@ class LiveRoomCardMobile extends StatelessWidget {
     return GestureDetector(
       onTap: () async {
         onTap?.call();
-        // 优先尝试打开B站App
-        final appUri = Uri.parse('bilibili://live/${room.roomId}');
-        if (await canLaunchUrl(appUri)) {
-          await launchUrl(appUri);
-        } else {
-          // fallback 到网页
-          final webUri = Uri.parse('https://live.bilibili.com/${room.roomId}');
-          await launchUrl(webUri, mode: LaunchMode.externalApplication);
-        }
+        await _openBilibiliLive(room.roomId);
       },
       child: Card(
         margin: EdgeInsets.zero,
@@ -216,6 +209,24 @@ class LiveRoomCardMobile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// 打开B站直播间：优先尝试拉起B站App，失败则降级到网页
+  Future<void> _openBilibiliLive(String roomId) async {
+    // B站直播间 deep link 格式：bilibili://live/{roomId}
+    final appUrl = WebUri('bilibili://live/$roomId');
+    final webUrl = WebUri('https://live.bilibili.com/$roomId');
+
+    try {
+      // 直接通过系统 Intent 打开 bilibili:// scheme
+      await InAppBrowser.openWithSystemBrowser(url: appUrl);
+    } catch (e) {
+      debugPrint('Bilibili app scheme failed: $e');
+      // App 未安装或 scheme 不可用，降级到系统浏览器打开网页
+      try {
+        await InAppBrowser.openWithSystemBrowser(url: webUrl);
+      } catch (_) {}
+    }
   }
 
   String _formatNumber(int number) {
