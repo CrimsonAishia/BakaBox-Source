@@ -110,6 +110,7 @@ class BilibiliContentBloc
       emit(
         state.copyWith(
           status: BilibiliContentStatus.error,
+          isRefreshing: false,
           errorMessage: ErrorUtils.getErrorMessage(e, defaultMessage: '获取内容失败'),
         ),
       );

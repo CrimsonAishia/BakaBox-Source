@@ -133,18 +133,34 @@ class _BilibiliContentMobileState extends State<BilibiliContentMobile>
       title: const Text('直播 / 视频'),
       centerTitle: true,
       actions: [
-        IconButton(
-          onPressed: () {
-            context.read<BilibiliContentBloc>().add(
-              BilibiliContentFetchRequested(
-                refresh: true,
-                tabIndex: _tabController.index,
-                pageIndex: 1,
-              ),
+        BlocBuilder<BilibiliContentBloc, BilibiliContentState>(
+          buildWhen: (prev, curr) => prev.isRefreshing != curr.isRefreshing,
+          builder: (context, state) {
+            return IconButton(
+              onPressed: state.isRefreshing
+                  ? null
+                  : () {
+                      context.read<BilibiliContentBloc>().add(
+                        BilibiliContentFetchRequested(
+                          refresh: true,
+                          tabIndex: _tabController.index,
+                          pageIndex: 1,
+                        ),
+                      );
+                    },
+              icon: state.isRefreshing
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: _bilibiliBlue,
+                      ),
+                    )
+                  : const Icon(Icons.refresh),
+              tooltip: '刷新',
             );
           },
-          icon: const Icon(Icons.refresh),
-          tooltip: '刷新',
         ),
       ],
       bottom: TabBar(
@@ -164,7 +180,7 @@ class _BilibiliContentMobileState extends State<BilibiliContentMobile>
   }
 
   Widget _buildLiveRoomTab(BilibiliContentState state) {
-    if (state.status == BilibiliContentStatus.loading && state.liveRooms.isEmpty) {
+    if (state.status == BilibiliContentStatus.loading && state.liveRooms.isEmpty && !state.isRefreshing) {
       return const Center(
         child: CircularProgressIndicator(color: _bilibiliBlue),
       );
@@ -178,18 +194,34 @@ class _BilibiliContentMobileState extends State<BilibiliContentMobile>
     return RefreshIndicator(
       color: _bilibiliBlue,
       onRefresh: () async {
-        context.read<BilibiliContentBloc>().add(
+        final bloc = context.read<BilibiliContentBloc>();
+        bloc.add(
           const BilibiliContentFetchRequested(refresh: true, tabIndex: 0, pageIndex: 1),
         );
-        await Future.delayed(const Duration(milliseconds: 500));
+        // 等待 isRefreshing 变为 false（数据加载完成）
+        await bloc.stream.firstWhere((s) => !s.isRefreshing);
       },
-      child: state.liveRooms.isEmpty
-          ? _buildEmptyScrollable('暂无直播间')
-          : LiveRoomGridMobile(
-              rooms: state.liveRooms,
-              total: state.liveRoomsTotal,
-              scrollController: _liveRoomScrollController,
+      child: Stack(
+        children: [
+          // 列表内容（带淡入动画）
+          AnimatedOpacity(
+            opacity: state.isRefreshing ? 0.3 : 1.0,
+            duration: const Duration(milliseconds: 200),
+            child: state.liveRooms.isEmpty
+                ? _buildEmptyScrollable('暂无直播间')
+                : LiveRoomGridMobile(
+                    rooms: state.liveRooms,
+                    total: state.liveRoomsTotal,
+                    scrollController: _liveRoomScrollController,
+                  ),
+          ),
+          // 刷新时的居中 loading
+          if (state.isRefreshing)
+            const Center(
+              child: CircularProgressIndicator(color: _bilibiliBlue),
             ),
+        ],
+      ),
     );
   }
 
@@ -214,15 +246,31 @@ class _BilibiliContentMobileState extends State<BilibiliContentMobile>
           child: RefreshIndicator(
             color: _bilibiliBlue,
             onRefresh: () async {
-              context.read<BilibiliContentBloc>().add(
+              final bloc = context.read<BilibiliContentBloc>();
+              bloc.add(
                 const BilibiliContentFetchRequested(refresh: true, tabIndex: 1, pageIndex: 1),
               );
-              await Future.delayed(const Duration(milliseconds: 500));
+              // 等待 isRefreshing 变为 false（数据加载完成）
+              await bloc.stream.firstWhere((s) => !s.isRefreshing);
             },
-            child: VideoGridMobile(
-              videos: state.videos,
-              total: state.videosTotal,
-              scrollController: _videoScrollController,
+            child: Stack(
+              children: [
+                // 列表内容（带淡入动画）
+                AnimatedOpacity(
+                  opacity: state.isRefreshing ? 0.3 : 1.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: VideoGridMobile(
+                    videos: state.videos,
+                    total: state.videosTotal,
+                    scrollController: _videoScrollController,
+                  ),
+                ),
+                // 刷新时的居中 loading
+                if (state.isRefreshing)
+                  const Center(
+                    child: CircularProgressIndicator(color: _bilibiliBlue),
+                  ),
+              ],
             ),
           ),
         ),
