@@ -14,10 +14,10 @@ class ContextMenuItem {
   });
 }
 
-/// 大厅右键菜单组件（Flame 渲染）
+/// 大厅玩家交互菜单组件（Flame 渲染）
 ///
-/// 在角色模型上右键时显示，包含"调查"和"关注/取消关注"选项。
-/// 使用 Flame 渲染以保持与游戏场景一致的视觉风格。
+/// 左键靠近玩家时显示，包含"调查"和"关注/取消关注"选项。
+/// 半透明毛玻璃风格，轻量不遮挡场景。
 class LobbyContextMenuComponent extends PositionComponent {
   LobbyContextMenuComponent({
     required List<ContextMenuItem> items,
@@ -30,7 +30,7 @@ class LobbyContextMenuComponent extends PositionComponent {
         super(
           position: worldPosition,
           anchor: Anchor.topLeft,
-          priority: 1000, // 最高层级，确保菜单在所有组件之上
+          priority: 1000,
         );
 
   final List<ContextMenuItem> _items;
@@ -38,19 +38,23 @@ class LobbyContextMenuComponent extends PositionComponent {
   final VoidCallback _onDismiss;
 
   // 菜单样式常量
-  static const double _itemHeight = 32.0;
-  static const double _itemPadding = 6.0;
-  static const double _borderRadius = 8.0;
-  static const double _menuWidth = 120.0;
-  static const double _shadowBlur = 12.0;
+  static const double _itemHeight = 28.0;
+  static const double _itemPaddingH = 12.0;
+  static const double _itemPaddingV = 4.0;
+  static const double _menuPadding = 5.0;
+  static const double _borderRadius = 10.0;
+  static const double _menuWidth = 110.0;
 
   // 动画
   double _opacity = 0.0;
-  double _scaleValue = 0.85;
-  static const double _animSpeed = 8.0;
+  double _scaleValue = 0.9;
+  static const double _animSpeed = 10.0;
 
   // 悬停状态
   int _hoveredIndex = -1;
+
+  /// 当前是否悬停在某个菜单项上（供外部切换鼠标光标）
+  bool get isHoveringItem => _hoveredIndex >= 0;
 
   // TextPainter 缓存
   final List<TextPainter> _textPainters = [];
@@ -60,12 +64,12 @@ class LobbyContextMenuComponent extends PositionComponent {
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // 计算菜单尺寸
     final menuHeight =
-        _items.length * _itemHeight + (_items.length + 1) * _itemPadding;
+        _items.length * _itemHeight +
+        (_items.length - 1) * _itemPaddingV +
+        _menuPadding * 2;
     size = Vector2(_menuWidth, menuHeight);
 
-    // 构建 TextPainter
     _buildTextPainters();
   }
 
@@ -75,11 +79,11 @@ class LobbyContextMenuComponent extends PositionComponent {
         text: TextSpan(
           text: item.label,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: FontWeight.w500,
             color: item.enabled
-                ? Colors.white
-                : Colors.white.withValues(alpha: 0.4),
+                ? Colors.white.withValues(alpha: 0.95)
+                : Colors.white.withValues(alpha: 0.35),
           ),
         ),
         textDirection: TextDirection.ltr,
@@ -93,7 +97,6 @@ class LobbyContextMenuComponent extends PositionComponent {
   void update(double dt) {
     super.update(dt);
 
-    // 入场动画
     if (_opacity < 1.0) {
       _opacity = (_opacity + _animSpeed * dt).clamp(0.0, 1.0);
     }
@@ -104,7 +107,6 @@ class LobbyContextMenuComponent extends PositionComponent {
 
   @override
   bool containsLocalPoint(Vector2 point) {
-    // 扩大点击区域，包含菜单本身
     return point.x >= 0 &&
         point.x <= size.x &&
         point.y >= 0 &&
@@ -133,7 +135,7 @@ class LobbyContextMenuComponent extends PositionComponent {
     if (localPoint.y < 0 || localPoint.y > size.y) return -1;
 
     for (int i = 0; i < _items.length; i++) {
-      final itemTop = _itemPadding + i * (_itemHeight + _itemPadding);
+      final itemTop = _menuPadding + i * (_itemHeight + _itemPaddingV);
       final itemBottom = itemTop + _itemHeight;
       if (localPoint.y >= itemTop && localPoint.y <= itemBottom) {
         return i;
@@ -146,68 +148,79 @@ class LobbyContextMenuComponent extends PositionComponent {
   void render(Canvas canvas) {
     if (!_paintersBuilt) return;
 
-    // 应用动画变换
     canvas.save();
-    if (_scaleValue < 1.0 || _opacity < 1.0) {
+
+    // 入场缩放动画（从顶部中心展开）
+    if (_scaleValue < 1.0) {
       canvas.translate(size.x / 2, 0);
       canvas.scale(_scaleValue, _scaleValue);
       canvas.translate(-size.x / 2, 0);
     }
 
-    // 绘制阴影
-    final shadowRect = Rect.fromLTWH(0, 2, size.x, size.y);
-    final shadowRRect =
-        RRect.fromRectAndRadius(shadowRect, const Radius.circular(_borderRadius));
-    final shadowPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.4 * _opacity)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, _shadowBlur);
-    canvas.drawRRect(shadowRRect, shadowPaint);
-
-    // 绘制背景（半透明深色毛玻璃风格）
     final bgRect = Rect.fromLTWH(0, 0, size.x, size.y);
     final bgRRect =
         RRect.fromRectAndRadius(bgRect, const Radius.circular(_borderRadius));
+
+    // 外阴影（柔和扩散）
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.35 * _opacity)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8.0);
+    canvas.drawRRect(bgRRect.shift(const Offset(0, 2)), shadowPaint);
+
+    // 背景：深色半透明（80% 不透明度）
     final bgPaint = Paint()
-      ..color = const Color(0xE6141B2D).withValues(alpha: _opacity);
+      ..color = const Color(0xFF0D1117).withValues(alpha: 0.80 * _opacity);
     canvas.drawRRect(bgRRect, bgPaint);
 
-    // 绘制边框
+    // 内层微光（模拟毛玻璃高光）
+    final innerGlowRect = Rect.fromLTWH(0, 0, size.x, size.y * 0.5);
+    final innerGlowRRect =
+        RRect.fromRectAndRadius(innerGlowRect, const Radius.circular(_borderRadius));
+    final innerGlowPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.white.withValues(alpha: 0.06 * _opacity),
+          Colors.white.withValues(alpha: 0.0),
+        ],
+      ).createShader(innerGlowRect);
+    canvas.drawRRect(innerGlowRRect, innerGlowPaint);
+
+    // 边框：细微白色描边
     final borderPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.12 * _opacity)
+      ..color = Colors.white.withValues(alpha: 0.10 * _opacity)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+      ..strokeWidth = 0.5;
     canvas.drawRRect(bgRRect, borderPaint);
 
     // 绘制菜单项
     for (int i = 0; i < _items.length; i++) {
-      final itemTop = _itemPadding + i * (_itemHeight + _itemPadding);
+      final itemTop = _menuPadding + i * (_itemHeight + _itemPaddingV);
       final itemRect = Rect.fromLTWH(
-        _itemPadding,
+        _menuPadding,
         itemTop,
-        size.x - _itemPadding * 2,
+        size.x - _menuPadding * 2,
         _itemHeight,
       );
 
-      // 悬停高亮
+      // 悬停高亮：柔和白色填充
       if (i == _hoveredIndex && _items[i].enabled) {
         final hoverRRect = RRect.fromRectAndRadius(
           itemRect,
           const Radius.circular(6),
         );
         final hoverPaint = Paint()
-          ..color = Colors.white.withValues(alpha: 0.1 * _opacity);
+          ..color = Colors.white.withValues(alpha: 0.12 * _opacity);
         canvas.drawRRect(hoverRRect, hoverPaint);
       }
 
-      // 绘制文字（居中）
+      // 绘制文字（左对齐，带左边距）
       if (i < _textPainters.length) {
         final painter = _textPainters[i];
-        final textX = itemRect.left + (itemRect.width - painter.width) / 2;
+        final textX = itemRect.left + _itemPaddingH;
         final textY = itemRect.top + (itemRect.height - painter.height) / 2;
-        painter.paint(
-          canvas,
-          Offset(textX, textY),
-        );
+        painter.paint(canvas, Offset(textX, textY));
       }
     }
 
