@@ -6398,11 +6398,13 @@ class InventoryStatsResponse extends $pb.GeneratedMessage {
 /// PresenceDeltaResponse 增量 presence 帧（替代逐条 presence.join/leave）
 /// 服务端每 tick 末尾合并本 tick 内所有 enter/leave 变化，一次性推送。
 /// 客户端收到后批量更新本地用户列表，减少渲染抖动。
+/// seq 为单调递增序列号，客户端检测到 seq 不连续时应主动请求 snapshot 进行全量同步。
 class PresenceDeltaResponse extends $pb.GeneratedMessage {
   factory PresenceDeltaResponse({
     $core.Iterable<LobbyUser>? joined,
     $core.Iterable<$core.String>? leftUserIds,
     $core.Iterable<CrossMapPresenceEvent>? crossMapEvents,
+    $fixnum.Int64? seq,
   }) {
     final $result = create();
     if (joined != null) {
@@ -6414,6 +6416,9 @@ class PresenceDeltaResponse extends $pb.GeneratedMessage {
     if (crossMapEvents != null) {
       $result.crossMapEvents.addAll(crossMapEvents);
     }
+    if (seq != null) {
+      $result.seq = seq;
+    }
     return $result;
   }
   PresenceDeltaResponse._() : super();
@@ -6424,6 +6429,7 @@ class PresenceDeltaResponse extends $pb.GeneratedMessage {
     ..pc<LobbyUser>(1, _omitFieldNames ? '' : 'joined', $pb.PbFieldType.PM, subBuilder: LobbyUser.create)
     ..pPS(2, _omitFieldNames ? '' : 'leftUserIds')
     ..pc<CrossMapPresenceEvent>(3, _omitFieldNames ? '' : 'crossMapEvents', $pb.PbFieldType.PM, subBuilder: CrossMapPresenceEvent.create)
+    ..aInt64(10, _omitFieldNames ? '' : 'seq')
     ..hasRequiredFields = false
   ;
 
@@ -6456,6 +6462,15 @@ class PresenceDeltaResponse extends $pb.GeneratedMessage {
 
   @$pb.TagNumber(3)
   $core.List<CrossMapPresenceEvent> get crossMapEvents => $_getList(2);
+
+  @$pb.TagNumber(10)
+  $fixnum.Int64 get seq => $_getI64(3);
+  @$pb.TagNumber(10)
+  set seq($fixnum.Int64 v) { $_setInt64(3, v); }
+  @$pb.TagNumber(10)
+  $core.bool hasSeq() => $_has(3);
+  @$pb.TagNumber(10)
+  void clearSeq() => clearField(10);
 }
 
 /// CrossMapPresenceEvent 跨地图 presence 事件（弱通知，不渲染角色，仅 UI 提示）

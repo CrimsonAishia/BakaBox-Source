@@ -11,6 +11,8 @@ enum LobbyLoadingPhase {
   connecting,
   /// 连接已建立，等待数据
   waiting,
+  /// 正在排队等待进入
+  queueing,
   /// 正在加载素材数据
   loadingAssets,
   /// 素材加载完成，正在获取大厅状态

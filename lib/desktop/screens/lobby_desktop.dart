@@ -163,6 +163,11 @@ class _LobbyDesktopState extends State<LobbyDesktop>
           _sceneFocusNode.requestFocus();
         }
       });
+
+      // 从后台恢复时，检查排队状态或对齐 snapshot
+      if (_started && mounted) {
+        context.read<LobbyBloc>().add(const LobbyAppResumed());
+      }
     }
   }
 
@@ -1609,6 +1614,8 @@ class _LobbyQueueScreenState extends State<_LobbyQueueScreen>
     final position = widget.state.queuePosition;
     final total = widget.state.queueTotal;
     if (total <= 0 || position <= 0) return 0.0;
+    // position=1 表示下一个就是自己，显示较高进度
+    if (position == 1) return 0.9;
     return ((total - position) / total).clamp(0.0, 1.0);
   }
 

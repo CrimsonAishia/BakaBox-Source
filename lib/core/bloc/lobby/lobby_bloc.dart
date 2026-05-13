@@ -22,6 +22,7 @@ import '../../services/server_address_mapping_service.dart';
 import '../../services/status_window_service.dart';
 import '../../services/steam_user_service.dart';
 import '../../utils/log_service.dart';
+import '../../utils/platform_utils.dart';
 import '../../utils/storage_utils.dart';
 import '../settings/settings_state.dart';
 import '../../models/proto/lobby.pb.dart' as pb;
@@ -124,6 +125,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     on<LobbyKickedDismissed>(_onKickedDismissed);
     on<LobbyChatBubblesCleared>(_onChatBubblesCleared);
     on<LobbySnapshotRefreshRequested>(_onSnapshotRefreshRequested);
+    on<LobbyAppResumed>(_onAppResumed);
     on<_LobbyQueueStarted>(_onQueueStarted);
     on<_LobbyQueueStatusUpdated>(_onQueueStatusUpdated);
     on<_LobbyQueueReady>(_onQueueReady);
@@ -190,6 +192,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   Timer? _queueRetryTimer;
   /// 当前排队轮询间隔（毫秒），用于避免重复重建定时器
   int _queuePollIntervalMs = 0;
+  /// 排队过期后连续重试次数（用于指数退避）
+  int _queueRetryCount = 0;
+  /// 排队重试最大退避时间（秒）
+  static const int _queueRetryMaxBackoffSeconds = 30;
+  /// 排队过期后最大重试次数（超过后停止自动重试，提示用户手动操作）
+  static const int _queueRetryMaxCount = 10;
 
   /// delta 异常检测：发现本地不存在的 left_user_id 时触发 snapshot 对齐
   /// 一次异常即说明漏收了 join 帧，立即对齐
@@ -199,6 +207,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
   /// 异常触发 snapshot 对齐的最小间隔
   static const Duration _anomalySnapshotCooldown = Duration(seconds: 30);
+
+  /// presence.delta seq 序列号追踪（用于检测丢帧）
+  /// null 表示尚未收到第一个带 seq 的 delta 帧（服务端未启用 seq 或刚进入大厅）
+  int? _lastDeltaSeq;
 
   /// AuthService 登录状态变化监听器回调
   late final LoginStateChangedCallback _authStateListener;
@@ -270,12 +282,18 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _previousSpriteId = null;
     _isLobbyEntered = true;
     _isDisposed = false;
+    _lastDeltaSeq = null;
 
     // 取消排队相关定时器
     _queuePollTimer?.cancel();
     _queuePollTimer = null;
     _queueTicket = null;
     _queuePollFailCount = 0;
+    // 只有非重试触发的 LobbyStarted 才重置重试计数
+    // （重试触发时 _queueRetryTimer 非空，说明是自动重试）
+    if (_queueRetryTimer == null) {
+      _queueRetryCount = 0;
+    }
     _queueRetryTimer?.cancel();
     _queueRetryTimer = null;
     _queuePollIntervalMs = 0;
@@ -1618,6 +1636,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           final previousServerUserId = _selfServerUserId;
           final nextServerUserId = snapshotState.selfServerUserId;
           _selfServerUserId = nextServerUserId;
+
+          // snapshot 是全量状态，重置 seq 追踪（下一个 delta 帧作为新基线）
+          _lastDeltaSeq = null;
 
           // 如果 snapshot 中包含 mapConfig，优先使用它作为当前地图配置
           // 同时将 snapshot 的 mapConfig 合并到 assets.maps 中（如果 maps 数组中没有该地图）
@@ -3390,6 +3411,30 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     await _service.requestSnapshot();
   }
 
+  /// 应用从后台恢复时的处理
+  ///
+  /// 1. 如果正在排队，立即轮询一次确认 ticket 状态（30 秒后可能已过期）
+  /// 2. 如果大厅已 ready，请求 snapshot 对齐
+  Future<void> _onAppResumed(
+    LobbyAppResumed event,
+    Emitter<LobbyState> emit,
+  ) async {
+    if (_isDisposed || !_isLobbyEntered) return;
+
+    // 排队中：立即轮询一次确认状态（ticket 30 秒未轮询会过期）
+    if (_queueTicket != null) {
+      LogService.d('[LobbyBloc] 从后台恢复，立即确认排队状态');
+      await _pollQueueStatus();
+      return;
+    }
+
+    // 大厅已 ready：请求 snapshot 对齐（覆盖后台期间可能丢失的 delta 帧）
+    if (state.pageStatus == LobbyPageStatus.ready) {
+      LogService.d('[LobbyBloc] 从后台恢复，请求 snapshot 对齐');
+      await _service.requestSnapshot();
+    }
+  }
+
   // =========================================================================
   // 排队系统处理
   // =========================================================================
@@ -3420,6 +3465,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   ) {
     _queueTicket = event.ticket;
     _queuePollFailCount = 0;
+    // 注意：不重置 _queueRetryCount，保留跨重试的累计计数
+    // 只有排队成功（_onQueueReady）时才重置
 
     emit(state.copyWith(
       queueTicket: event.ticket,
@@ -3427,7 +3474,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       queueTotal: event.queueTotal,
       queueEtaSeconds: event.etaSeconds,
       queueExpired: false,
-      loadingPhase: LobbyLoadingPhase.connecting,
+      loadingPhase: LobbyLoadingPhase.queueing,
       transientNotice: '服务器繁忙，正在排队中...',
     ));
 
@@ -3437,7 +3484,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
   /// 启动排队轮询
   void _startQueuePolling(int intervalMs) {
-    final clamped = intervalMs.clamp(1000, 10000);
+    final clamped = intervalMs.clamp(1000, 30000);
     // 避免相同间隔重复重建定时器
     if (_queuePollTimer != null && _queuePollIntervalMs == clamped) return;
     _queuePollTimer?.cancel();
@@ -3506,6 +3553,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _queuePollTimer?.cancel();
     _queuePollTimer = null;
     _queueTicket = null;
+    _queueRetryCount = 0;
+    _queuePollIntervalMs = 0;
 
     emit(state.copyWith(
       clearQueue: true,
@@ -3519,7 +3568,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       LogService.i('[LobbyBloc] 排队完成，已加入 Match: ${event.matchId}');
 
       // joinMatch 成功后，service 层会处理 join.success → enter → snapshot
-      // 但 assets 需要 bloc 层主动请求
+      // bloc 层需要主动请求 assets（service 层不处理 assets）
+      // snapshot 可能被请求两次（service + bloc），但这是幂等操作，无副作用
       _requestAssetsAndSnapshot();
     } catch (e) {
       LogService.e('[LobbyBloc] 排队完成后 joinMatch 失败: $e');
@@ -3542,6 +3592,27 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _queuePollIntervalMs = 0;
 
     final reason = event.reason;
+    _queueRetryCount++;
+
+    // 移动端：超过最大重试次数，停止自动重试，提示用户手动操作
+    // 桌面端：强制进入大厅，永远自动重试（不设上限）
+    if (!PlatformUtils.isDesktopPlatform && _queueRetryCount > _queueRetryMaxCount) {
+      String message;
+      switch (reason) {
+        case 'network_error':
+          message = '网络持续异常，请检查网络后重试';
+          break;
+        default:
+          message = '多次重试失败，请稍后重试';
+      }
+      emit(state.copyWith(
+        clearQueue: true,
+        transientNotice: message,
+        connectionStatus: LobbyConnectionStatus.failed,
+      ));
+      return;
+    }
+
     String message;
     switch (reason) {
       case 'timeout':
@@ -3559,9 +3630,14 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       transientNotice: message,
     ));
 
-    // 自动重新加入（延迟 2 秒避免频繁重试，使用可取消的 Timer）
+    // 指数退避重试：2s, 4s, 8s, 16s, 30s（上限）
+    final backoffSeconds = math.min(
+      2 * math.pow(2, _queueRetryCount - 1).toInt(),
+      _queueRetryMaxBackoffSeconds,
+    );
+
     _queueRetryTimer?.cancel();
-    _queueRetryTimer = Timer(const Duration(seconds: 2), () {
+    _queueRetryTimer = Timer(Duration(seconds: backoffSeconds), () {
       if (!_isDisposed && _isLobbyEntered) {
         add(const LobbyStarted());
       }
@@ -3577,6 +3653,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _queuePollTimer?.cancel();
     _queuePollTimer = null;
     _queueTicket = null;
+    _queueRetryTimer?.cancel();
+    _queueRetryTimer = null;
+    _queueRetryCount = 0;
 
     emit(state.copyWith(
       clearQueue: true,
@@ -3601,6 +3680,26 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     pb.PresenceDeltaResponse delta,
     Emitter<LobbyState> emit,
   ) {
+    // seq 连续性检测：服务端携带 seq 时启用，检测到不连续则触发 snapshot 对齐
+    if (delta.hasSeq()) {
+      final seq = delta.seq.toInt();
+      if (_lastDeltaSeq != null) {
+        final expected = _lastDeltaSeq! + 1;
+        if (seq != expected) {
+          // seq 回退说明服务器重启（seq 从头开始），同样需要 snapshot 对齐
+          LogService.w('[LobbyBloc] delta seq 不连续: expected=$expected, got=$seq'
+              '${seq < _lastDeltaSeq! ? "（服务器可能重启）" : ""}，触发 snapshot 对齐');
+          _lastDeltaSeq = seq;
+          _onDeltaAnomaly();
+          // 仍然继续处理本帧数据（尽力而为）
+        } else {
+          _lastDeltaSeq = seq;
+        }
+      } else {
+        _lastDeltaSeq = seq;
+      }
+    }
+
     var updatedUsers = List<LobbyUser>.from(state.users);
     final notifications = <PlayerNotification>[];
 
