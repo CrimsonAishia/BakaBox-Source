@@ -1,5 +1,4 @@
 import 'package:flame/components.dart';
-import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 
 /// 右键菜单项数据
@@ -19,7 +18,7 @@ class ContextMenuItem {
 ///
 /// 在角色模型上右键时显示，包含"调查"和"关注/取消关注"选项。
 /// 使用 Flame 渲染以保持与游戏场景一致的视觉风格。
-class LobbyContextMenuComponent extends PositionComponent with TapCallbacks {
+class LobbyContextMenuComponent extends PositionComponent {
   LobbyContextMenuComponent({
     required List<ContextMenuItem> items,
     required Vector2 worldPosition,
