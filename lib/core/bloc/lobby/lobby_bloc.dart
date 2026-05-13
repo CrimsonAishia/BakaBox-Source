@@ -2347,6 +2347,15 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         {
           final onlineStatsResp = envelope.onlineStatsResponse;
           final total = onlineStatsResp.total;
+
+          // 服务端推送的 online.stats 可能只包含 total（不含用户列表），
+          // 此时不应覆盖 allOnlineUsers，否则会清空在线面板。
+          if (onlineStatsResp.users.isEmpty) {
+            // 仅更新在线人数，不清空用户列表
+            emit(state.copyWith(serverOnlineCount: total));
+            break;
+          }
+
           final List<LobbyUser> parsedUsers = [];
           bool selfFound = false;
 
