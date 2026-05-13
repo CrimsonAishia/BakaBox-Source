@@ -138,7 +138,7 @@ class DesktopNavigation extends StatelessWidget {
   /// 构建问题反馈按钮
   Widget _buildFeedbackButton(ThemeData theme, bool isDark) {
     return Container(
-          margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 4),
           child: Material(
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(10),
@@ -236,7 +236,7 @@ class _NavigationItemWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-          margin: const EdgeInsets.only(bottom: 6),
+          margin: const EdgeInsets.symmetric(vertical: 2),
           child: Material(
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(12),
