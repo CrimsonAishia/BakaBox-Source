@@ -140,10 +140,10 @@ class _LoginPromptView extends StatelessWidget {
               fontSize: 12,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 4),
           SizedBox(
             width: double.infinity,
-            height: 36,
+            height: 28,
             child: ElevatedButton(
               onPressed: () {
                 // 使用 addPostFrameCallback 确保 overlay 已准备好
@@ -164,7 +164,7 @@ class _LoginPromptView extends StatelessWidget {
               child: const Text('关联账户', style: TextStyle(fontSize: 13)),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 4),
           Row(
             children: [
               Expanded(
