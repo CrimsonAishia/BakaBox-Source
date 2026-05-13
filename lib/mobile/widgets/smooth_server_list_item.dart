@@ -42,8 +42,16 @@ class _SmoothServerListItemState extends State<SmoothServerListItem>
       curve: Curves.easeOut,
     );
 
-    _checkDataAvailability();
-    _startTimeoutTimer();
+    // 如果初始化时已经有数据，直接显示真实卡片，跳过骨架屏
+    final hasServerData = widget.server.serverData != null;
+    if (hasServerData) {
+      _showRealCard = true;
+      _hasData = true;
+      _controller.value = 1.0; // 直接完成动画
+    } else {
+      _checkDataAvailability();
+      _startTimeoutTimer();
+    }
   }
 
   @override
@@ -71,8 +79,9 @@ class _SmoothServerListItemState extends State<SmoothServerListItem>
     final hasServerData = widget.server.serverData != null;
     final isLoading = widget.server.isLoading;
 
-    // 如果正在加载，重置为骨架屏状态
-    if (isLoading && _showRealCard) {
+    // 如果正在加载且之前从未有过数据，保持骨架屏状态
+    // 但如果已经有数据（无感刷新），不回退到骨架屏，避免闪烁
+    if (isLoading && !hasServerData && _showRealCard) {
       setState(() {
         _showRealCard = false;
         _hasData = false;
@@ -107,14 +116,6 @@ class _SmoothServerListItemState extends State<SmoothServerListItem>
 
   @override
   Widget build(BuildContext context) {
-    // 动画完成后，只渲染真实卡片，彻底移除骨架屏
-    if (_showRealCard && _controller.isCompleted) {
-      return ServerListItem(
-        server: widget.server,
-        onTap: widget.onTap,
-      );
-    }
-
     // 还没开始过渡，只渲染骨架屏
     if (!_showRealCard) {
       return ServerListItemSkeleton(
@@ -123,24 +124,28 @@ class _SmoothServerListItemState extends State<SmoothServerListItem>
       );
     }
 
-    // 过渡中：用 AnimatedBuilder 做简单的交叉淡入
+    // 过渡中或已完成：始终保持完全相同的 widget 树结构
+    // 不使用条件渲染（if），确保 ServerListItem 在树中的位置永远不变
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
+        final animValue = _fadeAnimation.value;
+        final isComplete = animValue >= 1.0;
         return Stack(
           children: [
-            // 骨架屏淡出
-            if (_fadeAnimation.value < 1.0)
-              Opacity(
-                opacity: 1.0 - _fadeAnimation.value,
-                child: ServerListItemSkeleton(
-                  index: widget.index,
-                  showShimmer: false, // 过渡中关闭 shimmer
-                ),
-              ),
-            // 真实卡片淡入
+            // 骨架屏淡出（完成后 opacity=0，仍保留在树中维持结构稳定）
             Opacity(
-              opacity: _fadeAnimation.value,
+              opacity: isComplete ? 0.0 : 1.0 - animValue,
+              child: isComplete
+                  ? const SizedBox.shrink() // 动画完成后用轻量占位，释放骨架屏资源
+                  : ServerListItemSkeleton(
+                      index: widget.index,
+                      showShimmer: false,
+                    ),
+            ),
+            // 真实卡片淡入（完成后 opacity=1.0）
+            Opacity(
+              opacity: animValue,
               child: child,
             ),
           ],
