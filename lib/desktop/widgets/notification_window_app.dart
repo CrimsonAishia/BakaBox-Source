@@ -952,7 +952,7 @@ class _ServerNameTextState extends State<_ServerNameText>
     _animationController.addListener(_onAnimationUpdate);
     _animationController.addStatusListener(_onAnimationStatus);
 
-    Future.delayed(const Duration(seconds: 1), () {
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted) _animationController.forward();
     });
   }
@@ -1108,8 +1108,8 @@ class _MarqueeTextState extends State<_MarqueeText>
     // 监听动画状态
     _animationController.addStatusListener(_onAnimationStatus);
 
-    // 延迟1秒后开始滚动
-    Future.delayed(const Duration(seconds: 1), () {
+    // 延迟3秒后开始滚动，让用户先看清内容
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted) _animationController.forward();
     });
   }
