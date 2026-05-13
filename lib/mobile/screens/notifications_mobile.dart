@@ -170,9 +170,7 @@ class _AnnouncementItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final content = announcement.content.length > 100
-        ? '${announcement.content.substring(0, 100)}...'
-        : announcement.content;
+    final content = announcement.content;
 
     final accentColor = announcement.isSticky ? colorScheme.error : colorScheme.primary;
 
@@ -275,14 +273,42 @@ class _AnnouncementItem extends StatelessWidget {
                             ),
                             if (content.isNotEmpty) ...[
                               const SizedBox(height: 6),
-                              Text(
-                                content,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                  height: 1.4,
+                              SizedBox(
+                                height: 40,
+                                child: ShaderMask(
+                                  shaderCallback: (Rect bounds) {
+                                    return LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [Colors.white, Colors.white, Colors.transparent],
+                                      stops: const [0.0, 0.6, 1.0],
+                                    ).createShader(bounds);
+                                  },
+                                  blendMode: BlendMode.dstIn,
+                                  child: SingleChildScrollView(
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    child: MarkdownBody(
+                                      data: content,
+                                      shrinkWrap: true,
+                                      fitContent: true,
+                                      styleSheet: MarkdownStyleSheet(
+                                        p: theme.textTheme.bodySmall?.copyWith(
+                                          color: colorScheme.onSurfaceVariant,
+                                          height: 1.4,
+                                        ),
+                                        a: TextStyle(
+                                          color: colorScheme.primary,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      onTapLink: (text, href, title) {
+                                        if (href != null) {
+                                          launchUrl(Uri.parse(href), mode: LaunchMode.externalApplication);
+                                        }
+                                      },
+                                    ),
+                                  ),
                                 ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                             const SizedBox(height: 8),
