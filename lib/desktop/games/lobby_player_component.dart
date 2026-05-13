@@ -1361,10 +1361,10 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       final textStyle = TextStyle(
         fontFamily: null,
         color: const Color(0xFFE2E8F0),
-        fontSize: 12,
+        fontSize: 10,
       );
 
-      final displayStatus = _truncateText(currentStatus, textStyle, 80);
+      final displayStatus = _truncateText(currentStatus, textStyle, 120);
       _cachedStatusPainter = TextPainter(
         text: TextSpan(text: displayStatus, style: textStyle),
         textDirection: TextDirection.ltr,
@@ -1372,7 +1372,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
       final strokeStyle = TextStyle(
         fontFamily: null,
-        fontSize: 12,
+        fontSize: 10,
         foreground: Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0
