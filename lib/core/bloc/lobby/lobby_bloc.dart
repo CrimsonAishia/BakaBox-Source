@@ -191,8 +191,14 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   /// 当前排队轮询间隔（毫秒），用于避免重复重建定时器
   int _queuePollIntervalMs = 0;
 
-  /// 定期 snapshot 对齐定时器（presence.delta 最终一致性保障）
-  Timer? _snapshotAlignTimer;
+  /// delta 异常检测：发现本地不存在的 left_user_id 时触发 snapshot 对齐
+  /// 一次异常即说明漏收了 join 帧，立即对齐
+
+  /// 上次因异常触发 snapshot 对齐的时间（防止频繁请求）
+  DateTime? _lastAnomalySnapshotTime;
+
+  /// 异常触发 snapshot 对齐的最小间隔
+  static const Duration _anomalySnapshotCooldown = Duration(seconds: 30);
 
   /// AuthService 登录状态变化监听器回调
   late final LoginStateChangedCallback _authStateListener;
@@ -273,8 +279,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _queueRetryTimer?.cancel();
     _queueRetryTimer = null;
     _queuePollIntervalMs = 0;
-    _snapshotAlignTimer?.cancel();
-    _snapshotAlignTimer = null;
 
     // 取消上一次可能残留的 assets 监听器和超时计时器
     _snapshotOnAssetsReceived?.cancel();
@@ -1390,6 +1394,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             if (_isLobbyEntered && state.pageStatus == LobbyPageStatus.loading && _queueTicket == null) {
               _requestAssetsAndSnapshot();
             }
+            // 重连成功且大厅已 ready 时，直接请求 snapshot 同步断连期间的变化
+            // （不需要重新请求 assets，assets 一般不会变化）
+            if (wasReconnecting && _isLobbyEntered && state.pageStatus == LobbyPageStatus.ready) {
+              _service.requestSnapshot();
+            }
           }
         }
       case LobbyConnectionEventType.closed:
@@ -1690,29 +1699,35 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           // snapshot 收到时 assets 已经在 _requestAssetsAndSnapshot 中处理了
           // 首次 snapshot 收到后立即进入 ready 状态，分页加载不影响页面状态
           final isFirstSnapshot = state.pageStatus == LobbyPageStatus.loading;
-          final notice = upgradedFromAnonymous || serverIdentityChanged
-              ? '已从匿名身份升级为登录身份'
-              : (snapshotState.isAnonymous ? '大厅就绪（匿名身份）' : '大厅就绪');
 
-          emit(
-            state.copyWith(
-              // 首次收到 snapshot 时进入 ready，后续分页加载不影响 pageStatus
-              pageStatus: isFirstSnapshot ? LobbyPageStatus.ready : state.pageStatus,
-              users: mergedUsers,
-              messages: state.isLoadingMore ? state.messages : snapshotState.messages,
-              selectedSpriteId: newSelectedSpriteId,
-              isAnonymous: snapshotState.isAnonymous,
-              transientNotice: notice,
-              pageInfo: pageInfo,
-              isLoadingMore: false,
-              assets: updatedAssets,
-            ),
-          );
-
-          // 首次进入 ready 时启动定期 snapshot 对齐（presence.delta 最终一致性保障）
-          if (isFirstSnapshot) {
-            _startSnapshotAlignTimer();
+          // 只在首次进入 ready 或身份变化时才显示通知，定期对齐不弹通知
+          final String? notice;
+          if (upgradedFromAnonymous || serverIdentityChanged) {
+            notice = '已从匿名身份升级为登录身份';
+          } else if (isFirstSnapshot) {
+            notice = snapshotState.isAnonymous ? '大厅就绪（匿名身份）' : '大厅就绪';
+          } else {
+            notice = null;
           }
+
+          final newState = state.copyWith(
+            // 首次收到 snapshot 时进入 ready，后续分页加载不影响 pageStatus
+            pageStatus: isFirstSnapshot ? LobbyPageStatus.ready : state.pageStatus,
+            users: mergedUsers,
+            messages: state.isLoadingMore ? state.messages : snapshotState.messages,
+            selectedSpriteId: newSelectedSpriteId,
+            isAnonymous: snapshotState.isAnonymous,
+            pageInfo: pageInfo,
+            isLoadingMore: false,
+            assets: updatedAssets,
+          );
+          // 只在有通知内容时才设置 transientNotice（避免定期对齐时无意义地递增 seq）
+          if (notice != null) {
+            emit(newState.copyWith(transientNotice: notice));
+          } else {
+            emit(newState);
+          }
+
 
           // 如果地图发生变化且正在传送中，等待地图加载完成后完成传送
           if (mapChanged && wasTeleporting && snapshotState.mapConfig != null) {
@@ -3281,8 +3296,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _queuePollTimer = null;
     _queueRetryTimer?.cancel();
     _queueRetryTimer = null;
-    _snapshotAlignTimer?.cancel();
-    _snapshotAlignTimer = null;
     await _wsSubscription?.cancel();
     await _gameStatusSubscription?.cancel();
     await _broadcastController.close();
@@ -3381,15 +3394,23 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   // 排队系统处理
   // =========================================================================
 
-  /// 启动定期 snapshot 对齐定时器（每 30 秒请求一次 snapshot，确保 delta 帧最终一致性）
-  void _startSnapshotAlignTimer() {
-    _snapshotAlignTimer?.cancel();
-    _snapshotAlignTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (_isDisposed || !_isLobbyEntered) return;
-      if (state.pageStatus != LobbyPageStatus.ready) return;
-      LogService.d('[LobbyBloc] 定期 snapshot 对齐');
-      _service.requestSnapshot();
-    });
+  /// 检测到 delta 异常时按需触发 snapshot 对齐
+  ///
+  /// 当 presence.delta 中的 left_user_ids 在本地找不到对应用户时，
+  /// 说明之前漏收了 join 帧，立即触发一次全量 snapshot 确保一致性。
+  /// 有冷却时间防止频繁请求。
+  void _onDeltaAnomaly() {
+    // 检查冷却时间
+    final now = DateTime.now();
+    if (_lastAnomalySnapshotTime != null &&
+        now.difference(_lastAnomalySnapshotTime!) < _anomalySnapshotCooldown) {
+      return;
+    }
+
+    // 触发 snapshot 对齐
+    _lastAnomalySnapshotTime = now;
+    LogService.w('[LobbyBloc] delta 异常（本地找不到离开的用户），触发 snapshot 对齐');
+    _service.requestSnapshot();
   }
 
   /// 排队开始
@@ -3619,6 +3640,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           playerName: leavingUser.displayName,
           createdAt: DateTime.now(),
         ));
+      } else {
+        // 本地找不到该用户，说明之前可能漏收了 join 帧
+        _onDeltaAnomaly();
       }
     }
 
