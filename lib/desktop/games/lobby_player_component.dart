@@ -602,41 +602,45 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       _targetPosition = user.targetPosition;
     }
 
-    // 直接使用服务器下发的 facing，不再自行计算
-    // 服务器的 facing 是权威值，客户端自行计算会导致其他用户朝向错误
-    final newFacing = user.facing;
-    final targetFacing = (newFacing == LobbyFacing.right)
-        ? FlipState.idleRight
-        : FlipState.idleLeft;
+    // 服务器 facing 处理策略：
+    // - 角色正在移动时，由 updatePosition 根据实际移动方向控制朝向，忽略服务器 facing
+    //   （避免移动插值方向与服务器 facing 互相打架导致反复抖动）
+    // - 角色静止时，采用服务器 facing 作为权威值
+    if (_targetPosition == null) {
+      final newFacing = user.facing;
+      final targetFacing = (newFacing == LobbyFacing.right)
+          ? FlipState.idleRight
+          : FlipState.idleLeft;
 
-    switch (_flipState) {
-      case FlipState.idleRight:
-      case FlipState.idleLeft:
-        // 空闲状态：若服务器朝向与当前不一致，触发动画切换
-        if (_flipState != targetFacing) {
-          final dir = _flipState == FlipState.idleLeft ? '右边' : '左边';
-          debugPrint(
-            '[LobbyPlayerComponent] 服务器朝向变化，开始转向$dir: ${_user.userId}',
-          );
-          _flipState = (targetFacing == FlipState.idleRight)
-              ? FlipState.turningToRight
-              : FlipState.turningToLeft;
-        }
-        break;
-      case FlipState.turningToLeft:
-        // 正在转向左边：若服务器要求朝右，立即反转
-        if (targetFacing == FlipState.idleRight) {
-          debugPrint('[LobbyPlayerComponent] 服务器朝向变化，立即转向右边: ${_user.userId}');
-          _flipState = FlipState.turningToRight;
-        }
-        break;
-      case FlipState.turningToRight:
-        // 正在转向右边：若服务器要求朝左，立即反转
-        if (targetFacing == FlipState.idleLeft) {
-          debugPrint('[LobbyPlayerComponent] 服务器朝向变化，立即转向左边: ${_user.userId}');
-          _flipState = FlipState.turningToLeft;
-        }
-        break;
+      switch (_flipState) {
+        case FlipState.idleRight:
+        case FlipState.idleLeft:
+          // 空闲状态：若服务器朝向与当前不一致，触发动画切换
+          if (_flipState != targetFacing) {
+            final dir = _flipState == FlipState.idleLeft ? '右边' : '左边';
+            debugPrint(
+              '[LobbyPlayerComponent] 服务器朝向变化，开始转向$dir: ${_user.userId}',
+            );
+            _flipState = (targetFacing == FlipState.idleRight)
+                ? FlipState.turningToRight
+                : FlipState.turningToLeft;
+          }
+          break;
+        case FlipState.turningToLeft:
+          // 正在转向左边：若服务器要求朝右，立即反转
+          if (targetFacing == FlipState.idleRight) {
+            debugPrint('[LobbyPlayerComponent] 服务器朝向变化，立即转向右边: ${_user.userId}');
+            _flipState = FlipState.turningToRight;
+          }
+          break;
+        case FlipState.turningToRight:
+          // 正在转向右边：若服务器要求朝左，立即反转
+          if (targetFacing == FlipState.idleLeft) {
+            debugPrint('[LobbyPlayerComponent] 服务器朝向变化，立即转向左边: ${_user.userId}');
+            _flipState = FlipState.turningToLeft;
+          }
+          break;
+      }
     }
   }
 
