@@ -826,8 +826,34 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   }
 
   void _onResumeRefresh(ServerResumeRefresh event, Emitter<ServerState> emit) {
-    // 恢复时只取消暂停状态，不重置倒计时，让进度条继续之前的进度
-    emit(state.copyWith(isPaused: false));
+    // 根据当前页面选择对应的最后刷新时间
+    final DateTime? lastRefresh;
+    if (state.selectedCategory != null) {
+      lastRefresh = state.lastRefreshTime;
+    } else {
+      lastRefresh = state.onlineCountsLastFetched ?? state.lastRefreshTime;
+    }
+
+    // 判断离开时间是否过长（超过10秒视为数据过期）
+    final isDataStale = lastRefresh == null ||
+        DateTime.now().difference(lastRefresh).inSeconds > 10;
+
+    if (isDataStale) {
+      // 数据过期：立即刷新数据并重置倒计时
+      emit(state.copyWith(
+        isPaused: false,
+        countdownResetKey: state.countdownResetKey + 1,
+      ));
+      // 根据当前页面状态触发对应的刷新
+      if (state.selectedCategory != null) {
+        add(ServerRefreshServers());
+      } else {
+        add(ServerUpdateCategoryOnlineCounts());
+      }
+    } else {
+      // 数据仍然新鲜：只取消暂停，让倒计时继续
+      emit(state.copyWith(isPaused: false));
+    }
   }
 
   void _onLifecycleChanged(
@@ -1029,12 +1055,18 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         );
       }
 
-      // 所有查询完成，关闭加载状态（仅首次加载时需要）
-      if (!emit.isDone && isFirstLoad) {
-        emit(state.copyWith(
-          isLoadingOnlineCounts: false,
-          onlineCountsLastFetched: DateTime.now(),
-        ));
+      // 所有查询完成，关闭加载状态（仅首次加载时需要）并记录刷新时间
+      if (!emit.isDone) {
+        if (isFirstLoad) {
+          emit(state.copyWith(
+            isLoadingOnlineCounts: false,
+            onlineCountsLastFetched: DateTime.now(),
+          ));
+        } else {
+          emit(state.copyWith(
+            onlineCountsLastFetched: DateTime.now(),
+          ));
+        }
       }
     } catch (e) {
       LogService.e('批量更新分类在线人数失败: $e', e);
