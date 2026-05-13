@@ -1482,7 +1482,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       final textStyle = TextStyle(
         fontFamily: null,
         color: const Color(0xFFE2E8F0),
-        fontSize: 10,
+        fontSize: 11,
       );
 
       final displayStatus = _truncateText(currentStatus, textStyle, 120);
@@ -1493,7 +1493,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
       final strokeStyle = TextStyle(
         fontFamily: null,
-        fontSize: 10,
+        fontSize: 11,
         foreground: Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0

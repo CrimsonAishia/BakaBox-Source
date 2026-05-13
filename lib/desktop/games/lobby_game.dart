@@ -672,42 +672,16 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     _applyFollowStates();
   }
 
-  // ========== 右键菜单 ==========
+  // ========== 玩家交互菜单 ==========
 
-  /// 处理右键点击（由 LobbyScene 转发）
-  void handleSecondaryTapDown(PointerEvent event) {
-    if (_mapConfig == null) return;
-
+  /// 为目标玩家显示交互菜单（左键靠近时触发）
+  void _showContextMenuForPlayer(LobbyPlayerComponent targetPlayer, double worldX, double worldY) {
     // 先关闭已有菜单
     _dismissContextMenu();
 
-    // 获取相机偏移量
-    final cameraOffset = _cameraComponent.viewfinder.position;
-
-    // 将点击坐标转换为世界坐标
-    final dx = event.localPosition.dx + cameraOffset.x;
-    final dy = event.localPosition.dy + cameraOffset.y;
-    final worldPoint = Vector2(dx, dy);
-
-    // 查找右键点击的玩家
-    LobbyPlayerComponent? targetPlayer;
-    for (final player in _playerComponents.values) {
-      if (player.containsPoint(worldPoint)) {
-        targetPlayer = player;
-      }
-    }
-
-    if (targetPlayer == null) return;
-
     final user = targetPlayer.user;
 
-    // 只允许对已登录的用户操作（有 businessUserId 表示是真实账户）
-    if (user.businessUserId == null || user.businessUserId!.isEmpty) return;
-
-    // 不对自己操作
-    if (user.isSelf) return;
-
-    // 设置右键菜单目标（闪动边框）
+    // 设置菜单目标（闪动边框）
     _contextMenuTarget = targetPlayer;
     _contextMenuTargetOriginPos = targetPlayer.currentRenderPosition;
     targetPlayer.setContextMenuTarget(true);
@@ -728,7 +702,7 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     ];
 
     // 计算菜单位置（在点击位置附近显示）
-    final menuPosition = Vector2(dx + 4, dy + 4);
+    final menuPosition = Vector2(worldX + 4, worldY + 4);
 
     _contextMenu = LobbyContextMenuComponent(
       items: items,
@@ -746,6 +720,11 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     );
 
     _world.add(_contextMenu!);
+  }
+
+  /// 处理右键点击（由 LobbyScene 转发）— 保留但不再触发菜单
+  void handleSecondaryTapDown(PointerEvent event) {
+    // 右键不再触发菜单，改为左键靠近触发
   }
 
   /// 关闭右键菜单
@@ -792,6 +771,9 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     }
   }
 
+  /// 左键点击触发菜单的交互距离（自己必须靠近目标玩家）
+  static const double _interactionRange = 50.0;
+
   @override
   void onTapDown(TapDownEvent event) {
     super.onTapDown(event);
@@ -802,14 +784,12 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
 
     // 将点击坐标转换为世界坐标
     final dx = event.localPosition.x + cameraOffset.x;
-    final dy = event.localPosition.y + cameraOffset.y + LobbyPlayerComponent.statusTextAreaHeight;
+    final dyRaw = event.localPosition.y + cameraOffset.y;
+    final dy = dyRaw + LobbyPlayerComponent.statusTextAreaHeight;
 
     // 如果右键菜单打开，检查点击是否在菜单内
     if (_contextMenu != null) {
-      final menuWorldPoint = Vector2(
-        event.localPosition.x + cameraOffset.x,
-        event.localPosition.y + cameraOffset.y,
-      );
+      final menuWorldPoint = Vector2(dx, dyRaw);
       if (_isPointInContextMenu(menuWorldPoint)) {
         // 点击在菜单内，处理菜单点击
         final menuPos = _contextMenu!.position;
@@ -820,15 +800,48 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
         _contextMenu!.handleTapAt(localPoint);
         return;
       } else {
-        // 点击在菜单外，关闭菜单
+        // 点击在菜单外，关闭菜单，继续处理后续逻辑（可能点击了另一个玩家）
         _dismissContextMenu();
-        return;
       }
     }
 
     // 验证点击在世界范围内
     if (dx < 0 || dx > _worldSize.x || dy < 0 || dy > _worldSize.y) {
       return;
+    }
+
+    // 左键点击玩家检测：使用未偏移的坐标（与角色渲染位置一致）
+    final hitPoint = Vector2(dx, dyRaw);
+    LobbyPlayerComponent? targetPlayer;
+    for (final player in _playerComponents.values) {
+      if (player.containsPoint(hitPoint)) {
+        targetPlayer = player;
+      }
+    }
+
+    if (targetPlayer != null) {
+      final user = targetPlayer.user;
+      // 只允许对已登录的非自己用户操作
+      if (user.businessUserId != null &&
+          user.businessUserId!.isNotEmpty &&
+          !user.isSelf) {
+        // 检查自己是否靠近目标玩家
+        final selfUser = _bloc.state.selfUser;
+        if (selfUser != null) {
+          final selfComp = _playerComponents[selfUser.userId];
+          final selfPos = selfComp?.currentRenderPosition ?? selfUser.renderPosition;
+          final targetPos = targetPlayer.currentRenderPosition;
+          final distX = selfPos.x - targetPos.x;
+          final distY = selfPos.y - targetPos.y;
+          final distSq = distX * distX + distY * distY;
+
+          if (distSq <= _interactionRange * _interactionRange) {
+            // 靠近目标，显示菜单
+            _showContextMenuForPlayer(targetPlayer, dx, dyRaw);
+            return;
+          }
+        }
+      }
     }
 
     _bloc.add(LobbySceneTapped(LobbyPosition(x: dx, y: dy)));

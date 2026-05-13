@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/bloc/lobby/lobby_bloc.dart';
@@ -201,29 +200,21 @@ class _LobbySceneState extends State<LobbyScene> with TickerProviderStateMixin {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        return Listener(
-          onPointerDown: (event) {
-            // 右键点击转发给游戏
-            if (event.buttons == kSecondaryMouseButton) {
-              _game?.handleSecondaryTapDown(event);
+        return MouseRegion(
+          cursor: _currentCursor,
+          onHover: (event) {
+            _game?.handleHoverMove(event);
+            _updateCursor();
+          },
+          onExit: (event) {
+            _game?.handleHoverExit();
+            if (_currentCursor != SystemMouseCursors.basic) {
+              setState(() {
+                _currentCursor = SystemMouseCursors.basic;
+              });
             }
           },
-          child: MouseRegion(
-            cursor: _currentCursor,
-            onHover: (event) {
-              _game?.handleHoverMove(event);
-              _updateCursor();
-            },
-            onExit: (event) {
-              _game?.handleHoverExit();
-              if (_currentCursor != SystemMouseCursors.basic) {
-                setState(() {
-                  _currentCursor = SystemMouseCursors.basic;
-                });
-              }
-            },
-            child: _buildMainContent(isDark),
-          ),
+          child: _buildMainContent(isDark),
         );
       },
     );
