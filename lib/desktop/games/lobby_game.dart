@@ -32,6 +32,151 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     _init();
   }
 
+  // ─── 角色贴图批量预加载注册表 ───────────────────────────────
+  /// 已加载的贴图缓存：spriteId -> ui.Image
+  final Map<String, ui.Image> _preloadedSpriteImages = {};
+
+  /// 正在加载的 spriteId 集合（防止重复加载）
+  final Set<String> _loadingSpriteIds = {};
+
+  /// 等待某个 spriteId 加载完成的玩家组件列表
+  final Map<String, List<LobbyPlayerComponent>> _waitingForSprite = {};
+
+  /// 查询某个 spriteId 是否已预加载完成
+  ui.Image? getPreloadedSpriteImage(String spriteId) => _preloadedSpriteImages[spriteId];
+
+  /// 注册一个玩家组件等待某个 spriteId 的贴图加载完成
+  void registerSpriteWaiter(String spriteId, LobbyPlayerComponent component) {
+    _waitingForSprite.putIfAbsent(spriteId, () => []).add(component);
+  }
+
+  /// 取消注册（组件销毁时调用）
+  void unregisterSpriteWaiter(String spriteId, LobbyPlayerComponent component) {
+    _waitingForSprite[spriteId]?.remove(component);
+  }
+
+  /// 按 spriteId 渐进式预加载贴图，逐个加载避免瞬间吃满性能
+  ///
+  /// 每加载完一种 sprite 后再加载下一种，确保：
+  /// - 不会同时发起大量网络请求
+  /// - 不会同时解码多张大图占满 CPU
+  /// - 每种加载完立即通知对应玩家显示，用户感知到逐步加载
+  Future<void> _preloadSpritesProgressively() async {
+    // 收集当前场景中用到的所有 spriteId，并按使用人数降序排列（优先加载多人用的）
+    final spriteUsageCount = <String, int>{};
+    for (final user in _initialUsers) {
+      spriteUsageCount[user.spriteId] = (spriteUsageCount[user.spriteId] ?? 0) + 1;
+    }
+
+    // 按使用人数降序排序，优先加载最多人使用的 sprite
+    final sortedSpriteIds = spriteUsageCount.keys.toList()
+      ..sort((a, b) => spriteUsageCount[b]!.compareTo(spriteUsageCount[a]!));
+
+    // 逐个加载，每完成一个再加载下一个
+    for (final spriteId in sortedSpriteIds) {
+      if (_preloadedSpriteImages.containsKey(spriteId)) continue;
+      if (_loadingSpriteIds.contains(spriteId)) continue;
+
+      final sprite = _sprites.where((s) => s.id == spriteId).firstOrNull;
+      if (sprite == null) continue;
+
+      await _loadSpriteForId(spriteId, sprite);
+
+      // 每加载完一个，让出一帧给渲染线程，避免连续解码卡 UI
+      await Future<void>.delayed(Duration.zero);
+    }
+  }
+
+  /// 加载单个 sprite 类型的贴图，完成后通知所有使用该 spriteId 的玩家
+  Future<void> _loadSpriteForId(String spriteId, LobbySprite sprite) async {
+    if (_loadingSpriteIds.contains(spriteId)) return;
+    _loadingSpriteIds.add(spriteId);
+
+    try {
+      ui.Image? image;
+
+      if (sprite.usesAtlas) {
+        // 图集模式：不走批量预加载，让各组件自行处理
+        // （图集需要 atlasFromAssets，逻辑较复杂）
+        _loadingSpriteIds.remove(spriteId);
+        return;
+      }
+
+      final url = sprite.spriteUrl;
+      if (url == null || url.isEmpty) {
+        _loadingSpriteIds.remove(spriteId);
+        return;
+      }
+
+      // 从缓存或网络加载图片
+      if (!LobbyImageCacheService.instance.isInitialized) {
+        await LobbyImageCacheService.instance.init();
+      }
+      image = await LobbyImageCacheService.instance.getDecodedImage(url);
+      if (image == null) {
+        // 尝试网络下载
+        final bytes = await LobbyImageCacheService.instance.downloadWithStableKey(url);
+        if (bytes != null) {
+          image = await LobbyImageCacheService.instance.getDecodedImage(url);
+        }
+      }
+
+      if (image != null) {
+        _preloadedSpriteImages[spriteId] = image;
+        LogService.d('[LobbyGame] 贴图预加载完成: $spriteId, 通知 ${_waitingForSprite[spriteId]?.length ?? 0} 个玩家');
+
+        // 通知所有等待该 spriteId 的玩家组件
+        final waiters = _waitingForSprite.remove(spriteId);
+        if (waiters != null) {
+          for (final component in waiters) {
+            if (!component.isRemoved) {
+              component.onSpritePreloaded(image);
+            }
+          }
+        }
+      } else {
+        // 加载失败：通知等待的组件走独立加载 fallback
+        LogService.w('[LobbyGame] 贴图预加载失败（无数据）: $spriteId, 通知等待者自行加载');
+        final waiters = _waitingForSprite.remove(spriteId);
+        if (waiters != null) {
+          for (final component in waiters) {
+            if (!component.isRemoved) {
+              component.onSpritePreloadFailed();
+            }
+          }
+        }
+      }
+    } catch (e) {
+      LogService.e('[LobbyGame] 贴图预加载失败: $spriteId', e);
+      // 异常时也通知等待者 fallback
+      final waiters = _waitingForSprite.remove(spriteId);
+      if (waiters != null) {
+        for (final component in waiters) {
+          if (!component.isRemoved) {
+            component.onSpritePreloadFailed();
+          }
+        }
+      }
+    } finally {
+      _loadingSpriteIds.remove(spriteId);
+    }
+  }
+
+  /// 当新用户加入时，确保其 sprite 贴图已加载或正在加载
+  ///
+  /// 仅在初始化完成后（_isInitialized=true）才触发加载，
+  /// 初始阶段由 _preloadSpritesProgressively 统一串行调度。
+  void ensureSpriteLoaded(String spriteId) {
+    if (!_isInitialized) return; // 初始阶段由 _preloadSpritesProgressively 管理
+    if (_preloadedSpriteImages.containsKey(spriteId)) return;
+    if (_loadingSpriteIds.contains(spriteId)) return;
+
+    final sprite = _sprites.where((s) => s.id == spriteId).firstOrNull;
+    if (sprite == null || sprite.usesAtlas) return;
+
+    unawaited(_loadSpriteForId(spriteId, sprite));
+  }
+
   void _init() {
     _stateSubscription = _bloc.stream.listen(_onStateChanged);
   }
@@ -162,6 +307,10 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     _followCurrentPlayer();
 
     _isInitialized = true;
+
+    // 异步批量预加载角色贴图（不阻塞 onLoad）
+    // 每种贴图加载完成后，所有使用该贴图的玩家同时 fade-in 显示
+    _preloadSpritesProgressively();
   }
 
   /// 更新传送门组件
@@ -431,6 +580,9 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
       _playerComponents[user.userId] = component;
       // 应用关注状态（基于 businessUserId）
       component.isFollowed = isBusinessUserFollowed(user.businessUserId);
+
+      // 确保该 spriteId 的贴图正在加载（新用户加入时触发）
+      ensureSpriteLoaded(user.spriteId);
     } finally {
       _pendingUserIds.remove(user.userId);
     }
