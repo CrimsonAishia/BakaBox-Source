@@ -101,6 +101,7 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
   // 窗口配置
   static const double _windowWidth = 300.0;
   static const double _normalCardHeight = 72.0;
+  static const double _mapCardHeight = 88.0;
   static const double _updateLogCardHeight = 120.0;
   static const double _topPadding = 40.0;
 
@@ -114,11 +115,25 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
   Timer? _countdownTimer;
 
   double get _windowHeight {
-    final type = widget.stateNotifier.notification.type;
+    final notification = widget.stateNotifier.notification;
+    final type = notification.type;
     if (type == NotificationType.updateLog) {
       return _updateLogCardHeight;
     }
+    // 有地图中文名的通知使用更高的卡片
+    if (_isMapNotification(notification)) {
+      return _mapCardHeight;
+    }
     return _normalCardHeight;
+  }
+
+  /// 判断是否为需要分行显示地图名的通知
+  bool _isMapNotification(NotificationData notification) {
+    return (notification.type == NotificationType.warmup ||
+            notification.type == NotificationType.mapChange ||
+            notification.type == NotificationType.mapSubscription) &&
+        notification.mapName != null &&
+        notification.mapName!.isNotEmpty;
   }
 
   @override
@@ -429,6 +444,7 @@ class _NotificationCardState extends State<_NotificationCard> {
 
   static const double _width = 300.0;
   static const double _normalHeight = 72.0;
+  static const double _mapHeight = 88.0;
   static const double _updateLogHeight = 120.0;
   static const double _borderRadius = 8.0;
   static const double _borderWidth = 2.0;
@@ -439,7 +455,20 @@ class _NotificationCardState extends State<_NotificationCard> {
     if (widget.notification.type == NotificationType.updateLog) {
       return _updateLogHeight;
     }
+    // 有地图中文名的通知使用更高的卡片
+    if (_isMapNotification(widget.notification)) {
+      return _mapHeight;
+    }
     return _normalHeight;
+  }
+
+  /// 判断是否为需要分行显示地图名的通知
+  bool _isMapNotification(NotificationData notification) {
+    return (notification.type == NotificationType.warmup ||
+            notification.type == NotificationType.mapChange ||
+            notification.type == NotificationType.mapSubscription) &&
+        notification.mapName != null &&
+        notification.mapName!.isNotEmpty;
   }
 
   bool get _hasProgressBar {
@@ -683,10 +712,41 @@ class _NotificationCardState extends State<_NotificationCard> {
       }
     }
 
+    // 判断是否有地图原名需要分行显示
+    final hasMapNames = showPlayers &&
+        notification.mapName != null &&
+        notification.mapName!.isNotEmpty;
+    final mapNameCn = (notification.mapNameCn != null &&
+            notification.mapNameCn!.isNotEmpty)
+        ? notification.mapNameCn!
+        : '暂无译名';
+
     return Row(
       children: [
         Expanded(
-          child: _MarqueeText(text: notification.message, style: textStyle),
+          child: hasMapNames
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // 译名（中文名）
+                    _MarqueeText(
+                      text: mapNameCn,
+                      style: textStyle,
+                    ),
+                    const SizedBox(height: 2),
+                    // 原名（英文名）
+                    _MarqueeText(
+                      text: notification.mapName!,
+                      style: textStyle.copyWith(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                )
+              : _MarqueeText(text: notification.message, style: textStyle),
         ),
         if (hasPlayers)
           Container(
