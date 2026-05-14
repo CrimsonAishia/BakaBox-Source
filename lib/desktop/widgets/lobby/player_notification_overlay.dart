@@ -156,14 +156,17 @@ class _PlayerNotificationItemState extends State<_PlayerNotificationItem>
             ),
             const SizedBox(width: 6),
             // 玩家名（带颜色）
-            Text(
-              widget.playerName,
-              style: TextStyle(
-                color: _typeColor,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+            Flexible(
+              child: Text(
+                widget.playerName,
+                style: TextStyle(
+                  color: _typeColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
-              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(width: 4),
             // 动作文字（白色）
