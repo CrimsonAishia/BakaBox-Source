@@ -12,12 +12,15 @@ class LobbyPlayersPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 获取在线用户并排序：自己排第一，其他按字母排序
+    // 获取在线用户并排序：自己排第一，匿名用户排最后，其他按字母排序
     final onlineUsers = state.users.where((user) => user.isOnline).toList()
       ..sort((a, b) {
         // 自己排在第一位
         if (a.isSelf) return -1;
         if (b.isSelf) return 1;
+        // 匿名用户排在最后
+        if (a.isAnonymous && !b.isAnonymous) return 1;
+        if (!a.isAnonymous && b.isAnonymous) return -1;
         // 其他玩家按 displayName 字母排序
         return a.displayName.compareTo(b.displayName);
       });
