@@ -1237,12 +1237,21 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
                           final isOnCurrentMap = widget.state.users.any(
                             (u) => u.userId == user.userId,
                           );
+                          // 解析用户所在地图名称：优先使用服务端返回的 mapId
+                          String? userMapName;
+                          if (isOnCurrentMap) {
+                            userMapName = widget.state.mapConfig?.displayName;
+                          } else if (user.mapId != null && user.mapId!.isNotEmpty) {
+                            userMapName = widget.state.assets.getMapById(user.mapId!)?.displayName ?? user.mapId;
+                          }
                           return _PlayerListTile(
                             user: user,
                             isFollowed: isFollowed,
                             isHighlighted: isHighlighted,
                             isOnCurrentMap: isOnCurrentMap,
-                            currentMapName: widget.state.mapConfig?.displayName,
+                            currentMapName: isOnCurrentMap
+                                ? widget.state.mapConfig?.displayName
+                                : userMapName,
                             onTapAt: user.isSelf
                                 ? null
                                 : user.isAnonymous
@@ -1619,8 +1628,10 @@ class _PlayerListTileState extends State<_PlayerListTile> {
                         ),
                         child: Text(
                           widget.isOnCurrentMap
-                              ? (widget.currentMapName ?? '本地图')
-                              : '其他地图',
+                              ? widget.currentMapName != null
+                                  ? '${widget.currentMapName}（本地图）'
+                                  : '本地图'
+                              : (widget.currentMapName ?? '其他地图'),
                           style: TextStyle(
                             color: widget.isOnCurrentMap
                                 ? const Color(0xFF4ADE80).withValues(alpha: 0.8)

@@ -170,6 +170,7 @@ const LobbyUser$json = {
     {'1': 'last_message', '3': 12, '4': 1, '5': 9, '10': 'lastMessage'},
     {'1': 'steam_id', '3': 13, '4': 1, '5': 9, '10': 'steamId'},
     {'1': 'business_user_id', '3': 14, '4': 1, '5': 9, '10': 'businessUserId'},
+    {'1': 'map_id', '3': 15, '4': 1, '5': 9, '10': 'mapId'},
   ],
 };
 
@@ -182,7 +183,7 @@ final $typed_data.Uint8List lobbyUserDescriptor = $convert.base64Decode(
     'IAEoCFIIaXNPbmxpbmUSIQoMaXNfYW5vbnltb3VzGAogASgIUgtpc0Fub255bW91cxIfCgtzdG'
     'F0dXNfdGV4dBgLIAEoCVIKc3RhdHVzVGV4dBIhCgxsYXN0X21lc3NhZ2UYDCABKAlSC2xhc3RN'
     'ZXNzYWdlEhkKCHN0ZWFtX2lkGA0gASgJUgdzdGVhbUlkEigKEGJ1c2luZXNzX3VzZXJfaWQYDi'
-    'ABKAlSDmJ1c2luZXNzVXNlcklk');
+    'ABKAlSDmJ1c2luZXNzVXNlcklkEhUKBm1hcF9pZBgPIAEoCVIFbWFwSWQ=');
 
 @$core.Deprecated('Use lobbyMessageDescriptor instead')
 const LobbyMessage$json = {
