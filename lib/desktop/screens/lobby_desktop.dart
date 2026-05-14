@@ -1243,9 +1243,14 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
                             isHighlighted: isHighlighted,
                             isOnCurrentMap: isOnCurrentMap,
                             currentMapName: widget.state.mapConfig?.displayName,
-                            onTapAt: user.isSelf || user.isAnonymous
+                            onTapAt: user.isSelf
                                 ? null
-                                : (offset) => _showPlayerContextMenu(context, user, offset, isFollowed),
+                                : user.isAnonymous
+                                    ? null
+                                    : (offset) => _showPlayerContextMenu(context, user, offset, isFollowed),
+                            onSelfTap: user.isSelf && !widget.state.isAnonymous
+                                ? () => LobbyUserProfilePanel.show(context, user)
+                                : null,
                           );
                         },
                       ),
@@ -1485,6 +1490,7 @@ class _PlayerListTile extends StatefulWidget {
   final bool isOnCurrentMap;
   final String? currentMapName;
   final void Function(Offset globalPosition)? onTapAt;
+  final VoidCallback? onSelfTap;
 
   const _PlayerListTile({
     required this.user,
@@ -1493,6 +1499,7 @@ class _PlayerListTile extends StatefulWidget {
     this.isOnCurrentMap = true,
     this.currentMapName,
     this.onTapAt,
+    this.onSelfTap,
   });
 
   @override
@@ -1507,16 +1514,18 @@ class _PlayerListTileState extends State<_PlayerListTile> {
     final user = widget.user;
     final isFollowed = widget.isFollowed;
     final isHighlighted = widget.isHighlighted;
-    final canInteract = widget.onTapAt != null;
+    final canInteract = widget.onTapAt != null || widget.onSelfTap != null;
 
     return MouseRegion(
       cursor: canInteract ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
-        onTapDown: canInteract
+        onTapDown: widget.onTapAt != null
             ? (details) => widget.onTapAt!(details.globalPosition)
-            : null,
+            : widget.onSelfTap != null
+                ? (_) => widget.onSelfTap!()
+                : null,
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
@@ -1591,64 +1600,64 @@ class _PlayerListTileState extends State<_PlayerListTile> {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      // 第三行：地图标签
-                      if (user.isSelf)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1D9BF0).withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(
-                              color: const Color(0xFF1D9BF0).withValues(alpha: 0.4),
-                            ),
-                          ),
-                          child: const Text(
-                            '你',
-                            style: TextStyle(
-                              color: Color(0xFF1D9BF0),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        )
-                      else
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
+                      // 第三行：地图标签（自己也显示地图名称）
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: widget.isOnCurrentMap
+                              ? const Color(0xFF4ADE80).withValues(alpha: 0.12)
+                              : Colors.white.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
                             color: widget.isOnCurrentMap
-                                ? const Color(0xFF4ADE80).withValues(alpha: 0.12)
-                                : Colors.white.withValues(alpha: 0.06),
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(
-                              color: widget.isOnCurrentMap
-                                  ? const Color(0xFF4ADE80).withValues(alpha: 0.3)
-                                  : Colors.white.withValues(alpha: 0.1),
-                            ),
-                          ),
-                          child: Text(
-                            widget.isOnCurrentMap
-                                ? (widget.currentMapName ?? '本地图')
-                                : '其他地图',
-                            style: TextStyle(
-                              color: widget.isOnCurrentMap
-                                  ? const Color(0xFF4ADE80).withValues(alpha: 0.8)
-                                  : Colors.white.withValues(alpha: 0.4),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
-                            ),
+                                ? const Color(0xFF4ADE80).withValues(alpha: 0.3)
+                                : Colors.white.withValues(alpha: 0.1),
                           ),
                         ),
+                        child: Text(
+                          widget.isOnCurrentMap
+                              ? (widget.currentMapName ?? '本地图')
+                              : '其他地图',
+                          style: TextStyle(
+                            color: widget.isOnCurrentMap
+                                ? const Color(0xFF4ADE80).withValues(alpha: 0.8)
+                                : Colors.white.withValues(alpha: 0.4),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                // 右侧箭头（非自己、非匿名时显示）
-                if (!user.isSelf && !user.isAnonymous) ...[
+                // 右侧：自己显示"你"标签，其他用户显示箭头
+                if (user.isSelf) ...[
+                  const SizedBox(width: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1D9BF0).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: const Color(0xFF1D9BF0).withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: const Text(
+                      '你',
+                      style: TextStyle(
+                        color: Color(0xFF1D9BF0),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ] else if (!user.isAnonymous) ...[
                   const SizedBox(width: 4),
                   Icon(
                     Icons.chevron_right,
