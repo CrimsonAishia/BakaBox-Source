@@ -85,6 +85,7 @@ message LobbyUser {
   string last_message = 12;
   string steam_id = 13;  // Steam 唯一 ID（仅自身可见，不广播给其他用户）
   string business_user_id = 14;  // 业务 ID（所有人可见）
+  string map_id = 15;  // 用户当前所在地图 ID
 }
 
 // LobbyMessage 聊天消息

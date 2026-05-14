@@ -983,6 +983,7 @@ class LobbyUser extends $pb.GeneratedMessage {
     $core.String? lastMessage,
     $core.String? steamId,
     $core.String? businessUserId,
+    $core.String? mapId,
   }) {
     final $result = create();
     if (userId != null) {
@@ -1027,6 +1028,9 @@ class LobbyUser extends $pb.GeneratedMessage {
     if (businessUserId != null) {
       $result.businessUserId = businessUserId;
     }
+    if (mapId != null) {
+      $result.mapId = mapId;
+    }
     return $result;
   }
   LobbyUser._() : super();
@@ -1048,6 +1052,7 @@ class LobbyUser extends $pb.GeneratedMessage {
     ..aOS(12, _omitFieldNames ? '' : 'lastMessage')
     ..aOS(13, _omitFieldNames ? '' : 'steamId')
     ..aOS(14, _omitFieldNames ? '' : 'businessUserId')
+    ..aOS(15, _omitFieldNames ? '' : 'mapId')
     ..hasRequiredFields = false
   ;
 
@@ -1197,6 +1202,15 @@ class LobbyUser extends $pb.GeneratedMessage {
   $core.bool hasBusinessUserId() => $_has(13);
   @$pb.TagNumber(14)
   void clearBusinessUserId() => clearField(14);
+
+  @$pb.TagNumber(15)
+  $core.String get mapId => $_getSZ(14);
+  @$pb.TagNumber(15)
+  set mapId($core.String v) { $_setString(14, v); }
+  @$pb.TagNumber(15)
+  $core.bool hasMapId() => $_has(14);
+  @$pb.TagNumber(15)
+  void clearMapId() => clearField(15);
 }
 
 /// LobbyMessage 聊天消息

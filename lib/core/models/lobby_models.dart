@@ -113,6 +113,7 @@ class LobbyUser extends Equatable {
   final String? lastMessage;
   final DateTime? lastMessageAt;
   final String? statusText;
+  final String? mapId;
 
   const LobbyUser({
     required this.userId,
@@ -132,6 +133,7 @@ class LobbyUser extends Equatable {
     this.lastMessage,
     this.lastMessageAt,
     this.statusText,
+    this.mapId,
   }) : renderPosition = renderPosition ?? position;
 
   String get displayName => nickname;
@@ -160,6 +162,7 @@ class LobbyUser extends Equatable {
     Object? lastMessage = _sentinel,
     Object? lastMessageAt = _sentinel,
     Object? statusText = _sentinel,
+    Object? mapId = _sentinel,
   }) {
     return LobbyUser(
       userId: userId ?? this.userId,
@@ -193,6 +196,9 @@ class LobbyUser extends Equatable {
       statusText: identical(statusText, _sentinel)
           ? this.statusText
           : statusText as String?,
+      mapId: identical(mapId, _sentinel)
+          ? this.mapId
+          : mapId as String?,
     );
   }
 
@@ -215,6 +221,7 @@ class LobbyUser extends Equatable {
     lastMessage,
     lastMessageAt,
     statusText,
+    mapId,
   ];
 }
 

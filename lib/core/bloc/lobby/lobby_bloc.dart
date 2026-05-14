@@ -2693,6 +2693,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       statusText: pbUser.statusText.isEmpty ? null : pbUser.statusText,
       lastMessage: pbUser.lastMessage.isEmpty ? null : pbUser.lastMessage,
       lastMessageAt: null, // protobuf 中没有 lastMessageAt 字段
+      mapId: pbUser.mapId.isEmpty ? null : pbUser.mapId,
     );
   }
 
