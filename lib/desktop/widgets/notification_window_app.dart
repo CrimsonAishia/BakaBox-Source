@@ -751,7 +751,7 @@ class _NotificationCardState extends State<_NotificationCard> {
         if (hasPlayers)
           Container(
             margin: const EdgeInsets.only(left: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             decoration: BoxDecoration(
               color: bgColor.withValues(alpha: 0.75),
               borderRadius: BorderRadius.circular(4),
@@ -767,7 +767,7 @@ class _NotificationCardState extends State<_NotificationCard> {
                   '$currentPlayers',
                   style: TextStyle(
                     color: primaryColor,
-                    fontSize: 16,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     height: 1,
                   ),
@@ -779,7 +779,7 @@ class _NotificationCardState extends State<_NotificationCard> {
                     '/',
                     style: TextStyle(
                       color: Color(0xFF9CA3AF),
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w300,
                       height: 1,
                     ),
@@ -790,7 +790,7 @@ class _NotificationCardState extends State<_NotificationCard> {
                   '$maxPlayers',
                   style: const TextStyle(
                     color: Color(0xFF6B7280),
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     height: 1,
                   ),
