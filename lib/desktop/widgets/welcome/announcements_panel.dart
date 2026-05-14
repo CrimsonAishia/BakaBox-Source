@@ -312,15 +312,22 @@ class _AnnouncementItemState extends State<_AnnouncementItem> {
     final dt = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
     final now = DateTime.now();
     final diff = now.difference(dt);
-    if (diff.inDays == 0) {
-      if (diff.inHours >= 1) return '${diff.inHours}小时前';
-      if (diff.inMinutes >= 1) return '${diff.inMinutes}分钟前';
-      return '刚刚';
+    final timeStr = '${dt.hour.toString().padLeft(2, '0')}时${dt.minute.toString().padLeft(2, '0')}分';
+
+    final today = DateTime(now.year, now.month, now.day);
+    final dateDay = DateTime(dt.year, dt.month, dt.day);
+    final daysDiff = today.difference(dateDay).inDays;
+
+    if (daysDiff == 0) {
+      if (diff.inHours == 0) {
+        if (diff.inMinutes == 0) return '刚刚';
+        return '${diff.inMinutes}分钟前';
+      }
+      return '${diff.inHours}小时前（$timeStr）';
     }
-    if (dt.year == now.year) {
-      return '${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
-    }
-    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+    if (daysDiff == 1) return '昨天（$timeStr）';
+
+    return '${dt.year}年${dt.month.toString().padLeft(2, '0')}月${dt.day.toString().padLeft(2, '0')}日 $timeStr';
   }
 }
 
@@ -435,8 +442,24 @@ class _AnnouncementDetailDialog extends StatelessWidget {
 
   String _formatFullTime(int timestamp) {
     final dt = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
-    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
-        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    final timeStr = '${dt.hour.toString().padLeft(2, '0')}时${dt.minute.toString().padLeft(2, '0')}分';
+
+    final today = DateTime(now.year, now.month, now.day);
+    final dateDay = DateTime(dt.year, dt.month, dt.day);
+    final daysDiff = today.difference(dateDay).inDays;
+
+    if (daysDiff == 0) {
+      if (diff.inHours == 0) {
+        if (diff.inMinutes == 0) return '刚刚';
+        return '${diff.inMinutes}分钟前';
+      }
+      return '${diff.inHours}小时前（$timeStr）';
+    }
+    if (daysDiff == 1) return '昨天（$timeStr）';
+
+    return '${dt.year}年${dt.month.toString().padLeft(2, '0')}月${dt.day.toString().padLeft(2, '0')}日 $timeStr';
   }
 
   Future<void> _launchUrl(String url) async {

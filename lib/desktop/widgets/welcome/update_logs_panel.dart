@@ -258,12 +258,7 @@ class _UpdateLogItemState extends State<_UpdateLogItem> {
   }
 
   String _formatDate(String dateStr) {
-    try {
-      final dt = DateTime.parse(dateStr);
-      return '${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
-    } catch (_) {
-      return dateStr.length > 10 ? dateStr.substring(5, 10) : dateStr;
-    }
+    return TimeUtils.formatRelative(dateStr);
   }
 }
 
@@ -326,7 +321,7 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          log.updateTime,
+                          TimeUtils.formatFull(log.updateTime),
                           style: TextStyle(
                             fontSize: 12,
                             color: isDark
