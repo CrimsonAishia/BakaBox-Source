@@ -6,6 +6,7 @@ class AppConstants {
   static const String appAuthor = 'Aishia';
   static const String appCopyright = '© 2026 Aishia. All rights reserved.';
   static const String appWebsite = 'https://bakabox.app';
+  static const String appRepoUrl = 'https://github.com/CrimsonAishia/BakaBox-Source';
 
   // UI Constants
   static const double defaultPadding = 16.0;
