@@ -233,6 +233,10 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
   /// 当前聚焦的用户 ID（面板点击后临时将视角移到该用户）
   String? _focusedUserId;
 
+  /// 面板聚焦时的相机水平偏移量（像素），用于将目标显示在面板左侧可视区域中心
+  /// 值为面板宽度的一半（320 / 2 = 160）
+  static const double _focusPanelOffsetX = 160.0;
+
   /// 当前是否悬停在可交互的玩家上（用于切换鼠标光标）
   bool get isHoveringInteractablePlayer {
     // 菜单打开时，悬停在菜单项上也显示手型
@@ -371,7 +375,7 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
       return _followSelf();
     }
 
-    _applyCameraTarget(targetPos);
+    _applyCameraTarget(targetPos, panelOffset: _focusPanelOffsetX);
   }
 
   /// 跟随自己的角色
@@ -398,15 +402,25 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
   }
 
   /// 将相机平滑移动到目标位置
-  void _applyCameraTarget(LobbyPosition targetPos) {
+  ///
+  /// [panelOffset] 当右侧有面板遮挡时，传入面板宽度的一半，
+  /// 使目标显示在可视区域（面板左侧）的中心，同时允许相机超出地图右边界。
+  void _applyCameraTarget(LobbyPosition targetPos, {double panelOffset = 0.0}) {
     final screenCenter = _cameraComponent.viewport.size / 2;
+    final viewportWidth = _cameraComponent.viewport.size.x;
+
+    // 地图比视口窄时，不需要偏移（所有玩家本来就在视野内）
+    final effectiveOffset = _worldSize.x > viewportWidth ? panelOffset : 0.0;
 
     // 计算目标相机位置，确保角色在屏幕中心
-    double targetCamX = targetPos.x - screenCenter.x;
+    // 当有面板偏移时，将目标向右移动 effectiveOffset，使角色出现在可视区域中心
+    double targetCamX = targetPos.x - screenCenter.x + effectiveOffset;
     double targetCamY = targetPos.y - screenCenter.y;
 
     // 边界限制：相机不能超出世界范围
-    final maxX = math.max(0.0, _worldSize.x - _cameraComponent.viewport.size.x);
+    // 当有面板偏移时，允许相机右边界额外扩展 effectiveOffset * 2（整个面板宽度），
+    // 这样地图右边缘的玩家也能正确显示在面板左侧
+    final maxX = math.max(0.0, _worldSize.x - viewportWidth + effectiveOffset * 2);
     final maxY = math.max(0.0, _worldSize.y - _cameraComponent.viewport.size.y);
     targetCamX = targetCamX.clamp(0.0, maxX);
     targetCamY = targetCamY.clamp(0.0, maxY);
