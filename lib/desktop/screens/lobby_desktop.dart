@@ -1539,25 +1539,25 @@ class _PlayerListTileState extends State<_PlayerListTile> {
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
             color: isHighlighted
-                ? const Color(0xFFFFD740).withValues(alpha: 0.10)
+                ? const Color(0xFF40C4FF).withValues(alpha: 0.10)
                 : _isHovered
                     ? Colors.white.withValues(alpha: 0.06)
                     : Colors.white.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: isHighlighted
-                  ? const Color(0xFFFFD740).withValues(alpha: 0.7)
+                  ? const Color(0xFF40C4FF).withValues(alpha: 0.7)
                   : user.isSelf
                       ? const Color(0xFF1D9BF0).withValues(alpha: 0.4)
                       : _isHovered
                           ? Colors.white.withValues(alpha: 0.12)
                           : Colors.white.withValues(alpha: 0.05),
-              width: 1,
+              width: isHighlighted ? 1.5 : 1,
             ),
             boxShadow: isHighlighted
                 ? [
                     BoxShadow(
-                      color: const Color(0xFFFFD740).withValues(alpha: 0.25),
+                      color: const Color(0xFF40C4FF).withValues(alpha: 0.25),
                       blurRadius: 12,
                       spreadRadius: 1,
                     ),
@@ -1581,9 +1581,11 @@ class _PlayerListTileState extends State<_PlayerListTile> {
                         child: MarqueeText(
                           text: user.displayName,
                           style: TextStyle(
-                            color: isFollowed || isHighlighted
+                            color: isFollowed
                                 ? const Color(0xFFFFD740)
-                                : Colors.white,
+                                : isHighlighted
+                                    ? const Color(0xFF40C4FF)
+                                    : Colors.white,
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                           ),
@@ -1610,7 +1612,7 @@ class _PlayerListTileState extends State<_PlayerListTile> {
                                 text: user.statusText ?? '在线',
                                 style: TextStyle(
                                   color: isHighlighted
-                                      ? const Color(0xFFFFD740).withValues(alpha: 0.7)
+                                      ? const Color(0xFF81D4FA)
                                       : Colors.white.withValues(alpha: 0.5),
                                   fontSize: 11,
                                 ),
