@@ -120,7 +120,13 @@ dependencies:
       ref: ff7488a79a310fd03e514dab489e06d67d5d4d37
   
   # WebView for mobile platforms
-  flutter_inappwebview: ^6.1.5
+  # 使用 fork：移除了 Windows 平台的 endorsed 实现（flutter_inappwebview_windows）
+  # 避免与 webview_windows 同时初始化 WebView2，并减少桌面端不必要的依赖。
+  flutter_inappwebview:
+    git:
+      url: https://github.com/CrimsonAishia/flutter_inappwebview.git
+      path: flutter_inappwebview
+      ref: 336230221b20189af67f4e318dd6c0c58000328e
   
   # Protobuf（与 nakama SDK 使用的 protobuf 4.x 保持一致）
   protobuf: ^4.0.0
