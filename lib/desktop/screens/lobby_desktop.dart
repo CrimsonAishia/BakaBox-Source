@@ -1214,10 +1214,16 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
                           final user = displayUsers[index];
                           final isFollowed = _followedIds.contains(user.businessUserId);
                           final isHighlighted = _highlightedUserId == user.userId;
+                          // 判断用户是否在本地图：检查 state.users（当前地图用户列表）中是否存在该用户
+                          final isOnCurrentMap = widget.state.users.any(
+                            (u) => u.userId == user.userId,
+                          );
                           return _PlayerListTile(
                             user: user,
                             isFollowed: isFollowed,
                             isHighlighted: isHighlighted,
+                            isOnCurrentMap: isOnCurrentMap,
+                            currentMapName: widget.state.mapConfig?.displayName,
                             onTapAt: user.isSelf || user.isAnonymous
                                 ? null
                                 : (offset) => _showPlayerContextMenu(context, user, offset, isFollowed),
@@ -1457,12 +1463,16 @@ class _PlayerListTile extends StatefulWidget {
   final LobbyUser user;
   final bool isFollowed;
   final bool isHighlighted;
+  final bool isOnCurrentMap;
+  final String? currentMapName;
   final void Function(Offset globalPosition)? onTapAt;
 
   const _PlayerListTile({
     required this.user,
     this.isFollowed = false,
     this.isHighlighted = false,
+    this.isOnCurrentMap = true,
+    this.currentMapName,
     this.onTapAt,
   });
 
@@ -1561,7 +1571,7 @@ class _PlayerListTileState extends State<_PlayerListTile> {
                     ],
                   ),
                 ),
-                // 自己的标识
+                // 右侧：地图标识 + 自己标识/箭头
                 if (user.isSelf)
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -1584,12 +1594,46 @@ class _PlayerListTileState extends State<_PlayerListTile> {
                       ),
                     ),
                   )
-                else if (!user.isAnonymous)
-                  Icon(
-                    Icons.chevron_right,
-                    color: Colors.white.withValues(alpha: 0.3),
-                    size: 18,
+                else ...[
+                  // 地图位置标签
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: widget.isOnCurrentMap
+                          ? const Color(0xFF4ADE80).withValues(alpha: 0.12)
+                          : Colors.white.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: widget.isOnCurrentMap
+                            ? const Color(0xFF4ADE80).withValues(alpha: 0.3)
+                            : Colors.white.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: Text(
+                      widget.isOnCurrentMap
+                          ? (widget.currentMapName ?? '本地图')
+                          : '其他地图',
+                      style: TextStyle(
+                        color: widget.isOnCurrentMap
+                            ? const Color(0xFF4ADE80).withValues(alpha: 0.8)
+                            : Colors.white.withValues(alpha: 0.4),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
+                  if (!user.isAnonymous) ...[
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.chevron_right,
+                      color: Colors.white.withValues(alpha: 0.3),
+                      size: 18,
+                    ),
+                  ],
+                ],
               ],
             ),
           ),
