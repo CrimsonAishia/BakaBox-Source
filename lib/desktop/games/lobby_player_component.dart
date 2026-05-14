@@ -1225,12 +1225,12 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     double glowAlpha;
 
     if (_isContextMenuTarget) {
-      // 右键菜单目标：橙色脉冲描边
+      // 聚焦目标：电光蓝脉冲描边（区别于关注的金黄色）
       final pulse = (math.sin(_contextMenuPulse * math.pi * 2) + 1.0) / 2.0;
       final alpha = (0.6 + pulse * 0.4) * _spriteOpacity;
-      outlineColor = Colors.orangeAccent.withValues(alpha: alpha);
-      outlineWidth = 2.5;
-      glowAlpha = alpha * 0.5;
+      outlineColor = const Color(0xFF40C4FF).withValues(alpha: alpha);
+      outlineWidth = 3.5;
+      glowAlpha = alpha * 0.7;
     } else if (_isHovered) {
       // 悬停：白色描边
       outlineColor = Colors.white.withValues(alpha: 0.95 * _spriteOpacity);
@@ -1248,12 +1248,13 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       ..colorFilter = ColorFilter.mode(outlineColor, BlendMode.srcIn);
 
     // 外发光 Paint（模糊效果增强视觉）
+    final glowBlurRadius = _isContextMenuTarget ? 6.0 : 3.0;
     final glowPaint = Paint()
       ..colorFilter = ColorFilter.mode(
         outlineColor.withValues(alpha: glowAlpha),
         BlendMode.srcIn,
       )
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.0);
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, glowBlurRadius);
 
     // 8 个方向的偏移量
     final offsets = [
@@ -1345,10 +1346,12 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     if (_cachedDisplayName != currentName || _cachedNamePainter == null) {
       _cachedDisplayName = currentName;
 
-      // 关注用户或聚焦用户使用亮金橙色名字，普通用户白色
-      final nameColor = (_isFollowed || _isContextMenuTarget)
-          ? const Color(0xFFFFD740) // 亮金黄色
-          : Colors.white;
+      // 关注用户或聚焦用户使用高亮名字，普通用户白色
+      final nameColor = _isContextMenuTarget
+          ? const Color(0xFF40C4FF) // 电光蓝（聚焦）
+          : _isFollowed
+              ? const Color(0xFFFFD740) // 亮金黄色（关注）
+              : Colors.white;
 
       final pixelTextStyle = TextStyle(
         fontFamily: null,
@@ -1363,10 +1366,12 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         textDirection: TextDirection.ltr,
       )..layout();
 
-      // 关注/聚焦用户使用橙色描边增强辨识度，普通用户黑色描边
-      final strokeColor = (_isFollowed || _isContextMenuTarget)
-          ? const Color(0xFF8B4500) // 深橙棕色描边
-          : Colors.black.withValues(alpha: 0.7);
+      // 关注/聚焦用户使用对应色描边增强辨识度，普通用户黑色描边
+      final strokeColor = _isContextMenuTarget
+          ? const Color(0xFF01579B) // 深蓝描边（聚焦）
+          : _isFollowed
+              ? const Color(0xFF8B4500) // 深橙棕色描边（关注）
+              : Colors.black.withValues(alpha: 0.7);
 
       final strokeStyle = TextStyle(
         fontFamily: null,
@@ -1517,10 +1522,12 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     if (_cachedStatusText != currentStatus || _cachedStatusPainter == null) {
       _cachedStatusText = currentStatus;
 
-      // 关注/聚焦用户状态文字用浅金色，普通用户用灰白色
-      final statusColor = (_isFollowed || _isContextMenuTarget)
-          ? const Color(0xFFFFD54F) // 浅金黄色
-          : const Color(0xFFE2E8F0);
+      // 关注/聚焦用户状态文字用高亮色，普通用户用灰白色
+      final statusColor = _isContextMenuTarget
+          ? const Color(0xFF81D4FA) // 浅电光蓝（聚焦）
+          : _isFollowed
+              ? const Color(0xFFFFD54F) // 浅金黄色（关注）
+              : const Color(0xFFE2E8F0);
 
       final textStyle = TextStyle(
         fontFamily: null,
@@ -1534,10 +1541,12 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         textDirection: TextDirection.ltr,
       )..layout();
 
-      // 关注/聚焦用户用深金色描边，普通用户用黑色描边
-      final strokeColor = (_isFollowed || _isContextMenuTarget)
-          ? const Color(0xFF6D4C00) // 深金棕色描边
-          : Colors.black.withValues(alpha: 0.6);
+      // 关注/聚焦用户用对应色描边，普通用户用黑色描边
+      final strokeColor = _isContextMenuTarget
+          ? const Color(0xFF01579B) // 深蓝描边（聚焦）
+          : _isFollowed
+              ? const Color(0xFF6D4C00) // 深金棕色描边（关注）
+              : Colors.black.withValues(alpha: 0.6);
 
       final strokeStyle = TextStyle(
         fontFamily: null,
