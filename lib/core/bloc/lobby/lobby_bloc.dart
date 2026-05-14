@@ -134,6 +134,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   }
 
   static const double _moveSpeed = 2.8;
+  /// 玩家移动边界留白 — 水平方向（1个角色身位）
+  static const double _playerMarginX = 50.0;
+  /// 玩家移动边界留白 — 顶部（角色身位 + 用户名文字区域）
+  static const double _playerMarginTop = 100.0;
+  /// 玩家移动边界留白 — 底部（角色身位 + 状态文字区域）
+  static const double _playerMarginBottom = 5.0;
   static const String _selfUserId = 'self';
   static const Duration _moveDebounceInterval = Duration(milliseconds: 250);
   /// 聊天冷却时间（秒）
@@ -575,10 +581,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     }
 
     final target = event.position.clamp(
-      minX: 0,
-      maxX: mapConfig.width,
-      minY: 0,
-      maxY: mapConfig.height,
+      minX: _playerMarginX,
+      maxX: mapConfig.width - _playerMarginX,
+      minY: _playerMarginTop,
+      maxY: mapConfig.height - _playerMarginBottom,
     );
 
     if (!mapConfig.contains(target)) return;
