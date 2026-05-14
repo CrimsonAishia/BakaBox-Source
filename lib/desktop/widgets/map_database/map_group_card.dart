@@ -157,34 +157,118 @@ class _MapGroupCardState extends State<MapGroupCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        MarqueeText(
-                          text: mapInfo.mapName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            height: 1.2,
-                            fontFamily: 'monospace',
-                            letterSpacing: 0.5,
-                            shadows: [
-                              Shadow(color: Colors.black, blurRadius: 8),
-                            ],
-                          ),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.map_outlined,
+                              size: 18,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(color: Colors.black, blurRadius: 4),
+                              ],
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: MarqueeText(
+                                text: mapInfo.mapName,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  height: 1.2,
+                                  fontFamily: 'monospace',
+                                  letterSpacing: 0.5,
+                                  shadows: [
+                                    const Shadow(
+                                      color: Colors.black,
+                                      blurRadius: 8,
+                                    ),
+                                    Shadow(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.9),
+                                      offset: const Offset(1, 1),
+                                      blurRadius: 2,
+                                    ),
+                                    Shadow(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.9),
+                                      offset: const Offset(-1, -1),
+                                      blurRadius: 2,
+                                    ),
+                                    Shadow(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.9),
+                                      offset: const Offset(1, -1),
+                                      blurRadius: 2,
+                                    ),
+                                    Shadow(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.9),
+                                      offset: const Offset(-1, 1),
+                                      blurRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 4),
-                        MarqueeText(
-                          text: '译名：${mapInfo.mapLabel}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white.withValues(alpha: 0.8),
-                            shadows: const [
-                              Shadow(color: Colors.black, blurRadius: 4),
-                            ],
-                          ),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.translate,
+                              size: 15,
+                              color: Colors.white.withValues(alpha: 0.9),
+                              shadows: const [
+                                Shadow(color: Colors.black, blurRadius: 4),
+                              ],
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: MarqueeText(
+                                text: mapInfo.mapLabel,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  shadows: [
+                                    const Shadow(
+                                      color: Colors.black,
+                                      blurRadius: 4,
+                                    ),
+                                    Shadow(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.9),
+                                      offset: const Offset(1, 1),
+                                      blurRadius: 2,
+                                    ),
+                                    Shadow(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.9),
+                                      offset: const Offset(-1, -1),
+                                      blurRadius: 2,
+                                    ),
+                                    Shadow(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.9),
+                                      offset: const Offset(1, -1),
+                                      blurRadius: 2,
+                                    ),
+                                    Shadow(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.9),
+                                      offset: const Offset(-1, 1),
+                                      blurRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         if (!_isHovered) ...[
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 6),
                           _buildMapTagRow(mapInfo.tags),
                         ],
                       ],
