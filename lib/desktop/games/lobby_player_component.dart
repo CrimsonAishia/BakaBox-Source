@@ -791,6 +791,17 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
           priority = _isFollowed ? 50 : _defaultPriority;
         }
       }
+      // 名字和状态文字缓存失效（聚焦状态影响颜色）
+      _cachedDisplayName = null;
+      _cachedNamePainter?.dispose();
+      _cachedNamePainter = null;
+      _cachedNameStrokePainter?.dispose();
+      _cachedNameStrokePainter = null;
+      _cachedStatusText = null;
+      _cachedStatusPainter?.dispose();
+      _cachedStatusPainter = null;
+      _cachedStatusStrokePainter?.dispose();
+      _cachedStatusStrokePainter = null;
     }
   }
 
@@ -1334,8 +1345,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     if (_cachedDisplayName != currentName || _cachedNamePainter == null) {
       _cachedDisplayName = currentName;
 
-      // 关注用户使用亮金橙色名字，普通用户白色
-      final nameColor = _isFollowed
+      // 关注用户或聚焦用户使用亮金橙色名字，普通用户白色
+      final nameColor = (_isFollowed || _isContextMenuTarget)
           ? const Color(0xFFFFD740) // 亮金黄色
           : Colors.white;
 
@@ -1352,8 +1363,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         textDirection: TextDirection.ltr,
       )..layout();
 
-      // 关注用户使用橙色描边增强辨识度，普通用户黑色描边
-      final strokeColor = _isFollowed
+      // 关注/聚焦用户使用橙色描边增强辨识度，普通用户黑色描边
+      final strokeColor = (_isFollowed || _isContextMenuTarget)
           ? const Color(0xFF8B4500) // 深橙棕色描边
           : Colors.black.withValues(alpha: 0.7);
 
@@ -1506,8 +1517,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     if (_cachedStatusText != currentStatus || _cachedStatusPainter == null) {
       _cachedStatusText = currentStatus;
 
-      // 关注用户状态文字用浅金色，普通用户用灰白色
-      final statusColor = _isFollowed
+      // 关注/聚焦用户状态文字用浅金色，普通用户用灰白色
+      final statusColor = (_isFollowed || _isContextMenuTarget)
           ? const Color(0xFFFFD54F) // 浅金黄色
           : const Color(0xFFE2E8F0);
 
@@ -1523,8 +1534,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         textDirection: TextDirection.ltr,
       )..layout();
 
-      // 关注用户用深金色描边，普通用户用黑色描边
-      final strokeColor = _isFollowed
+      // 关注/聚焦用户用深金色描边，普通用户用黑色描边
+      final strokeColor = (_isFollowed || _isContextMenuTarget)
           ? const Color(0xFF6D4C00) // 深金棕色描边
           : Colors.black.withValues(alpha: 0.6);
 
