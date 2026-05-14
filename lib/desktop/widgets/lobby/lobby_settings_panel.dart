@@ -8,7 +8,7 @@ import '../../../core/models/lobby_models.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/lobby_image_cache_service.dart';
 import '../../../desktop/widgets/common_scroll_indicator.dart';
-import 'lobby_players_panel.dart';
+import 'lobby_panel_shell.dart';
 
 /// 设置面板
 class LobbySettingsPanel extends StatelessWidget {

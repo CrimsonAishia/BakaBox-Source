@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/core.dart';
+import '../../core/widgets/marquee_text.dart';
 import '../games/lobby_game.dart';
 import '../widgets/lobby/lobby_loading_screen.dart';
 import '../widgets/lobby/lobby_scene.dart';
@@ -1537,30 +1538,31 @@ class _PlayerListTileState extends State<_PlayerListTile> {
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: Row(
               children: [
                 // 头像
                 _PlayerAvatar(user: user),
                 const SizedBox(width: 12),
-                // 名称和状态
+                // 名称、状态、地图标签
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        user.displayName,
-                        style: TextStyle(
-                          color: isFollowed
-                              ? const Color(0xFFFFD740)
-                              : Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
+                      SizedBox(
+                        height: 18,
+                        child: MarqueeText(
+                          text: user.displayName,
+                          style: TextStyle(
+                            color: isFollowed
+                                ? const Color(0xFFFFD740)
+                                : Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Row(
                         children: [
                           Container(
@@ -1575,82 +1577,84 @@ class _PlayerListTileState extends State<_PlayerListTile> {
                           ),
                           const SizedBox(width: 6),
                           Expanded(
-                            child: Text(
-                              user.statusText ?? '在线',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.5),
-                                fontSize: 11,
+                            child: SizedBox(
+                              height: 15,
+                              child: MarqueeText(
+                                text: user.statusText ?? '在线',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 11,
+                                ),
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
+                      const SizedBox(height: 4),
+                      // 第三行：地图标签
+                      if (user.isSelf)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1D9BF0).withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: const Color(0xFF1D9BF0).withValues(alpha: 0.4),
+                            ),
+                          ),
+                          child: const Text(
+                            '你',
+                            style: TextStyle(
+                              color: Color(0xFF1D9BF0),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: widget.isOnCurrentMap
+                                ? const Color(0xFF4ADE80).withValues(alpha: 0.12)
+                                : Colors.white.withValues(alpha: 0.06),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: widget.isOnCurrentMap
+                                  ? const Color(0xFF4ADE80).withValues(alpha: 0.3)
+                                  : Colors.white.withValues(alpha: 0.1),
+                            ),
+                          ),
+                          child: Text(
+                            widget.isOnCurrentMap
+                                ? (widget.currentMapName ?? '本地图')
+                                : '其他地图',
+                            style: TextStyle(
+                              color: widget.isOnCurrentMap
+                                  ? const Color(0xFF4ADE80).withValues(alpha: 0.8)
+                                  : Colors.white.withValues(alpha: 0.4),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
-                // 右侧：地图标识 + 自己标识/箭头
-                if (user.isSelf)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1D9BF0).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: const Color(0xFF1D9BF0).withValues(alpha: 0.4),
-                      ),
-                    ),
-                    child: const Text(
-                      '你',
-                      style: TextStyle(
-                        color: Color(0xFF1D9BF0),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  )
-                else ...[
-                  // 地图位置标签
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: widget.isOnCurrentMap
-                          ? const Color(0xFF4ADE80).withValues(alpha: 0.12)
-                          : Colors.white.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: widget.isOnCurrentMap
-                            ? const Color(0xFF4ADE80).withValues(alpha: 0.3)
-                            : Colors.white.withValues(alpha: 0.1),
-                      ),
-                    ),
-                    child: Text(
-                      widget.isOnCurrentMap
-                          ? (widget.currentMapName ?? '本地图')
-                          : '其他地图',
-                      style: TextStyle(
-                        color: widget.isOnCurrentMap
-                            ? const Color(0xFF4ADE80).withValues(alpha: 0.8)
-                            : Colors.white.withValues(alpha: 0.4),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                // 右侧箭头（非自己、非匿名时显示）
+                if (!user.isSelf && !user.isAnonymous) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.chevron_right,
+                    color: Colors.white.withValues(alpha: 0.3),
+                    size: 18,
                   ),
-                  if (!user.isAnonymous) ...[
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.chevron_right,
-                      color: Colors.white.withValues(alpha: 0.3),
-                      size: 18,
-                    ),
-                  ],
                 ],
               ],
             ),
