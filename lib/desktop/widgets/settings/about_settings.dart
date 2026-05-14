@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/bloc/update/update_bloc.dart';
 import '../../../core/bloc/update/update_event.dart';
 import '../../../core/bloc/update/update_state.dart';
@@ -131,6 +132,38 @@ class AboutSettings extends StatelessWidget {
               action: const SizedBox.shrink(),
             ),
             _UpdateInfoItem(
+              icon: MdiIcons.github,
+              iconColor: const Color(0xFF6366F1),
+              label: '开源地址',
+              value: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    AppConstants.appRepoUrl,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF3B82F6),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '代码会在稳定后同步更新🐛',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                    ),
+                  ),
+                ],
+              ),
+              action: SettingsPrimaryButton(
+                onPressed: () => _openRepoUrl(),
+                label: '打开',
+                icon: MdiIcons.openInNew,
+              ),
+            ),
+            _UpdateInfoItem(
               icon: MdiIcons.copyright,
               iconColor: const Color(0xFF8B5CF6),
               label: '版权信息',
@@ -152,6 +185,13 @@ class AboutSettings extends StatelessWidget {
 
   void _checkForUpdates(BuildContext context) {
     context.read<UpdateBloc>().add(UpdateCheck());
+  }
+
+  static Future<void> _openRepoUrl() async {
+    final uri = Uri.parse(AppConstants.appRepoUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 }
 
