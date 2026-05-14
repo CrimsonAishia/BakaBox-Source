@@ -8,6 +8,10 @@ import 'package:webview_windows/webview_windows.dart';
 class CaptchaDialog extends StatefulWidget {
   const CaptchaDialog({super.key});
 
+  /// 返回值：
+  /// - 非空字符串：验证码 token
+  /// - 空字符串：检测到论坛已登录，需要重试
+  /// - null：用户取消或验证失败
   static Future<String?> show(BuildContext context) {
     return showDialog<String>(
       context: context,
@@ -23,6 +27,7 @@ class CaptchaDialog extends StatefulWidget {
 class _CaptchaDialogState extends State<CaptchaDialog> {
   final _controller = WebviewController();
   bool _isLoading = true;
+  bool _isWebViewReady = false;
   String? _errorMessage;
   String? _captchaToken;
   Timer? _tokenCheckTimer;
@@ -106,6 +111,9 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
     try {
       await _controller.initialize();
 
+      // 清除 Cookie，避免论坛已登录状态导致验证码不显示
+      await _controller.clearCookies();
+
       // 监听页面加载完成
       _controller.loadingState.listen((state) {
         if (state == LoadingState.navigationCompleted) {
@@ -132,6 +140,22 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
 
     if (!mounted) return;
 
+    // 检测验证码容器是否存在，不存在说明论坛已登录，直接退出
+    try {
+      final hasCaptcha = await _controller.executeScript('''
+(function() {
+  return document.getElementById('dx_page_logging_input') ? 'yes' : 'no';
+})();
+''');
+      if (hasCaptcha?.toString().trim() == 'no') {
+        if (mounted) {
+          // 返回空字符串标记"已登录"状态，与用户取消(null)区分
+          Navigator.of(context).pop('');
+        }
+        return;
+      }
+    } catch (_) {}
+
     // 注入 JS 隐藏其他元素
     try {
       await _controller.executeScript(_injectJs);
@@ -139,6 +163,7 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
 
     setState(() {
       _isLoading = false;
+      _isWebViewReady = true;
     });
 
     // 开始轮询 token
@@ -274,7 +299,7 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
       );
     }
 
-    if (_isLoading) {
+    if (_isLoading || !_isWebViewReady) {
       return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

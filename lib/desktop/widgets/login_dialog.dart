@@ -84,8 +84,15 @@ class _LoginDialogState extends State<LoginDialog> {
         _captchaToken = captchaToken;
       });
       ToastUtils.showSuccess(context, '验证成功');
+    } else if (captchaToken != null && captchaToken.isEmpty) {
+      // 检测到论坛已登录状态，自动重试一次
+      ToastUtils.showWarning(context, '验证码加载异常，正在重试...');
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
+      // 递归重试
+      await _handleGetCaptcha();
     } else {
-      ToastUtils.showWarning(context, '验证失败或已取消');
+      ToastUtils.showWarning(context, '验证已取消');
     }
   }
 
