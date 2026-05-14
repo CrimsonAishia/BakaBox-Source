@@ -530,17 +530,21 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     final prevLastMessageAt = _user.lastMessageAt;
 
     // 检测 spriteId 变化，触发动画切换
-    final spriteIdChanged = _currentSpriteId != user.spriteId;
+    // 需要同时检查 _currentSpriteId（正在加载/显示的）和排队中的 spriteId，
+    // 避免服务端反复广播+回滚时产生无意义的重复切换
+    final newSpriteId = user.spriteId;
+    final effectiveSpriteId = _queuedSpriteSwitch?.spriteId ?? _currentSpriteId;
+    final spriteIdChanged = effectiveSpriteId != newSpriteId;
     if (spriteIdChanged) {
       debugPrint(
-        '[LobbyPlayerComponent] 检测到模型切换: $_currentSpriteId -> ${user.spriteId}',
+        '[LobbyPlayerComponent] 检测到模型切换: $effectiveSpriteId -> $newSpriteId',
       );
       // 查找新模型的配置
       LobbySprite newSprite = _sprite;
       if (availableSprites != null) {
-        newSprite = _findSpriteById(availableSprites, user.spriteId);
+        newSprite = _findSpriteById(availableSprites, newSpriteId);
       }
-      _triggerSpriteSwitch(user.spriteId, newSprite);
+      _triggerSpriteSwitch(newSpriteId, newSprite);
     }
 
     _user = _user.copyWith(
@@ -646,7 +650,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
   /// 触发动画切换特效
   void _triggerSpriteSwitch(String newSpriteId, LobbySprite newSprite) {
-    // 如果正在切换中，将请求排队
+    // 如果正在切换中，将请求排队（覆盖之前的排队请求，只保留最新的）
     if (_spriteSwitchState != SpriteSwitchState.idle) {
       debugPrint('[LobbyPlayerComponent] 模型切换中，排入队列: $newSpriteId');
       _queuedSpriteSwitch = _PendingSpriteSwitch(
@@ -1063,12 +1067,19 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
           // 检查是否有排队的切换请求，如果有则立即处理
           if (_queuedSpriteSwitch != null) {
-            debugPrint(
-              '[LobbyPlayerComponent] 处理排队的切换: ${_queuedSpriteSwitch!.spriteId}',
-            );
             final queued = _queuedSpriteSwitch!;
             _queuedSpriteSwitch = null;
-            _triggerSpriteSwitch(queued.spriteId, queued.sprite);
+            // 如果排队的 spriteId 与刚加载完成的一致，跳过冗余切换
+            if (queued.spriteId == _currentSpriteId) {
+              debugPrint(
+                '[LobbyPlayerComponent] 排队的切换与当前一致，跳过: ${queued.spriteId}',
+              );
+            } else {
+              debugPrint(
+                '[LobbyPlayerComponent] 处理排队的切换: ${queued.spriteId}',
+              );
+              _triggerSpriteSwitch(queued.spriteId, queued.sprite);
+            }
           }
         }
         break;
