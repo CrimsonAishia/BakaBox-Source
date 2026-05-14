@@ -992,6 +992,9 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
   /// 当前高亮的用户 ID（点击弹出菜单时）
   String? _highlightedUserId;
 
+  /// 当前打开的菜单 OverlayEntry（用于面板关闭时清理）
+  OverlayEntry? _activeMenuEntry;
+
   @override
   void initState() {
     super.initState();
@@ -1025,11 +1028,14 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
         isFollowed: isFollowed,
         onInvestigate: () {
           entry.remove();
+          _activeMenuEntry = null;
           setState(() => _highlightedUserId = null);
+          LobbyGame.activeInstance?.cancelFocus();
           LobbyUserProfilePanel.show(context, user);
         },
         onToggleFollow: () {
           entry.remove();
+          _activeMenuEntry = null;
           // 切换关注状态
           if (isFollowed) {
             _followedIds.remove(user.businessUserId);
@@ -1041,20 +1047,32 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
           StorageUtils.setStringList('lobby_followed_user_ids', _followedIds.toList());
           // 通知游戏刷新角色关注状态
           LobbyGame.activeInstance?.reloadFollowedUsers();
+          LobbyGame.activeInstance?.cancelFocus();
           setState(() => _highlightedUserId = null);
         },
         onDismiss: () {
           entry.remove();
+          _activeMenuEntry = null;
+          LobbyGame.activeInstance?.cancelFocus();
           setState(() => _highlightedUserId = null);
         },
       ),
     );
 
+    // 菜单弹出时，将视角移到该用户
+    _activeMenuEntry = entry;
+    LobbyGame.activeInstance?.focusOnUser(user.userId);
     overlay.insert(entry);
   }
 
   @override
   void dispose() {
+    // 面板关闭时清理残留的菜单和聚焦状态
+    if (_activeMenuEntry != null) {
+      _activeMenuEntry!.remove();
+      _activeMenuEntry = null;
+      LobbyGame.activeInstance?.cancelFocus();
+    }
     _searchController.dispose();
     super.dispose();
   }

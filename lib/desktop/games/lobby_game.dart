@@ -230,6 +230,9 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
   /// 右键菜单回调：调查用户
   void Function(LobbyUser user)? onInvestigateUser;
 
+  /// 当前聚焦的用户 ID（面板点击后临时将视角移到该用户）
+  String? _focusedUserId;
+
   /// 当前是否悬停在可交互的玩家上（用于切换鼠标光标）
   bool get isHoveringInteractablePlayer {
     // 菜单打开时，悬停在菜单项上也显示手型
@@ -352,6 +355,27 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
 
   /// 相机跟随当前玩家（每帧调用，驱动插值跟随）
   void _followCurrentPlayer() {
+    LobbyPosition targetPos;
+
+    // 如果有聚焦用户，优先跟随聚焦用户
+    if (_focusedUserId != null) {
+      final focusedComp = _playerComponents[_focusedUserId!];
+      if (focusedComp != null) {
+        targetPos = focusedComp.currentRenderPosition;
+      } else {
+        // 聚焦用户已不在场景中，取消聚焦
+        _focusedUserId = null;
+        return _followSelf();
+      }
+    } else {
+      return _followSelf();
+    }
+
+    _applyCameraTarget(targetPos);
+  }
+
+  /// 跟随自己的角色
+  void _followSelf() {
     final selfUser = _bloc.state.selfUser;
     if (selfUser == null) return;
 
@@ -370,6 +394,11 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
       }
     }
 
+    _applyCameraTarget(targetPos);
+  }
+
+  /// 将相机平滑移动到目标位置
+  void _applyCameraTarget(LobbyPosition targetPos) {
     final screenCenter = _cameraComponent.viewport.size / 2;
 
     // 计算目标相机位置，确保角色在屏幕中心
@@ -612,6 +641,27 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     _followedUserIds = list.toSet();
     // 更新已有组件的关注状态
     _applyFollowStates();
+  }
+
+  /// 将视角聚焦到指定用户（菜单关闭时调用 cancelFocus 恢复）
+  /// 仅对本地图用户有效（用户必须在 _playerComponents 中）
+  /// 同时高亮该用户角色（与游戏内右键交互一致的闪动边框）
+  void focusOnUser(String userId) {
+    final comp = _playerComponents[userId];
+    if (comp == null) return;
+    _focusedUserId = userId;
+    comp.setContextMenuTarget(true);
+  }
+
+  /// 取消聚焦，立即恢复跟随自己，同时取消高亮
+  void cancelFocus() {
+    if (_focusedUserId != null) {
+      final comp = _playerComponents[_focusedUserId!];
+      if (comp != null && !comp.isRemoved) {
+        comp.setContextMenuTarget(false);
+      }
+      _focusedUserId = null;
+    }
   }
 
   /// 保存关注列表
