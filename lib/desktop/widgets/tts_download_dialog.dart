@@ -161,7 +161,6 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
   ) {
     final isDownloaded = _ttsService.isModelDownloadedById(model.id);
     final isSelected = isDownloaded && state.selectedTtsModelId == model.id;
-    final isDomestic = model.region == TtsModelRegion.domestic;
     final isDownloading =
         _downloadingModelId == model.id &&
         state.ttsDownloadStatus == TtsDownloadStatus.downloading;
@@ -229,34 +228,6 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
                                   color: isDark
                                       ? Colors.white
                                       : const Color(0xFF1F2937),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              // 区域标签
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isDomestic
-                                      ? const Color(
-                                          0xFF10B981,
-                                        ).withValues(alpha: 0.12)
-                                      : const Color(
-                                          0xFF6366F1,
-                                        ).withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  isDomestic ? '国内' : '国外',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w500,
-                                    color: isDomestic
-                                        ? const Color(0xFF10B981)
-                                        : const Color(0xFF6366F1),
-                                  ),
                                 ),
                               ),
                               // 已下载标记
