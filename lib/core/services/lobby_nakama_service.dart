@@ -27,6 +27,10 @@ class _NakamaClientManager {
   NakamaBaseClient? _client;
   Session? _session;
   NakamaConfig? _config;
+  String? _deviceId;
+
+  /// Session 即将过期的提前量（提前 30 秒视为过期，避免边界竞态）
+  static const int _sessionExpiryBufferSeconds = 30;
 
   /// 初始化 Nakama 客户端
   void init(NakamaConfig config) {
@@ -58,6 +62,8 @@ class _NakamaClientManager {
     if (client == null) {
       throw StateError('[NakamaClientManager] 客户端未初始化');
     }
+
+    _deviceId = deviceId;
 
     // 统一使用设备 ID 认证（无论是否有 JWT token）
     // JWT token 会在连接成功后通过 login 消息发送给服务器
@@ -107,16 +113,68 @@ class _NakamaClientManager {
     }
   }
 
-  /// RPC 调用
+  /// RPC 调用（带 Session 过期自动刷新 + 401 重试）
+  ///
+  /// 1. 调用前检查 Session 是否即将过期，提前刷新
+  /// 2. 调用失败且疑似 Session 过期（401/Unauthenticated），刷新后重试一次
   Future<String?> rpc(String id, {String? payload}) async {
     final client = _client;
-    final session = _session;
-    if (client == null || session == null) {
-      throw StateError('[NakamaClientManager] 客户端或 Session 未就绪');
+    if (client == null) {
+      throw StateError('[NakamaClientManager] 客户端未初始化');
+    }
+    if (_session == null) {
+      throw StateError('[NakamaClientManager] Session 未就绪');
+    }
+
+    // 预检：Session 即将过期则提前刷新
+    if (_isSessionExpiringSoon()) {
+      LogService.d('[NakamaClientManager] Session 即将过期，RPC 调用前主动刷新: $id');
+      await _ensureSessionFresh();
     }
 
     LogService.d('[NakamaClientManager] RPC 调用: $id');
-    return client.rpc(session: session, id: id, payload: payload);
+    try {
+      return await client.rpc(session: _session!, id: id, payload: payload);
+    } catch (e) {
+      // 判断是否为 Session 过期导致的认证错误（401 / Unauthenticated）
+      if (_isAuthError(e)) {
+        LogService.w('[NakamaClientManager] RPC $id 认证失败，尝试刷新 Session 后重试: $e');
+        await _ensureSessionFresh();
+        // 重试一次
+        return await client.rpc(session: _session!, id: id, payload: payload);
+      }
+      rethrow;
+    }
+  }
+
+  /// 判断 Session 是否即将过期（含提前量）
+  bool _isSessionExpiringSoon() {
+    final session = _session;
+    if (session == null) return true;
+    if (session.isExpired) return true;
+    // 提前 buffer 秒视为即将过期
+    final now = DateTime.now();
+    final expiresAt = session.expiresAt;
+    return expiresAt.difference(now).inSeconds <= _sessionExpiryBufferSeconds;
+  }
+
+  /// 确保 Session 有效：刷新或重新认证
+  Future<void> _ensureSessionFresh() async {
+    final deviceId = _deviceId;
+    if (deviceId == null) {
+      throw StateError('[NakamaClientManager] 无法刷新 Session（缺少 deviceId）');
+    }
+    await refreshSession(deviceId: deviceId);
+  }
+
+  /// 判断异常是否为认证/授权错误（Session 过期）
+  bool _isAuthError(Object e) {
+    final msg = e.toString().toLowerCase();
+    return msg.contains('unauthenticated') ||
+        msg.contains('401') ||
+        msg.contains('token') ||
+        msg.contains('session expired') ||
+        msg.contains('not authenticated');
   }
 
   /// 当前 Session 是否有效（未过期）
@@ -419,6 +477,9 @@ class LobbyNakamaService {
   static const int _maxReconnectDelaySeconds = 30;
   Timer? _reconnectTimer;
 
+  // === Session 主动刷新 ===
+  Timer? _sessionRefreshTimer;
+
   // === 流订阅 ===
   StreamSubscription<LobbyWsEvent>? _matchEventSubscription;
   StreamSubscription<void>? _disconnectSubscription;
@@ -558,6 +619,8 @@ class LobbyNakamaService {
 
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
+    _sessionRefreshTimer?.cancel();
+    _sessionRefreshTimer = null;
 
     // 清理旧连接
     await _matchEventSubscription?.cancel();
@@ -587,6 +650,8 @@ class LobbyNakamaService {
     _isDisposed = true;
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
+    _sessionRefreshTimer?.cancel();
+    _sessionRefreshTimer = null;
 
     await _matchEventSubscription?.cancel();
     _matchEventSubscription = null;
@@ -657,6 +722,9 @@ class LobbyNakamaService {
         deviceId: _deviceId!,
       );
 
+      // 2.1. 启动 Session 主动刷新定时器
+      _scheduleSessionRefresh();
+
       // 3. WebSocket 连接
       await _socketManager.connect(
         host: config.host,
@@ -673,6 +741,8 @@ class LobbyNakamaService {
       if (joinResponse == null) {
         LogService.e('[LobbyNakamaService] RPC lobby_join 获取响应失败');
         _emitConnectionEvent(LobbyConnectionEventType.error, error: '获取 matchId 失败');
+        _sessionRefreshTimer?.cancel();
+        _sessionRefreshTimer = null;
         _scheduleReconnect();
         return;
       }
@@ -712,6 +782,8 @@ class LobbyNakamaService {
       } else {
         LogService.e('[LobbyNakamaService] RPC lobby_join 返回无效响应（matchId 和 ticket 均为空）');
         _emitConnectionEvent(LobbyConnectionEventType.error, error: '获取 matchId 失败');
+        _sessionRefreshTimer?.cancel();
+        _sessionRefreshTimer = null;
         _scheduleReconnect();
         return;
       }
@@ -719,6 +791,8 @@ class LobbyNakamaService {
       LogService.e('[LobbyNakamaService] 连接失败', e, stackTrace);
       _emitConnectionEvent(LobbyConnectionEventType.error, error: e.toString());
       _isConnected = false;
+      _sessionRefreshTimer?.cancel();
+      _sessionRefreshTimer = null;
       _scheduleReconnect();
     }
   }
@@ -831,6 +905,8 @@ class LobbyNakamaService {
   void _handleDisconnect() {
     LogService.w('[LobbyNakamaService] WebSocket 已断开');
     _isConnected = false;
+    _sessionRefreshTimer?.cancel();
+    _sessionRefreshTimer = null;
     _latestSnapshot = null;
     _latestAssetsPayload = null;
     _hasAssetsReceived = false;
@@ -896,6 +972,66 @@ class LobbyNakamaService {
     // delay = min(2 * 2^n, 30)
     final delay = 2 * (1 << retryCount.clamp(0, 30));
     return delay.clamp(2, 30);
+  }
+
+  /// 调度 Session 主动刷新定时器
+  ///
+  /// 在 Session 过期前主动刷新，避免 RPC 调用时才发现过期。
+  /// 刷新时机 = Session 有效期的 75% 处（例如有效期 300 秒，则 225 秒后刷新）。
+  /// 最少 30 秒后刷新，避免频繁刷新。
+  void _scheduleSessionRefresh() {
+    _sessionRefreshTimer?.cancel();
+    _sessionRefreshTimer = null;
+
+    final session = _clientManager.session;
+    if (session == null) return;
+
+    final now = DateTime.now();
+    final expiresAt = session.expiresAt;
+    final remainingSeconds = expiresAt.difference(now).inSeconds;
+
+    if (remainingSeconds <= 0) {
+      // 已过期，立即刷新
+      LogService.w('[LobbyNakamaService] Session 已过期，立即刷新');
+      unawaited(_doSessionRefresh());
+      return;
+    }
+
+    // 在有效期的 75% 处刷新，最少 30 秒
+    final refreshAfterSeconds = (remainingSeconds * 0.75).toInt().clamp(30, remainingSeconds - 10);
+
+    LogService.d(
+      '[LobbyNakamaService] Session 剩余 ${remainingSeconds}s，'
+      '将在 ${refreshAfterSeconds}s 后主动刷新',
+    );
+
+    _sessionRefreshTimer = Timer(Duration(seconds: refreshAfterSeconds), () {
+      if (_isDisposed || !_isConnected) return;
+      unawaited(_doSessionRefresh());
+    });
+  }
+
+  /// 执行 Session 刷新并重新调度定时器
+  Future<void> _doSessionRefresh() async {
+    if (_isDisposed) return;
+    final deviceId = _deviceId;
+    if (deviceId == null) return;
+
+    try {
+      LogService.d('[LobbyNakamaService] 主动刷新 Session...');
+      await _clientManager.refreshSession(deviceId: deviceId);
+      LogService.i('[LobbyNakamaService] Session 主动刷新成功');
+      // 刷新成功后重新调度下一次刷新
+      _scheduleSessionRefresh();
+    } catch (e) {
+      LogService.e('[LobbyNakamaService] Session 主动刷新失败: $e');
+      // 失败后 60 秒重试
+      _sessionRefreshTimer?.cancel();
+      _sessionRefreshTimer = Timer(const Duration(seconds: 60), () {
+        if (_isDisposed || !_isConnected) return;
+        unawaited(_doSessionRefresh());
+      });
+    }
   }
 
   /// 协议能力声明位掩码
