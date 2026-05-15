@@ -506,11 +506,15 @@ class LobbyNakamaService {
       _cachedEventsStream ??= Stream<LobbyWsEvent>.multi(
         (controller) {
           controller.add(latest);
-          _eventController.stream.listen(
+          final subscription = _eventController.stream.listen(
             controller.add,
             onError: controller.addError,
             onDone: controller.close,
           );
+          // 外部订阅者取消时，同步取消内部订阅，避免悬空 listener 累积
+          controller.onCancel = () {
+            subscription.cancel();
+          };
         },
         isBroadcast: true,
       );
