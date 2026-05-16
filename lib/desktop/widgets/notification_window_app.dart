@@ -712,8 +712,8 @@ class _NotificationCardState extends State<_NotificationCard> {
       }
     }
 
-    // 判断是否有地图原名需要分行显示
-    final hasMapNames = showPlayers &&
+    // 判断是否有地图原名需要分行显示（热身通知也使用分行显示地图名）
+    final hasMapNames = (showPlayers || isWarmup) &&
         notification.mapName != null &&
         notification.mapName!.isNotEmpty;
     final mapNameCn = (notification.mapNameCn != null &&
