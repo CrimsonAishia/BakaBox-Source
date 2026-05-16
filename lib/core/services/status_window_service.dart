@@ -1229,6 +1229,20 @@ class StatusWindowService {
     // 防止重复触发连接
     if (_isTriggeredConnection) return;
 
+    // 【防御性检查】如果游戏已经在服务器中，直接走成功路径
+    final currentGameState = _consoleLogService.currentState;
+    if (currentGameState.state == GameState.inGame) {
+      LogService.i(
+        '[StatusWindowService] 挤服条件检查：游戏已在服务器中，跳过连接',
+      );
+      _isTriggeredConnection = true;
+      _isQueueRunning = false;
+      _isThreadsRunning = false;
+      _activeThreadIds.clear();
+      _handleAlreadyInGame();
+      return;
+    }
+
     final players = _state.serverInfo!.players ?? 0;
     final targetPlayers = _state.queueConfig.targetPlayers;
 
@@ -1244,6 +1258,16 @@ class StatusWindowService {
 
   /// 挤服专用连接
   Future<void> _connectForQueue(String serverAddress) async {
+    // 【防御性检查】发送连接命令前，确认游戏不在服务器中
+    final preConnectState = _consoleLogService.currentState;
+    if (preConnectState.state == GameState.inGame) {
+      LogService.i(
+        '[StatusWindowService] 挤服连接取消：游戏已在服务器中 (${preConnectState.serverAddress})',
+      );
+      _handleAlreadyInGame();
+      return;
+    }
+
     _updateState(
       _state.copyWith(
         status: OperationStatus.running,
@@ -1426,6 +1450,44 @@ class StatusWindowService {
       return;
     }
 
+    // 【防御性检查1】重试前先检查游戏是否已经在服务器中
+    // 这是修复"用户已进入服务器但仍触发重试"BUG的关键防御
+    final currentGameState = _consoleLogService.currentState;
+    if (currentGameState.state == GameState.inGame) {
+      LogService.i(
+        '[StatusWindowService] 自动重试取消：游戏已在服务器中 (${currentGameState.serverAddress})，无需重试',
+      );
+      // 走成功路径
+      _handleAlreadyInGame();
+      return;
+    }
+
+    // 【防御性检查2】如果游戏正在加载中（loading），说明连接可能正在进行
+    // 等待加载完成而不是直接重试
+    if (currentGameState.state == GameState.loading ||
+        currentGameState.state == GameState.connecting) {
+      LogService.i(
+        '[StatusWindowService] 自动重试延迟：游戏正在连接/加载中 (${currentGameState.state})，等待结果...',
+      );
+      // 等待游戏状态变为 inGame 或回到主菜单，最多等30秒
+      final settled = await _waitForGameStateSettled(
+        maxWait: const Duration(seconds: 30),
+      );
+      if (settled == GameState.inGame) {
+        LogService.i('[StatusWindowService] 自动重试取消：等待期间游戏成功进入服务器');
+        _handleAlreadyInGame();
+        return;
+      }
+      // 如果回到主菜单或超时，继续重试流程
+    }
+
+    // 再次检查状态（等待期间可能被用户暂停）
+    if (_state.type != OperationType.queueing ||
+        !_state.queueConfig.enableAutoRetry) {
+      LogService.w('[StatusWindowService] 等待期间重试已被取消');
+      return;
+    }
+
     // 重置状态标志
     _isTriggeredConnection = false;
     _isThreadsRunning = false;
@@ -1434,15 +1496,126 @@ class StatusWindowService {
     _updateState(_state.copyWith(message: _Messages.queueing));
     _updateWindow(state: 'queueing', message: _Messages.queueing);
 
-    // 服满拒载时引擎未加载重资源，1秒冷却即可安全重试
-    LogService.i('[StatusWindowService] 自动重试冷却：等待引擎就绪 (1秒)...');
-    await Future.delayed(const Duration(seconds: 1));
+    // 等待游戏确认回到主菜单（真正的主菜单检测，而不是固定1秒）
+    final isMainMenu = await _consoleLogService.waitForMainMenu(
+      maxWait: const Duration(seconds: 10),
+    );
 
     if (!_isQueueRunning) return;
 
+    // 【防御性检查3】waitForMainMenu 返回后再次确认游戏状态
+    final stateAfterWait = _consoleLogService.currentState;
+    if (stateAfterWait.state == GameState.inGame) {
+      LogService.i(
+        '[StatusWindowService] 自动重试取消：等待主菜单期间游戏已进入服务器',
+      );
+      _handleAlreadyInGame();
+      return;
+    }
+
+    if (!isMainMenu) {
+      // 没有检测到主菜单，但也不在游戏中，使用保守的冷却时间
+      LogService.i('[StatusWindowService] 未检测到主菜单状态，使用保守冷却 (2秒)...');
+      await Future.delayed(const Duration(seconds: 2));
+
+      if (!_isQueueRunning) return;
+
+      // 最终防御：冷却后再检查一次
+      if (_consoleLogService.currentState.state == GameState.inGame) {
+        LogService.i('[StatusWindowService] 自动重试取消：冷却期间游戏已进入服务器');
+        _handleAlreadyInGame();
+        return;
+      }
+    }
+
     _scheduleNextFetch(serverAddress);
 
-    LogService.i('[StatusWindowService] 自动重试：引擎冷却完毕，开始重新挤服');
+    LogService.i('[StatusWindowService] 自动重试：确认游戏在主菜单，开始重新挤服');
+  }
+
+  /// 处理"游戏已在服务器中"的情况（自动重试发现用户已经进入游戏）
+  void _handleAlreadyInGame() {
+    // 发送挤服成功消息并断开 WebSocket
+    final usersBloc = QueueUsersBloc.instance;
+    usersBloc.add(const QueueUsersSuccess());
+    usersBloc.add(const QueueUsersDisconnect());
+
+    _isQueueRunning = false;
+    _isThreadsRunning = false;
+    _activeThreadIds.clear();
+
+    _updateState(
+      _state.copyWith(
+        type: OperationType.none,
+        status: OperationStatus.success,
+        message: _Messages.connectSuccess,
+      ),
+    );
+    _updateWindow(
+      state: 'success',
+      message: _Messages.connectSuccess,
+      autoDismissSeconds: 5,
+    );
+    _audioService.playQueueSuccessSound();
+    _scheduleClose(seconds: 5);
+  }
+
+  /// 等待游戏状态稳定（变为 inGame 或 mainMenu）
+  ///
+  /// 返回最终稳定的状态，超时返回 null
+  Future<GameState?> _waitForGameStateSettled({
+    Duration maxWait = const Duration(seconds: 30),
+  }) async {
+    final completer = Completer<GameState?>();
+    StreamSubscription<ConsoleLogState>? subscription;
+    Timer? timeoutTimer;
+
+    void cleanup() {
+      subscription?.cancel();
+      timeoutTimer?.cancel();
+    }
+
+    timeoutTimer = Timer(maxWait, () {
+      cleanup();
+      if (!completer.isCompleted) {
+        LogService.w('[StatusWindowService] 等待游戏状态稳定超时');
+        completer.complete(null);
+      }
+    });
+
+    subscription = _consoleLogService.stateStream.listen((state) {
+      if (state.state == GameState.inGame) {
+        cleanup();
+        if (!completer.isCompleted) {
+          completer.complete(GameState.inGame);
+        }
+      } else if (state.state == GameState.mainMenu) {
+        cleanup();
+        if (!completer.isCompleted) {
+          completer.complete(GameState.mainMenu);
+        }
+      } else if (state.state == GameState.serverFull ||
+          state.state == GameState.failed) {
+        cleanup();
+        if (!completer.isCompleted) {
+          completer.complete(state.state);
+        }
+      }
+    });
+
+    // 立即检查当前状态
+    final current = _consoleLogService.currentState.state;
+    if (current == GameState.inGame ||
+        current == GameState.mainMenu ||
+        current == GameState.serverFull ||
+        current == GameState.failed) {
+      cleanup();
+      if (!completer.isCompleted) {
+        completer.complete(current);
+      }
+    }
+
+    return completer.future;
   }
 
   /// 调度下次获取
