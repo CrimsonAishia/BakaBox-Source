@@ -4,10 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../core/bloc/key_binding/key_binding_bloc.dart';
 import '../../core/bloc/map_contribution/map_contribution_bloc.dart';
-import '../../core/bloc/feature_status/feature_status_bloc.dart';
-import '../../core/bloc/feature_status/feature_status_state.dart';
-import '../../core/models/feature_status_models.dart';
-import '../../core/widgets/feature_gate.dart';
 import '../widgets/key_binding/key_binding_tool.dart';
 import '../widgets/obs_tool/obs_tool.dart';
 import '../widgets/page_layout.dart';
@@ -112,20 +108,14 @@ class _ToolsScreenState extends State<ToolsScreen> {
   Widget _buildToolContent() {
     switch (_openedToolId) {
       case 'key_binding':
-        return FeatureGate(
-          feature: FeatureType.keyConfig,
-          child: BlocProvider(
-            create: (context) => KeyBindingBloc(),
-            child: const KeyBindingTool(),
-          ),
+        return BlocProvider(
+          create: (context) => KeyBindingBloc(),
+          child: const KeyBindingTool(),
         );
       case 'map_database':
-        return FeatureGate(
-          feature: FeatureType.mapContribution,
-          child: BlocProvider(
-            create: (context) => MapContributionBloc(),
-            child: const MapDatabaseDesktop(),
-          ),
+        return BlocProvider(
+          create: (context) => MapContributionBloc(),
+          child: const MapDatabaseDesktop(),
         );
       case 'obs_overlay':
         return const ObsTool();
@@ -362,35 +352,9 @@ class _ToolCard extends StatefulWidget {
 class _ToolCardState extends State<_ToolCard> {
   bool _isHovered = false;
 
-  /// 获取工具对应的功能类型
-  FeatureType? get _featureType {
-    switch (widget.tool.id) {
-      case 'key_binding':
-        return FeatureType.keyConfig;
-      case 'map_database':
-        return FeatureType.mapContribution;
-      default:
-        return null;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // 如果有对应的功能类型，检查功能状态
-    if (_featureType != null) {
-      return BlocBuilder<FeatureStatusBloc, FeatureStatusState>(
-        builder: (context, state) {
-          // 只有明确加载完成且禁用时才显示为禁用
-          final isEnabled =
-              state.loadState != FeatureStatusLoadState.loaded ||
-              state.status.getStatus(_featureType!).enabled;
-          return _buildCard(context, isDark, isEnabled);
-        },
-      );
-    }
-
     return _buildCard(context, isDark, true);
   }
 
@@ -549,7 +513,7 @@ class _ToolCardState extends State<_ToolCard> {
           const SizedBox(height: 8),
           // 描述
           Text(
-            isEnabled ? widget.tool.description : '功能暂未开放',
+            widget.tool.description,
             style: TextStyle(
               fontSize: 13,
               color: isDark ? Colors.white54 : const Color(0xFF6B7280),

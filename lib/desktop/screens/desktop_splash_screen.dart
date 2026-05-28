@@ -84,40 +84,7 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen>
         }
       }
 
-      // 阶段3: 加载功能状态 (60-80%)
-      if (mounted) {
-        setState(() => _loadingText = 'LOADING FEATURES');
-        final featureStatusBloc = context.read<FeatureStatusBloc>();
-
-        // 启动进度条动画到80%
-        _progressController.animateTo(
-          0.8,
-          duration: const Duration(milliseconds: 800),
-        );
-
-        // 等待功能状态加载完成
-        await featureStatusBloc.stream
-            .firstWhere(
-              (state) =>
-                  state.loadState == FeatureStatusLoadState.loaded ||
-                  state.loadState == FeatureStatusLoadState.error,
-              orElse: () => featureStatusBloc.state,
-            )
-            .timeout(
-              const Duration(milliseconds: 800),
-              onTimeout: () => featureStatusBloc.state,
-            );
-
-        // 功能状态加载完成，快速推进到80%
-        if (_progressController.value < 0.8) {
-          await _progressController.animateTo(
-            0.8,
-            duration: const Duration(milliseconds: 200),
-          );
-        }
-      }
-
-      // 阶段4: 完成 (80-100%)
+      // 阶段3: 完成 (60-100%)
       if (mounted) {
         setState(() => _loadingText = 'LOADING');
         _progressController.animateTo(

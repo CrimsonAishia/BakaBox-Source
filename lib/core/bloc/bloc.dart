@@ -66,11 +66,6 @@ export 'daily_task/daily_task_bloc.dart';
 export 'daily_task/daily_task_event.dart';
 export 'daily_task/daily_task_state.dart';
 
-// Feature Status
-export 'feature_status/feature_status_bloc.dart';
-export 'feature_status/feature_status_event.dart';
-export 'feature_status/feature_status_state.dart';
-
 // Notification
 export 'notification/notification_bloc.dart';
 export 'notification/notification_event.dart';

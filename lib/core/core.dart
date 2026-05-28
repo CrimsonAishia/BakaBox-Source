@@ -21,7 +21,6 @@ export 'api/server_stats_api.dart';
 export 'api/update_api.dart';
 export 'api/update_log_api.dart';
 export 'api/issue_api.dart';
-export 'api/feature_status_api.dart';
 export 'api/character_api.dart';
 
 // Exceptions
@@ -36,7 +35,6 @@ export 'models/update_models.dart';
 export 'models/update_log_models.dart';
 export 'models/user_info.dart';
 export 'models/issue_models.dart';
-export 'models/feature_status_models.dart';
 export 'models/character_models.dart';
 export 'models/map_subscription_models.dart';
 export 'models/bilibili_content_models.dart';
@@ -106,5 +104,4 @@ export 'widgets/image_viewer_dialog.dart';
 export 'widgets/clickable_image.dart';
 export 'widgets/map_background.dart';
 export 'widgets/rich_text_viewer.dart';
-export 'widgets/feature_gate.dart';
 export 'widgets/lobby_kicked_overlay.dart';

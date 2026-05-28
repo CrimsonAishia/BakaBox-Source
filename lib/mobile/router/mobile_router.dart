@@ -2,8 +2,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/bloc/bloc.dart';
 import '../../core/models/character_models.dart';
-import '../../core/models/feature_status_models.dart';
-import '../../core/widgets/feature_gate.dart';
 import '../screens/mobile_splash_screen.dart';
 import '../screens/issues_mobile.dart';
 import '../screens/issue_detail_mobile.dart';
@@ -51,23 +49,17 @@ class MobileRouter {
       GoRoute(
         path: MobileRoutes.issues,
         name: 'issues',
-        builder: (context, state) => FeatureGate(
-          feature: FeatureType.issue,
-          child: BlocProvider(
-            create: (_) => IssueBloc()..add(const IssueFetch()),
-            child: const IssuesMobile(),
-          ),
+        builder: (context, state) => BlocProvider(
+          create: (_) => IssueBloc()..add(const IssueFetch()),
+          child: const IssuesMobile(),
         ),
       ),
       GoRoute(
         path: MobileRoutes.issueCreate,
         name: 'issueCreate',
-        builder: (context, state) => FeatureGate(
-          feature: FeatureType.issue,
-          child: BlocProvider(
-            create: (_) => IssueBloc(),
-            child: const IssueCreateMobile(),
-          ),
+        builder: (context, state) => BlocProvider(
+          create: (_) => IssueBloc(),
+          child: const IssueCreateMobile(),
         ),
       ),
       GoRoute(
@@ -75,12 +67,9 @@ class MobileRouter {
         name: 'issueDetail',
         builder: (context, state) {
           final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
-          return FeatureGate(
-            feature: FeatureType.issue,
-            child: BlocProvider(
-              create: (_) => IssueDetailBloc()..add(IssueDetailFetch(id)),
-              child: IssueDetailMobile(issueId: id),
-            ),
+          return BlocProvider(
+            create: (_) => IssueDetailBloc()..add(IssueDetailFetch(id)),
+            child: IssueDetailMobile(issueId: id),
           );
         },
       ),
