@@ -10,7 +10,7 @@ import '../../../../core/bloc/key_binding/key_binding_state.dart';
 import '../../../../core/constants/credit_constants.dart';
 import '../../../../core/models/key_config_models.dart';
 import '../../../../core/utils/key_placeholder_parser.dart';
-import '../components/common_widgets.dart';
+import '../components/form_widgets.dart';
 import '../../login_dialog.dart';
 
 /// 发布视图
@@ -233,85 +233,53 @@ class _PublishViewState extends State<PublishView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildInput('配置名称', '给配置起个名字', _nameCtrl),
+                      ConfigFormInput(
+                        label: '配置名称',
+                        hint: '给配置起个名字',
+                        controller: _nameCtrl,
+                        onChanged: (_) => setState(() {}),
+                      ),
                       const SizedBox(height: 12),
-                      _buildInput('配置描述', '简单描述功能', _descCtrl, maxLines: 2),
+                      ConfigFormInput(
+                        label: '配置描述',
+                        hint: '简单描述功能',
+                        controller: _descCtrl,
+                        maxLines: 2,
+                        onChanged: (_) => setState(() {}),
+                      ),
                       const SizedBox(height: 16),
                       // 分类选择
-                      Text(
-                        '选择分类',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white54
-                              : Colors.grey[600],
-                        ),
-                      ),
+                      _buildSectionLabel('选择分类'),
                       const SizedBox(height: 8),
-                      _buildCategoryChips(state.categories),
+                      CategoryChips(
+                        categories: state.categories,
+                        selectedId: _categoryId,
+                        onSelected: (id) => setState(() => _categoryId = id),
+                      ),
                       const SizedBox(height: 16),
                       // 类型选择
-                      Text(
-                        '配置类型',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white54
-                              : Colors.grey[600],
-                        ),
-                      ),
+                      _buildSectionLabel('配置类型'),
                       const SizedBox(height: 8),
-                      _buildTypeSelector(),
+                      ConfigTypeSelector(
+                        needsKey: _needsKey,
+                        onChanged: (v) => setState(() => _needsKey = v),
+                      ),
                       const SizedBox(height: 16),
                       // 脚本编辑
-                      Row(
-                        children: [
-                          Text(
-                            '配置脚本',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.white54
-                                  : Colors.grey[600],
-                            ),
-                          ),
-                          if (_needsKey) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFFf59e0b,
-                                ).withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                '需要按键绑定',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFFf59e0b),
-                                ),
-                              ),
-                            ),
-                          ],
-                          const Spacer(),
-                          if (_needsKey) _buildInsertBtn(),
-                        ],
-                      ),
+                      _buildScriptHeader(),
                       const SizedBox(height: 8),
-                      _buildScriptEditor(),
+                      ScriptEditor(
+                        controller: _scriptCtrl,
+                        needsKey: _needsKey,
+                        onChanged: (_) => setState(() {}),
+                      ),
                       if (_needsKey && placeholders.isNotEmpty) ...[
                         const SizedBox(height: 10),
-                        _buildPlaceholderTags(placeholders),
+                        PlaceholderTagList(
+                          placeholders: placeholders,
+                          scriptController: _scriptCtrl,
+                          onChanged: () => setState(() {}),
+                        ),
                       ],
                     ],
                   ),
@@ -322,6 +290,61 @@ class _PublishViewState extends State<PublishView> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildSectionLabel(String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: isDark ? Colors.white54 : Colors.grey[600],
+      ),
+    );
+  }
+
+  Widget _buildScriptHeader() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Row(
+      children: [
+        Text(
+          '配置脚本',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: isDark ? Colors.white54 : Colors.grey[600],
+          ),
+        ),
+        if (_needsKey) ...[
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFFf59e0b).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: const Text(
+              '需要按键绑定',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFFf59e0b),
+              ),
+            ),
+          ),
+        ],
+        const Spacer(),
+        if (_needsKey)
+          InsertPlaceholderButton(
+            onPressed: () => PlaceholderInsertHelper.showInsertDialog(
+              context,
+              scriptController: _scriptCtrl,
+              onInserted: () => setState(() {}),
+            ),
+          ),
+      ],
     );
   }
 
@@ -377,254 +400,6 @@ class _PublishViewState extends State<PublishView> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildInput(
-    String label,
-    String hint,
-    TextEditingController ctrl, {
-    int maxLines = 1,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white54 : Colors.grey[600],
-          ),
-        ),
-        const SizedBox(height: 6),
-        TextFormField(
-          controller: ctrl,
-          maxLines: maxLines,
-          style: TextStyle(
-            fontSize: 13,
-            color: isDark ? Colors.white : const Color(0xFF1a1a2e),
-          ),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(
-              fontSize: 13,
-              color: isDark ? Colors.white38 : Colors.grey[400],
-            ),
-            filled: true,
-            fillColor: isDark ? const Color(0xFF334155) : Colors.grey[50],
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 10,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: isDark ? const Color(0xFF475569) : Colors.grey[200]!,
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: isDark ? const Color(0xFF475569) : Colors.grey[200]!,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF0080FF)),
-            ),
-          ),
-          onChanged: (_) => setState(() {}),
-          validator: (v) => v?.trim().isEmpty == true ? '必填' : null,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCategoryChips(List<KeyConfigCategory> categories) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: categories.map((c) {
-        final sel = _categoryId == c.id;
-        return HoverChip(
-          label: c.name,
-          selected: sel,
-          onTap: () => setState(() => _categoryId = c.id),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildTypeSelector() {
-    return Row(
-      children: [
-        Expanded(
-          child: HoverTypeOption(
-            icon: MdiIcons.autoFix,
-            title: '自动应用',
-            subtitle: '直接生效，无需选择按键',
-            selected: !_needsKey,
-            onTap: () => setState(() => _needsKey = false),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: HoverTypeOption(
-            icon: MdiIcons.keyboardOutline,
-            title: '按键绑定',
-            subtitle: '需要用户选择绑定按键',
-            selected: _needsKey,
-            onTap: () => setState(() => _needsKey = true),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInsertBtn() {
-    return FilledButton.icon(
-      onPressed: _insertPlaceholder,
-      icon: Icon(MdiIcons.keyboardOutline, size: 16),
-      label: const Text(
-        '插入按键绑定',
-        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-      ),
-      style: FilledButton.styleFrom(
-        backgroundColor: const Color(0xFF0080FF),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
-  }
-
-  Widget _buildScriptEditor() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          height: 140,
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF334155) : Colors.grey[50],
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isDark ? const Color(0xFF475569) : Colors.grey[200]!,
-            ),
-          ),
-          child: TextFormField(
-            controller: _scriptCtrl,
-            maxLines: null,
-            expands: true,
-            textAlignVertical: TextAlignVertical.top,
-            style: TextStyle(
-              fontSize: 13,
-              fontFamily: 'monospace',
-              color: isDark ? const Color(0xFFcdd6f4) : const Color(0xFF374151),
-              height: 1.5,
-            ),
-            decoration: InputDecoration(
-              hintText: _needsKey ? '输入脚本，使用 {{KEY:名称}} 插入按键占位符' : '输入脚本...',
-              hintStyle: TextStyle(
-                color: isDark ? Colors.white38 : Colors.grey[400],
-                fontSize: 13,
-              ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.all(12),
-            ),
-            onChanged: (_) => setState(() {}),
-            validator: (v) {
-              if (v?.trim().isEmpty == true) return '必填';
-              if (_needsKey && !KeyPlaceholderParser.hasPlaceholders(v!)) {
-                return '需包含按键占位符';
-              }
-              return null;
-            },
-          ),
-        ),
-        if (_needsKey) ...[
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0080FF).withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                color: const Color(0xFF0080FF).withValues(alpha: 0.2),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.lightbulb_outline,
-                  size: 14,
-                  color: const Color(0xFF0080FF),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '点击右上角按钮在脚本中插入按键绑定点，使用者可以自己选择按键',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isDark ? Colors.white70 : Colors.grey[700],
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildPlaceholderTags(List<KeyPlaceholder> placeholders) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(
-              MdiIcons.keyboardOutline,
-              size: 12,
-              color: const Color(0xFFf59e0b),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              '已添加的按键占位符',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: isDark ? Colors.white54 : Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: placeholders
-              .map(
-                (p) => PlaceholderTag(
-                  label: p.label,
-                  onRemove: () {
-                    _scriptCtrl.text = _scriptCtrl.text.replaceAll(
-                      '{{KEY:${p.label}}}',
-                      '',
-                    );
-                    setState(() {});
-                  },
-                ),
-              )
-              .toList(),
-        ),
-      ],
     );
   }
 
@@ -755,125 +530,6 @@ class _PublishViewState extends State<PublishView> {
       _categoryId = null;
       _needsKey = false;
     });
-  }
-
-  void _insertPlaceholder() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final ctrl = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: isDark ? const Color(0xFF1E293B) : null,
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0080FF).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Icon(
-                MdiIcons.keyboardOutline,
-                size: 18,
-                color: const Color(0xFF0080FF),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              '插入按键绑定',
-              style: TextStyle(
-                fontSize: 15,
-                color: isDark ? Colors.white : null,
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '给这个按键位置起个说明，使用者会根据这个说明选择按键',
-              style: TextStyle(
-                fontSize: 12,
-                color: isDark ? Colors.white54 : Colors.grey[600],
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: ctrl,
-              autofocus: true,
-              style: TextStyle(color: isDark ? Colors.white : null),
-              decoration: InputDecoration(
-                labelText: '按键说明',
-                hintText: '例如：触发键1、触发键2',
-                helperText: '将在脚本中插入 {{KEY:按键说明}}',
-                helperStyle: TextStyle(
-                  fontSize: 11,
-                  color: isDark ? Colors.white38 : Colors.grey[500],
-                ),
-                filled: true,
-                fillColor: isDark ? const Color(0xFF334155) : Colors.grey[50],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                    color: isDark ? const Color(0xFF475569) : Colors.grey[300]!,
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                    color: isDark ? const Color(0xFF475569) : Colors.grey[300]!,
-                  ),
-                ),
-                prefixIcon: Icon(MdiIcons.tagOutline, size: 18),
-              ),
-              onSubmitted: (v) {
-                if (v.trim().isNotEmpty) {
-                  _doInsert(v.trim());
-                  Navigator.pop(ctx);
-                }
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('取消'),
-          ),
-          FilledButton.icon(
-            onPressed: () {
-              if (ctrl.text.trim().isNotEmpty) {
-                _doInsert(ctrl.text.trim());
-                Navigator.pop(ctx);
-              }
-            },
-            icon: const Icon(Icons.check, size: 16),
-            label: const Text('插入'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _doInsert(String label) {
-    final ph = ' {{KEY:$label}} ';
-    final text = _scriptCtrl.text;
-    final sel = _scriptCtrl.selection;
-    final start = sel.isValid ? sel.start : text.length;
-    final end = sel.isValid ? sel.end : text.length;
-
-    final newText = text.replaceRange(start, end, ph);
-    final newCursorPos = start + ph.length;
-
-    _scriptCtrl.value = TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(offset: newCursorPos),
-    );
-    setState(() {});
   }
 
   void _submit() {
