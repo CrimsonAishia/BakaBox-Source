@@ -263,6 +263,12 @@ class WarmupMonitorService {
 
   /// 从 ConsoleLogService 恢复当前状态
   void _restoreStateFromConsoleLog() {
+    // 必须先确认游戏进程确实在运行，否则日志可能是上次游戏遗留的旧数据
+    if (!_gameStatusService.isGameRunning) {
+      LogService.d('[WarmupMonitor] 历史: 游戏未运行，跳过日志状态恢复');
+      return;
+    }
+
     final state = _consoleLogService.currentState;
     if (state.state == GameState.inGame && state.serverAddress.isNotEmpty) {
       _connectedServerAddress = state.serverAddress;
