@@ -11,7 +11,9 @@ import '../core/services/game_status_service.dart';
 import '../core/services/gsi_service.dart';
 import '../core/services/policy_service.dart';
 import '../core/services/obs_server_service.dart';
+import '../core/services/queue_guard_service.dart';
 import '../core/services/score_upload_service.dart';
+import '../core/services/server_address_mapping_service.dart';
 import 'router/desktop_router.dart';
 import '../core/services/console_log_service.dart';
 import '../core/services/map_change_monitor_service.dart';
@@ -218,6 +220,13 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
 
       // 初始化比分上传服务（依赖 GsiService 和 ConsoleLogService）
       await ScoreUploadService().initialize();
+
+      // 加载地址映射（挤服守护进程依赖；ObsServerService.start 也会加载，
+      // 但 OBS 未启用时不会被调用，因此这里独立兜底）
+      ServerAddressMappingService().load();
+
+      // 启动挤服守护进程（依赖 ConsoleLogService、GsiService 和 ServerAddressMappingService）
+      QueueGuardService().start();
     } catch (e) {
       LogService.e('[DesktopAppHome] 初始化服务时出错', e);
     }

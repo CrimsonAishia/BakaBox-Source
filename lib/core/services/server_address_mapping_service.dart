@@ -101,6 +101,38 @@ class ServerAddressMappingService {
     return _ipToDomainCache.containsKey(ipAddress);
   }
 
+  /// 运行期间补登映射（用于用户新增/编辑自定义服务器后立即使用的场景）
+  ///
+  /// [address] 域名地址（host:port），异步解析其 IP 后写入缓存
+  /// 已存在的映射不重复解析（无论是 IP→domain 还是 domain→domain）
+  Future<void> ensureMapping(String address) async {
+    if (address.isEmpty) return;
+
+    // 已经映射过的不重复解析
+    if (_ipToDomainCache.containsKey(address) ||
+        _ipToDomainCache.containsValue(address)) {
+      return;
+    }
+
+    final parts = address.split(':');
+    if (parts.length != 2) return;
+    final host = parts[0];
+    final port = parts[1];
+
+    try {
+      final addrs = await InternetAddress.lookup(host)
+          .timeout(const Duration(seconds: 2));
+      if (addrs.isNotEmpty) {
+        final ip = addrs.first.address;
+        _ipToDomainCache['$ip:$port'] = address;
+        LogService.d('[AddressMapping] 补登映射: $ip:$port → $address');
+      }
+    } catch (e) {
+      // host 本身就是 IP 或 DNS 失败：缓存原值
+      _ipToDomainCache[address] = address;
+    }
+  }
+
   /// 清除缓存
   void clear() {
     _ipToDomainCache.clear();
