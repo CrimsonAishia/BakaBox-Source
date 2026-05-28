@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../models/realtime_models.dart';
 import '../../services/auth_service.dart';
+import '../../services/realtime_service.dart';
 import '../../services/scheduler_service.dart';
 import '../../services/token_service.dart';
 import '../../utils/error_utils.dart';
@@ -14,6 +16,7 @@ import 'auth_state.dart';
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthService _authService = AuthService.instance;
   final SchedulerService _scheduler = SchedulerService();
+  StreamSubscription<RealtimeForceLogoutPayload>? _forceLogoutSubscription;
 
   static const _taskIdSessionValidation = 'auth_session_validation';
   static const _taskIdStatsRefresh = 'auth_stats_refresh';
@@ -26,6 +29,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthRefreshRequested>(_onRefreshRequested);
     on<AuthValidateSessionRequested>(_onValidateSessionRequested);
     on<AuthSessionExpired>(_onSessionExpired);
+
+    // 监听 WS 强制登出事件
+    _forceLogoutSubscription =
+        RealtimeService().forceLogoutStream.listen((payload) {
+      LogService.w(
+        '[AuthBloc] 收到 force_logout reason=${payload.reason} '
+        'message=${payload.message}',
+      );
+      add(const AuthSessionExpired());
+    });
   }
 
   Future<void> _onCheckRequested(
@@ -263,6 +276,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   @override
   Future<void> close() {
     _stopTimers();
+    _forceLogoutSubscription?.cancel();
     return super.close();
   }
 }

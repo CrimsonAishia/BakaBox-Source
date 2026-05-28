@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../services/realtime/realtime_announcement_channel.dart';
+
 /// 公告事件基类
 abstract class AnnouncementEvent extends Equatable {
   const AnnouncementEvent();
@@ -15,7 +17,7 @@ class AnnouncementFetch extends AnnouncementEvent {}
 
 /// 刷新公告列表事件
 ///
-/// 触发时机：用户手动下拉刷新或自动刷新
+/// 触发时机：用户手动下拉刷新或 WS 推送触发的自动刷新
 ///
 /// [silent] 是否静默刷新（不显示 loading 状态）
 class AnnouncementRefresh extends AnnouncementEvent {
@@ -40,23 +42,29 @@ class AnnouncementMarkAsRead extends AnnouncementEvent {
 }
 
 /// 清除错误状态事件
-///
-/// 触发时机：用户关闭错误提示或重试
 class AnnouncementClearError extends AnnouncementEvent {}
 
-/// 启动自动刷新事件
-///
-/// 触发时机：应用启动时
-class AnnouncementStartAutoRefresh extends AnnouncementEvent {}
+/// 启动 WS 实时订阅
+class AnnouncementStartRealtime extends AnnouncementEvent {
+  const AnnouncementStartRealtime();
+}
 
-/// 停止自动刷新事件
-///
-/// 触发时机：应用退出或需要停止刷新时
-class AnnouncementStopAutoRefresh extends AnnouncementEvent {}
+/// 停止 WS 实时订阅
+class AnnouncementStopRealtime extends AnnouncementEvent {
+  const AnnouncementStopRealtime();
+}
+
+/// 收到公告频道推送（内部事件）
+class AnnouncementRealtimeReceived extends AnnouncementEvent {
+  final AnnouncementChannelEvent payload;
+
+  const AnnouncementRealtimeReceived(this.payload);
+
+  @override
+  List<Object?> get props => [payload.kind, payload.id];
+}
 
 /// 获取公告详情事件
-///
-/// 触发时机：用户点击查看公告详情
 class AnnouncementFetchDetail extends AnnouncementEvent {
   final int announcementId;
 

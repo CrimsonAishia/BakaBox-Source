@@ -131,7 +131,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
 
       final bloc = context.read<AnnouncementBloc>();
       bloc.add(AnnouncementFetch());
-      bloc.add(AnnouncementStartAutoRefresh());
+      bloc.add(const AnnouncementStartRealtime());
 
       context.read<LobbyBloc>().add(const LobbyPageActivityChanged('在看主页'));
 

@@ -5,8 +5,7 @@ import '../api/server_api.dart';
 import '../utils/log_service.dart';
 import '../utils/storage_utils.dart';
 import 'notification_window_service.dart';
-import 'scheduler_service.dart';
-import 'source_server_service.dart';
+import 'realtime/realtime_server_map_runtime_channel.dart';
 
 /// 服务器监控数据
 class ServerMonitorData {
@@ -15,13 +14,11 @@ class ServerMonitorData {
   final String? categoryName; // 分类名称
   String? lastMapName;
   DateTime? lastCheckTime;
-  bool _isChecking = false; // 防止并发检查
-  int _consecutiveFailures = 0; // 连续失败次数
 
   // 上次发送通知的换图记录（用于防止重复通知）
   DateTime? _lastNotificationTime;
-  String? _lastNotifiedOldMap; // 记录旧地图
-  String? _lastNotifiedNewMap; // 记录新地图
+  String? _lastNotifiedOldMap;
+  String? _lastNotifiedNewMap;
 
   ServerMonitorData({
     required this.serverAddress,
@@ -33,43 +30,27 @@ class ServerMonitorData {
 
   /// 检查是否应该发送通知（防止短时间内重复通知同一换图）
   bool shouldNotify(String oldMap, String newMap) {
-    // 如果从未通知过，允许通知
-    if (_lastNotificationTime == null) {
-      return true;
-    }
-
-    // 如果是不同的换图组合（oldMap→newMap），允许通知
+    if (_lastNotificationTime == null) return true;
     if (_lastNotifiedOldMap != oldMap || _lastNotifiedNewMap != newMap) {
       return true;
     }
-
-    // 如果是相同的换图组合，检查时间间隔（30秒内不重复通知）
-    final timeSinceLastNotification = DateTime.now().difference(
-      _lastNotificationTime!,
-    );
-    return timeSinceLastNotification.inSeconds > 30;
+    final elapsed =
+        DateTime.now().difference(_lastNotificationTime!).inSeconds;
+    return elapsed > 30;
   }
 
-  /// 记录已发送通知
   void markNotified(String oldMap, String newMap) {
     _lastNotificationTime = DateTime.now();
     _lastNotifiedOldMap = oldMap;
     _lastNotifiedNewMap = newMap;
   }
-
-  /// 记录查询失败
-  void recordFailure() => _consecutiveFailures++;
-
-  /// 重置失败计数
-  void resetFailures() => _consecutiveFailures = 0;
-
-  /// 是否应该跳过检查（连续失败超过3次后暂停一段时间）
-  bool get shouldSkipDueToFailures => _consecutiveFailures >= 3;
 }
 
 /// 换图监控服务（单例）
 ///
-/// 监控指定服务器的地图变化，当检测到换图时发送通知
+/// 通过 `server.map.runtime` WS 频道接收换图推送：
+/// - 订阅时服务端会下发一次 snapshot，用来初始化 [_lastMapName]，避免重连后重复通知
+/// - changed 事件直接驱动通知，0 轮询
 class MapChangeMonitorService {
   static final MapChangeMonitorService _instance =
       MapChangeMonitorService._internal();
@@ -79,13 +60,14 @@ class MapChangeMonitorService {
   /// 监控中的服务器
   final Map<String, ServerMonitorData> _monitoredServers = {};
 
-  final SchedulerService _scheduler = SchedulerService();
+  /// 实时频道
+  final RealtimeServerMapRuntimeChannel _realtimeChannel =
+      RealtimeServerMapRuntimeChannel();
 
-  /// 监控间隔（秒）
-  static const int monitorIntervalSeconds = 10;
+  StreamSubscription<ServerMapRuntimeEvent>? _realtimeSubscription;
 
-  /// 任务 ID
-  static const String _taskId = 'map_change_monitor';
+  /// 是否已订阅 WS 频道
+  bool _realtimeSubscribed = false;
 
   /// 存储 key
   static const String _storageKey = 'monitored_servers';
@@ -109,7 +91,7 @@ class MapChangeMonitorService {
   /// 初始化服务（应用启动时调用）
   Future<void> initialize() async {
     await _loadMonitoredServers();
-    _startMonitorLoop();
+    _startRealtime();
     LogService.d(
       '[MapChangeMonitor] 服务已初始化，监控 ${_monitoredServers.length} 个服务器',
     );
@@ -128,15 +110,13 @@ class MapChangeMonitorService {
       serverAddress: serverAddress,
       serverName: serverName,
       categoryName: categoryName,
-      lastMapName: currentMap,
+      lastMapName: currentMap ?? _readSnapshotMap(serverAddress),
       lastCheckTime: DateTime.now(),
     );
 
     await _saveMonitoredServers();
     _notifyStateChange();
-
-    // 如果定时器未启动，启动它
-    _startMonitorLoop();
+    _startRealtime();
 
     LogService.d('[MapChangeMonitor] 添加监控: $serverAddress ($serverName)');
   }
@@ -149,9 +129,8 @@ class MapChangeMonitorService {
     await _saveMonitoredServers();
     _notifyStateChange();
 
-    // 如果没有监控的服务器，停止定时器
     if (_monitoredServers.isEmpty) {
-      _stopMonitorLoop();
+      _stopRealtime();
     }
 
     LogService.d('[MapChangeMonitor] 移除监控: $serverAddress');
@@ -178,165 +157,120 @@ class MapChangeMonitorService {
     }
   }
 
-  /// 启动监控循环
-  void _startMonitorLoop() {
-    if (_scheduler.hasTask(_taskId)) return;
+  // ---- 实时频道 ----
+
+  void _startRealtime() {
+    if (_realtimeSubscribed) return;
     if (_monitoredServers.isEmpty) return;
 
-    _scheduler.register(
-      ScheduledTask(
-        id: _taskId,
-        name: '地图换图监控',
-        interval: Intervals.tenSeconds,
-        callback: () async => _checkAllServers(),
-        runImmediately: true,
-      ),
-    );
+    _realtimeSubscribed = true;
+    _realtimeChannel.subscribe();
+    _realtimeSubscription = _realtimeChannel.events.listen(_onRealtimeEvent);
+    LogService.d('[MapChangeMonitor] 实时通道已启动');
   }
 
-  /// 停止监控循环
-  void _stopMonitorLoop() {
-    _scheduler.cancel(_taskId);
+  void _stopRealtime() {
+    if (!_realtimeSubscribed) return;
+    _realtimeSubscribed = false;
+    _realtimeSubscription?.cancel();
+    _realtimeSubscription = null;
+    _realtimeChannel.unsubscribe();
+    LogService.d('[MapChangeMonitor] 实时通道已停止');
   }
 
-  /// 检查所有监控的服务器
-  Future<void> _checkAllServers() async {
-    if (_monitoredServers.isEmpty) return;
+  String? _readSnapshotMap(String serverAddress) =>
+      _realtimeChannel.snapshotFor(serverAddress)?.mapName;
 
-    // 复制一份避免并发修改错误
-    final serversToCheck = Map<String, ServerMonitorData>.from(
-      _monitoredServers,
-    );
-
-    // 并行检查所有服务器，提高效率
-    await Future.wait(
-      serversToCheck.entries.map((entry) async {
-        // 检查服务器是否仍在监控列表中
-        if (_monitoredServers.containsKey(entry.key)) {
-          await _checkServer(entry.key, entry.value);
+  void _onRealtimeEvent(ServerMapRuntimeEvent event) {
+    switch (event.kind) {
+      case ServerMapRuntimeEventKind.snapshot:
+        _onSnapshot(event.entries);
+        break;
+      case ServerMapRuntimeEventKind.changed:
+        for (final entry in event.entries) {
+          _onChanged(entry);
         }
-      }),
-      eagerError: false, // 不因单个失败而中断其他检查
-    );
+        break;
+    }
   }
 
-  /// 检查单个服务器
-  Future<void> _checkServer(
-    String serverAddress,
-    ServerMonitorData data,
-  ) async {
-    // 如果连续失败次数过多，每3次检查周期才重试一次
-    if (data.shouldSkipDueToFailures) {
-      // 每60秒（3个周期）重试一次
-      if (data.lastCheckTime != null) {
-        final timeSinceLastCheck = DateTime.now().difference(
-          data.lastCheckTime!,
-        );
-        if (timeSinceLastCheck.inSeconds < 60) {
-          return;
-        }
-      }
-      // 重置失败计数，允许重试
-      data.resetFailures();
+  void _onSnapshot(List<ServerMapRuntimeEntry> entries) {
+    // 用 snapshot 校准当前地图，但不触发通知（避免上线 / 重连时刷一波）
+    for (final entry in entries) {
+      final monitor = _monitoredServers[entry.serverAddress];
+      if (monitor == null) continue;
+      monitor.lastMapName = entry.mapName;
+      monitor.lastCheckTime = DateTime.now();
+    }
+  }
+
+  Future<void> _onChanged(ServerMapRuntimeEntry entry) async {
+    final monitor = _monitoredServers[entry.serverAddress];
+    if (monitor == null) return;
+
+    final newMap = entry.mapName;
+    final oldMap = entry.oldMapName ?? monitor.lastMapName;
+    monitor.lastMapName = newMap;
+    monitor.lastCheckTime = DateTime.now();
+
+    // 过滤 graphics_settings（服务器重启时的加载地图）
+    if (newMap == 'graphics_settings' || oldMap == 'graphics_settings') {
+      return;
     }
 
-    // 防止并发检查同一服务器
-    if (data._isChecking) return;
-    data._isChecking = true;
+    // 没有旧地图（首次接到此服务器的事件），仅记录不通知
+    if (oldMap == null || oldMap.isEmpty || oldMap == newMap) {
+      return;
+    }
 
-    try {
-      final parts = serverAddress.split(':');
-      if (parts.length != 2) return;
-
-      final ip = parts[0];
-      final port = int.tryParse(parts[1]);
-      if (port == null) return;
-
-      final serverInfo = await SourceServerService.getServerInfo(
-        ip,
-        port,
-        timeout: 3000,
+    if (!monitor.shouldNotify(oldMap, newMap)) {
+      LogService.d(
+        '[MapChangeMonitor] 重复换图事件，跳过通知: ${entry.serverAddress} $oldMap → $newMap',
       );
-      if (serverInfo == null) {
-        // 记录失败，但保留 lastMapName 以便下次比较
-        data.recordFailure();
-        return;
-      }
-
-      // 查询成功，重置失败计数
-      data.resetFailures();
-
-      final newMapName = serverInfo.map;
-      final oldMapName = data.lastMapName;
-
-      // 检测换图：只有当旧地图存在且与新地图不同时才通知
-      // 如果 oldMapName 为 null，说明是首次检查，只记录不通知
-      // 过滤 graphics_settings 地图（服务器重启时的加载地图）
-      if (oldMapName != null &&
-          oldMapName.isNotEmpty &&
-          oldMapName != newMapName &&
-          oldMapName != 'graphics_settings' &&
-          newMapName != 'graphics_settings') {
-        // 检查是否应该发送通知（防止重复通知）
-        if (data.shouldNotify(oldMapName, newMapName)) {
-          LogService.d(
-            '[MapChangeMonitor] 检测到换图: $serverAddress, $oldMapName → $newMapName',
-          );
-
-          // 先记录通知状态，防止并发重复
-          data.markNotified(oldMapName, newMapName);
-
-          // 获取新地图信息（中文名和背景图）
-          String? newMapCn;
-          String? mapBackground;
-          try {
-            final mapInfo = await _serverApi.getMapInfo(newMapName);
-            newMapCn = mapInfo?.mapLabel;
-            mapBackground = mapInfo?.mapUrl;
-          } catch (e) {
-            // 静默处理
-          }
-
-          // 发送换图通知
-          _notificationService.showMapChangeNotification(
-            serverAddress: serverAddress,
-            serverName: data.serverName,
-            oldMap: oldMapName,
-            newMap: newMapName,
-            newMapCn: newMapCn,
-            mapBackground: mapBackground,
-            categoryName: data.categoryName,
-            currentPlayers: serverInfo.players,
-            maxPlayers: serverInfo.maxPlayers,
-          );
-        }
-      }
-
-      // 更新数据（graphics_settings 不更新 lastMapName，保留原地图名）
-      if (newMapName != 'graphics_settings') {
-        data.lastMapName = newMapName;
-      }
-      data.lastCheckTime = DateTime.now();
-    } catch (e) {
-      data.recordFailure();
-      LogService.e('[MapChangeMonitor] 检查服务器异常: $serverAddress', e);
-    } finally {
-      data._isChecking = false;
+      return;
     }
+
+    monitor.markNotified(oldMap, newMap);
+
+    LogService.d(
+      '[MapChangeMonitor] 检测到换图: ${entry.serverAddress}, $oldMap → $newMap',
+    );
+
+    // 异步获取地图信息（中文名 + 背景），失败不影响通知
+    String? newMapCn;
+    String? mapBackground;
+    try {
+      final mapInfo = await _serverApi.getMapInfo(newMap);
+      newMapCn = mapInfo?.mapLabel;
+      mapBackground = mapInfo?.mapUrl;
+    } catch (_) {}
+
+    _notificationService.showMapChangeNotification(
+      serverAddress: entry.serverAddress,
+      serverName: monitor.serverName,
+      oldMap: oldMap,
+      newMap: newMap,
+      newMapCn: newMapCn,
+      mapBackground: mapBackground,
+      categoryName: monitor.categoryName,
+      currentPlayers: 0,
+      maxPlayers: entry.maxPlayers ?? 0,
+    );
   }
+
+  // ---- 持久化 ----
 
   /// 保存监控列表到本地存储（JSON格式）
   Future<void> _saveMonitoredServers() async {
     try {
       final List<String> data = _monitoredServers.entries.map((e) {
-        // 只有 categoryName 不为空时才标记为自定义分类
         final isCustomCategory =
             e.value.categoryName != null && e.value.categoryName!.isNotEmpty;
         return jsonEncode({
           'address': e.key,
           'serverName': e.value.serverName,
           'categoryName': e.value.categoryName,
-          'isCustomCategory': isCustomCategory, // 标记是否为自定义分类
+          'isCustomCategory': isCustomCategory,
         });
       }).toList();
       await StorageUtils.setStringList(_storageKey, data);
@@ -347,21 +281,17 @@ class MapChangeMonitorService {
 
   /// 从本地存储加载监控列表
   ///
-  /// 注意：
-  /// 1. 启动时不加载之前保存的地图名，这样首次检查只会记录当前地图而不会触发通知
-  /// 2. 只有标记为自定义分类（isCustomCategory=true）的才加载 categoryName
-  ///    这样可以清理历史错误数据（非自定义分类但保存了分类名）
+  /// 启动时不加载之前保存的地图名，依赖 WS 的 snapshot 来校准当前地图，
+  /// 避免在 changed 事件中误触发通知。
   Future<void> _loadMonitoredServers() async {
     try {
       final data = StorageUtils.getStringList(_storageKey);
 
       for (final item in data) {
         try {
-          // 尝试 JSON 格式解析
           final map = jsonDecode(item) as Map<String, dynamic>;
           final address = map['address'] as String;
           final serverName = map['serverName'] as String;
-          // 只有明确标记为自定义分类的才加载 categoryName
           final isCustomCategory = map['isCustomCategory'] as bool? ?? false;
           final categoryName = isCustomCategory
               ? (map['categoryName'] as String?)
@@ -380,7 +310,7 @@ class MapChangeMonitorService {
             _monitoredServers[parts[0]] = ServerMonitorData(
               serverAddress: parts[0],
               serverName: parts[1],
-              categoryName: null, // 旧格式无分类名
+              categoryName: null,
               lastMapName: null,
             );
           }
@@ -399,7 +329,7 @@ class MapChangeMonitorService {
 
   /// 销毁服务
   void dispose() {
-    _stopMonitorLoop();
+    _stopRealtime();
     _monitoredServers.clear();
     _monitorStateController.close();
   }

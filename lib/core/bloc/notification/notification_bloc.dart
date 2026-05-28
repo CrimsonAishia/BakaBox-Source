@@ -1,26 +1,37 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../api/notification_api.dart';
 import '../../models/notification_models.dart';
+import '../../models/realtime_models.dart';
 import '../../services/auth_service.dart';
-import '../../services/scheduler_service.dart';
+import '../../services/realtime/realtime_notifications_channel.dart';
+import '../../services/realtime_service.dart';
 import '../../utils/log_service.dart';
 import 'notification_event.dart';
 import 'notification_state.dart';
 
 /// 消息 BLoC
 ///
-/// 负责管理消息的获取、刷新、标记已读、删除等操作
-/// 支持自动刷新未读数量（默认5分钟）
+/// 通过 `notifications` WS 频道接收新消息，未读数量由 WS 推送 + 标记已读时本地维护。
+/// 仅在以下场景调用 REST：
+/// - 首次进入消息页 / 切换筛选条件：`getNotifications`
+/// - 操作（标记已读 / 全部已读 / 删除）：写操作 REST
+/// - 应用启动 / 切换登录态后拉一次基线：`getUnreadCount`
 class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   final NotificationApi _notificationApi;
-  final SchedulerService _scheduler = SchedulerService();
+  final RealtimeNotificationsChannel _realtimeChannel =
+      RealtimeNotificationsChannel();
 
-  static const String _taskId = 'notification_auto_refresh';
+  StreamSubscription<NotificationItem>? _realtimeSubscription;
+  bool _realtimeStarted = false;
+
   static const int _pageSize = 20;
 
   NotificationBloc({NotificationApi? notificationApi})
-    : _notificationApi = notificationApi ?? NotificationApi(),
-      super(const NotificationState()) {
+      : _notificationApi = notificationApi ?? NotificationApi(),
+        super(const NotificationState()) {
     on<NotificationFetch>(_onFetch);
     on<NotificationRefresh>(_onRefresh);
     on<NotificationLoadMore>(_onLoadMore);
@@ -28,51 +39,90 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     on<NotificationMarkAllRead>(_onMarkAllRead);
     on<NotificationDelete>(_onDelete);
     on<NotificationFetchUnreadCount>(_onFetchUnreadCount);
-    on<NotificationStartAutoRefresh>(_onStartAutoRefresh);
-    on<NotificationStopAutoRefresh>(_onStopAutoRefresh);
+    on<NotificationStartRealtime>(_onStartRealtime);
+    on<NotificationStopRealtime>(_onStopRealtime);
+    on<NotificationRealtimeReceived>(_onRealtimeReceived);
     on<NotificationClearError>(_onClearError);
     on<NotificationClear>(_onClear);
   }
 
-  /// 启动自动刷新
-  void _startAutoRefresh() {
-    _stopAutoRefresh();
-    _scheduler.register(
-      ScheduledTask(
-        id: _taskId,
-        name: '消息未读数量自动刷新',
-        interval: Intervals.fiveMinutes,
-        callback: () async {
-          // 检查用户是否已登录，未登录时跳过请求
-          if (!AuthService.instance.isLoggedIn) {
-            LogService.d('消息未读数量自动刷新跳过：用户未登录');
-            return;
-          }
-          LogService.d('消息未读数量自动刷新触发');
-          add(const NotificationFetchUnreadCount());
-        },
-      ),
-    );
-    LogService.d('消息自动刷新已启动，间隔: 5 分钟');
-  }
-
-  /// 停止自动刷新
-  void _stopAutoRefresh() {
-    _scheduler.cancel(_taskId);
-  }
-
   @override
   Future<void> close() {
-    _stopAutoRefresh();
+    _stopRealtime();
     return super.close();
   }
 
-  /// 处理获取消息列表事件
+  // ---- 实时频道 ----
+
+  void _startRealtime() {
+    if (_realtimeStarted) return;
+    _realtimeStarted = true;
+    _realtimeChannel.subscribe();
+    _realtimeSubscription = _realtimeChannel.newItemStream.listen((item) {
+      if (isClosed) return;
+      add(NotificationRealtimeReceived(item));
+    });
+    LogService.d('[NotificationBloc] 实时通道已启动');
+  }
+
+  void _stopRealtime() {
+    if (!_realtimeStarted) return;
+    _realtimeStarted = false;
+    _realtimeSubscription?.cancel();
+    _realtimeSubscription = null;
+    _realtimeChannel.unsubscribe();
+    LogService.d('[NotificationBloc] 实时通道已停止');
+  }
+
+  void _onStartRealtime(
+    NotificationStartRealtime event,
+    Emitter<NotificationState> emit,
+  ) {
+    _startRealtime();
+  }
+
+  void _onStopRealtime(
+    NotificationStopRealtime event,
+    Emitter<NotificationState> emit,
+  ) {
+    _stopRealtime();
+  }
+
+  void _onRealtimeReceived(
+    NotificationRealtimeReceived event,
+    Emitter<NotificationState> emit,
+  ) {
+    final item = event.item;
+    LogService.d('[NotificationBloc] 收到推送: id=${item.id} title=${item.title}');
+
+    final filterType = state.filterType;
+    final filterIsRead = state.filterIsRead;
+    final matchesFilter = (filterType == null ||
+            filterType == NotificationType.all ||
+            filterType == item.type) &&
+        (filterIsRead == null || filterIsRead == item.isRead);
+
+    final updatedList = matchesFilter
+        ? [item, ...state.notifications.where((n) => n.id != item.id)]
+        : state.notifications;
+
+    final newUnreadCount = item.isRead ? state.unreadCount : state.unreadCount + 1;
+
+    emit(
+      state.copyWith(
+        notifications: updatedList,
+        unreadCount: newUnreadCount,
+        total: matchesFilter ? state.total + 1 : state.total,
+      ),
+    );
+  }
+
+  // ---- REST 操作 ----
+
   Future<void> _onFetch(
     NotificationFetch event,
     Emitter<NotificationState> emit,
   ) async {
-    // 检查用户是否已登录，未登录时不请求
     if (!AuthService.instance.isLoggedIn) {
       LogService.d('获取消息列表跳过：用户未登录');
       emit(state.copyWith(isLoading: false, clearError: true));
@@ -90,8 +140,6 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     );
 
     try {
-      LogService.d('开始获取消息列表');
-
       final response = await _notificationApi.getNotifications(
         page: event.page,
         pageSize: _pageSize,
@@ -100,7 +148,6 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       );
 
       if (response != null) {
-        // 服务端 totalPages 可能不正确，根据 total 和 pageSize 计算
         final calculatedTotalPages = (response.total / _pageSize).ceil();
         final totalPages = calculatedTotalPages > 0 ? calculatedTotalPages : 1;
 
@@ -115,7 +162,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         );
         LogService.d('成功获取 ${response.items.length} 条消息');
 
-        // 获取准确的未读数量
+        // 列表数据是当前最新值，未读数量同步刷一次
         add(const NotificationFetchUnreadCount());
       } else {
         emit(state.copyWith(isLoading: false));
@@ -126,12 +173,10 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     }
   }
 
-  /// 处理刷新消息列表事件
   Future<void> _onRefresh(
     NotificationRefresh event,
     Emitter<NotificationState> emit,
   ) async {
-    // 检查用户是否已登录，未登录时不请求
     if (!AuthService.instance.isLoggedIn) {
       LogService.d('刷新消息列表跳过：用户未登录');
       return;
@@ -142,8 +187,6 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     }
 
     try {
-      LogService.d('开始${event.silent ? "静默" : ""}刷新消息列表');
-
       final response = await _notificationApi.getNotifications(
         page: 1,
         pageSize: _pageSize,
@@ -152,7 +195,6 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       );
 
       if (response != null) {
-        // 服务端 totalPages 可能不正确，根据 total 和 pageSize 计算
         final calculatedTotalPages = (response.total / _pageSize).ceil();
         final totalPages = calculatedTotalPages > 0 ? calculatedTotalPages : 1;
 
@@ -165,11 +207,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
             isLoading: false,
           ),
         );
-        LogService.d(
-          '成功刷新消息列表，共 ${response.items.length} 条, totalPages: $totalPages',
-        );
 
-        // 获取准确的未读数量
         add(const NotificationFetchUnreadCount());
       }
     } catch (e) {
@@ -180,24 +218,17 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     }
   }
 
-  /// 处理加载更多事件
   Future<void> _onLoadMore(
     NotificationLoadMore event,
     Emitter<NotificationState> emit,
   ) async {
-    // 检查用户是否已登录，未登录时不请求
-    if (!AuthService.instance.isLoggedIn) {
-      LogService.d('加载更多消息跳过：用户未登录');
-      return;
-    }
-
+    if (!AuthService.instance.isLoggedIn) return;
     if (state.isLoadingMore || !state.hasMore) return;
 
     emit(state.copyWith(isLoadingMore: true));
 
     try {
       final nextPage = state.currentPage + 1;
-      LogService.d('加载更多消息, page: $nextPage');
 
       final response = await _notificationApi.getNotifications(
         page: nextPage,
@@ -207,11 +238,9 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       );
 
       if (response != null) {
-        // 服务端 totalPages 可能不正确，根据 total 和 pageSize 计算
         final calculatedTotalPages = (response.total / _pageSize).ceil();
         final totalPages = calculatedTotalPages > 0 ? calculatedTotalPages : 1;
 
-        // 去重：根据 id 过滤已存在的消息
         final existingIds = state.notifications.map((n) => n.id).toSet();
         final newItems = response.items
             .where((n) => !existingIds.contains(n.id))
@@ -221,14 +250,12 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         emit(
           state.copyWith(
             notifications: updatedList,
-            // 使用请求的页码，而不是响应的页码（服务端可能不返回正确的 page）
             currentPage: nextPage,
             totalPages: totalPages,
             total: response.total,
             isLoadingMore: false,
           ),
         );
-        LogService.d('成功加载更多，当前共 ${updatedList.length} 条');
       }
     } catch (e) {
       LogService.e('加载更多消息失败: $e', e);
@@ -236,30 +263,23 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     }
   }
 
-  /// 处理标记单个消息已读事件
   Future<void> _onMarkRead(
     NotificationMarkRead event,
     Emitter<NotificationState> emit,
   ) async {
-    // 查找消息
     final index = state.notifications.indexWhere((n) => n.id == event.id);
     if (index == -1 || state.notifications[index].isRead) return;
 
-    // 乐观更新
     final updatedList = List<NotificationItem>.from(state.notifications);
     updatedList[index] = updatedList[index].copyWith(isRead: true);
     final newUnreadCount = state.unreadCount > 0 ? state.unreadCount - 1 : 0;
 
-    emit(
-      state.copyWith(notifications: updatedList, unreadCount: newUnreadCount),
-    );
+    emit(state.copyWith(notifications: updatedList, unreadCount: newUnreadCount));
 
     try {
       await _notificationApi.markAsRead(event.id);
-      LogService.d('消息 ${event.id} 已标记为已读');
     } catch (e) {
       LogService.e('标记消息已读失败: $e', e);
-      // 回滚
       emit(
         state.copyWith(
           notifications: state.notifications,
@@ -269,14 +289,12 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     }
   }
 
-  /// 处理标记所有消息已读事件
   Future<void> _onMarkAllRead(
     NotificationMarkAllRead event,
     Emitter<NotificationState> emit,
   ) async {
     if (state.unreadCount == 0) return;
 
-    // 乐观更新
     final updatedList = state.notifications
         .map((n) => n.isRead ? n : n.copyWith(isRead: true))
         .toList();
@@ -286,10 +304,8 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
 
     try {
       await _notificationApi.markAllAsRead();
-      LogService.d('所有消息已标记为已读');
     } catch (e) {
       LogService.e('标记所有消息已读失败: $e', e);
-      // 回滚
       emit(
         state.copyWith(
           notifications: state.notifications,
@@ -299,7 +315,6 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     }
   }
 
-  /// 处理删除消息事件
   Future<void> _onDelete(
     NotificationDelete event,
     Emitter<NotificationState> emit,
@@ -324,10 +339,8 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
 
     try {
       await _notificationApi.deleteNotification(event.id);
-      LogService.d('消息 ${event.id} 已删除');
     } catch (e) {
       LogService.e('删除消息失败: $e', e);
-      // 回滚
       final rollbackList = List<NotificationItem>.from(updatedList)
         ..insert(index, deletedItem);
       emit(
@@ -340,12 +353,10 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     }
   }
 
-  /// 处理获取未读数量事件
   Future<void> _onFetchUnreadCount(
     NotificationFetchUnreadCount event,
     Emitter<NotificationState> emit,
   ) async {
-    // 检查用户是否已登录，未登录时跳过请求
     if (!AuthService.instance.isLoggedIn) {
       LogService.d('获取未读消息数量跳过：用户未登录');
       return;
@@ -354,30 +365,11 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     try {
       final count = await _notificationApi.getUnreadCount();
       emit(state.copyWith(unreadCount: count));
-      LogService.d('未读消息数量: $count');
     } catch (e) {
       LogService.e('获取未读消息数量失败: $e', e);
     }
   }
 
-  /// 处理启动自动刷新事件
-  void _onStartAutoRefresh(
-    NotificationStartAutoRefresh event,
-    Emitter<NotificationState> emit,
-  ) {
-    _startAutoRefresh();
-  }
-
-  /// 处理停止自动刷新事件
-  void _onStopAutoRefresh(
-    NotificationStopAutoRefresh event,
-    Emitter<NotificationState> emit,
-  ) {
-    _stopAutoRefresh();
-    LogService.i('消息自动刷新已停止');
-  }
-
-  /// 处理清除错误事件
   void _onClearError(
     NotificationClearError event,
     Emitter<NotificationState> emit,
@@ -385,12 +377,11 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     emit(state.copyWith(clearError: true));
   }
 
-  /// 处理清除所有消息数据事件（退出登录时调用）
   void _onClear(
     NotificationClear event,
     Emitter<NotificationState> emit,
   ) {
-    _stopAutoRefresh();
+    _stopRealtime();
     emit(const NotificationState());
     LogService.d('消息数据已清除');
   }

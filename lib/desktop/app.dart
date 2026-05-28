@@ -75,7 +75,7 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
         BlocProvider(
           create: (_) => NotificationBloc()
             ..add(const NotificationFetchUnreadCount())
-            ..add(const NotificationStartAutoRefresh()),
+            ..add(const NotificationStartRealtime()),
         ),
         BlocProvider(
           create: (_) =>
@@ -180,6 +180,11 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
     try {
       // 首帧渲染完成，上报启动统计
       AnalyticsService.instance.reportStartupIfNeeded();
+
+      // 启动实时推送服务（业务侧 Bloc / Service 自行订阅频道）
+      await RealtimeService().start();
+      // 启动地图信息缓存失效器（监听 map.info 频道）
+      RealtimeMapInfoInvalidator().start();
 
       // 启动 GSI 服务（独立服务，不依赖其他服务）
       final gsiService = GsiService();
