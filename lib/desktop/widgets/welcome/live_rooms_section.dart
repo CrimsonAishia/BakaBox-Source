@@ -20,7 +20,7 @@ class LiveRoomsSection extends StatefulWidget {
 class _LiveRoomsSectionState extends State<LiveRoomsSection> {
   final ScrollController _scrollController = ScrollController();
   bool _canScrollLeft = false;
-  bool _canScrollRight = false;
+  bool _canScrollRight = true; // 默认可右滚
   bool _isHovering = false;
 
   @override
@@ -189,30 +189,16 @@ class _LiveRoomsSectionState extends State<LiveRoomsSection> {
                         height: 270, // 加 10 留给 Scrollbar 空间
                         child: Stack(
                           children: [
-                            // 鼠标滚轮 → 横向滚动
-                            Listener(
-                              onPointerSignal: (event) {
-                                if (event is PointerScrollEvent) {
-                                  final delta = event.scrollDelta.dy != 0
-                                      ? event.scrollDelta.dy
-                                      : event.scrollDelta.dx;
-                                  _scrollController.animateTo(
-                                    (_scrollController.offset + delta).clamp(
-                                      0.0,
-                                      _scrollController.position.maxScrollExtent,
-                                    ),
-                                    duration: const Duration(milliseconds: 80),
-                                    curve: Curves.linear,
-                                  );
-                                }
-                              },
-                              child: Scrollbar(
-                                controller: _scrollController,
-                                thumbVisibility: true,
-                                trackVisibility: true,
-                                child: Padding(
-                                  // Scrollbar 占底部约 10px，卡片区保持 260
-                                  padding: const EdgeInsets.only(bottom: 10),
+                            Scrollbar(
+                              controller: _scrollController,
+                              thumbVisibility: true,
+                              trackVisibility: true,
+                              child: Padding(
+                                // Scrollbar 占底部约 10px，卡片区保持 260
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: ScrollConfiguration(
+                                  // 禁用鼠标滚轮驱动，只保留触摸/触控板拖拽
+                                  behavior: const _NoMouseWheelBehavior(),
                                   child: ListView.separated(
                                     controller: _scrollController,
                                     scrollDirection: Axis.horizontal,
@@ -242,15 +228,16 @@ class _LiveRoomsSectionState extends State<LiveRoomsSection> {
                                 ),
                               ),
                             ),
-                            // 左侧翻页按钮
-                            if (_canScrollLeft)
-                              Positioned(
-                                left: 0,
-                                top: 0,
-                                bottom: 10,
-                                child: AnimatedOpacity(
-                                  opacity: _isHovering ? 1.0 : 0.0,
-                                  duration: const Duration(milliseconds: 200),
+                            // 左侧翻页按钮（hover 时始终显示）
+                            Positioned(
+                              left: 0,
+                              top: 0,
+                              bottom: 10,
+                              child: AnimatedOpacity(
+                                opacity: _isHovering ? (_canScrollLeft ? 1.0 : 0.3) : 0.0,
+                                duration: const Duration(milliseconds: 200),
+                                child: IgnorePointer(
+                                  ignoring: !_canScrollLeft,
                                   child: _ScrollArrowButton(
                                     isDark: isDark,
                                     icon: Icons.chevron_left_rounded,
@@ -258,15 +245,17 @@ class _LiveRoomsSectionState extends State<LiveRoomsSection> {
                                   ),
                                 ),
                               ),
-                            // 右侧翻页按钮
-                            if (_canScrollRight)
-                              Positioned(
-                                right: 0,
-                                top: 0,
-                                bottom: 10,
-                                child: AnimatedOpacity(
-                                  opacity: _isHovering ? 1.0 : 0.0,
-                                  duration: const Duration(milliseconds: 200),
+                            ),
+                            // 右侧翻页按钮（hover 时始终显示）
+                            Positioned(
+                              right: 0,
+                              top: 0,
+                              bottom: 10,
+                              child: AnimatedOpacity(
+                                opacity: _isHovering ? (_canScrollRight ? 1.0 : 0.3) : 0.0,
+                                duration: const Duration(milliseconds: 200),
+                                child: IgnorePointer(
+                                  ignoring: !_canScrollRight,
                                   child: _ScrollArrowButton(
                                     isDark: isDark,
                                     icon: Icons.chevron_right_rounded,
@@ -274,6 +263,7 @@ class _LiveRoomsSectionState extends State<LiveRoomsSection> {
                                   ),
                                 ),
                               ),
+                            ),
                           ],
                         ),
                       ),
@@ -351,36 +341,91 @@ class _ScrollArrowButtonState extends State<_ScrollArrowButton> {
 
   @override
   Widget build(BuildContext context) {
+    final isLeft = widget.icon == Icons.chevron_left_rounded;
+    final baseColor = widget.isDark ? Colors.black : Colors.white;
+
     return MouseRegion(
+      cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          width: 36,
-          margin: const EdgeInsets.symmetric(vertical: 60),
+          width: 72,
           decoration: BoxDecoration(
-            color: _hovering
-                ? (widget.isDark
-                    ? Colors.black.withValues(alpha: 0.7)
-                    : Colors.white.withValues(alpha: 0.95))
-                : (widget.isDark
-                    ? Colors.black.withValues(alpha: 0.45)
-                    : Colors.white.withValues(alpha: 0.75)),
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            gradient: LinearGradient(
+              begin: isLeft ? Alignment.centerLeft : Alignment.centerRight,
+              end: isLeft ? Alignment.centerRight : Alignment.centerLeft,
+              stops: const [0.0, 0.5, 0.75, 1.0],
+              colors: [
+                baseColor.withValues(alpha: _hovering ? 0.98 : 0.9),
+                baseColor.withValues(alpha: _hovering ? 0.9 : 0.8),
+                baseColor.withValues(alpha: _hovering ? 0.5 : 0.35),
+                baseColor.withValues(alpha: 0.0),
+              ],
+            ),
           ),
-          child: Icon(
-            widget.icon,
-            size: 22,
-            color: widget.isDark ? Colors.white : const Color(0xFF1E293B),
+          child: Align(
+            alignment: isLeft ? Alignment.centerLeft : Alignment.centerRight,
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: isLeft ? 4 : 0,
+                right: isLeft ? 0 : 4,
+              ),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: widget.isDark
+                      ? (_hovering
+                          ? const Color(0xFF3B82F6).withValues(alpha: 0.3)
+                          : Colors.white.withValues(alpha: 0.12))
+                      : (_hovering
+                          ? const Color(0xFF3B82F6).withValues(alpha: 0.15)
+                          : Colors.black.withValues(alpha: 0.06)),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: widget.isDark
+                        ? (_hovering
+                            ? const Color(0xFF3B82F6).withValues(alpha: 0.7)
+                            : Colors.white.withValues(alpha: 0.3))
+                        : (_hovering
+                            ? const Color(0xFF3B82F6).withValues(alpha: 0.5)
+                            : Colors.black.withValues(alpha: 0.15)),
+                    width: 1.5,
+                  ),
+                  boxShadow: _hovering
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFF3B82F6).withValues(alpha: 0.4),
+                            blurRadius: 12,
+                            spreadRadius: 1,
+                          ),
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                ),
+                child: Icon(
+                  widget.icon,
+                  size: 22,
+                  color: widget.isDark
+                      ? (_hovering ? const Color(0xFF93C5FD) : Colors.white.withValues(alpha: 0.9))
+                      : (_hovering ? const Color(0xFF2563EB) : const Color(0xFF1E293B)),
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -437,4 +482,24 @@ class _SkeletonCardState extends State<_SkeletonCard>
       },
     );
   }
+}
+
+/// 禁用鼠标滚轮的 ScrollBehavior，让滚轮事件穿透给外层处理
+class _NoMouseWheelBehavior extends ScrollBehavior {
+  const _NoMouseWheelBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.stylus,
+        PointerDeviceKind.invertedStylus,
+      };
+
+  @override
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) =>
+      child;
 }
