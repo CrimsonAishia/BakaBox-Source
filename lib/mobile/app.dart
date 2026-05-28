@@ -74,11 +74,6 @@ class _MobileAppState extends State<MobileApp> {
             ..add(AnnouncementFetch())
             ..add(AnnouncementStartAutoRefresh()),
         ),
-        BlocProvider(
-          create: (_) => FeatureStatusBloc()
-            ..add(FeatureStatusLoad())
-            ..add(FeatureStatusStartPeriodicRefresh()),
-        ),
       ],
       child: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {
