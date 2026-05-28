@@ -12,6 +12,8 @@ import 'console_log_service.dart';
 import 'floating_window_service.dart';
 import 'game_launcher_service.dart';
 import 'game_status_service.dart';
+import 'queue_guard_service.dart';
+import 'server_address_mapping_service.dart';
 import 'source_server_service.dart';
 
 /// 操作类型
@@ -220,6 +222,11 @@ class StatusWindowService {
   int _consecutiveFailures = 0;
   double _backoffMultiplier = 1.0;
   DateTime? _lastSuccessTime;
+
+  // 挤服守护进程相关
+  bool _outcomeFinalized = false; // 结局闸门：本周期是否已敲定终态
+  bool _isObservingConnect = false; // 观察期独占标志
+  StreamSubscription<QueueGuardEvent>? _queueGuardSub;
 
   // 游戏状态订阅
   StreamSubscription<GameStatusEvent>? _gameStatusSubscription;
@@ -788,6 +795,11 @@ class StatusWindowService {
     _consecutiveFailures = 0;
     _backoffMultiplier = 1.0;
     _lastSuccessTime = null;
+    _outcomeFinalized = false;
+    _isObservingConnect = false; // 防御：上一周期若被异常打断，避免观察期标志残留
+
+    // 设置守护进程目标地址（同步，DNS 已在应用启动时完成）
+    QueueGuardService().setTarget(serverAddress);
 
     // 创建窗口
     await _showWindow(
@@ -804,11 +816,20 @@ class StatusWindowService {
       threadStatuses: threadStatuses.map((s) => s.name).toList(),
     );
 
+    // 挂载守护进程（内部检查 isMonitorable / 映射就绪情况）
+    await _attachQueueGuard(serverAddress);
+
+    // 入口快照检查：若已被守护判定为终态，跳过后续刷信息
+    if (_outcomeFinalized) {
+      LogService.i('[StatusWindowService] startQueue 入口快照已敲定终态，跳过刷信息');
+      return true;
+    }
+
     // 获取初始服务器信息
     await _fetchServerInfo(serverAddress);
 
     // 开始多线程请求
-    if (_isQueueRunning) {
+    if (_isQueueRunning && !_outcomeFinalized) {
       _scheduleNextFetch(serverAddress);
     }
 
@@ -832,6 +853,9 @@ class StatusWindowService {
     _consecutiveFailures = 0;
     _backoffMultiplier = 1.0;
     _lastSuccessTime = null;
+
+    // 卸载守护进程
+    _detachQueueGuard();
 
     // 断开 WebSocket 连接
     final usersBloc = QueueUsersBloc.instance;
@@ -898,6 +922,10 @@ class StatusWindowService {
   }
 
   /// 设置自动重试
+  ///
+  /// 自动重试强依赖 console.log 监控（-condebug），因此：
+  /// - 启用前必须确认 isMonitorable
+  /// - isMonitorable 为真 → 守护进程已在 startQueue 时挂载（无需补挂）
   Future<bool> setAutoRetry(bool enable) async {
     if (_state.type != OperationType.queueing) return false;
 
@@ -926,6 +954,9 @@ class StatusWindowService {
     _isFetching = false;
     _activeThreadIds.clear();
     _consoleLogService.cancelConnectionMonitor();
+
+    // 卸载守护进程
+    _detachQueueGuard();
 
     // 断开 WebSocket 连接
     final usersBloc = QueueUsersBloc.instance;
@@ -958,6 +989,11 @@ class StatusWindowService {
     _consecutiveFailures = 0;
     _backoffMultiplier = 1.0;
     _lastSuccessTime = null;
+    _outcomeFinalized = false;
+    _isObservingConnect = false;
+
+    // 卸载守护进程
+    _detachQueueGuard();
 
     // 断开 WebSocket 连接
     final usersBloc = QueueUsersBloc.instance;
@@ -1005,6 +1041,106 @@ class StatusWindowService {
     }
   }
 
+  /// 结局闸门：本周期内仅允许一次终态
+  ///
+  /// 仅包裹"真正终结"的路径（成功 / 不重试的失败终态）。
+  /// 自动重试的失败不锁，让下一轮可以继续判定。
+  bool _finalizeOnce(void Function() action) {
+    if (_outcomeFinalized) return false;
+    _outcomeFinalized = true;
+    action();
+    return true;
+  }
+
+  /// 挂载守护进程订阅 + 启动心跳
+  ///
+  /// - 不可监控（无 -condebug）→ 跳过守护，挤服走"乐观模式"
+  /// - 映射服务未就绪 → await load 兜底，失败则跳过守护
+  Future<void> _attachQueueGuard(String serverAddress) async {
+    _queueGuardSub?.cancel();
+    _queueGuardSub = null;
+
+    // 降级 1：游戏不可监控
+    if (!_gameStatusService.isMonitorable) {
+      LogService.i('[StatusWindowService] 游戏不可监控，跳过守护进程（乐观模式）');
+      return;
+    }
+
+    // 降级 2：地址映射未就绪
+    if (!ServerAddressMappingService().isLoaded) {
+      try {
+        await ServerAddressMappingService()
+            .load()
+            .timeout(const Duration(seconds: 3));
+      } catch (e) {
+        LogService.w('[StatusWindowService] 映射服务未就绪且加载失败，跳过守护进程: $e');
+        return;
+      }
+    }
+
+    // 入口快照
+    final initial = QueueGuardService().location;
+    LogService.d('[StatusWindowService] 挂载守护进程，初始 location=$initial');
+    switch (initial) {
+      case GuardLocation.inTargetServer:
+      case GuardLocation.inUnknownServer:
+        LogService.i('[StatusWindowService] 启动时已在游戏中 ($initial)，立即 finalize');
+        _finalizeOnce(_handleAlreadyInGame);
+        return;
+      case GuardLocation.inOtherServer:
+        // 入口快照：用户已在其他服，挤服正常继续刷信息（文案保持"挤服中..."，无需切换）
+        break;
+      case GuardLocation.notInGame:
+        break;
+    }
+
+    _queueGuardSub = QueueGuardService().events.listen(_onGuardEvent);
+    QueueGuardService().startHeartbeat();
+  }
+
+  /// 卸载守护进程订阅 + 停止心跳
+  void _detachQueueGuard() {
+    _queueGuardSub?.cancel();
+    _queueGuardSub = null;
+    QueueGuardService().stopHeartbeat();
+    QueueGuardService().clearTarget();
+  }
+
+  /// 守护进程事件回调（全局守护）
+  ///
+  /// 观察期内（[_isObservingConnect]=true）由 [_observeConnection] 独占处理，
+  /// 此处直接 return 避免切服中间态被全局误处理。
+  void _onGuardEvent(QueueGuardEvent event) {
+    // 用 _state.type 而不是 _isQueueRunning：
+    // _isQueueRunning 在 connect 期间为 false（用来停刷信息线程），
+    // 但挤服整体仍处于活跃状态，守护回调需要继续工作
+    if (_state.type != OperationType.queueing) return;
+    if (_isObservingConnect) return;
+    if (_outcomeFinalized) return;
+
+    switch (event.location) {
+      case GuardLocation.inTargetServer:
+        LogService.i('[StatusWindowService] [QueueGuard] 进入目标服，挤服成功');
+        _finalizeOnce(_handleAlreadyInGame);
+        break;
+
+      case GuardLocation.inUnknownServer:
+        LogService.i(
+          '[StatusWindowService] [QueueGuard] 检测到在游戏中（地址未知），保守 finalize',
+        );
+        _finalizeOnce(_handleAlreadyInGame);
+        break;
+
+      case GuardLocation.inOtherServer:
+        // 用户在其他服，挤服继续运行（不切换文案，保持"挤服中..."）
+        break;
+
+      case GuardLocation.notInGame:
+        // 主菜单或未在游戏：挤服正常继续，无需特殊处理
+        break;
+    }
+  }
+
   /// 游戏状态变化处理
   void _onGameStatusChanged(GameStatusEvent event) {
     _updateState(_state.copyWith(isGameRunning: event.isRunning));
@@ -1019,6 +1155,9 @@ class StatusWindowService {
       _isTriggeredConnection = false;
       _isFetching = false;
       _activeThreadIds.clear();
+
+      // 卸载守护进程
+      _detachQueueGuard();
 
       // 断开 WebSocket 连接
       final usersBloc = QueueUsersBloc.instance;
@@ -1225,21 +1364,20 @@ class StatusWindowService {
   /// 检查挤服条件
   void _checkQueueCondition(String serverAddress) {
     if (!_isQueueRunning || _state.serverInfo == null) return;
+    if (_outcomeFinalized) return;
 
-    // 防止重复触发连接
+    // 防止重复触发连接（多线程并发触发原子锁的快速路径，
+    // _connectForQueue 入口还会再次加锁兜底）
     if (_isTriggeredConnection) return;
 
-    // 【防御性检查】如果游戏已经在服务器中，直接走成功路径
-    final currentGameState = _consoleLogService.currentState;
-    if (currentGameState.state == GameState.inGame) {
+    // 【守护进程检查】优先用守护进程的判定（覆盖 console + GSI 双信号）
+    final loc = QueueGuardService().location;
+    if (loc == GuardLocation.inTargetServer ||
+        loc == GuardLocation.inUnknownServer) {
       LogService.i(
-        '[StatusWindowService] 挤服条件检查：游戏已在服务器中，跳过连接',
+        '[StatusWindowService] 挤服条件检查：守护进程判定已在游戏中 ($loc)，跳过连接',
       );
-      _isTriggeredConnection = true;
-      _isQueueRunning = false;
-      _isThreadsRunning = false;
-      _activeThreadIds.clear();
-      _handleAlreadyInGame();
+      _finalizeOnce(_handleAlreadyInGame);
       return;
     }
 
@@ -1247,136 +1385,304 @@ class StatusWindowService {
     final targetPlayers = _state.queueConfig.targetPlayers;
 
     if (players <= targetPlayers) {
-      // 标记已触发连接，防止重复
-      _isTriggeredConnection = true;
-      _isQueueRunning = false;
-      _isThreadsRunning = false;
-      _activeThreadIds.clear();
       _connectForQueue(serverAddress);
     }
   }
 
-  /// 挤服专用连接
+  /// 挤服专用连接（重构版）
+  ///
+  /// 入口先用 [_isTriggeredConnection] 原子锁防止多线程并发触发，
+  /// 再做 location 入口快照 → 进入观察期独占 → 发 connect → 用
+  /// [_observeConnection] 等结局。
   Future<void> _connectForQueue(String serverAddress) async {
-    // 【防御性检查】发送连接命令前，确认游戏不在服务器中
-    final preConnectState = _consoleLogService.currentState;
-    if (preConnectState.state == GameState.inGame) {
-      LogService.i(
-        '[StatusWindowService] 挤服连接取消：游戏已在服务器中 (${preConnectState.serverAddress})',
-      );
-      _handleAlreadyInGame();
-      return;
+    // 多线程并发触发的原子锁（设计 3.3.6）
+    if (_isTriggeredConnection) return;
+    _isTriggeredConnection = true;
+
+    if (_outcomeFinalized) return;
+
+    // 入口快照检查
+    final entryLocation = QueueGuardService().location;
+    switch (entryLocation) {
+      case GuardLocation.inTargetServer:
+      case GuardLocation.inUnknownServer:
+        LogService.i(
+          '[StatusWindowService] _connectForQueue 入口快照: $entryLocation → finalize',
+        );
+        _finalizeOnce(_handleAlreadyInGame);
+        return;
+      case GuardLocation.inOtherServer:
+      case GuardLocation.notInGame:
+        // 继续发 connect（CS2 引擎会自动断开当前连接）
+        break;
     }
 
-    _updateState(
-      _state.copyWith(
-        status: OperationStatus.running,
-        message: _Messages.connecting,
-      ),
-    );
-
-    await _updateWindow(state: 'connecting', message: _Messages.connecting);
-
+    // 进入观察期独占
+    _isObservingConnect = true;
     try {
-      // 从状态中获取游戏类型
+      // 立刻清空刷信息线程，避免重复触发
+      _activeThreadIds.clear();
+      _isThreadsRunning = false;
+      _isQueueRunning = false;
+
+      _updateState(
+        _state.copyWith(
+          status: OperationStatus.running,
+          message: _Messages.connecting,
+        ),
+      );
+      await _updateWindow(state: 'connecting', message: _Messages.connecting);
+
+      // 【最终防御】发送 connect 命令前再次确认 location
+      // 入口快照与此处之间有 await（_updateWindow），微任务窗口里用户
+      // 可能已经进入游戏。这里宁可错失一次 connect 也不在游戏中重连。
+      final preConnectLocation = QueueGuardService().location;
+      if (preConnectLocation == GuardLocation.inTargetServer ||
+          preConnectLocation == GuardLocation.inUnknownServer) {
+        LogService.i(
+          '[StatusWindowService] 发送 connect 前最终防御: $preConnectLocation → 取消命令并 finalize',
+        );
+        _finalizeOnce(_handleAlreadyInGame);
+        return;
+      }
+
       final gameType = _state.serverInfo?.gameType;
       final result = await _gameLauncher.connectToServer(
         serverAddress,
         gameType: gameType,
       );
 
-      if (result.success) {
-        final canMonitor = _gameStatusService.isMonitorable;
+      if (!result.success) {
+        _handleConnectionOutcome(
+          ConnectionOutcome.refused,
+          serverAddress,
+          result.error,
+        );
+        return;
+      }
 
-        if (canMonitor) {
-          _updateState(_state.copyWith(message: _Messages.loading));
-          await _updateWindow(state: 'loading', message: _Messages.loading);
+      // 不可监控：乐观模式，直接 finalize success（设计 3.3.6）
+      if (!_gameStatusService.isMonitorable) {
+        // 不可监控时发送成功消息
+        final usersBloc = QueueUsersBloc.instance;
+        usersBloc.add(const QueueUsersSuccess());
+        usersBloc.add(const QueueUsersDisconnect());
 
-          final connectionResult = await _monitorConnection(
-            mapName: _state.serverInfo?.map,
-            mapNameCn: _state.mapInfo?.mapLabel,
-            mapBackground: _state.mapInfo?.mapUrl,
-          );
-
-          switch (connectionResult.state) {
-            case GameState.inGame:
-              // 发送挤服成功消息并断开 WebSocket
-              final usersBloc = QueueUsersBloc.instance;
-              usersBloc.add(const QueueUsersSuccess());
-              usersBloc.add(const QueueUsersDisconnect());
-
-              _updateState(
-                _state.copyWith(
-                  type: OperationType.none, // 重置操作类型
-                  status: OperationStatus.success,
-                  message: _Messages.connectSuccess,
-                ),
-              );
-              await _updateWindow(
-                state: 'success',
-                message: _Messages.connectSuccess,
-                autoDismissSeconds: 5,
-              );
-              _audioService.playQueueSuccessSound();
-              _scheduleClose(seconds: 5);
-              break;
-
-            case GameState.serverFull:
-              _handleQueueConnectionFailure(
-                _Messages.serverFull,
-                serverAddress,
-              );
-              break;
-
-            case GameState.failed:
-              _handleQueueConnectionFailure(
-                connectionResult.message ?? _Messages.connectFailed,
-                serverAddress,
-              );
-              break;
-
-            default:
-              _handleQueueConnectionFailure(
-                connectionResult.message ?? _Messages.connectFailed,
-                serverAddress,
-              );
-              break;
-          }
-        } else {
-          // 不可监控，发送成功消息并断开 WebSocket
-          final usersBloc = QueueUsersBloc.instance;
-          usersBloc.add(const QueueUsersSuccess());
-          usersBloc.add(const QueueUsersDisconnect());
-
+        _finalizeOnce(() {
+          _isQueueRunning = false;
+          _isThreadsRunning = false;
+          _activeThreadIds.clear();
           _updateState(
             _state.copyWith(
-              type: OperationType.none, // 重置操作类型
+              type: OperationType.none,
               status: OperationStatus.success,
               message: _Messages.commandSent,
             ),
           );
-          await _updateWindow(
+          _updateWindow(
             state: 'success',
             message: _Messages.commandSent,
             autoDismissSeconds: 5,
           );
           _audioService.playQueueSuccessSound();
           _scheduleClose(seconds: 5);
-        }
-      } else {
-        _handleQueueConnectionFailure(
-          result.error ?? _Messages.connectFailed,
-          serverAddress,
-        );
+        });
+        return;
       }
+
+      // 可监控：进入观察期，等待守护进程或 console 给出结局
+      _updateState(_state.copyWith(message: _Messages.loading));
+      await _updateWindow(state: 'loading', message: _Messages.loading);
+
+      final outcome = await _observeConnection(serverAddress, entryLocation);
+      _handleConnectionOutcome(outcome, serverAddress, null);
     } catch (e) {
-      _handleQueueConnectionFailure(_Messages.networkError, serverAddress);
+      LogService.e('[StatusWindowService] _connectForQueue 异常', e);
+      _handleConnectionOutcome(
+        ConnectionOutcome.refused,
+        serverAddress,
+        _Messages.networkError,
+      );
+    } finally {
+      _isObservingConnect = false;
+      // 注意：_isTriggeredConnection 不在这里复位
+      // 由 startQueue / _waitForMainMenuAndRetry 复位（保证一次挤服周期内只触发一次）
     }
+  }
+
+  /// 观察连接结局
+  ///
+  /// 同时监听 console.log（明确失败信号）和守护进程（位置变化），
+  /// 用 `seenLeftOldServer` 排除"还在原服"误判。
+  ///
+  /// 切服特殊处理：当 [startLocation] 为 [GuardLocation.inOtherServer] 时，
+  /// 引擎会先 disconnect 旧服再 connect 新服。第一次的 `GameState.failed`
+  /// 实际上是"按用户意图断开旧服"的副作用，不是真失败，应吞掉并视为
+  /// `seenLeftOldServer = true`。后续若再次出现 failed 才是真失败。
+  Future<ConnectionOutcome> _observeConnection(
+    String serverAddress,
+    GuardLocation startLocation,
+  ) async {
+    final completer = Completer<ConnectionOutcome>();
+    StreamSubscription<ConsoleLogState>? consoleSub;
+    StreamSubscription<QueueGuardEvent>? guardSub;
+    Timer? primaryTimer;
+    Timer? extendedTimer;
+    bool seenLeftOldServer = false;
+    // 切服场景：旧服的引擎 disconnect 不算失败，仅吞一次
+    bool consumedSwitchDisconnect = startLocation != GuardLocation.inOtherServer;
+
+    void resolve(ConnectionOutcome outcome) {
+      if (completer.isCompleted) return;
+      consoleSub?.cancel();
+      guardSub?.cancel();
+      primaryTimer?.cancel();
+      extendedTimer?.cancel();
+      completer.complete(outcome);
+    }
+
+    void onSignal() {
+      if (completer.isCompleted) return;
+      final loc = QueueGuardService().location;
+
+      // 切服中的过渡态：从其他服 → notInGame（短暂主菜单）→ 目标服
+      // 必须等到 inTargetServer 才算成功，inOtherServer 不算
+      if (loc == GuardLocation.inTargetServer) {
+        resolve(ConnectionOutcome.success);
+        return;
+      }
+
+      if (loc == GuardLocation.inUnknownServer) {
+        // 保守：仅在已离开旧服后才接受 unknown 为成功
+        // 避免命令刚发出、还在原服时 GSI 信号被误判
+        if (seenLeftOldServer || startLocation == GuardLocation.notInGame) {
+          resolve(ConnectionOutcome.success);
+        }
+        return;
+      }
+
+      if (loc == GuardLocation.notInGame) {
+        seenLeftOldServer = true; // 标记已离开旧服，进入主菜单（连接中）
+      }
+
+      // inOtherServer：仍在原其他服 → 继续等待
+    }
+
+    // 监听 console 的状态变化
+    //  - 进度态（connecting / loading）→ 更新浮窗 UI
+    //  - serverFull / failed → 失败信号
+    //  - 其他 → 走 onSignal 重新评估 location
+    consoleSub = _consoleLogService.stateStream.listen((s) {
+      if (completer.isCompleted) return;
+
+      switch (s.state) {
+        case GameState.connecting:
+          _updateState(_state.copyWith(message: _Messages.connecting));
+          _updateWindow(state: 'connecting', message: _Messages.connecting);
+          onSignal();
+          return;
+
+        case GameState.loading:
+          final msg = s.mapName.isNotEmpty
+              ? _Messages.loadingMap(s.mapName)
+              : _Messages.loading;
+          _updateState(_state.copyWith(message: msg));
+          _updateWindow(state: 'loading', message: msg);
+          onSignal();
+          return;
+
+        case GameState.serverFull:
+          // 服务器满始终是真失败（切服中间态不会触发 serverFull）
+          resolve(ConnectionOutcome.serverFull);
+          return;
+
+        case GameState.failed:
+          // 切服场景：吞掉首次 failed（旧服的引擎 disconnect）
+          if (!consumedSwitchDisconnect) {
+            consumedSwitchDisconnect = true;
+            seenLeftOldServer = true;
+            LogService.d(
+              '[StatusWindowService] [Observe] 吞掉切服过渡的 disconnect',
+            );
+            return;
+          }
+          resolve(ConnectionOutcome.refused);
+          return;
+
+        default:
+          onSignal();
+          return;
+      }
+    });
+
+    guardSub = QueueGuardService().events.listen((_) => onSignal());
+
+    // 启动后立即检查一次（处理"已经在目标服"或"已经在其他服"的初始态）
+    onSignal();
+    if (completer.isCompleted) return completer.future;
+
+    // 主超时 30 秒
+    primaryTimer = Timer(const Duration(seconds: 30), () {
+      if (completer.isCompleted) return;
+      LogService.w('[StatusWindowService] 观察主超时（30s），延长 30s');
+      extendedTimer = Timer(const Duration(seconds: 30), () {
+        // 延长结束仍无结果 → 当作 refused 触发重试
+        resolve(ConnectionOutcome.refused);
+      });
+    });
+
+    return completer.future;
+  }
+
+  /// 统一处理连接结局
+  void _handleConnectionOutcome(
+    ConnectionOutcome outcome,
+    String serverAddress,
+    String? errorHint,
+  ) {
+    switch (outcome) {
+      case ConnectionOutcome.success:
+        // QueueUsersSuccess / Disconnect 由 _handleAlreadyInGame 内部统一发送，
+        // 避免与该路径重复触发
+        _finalizeOnce(_handleAlreadyInGame);
+        break;
+
+      case ConnectionOutcome.serverFull:
+        _maybeRetry(_Messages.serverFull, serverAddress);
+        break;
+
+      case ConnectionOutcome.refused:
+        _maybeRetry(errorHint ?? _Messages.connectFailed, serverAddress);
+        break;
+
+      case ConnectionOutcome.pending:
+        // pending 在 _observeConnection 内部已转化为 refused/success，
+        // 兜底当作 refused 处理
+        _maybeRetry(_Messages.connectFailed, serverAddress);
+        break;
+    }
+  }
+
+  /// 失败后的重试入口（重试前再问一次守护进程）
+  void _maybeRetry(String reason, String serverAddress) {
+    final loc = QueueGuardService().location;
+    if (loc == GuardLocation.inTargetServer ||
+        loc == GuardLocation.inUnknownServer) {
+      LogService.i('[StatusWindowService] _maybeRetry 时守护进程已判定在游戏中 → finalize');
+      _finalizeOnce(_handleAlreadyInGame);
+      return;
+    }
+    _handleQueueConnectionFailure(reason, serverAddress);
   }
 
   /// 处理挤服连接失败
   void _handleQueueConnectionFailure(String reason, String serverAddress) {
     LogService.w('[StatusWindowService] 连接失败: $reason');
+
+    if (_outcomeFinalized) {
+      LogService.d('[StatusWindowService] _handleQueueConnectionFailure: 已 finalize，忽略');
+      return;
+    }
 
     // 保存当前的自动重试状态（在检查前保存，避免状态被意外修改）
     final enableAutoRetry = _state.queueConfig.enableAutoRetry;
@@ -1408,34 +1714,43 @@ class StatusWindowService {
       // 发送 queueing 状态而不是终态，避免触发浮窗倒计时关闭
       _updateWindow(state: 'queueing', message: retryMessage);
 
-      // 等待游戏回到主菜单后再重试
+      // 等待游戏回到主菜单后再重试（不锁闸门，让重试继续）
       _waitForMainMenuAndRetry(serverAddress);
     } else {
-      // 非自动重试模式，显示终态并关闭窗口
-      String windowState;
-      if (reason.contains('服务器已满')) {
-        windowState = 'serverFull';
-      } else {
-        windowState = 'failed';
-      }
+      // 非自动重试模式：终态路径，锁闸门
+      _finalizeOnce(() {
+        String windowState;
+        if (reason.contains('服务器已满')) {
+          windowState = 'serverFull';
+        } else {
+          windowState = 'failed';
+        }
 
-      // 断开 WebSocket 连接
-      final usersBloc = QueueUsersBloc.instance;
-      usersBloc.add(const QueueUsersLeave());
-      usersBloc.add(const QueueUsersDisconnect());
+        // 卸载守护进程
+        _detachQueueGuard();
 
-      LogService.i('[StatusWindowService] 自动重试未启用，关闭窗口');
-      _updateState(
-        _state.copyWith(
-          type: OperationType.none, // 重置操作类型
-          status: reason.contains('服务器已满')
-              ? OperationStatus.serverFull
-              : OperationStatus.failed,
+        // 断开 WebSocket 连接
+        final usersBloc = QueueUsersBloc.instance;
+        usersBloc.add(const QueueUsersLeave());
+        usersBloc.add(const QueueUsersDisconnect());
+
+        LogService.i('[StatusWindowService] 自动重试未启用，关闭窗口');
+        _updateState(
+          _state.copyWith(
+            type: OperationType.none, // 重置操作类型
+            status: reason.contains('服务器已满')
+                ? OperationStatus.serverFull
+                : OperationStatus.failed,
+            message: reason,
+          ),
+        );
+        _updateWindow(
+          state: windowState,
           message: reason,
-        ),
-      );
-      _updateWindow(state: windowState, message: reason, autoDismissSeconds: 3);
-      _scheduleClose(seconds: 3);
+          autoDismissSeconds: 3,
+        );
+        _scheduleClose(seconds: 3);
+      });
     }
   }
 
@@ -1450,20 +1765,25 @@ class StatusWindowService {
       return;
     }
 
-    // 【防御性检查1】重试前先检查游戏是否已经在服务器中
-    // 这是修复"用户已进入服务器但仍触发重试"BUG的关键防御
-    final currentGameState = _consoleLogService.currentState;
-    if (currentGameState.state == GameState.inGame) {
-      LogService.i(
-        '[StatusWindowService] 自动重试取消：游戏已在服务器中 (${currentGameState.serverAddress})，无需重试',
-      );
-      // 走成功路径
-      _handleAlreadyInGame();
+    if (_outcomeFinalized) {
+      LogService.d('[StatusWindowService] 重试取消：已 finalize');
       return;
     }
 
-    // 【防御性检查2】如果游戏正在加载中（loading），说明连接可能正在进行
+    // 【守护进程检查】重试前先用守护进程的判定（覆盖 console + GSI）
+    final guardLoc = QueueGuardService().location;
+    if (guardLoc == GuardLocation.inTargetServer ||
+        guardLoc == GuardLocation.inUnknownServer) {
+      LogService.i(
+        '[StatusWindowService] 自动重试取消：守护进程判定已在游戏中 ($guardLoc)',
+      );
+      _finalizeOnce(_handleAlreadyInGame);
+      return;
+    }
+
+    // 【防御性检查】如果游戏正在加载中（loading），说明连接可能正在进行
     // 等待加载完成而不是直接重试
+    final currentGameState = _consoleLogService.currentState;
     if (currentGameState.state == GameState.loading ||
         currentGameState.state == GameState.connecting) {
       LogService.i(
@@ -1474,21 +1794,39 @@ class StatusWindowService {
         maxWait: const Duration(seconds: 30),
       );
       if (settled == GameState.inGame) {
-        LogService.i('[StatusWindowService] 自动重试取消：等待期间游戏成功进入服务器');
-        _handleAlreadyInGame();
-        return;
+        // 不能仅凭 GameState.inGame 就 finalize success，
+        // 用户可能进入的是其他服（C 服）而不是目标服。改用守护进程的
+        // location 判定，仅 inTargetServer / inUnknownServer 才算成功；
+        // inOtherServer 时切换到"在其他服等待"文案并继续重试流程。
+        final settledLoc = QueueGuardService().location;
+        if (settledLoc == GuardLocation.inTargetServer ||
+            settledLoc == GuardLocation.inUnknownServer) {
+          LogService.i(
+            '[StatusWindowService] 自动重试取消：等待期间进入目标服 ($settledLoc)',
+          );
+          _finalizeOnce(_handleAlreadyInGame);
+          return;
+        }
+        if (settledLoc == GuardLocation.inOtherServer) {
+          LogService.i(
+            '[StatusWindowService] 等待期间用户进入其他服，继续重试流程',
+          );
+          // 不切换文案，保持原有的重试中文案
+          // fall through，继续重试
+        }
       }
       // 如果回到主菜单或超时，继续重试流程
     }
 
     // 再次检查状态（等待期间可能被用户暂停）
     if (_state.type != OperationType.queueing ||
-        !_state.queueConfig.enableAutoRetry) {
+        !_state.queueConfig.enableAutoRetry ||
+        _outcomeFinalized) {
       LogService.w('[StatusWindowService] 等待期间重试已被取消');
       return;
     }
 
-    // 重置状态标志
+    // 重置状态标志（让下一轮可以触发 connect）
     _isTriggeredConnection = false;
     _isThreadsRunning = false;
     _isQueueRunning = true;
@@ -1501,15 +1839,16 @@ class StatusWindowService {
       maxWait: const Duration(seconds: 10),
     );
 
-    if (!_isQueueRunning) return;
+    if (!_isQueueRunning || _outcomeFinalized) return;
 
-    // 【防御性检查3】waitForMainMenu 返回后再次确认游戏状态
-    final stateAfterWait = _consoleLogService.currentState;
-    if (stateAfterWait.state == GameState.inGame) {
+    // 【守护进程检查】waitForMainMenu 返回后再次确认
+    final locAfterWait = QueueGuardService().location;
+    if (locAfterWait == GuardLocation.inTargetServer ||
+        locAfterWait == GuardLocation.inUnknownServer) {
       LogService.i(
-        '[StatusWindowService] 自动重试取消：等待主菜单期间游戏已进入服务器',
+        '[StatusWindowService] 自动重试取消：等待主菜单期间守护进程判定在游戏中',
       );
-      _handleAlreadyInGame();
+      _finalizeOnce(_handleAlreadyInGame);
       return;
     }
 
@@ -1518,12 +1857,14 @@ class StatusWindowService {
       LogService.i('[StatusWindowService] 未检测到主菜单状态，使用保守冷却 (2秒)...');
       await Future.delayed(const Duration(seconds: 2));
 
-      if (!_isQueueRunning) return;
+      if (!_isQueueRunning || _outcomeFinalized) return;
 
       // 最终防御：冷却后再检查一次
-      if (_consoleLogService.currentState.state == GameState.inGame) {
-        LogService.i('[StatusWindowService] 自动重试取消：冷却期间游戏已进入服务器');
-        _handleAlreadyInGame();
+      final finalLoc = QueueGuardService().location;
+      if (finalLoc == GuardLocation.inTargetServer ||
+          finalLoc == GuardLocation.inUnknownServer) {
+        LogService.i('[StatusWindowService] 自动重试取消：冷却期间守护进程判定在游戏中');
+        _finalizeOnce(_handleAlreadyInGame);
         return;
       }
     }
@@ -1534,7 +1875,12 @@ class StatusWindowService {
   }
 
   /// 处理"游戏已在服务器中"的情况（自动重试发现用户已经进入游戏）
+  ///
+  /// 应通过 [_finalizeOnce] 调用，幂等且只执行一次。
   void _handleAlreadyInGame() {
+    // 卸载守护进程
+    _detachQueueGuard();
+
     // 发送挤服成功消息并断开 WebSocket
     final usersBloc = QueueUsersBloc.instance;
     usersBloc.add(const QueueUsersSuccess());
@@ -1876,6 +2222,9 @@ class StatusWindowService {
   Future<void> dispose() async {
     _isQueueRunning = false;
     _activeThreadIds.clear();
+
+    // 卸载守护进程
+    _detachQueueGuard();
 
     // 断开 WebSocket 连接
     final usersBloc = QueueUsersBloc.instance;
