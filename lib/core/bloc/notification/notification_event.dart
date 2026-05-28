@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../models/notification_models.dart';
+
 /// 通知事件基类
 sealed class NotificationEvent extends Equatable {
   const NotificationEvent();
@@ -60,19 +62,29 @@ class NotificationDelete extends NotificationEvent {
   List<Object?> get props => [id];
 }
 
-/// 获取未读数量
+/// 获取未读数量（首次拉基线时调用一次，长连接建立后由 WS 维护）
 class NotificationFetchUnreadCount extends NotificationEvent {
   const NotificationFetchUnreadCount();
 }
 
-/// 启动自动刷新
-class NotificationStartAutoRefresh extends NotificationEvent {
-  const NotificationStartAutoRefresh();
+/// 启动 WebSocket 实时推送订阅（替代旧的轮询）
+class NotificationStartRealtime extends NotificationEvent {
+  const NotificationStartRealtime();
 }
 
-/// 停止自动刷新
-class NotificationStopAutoRefresh extends NotificationEvent {
-  const NotificationStopAutoRefresh();
+/// 停止 WebSocket 实时推送订阅
+class NotificationStopRealtime extends NotificationEvent {
+  const NotificationStopRealtime();
+}
+
+/// 收到一条 WS 推送的新消息
+class NotificationRealtimeReceived extends NotificationEvent {
+  final NotificationItem item;
+
+  const NotificationRealtimeReceived(this.item);
+
+  @override
+  List<Object?> get props => [item];
 }
 
 /// 清除错误

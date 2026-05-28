@@ -39,6 +39,10 @@ class _MobileAppState extends State<MobileApp> {
     await BroadcastNotificationService.instance.init();
     // 初始化前台保活服务配置（Android 平台）
     AppPermissionService.initForegroundService();
+    // 启动实时推送服务（业务侧 Bloc / Service 自行订阅频道）
+    await RealtimeService().start();
+    // 启动地图信息缓存失效器（监听 map.info 频道）
+    RealtimeMapInfoInvalidator().start();
 
     if (mounted) {
       setState(() => _initialized = true);
@@ -67,12 +71,12 @@ class _MobileAppState extends State<MobileApp> {
         BlocProvider(
           create: (_) => NotificationBloc()
             ..add(const NotificationFetchUnreadCount())
-            ..add(const NotificationStartAutoRefresh()),
+            ..add(const NotificationStartRealtime()),
         ),
         BlocProvider(
           create: (_) => AnnouncementBloc()
             ..add(AnnouncementFetch())
-            ..add(AnnouncementStartAutoRefresh()),
+            ..add(const AnnouncementStartRealtime()),
         ),
       ],
       child: BlocBuilder<SettingsBloc, SettingsState>(

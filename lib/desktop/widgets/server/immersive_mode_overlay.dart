@@ -8,11 +8,11 @@ import 'package:image/image.dart' as img;
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:super_clipboard/super_clipboard.dart';
-import '../../../core/api/score_api.dart';
 import '../../../core/api/server_api.dart';
 import '../../../core/bloc/server/server_bloc.dart';
 import '../../../core/bloc/server/server_state.dart';
 import '../../../core/models/server_models.dart';
+import '../../../core/services/realtime/realtime_score_updates_channel.dart';
 import '../../../core/services/source_server_service.dart';
 import '../../../core/services/status_window_service.dart';
 import '../../../core/utils/log_service.dart';
@@ -310,9 +310,13 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
 
       if (addresses.isEmpty) return;
 
-      // 调用 ScoreApi 批量查询比分
-      final scoreApi = ScoreApi();
-      final scores = await scoreApi.batchGetScores(addresses);
+      // 直接读取 score.updates 频道在 ServerBloc 启动时缓存的最新 snapshot
+      final scores = <String, dynamic>{};
+      final snapshot = RealtimeScoreUpdatesChannel().latestSnapshot;
+      for (final address in addresses) {
+        final score = snapshot[address];
+        if (score != null) scores[address] = score;
+      }
 
       if (scores.isEmpty || !mounted) return;
 
@@ -454,9 +458,13 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
 
       if (addresses.isEmpty) return;
 
-      // 调用 ScoreApi 批量查询比分
-      final scoreApi = ScoreApi();
-      final scores = await scoreApi.batchGetScores(addresses);
+      // 直接读取 score.updates 频道在 ServerBloc 启动时缓存的最新 snapshot
+      final scores = <String, dynamic>{};
+      final snapshot = RealtimeScoreUpdatesChannel().latestSnapshot;
+      for (final address in addresses) {
+        final score = snapshot[address];
+        if (score != null) scores[address] = score;
+      }
 
       if (scores.isEmpty || !mounted) return;
 

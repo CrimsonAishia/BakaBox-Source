@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../../models/server_models.dart';
+import '../../models/server_score.dart';
 
 abstract class ServerEvent extends Equatable {
   const ServerEvent();
@@ -239,4 +240,34 @@ class ServerApplyPendingCategories extends ServerEvent {
 /// 用户忽略待更新的分类列表
 class ServerDismissPendingCategories extends ServerEvent {
   const ServerDismissPendingCategories();
+}
+
+/// 内部事件：来自 `score.updates` WS 频道的比分更新
+class ServerApplyScoreUpdates extends ServerEvent {
+  final List<ServerScore> scores;
+
+  /// 是否为 snapshot（true 表示需要将所有不在 snapshot 中的服务器比分清空？
+  /// 实际不清，只覆盖入参里的条目，避免与本地的“无比分”状态冲突）
+  final bool isSnapshot;
+
+  const ServerApplyScoreUpdates({required this.scores, required this.isSnapshot});
+
+  @override
+  List<Object?> get props => [scores, isSnapshot];
+}
+
+/// 内部事件：来自 `server.map.runtime` WS 频道的换图事件
+class ServerApplyMapRuntimeChange extends ServerEvent {
+  final String serverAddress;
+  final String newMapName;
+  final String? oldMapName;
+
+  const ServerApplyMapRuntimeChange({
+    required this.serverAddress,
+    required this.newMapName,
+    this.oldMapName,
+  });
+
+  @override
+  List<Object?> get props => [serverAddress, newMapName, oldMapName];
 }

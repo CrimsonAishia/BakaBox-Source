@@ -20,6 +20,7 @@ dependencies:
   # HTTP & Network
   http: ^1.2.0
   dio: ^5.4.0
+  web_socket_channel: ^3.0.0
   
   # State Management - Bloc
   flutter_bloc: ^9.1.0

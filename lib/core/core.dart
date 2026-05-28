@@ -67,6 +67,8 @@ export 'services/lobby_map_loader_service.dart';
 export 'services/broadcast_notification_service.dart';
 export 'services/app_permission_service.dart';
 export 'services/scheduler_service.dart';
+export 'services/realtime_service.dart';
+export 'services/realtime/realtime.dart';
 
 // Desktop-only services（桌面端直接 import，不通过 core.dart 导出）
 // - game_launcher_service.dart

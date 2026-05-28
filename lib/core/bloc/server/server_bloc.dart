@@ -3,12 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../models/server_models.dart';
 import '../../models/server_score.dart';
 import '../../api/server_api.dart';
-import '../../api/score_api.dart';
 import '../../services/source_server_service.dart';
 import '../../services/game_launcher_service.dart';
 import '../../services/map_change_monitor_service.dart';
 import '../../services/custom_server_service.dart';
 import '../../services/obs_server_service.dart';
+import '../../services/realtime/realtime_score_updates_channel.dart';
+import '../../services/realtime/realtime_server_map_runtime_channel.dart';
 import '../../services/server_category_service.dart';
 import '../../utils/log_service.dart';
 import '../../utils/error_utils.dart';
@@ -55,9 +56,18 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   // 缓存大小限制：大幅增加容量，避免单个分类服务器数量过多导致缓存被高频淘汰（Thrashing）
   static const int _maxCacheSize = 2000; // 最多缓存 2000 个服务器的数据（实际内存占用极低）
 
-  // 比分查询频率限制（60秒）
+  // 比分查询防抖时间戳（仅记录用于诊断；具体值由 WS 频道维护）
+  // ignore: unused_field
   DateTime? _lastScoreFetchTime;
-  static const Duration _scoreFetchInterval = Duration(seconds: 60);
+
+  // 实时比分 / 换图频道
+  final RealtimeScoreUpdatesChannel _scoreChannel =
+      RealtimeScoreUpdatesChannel();
+  final RealtimeServerMapRuntimeChannel _mapRuntimeChannel =
+      RealtimeServerMapRuntimeChannel();
+  StreamSubscription<ScoreUpdateEvent>? _scoreChannelSubscription;
+  StreamSubscription<ServerMapRuntimeEvent>? _mapRuntimeChannelSubscription;
+  bool _realtimeStarted = false;
 
   /// 指数退避重试辅助方法
   /// [operation] 要执行的操作
@@ -134,6 +144,54 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     on<ServerRefreshCategoriesInternal>(_onRefreshCategories);
     on<ServerApplyPendingCategories>(_onApplyPendingCategories);
     on<ServerDismissPendingCategories>(_onDismissPendingCategories);
+    on<ServerApplyScoreUpdates>(_onApplyScoreUpdates);
+    on<ServerApplyMapRuntimeChange>(_onApplyMapRuntimeChange);
+
+    _startRealtime();
+  }
+
+  /// 启动 WS 实时频道订阅（构造时一次性启动，close 时释放）
+  void _startRealtime() {
+    if (_realtimeStarted) return;
+    _realtimeStarted = true;
+
+    _scoreChannel.subscribe();
+    _scoreChannelSubscription = _scoreChannel.events.listen((event) {
+      if (isClosed) return;
+      add(
+        ServerApplyScoreUpdates(
+          scores: event.scores,
+          isSnapshot: event.kind == ScoreUpdateEventKind.snapshot,
+        ),
+      );
+    });
+
+    _mapRuntimeChannel.subscribe();
+    _mapRuntimeChannelSubscription = _mapRuntimeChannel.events.listen((event) {
+      if (isClosed) return;
+      // snapshot 不必逐条触发；交给后续 changed 事件即可
+      if (event.kind != ServerMapRuntimeEventKind.changed) return;
+      for (final entry in event.entries) {
+        add(
+          ServerApplyMapRuntimeChange(
+            serverAddress: entry.serverAddress,
+            newMapName: entry.mapName,
+            oldMapName: entry.oldMapName,
+          ),
+        );
+      }
+    });
+  }
+
+  void _stopRealtime() {
+    if (!_realtimeStarted) return;
+    _realtimeStarted = false;
+    _scoreChannelSubscription?.cancel();
+    _scoreChannelSubscription = null;
+    _scoreChannel.unsubscribe();
+    _mapRuntimeChannelSubscription?.cancel();
+    _mapRuntimeChannelSubscription = null;
+    _mapRuntimeChannel.unsubscribe();
   }
 
   /// 重置倒计时（递增 countdownResetKey 触发 UI 重置）
@@ -328,11 +386,13 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       eagerError: false,
     );
 
-    // 批量查询服务器比分数据（静默失败，不影响主流程）
+    // 比分数据由 `score.updates` WS 频道推送：
+    // - 订阅时服务端会下发 snapshot
+    // - 后续单条 updated 事件会自动更新 servers
+    // 这里只在加载阶段切换到 completed，并复用频道现有的 snapshot 给已加载的服务器赋初值
     if (!emit.isDone && requestId == _currentRequestId) {
-      // A2S 主数据加载完成
       emit(state.copyWith(loadingPhase: LoadingPhase.completed));
-      await _fetchBatchScores(requestId, emit);
+      _applyScoreSnapshotForCurrentServers(emit);
     }
 
     if (!emit.isDone && requestId == _currentRequestId) {
@@ -348,90 +408,44 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     _clearRecentlyUpdatedAfterDelay(requestId);
   }
 
-  /// 批量获取服务器比分数据
+  /// 用 [RealtimeScoreUpdatesChannel] 缓存的最新 snapshot 给当前服务器赋初值。
   ///
-  /// 静默失败，不影响主流程
-  /// 60 秒内不重复查询（比分变化频率低于服务器信息）
-  Future<void> _fetchBatchScores(
-    int requestId,
-    Emitter<ServerState> emit,
-  ) async {
-    // 频率限制：距上次查询不到 60 秒则跳过
-    if (_lastScoreFetchTime != null &&
-        DateTime.now().difference(_lastScoreFetchTime!) < _scoreFetchInterval) {
-      LogService.d('批量比分查询跳过: 距上次查询不到 ${_scoreFetchInterval.inSeconds} 秒');
-      return;
-    }
+  /// 比分通过 WS 推送（订阅时下发 snapshot + 后续 updated 事件），
+  /// 这里只是在切换分类后立刻把已有的 snapshot 应用到本地服务器上，避免空窗。
+  void _applyScoreSnapshotForCurrentServers(Emitter<ServerState> emit) {
+    if (state.servers.isEmpty) return;
+    final snapshot = _scoreChannel.latestSnapshot;
+    if (snapshot.isEmpty) return;
 
-    try {
-      // 收集所有服务器地址（使用 Set 去重）
-      final addresses = <String>{};
-      for (final server in state.servers) {
-        final address =
-            server.serverItem.address ?? server.serverItem.serverAddress;
-        if (address != null && address.isNotEmpty) {
-          addresses.add(address);
-        }
+    bool changed = false;
+    final updatedServers = state.servers.map((server) {
+      final address =
+          server.serverItem.address ?? server.serverItem.serverAddress;
+      if (address == null) return server;
+      final score = snapshot[address];
+      if (score == null || score.ctScore == null || score.tScore == null) {
+        return server;
       }
-
-      if (addresses.isEmpty) return;
-
-      // 指数退避重试获取比分数据
-      final scoreApi = ScoreApi();
-      Map<String, ServerScore> scores = {};
-      for (int retryCount = 0; retryCount < _maxRetries; retryCount++) {
-        if (requestId != _currentRequestId) return;
-
-        try {
-          scores = await scoreApi.batchGetScores(addresses.toList());
-          if (scores.isNotEmpty) {
-            break; // 成功获取数据，退出重试循环
-          }
-        } catch (e) {
-          LogService.w('批量比分查询重试 ${retryCount + 1}/$_maxRetries 失败: $e');
-        }
-
-        // 如果还有重试次数，等待后继续
-        if (retryCount < _maxRetries - 1) {
-          final delay = _retryDelays[retryCount];
-          await Future.delayed(Duration(milliseconds: delay));
-        }
+      final teamScores = TeamScores(
+        ctScore: score.ctScore,
+        tScore: score.tScore,
+        dataQuality: score.dataQuality,
+      );
+      final existing = server.teamScores;
+      if (existing != null &&
+          existing.ctScore == teamScores.ctScore &&
+          existing.tScore == teamScores.tScore &&
+          existing.dataQuality == teamScores.dataQuality) {
+        return server;
       }
+      changed = true;
+      return server.copyWith(teamScores: teamScores);
+    }).toList();
 
-      if (scores.isEmpty || emit.isDone || requestId != _currentRequestId) {
-        return;
-      }
-
-      // 将比分数据合并到 ExtendedServerItem
-      final updatedServers = state.servers.map((server) {
-        final address =
-            server.serverItem.address ?? server.serverItem.serverAddress;
-        if (address == null) return server;
-
-        final score = scores[address];
-        if (score == null || score.ctScore == null || score.tScore == null) {
-          return server;
-        }
-
-        // 创建 TeamScores 并更新服务器（包含 dataQuality）
-        final teamScores = TeamScores(
-          ctScore: score.ctScore,
-          tScore: score.tScore,
-          dataQuality: score.dataQuality,
-        );
-
-        return server.copyWith(teamScores: teamScores);
-      }).toList();
-
-      if (!emit.isDone && requestId == _currentRequestId) {
-        emit(state.copyWith(servers: updatedServers));
-        _lastScoreFetchTime = DateTime.now();
-        LogService.d('批量比分查询完成: ${scores.length} 个服务器有比分数据');
-      }
-    } catch (e) {
-      // 静默失败，不影响主流程
-      LogService.w('批量比分查询失败: $e');
-    }
+    if (!changed) return;
+    if (emit.isDone) return;
+    emit(state.copyWith(servers: updatedServers));
+    _lastScoreFetchTime = DateTime.now();
   }
 
   /// 获取单个服务器信息（异步独立执行）
@@ -2134,7 +2148,103 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     _refreshHistory.clear();
     _categoryRefreshTimer?.cancel();
     _categoryRefreshTimer = null;
+    _stopRealtime();
     return super.close();
+  }
+
+  /// 处理 WS 推送的比分更新事件
+  ///
+  /// snapshot：服务端订阅时下发的全量列表，逐条覆盖本地服务器的 teamScores
+  /// updated：单条增量更新
+  void _onApplyScoreUpdates(
+    ServerApplyScoreUpdates event,
+    Emitter<ServerState> emit,
+  ) {
+    if (state.servers.isEmpty || event.scores.isEmpty) return;
+
+    final byAddress = <String, ServerScore>{};
+    for (final score in event.scores) {
+      if (score.serverAddress.isEmpty) continue;
+      byAddress[score.serverAddress] = score;
+    }
+    if (byAddress.isEmpty) return;
+
+    bool changed = false;
+    final updatedServers = state.servers.map((server) {
+      final address =
+          server.serverItem.address ?? server.serverItem.serverAddress;
+      if (address == null) return server;
+      final score = byAddress[address];
+      if (score == null) return server;
+      if (score.ctScore == null || score.tScore == null) return server;
+
+      final teamScores = TeamScores(
+        ctScore: score.ctScore,
+        tScore: score.tScore,
+        dataQuality: score.dataQuality,
+      );
+      // 跳过无变化的更新，减少 emit 频率
+      final existing = server.teamScores;
+      if (existing != null &&
+          existing.ctScore == teamScores.ctScore &&
+          existing.tScore == teamScores.tScore &&
+          existing.dataQuality == teamScores.dataQuality) {
+        return server;
+      }
+      changed = true;
+      return server.copyWith(teamScores: teamScores);
+    }).toList();
+
+    if (!changed) return;
+    emit(state.copyWith(servers: updatedServers));
+    _lastScoreFetchTime = DateTime.now();
+  }
+
+  /// 处理 WS 推送的换图事件：清缓存 + 刷新地图信息和运行时间
+  Future<void> _onApplyMapRuntimeChange(
+    ServerApplyMapRuntimeChange event,
+    Emitter<ServerState> emit,
+  ) async {
+    if (state.servers.isEmpty) return;
+    final index = state.servers.indexWhere(
+      (s) =>
+          (s.serverItem.address ?? s.serverItem.serverAddress) ==
+          event.serverAddress,
+    );
+    if (index == -1) return;
+    if (event.newMapName.isEmpty || event.newMapName == 'graphics_settings') {
+      return;
+    }
+
+    // 清掉旧的 mapRuntime / mapInfo 缓存，让 UI 立即知道地图变了
+    _mapRuntimeCache.remove(event.serverAddress);
+    _mapRuntimeLastFetchedCache.remove(event.serverAddress);
+    _serverMapCache[event.serverAddress] = event.newMapName;
+
+    final servers = List<ExtendedServerItem>.from(state.servers);
+    final current = servers[index];
+    servers[index] = current.copyWith(
+      clearMapRuntime: true,
+      clearMapInfo: true,
+      mapRuntimeError: false,
+    );
+    emit(state.copyWith(servers: servers));
+
+    // 异步重新拉地图信息和运行时间
+    final serverApi = ServerApi();
+    final requestId = _currentRequestId;
+    _fetchMapInfoAsync(
+      event.serverAddress,
+      event.newMapName,
+      requestId,
+      serverApi,
+    );
+    _fetchMapRuntimeAsync(
+      event.serverAddress,
+      event.newMapName,
+      requestId,
+      serverApi,
+    );
   }
 
   /// 内部事件：定时静默检测分类列表是否有变化
