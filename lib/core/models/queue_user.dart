@@ -22,7 +22,7 @@ class QueueUser extends Equatable {
   final String? avatarUrl;
 
   /// 是否匿名用户
-  final bool isAnonymous;
+  bool get isAnonymous => odId.isEmpty;
 
   /// 是否是当前用户（后端标记）
   final bool isSelf;
@@ -36,7 +36,6 @@ class QueueUser extends Equatable {
     required this.visitorId,
     this.nickname,
     this.avatarUrl,
-    required this.isAnonymous,
     required this.isSelf,
     required this.joinedAt,
   });
@@ -56,7 +55,6 @@ class QueueUser extends Equatable {
     visitorId,
     nickname,
     avatarUrl,
-    isAnonymous,
     isSelf,
     joinedAt,
   ];
