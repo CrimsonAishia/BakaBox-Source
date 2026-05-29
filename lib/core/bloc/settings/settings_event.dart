@@ -46,6 +46,8 @@ class SettingsDetectGamePath extends SettingsEvent {}
 
 class SettingsDetectSteamPath extends SettingsEvent {}
 
+class SettingsCheckPathsValidity extends SettingsEvent {}
+
 class SettingsSetLaunchPlatform extends SettingsEvent {
   final LaunchPlatformType platform;
   const SettingsSetLaunchPlatform(this.platform);

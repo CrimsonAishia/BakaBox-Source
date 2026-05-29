@@ -7,6 +7,7 @@ import 'parser/cs2_log_parser.dart';
 import '../utils/log_service.dart';
 import '../utils/platform_utils.dart';
 import 'game_launcher_service.dart';
+import 'game_path_service.dart';
 import 'game_status_service.dart';
 
 /// 游戏状态枚举 - 覆盖 CS2 完整生命周期
@@ -511,6 +512,13 @@ class ConsoleLogService {
   /// 开始监控控制台日志
   Future<void> startMonitoring() async {
     if (_isMonitoring) {
+      return;
+    }
+
+    // 启动前先验证路径是否有效，避免因磁盘更换导致后续全部无响应
+    final pathValidation = await GamePathService().verifyCurrentPaths();
+    if (!pathValidation.isValid) {
+      LogService.w('[ConsoleLog] 路径失效，停止监控并等待用户重新配置: ${pathValidation.error}');
       return;
     }
 

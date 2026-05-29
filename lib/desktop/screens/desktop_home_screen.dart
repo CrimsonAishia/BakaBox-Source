@@ -17,6 +17,7 @@ import 'update_logs_desktop.dart';
 import 'issues_desktop.dart';
 import 'tools_screen.dart';
 import 'settings_desktop.dart';
+import '../widgets/settings/path_invalid_dialog.dart';
 import 'character_gallery_desktop.dart';
 import 'bilibili_content_screen.dart';
 import 'lobby_desktop.dart';
@@ -264,9 +265,18 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
 
     return BlocProvider<FloatingChatCubit>.value(
       value: _floatingChatCubit,
-      child: PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (didPop, result) async {
+      child: BlocListener<SettingsBloc, SettingsState>(
+        listenWhen: (previous, current) => !previous.isPathInvalidated && current.isPathInvalidated,
+        listener: (context, state) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const PathInvalidDialog(),
+          );
+        },
+        child: PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) async {
           if (didPop) return;
           final shouldExit = await _handleExit();
           if (shouldExit && context.mounted) SystemNavigator.pop();
@@ -347,7 +357,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
           ),
         ),
       ),
-    );
+    ));
   }
 
   /// 构建页面内容，使用 KeyedSubtree 确保页面切换时正确销毁
