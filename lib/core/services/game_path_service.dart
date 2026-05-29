@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import '../utils/log_service.dart';
 import '../utils/storage_utils.dart';
 
@@ -18,6 +19,10 @@ class GamePathService {
 
   static const String _keyGamePath = 'game_path';
   static const String _keySteamPath = 'steam_path';
+
+  // 路径失效事件流
+  final _pathInvalidController = StreamController<PathValidationResult>.broadcast();
+  Stream<PathValidationResult> get onPathInvalidStream => _pathInvalidController.stream;
 
   // ==================== 路径获取 ====================
 
@@ -148,6 +153,39 @@ class GamePathService {
           isValid: false,
           error: '未找到steamapps目录，请确认选择的是正确的Steam安装目录',
         );
+      }
+    }
+
+    return const PathValidationResult(isValid: true);
+  }
+
+  /// 验证当前存储的路径是否仍然有效（用于检测移动目录或更换硬盘的情况）
+  /// 如果只传入了部分路径配置，则只验证已配置的。如果全部未配置，视为"没有失效"（因为本来就没有）。
+  Future<PathValidationResult> verifyCurrentPaths() async {
+    final gamePath = await getGamePath();
+    final steamPath = await getSteamPath();
+
+    // 如果都没配置，则不存在"路径失效"的问题
+    if ((gamePath == null || gamePath.isEmpty) && 
+        (steamPath == null || steamPath.isEmpty)) {
+      return const PathValidationResult(isValid: true);
+    }
+
+    if (gamePath != null && gamePath.isNotEmpty) {
+      final result = await validateGamePath(gamePath);
+      if (!result.isValid) {
+        final errorResult = PathValidationResult(isValid: false, error: '游戏路径已失效: ${result.error}');
+        _pathInvalidController.add(errorResult);
+        return errorResult;
+      }
+    }
+
+    if (steamPath != null && steamPath.isNotEmpty) {
+      final result = await validateSteamPath(steamPath);
+      if (!result.isValid) {
+        final errorResult = PathValidationResult(isValid: false, error: 'Steam路径已失效: ${result.error}');
+        _pathInvalidController.add(errorResult);
+        return errorResult;
       }
     }
 

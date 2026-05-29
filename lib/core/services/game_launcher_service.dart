@@ -9,6 +9,7 @@ import '../utils/server_item_utils.dart';
 import '../utils/storage_utils.dart';
 import 'console_log_service.dart';
 import 'game_status_service.dart';
+import 'game_path_service.dart';
 import 'steam_user_service.dart';
 
 /// 游戏启动结果
@@ -405,6 +406,12 @@ class GameLauncherService {
       return GameLaunchResult.failure('请先在设置中配置游戏路径');
     }
 
+    // 检查路径是否仍然有效
+    final pathValidation = await GamePathService().verifyCurrentPaths();
+    if (!pathValidation.isValid) {
+      return GameLaunchResult.failure('游戏路径已失效，请在弹出的窗口中重新配置');
+    }
+
     LogService.d('收到CS2启动请求');
 
     // 检查Steam启动选项是否已配置 -condebug（仅Windows）
@@ -749,6 +756,12 @@ class GameLauncherService {
     final hasPath = await hasGamePath();
     if (!hasPath) {
       return ServerConnectResult.failure('请先在设置中配置游戏路径');
+    }
+
+    // 检查路径是否仍然有效
+    final pathValidation = await GamePathService().verifyCurrentPaths();
+    if (!pathValidation.isValid) {
+      return ServerConnectResult.failure('游戏路径已失效，请在弹出的窗口中重新配置');
     }
 
     LogService.d('收到连接服务器请求，目标服务器: $address, 游戏类型: $gameType');

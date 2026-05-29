@@ -270,6 +270,10 @@ class SettingsState extends Equatable {
   // 路径错误信息
   final String? gamePathError;
   final String? steamPathError;
+  
+  // 是否检测到已配置的路径失效
+  final bool isPathInvalidated;
+  final String? pathValidationMessage;
 
   // 音效设置
   final double audioVolume;
@@ -320,6 +324,8 @@ class SettingsState extends Equatable {
     this.isDetectingPath = false,
     this.gamePathError,
     this.steamPathError,
+    this.isPathInvalidated = false,
+    this.pathValidationMessage,
     this.audioVolume = 0.8,
     this.cacheDetails = const [],
     this.isLoadingCacheDetails = false,
@@ -389,6 +395,8 @@ class SettingsState extends Equatable {
     bool? isDetectingPath,
     String? gamePathError,
     String? steamPathError,
+    bool? isPathInvalidated,
+    String? pathValidationMessage,
     double? audioVolume,
     List<CacheItemInfo>? cacheDetails,
     bool? isLoadingCacheDetails,
@@ -417,6 +425,8 @@ class SettingsState extends Equatable {
       isDetectingPath: isDetectingPath ?? this.isDetectingPath,
       gamePathError: gamePathError,
       steamPathError: steamPathError,
+      isPathInvalidated: isPathInvalidated ?? this.isPathInvalidated,
+      pathValidationMessage: pathValidationMessage,
       audioVolume: audioVolume ?? this.audioVolume,
       cacheDetails: cacheDetails ?? this.cacheDetails,
       isLoadingCacheDetails:
@@ -453,6 +463,8 @@ class SettingsState extends Equatable {
     isDetectingPath,
     gamePathError,
     steamPathError,
+    isPathInvalidated,
+    pathValidationMessage,
     audioVolume,
     cacheDetails,
     isLoadingCacheDetails,

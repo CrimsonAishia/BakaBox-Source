@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -40,6 +41,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   final AudioService _audioService = AudioService();
   final GamePathService _gamePathService = GamePathService();
   final GameLauncherService _gameLauncherService = GameLauncherService();
+  StreamSubscription<PathValidationResult>? _pathInvalidSubscription;
 
   SettingsBloc() : super(const SettingsState()) {
     on<SettingsInit>(_onInit);
@@ -54,6 +56,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<SettingsSetSteamPath>(_onSetSteamPath);
     on<SettingsDetectGamePath>(_onDetectGamePath);
     on<SettingsDetectSteamPath>(_onDetectSteamPath);
+    on<SettingsCheckPathsValidity>(_onCheckPathsValidity);
     on<SettingsSetLaunchPlatform>(_onSetLaunchPlatform);
     on<SettingsSetLaunchOptions>(_onSetLaunchOptions);
     on<SettingsAddLaunchOption>(_onAddLaunchOption);
@@ -96,6 +99,22 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       // 即使已初始化，也重新加载游戏设置（可能在 OOBE 中设置了路径）
       await _loadGameSettings(emit);
     }
+    
+    // 初始化完成后检查路径是否失效
+    add(SettingsCheckPathsValidity());
+
+    // 监听底层服务主动发出的路径失效事件
+    _pathInvalidSubscription ??= _gamePathService.onPathInvalidStream.listen((result) {
+      if (!result.isValid) {
+        add(SettingsCheckPathsValidity());
+      }
+    });
+  }
+
+  @override
+  Future<void> close() {
+    _pathInvalidSubscription?.cancel();
+    return super.close();
   }
 
   Future<void> _loadAppInfo(Emitter<SettingsState> emit) async {
@@ -431,6 +450,36 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     }
   }
 
+  Future<void> _onCheckPathsValidity(
+    SettingsCheckPathsValidity event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      final validationResult = await _gamePathService.verifyCurrentPaths();
+      if (!validationResult.isValid) {
+        emit(
+          state.copyWith(
+            isPathInvalidated: true,
+            pathValidationMessage: validationResult.error,
+          ),
+        );
+        LogService.w('检测到已配置的游戏路径失效: ${validationResult.error}');
+      } else {
+        // 如果有效，清除失效标记
+        if (state.isPathInvalidated) {
+          emit(
+            state.copyWith(
+              isPathInvalidated: false,
+              pathValidationMessage: null,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      LogService.e('检查路径有效性时出错', e);
+    }
+  }
+
   // ==================== 游戏设置事件处理 ====================
 
   Future<void> _onSetGamePath(
@@ -449,7 +498,11 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       }
 
       await StorageUtils.setString(_keyGamePath, event.path);
-      emit(state.copyWith(gamePath: event.path, gamePathError: null));
+      emit(state.copyWith(
+        gamePath: event.path, 
+        gamePathError: null,
+        isPathInvalidated: false, // 重新设置成功后清除失效标记
+      ));
 
       // 同步到 GameLauncherService
       await GameLauncherService().setGamePath(event.path);
@@ -483,7 +536,11 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       }
 
       await StorageUtils.setString(_keySteamPath, event.path);
-      emit(state.copyWith(steamPath: event.path, steamPathError: null));
+      emit(state.copyWith(
+        steamPath: event.path, 
+        steamPathError: null,
+        isPathInvalidated: false, // 重新设置成功后清除失效标记
+      ));
 
       // 同步到 GameLauncherService
       await GameLauncherService().setSteamPath(event.path);
