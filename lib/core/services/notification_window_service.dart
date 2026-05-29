@@ -208,9 +208,16 @@ class NotificationWindowService {
     return offset;
   }
 
+  /// 判断是否为多行广播
+  bool _isMultilineBroadcast(NotificationData notification) {
+    return notification.type == NotificationType.broadcast &&
+        notification.message.contains('<br>');
+  }
+
   /// 计算通知的卡片高度
   double _getCardHeight(NotificationData notification) {
-    if (notification.type == NotificationType.updateLog) {
+    if (notification.type == NotificationType.updateLog ||
+        _isMultilineBroadcast(notification)) {
       return updateLogCardHeight;
     }
     if (_isMapNotification(notification)) {
@@ -532,12 +539,16 @@ class NotificationWindowService {
     required String content,
   }) async {
     final id = 'broadcast_${DateTime.now().millisecondsSinceEpoch}';
+    
+    // 将换行符转换为 HTML 的 <br> 标签，以便在 _VerticalMarqueeHtml 中正确换行
+    final htmlContent = content.replaceAll('\n', '<br>');
+    
     await show(
       NotificationData(
         id: id,
         type: NotificationType.broadcast,
         title: '广播',
-        message: content,
+        message: htmlContent,
         serverName: nickname,
         autoDismissSeconds: 30,
       ),
