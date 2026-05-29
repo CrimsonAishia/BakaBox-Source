@@ -2102,7 +2102,12 @@ class StatusWindowService {
         mapNameCn: mapNameCn,
         mapBackground: mapBackground,
       );
-      return;
+      
+      // 如果更新成功，_windowId 会保留。如果更新失败且窗口已关闭，_windowId 会被置空。
+      // 此时我们继续往下执行创建新窗口的逻辑。
+      if (_windowId != null) {
+        return;
+      }
     }
 
     // 窗口不存在或已关闭，清理并创建新窗口
