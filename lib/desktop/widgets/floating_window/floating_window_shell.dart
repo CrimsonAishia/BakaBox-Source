@@ -33,6 +33,7 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
   int _countdownSeconds = 0;
   int _totalCountdownSeconds = 5;
   Timer? _countdownTimer;
+  Timer? _scheduleCloseTimer;
   bool _isCountdownActive = false;
 
   // 窗口关闭状态
@@ -96,6 +97,7 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
 
   void _cancelCountdown() {
     _countdownTimer?.cancel();
+    _scheduleCloseTimer?.cancel();
     _isCountdownActive = false;
     _isClosing = false; // 重置关闭标志，允许新的倒计时
     if (mounted) setState(() {});
@@ -156,7 +158,8 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
     if (_isClosing) return;
     _isClosing = true;
 
-    Future.delayed(const Duration(milliseconds: 1000), () {
+    _scheduleCloseTimer?.cancel();
+    _scheduleCloseTimer = Timer(const Duration(milliseconds: 1000), () {
       // 即使 mounted 为 false，也尝试关闭窗口
       _closeWindow();
     });
@@ -164,6 +167,7 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
 
   Future<void> _closeWindow() async {
     _countdownTimer?.cancel();
+    _scheduleCloseTimer?.cancel();
     _isCountdownActive = false;
 
     debugPrint('[FloatingWindowShell] Closing window: ${widget.windowId}');
@@ -227,6 +231,7 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _scheduleCloseTimer?.cancel();
     widget.stateNotifier.removeListener(_onStateChanged);
     super.dispose();
   }
