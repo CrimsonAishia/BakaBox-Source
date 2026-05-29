@@ -222,9 +222,12 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                     state.selectedCategory == CharacterCategory.touhou &&
                     !state.showSpellCardTierView &&
                     !state.showWeaponModelView,
-                onTap: () => context.read<CharacterGalleryBloc>().add(
-                  ChangeCategory(CharacterCategory.touhou),
-                ),
+                onTap: () {
+                  PaintingBinding.instance.imageCache.clear();
+                  context.read<CharacterGalleryBloc>().add(
+                    ChangeCategory(CharacterCategory.touhou),
+                  );
+                },
               ),
               const SizedBox(width: 8),
               CategoryButton(
@@ -233,9 +236,12 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                     state.selectedCategory == CharacterCategory.zombie &&
                     !state.showSpellCardTierView &&
                     !state.showWeaponModelView,
-                onTap: () => context.read<CharacterGalleryBloc>().add(
-                  ChangeCategory(CharacterCategory.zombie),
-                ),
+                onTap: () {
+                  PaintingBinding.instance.imageCache.clear();
+                  context.read<CharacterGalleryBloc>().add(
+                    ChangeCategory(CharacterCategory.zombie),
+                  );
+                },
               ),
               const SizedBox(width: 8),
               CategoryButton(
@@ -244,9 +250,12 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                     state.selectedCategory == CharacterCategory.normal &&
                     !state.showSpellCardTierView &&
                     !state.showWeaponModelView,
-                onTap: () => context.read<CharacterGalleryBloc>().add(
-                  ChangeCategory(CharacterCategory.normal),
-                ),
+                onTap: () {
+                  PaintingBinding.instance.imageCache.clear();
+                  context.read<CharacterGalleryBloc>().add(
+                    ChangeCategory(CharacterCategory.normal),
+                  );
+                },
               ),
               const SizedBox(width: 8),
               // 分隔线
@@ -267,18 +276,24 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
               CategoryButton(
                 label: '符卡',
                 isSelected: state.showSpellCardTierView,
-                onTap: () => context.read<CharacterGalleryBloc>().add(
-                  const LoadSpellCardTierList(),
-                ),
+                onTap: () {
+                  PaintingBinding.instance.imageCache.clear();
+                  context.read<CharacterGalleryBloc>().add(
+                    const LoadSpellCardTierList(),
+                  );
+                },
               ),
               const SizedBox(width: 8),
               // 刀枪图鉴按钮
               CategoryButton(
                 label: '刀枪',
                 isSelected: state.showWeaponModelView,
-                onTap: () => context.read<CharacterGalleryBloc>().add(
-                  const LoadAllWeaponModels(),
-                ),
+                onTap: () {
+                  PaintingBinding.instance.imageCache.clear();
+                  context.read<CharacterGalleryBloc>().add(
+                    const LoadAllWeaponModels(),
+                  );
+                },
               ),
               const Spacer(),
               _buildSearchBox(),

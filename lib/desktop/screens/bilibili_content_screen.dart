@@ -140,6 +140,9 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
     // 只有在TabController初始化完成后才处理Tab切换
     if (!_isTabControllerInitialized) return;
 
+    // 切换Tab时清理 Flutter 图片缓存，释放内存
+    PaintingBinding.instance.imageCache.clear();
+
     final bloc = context.read<BilibiliContentBloc>();
 
     // 及时通知状态层 Tab 已经切换

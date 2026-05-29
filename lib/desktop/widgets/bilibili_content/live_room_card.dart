@@ -148,6 +148,7 @@ class _LiveRoomCardState extends State<LiveRoomCard>
                 DiskCachedImage(
                   imageUrl: widget.coverUrl ?? '',
                   fit: BoxFit.cover,
+                  cacheWidth: 400,
                   placeholder: Container(
                     color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
                     child: const Center(child: CircularProgressIndicator()),

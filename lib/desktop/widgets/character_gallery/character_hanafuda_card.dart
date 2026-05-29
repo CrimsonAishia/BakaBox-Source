@@ -112,6 +112,7 @@ class _HanafudaCardState extends State<HanafudaCard> {
                         DiskCachedImage(
                           imageUrl: widget.character.thumbnailUrl,
                           fit: BoxFit.cover,
+                          cacheWidth: 400,
                           placeholder: Container(
                             color: washiColor,
                             child: Center(
