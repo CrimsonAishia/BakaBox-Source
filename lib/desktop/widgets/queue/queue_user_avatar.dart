@@ -111,7 +111,7 @@ class _QueueUserTooltip extends StatelessWidget {
 
   String _getDisplayName() {
     if (user.isSelf) return '我';
-    if (user.isAnonymous) return '匿名用户';
+    if (user.isAnonymous) return '未登录用户';
     return user.nickname ?? '未知';
   }
 

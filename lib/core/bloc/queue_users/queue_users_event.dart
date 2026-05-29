@@ -50,15 +50,11 @@ class QueueUsersJoin extends QueueUsersEvent {
   /// 当前用户头像URL（匿名用户为空）
   final String? avatarUrl;
 
-  /// 是否匿名用户
-  final bool isAnonymous;
-
   const QueueUsersJoin({
     this.odId = '',
     this.visitorId = '',
     this.nickname,
     this.avatarUrl,
-    this.isAnonymous = true,
   });
 
   @override
@@ -67,7 +63,6 @@ class QueueUsersJoin extends QueueUsersEvent {
     visitorId,
     nickname,
     avatarUrl,
-    isAnonymous,
   ];
 }
 

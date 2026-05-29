@@ -222,7 +222,7 @@ class QueueUsersServiceImpl implements QueueUsersService {
     // 将 http/https 转换为 ws/wss
     final wsBase = baseUrl.replaceFirst('http', 'ws');
     final encodedAddress = Uri.encodeComponent(serverAddress);
-    return '$wsBase/api/stub$encodedAddress';
+    return '$wsBase/api/stub$encodedAddress?roomType=queue';
   }
 
   void _onMessage(dynamic data) {

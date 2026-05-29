@@ -35,7 +35,7 @@ class QueueActivityItem {
     return QueueActivityItem(
       id: '${user.uniqueId}_${type.name}_${DateTime.now().millisecondsSinceEpoch}',
       type: type,
-      userName: user.nickname ?? (user.isAnonymous ? '匿名用户' : '用户'),
+      userName: user.nickname ?? (user.isAnonymous ? '未登录用户' : '用户'),
       isSelf: user.isSelf,
       timestamp: DateTime.now(),
     );

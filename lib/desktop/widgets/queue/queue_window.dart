@@ -184,10 +184,9 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
     for (final user in users) {
       final uniqueId = user.uniqueId as String;
       final nickname = user.nickname as String?;
-      final isAnonymous = user.isAnonymous as bool;
       final isSelf = user.isSelf as bool;
       _userInfoCache[uniqueId] = _CachedUserInfo(
-        userName: nickname ?? (isAnonymous ? '匿名用户' : '用户'),
+        userName: nickname ?? (user.isAnonymous ? '未登录用户' : '用户'),
         isSelf: isSelf,
       );
     }
@@ -857,6 +856,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
     // 最终昵称优先级：Steam 用户名 > 登录用户名 > null
     final nickname =
         steamUsername ?? (isAuthenticated ? userInfo?.username : null);
+    final avatarUrl = isAuthenticated ? userInfo?.avatar : null;
 
     if (!mounted) return;
 
@@ -869,30 +869,14 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
     // 后端不返回当前用户，需要在客户端把自己加入列表
     usersBloc.add(
       QueueUsersJoin(
-        odId: isAuthenticated ? (userInfo?.uid ?? '') : '',
-        visitorId: isAuthenticated ? '' : _getOrCreateVisitorId(),
         nickname: nickname,
-        avatarUrl: isAuthenticated ? userInfo?.avatar : null,
-        isAnonymous: !isAuthenticated,
+        avatarUrl: avatarUrl,
       ),
     );
     queueBloc.add(const QueueStart());
   }
 
-  /// 获取或创建访客ID
-  /// 匿名用户使用此ID标识，存储在本地以保持一致性
-  String _getOrCreateVisitorId() {
-    const key = 'queue_visitor_id';
-    var visitorId = StorageUtils.getString(key);
-    if (visitorId == null || visitorId.isEmpty) {
-      // 生成一个简单的唯一ID（时间戳 + 随机数）
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final random = Random().nextInt(999999);
-      visitorId = 'visitor_${timestamp}_$random';
-      StorageUtils.setString(key, visitorId);
-    }
-    return visitorId;
-  }
+
 
   Widget _buildLaunchGameButton(BuildContext context, QueueBlocState state) {
     // 正在启动游戏时显示启动中状态（优先级最高）
