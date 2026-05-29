@@ -1245,7 +1245,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     );
   }
 
-  /// 玩家数量 - 当前人数/最大人数（行内斜杠分隔）
   Widget _buildPlayerCount(int players, int maxPlayers) {
     Color primaryColor;
     Color bgColor;
@@ -1260,6 +1259,10 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       primaryColor = const Color(0xFF0080FF);
       bgColor = Colors.white;
     }
+
+    final int queueCount = widget.server.queueCount;
+    final int warmupCount = widget.server.warmupCount;
+    final int extraCount = queueCount + warmupCount;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -1290,13 +1293,18 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
               height: 1,
             ),
           ),
+          if (extraCount > 0)
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: _buildExtraCount(queueCount, warmupCount, extraCount),
+            ),
           // 斜杠
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: Text(
+            child: const Text(
               '/',
               style: TextStyle(
-                color: const Color(0xFF9CA3AF),
+                color: Color(0xFF9CA3AF),
                 fontSize: 18,
                 fontWeight: FontWeight.w300,
                 height: 1,
@@ -1316,6 +1324,47 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         ],
       ),
     );
+  }
+
+  Widget _buildExtraCount(int queueCount, int warmupCount, int extraCount) {
+    if (queueCount > 0 && warmupCount > 0) {
+      return ShaderMask(
+        shaderCallback: (bounds) => const LinearGradient(
+          colors: [Color(0xFFF44336), Color(0xFFF59E0B)], // 红色到黄色渐变
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ).createShader(bounds),
+        child: Text(
+          '+$extraCount',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            height: 1,
+          ),
+        ),
+      );
+    } else if (queueCount > 0) {
+      return Text(
+        '+$extraCount',
+        style: const TextStyle(
+          color: Color(0xFFF44336), // 红色 - 挤服
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          height: 1,
+        ),
+      );
+    } else {
+      return Text(
+        '+$extraCount',
+        style: const TextStyle(
+          color: Color(0xFFF59E0B), // 黄色 - 暖服
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          height: 1,
+        ),
+      );
+    }
   }
 
   Widget _buildRuntimeInfo() {

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 class AnimatedPlayerCount extends StatefulWidget {
   final int currentPlayers;
   final int maxPlayers;
+  final int queueCount;
+  final int warmupCount;
   final TextStyle? textStyle;
   final Color? iconColor;
 
@@ -10,6 +12,8 @@ class AnimatedPlayerCount extends StatefulWidget {
     super.key,
     required this.currentPlayers,
     required this.maxPlayers,
+    this.queueCount = 0,
+    this.warmupCount = 0,
     this.textStyle,
     this.iconColor,
   });
@@ -86,10 +90,43 @@ class _AnimatedPlayerCountState extends State<AnimatedPlayerCount>
                 (_previousMax + (_currentMax - _previousMax) * _animation.value)
                     .round();
 
-            return Text('$displayCurrent/$displayMax', style: widget.textStyle);
+            final extraCount = widget.queueCount + widget.warmupCount;
+
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('$displayCurrent', style: widget.textStyle),
+                if (extraCount > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 2),
+                    child: _buildExtraCount(widget.queueCount, widget.warmupCount, extraCount),
+                  ),
+                Text('/$displayMax', style: widget.textStyle),
+              ],
+            );
           },
         ),
       ],
     );
+  }
+
+  Widget _buildExtraCount(int queueCount, int warmupCount, int extraCount) {
+    final baseStyle = widget.textStyle ?? const TextStyle(fontSize: 13);
+    final style = baseStyle.copyWith(fontWeight: FontWeight.bold);
+
+    if (queueCount > 0 && warmupCount > 0) {
+      return ShaderMask(
+        shaderCallback: (bounds) => const LinearGradient(
+          colors: [Color(0xFFF44336), Color(0xFFF59E0B)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ).createShader(bounds),
+        child: Text('+$extraCount', style: style.copyWith(color: Colors.white)),
+      );
+    } else if (queueCount > 0) {
+      return Text('+$extraCount', style: style.copyWith(color: const Color(0xFFF44336)));
+    } else {
+      return Text('+$extraCount', style: style.copyWith(color: const Color(0xFFF59E0B)));
+    }
   }
 }

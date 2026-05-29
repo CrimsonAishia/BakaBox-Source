@@ -696,6 +696,8 @@ class _NotificationCardState extends State<_NotificationCard> {
     // 获取人数信息
     final currentPlayers = notification.extraData?['currentPlayers'] as int?;
     final maxPlayers = notification.extraData?['maxPlayers'] as int?;
+    final queueCount = notification.extraData?['queueCount'] as int? ?? 0;
+    final warmupCount = notification.extraData?['warmupCount'] as int? ?? 0;
     final hasPlayers =
         showPlayers && currentPlayers != null && maxPlayers != null;
 
@@ -772,6 +774,33 @@ class _NotificationCardState extends State<_NotificationCard> {
                     height: 1,
                   ),
                 ),
+                if (queueCount > 0 || warmupCount > 0)
+                  ShaderMask(
+                    shaderCallback: (bounds) {
+                      if (queueCount > 0 && warmupCount > 0) {
+                        return const LinearGradient(
+                          colors: [Colors.red, Colors.yellow],
+                        ).createShader(bounds);
+                      } else if (queueCount > 0) {
+                        return const LinearGradient(
+                          colors: [Colors.red, Colors.red],
+                        ).createShader(bounds);
+                      } else {
+                        return const LinearGradient(
+                          colors: [Colors.yellow, Colors.yellow],
+                        ).createShader(bounds);
+                      }
+                    },
+                    child: Text(
+                      '+${queueCount + warmupCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        height: 1,
+                      ),
+                    ),
+                  ),
                 // 斜杠（灰色）
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 2),

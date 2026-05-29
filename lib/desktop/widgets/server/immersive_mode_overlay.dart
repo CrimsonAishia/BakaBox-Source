@@ -1217,7 +1217,12 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildStaticPlayerCount(players, maxPlayers),
+                      _buildStaticPlayerCount(
+                        players,
+                        maxPlayers,
+                        server.queueCount,
+                        server.warmupCount,
+                      ),
                       if (showRuntime) ...[
                         const SizedBox(height: 6),
                         _buildStaticRuntimeInfo(
@@ -1242,7 +1247,12 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   }
 
   /// 构建静态玩家数量显示
-  Widget _buildStaticPlayerCount(int players, int maxPlayers) {
+  Widget _buildStaticPlayerCount(
+    int players,
+    int maxPlayers,
+    int queueCount,
+    int warmupCount,
+  ) {
     Color primaryColor;
     Color bgColor;
 
@@ -1256,6 +1266,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       primaryColor = const Color(0xFF0080FF);
       bgColor = Colors.white;
     }
+
+    final int extraCount = queueCount + warmupCount;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -1285,6 +1297,11 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
               height: 1,
             ),
           ),
+          if (extraCount > 0)
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: _buildStaticExtraCount(queueCount, warmupCount, extraCount),
+            ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2),
             child: Text(
@@ -1309,6 +1326,47 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         ],
       ),
     );
+  }
+
+  Widget _buildStaticExtraCount(int queueCount, int warmupCount, int extraCount) {
+    if (queueCount > 0 && warmupCount > 0) {
+      return ShaderMask(
+        shaderCallback: (bounds) => const LinearGradient(
+          colors: [Color(0xFFF44336), Color(0xFFF59E0B)], // 红色到黄色渐变
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ).createShader(bounds),
+        child: Text(
+          '+$extraCount',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            height: 1,
+          ),
+        ),
+      );
+    } else if (queueCount > 0) {
+      return Text(
+        '+$extraCount',
+        style: const TextStyle(
+          color: Color(0xFFF44336), // 红色 - 挤服
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          height: 1,
+        ),
+      );
+    } else {
+      return Text(
+        '+$extraCount',
+        style: const TextStyle(
+          color: Color(0xFFF59E0B), // 黄色 - 暖服
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          height: 1,
+        ),
+      );
+    }
   }
 
   /// 构建静态运行时间信息（用于截图）

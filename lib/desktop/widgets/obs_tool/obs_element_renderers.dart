@@ -139,6 +139,10 @@ Widget buildServerCardMock(
       ? queriedInfo.map
       : mockServer?.serverData?.map;
 
+  final queueCount = useQueriedData ? 0 : (mockServer?.queueCount ?? 0);
+  final warmupCount = useQueriedData ? 0 : (mockServer?.warmupCount ?? 0);
+  final extraCount = queueCount + warmupCount;
+
   Color playersColor = const Color(0xFF0080FF);
   Color playersBgColor = Colors.white;
   if (players >= maxPlayers && maxPlayers > 0) {
@@ -323,6 +327,11 @@ Widget buildServerCardMock(
                               height: 1,
                             ),
                           ),
+                          if (extraCount > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 4),
+                              child: _buildObsExtraCount(queueCount, warmupCount, extraCount),
+                            ),
                           Text(
                             '/',
                             style: TextStyle(
@@ -352,6 +361,47 @@ Widget buildServerCardMock(
       ),
     ),
   );
+}
+
+Widget _buildObsExtraCount(int queueCount, int warmupCount, int extraCount) {
+  if (queueCount > 0 && warmupCount > 0) {
+    return ShaderMask(
+      shaderCallback: (bounds) => const LinearGradient(
+        colors: [Color(0xFFF44336), Color(0xFFF59E0B)],
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+      ).createShader(bounds),
+      child: Text(
+        '+$extraCount',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          height: 1,
+        ),
+      ),
+    );
+  } else if (queueCount > 0) {
+    return Text(
+      '+$extraCount',
+      style: const TextStyle(
+        color: Color(0xFFF44336),
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        height: 1,
+      ),
+    );
+  } else {
+    return Text(
+      '+$extraCount',
+      style: const TextStyle(
+        color: Color(0xFFF59E0B),
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        height: 1,
+      ),
+    );
+  }
 }
 
 /// 构建文本预览组件

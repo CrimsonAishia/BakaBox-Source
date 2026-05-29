@@ -467,6 +467,8 @@ class NotificationWindowService {
     String? categoryName,
     int? currentPlayers,
     int? maxPlayers,
+    int? queueCount,
+    int? warmupCount,
   }) async {
     final id =
         'mapchange_${serverAddress}_${DateTime.now().millisecondsSinceEpoch}';
@@ -490,6 +492,8 @@ class NotificationWindowService {
           if (categoryName != null) 'categoryName': categoryName,
           if (currentPlayers != null) 'currentPlayers': currentPlayers,
           if (maxPlayers != null) 'maxPlayers': maxPlayers,
+          if (queueCount != null) 'queueCount': queueCount,
+          if (warmupCount != null) 'warmupCount': warmupCount,
         },
       ),
     );

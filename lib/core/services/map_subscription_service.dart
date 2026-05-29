@@ -9,7 +9,9 @@ import '../utils/storage_utils.dart';
 import 'custom_server_service.dart';
 import 'notification_window_service.dart';
 import 'realtime/realtime_server_map_runtime_channel.dart';
+import 'realtime/realtime_server_users_count_channel.dart';
 import 'server_category_service.dart';
+import 'source_server_service.dart';
 import 'tts_service.dart';
 
 /// 地图订阅监控服务（单例）
@@ -414,6 +416,25 @@ class MapSubscriptionService {
     _notificationCooldown[cooldownKey] = DateTime.now().millisecondsSinceEpoch;
     await _saveNotificationCooldown();
 
+    // 获取玩家数量和排队数量
+    int currentPlayers = 0;
+    try {
+      final parts = entry.serverAddress.split(':');
+      if (parts.length == 2) {
+        final ip = parts[0];
+        final port = int.tryParse(parts[1]);
+        if (port != null) {
+          final serverInfo = await SourceServerService.getServerInfo(ip, port, timeout: 3000);
+          if (serverInfo != null) {
+            currentPlayers = serverInfo.players;
+          }
+        }
+      }
+    } catch (_) {}
+
+    final usersCountSnapshot = RealtimeServerUsersCountChannel().latestSnapshot;
+    final usersCount = usersCountSnapshot[entry.serverAddress];
+
     LogService.i(
       '[MapSubscription] 命中订阅: ${subscription.displayName} @ $serverName ($categoryName)',
     );
@@ -423,7 +444,10 @@ class MapSubscriptionService {
       serverAddress: entry.serverAddress,
       serverName: serverName,
       categoryName: categoryName,
+      numPlayers: currentPlayers,
       maxPlayers: entry.maxPlayers ?? 0,
+      queueCount: usersCount?.queueCount ?? 0,
+      warmupCount: usersCount?.warmupCount ?? 0,
     );
   }
 
@@ -432,7 +456,10 @@ class MapSubscriptionService {
     required String serverAddress,
     required String serverName,
     required String categoryName,
+    required int numPlayers,
     required int maxPlayers,
+    required int queueCount,
+    required int warmupCount,
   }) async {
     if (_isNotificationEnabled) {
       final id =
@@ -451,8 +478,10 @@ class MapSubscriptionService {
           autoDismissSeconds: 60,
           extraData: {
             'categoryName': categoryName,
-            'currentPlayers': 0,
+            'currentPlayers': numPlayers,
             'maxPlayers': maxPlayers,
+            'queueCount': queueCount,
+            'warmupCount': warmupCount,
           },
         ),
       );

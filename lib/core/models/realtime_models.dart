@@ -17,6 +17,7 @@ class RealtimeChannels {
   static const String serverMapRuntime = 'server.map.runtime';
   static const String mapInfo = 'map.info';
   static const String scoreUpdates = 'score.updates';
+  static const String serverUsersCount = 'server.users.count';
   static const String notifications = 'notifications';
   static const String announcements = 'announcements';
 
@@ -25,6 +26,7 @@ class RealtimeChannels {
     serverMapRuntime,
     mapInfo,
     scoreUpdates,
+    serverUsersCount,
     notifications,
     announcements,
   ];

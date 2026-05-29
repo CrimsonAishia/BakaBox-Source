@@ -6,15 +6,16 @@ import '../../api/server_api.dart';
 import '../../services/source_server_service.dart';
 import '../../services/game_launcher_service.dart';
 import '../../services/map_change_monitor_service.dart';
-import '../../services/custom_server_service.dart';
 import '../../services/obs_server_service.dart';
 import '../../services/realtime/realtime_score_updates_channel.dart';
 import '../../services/realtime/realtime_server_map_runtime_channel.dart';
+import '../../services/realtime/realtime_server_users_count_channel.dart';
 import '../../services/server_category_service.dart';
 import '../../utils/log_service.dart';
 import '../../utils/error_utils.dart';
 import 'server_event.dart';
 import 'server_state.dart';
+import '../../services/custom_server_service.dart';
 
 class ServerBloc extends Bloc<ServerEvent, ServerState> {
   // 全局 mapRuntime 缓存，key 为服务器地址
@@ -65,8 +66,11 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       RealtimeScoreUpdatesChannel();
   final RealtimeServerMapRuntimeChannel _mapRuntimeChannel =
       RealtimeServerMapRuntimeChannel();
+  final RealtimeServerUsersCountChannel _usersCountChannel =
+      RealtimeServerUsersCountChannel();
   StreamSubscription<ScoreUpdateEvent>? _scoreChannelSubscription;
   StreamSubscription<ServerMapRuntimeEvent>? _mapRuntimeChannelSubscription;
+  StreamSubscription<UsersCountUpdateEvent>? _usersCountChannelSubscription;
   bool _realtimeStarted = false;
 
   /// 指数退避重试辅助方法
@@ -142,9 +146,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     on<ServerReorderCategories>(_onReorderCategories);
     on<ServerForceRefresh>(_onForceRefresh);
     on<ServerRefreshCategoriesInternal>(_onRefreshCategories);
-    on<ServerApplyPendingCategories>(_onApplyPendingCategories);
     on<ServerDismissPendingCategories>(_onDismissPendingCategories);
     on<ServerApplyScoreUpdates>(_onApplyScoreUpdates);
+    on<ServerApplyUsersCountUpdates>(_onApplyUsersCountUpdates);
     on<ServerApplyMapRuntimeChange>(_onApplyMapRuntimeChange);
 
     _startRealtime();
@@ -181,6 +185,17 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         );
       }
     });
+
+    _usersCountChannel.subscribe();
+    _usersCountChannelSubscription = _usersCountChannel.events.listen((event) {
+      if (isClosed) return;
+      add(
+        ServerApplyUsersCountUpdates(
+          counts: event.counts,
+          isSnapshot: event.kind == UsersCountUpdateEventKind.snapshot,
+        ),
+      );
+    });
   }
 
   void _stopRealtime() {
@@ -188,10 +203,12 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     _realtimeStarted = false;
     _scoreChannelSubscription?.cancel();
     _scoreChannelSubscription = null;
-    _scoreChannel.unsubscribe();
     _mapRuntimeChannelSubscription?.cancel();
     _mapRuntimeChannelSubscription = null;
     _mapRuntimeChannel.unsubscribe();
+    _usersCountChannelSubscription?.cancel();
+    _usersCountChannelSubscription = null;
+    _usersCountChannel.unsubscribe();
   }
 
   /// 重置倒计时（递增 countdownResetKey 触发 UI 重置）
@@ -208,8 +225,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
     emit(state.copyWith(isLoading: true, error: null));
     try {
-      final apiCategories =
-          await ServerCategoryService.instance.getApiCategories();
+      final apiCategories = await ServerCategoryService.instance
+          .getApiCategories();
 
       // 加载自定义分类
       final customCategories = await CustomServerService.loadCustomCategories();
@@ -393,6 +410,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     if (!emit.isDone && requestId == _currentRequestId) {
       emit(state.copyWith(loadingPhase: LoadingPhase.completed));
       _applyScoreSnapshotForCurrentServers(emit);
+      _applyUsersCountSnapshotForCurrentServers(emit);
     }
 
     if (!emit.isDone && requestId == _currentRequestId) {
@@ -446,6 +464,35 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     if (emit.isDone) return;
     emit(state.copyWith(servers: updatedServers));
     _lastScoreFetchTime = DateTime.now();
+  }
+
+  void _applyUsersCountSnapshotForCurrentServers(Emitter<ServerState> emit) {
+    if (state.servers.isEmpty) return;
+    final snapshot = _usersCountChannel.latestSnapshot;
+    if (snapshot.isEmpty) return;
+
+    bool changed = false;
+    final updatedServers = state.servers.map((server) {
+      final address =
+          server.serverItem.address ?? server.serverItem.serverAddress;
+      if (address == null) return server;
+      final count = snapshot[address];
+      if (count == null) return server;
+
+      if (server.queueCount == count.queueCount &&
+          server.warmupCount == count.warmupCount) {
+        return server;
+      }
+      changed = true;
+      return server.copyWith(
+        queueCount: count.queueCount,
+        warmupCount: count.warmupCount,
+      );
+    }).toList();
+
+    if (!changed) return;
+    if (emit.isDone) return;
+    emit(state.copyWith(servers: updatedServers));
   }
 
   /// 获取单个服务器信息（异步独立执行）
@@ -849,15 +896,18 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     }
 
     // 判断离开时间是否过长（超过10秒视为数据过期）
-    final isDataStale = lastRefresh == null ||
+    final isDataStale =
+        lastRefresh == null ||
         DateTime.now().difference(lastRefresh).inSeconds > 10;
 
     if (isDataStale) {
       // 数据过期：立即刷新数据并重置倒计时
-      emit(state.copyWith(
-        isPaused: false,
-        countdownResetKey: state.countdownResetKey + 1,
-      ));
+      emit(
+        state.copyWith(
+          isPaused: false,
+          countdownResetKey: state.countdownResetKey + 1,
+        ),
+      );
       // 根据当前页面状态触发对应的刷新
       if (state.selectedCategory != null) {
         add(ServerRefreshServers());
@@ -1072,14 +1122,14 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       // 所有查询完成，关闭加载状态（仅首次加载时需要）并记录刷新时间
       if (!emit.isDone) {
         if (isFirstLoad) {
-          emit(state.copyWith(
-            isLoadingOnlineCounts: false,
-            onlineCountsLastFetched: DateTime.now(),
-          ));
+          emit(
+            state.copyWith(
+              isLoadingOnlineCounts: false,
+              onlineCountsLastFetched: DateTime.now(),
+            ),
+          );
         } else {
-          emit(state.copyWith(
-            onlineCountsLastFetched: DateTime.now(),
-          ));
+          emit(state.copyWith(onlineCountsLastFetched: DateTime.now()));
         }
       }
     } catch (e) {
@@ -1179,10 +1229,12 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
     final updatedCounts = Map<String, int>.from(state.categoryOnlineCounts)
       ..[categoryName] = totalOnline;
-    emit(state.copyWith(
-      categoryOnlineCounts: updatedCounts,
-      serverPlayerCache: updatedCache,
-    ));
+    emit(
+      state.copyWith(
+        categoryOnlineCounts: updatedCounts,
+        serverPlayerCache: updatedCache,
+      ),
+    );
   }
 
   Future<SourceServerInfo?> _getServerInfo(String address) async {
@@ -1703,10 +1755,12 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       _serverMapCache.remove(event.oldServerAddress);
       // 清理旧地址的人数缓存
       if (state.serverPlayerCache.containsKey(event.oldServerAddress)) {
-        emit(state.copyWith(
-          serverPlayerCache: Map<String, int>.from(state.serverPlayerCache)
-            ..remove(event.oldServerAddress),
-        ));
+        emit(
+          state.copyWith(
+            serverPlayerCache: Map<String, int>.from(state.serverPlayerCache)
+              ..remove(event.oldServerAddress),
+          ),
+        );
       }
 
       // 取消旧地址的换图监控（如果有）
@@ -2200,6 +2254,53 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     _lastScoreFetchTime = DateTime.now();
   }
 
+  void _onApplyUsersCountUpdates(
+    ServerApplyUsersCountUpdates event,
+    Emitter<ServerState> emit,
+  ) {
+    if (state.servers.isEmpty) return;
+
+    final updates = <String, ServerUsersCount>{};
+    for (final c in event.counts) {
+      updates[c.serverAddress] = c;
+    }
+
+    bool changed = false;
+    final updatedServers = state.servers.map((server) {
+      final address =
+          server.serverItem.address ?? server.serverItem.serverAddress;
+      if (address == null) return server;
+
+      ServerUsersCount count;
+      if (event.isSnapshot) {
+        count =
+            updates[address] ??
+            ServerUsersCount(
+              serverAddress: address,
+              queueCount: 0,
+              warmupCount: 0,
+            );
+      } else {
+        if (!updates.containsKey(address)) return server;
+        count = updates[address]!;
+      }
+
+      if (server.queueCount == count.queueCount &&
+          server.warmupCount == count.warmupCount) {
+        return server;
+      }
+      changed = true;
+      return server.copyWith(
+        queueCount: count.queueCount,
+        warmupCount: count.warmupCount,
+      );
+    }).toList();
+
+    if (changed) {
+      emit(state.copyWith(servers: updatedServers));
+    }
+  }
+
   /// 处理 WS 推送的换图事件：清缓存 + 刷新地图信息和运行时间
   Future<void> _onApplyMapRuntimeChange(
     ServerApplyMapRuntimeChange event,
@@ -2256,8 +2357,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     Emitter<ServerState> emit,
   ) async {
     try {
-      final apiCategories =
-          await ServerCategoryService.instance.fetchFresh();
+      final apiCategories = await ServerCategoryService.instance.fetchFresh();
       if (apiCategories.isEmpty || emit.isDone) return;
 
       // 分类尚未加载完成时不触发更新提示（避免首次加载前误报）
@@ -2269,7 +2369,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           .map((c) => c.modelName)
           .toSet();
       final newApiNames = apiCategories.map((c) => c.modelName).toSet();
-      final categoriesChanged = oldApiNames.length != newApiNames.length ||
+      final categoriesChanged =
+          oldApiNames.length != newApiNames.length ||
           !oldApiNames.containsAll(newApiNames);
 
       // 比较各分类的服务器列表是否有变化（新增/删除服务器 IP）
@@ -2318,10 +2419,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     final pending = state.pendingCategories;
     if (pending == null || pending.isEmpty) return;
 
-    emit(state.copyWith(
-      serverCategories: pending,
-      clearPendingCategories: true,
-    ));
+    emit(
+      state.copyWith(serverCategories: pending, clearPendingCategories: true),
+    );
 
     LogService.i('已应用新分类列表：${pending.length} 个分类');
 

@@ -332,6 +332,8 @@ class ServerListItem extends StatelessWidget {
                 child: AnimatedPlayerCount(
                   currentPlayers: _currentPlayers,
                   maxPlayers: _maxPlayers,
+                  queueCount: server.queueCount,
+                  warmupCount: server.warmupCount,
                   iconColor: _getPlayerCountColor(_currentPlayers, _maxPlayers),
                   textStyle: TextStyle(
                     fontSize: 13,
