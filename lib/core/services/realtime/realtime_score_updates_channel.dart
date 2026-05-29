@@ -123,7 +123,7 @@ class RealtimeScoreUpdatesChannel {
       'confidence': raw['confidence'],
       'source_count': raw['sourceCount'] ?? raw['source_count'],
       'updated_at': raw['updatedAt'] ?? raw['updated_at'],
-      'data_quality': raw['dataQuality'] ?? raw['data_quality'] ?? 'unknown',
+      'data_quality': raw['dataQuality'] ?? raw['data_quality'] ?? 'good',
     };
     try {
       return ServerScore.fromJson(mapped);
