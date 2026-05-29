@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
@@ -1220,94 +1221,84 @@ class _VerticalMarqueeHtml extends StatefulWidget {
 class _VerticalMarqueeHtmlState extends State<_VerticalMarqueeHtml>
     with SingleTickerProviderStateMixin {
   late ScrollController _scrollController;
-  late AnimationController _animationController;
-  double _scrollDistance = 0;
+  late Ticker _ticker;
+  Duration _lastElapsed = Duration.zero;
+  bool _isWaiting = true;
+  double _currentScroll = 0.0;
+  static const double _scrollSpeed = 20.0; // 每秒滚动像素
+
   final GlobalKey _contentKey = GlobalKey();
-  bool _animationStarted = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    _animationController = AnimationController(vsync: this);
-    // 监听滚动位置变化，当内容渲染完成后自动触发
-    _scrollController.addListener(_onScrollChanged);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAndStartScroll());
+    _ticker = createTicker(_onTick);
+    
+    // 延迟2秒后开始
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        _isWaiting = false;
+        _ticker.start();
+      }
+    });
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScrollChanged);
-    _animationController.dispose();
+    _ticker.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _onScrollChanged() {
-    // 当滚动控制器准备好且还未开始动画时，检查是否可以开始滚动
-    if (!_animationStarted && _scrollController.hasClients) {
-      _checkAndStartScroll();
+  void _onTick(Duration elapsed) {
+    if (!mounted || !_scrollController.hasClients || _isWaiting) {
+      _lastElapsed = elapsed;
+      return;
     }
-  }
 
-  void _checkAndStartScroll() {
-    if (!mounted || !_scrollController.hasClients || _animationStarted) return;
-
-    // 等待下一帧确保布局完成
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scrollController.hasClients || _animationStarted) {
-        return;
-      }
-
-      final maxScroll = _scrollController.position.maxScrollExtent;
-      if (maxScroll <= 0) return;
-
-      _scrollDistance = maxScroll;
-      _animationStarted = true;
-      _startScrollAnimation();
-    });
-  }
-
-  void _startScrollAnimation() {
-    if (!mounted || _scrollDistance <= 0) return;
-
-    // 速度：每像素 50ms
-    final duration = Duration(milliseconds: (_scrollDistance * 50).toInt());
-    _animationController.duration = duration;
-
-    _animationController.addListener(_onAnimationUpdate);
-    _animationController.addStatusListener(_onAnimationStatus);
-
-    // 延迟2秒后开始滚动
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) _animationController.forward();
-    });
-  }
-
-  void _onAnimationUpdate() {
-    if (_scrollController.hasClients) {
-      final maxScroll = _scrollController.position.maxScrollExtent;
-      final targetScroll = (_animationController.value * _scrollDistance).clamp(
-        0.0,
-        maxScroll,
-      );
-      _scrollController.jumpTo(targetScroll);
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    // 如果不需要滚动，持续更新时间但不增加位移
+    if (maxScroll <= 0) {
+      _lastElapsed = elapsed;
+      return;
     }
-  }
 
-  void _onAnimationStatus(AnimationStatus status) {
-    if (status == AnimationStatus.completed) {
-      // 滚动完成后等待3秒再重置
+    final delta = (elapsed - _lastElapsed).inMilliseconds;
+    _lastElapsed = elapsed;
+
+    if (delta <= 0) return;
+
+    _currentScroll += (delta / 1000.0) * _scrollSpeed;
+
+    // 检查是否已经到达或超过底部
+    if (_currentScroll >= maxScroll) {
+      _currentScroll = maxScroll;
+      _scrollController.jumpTo(_currentScroll);
+      
+      _isWaiting = true;
+      _ticker.stop();
+      
+      // 触底等待 3 秒
       Future.delayed(const Duration(seconds: 3), () {
-        if (!mounted) return;
-        _scrollController.jumpTo(0);
-        // 等待2秒后重新开始
+        if (!mounted || !_scrollController.hasClients) return;
+        _currentScroll = 0.0;
+        _scrollController.jumpTo(0.0);
+        
+        // 返回顶部后等待 2 秒再继续
         Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) _animationController.forward(from: 0);
+          if (mounted) {
+            _isWaiting = false;
+            _lastElapsed = Duration.zero; // 重置时间以避免跳跃
+            _ticker.start();
+          }
         });
       });
+    } else {
+      _scrollController.jumpTo(_currentScroll);
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
