@@ -114,10 +114,16 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
   int _totalCountdownSeconds = 0;
   Timer? _countdownTimer;
 
+  /// 判断是否为多行广播
+  bool _isMultilineBroadcast(NotificationData notification) {
+    return notification.type == NotificationType.broadcast &&
+        notification.message.contains('<br>');
+  }
+
   double get _windowHeight {
     final notification = widget.stateNotifier.notification;
     final type = notification.type;
-    if (type == NotificationType.updateLog) {
+    if (type == NotificationType.updateLog || _isMultilineBroadcast(notification)) {
       return _updateLogCardHeight;
     }
     // 有地图中文名的通知使用更高的卡片
@@ -451,8 +457,14 @@ class _NotificationCardState extends State<_NotificationCard> {
   static const double _progressBarHeight = 3.0;
   static const double _deleteAreaWidth = 50.0;
 
+  /// 判断是否为多行广播
+  bool _isMultilineBroadcast(NotificationData notification) {
+    return notification.type == NotificationType.broadcast &&
+        notification.message.contains('<br>');
+  }
+
   double get _height {
-    if (widget.notification.type == NotificationType.updateLog) {
+    if (widget.notification.type == NotificationType.updateLog || _isMultilineBroadcast(widget.notification)) {
       return _updateLogHeight;
     }
     // 有地图中文名的通知使用更高的卡片
@@ -616,7 +628,7 @@ class _NotificationCardState extends State<_NotificationCard> {
                               const SizedBox(height: 4),
                               // 消息
                               Expanded(
-                                child: isUpdateLog
+                                child: isUpdateLog || _isMultilineBroadcast(notification)
                                     ? _buildUpdateLogContent(notification)
                                     : _buildMessageWidget(
                                         notification,
