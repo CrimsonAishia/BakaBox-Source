@@ -6,6 +6,8 @@ import '../utils/log_service.dart';
 import '../utils/storage_utils.dart';
 import 'notification_window_service.dart';
 import 'realtime/realtime_server_map_runtime_channel.dart';
+import 'realtime/realtime_server_users_count_channel.dart';
+import 'source_server_service.dart';
 
 /// 服务器监控数据
 class ServerMonitorData {
@@ -245,6 +247,24 @@ class MapChangeMonitorService {
       mapBackground = mapInfo?.mapUrl;
     } catch (_) {}
 
+    int currentPlayers = 0;
+    try {
+      final parts = entry.serverAddress.split(':');
+      if (parts.length == 2) {
+        final ip = parts[0];
+        final port = int.tryParse(parts[1]);
+        if (port != null) {
+          final serverInfo = await SourceServerService.getServerInfo(ip, port, timeout: 3000);
+          if (serverInfo != null) {
+            currentPlayers = serverInfo.players;
+          }
+        }
+      }
+    } catch (_) {}
+
+    final usersCountSnapshot = RealtimeServerUsersCountChannel().latestSnapshot;
+    final usersCount = usersCountSnapshot[entry.serverAddress];
+
     _notificationService.showMapChangeNotification(
       serverAddress: entry.serverAddress,
       serverName: monitor.serverName,
@@ -253,8 +273,10 @@ class MapChangeMonitorService {
       newMapCn: newMapCn,
       mapBackground: mapBackground,
       categoryName: monitor.categoryName,
-      currentPlayers: 0,
+      currentPlayers: currentPlayers,
       maxPlayers: entry.maxPlayers ?? 0,
+      queueCount: usersCount?.queueCount ?? 0,
+      warmupCount: usersCount?.warmupCount ?? 0,
     );
   }
 

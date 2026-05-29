@@ -271,3 +271,14 @@ class ServerApplyMapRuntimeChange extends ServerEvent {
   @override
   List<Object?> get props => [serverAddress, newMapName, oldMapName];
 }
+
+/// 内部事件：来自 `server.users.count` WS 频道的人数更新
+class ServerApplyUsersCountUpdates extends ServerEvent {
+  final List<ServerUsersCount> counts;
+  final bool isSnapshot;
+
+  const ServerApplyUsersCountUpdates({required this.counts, required this.isSnapshot});
+
+  @override
+  List<Object?> get props => [counts, isSnapshot];
+}

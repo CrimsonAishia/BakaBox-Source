@@ -4,6 +4,29 @@ import 'map_tag_models.dart';
 
 part 'server_models.g.dart';
 
+class ServerUsersCount extends Equatable {
+  final String serverAddress;
+  final int queueCount;
+  final int warmupCount;
+
+  const ServerUsersCount({
+    required this.serverAddress,
+    this.queueCount = 0,
+    this.warmupCount = 0,
+  });
+
+  factory ServerUsersCount.fromJson(Map<String, dynamic> json) {
+    return ServerUsersCount(
+      serverAddress: json['serverAddress'] as String? ?? '',
+      queueCount: (json['queueCount'] as num?)?.toInt() ?? 0,
+      warmupCount: (json['warmupCount'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  @override
+  List<Object?> get props => [serverAddress, queueCount, warmupCount];
+}
+
 @JsonSerializable()
 class ServerCategory extends Equatable {
   final String? modelName;
@@ -414,6 +437,8 @@ class ExtendedServerItem extends Equatable {
   final int consecutiveFailures; // 连续失败次数
   final bool isOffline; // 是否离线（连续失败3次）
   final TeamScores? teamScores; // 新增：比分数据
+  final int queueCount;
+  final int warmupCount;
 
   const ExtendedServerItem({
     required this.serverItem,
@@ -431,6 +456,8 @@ class ExtendedServerItem extends Equatable {
     this.consecutiveFailures = 0,
     this.isOffline = false,
     this.teamScores,
+    this.queueCount = 0,
+    this.warmupCount = 0,
   });
 
   ExtendedServerItem copyWith({
@@ -453,6 +480,8 @@ class ExtendedServerItem extends Equatable {
     bool? isOffline,
     TeamScores? teamScores,
     bool clearTeamScores = false,
+    int? queueCount,
+    int? warmupCount,
   }) {
     return ExtendedServerItem(
       serverItem: serverItem ?? this.serverItem,
@@ -472,6 +501,8 @@ class ExtendedServerItem extends Equatable {
       consecutiveFailures: consecutiveFailures ?? this.consecutiveFailures,
       isOffline: isOffline ?? this.isOffline,
       teamScores: clearTeamScores ? null : (teamScores ?? this.teamScores),
+      queueCount: queueCount ?? this.queueCount,
+      warmupCount: warmupCount ?? this.warmupCount,
     );
   }
 
@@ -492,6 +523,8 @@ class ExtendedServerItem extends Equatable {
     consecutiveFailures,
     isOffline,
     teamScores,
+    queueCount,
+    warmupCount,
   ];
 }
 
