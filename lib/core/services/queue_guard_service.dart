@@ -199,6 +199,24 @@ class QueueGuardService {
         if (!ServerAddressMappingService().isLoaded) {
           return GuardLocation.inUnknownServer;
         }
+
+        // DNS 解析失败兜底：如果目标是域名但控制台抓到的是 IPv4，
+        // 且映射服务缓存中未收录此 IP，我们无法确定它是否是目标服。
+        // 保守返回 inUnknownServer，防止被误判为 inOtherServer 导致无限将玩家从目标服中拉出重连。
+        final target = _targetAddress;
+        if (target != null) {
+          final targetHost = target.split(':').first;
+          final consoleHost = consoleAddr.split(':').first;
+          final isConsoleIpv4 = RegExp(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$').hasMatch(consoleHost);
+          final isTargetDomain = targetHost.contains(RegExp(r'[a-zA-Z]'));
+
+          if (isTargetDomain && isConsoleIpv4) {
+            if (!ServerAddressMappingService().hasMapping(consoleAddr)) {
+              return GuardLocation.inUnknownServer;
+            }
+          }
+        }
+
         return GuardLocation.inOtherServer;
       }
       // console 说在游戏但地址未抓到（罕见）→ 走 unknown

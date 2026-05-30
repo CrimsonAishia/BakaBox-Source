@@ -13,7 +13,8 @@ class CS2LogParser {
   static final _regDisconnect = RegExp(r'(?:Disconnect reason:|Disconnected from server:)\s+([A-Z_]+)');
   
   // ChangeGameUIState: INGAME -> CSGO_GAME_UI_STATE_MAINMENU
-  static final _regMainMenu = RegExp(r'ChangeGameUIState:.*->\s*CSGO_GAME_UI_STATE_MAINMENU');
+  // Or explicitly starting a loopback connection (main menu background)
+  static final _regMainMenu = RegExp(r"ChangeGameUIState:.*->\s*CSGO_GAME_UI_STATE_MAINMENU|CCreateGameClientJob creating client connection to 'loopback'");
 
   // Map: "de_dust2"
   static final _regLoadingMap = RegExp(r'\[Client\]\s+Map:\s+"([^"]+)"');
