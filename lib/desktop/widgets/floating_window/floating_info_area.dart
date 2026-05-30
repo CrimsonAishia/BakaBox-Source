@@ -92,16 +92,16 @@ class FloatingInfoArea extends StatelessWidget {
         // 线程指示器（单独一行）
         if (state.threadStatuses != null && state.threadStatuses!.isNotEmpty)
           _buildThreadIndicators(),
-        // 地图名（格式：英文名(中文名)，过长滚动）
+        // 地图名（分两行显示：译名在上，原名在下）
         if (state.mapName != null && state.mapName!.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: MarqueeText(
-              text: _formatMapName(),
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 12,
-              ),
+            child: _buildTwoLineMapName(
+              titleFontSize: 13,
+              subtitleFontSize: 11,
+              titleColor: Colors.white.withValues(alpha: 0.8),
+              subtitleColor: Colors.white.withValues(alpha: 0.5),
+              titleWeight: FontWeight.normal,
             ),
           ),
       ],
@@ -127,15 +127,14 @@ class FloatingInfoArea extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 地图名（格式：英文名(中文名)，过长滚动）
+        // 地图名（分两行显示：译名在上，原名在下）
         if (state.mapName != null && state.mapName!.isNotEmpty)
-          MarqueeText(
-            text: _formatMapName(),
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.85),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+          _buildTwoLineMapName(
+            titleFontSize: 14,
+            subtitleFontSize: 12,
+            titleColor: Colors.white.withValues(alpha: 0.85),
+            subtitleColor: Colors.white.withValues(alpha: 0.6),
+            titleWeight: FontWeight.w500,
           ),
         // 服务器地址
         if (serverAddress != null && serverAddress!.isNotEmpty)
@@ -155,28 +154,52 @@ class FloatingInfoArea extends StatelessWidget {
     );
   }
 
-  /// 格式化地图名：英文名(中文名)，如果没有中文名则只显示英文名
-  String _formatMapName() {
-    final mapName = state.mapName ?? '';
-    final mapNameCn = state.mapNameCn;
+  /// 构建双行地图名（译名在上，原名在下）
+  Widget _buildTwoLineMapName({
+    required double titleFontSize,
+    required double subtitleFontSize,
+    Color? titleColor,
+    Color? subtitleColor,
+    FontWeight titleWeight = FontWeight.w500,
+  }) {
+    final mapNameCn = (state.mapNameCn != null && state.mapNameCn!.isNotEmpty)
+        ? state.mapNameCn!
+        : '暂无译名';
 
-    if (mapName.isEmpty) return '';
-    if (mapNameCn != null && mapNameCn.isNotEmpty) {
-      return '$mapName ($mapNameCn)';
-    }
-    return mapName;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        MarqueeText(
+          text: mapNameCn,
+          style: TextStyle(
+            color: titleColor ?? Colors.white.withValues(alpha: 0.85),
+            fontSize: titleFontSize,
+            fontWeight: titleWeight,
+          ),
+        ),
+        const SizedBox(height: 2),
+        MarqueeText(
+          text: state.mapName!,
+          style: TextStyle(
+            color: subtitleColor ?? Colors.white.withValues(alpha: 0.5),
+            fontSize: subtitleFontSize,
+          ),
+        ),
+      ],
+    );
   }
 
   /// 终态内容
   Widget _buildTerminalContent() {
-    // 成功时显示地图名（格式：英文名(中文名)，过长滚动）
+    // 成功时显示地图名（分两行显示：译名在上，原名在下）
     if (state.isSuccess && state.mapName != null && state.mapName!.isNotEmpty) {
-      return MarqueeText(
-        text: _formatMapName(),
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.7),
-          fontSize: 13,
-        ),
+      return _buildTwoLineMapName(
+        titleFontSize: 13,
+        subtitleFontSize: 11,
+        titleColor: Colors.white.withValues(alpha: 0.8),
+        subtitleColor: Colors.white.withValues(alpha: 0.5),
+        titleWeight: FontWeight.normal,
       );
     }
 
