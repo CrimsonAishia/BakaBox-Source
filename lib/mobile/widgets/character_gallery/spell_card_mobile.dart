@@ -13,13 +13,11 @@ class SpellCardMobile extends StatelessWidget {
   /// 符卡数据
   final SpellCard spellCard;
 
-  const SpellCardMobile({
-    super.key,
-    required this.spellCard,
-  });
+  const SpellCardMobile({super.key, required this.spellCard});
 
   /// 获取符卡类型对应的样式配置（与桌面端一致）
-  (Color borderColor, Color bgColor, String symbol, String bgAsset) _getTypeStyle(BuildContext context) {
+  (Color borderColor, Color bgColor, String symbol, String bgAsset)
+  _getTypeStyle(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final vermillion = CharacterGalleryTheme.getVermillion(context);
     final gold = CharacterGalleryTheme.getGold(context);
@@ -112,7 +110,13 @@ class SpellCardMobile extends StatelessWidget {
   }
 
   /// 构建头部（符号 + 名称 + 评级）- 与桌面端完全一致
-  Widget _buildHeader(BuildContext context, Color inkColor, Color borderColor, String symbol, bool isDark) {
+  Widget _buildHeader(
+    BuildContext context,
+    Color inkColor,
+    Color borderColor,
+    String symbol,
+    bool isDark,
+  ) {
     return Row(
       children: [
         // 符号（与桌面端一致的阴影）
@@ -125,7 +129,10 @@ class SpellCardMobile extends StatelessWidget {
                 ? null
                 : [
                     const Shadow(color: Colors.white, blurRadius: 3),
-                    Shadow(color: Colors.white.withValues(alpha: 0.8), blurRadius: 6),
+                    Shadow(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      blurRadius: 6,
+                    ),
                   ],
           ),
         ),
@@ -142,8 +149,14 @@ class SpellCardMobile extends StatelessWidget {
                   ? null
                   : [
                       const Shadow(color: Colors.white, blurRadius: 4),
-                      Shadow(color: Colors.white.withValues(alpha: 0.9), blurRadius: 8),
-                      Shadow(color: Colors.white.withValues(alpha: 0.7), blurRadius: 12),
+                      Shadow(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        blurRadius: 8,
+                      ),
+                      Shadow(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        blurRadius: 12,
+                      ),
                     ],
             ),
           ),
@@ -153,7 +166,9 @@ class SpellCardMobile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.85),
+              color: (isDark ? Colors.black : Colors.white).withValues(
+                alpha: 0.85,
+              ),
               border: Border.all(color: _getTierColor(spellCard.tier!)),
               borderRadius: BorderRadius.circular(4),
             ),
@@ -204,8 +219,14 @@ class SpellCardMobile extends StatelessWidget {
             ? null
             : [
                 const Shadow(color: Colors.white, blurRadius: 4),
-                Shadow(color: Colors.white.withValues(alpha: 0.9), blurRadius: 8),
-                Shadow(color: Colors.white.withValues(alpha: 0.7), blurRadius: 12),
+                Shadow(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  blurRadius: 8,
+                ),
+                Shadow(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  blurRadius: 12,
+                ),
               ],
       ),
     );
@@ -285,7 +306,10 @@ class SpellCardMobile extends StatelessWidget {
               ? null
               : [
                   const Shadow(color: Colors.white, blurRadius: 3),
-                  Shadow(color: Colors.white.withValues(alpha: 0.8), blurRadius: 6),
+                  Shadow(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    blurRadius: 6,
+                  ),
                 ],
         ),
         const SizedBox(width: 4),
@@ -299,7 +323,10 @@ class SpellCardMobile extends StatelessWidget {
                 ? null
                 : [
                     const Shadow(color: Colors.white, blurRadius: 3),
-                    Shadow(color: Colors.white.withValues(alpha: 0.8), blurRadius: 6),
+                    Shadow(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      blurRadius: 6,
+                    ),
                   ],
           ),
         ),
@@ -314,7 +341,10 @@ class SpellCardMobile extends StatelessWidget {
                 ? null
                 : [
                     const Shadow(color: Colors.white, blurRadius: 3),
-                    Shadow(color: Colors.white.withValues(alpha: 0.8), blurRadius: 6),
+                    Shadow(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      blurRadius: 6,
+                    ),
                   ],
           ),
         ),

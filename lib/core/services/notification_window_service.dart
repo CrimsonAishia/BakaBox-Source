@@ -539,10 +539,10 @@ class NotificationWindowService {
     required String content,
   }) async {
     final id = 'broadcast_${DateTime.now().millisecondsSinceEpoch}';
-    
+
     // 将换行符转换为 HTML 的 <br> 标签，以便在 _VerticalMarqueeHtml 中正确换行
     final htmlContent = content.replaceAll('\n', '<br>');
-    
+
     await show(
       NotificationData(
         id: id,

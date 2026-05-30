@@ -32,8 +32,7 @@ class UpdateLogsPanel extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color:
-                        Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -289,7 +288,9 @@ class _UpdateLogDetailDialog extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
               decoration: BoxDecoration(
                 color: const Color(0xFF3B82F6).withValues(alpha: 0.06),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
               ),
               child: Row(
                 children: [
@@ -316,7 +317,9 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
-                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1E293B),
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -340,7 +343,10 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                       color: isDark ? Colors.white54 : const Color(0xFF9CA3AF),
                     ),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
                   ),
                 ],
               ),
@@ -353,13 +359,18 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                       child: Text(
                         '暂无详细内容',
                         style: TextStyle(
-                          color: isDark ? Colors.white54 : const Color(0xFF9CA3AF),
+                          color: isDark
+                              ? Colors.white54
+                              : const Color(0xFF9CA3AF),
                           fontSize: 14,
                         ),
                       ),
                     )
                   : SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
                       child: Html(
                         data: htmlContent,
                         onLinkTap: (url, attributes, element) {
@@ -379,19 +390,25 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                           'h1': Style(
                             fontSize: FontSize(18),
                             fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : const Color(0xFF1F2937),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1F2937),
                             margin: Margins.only(top: 16, bottom: 12),
                           ),
                           'h2': Style(
                             fontSize: FontSize(16),
                             fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : const Color(0xFF1F2937),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1F2937),
                             margin: Margins.only(top: 14, bottom: 10),
                           ),
                           'h3': Style(
                             fontSize: FontSize(15),
                             fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : const Color(0xFF1F2937),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1F2937),
                             margin: Margins.only(top: 12, bottom: 8),
                           ),
                           'ul': Style(
@@ -408,7 +425,9 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                           ),
                           'strong': Style(
                             fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : const Color(0xFF1F2937),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1F2937),
                           ),
                           'em': Style(
                             fontStyle: FontStyle.italic,
@@ -427,7 +446,10 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                             color: isDark
                                 ? const Color(0xFFFCA5A5)
                                 : const Color(0xFFE74C3C),
-                            padding: HtmlPaddings.symmetric(horizontal: 6, vertical: 2),
+                            padding: HtmlPaddings.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             fontSize: FontSize(13),
                           ),
                           'pre': Style(

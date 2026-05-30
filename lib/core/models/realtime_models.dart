@@ -195,11 +195,11 @@ class RealtimeIdentity {
   });
 
   factory RealtimeIdentity.anonymous() => const RealtimeIdentity(
-        isAnonymous: true,
-        userId: 0,
-        visitorId: '',
-        supportChannels: [],
-      );
+    isAnonymous: true,
+    userId: 0,
+    visitorId: '',
+    supportChannels: [],
+  );
 
   factory RealtimeIdentity.fromJson(Map<String, dynamic> json) {
     final list = json['supportChannels'];

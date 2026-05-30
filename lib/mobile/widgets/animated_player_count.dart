@@ -99,7 +99,11 @@ class _AnimatedPlayerCountState extends State<AnimatedPlayerCount>
                 if (extraCount > 0)
                   Padding(
                     padding: const EdgeInsets.only(left: 2),
-                    child: _buildExtraCount(widget.queueCount, widget.warmupCount, extraCount),
+                    child: _buildExtraCount(
+                      widget.queueCount,
+                      widget.warmupCount,
+                      extraCount,
+                    ),
                   ),
                 Text('/$displayMax', style: widget.textStyle),
               ],
@@ -124,9 +128,15 @@ class _AnimatedPlayerCountState extends State<AnimatedPlayerCount>
         child: Text('+$extraCount', style: style.copyWith(color: Colors.white)),
       );
     } else if (queueCount > 0) {
-      return Text('+$extraCount', style: style.copyWith(color: const Color(0xFFF44336)));
+      return Text(
+        '+$extraCount',
+        style: style.copyWith(color: const Color(0xFFF44336)),
+      );
     } else {
-      return Text('+$extraCount', style: style.copyWith(color: const Color(0xFFF59E0B)));
+      return Text(
+        '+$extraCount',
+        style: style.copyWith(color: const Color(0xFFF59E0B)),
+      );
     }
   }
 }

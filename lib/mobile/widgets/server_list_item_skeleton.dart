@@ -19,8 +19,12 @@ class ServerListItemSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final baseColor = isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0);
-    final blockColor = isDark ? const Color(0xFF4A5568) : const Color(0xFFCBD5E0);
+    final baseColor = isDark
+        ? const Color(0xFF2D3748)
+        : const Color(0xFFE2E8F0);
+    final blockColor = isDark
+        ? const Color(0xFF4A5568)
+        : const Color(0xFFCBD5E0);
 
     Widget block({double? width, required double height, double radius = 4}) =>
         Container(
@@ -52,7 +56,10 @@ class ServerListItemSkeleton extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.grey.withValues(alpha: 0.3), width: 1.0),
+            side: BorderSide(
+              color: Colors.grey.withValues(alpha: 0.3),
+              width: 1.0,
+            ),
           ),
           child: SizedBox(
             height: 165,
@@ -81,7 +88,11 @@ class ServerListItemSkeleton extends StatelessWidget {
                           ),
                           overlay: Align(
                             alignment: Alignment.centerLeft,
-                            child: block(width: double.infinity, height: 14, radius: 4),
+                            child: block(
+                              width: double.infinity,
+                              height: 14,
+                              radius: 4,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 3),
@@ -94,7 +105,10 @@ class ServerListItemSkeleton extends StatelessWidget {
                               const SizedBox(width: 6),
                               const Text(
                                 'placeholder map name',
-                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ],
                           ),
@@ -119,7 +133,10 @@ class ServerListItemSkeleton extends StatelessWidget {
                                 style: TextStyle(fontSize: 14),
                               ),
                               const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 child: Icon(Icons.copy, size: 16),
                               ),
                             ],
@@ -130,7 +147,10 @@ class ServerListItemSkeleton extends StatelessWidget {
                               const SizedBox(width: 6),
                               block(width: 130, height: 11, radius: 4),
                               const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 child: SizedBox(width: 16, height: 16),
                               ),
                             ],
@@ -145,18 +165,30 @@ class ServerListItemSkeleton extends StatelessWidget {
                               const Icon(Icons.label_outline, size: 18),
                               const SizedBox(width: 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
                                 child: const Text(
                                   'tag',
-                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
                                 child: const Text(
                                   'tag2',
-                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ],
@@ -166,7 +198,10 @@ class ServerListItemSkeleton extends StatelessWidget {
                               block(width: 18, height: 18, radius: 3),
                               const SizedBox(width: 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: blockColor,
                                   borderRadius: BorderRadius.circular(4),
@@ -175,7 +210,10 @@ class ServerListItemSkeleton extends StatelessWidget {
                               ),
                               const SizedBox(width: 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: blockColor,
                                   borderRadius: BorderRadius.circular(4),
@@ -192,18 +230,30 @@ class ServerListItemSkeleton extends StatelessWidget {
                           realWidget: Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
                                 child: const Text(
                                   '00/00',
-                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
                                 child: const Text(
                                   '00分钟',
-                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ],
@@ -211,7 +261,10 @@ class ServerListItemSkeleton extends StatelessWidget {
                           overlay: Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
                                   color: blockColor.withValues(alpha: 0.6),
                                   borderRadius: BorderRadius.circular(6),
@@ -223,7 +276,10 @@ class ServerListItemSkeleton extends StatelessWidget {
                               ),
                               const SizedBox(width: 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
                                   color: blockColor.withValues(alpha: 0.6),
                                   borderRadius: BorderRadius.circular(6),
@@ -250,10 +306,7 @@ class ServerListItemSkeleton extends StatelessWidget {
     if (showShimmer) {
       return skeleton
           .animate(onPlay: (controller) => controller.repeat())
-          .shimmer(
-            duration: 1500.ms,
-            color: blockColor.withValues(alpha: 0.6),
-          );
+          .shimmer(duration: 1500.ms, color: blockColor.withValues(alpha: 0.6));
     }
 
     return skeleton;

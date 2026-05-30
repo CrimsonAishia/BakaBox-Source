@@ -1300,7 +1300,11 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
           if (extraCount > 0)
             Padding(
               padding: const EdgeInsets.only(left: 4),
-              child: _buildStaticExtraCount(queueCount, warmupCount, extraCount),
+              child: _buildStaticExtraCount(
+                queueCount,
+                warmupCount,
+                extraCount,
+              ),
             ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -1328,7 +1332,11 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     );
   }
 
-  Widget _buildStaticExtraCount(int queueCount, int warmupCount, int extraCount) {
+  Widget _buildStaticExtraCount(
+    int queueCount,
+    int warmupCount,
+    int extraCount,
+  ) {
     if (queueCount > 0 && warmupCount > 0) {
       return ShaderMask(
         shaderCallback: (bounds) => const LinearGradient(
@@ -1825,7 +1833,11 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.arrow_right_alt_rounded, size: 18, color: accentColor),
+                Icon(
+                  Icons.arrow_right_alt_rounded,
+                  size: 18,
+                  color: accentColor,
+                ),
                 const SizedBox(width: 2),
                 Icon(Icons.tune_rounded, size: 16, color: accentColor),
                 const SizedBox(width: 6),
@@ -1865,7 +1877,11 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                   ),
                 ],
                 const SizedBox(width: 4),
-                Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: accentColor),
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 16,
+                  color: accentColor,
+                ),
               ],
             ),
           ),
@@ -3426,7 +3442,9 @@ class _CompactMarqueeTextState extends State<_CompactMarqueeText> {
 
   double _measureOverflowWidth(BuildContext context) {
     final renderObject = context.findRenderObject();
-    final viewportWidth = renderObject is RenderBox ? renderObject.size.width : 0.0;
+    final viewportWidth = renderObject is RenderBox
+        ? renderObject.size.width
+        : 0.0;
     if (viewportWidth <= 0) return 0;
 
     final textPainter = TextPainter(

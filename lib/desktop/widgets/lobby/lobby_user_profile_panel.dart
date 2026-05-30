@@ -51,9 +51,10 @@ class _LobbyUserProfilePanelState extends State<LobbyUserProfilePanel>
     _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _animController.forward();
   }
 
@@ -77,16 +78,10 @@ class _LobbyUserProfilePanelState extends State<LobbyUserProfilePanel>
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF1A1F2E),
-                  Color(0xFF0F1624),
-                ],
+                colors: [Color(0xFF1A1F2E), Color(0xFF0F1624)],
               ),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: const Color(0xFF2A3A5C),
-                width: 1.5,
-              ),
+              border: Border.all(color: const Color(0xFF2A3A5C), width: 1.5),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.6),
@@ -104,10 +99,7 @@ class _LobbyUserProfilePanelState extends State<LobbyUserProfilePanel>
               borderRadius: BorderRadius.circular(14),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildHeader(),
-                  _buildGrid(),
-                ],
+                children: [_buildHeader(), _buildGrid()],
               ),
             ),
           ),
@@ -280,10 +272,7 @@ class _LobbyUserProfilePanelState extends State<LobbyUserProfilePanel>
         itemBuilder: (context, index) {
           final item = items[index];
           if (item == null) return const SizedBox.shrink();
-          return _GridItemWidget(
-            item: item,
-            onTap: () => _onItemTap(item.id),
-          );
+          return _GridItemWidget(item: item, onTap: () => _onItemTap(item.id));
         },
       ),
     );
@@ -358,7 +347,9 @@ class _GridItemWidgetState extends State<_GridItemWidget> {
             children: [
               Icon(
                 widget.item.icon,
-                color: widget.item.color.withValues(alpha: _hovered ? 1.0 : 0.8),
+                color: widget.item.color.withValues(
+                  alpha: _hovered ? 1.0 : 0.8,
+                ),
                 size: 22,
               ),
               const SizedBox(height: 6),

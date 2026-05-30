@@ -208,4 +208,3 @@ class KeyBindingCancelChangeRequest extends KeyBindingEvent {
   @override
   List<Object?> get props => [configId];
 }
-

@@ -43,14 +43,14 @@ class _GlobalBroadcastBarState extends State<GlobalBroadcastBar>
       duration: const Duration(milliseconds: 450),
       vsync: this,
     );
-    _cardSlide = Tween<Offset>(
-      begin: const Offset(1.2, 0.0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _cardController,
-      curve: Curves.elasticOut,
-      reverseCurve: Curves.easeInCubic,
-    ));
+    _cardSlide = Tween<Offset>(begin: const Offset(1.2, 0.0), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _cardController,
+            curve: Curves.elasticOut,
+            reverseCurve: Curves.easeInCubic,
+          ),
+        );
     _cardFade = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _cardController,
@@ -73,7 +73,8 @@ class _GlobalBroadcastBarState extends State<GlobalBroadcastBar>
   }
 
   // 有效消息数（不含正在退出的）
-  int get _activeCount => _messages.where((m) => !_leavingIds.contains(m.messageId)).length;
+  int get _activeCount =>
+      _messages.where((m) => !_leavingIds.contains(m.messageId)).length;
 
   void _onBroadcast(LobbyBroadcastMessage msg) {
     if (!mounted) return;
@@ -200,10 +201,7 @@ class _BroadcastCard extends StatelessWidget {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildHeader(),
-          _buildMessageList(),
-        ],
+        children: [_buildHeader(), _buildMessageList()],
       ),
     );
   }
@@ -218,9 +216,7 @@ class _BroadcastCard extends StatelessWidget {
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-        border: Border(
-          bottom: BorderSide(color: Color(0xFF2D3F55), width: 1),
-        ),
+        border: Border(bottom: BorderSide(color: Color(0xFF2D3F55), width: 1)),
       ),
       child: Row(
         children: [
@@ -232,7 +228,11 @@ class _BroadcastCard extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(7),
             ),
-            child: const Icon(Icons.campaign_rounded, color: Colors.white, size: 14),
+            child: const Icon(
+              Icons.campaign_rounded,
+              color: Colors.white,
+              size: 14,
+            ),
           ),
           const SizedBox(width: 8),
           const Column(
@@ -302,6 +302,7 @@ class _BroadcastCard extends StatelessWidget {
 class _AnimatedMessageItem extends StatefulWidget {
   final LobbyBroadcastMessage message;
   final bool isLeaving;
+
   /// true = 向上退出（被新消息顶替的最旧条目），false = 向下退出（用户手动关闭）
   final bool leaveUpward;
   final VoidCallback onDismiss;
@@ -399,14 +400,18 @@ class _AnimatedMessageItemState extends State<_AnimatedMessageItem>
       // 正确做法：退出时 forward 一个新的 controller，但我们只有一个 controller。
       // 最简单的解法：退出时直接 reverse()，leaveSlide 用 begin=leaveTo end=zero，
       // reverse 时 t: 1→0，即从 zero→leaveTo，正好是我们想要的。
-      _leaveSlide = Tween<Offset>(
-        begin: _leaveTo, // reverse 时：end(zero) → begin(leaveTo)，即 zero→leaveTo ✓
-        end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: _ctrl,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
-      ));
+      _leaveSlide =
+          Tween<Offset>(
+            begin:
+                _leaveTo, // reverse 时：end(zero) → begin(leaveTo)，即 zero→leaveTo ✓
+            end: Offset.zero,
+          ).animate(
+            CurvedAnimation(
+              parent: _ctrl,
+              curve: Curves.easeOutCubic,
+              reverseCurve: Curves.easeInCubic,
+            ),
+          );
       _ctrl.reverse();
     }
   }
@@ -485,7 +490,10 @@ class _MessageRowState extends State<_MessageRow> {
 
   void _startAutoScroll() {
     _autoScrollTimer?.cancel();
-    _autoScrollTimer = Timer(const Duration(milliseconds: 1500), _scrollToBottom);
+    _autoScrollTimer = Timer(
+      const Duration(milliseconds: 1500),
+      _scrollToBottom,
+    );
   }
 
   void _scrollToBottom() {
@@ -498,12 +506,17 @@ class _MessageRowState extends State<_MessageRow> {
     }
     final ms = (remaining / 40 * 1000).round().clamp(800, 12000);
     _scrollController
-        .animateTo(pos.maxScrollExtent,
-            duration: Duration(milliseconds: ms), curve: Curves.linear)
+        .animateTo(
+          pos.maxScrollExtent,
+          duration: Duration(milliseconds: ms),
+          curve: Curves.linear,
+        )
         .then((_) {
-      if (!mounted || !_scrollController.hasClients || _userScrolling) return;
-      _pauseThenReturnToTop();
-    });
+          if (!mounted || !_scrollController.hasClients || _userScrolling) {
+            return;
+          }
+          _pauseThenReturnToTop();
+        });
   }
 
   void _pauseThenReturnToTop() {
@@ -567,7 +580,9 @@ class _MessageRowState extends State<_MessageRow> {
                     return false;
                   },
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: _maxContentHeight),
+                    constraints: const BoxConstraints(
+                      maxHeight: _maxContentHeight,
+                    ),
                     child: RawScrollbar(
                       controller: _scrollController,
                       thumbVisibility: _needsScroll,
@@ -607,7 +622,11 @@ class _MessageRowState extends State<_MessageRow> {
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 150),
                 opacity: _dismissHovered ? 1.0 : 0.4,
-                child: const Icon(Icons.close_rounded, color: Colors.white, size: 14),
+                child: const Icon(
+                  Icons.close_rounded,
+                  color: Colors.white,
+                  size: 14,
+                ),
               ),
             ),
           ),
@@ -689,8 +708,9 @@ class _Avatar extends StatelessWidget {
   }
 
   Widget _fallback(double size) {
-    final initial =
-        nickname.isNotEmpty ? nickname.characters.first.toUpperCase() : '?';
+    final initial = nickname.isNotEmpty
+        ? nickname.characters.first.toUpperCase()
+        : '?';
     const colors = [
       Color(0xFF6366F1),
       Color(0xFF8B5CF6),

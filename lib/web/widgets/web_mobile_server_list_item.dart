@@ -9,6 +9,7 @@ import '../widgets/web_map_background.dart';
 class WebMobileServerListItem extends StatefulWidget {
   final WebServerItem server;
   final VoidCallback? onTap;
+
   /// 由父级页面提供的缓存地图背景 Widget（可选）
   final Widget? mapBackground;
 
@@ -20,7 +21,8 @@ class WebMobileServerListItem extends StatefulWidget {
   });
 
   @override
-  State<WebMobileServerListItem> createState() => _WebMobileServerListItemState();
+  State<WebMobileServerListItem> createState() =>
+      _WebMobileServerListItemState();
 }
 
 class _WebMobileServerListItemState extends State<WebMobileServerListItem> {
@@ -63,7 +65,11 @@ class _WebMobileServerListItemState extends State<WebMobileServerListItem> {
     if (url == null || url.isEmpty) return url;
     final uri = Uri.tryParse(url);
     if (uri == null) return url;
-    return uri.replace(query: '', fragment: '').toString().replaceAll('?', '').replaceAll('#', '');
+    return uri
+        .replace(query: '', fragment: '')
+        .toString()
+        .replaceAll('?', '')
+        .replaceAll('#', '');
   }
 
   /// 获取缓存的地图背景组件
@@ -294,7 +300,8 @@ class _WebMobileServerListItemState extends State<WebMobileServerListItem> {
                 ],
               ),
             ),
-            if (server.runtimeMinutes != null || server.weeklyOccurrences != null) ...[
+            if (server.runtimeMinutes != null ||
+                server.weeklyOccurrences != null) ...[
               const SizedBox(width: 6),
               _buildInfoChip(
                 child: Row(
@@ -318,9 +325,7 @@ class _WebMobileServerListItemState extends State<WebMobileServerListItem> {
                 ),
               ),
               const SizedBox(width: 6),
-              _buildInfoChip(
-                child: _buildScoreOrOccurrence(),
-              ),
+              _buildInfoChip(child: _buildScoreOrOccurrence()),
             ],
           ],
         ),
@@ -357,9 +362,12 @@ class _WebMobileServerListItemState extends State<WebMobileServerListItem> {
 
   Widget _buildScoreOrOccurrence() {
     final score = server.score;
-    final hasValidScore = score != null &&
+    final hasValidScore =
+        score != null &&
         !server.isCustom &&
-        (score.ctScore > 0 || score.tScore > 0 || score.dataQuality == 'unknown');
+        (score.ctScore > 0 ||
+            score.tScore > 0 ||
+            score.dataQuality == 'unknown');
 
     if (hasValidScore) {
       final isZombie = _isZombieMap(server.mapName);
@@ -399,11 +407,7 @@ class _WebMobileServerListItemState extends State<WebMobileServerListItem> {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Icon(
-              MdiIcons.swordCross,
-              size: 11,
-              color: iconColor,
-            ),
+            child: Icon(MdiIcons.swordCross, size: 11, color: iconColor),
           ),
           Text(
             '${score.tScore} $rightLabel',
@@ -461,7 +465,9 @@ class _WebMobileServerListItemState extends State<WebMobileServerListItem> {
           children: [
             Icon(
               server.isLoading ? Icons.hourglass_empty : Icons.info_outline,
-              color: server.isLoading ? Colors.orange.shade300 : Colors.red.shade300,
+              color: server.isLoading
+                  ? Colors.orange.shade300
+                  : Colors.red.shade300,
               size: 20,
             ),
             const SizedBox(width: 8),
@@ -469,7 +475,9 @@ class _WebMobileServerListItemState extends State<WebMobileServerListItem> {
               child: Text(
                 _serverStatusText,
                 style: TextStyle(
-                  color: server.isLoading ? Colors.orange.shade300 : Colors.red.shade300,
+                  color: server.isLoading
+                      ? Colors.orange.shade300
+                      : Colors.red.shade300,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),

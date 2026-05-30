@@ -86,54 +86,54 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
       ],
       child: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {
-        return Portal(
-          child: MaterialApp.router(
-            title: AppConstants.appName,
-            debugShowCheckedModeBanner: false,
-            localizationsDelegates: const [
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-              FlutterQuillLocalizations.delegate,
-            ],
-            supportedLocales: const [Locale('zh', 'CN'), Locale('en', 'US')],
-            builder: (context, child) {
-              final isDark = Theme.of(context).brightness == Brightness.dark;
-              return Stack(
-                children: [
-                  // 内容层：裁剪圆角
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: Container(
-                      color: isDark
-                          ? const Color(0xFF0F172A)
-                          : const Color(0xFFE9EEF8),
-                      child: child,
-                    ),
-                  ),
-                  // 边框层
-                  Positioned.fill(
-                    child: IgnorePointer(
+          return Portal(
+            child: MaterialApp.router(
+              title: AppConstants.appName,
+              debugShowCheckedModeBanner: false,
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+                FlutterQuillLocalizations.delegate,
+              ],
+              supportedLocales: const [Locale('zh', 'CN'), Locale('en', 'US')],
+              builder: (context, child) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                return Stack(
+                  children: [
+                    // 内容层：裁剪圆角
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
                       child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: const Color(0xFF0080FF),
-                            width: 2,
+                        color: isDark
+                            ? const Color(0xFF0F172A)
+                            : const Color(0xFFE9EEF8),
+                        child: child,
+                      ),
+                    ),
+                    // 边框层
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: const Color(0xFF0080FF),
+                              width: 2,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              );
-            },
-            theme: DesktopTheme.lightTheme,
-            darkTheme: DesktopTheme.darkTheme,
-            themeMode: settingsState.themeMode,
-            routerConfig: DesktopRouter.router,
-          ),
-        );
+                  ],
+                );
+              },
+              theme: DesktopTheme.lightTheme,
+              darkTheme: DesktopTheme.darkTheme,
+              themeMode: settingsState.themeMode,
+              routerConfig: DesktopRouter.router,
+            ),
+          );
         },
       ),
     );

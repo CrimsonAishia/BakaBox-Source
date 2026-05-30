@@ -150,8 +150,8 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
       // 获取自定义分类
       final customCategories = await CustomServerService.loadCustomCategories();
       // 获取 API 分类
-      final apiCategories =
-          await ServerCategoryService.instance.getApiCategories();
+      final apiCategories = await ServerCategoryService.instance
+          .getApiCategories();
       // 合并所有分类（自定义分类在前）
       _allCategories = [...customCategories, ...apiCategories];
 

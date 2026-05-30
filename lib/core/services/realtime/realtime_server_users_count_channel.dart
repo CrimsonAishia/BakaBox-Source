@@ -82,7 +82,10 @@ class RealtimeServerUsersCountChannel {
     _latestSnapshot = indexed;
     if (!_controller.isClosed) {
       _controller.add(
-        UsersCountUpdateEvent(kind: UsersCountUpdateEventKind.snapshot, counts: list),
+        UsersCountUpdateEvent(
+          kind: UsersCountUpdateEventKind.snapshot,
+          counts: list,
+        ),
       );
     }
   }
@@ -95,7 +98,10 @@ class RealtimeServerUsersCountChannel {
     _latestSnapshot = next;
     if (!_controller.isClosed) {
       _controller.add(
-        UsersCountUpdateEvent(kind: UsersCountUpdateEventKind.updated, counts: [count]),
+        UsersCountUpdateEvent(
+          kind: UsersCountUpdateEventKind.updated,
+          counts: [count],
+        ),
       );
     }
   }

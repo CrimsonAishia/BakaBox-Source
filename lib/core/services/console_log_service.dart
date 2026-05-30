@@ -663,7 +663,7 @@ class ConsoleLogService {
     final completer = Completer<ConnectionStatusResult>();
     StreamSubscription<ConsoleLogState>? subscription;
     Timer? timeoutTimer;
-    
+
     // 清理回调
     void cleanup() {
       subscription?.cancel();
@@ -728,15 +728,15 @@ class ConsoleLogService {
       subscription = stateStream.listen((state) {
         checkState(state);
       });
-      
+
       // 我们不需要使用 _checkTimer 了，但保留对 _isCancelled 的依赖以便外部能够中止。
       // 为保持向下兼容（如果其他函数在某处读取），这里设置一个空Timer
       _checkTimer?.cancel();
       _checkTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
-         if (_isCancelled || completer.isCompleted) {
-            timer.cancel();
-            cleanup();
-         }
+        if (_isCancelled || completer.isCompleted) {
+          timer.cancel();
+          cleanup();
+        }
       });
     }
 
@@ -995,16 +995,18 @@ class ConsoleLogService {
             // keep looking for the server IP backward
           } else if (event is EvConnectInitiated) {
             if (isInGame && lastServerAddress == null) {
-               lastServerAddress = event.target;
+              lastServerAddress = event.target;
             }
           } else if (event is EvMapLoaded) {
             if (isInGame && lastMapName == null) {
-               lastMapName = event.mapName;
+              lastMapName = event.mapName;
             }
           }
         }
 
-        if (isInGame && lastServerAddress != null && !lastServerAddress.contains('loopback')) {
+        if (isInGame &&
+            lastServerAddress != null &&
+            !lastServerAddress.contains('loopback')) {
           _currentState = _currentState.copyWith(
             state: GameState.inGame,
             serverAddress: lastServerAddress,
@@ -1057,25 +1059,22 @@ class ConsoleLogService {
       _isLoopbackFallback = false;
       _isInLoopbackMode = newServer.contains('loopback');
       LogService.d('[ConsoleLog] 解析到开始连接: $_targetServer');
-      
+
       if (!_isInLoopbackMode) {
         _updateConnectionState(
           GameState.connecting,
           serverAddress: newServer,
-          mapName: '',  // 新连接清空旧地图，避免残留上一个服务器的地图名
+          mapName: '', // 新连接清空旧地图，避免残留上一个服务器的地图名
           rawLine: line,
         );
       }
     } else if (event is EvSignonState) {
       if (_isInLoopbackMode) return;
-      
+
       LogService.d('[ConsoleLog] 解析到握手状态: ${event.state} (${event.stateName})');
-      
+
       if (event.state == 2) {
-        _updateConnectionState(
-          GameState.loading,
-          rawLine: line,
-        );
+        _updateConnectionState(GameState.loading, rawLine: line);
       } else if (event.state >= 5) {
         if (_currentState.serverAddress.isEmpty) {
           LogService.d('[ConsoleLog] 忽略无地址的进入游戏状态（推测为主菜单背景）');
@@ -1100,16 +1099,18 @@ class ConsoleLogService {
       }
     } else if (event is EvDisconnect) {
       if (_isInLoopbackMode) return;
-      LogService.d('[ConsoleLog] 解析到断开连接: ${event.reason}, 服满: ${event.isServerFull}');
-      
+      LogService.d(
+        '[ConsoleLog] 解析到断开连接: ${event.reason}, 服满: ${event.isServerFull}',
+      );
 
+      final state = event.isServerFull
+          ? GameState.serverFull
+          : GameState.failed;
 
-      final state = event.isServerFull ? GameState.serverFull : GameState.failed;
-      
       _updateConnectionState(
         state,
         serverAddress: '',
-        mapName: '',  // 断开连接清空地图名
+        mapName: '', // 断开连接清空地图名
         rawLine: line,
       );
     } else if (event is EvMapLoaded) {
@@ -1124,7 +1125,7 @@ class ConsoleLogService {
       _updateConnectionState(
         GameState.mainMenu,
         serverAddress: '',
-        mapName: '',  // 回到主菜单清空地图名
+        mapName: '', // 回到主菜单清空地图名
         rawLine: line,
       );
       _targetServer = '';

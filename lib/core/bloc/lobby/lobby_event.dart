@@ -396,5 +396,11 @@ class _LobbyQueueStarted extends LobbyEvent {
   });
 
   @override
-  List<Object?> get props => [ticket, position, queueTotal, etaSeconds, pollIntervalMs];
+  List<Object?> get props => [
+    ticket,
+    position,
+    queueTotal,
+    etaSeconds,
+    pollIntervalMs,
+  ];
 }

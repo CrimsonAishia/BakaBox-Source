@@ -72,9 +72,7 @@ class _ProfileMobileState extends State<ProfileMobile> {
                 // 顶部渐变背景 + 用户信息
                 _buildProfileHeader(context, authState),
                 // 内容区域
-                SliverToBoxAdapter(
-                  child: _buildContent(context, authState),
-                ),
+                SliverToBoxAdapter(child: _buildContent(context, authState)),
               ],
             );
           },
@@ -133,7 +131,9 @@ class _ProfileMobileState extends State<ProfileMobile> {
           builder: (context, notificationState) {
             return BlocBuilder<AnnouncementBloc, AnnouncementState>(
               builder: (context, announcementState) {
-                final totalUnread = notificationState.unreadCount + announcementState.unreadCount;
+                final totalUnread =
+                    notificationState.unreadCount +
+                    announcementState.unreadCount;
                 return Stack(
                   children: [
                     IconButton(
@@ -149,7 +149,10 @@ class _ProfileMobileState extends State<ProfileMobile> {
                         right: 0,
                         top: 0,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFEF4444),
                             borderRadius: BorderRadius.circular(10),
@@ -195,7 +198,10 @@ class _ProfileMobileState extends State<ProfileMobile> {
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.5),
+              width: 2,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.2),
@@ -258,12 +264,19 @@ class _ProfileMobileState extends State<ProfileMobile> {
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.5),
+              width: 2,
+            ),
           ),
           child: CircleAvatar(
             radius: 40,
             backgroundColor: Colors.white.withValues(alpha: 0.2),
-            child: const Icon(Icons.person_outline, size: 40, color: Colors.white),
+            child: const Icon(
+              Icons.person_outline,
+              size: 40,
+              color: Colors.white,
+            ),
           ),
         ).animate().scale(
           begin: const Offset(0.8, 0.8),
@@ -290,7 +303,10 @@ class _ProfileMobileState extends State<ProfileMobile> {
               borderRadius: BorderRadius.circular(20),
             ),
           ),
-          child: const Text('关联论坛账户', style: TextStyle(fontWeight: FontWeight.w600)),
+          child: const Text(
+            '关联论坛账户',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
         ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.2),
       ],
     );
@@ -461,8 +477,8 @@ class _ProfileMobileState extends State<ProfileMobile> {
                 onTap: state.hasCheckedIn || state.isCheckingIn
                     ? null
                     : () => context.read<DailyTaskBloc>().add(
-                          const DailyTaskCheckInRequested(),
-                        ),
+                        const DailyTaskCheckInRequested(),
+                      ),
               ),
               const SizedBox(height: 12),
               // 摇摇乐任务
@@ -503,7 +519,9 @@ class _ProfileMobileState extends State<ProfileMobile> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          color: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.5,
+          ),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -532,7 +550,10 @@ class _ProfileMobileState extends State<ProfileMobile> {
               )
             else if (isCompleted && reward != null)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF10B981).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -548,7 +569,10 @@ class _ProfileMobileState extends State<ProfileMobile> {
               )
             else
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF0080FF).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),

@@ -144,7 +144,9 @@ class AboutSettings extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF3B82F6),
+                      color: isDark
+                          ? const Color(0xFF93C5FD)
+                          : const Color(0xFF3B82F6),
                     ),
                   ),
                   const SizedBox(height: 4),

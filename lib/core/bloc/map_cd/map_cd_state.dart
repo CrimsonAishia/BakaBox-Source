@@ -61,5 +61,10 @@ class MapCdState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [cdCache, loadingMaps, errorCache, cacheTimestamps];
+  List<Object?> get props => [
+    cdCache,
+    loadingMaps,
+    errorCache,
+    cacheTimestamps,
+  ];
 }

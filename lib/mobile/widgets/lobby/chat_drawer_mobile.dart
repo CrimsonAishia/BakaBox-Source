@@ -12,10 +12,8 @@ Future<void> showChatBottomSheet(BuildContext context, LobbyBloc bloc) {
     // 让系统把键盘 viewInsets 传入 builder 的 MediaQuery
     useSafeArea: false,
     backgroundColor: Colors.transparent,
-    builder: (sheetContext) => BlocProvider.value(
-      value: bloc,
-      child: const ChatBottomSheetMobile(),
-    ),
+    builder: (sheetContext) =>
+        BlocProvider.value(value: bloc, child: const ChatBottomSheetMobile()),
   );
 }
 
@@ -121,7 +119,8 @@ class _ChatBottomSheetMobileState extends State<ChatBottomSheetMobile> {
     );
   }
 
-  Widget _buildHandle() {    return Padding(
+  Widget _buildHandle() {
+    return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 4),
       child: Container(
         width: 36,
@@ -139,15 +138,16 @@ class _ChatBottomSheetMobileState extends State<ChatBottomSheetMobile> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(
-            color: Colors.white.withValues(alpha: 0.08),
-          ),
+          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
         ),
       ),
       child: Row(
         children: [
-          Icon(Icons.chat_bubble_outline,
-              size: 22, color: Colors.white.withValues(alpha: 0.9)),
+          Icon(
+            Icons.chat_bubble_outline,
+            size: 22,
+            color: Colors.white.withValues(alpha: 0.9),
+          ),
           const SizedBox(width: 8),
           const Text(
             '大厅聊天',
@@ -166,8 +166,11 @@ class _ChatBottomSheetMobileState extends State<ChatBottomSheetMobile> {
                 color: Colors.white.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.close,
-                  size: 20, color: Colors.white.withValues(alpha: 0.54)),
+              child: Icon(
+                Icons.close,
+                size: 20,
+                color: Colors.white.withValues(alpha: 0.54),
+              ),
             ),
           ),
         ],
@@ -181,8 +184,9 @@ class _ChatBottomSheetMobileState extends State<ChatBottomSheetMobile> {
         height: 120,
         child: Center(
           child: Text(
-              '暂无消息',
-              style: TextStyle(color: Colors.white54, fontSize: 15)),
+            '暂无消息',
+            style: TextStyle(color: Colors.white54, fontSize: 15),
+          ),
         ),
       );
     }
@@ -308,9 +312,7 @@ class _ChatBottomSheetMobileState extends State<ChatBottomSheetMobile> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(
-            color: Colors.white.withValues(alpha: 0.08),
-          ),
+          top: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
         ),
       ),
       child: Row(

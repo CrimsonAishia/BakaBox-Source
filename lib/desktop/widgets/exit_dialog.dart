@@ -166,7 +166,9 @@ class _ExitDialogState extends State<ExitDialog> with TickerProviderStateMixin {
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(14),
-                      hoverColor: const Color(0xFF0080FF).withValues(alpha: 0.08),
+                      hoverColor: const Color(
+                        0xFF0080FF,
+                      ).withValues(alpha: 0.08),
                       onTap: () => Navigator.of(context).pop(),
                       child: Ink(
                         width: 36,
@@ -236,7 +238,9 @@ class _ExitDialogState extends State<ExitDialog> with TickerProviderStateMixin {
                                   duration: 800.ms,
                                   colors: [
                                     Colors.transparent,
-                                    const Color(0xFFEF4444).withValues(alpha: 0.1),
+                                    const Color(
+                                      0xFFEF4444,
+                                    ).withValues(alpha: 0.1),
                                     Colors.transparent,
                                   ],
                                 ),
@@ -322,7 +326,9 @@ class _ExitDialogState extends State<ExitDialog> with TickerProviderStateMixin {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
-                          hoverColor: const Color(0xFF0080FF).withValues(alpha: 0.06),
+                          hoverColor: const Color(
+                            0xFF0080FF,
+                          ).withValues(alpha: 0.06),
                           onTap: _handleHideToTray,
                           child: Center(
                             child: Row(

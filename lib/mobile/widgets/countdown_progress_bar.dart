@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 class CountdownProgressBar extends StatefulWidget {
   final int duration;
   final VoidCallback? onComplete;
+
   /// 手动点击刷新时的回调（用于强制刷新）
   final VoidCallback? onForceRefresh;
   final bool isActive;
+
   /// 外部传入的刷新状态，用于同步 Bloc 的实际刷新状态
   final bool isRefreshing;
 
@@ -26,8 +28,8 @@ class CountdownProgressBar extends StatefulWidget {
 class _CountdownProgressBarState extends State<CountdownProgressBar> {
   Timer? _timer;
   int _remaining = 0;
-  bool _internalRefreshing = false;  // 内部刷新动画状态
-  
+  bool _internalRefreshing = false; // 内部刷新动画状态
+
   /// 实际的刷新状态：内部动画状态 或 外部传入的刷新状态
   bool get _isRefreshing => _internalRefreshing || widget.isRefreshing;
 
@@ -43,12 +45,12 @@ class _CountdownProgressBarState extends State<CountdownProgressBar> {
   @override
   void didUpdateWidget(CountdownProgressBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // duration 变化时重新计算
     if (widget.duration != oldWidget.duration) {
       _remaining = widget.duration;
     }
-    
+
     // isActive 变化时启动或停止
     if (widget.isActive != oldWidget.isActive) {
       if (widget.isActive) {
@@ -57,7 +59,7 @@ class _CountdownProgressBarState extends State<CountdownProgressBar> {
         _timer?.cancel();
       }
     }
-    
+
     // 外部刷新状态从 true 变为 false 时，重置倒计时
     if (oldWidget.isRefreshing && !widget.isRefreshing) {
       setState(() {
@@ -77,7 +79,7 @@ class _CountdownProgressBarState extends State<CountdownProgressBar> {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted || !widget.isActive || _isRefreshing) return;
-      
+
       setState(() {
         _remaining--;
         if (_remaining <= 0) {
@@ -90,14 +92,14 @@ class _CountdownProgressBarState extends State<CountdownProgressBar> {
   void _triggerRefresh({required bool isManual}) {
     _internalRefreshing = true;
     _remaining = widget.duration;
-    
+
     // 手动刷新使用强制刷新，自动刷新使用普通刷新
     if (isManual && widget.onForceRefresh != null) {
       widget.onForceRefresh!();
     } else {
       widget.onComplete?.call();
     }
-    
+
     // 1秒后结束刷新动画
     Future.delayed(const Duration(seconds: 1), () {
       if (mounted) {
@@ -137,9 +139,13 @@ class _CountdownProgressBarState extends State<CountdownProgressBar> {
                   : CircularProgressIndicator(
                       value: progress,
                       strokeWidth: 3,
-                      backgroundColor: const Color(0xFF0080FF).withValues(alpha: 0.2),
+                      backgroundColor: const Color(
+                        0xFF0080FF,
+                      ).withValues(alpha: 0.2),
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        _remaining <= 5 ? Colors.orange : const Color(0xFF0080FF),
+                        _remaining <= 5
+                            ? Colors.orange
+                            : const Color(0xFF0080FF),
                       ),
                     ),
             ),
@@ -148,7 +154,9 @@ class _CountdownProgressBarState extends State<CountdownProgressBar> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: _remaining <= 5 || _isRefreshing ? Colors.orange : const Color(0xFF0080FF),
+                color: _remaining <= 5 || _isRefreshing
+                    ? Colors.orange
+                    : const Color(0xFF0080FF),
               ),
             ),
           ],

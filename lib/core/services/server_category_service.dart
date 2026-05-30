@@ -65,7 +65,9 @@ class ServerCategoryService {
         );
 
         if (result != null && result.isNotEmpty) {
-          LogService.i('[ServerCategoryService] 主 API 获取成功（第 $attempt 次），共 ${result.length} 个分类');
+          LogService.i(
+            '[ServerCategoryService] 主 API 获取成功（第 $attempt 次），共 ${result.length} 个分类',
+          );
           _lastSuccessfulList = result;
           await CacheService.cacheServerList(result);
           return result;
@@ -83,7 +85,9 @@ class ServerCategoryService {
 
     // 2. 本次运行内存缓存
     if (_lastSuccessfulList != null && _lastSuccessfulList!.isNotEmpty) {
-      LogService.i('[ServerCategoryService] 使用内存缓存，共 ${_lastSuccessfulList!.length} 个分类');
+      LogService.i(
+        '[ServerCategoryService] 使用内存缓存，共 ${_lastSuccessfulList!.length} 个分类',
+      );
       return _lastSuccessfulList!;
     }
 

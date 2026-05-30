@@ -33,6 +33,7 @@ class ServerState extends Equatable {
   final DateTime? loadingStartTime; // 加载开始时间（用于计算倒计时）
   /// 待应用的新分类列表（定时检测到变化后暂存，等用户确认后再应用）
   final List<ServerCategory>? pendingCategories;
+
   /// 每个服务器地址的最后已知在线人数缓存（累加模式：离线时保留上次成功的值）
   final Map<String, int> serverPlayerCache;
 

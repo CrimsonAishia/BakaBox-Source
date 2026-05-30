@@ -116,10 +116,7 @@ class _BilibiliContentMobileState extends State<BilibiliContentMobile>
         builder: (context, state) {
           return TabBarView(
             controller: _tabController,
-            children: [
-              _buildLiveRoomTab(state),
-              _buildVideoTab(state),
-            ],
+            children: [_buildLiveRoomTab(state), _buildVideoTab(state)],
           );
         },
       ),
@@ -170,7 +167,10 @@ class _BilibiliContentMobileState extends State<BilibiliContentMobile>
         labelColor: _bilibiliBlue,
         unselectedLabelColor: isDark ? Colors.white60 : Colors.black54,
         labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
+        unselectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: 15,
+        ),
         tabs: const [
           Tab(text: '直播间'),
           Tab(text: '视频'),
@@ -180,7 +180,9 @@ class _BilibiliContentMobileState extends State<BilibiliContentMobile>
   }
 
   Widget _buildLiveRoomTab(BilibiliContentState state) {
-    if (state.status == BilibiliContentStatus.loading && state.liveRooms.isEmpty && !state.isRefreshing) {
+    if (state.status == BilibiliContentStatus.loading &&
+        state.liveRooms.isEmpty &&
+        !state.isRefreshing) {
       return const Center(
         child: CircularProgressIndicator(color: _bilibiliBlue),
       );
@@ -196,7 +198,11 @@ class _BilibiliContentMobileState extends State<BilibiliContentMobile>
       onRefresh: () async {
         final bloc = context.read<BilibiliContentBloc>();
         bloc.add(
-          const BilibiliContentFetchRequested(refresh: true, tabIndex: 0, pageIndex: 1),
+          const BilibiliContentFetchRequested(
+            refresh: true,
+            tabIndex: 0,
+            pageIndex: 1,
+          ),
         );
         // 等待 isRefreshing 变为 false（数据加载完成）
         await bloc.stream.firstWhere((s) => !s.isRefreshing);
@@ -248,7 +254,11 @@ class _BilibiliContentMobileState extends State<BilibiliContentMobile>
             onRefresh: () async {
               final bloc = context.read<BilibiliContentBloc>();
               bloc.add(
-                const BilibiliContentFetchRequested(refresh: true, tabIndex: 1, pageIndex: 1),
+                const BilibiliContentFetchRequested(
+                  refresh: true,
+                  tabIndex: 1,
+                  pageIndex: 1,
+                ),
               );
               // 等待 isRefreshing 变为 false（数据加载完成）
               await bloc.stream.firstWhere((s) => !s.isRefreshing);
@@ -319,23 +329,29 @@ class _BilibiliContentMobileState extends State<BilibiliContentMobile>
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  _buildCategoryChip('全部', state.videoCategoryFilter == null, () {
-                    context.read<BilibiliContentBloc>().add(
-                      const BilibiliContentVideoCategoryFilterChanged(null),
-                    );
-                  }),
-                  ...state.videoCategories.map((cat) => Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: _buildCategoryChip(
-                      cat.name,
-                      state.videoCategoryFilter == cat.id,
-                      () {
-                        context.read<BilibiliContentBloc>().add(
-                          BilibiliContentVideoCategoryFilterChanged(cat.id),
-                        );
-                      },
+                  _buildCategoryChip(
+                    '全部',
+                    state.videoCategoryFilter == null,
+                    () {
+                      context.read<BilibiliContentBloc>().add(
+                        const BilibiliContentVideoCategoryFilterChanged(null),
+                      );
+                    },
+                  ),
+                  ...state.videoCategories.map(
+                    (cat) => Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: _buildCategoryChip(
+                        cat.name,
+                        state.videoCategoryFilter == cat.id,
+                        () {
+                          context.read<BilibiliContentBloc>().add(
+                            BilibiliContentVideoCategoryFilterChanged(cat.id),
+                          );
+                        },
+                      ),
                     ),
-                  )),
+                  ),
                 ],
               ),
             ),
@@ -354,10 +370,14 @@ class _BilibiliContentMobileState extends State<BilibiliContentMobile>
         decoration: BoxDecoration(
           color: isSelected
               ? _bilibiliBlue.withValues(alpha: 0.15)
-              : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05)),
+              : (isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.05)),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? _bilibiliBlue.withValues(alpha: 0.5) : Colors.transparent,
+            color: isSelected
+                ? _bilibiliBlue.withValues(alpha: 0.5)
+                : Colors.transparent,
           ),
         ),
         child: Text(
@@ -365,7 +385,9 @@ class _BilibiliContentMobileState extends State<BilibiliContentMobile>
           style: TextStyle(
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            color: isSelected ? _bilibiliBlue : (isDark ? Colors.white70 : Colors.black54),
+            color: isSelected
+                ? _bilibiliBlue
+                : (isDark ? Colors.white70 : Colors.black54),
           ),
         ),
       ),
@@ -381,10 +403,14 @@ class _BilibiliContentMobileState extends State<BilibiliContentMobile>
         decoration: BoxDecoration(
           color: isSelected
               ? _bilibiliPink.withValues(alpha: 0.15)
-              : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05)),
+              : (isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.05)),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? _bilibiliPink.withValues(alpha: 0.5) : Colors.transparent,
+            color: isSelected
+                ? _bilibiliPink.withValues(alpha: 0.5)
+                : Colors.transparent,
           ),
         ),
         child: Text(
@@ -392,7 +418,9 @@ class _BilibiliContentMobileState extends State<BilibiliContentMobile>
           style: TextStyle(
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            color: isSelected ? _bilibiliPink : (isDark ? Colors.white70 : Colors.black54),
+            color: isSelected
+                ? _bilibiliPink
+                : (isDark ? Colors.white70 : Colors.black54),
           ),
         ),
       ),

@@ -5,7 +5,7 @@ import '../../../core/widgets/disk_cached_image.dart';
 import '../../../desktop/widgets/character_gallery/character_gallery_theme.dart';
 
 /// 移动端角色卡片组件 - 现代花札风格设计
-/// 
+///
 /// 采用更精致的视觉效果，包括渐变装饰、柔和阴影和流畅动画
 class CharacterCardMobile extends StatefulWidget {
   final CharacterListItem character;
@@ -23,7 +23,7 @@ class CharacterCardMobile extends StatefulWidget {
   State<CharacterCardMobile> createState() => _CharacterCardMobileState();
 }
 
-class _CharacterCardMobileState extends State<CharacterCardMobile> 
+class _CharacterCardMobileState extends State<CharacterCardMobile>
     with SingleTickerProviderStateMixin {
   late AnimationController _pressController;
   late Animation<double> _scaleAnimation;
@@ -80,10 +80,7 @@ class _CharacterCardMobileState extends State<CharacterCardMobile>
       child: AnimatedBuilder(
         animation: _scaleAnimation,
         builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: child,
-          );
+          return Transform.scale(scale: _scaleAnimation.value, child: child);
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -94,7 +91,9 @@ class _CharacterCardMobileState extends State<CharacterCardMobile>
             border: Border.all(
               color: widget.isSelected
                   ? goldColor
-                  : (_isPressed ? vermillionColor : scrollBrown.withValues(alpha: 0.6)),
+                  : (_isPressed
+                        ? vermillionColor
+                        : scrollBrown.withValues(alpha: 0.6)),
               width: widget.isSelected ? 2.5 : 1.5,
             ),
             boxShadow: [
@@ -102,9 +101,11 @@ class _CharacterCardMobileState extends State<CharacterCardMobile>
               BoxShadow(
                 color: widget.isSelected
                     ? goldColor.withValues(alpha: isDark ? 0.3 : 0.25)
-                    : (_isPressed 
-                        ? vermillionColor.withValues(alpha: 0.2)
-                        : Colors.black.withValues(alpha: isDark ? 0.3 : 0.08)),
+                    : (_isPressed
+                          ? vermillionColor.withValues(alpha: 0.2)
+                          : Colors.black.withValues(
+                              alpha: isDark ? 0.3 : 0.08,
+                            )),
                 blurRadius: widget.isSelected ? 16 : (_isPressed ? 12 : 8),
                 offset: Offset(0, widget.isSelected ? 6 : (_isPressed ? 4 : 3)),
                 spreadRadius: widget.isSelected ? 1 : 0,
@@ -126,7 +127,9 @@ class _CharacterCardMobileState extends State<CharacterCardMobile>
                 Positioned.fill(
                   child: CustomPaint(
                     painter: _WashiTexturePainter(
-                      color: scrollBrown.withValues(alpha: isDark ? 0.03 : 0.02),
+                      color: scrollBrown.withValues(
+                        alpha: isDark ? 0.03 : 0.02,
+                      ),
                     ),
                   ),
                 ),
@@ -139,8 +142,8 @@ class _CharacterCardMobileState extends State<CharacterCardMobile>
                     // 角色图片
                     Expanded(
                       child: _buildCharacterImage(
-                        context, 
-                        washiColor, 
+                        context,
+                        washiColor,
                         scrollBrown,
                         goldColor,
                         vermillionColor,
@@ -179,19 +182,29 @@ class _CharacterCardMobileState extends State<CharacterCardMobile>
   }
 
   /// 顶部渐变装饰条
-  Widget _buildTopDecoration(BuildContext context, Color vermillion, Color gold) {
+  Widget _buildTopDecoration(
+    BuildContext context,
+    Color vermillion,
+    Color gold,
+  ) {
     return Container(
       height: 5,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: widget.isSelected
               ? [gold, gold.withValues(alpha: 0.8), gold]
-              : [vermillion.withValues(alpha: 0.9), vermillion, vermillion.withValues(alpha: 0.9)],
+              : [
+                  vermillion.withValues(alpha: 0.9),
+                  vermillion,
+                  vermillion.withValues(alpha: 0.9),
+                ],
           stops: const [0.0, 0.5, 1.0],
         ),
         boxShadow: [
           BoxShadow(
-            color: (widget.isSelected ? gold : vermillion).withValues(alpha: 0.3),
+            color: (widget.isSelected ? gold : vermillion).withValues(
+              alpha: 0.3,
+            ),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -214,7 +227,7 @@ class _CharacterCardMobileState extends State<CharacterCardMobile>
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: widget.isSelected 
+          color: widget.isSelected
               ? goldColor.withValues(alpha: 0.6)
               : scrollBrown.withValues(alpha: isDark ? 0.3 : 0.2),
           width: 1.5,
@@ -378,10 +391,18 @@ class _CharacterCardMobileState extends State<CharacterCardMobile>
   }
 
   /// 获取渠道标签
-  Widget _buildAcquisitionTag(BuildContext context, Color inkColor, bool isDark) {
+  Widget _buildAcquisitionTag(
+    BuildContext context,
+    Color inkColor,
+    bool isDark,
+  ) {
     final acquisition = widget.character.acquisition;
-    
-    final (text, color, icon) = acquisition == null || acquisition.type == AcquisitionType.unknown
+
+    final (
+      text,
+      color,
+      icon,
+    ) = acquisition == null || acquisition.type == AcquisitionType.unknown
         ? ('未知', inkColor.withValues(alpha: 0.5), Icons.help_outline_rounded)
         : switch (acquisition.type) {
             AcquisitionType.gold => (

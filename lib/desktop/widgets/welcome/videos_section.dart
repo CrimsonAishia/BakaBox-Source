@@ -45,7 +45,10 @@ class _VideosSectionState extends State<VideosSection> {
 
   void _scrollLeft() {
     _scrollController.animateTo(
-      (_scrollController.offset - 220).clamp(0, _scrollController.position.maxScrollExtent),
+      (_scrollController.offset - 220).clamp(
+        0,
+        _scrollController.position.maxScrollExtent,
+      ),
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutCubic,
     );
@@ -53,7 +56,10 @@ class _VideosSectionState extends State<VideosSection> {
 
   void _scrollRight() {
     _scrollController.animateTo(
-      (_scrollController.offset + 220).clamp(0, _scrollController.position.maxScrollExtent),
+      (_scrollController.offset + 220).clamp(
+        0,
+        _scrollController.position.maxScrollExtent,
+      ),
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutCubic,
     );
@@ -72,9 +78,7 @@ class _VideosSectionState extends State<VideosSection> {
     return BlocBuilder<BilibiliContentBloc, BilibiliContentState>(
       builder: (context, state) {
         // 只展示审核通过的视频，按创建时间降序（新添加的优先）
-        final videos = state.videos
-            .where((v) => v.isApproved)
-            .toList()
+        final videos = state.videos.where((v) => v.isApproved).toList()
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
         final displayVideos = videos.take(6).toList();
 
@@ -92,8 +96,7 @@ class _VideosSectionState extends State<VideosSection> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color:
-                        Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -194,7 +197,9 @@ class _VideosSectionState extends State<VideosSection> {
                               top: 0,
                               bottom: 10,
                               child: AnimatedOpacity(
-                                opacity: _isHovering ? (_canScrollLeft ? 1.0 : 0.3) : 0.0,
+                                opacity: _isHovering
+                                    ? (_canScrollLeft ? 1.0 : 0.3)
+                                    : 0.0,
                                 duration: const Duration(milliseconds: 200),
                                 child: IgnorePointer(
                                   ignoring: !_canScrollLeft,
@@ -212,7 +217,9 @@ class _VideosSectionState extends State<VideosSection> {
                               top: 0,
                               bottom: 10,
                               child: AnimatedOpacity(
-                                opacity: _isHovering ? (_canScrollRight ? 1.0 : 0.3) : 0.0,
+                                opacity: _isHovering
+                                    ? (_canScrollRight ? 1.0 : 0.3)
+                                    : 0.0,
                                 duration: const Duration(milliseconds: 200),
                                 child: IgnorePointer(
                                   ignoring: !_canScrollRight,
@@ -268,10 +275,7 @@ class _VideosSectionState extends State<VideosSection> {
         itemCount: 4,
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
-          return SizedBox(
-            width: 200,
-            child: _SkeletonCard(isDark: isDark),
-          );
+          return SizedBox(width: 200, child: _SkeletonCard(isDark: isDark));
         },
       ),
     );
@@ -338,26 +342,28 @@ class _ScrollArrowButtonState extends State<_ScrollArrowButton> {
                 decoration: BoxDecoration(
                   color: widget.isDark
                       ? (_hovering
-                          ? const Color(0xFF3B82F6).withValues(alpha: 0.3)
-                          : Colors.white.withValues(alpha: 0.12))
+                            ? const Color(0xFF3B82F6).withValues(alpha: 0.3)
+                            : Colors.white.withValues(alpha: 0.12))
                       : (_hovering
-                          ? const Color(0xFF3B82F6).withValues(alpha: 0.15)
-                          : Colors.black.withValues(alpha: 0.06)),
+                            ? const Color(0xFF3B82F6).withValues(alpha: 0.15)
+                            : Colors.black.withValues(alpha: 0.06)),
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: widget.isDark
                         ? (_hovering
-                            ? const Color(0xFF3B82F6).withValues(alpha: 0.7)
-                            : Colors.white.withValues(alpha: 0.3))
+                              ? const Color(0xFF3B82F6).withValues(alpha: 0.7)
+                              : Colors.white.withValues(alpha: 0.3))
                         : (_hovering
-                            ? const Color(0xFF3B82F6).withValues(alpha: 0.5)
-                            : Colors.black.withValues(alpha: 0.15)),
+                              ? const Color(0xFF3B82F6).withValues(alpha: 0.5)
+                              : Colors.black.withValues(alpha: 0.15)),
                     width: 1.5,
                   ),
                   boxShadow: _hovering
                       ? [
                           BoxShadow(
-                            color: const Color(0xFF3B82F6).withValues(alpha: 0.4),
+                            color: const Color(
+                              0xFF3B82F6,
+                            ).withValues(alpha: 0.4),
                             blurRadius: 12,
                             spreadRadius: 1,
                           ),
@@ -379,8 +385,12 @@ class _ScrollArrowButtonState extends State<_ScrollArrowButton> {
                   widget.icon,
                   size: 22,
                   color: widget.isDark
-                      ? (_hovering ? const Color(0xFF93C5FD) : Colors.white.withValues(alpha: 0.9))
-                      : (_hovering ? const Color(0xFF2563EB) : const Color(0xFF1E293B)),
+                      ? (_hovering
+                            ? const Color(0xFF93C5FD)
+                            : Colors.white.withValues(alpha: 0.9))
+                      : (_hovering
+                            ? const Color(0xFF2563EB)
+                            : const Color(0xFF1E293B)),
                 ),
               ),
             ),
@@ -412,9 +422,10 @@ class _SkeletonCardState extends State<_SkeletonCard>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
-    _animation = Tween<double>(begin: 0.3, end: 0.7).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _animation = Tween<double>(
+      begin: 0.3,
+      end: 0.7,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -448,16 +459,15 @@ class _NoMouseWheelBehavior extends ScrollBehavior {
 
   @override
   Set<PointerDeviceKind> get dragDevices => {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.stylus,
-        PointerDeviceKind.invertedStylus,
-      };
+    PointerDeviceKind.touch,
+    PointerDeviceKind.stylus,
+    PointerDeviceKind.invertedStylus,
+  };
 
   @override
   Widget buildScrollbar(
     BuildContext context,
     Widget child,
     ScrollableDetails details,
-  ) =>
-      child;
+  ) => child;
 }

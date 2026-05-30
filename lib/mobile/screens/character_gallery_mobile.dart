@@ -95,14 +95,16 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
             onRefresh: () async {
               final bloc = context.read<CharacterGalleryBloc>();
               if (state.showSpellCardTierView) {
-                bloc.add(LoadSpellCardTierList(
-                  type: state.spellCardTierFilter,
-                ));
+                bloc.add(
+                  LoadSpellCardTierList(type: state.spellCardTierFilter),
+                );
               } else {
-                bloc.add(LoadCharacters(
-                  category: state.selectedCategory,
-                  keyword: state.keyword,
-                ));
+                bloc.add(
+                  LoadCharacters(
+                    category: state.selectedCategory,
+                    keyword: state.keyword,
+                  ),
+                );
               }
             },
             child: CustomScrollView(
@@ -112,32 +114,40 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                 BlocBuilder<CharacterGalleryBloc, CharacterGalleryState>(
                   buildWhen: (previous, current) =>
                       previous.totalCount != current.totalCount ||
-                      previous.showSpellCardTierView != current.showSpellCardTierView ||
-                      previous.spellCardTierTotalCount != current.spellCardTierTotalCount ||
-                      (previous.listLoadState == LoadState.loading) != (current.listLoadState == LoadState.loading && current.characters.isEmpty),
+                      previous.showSpellCardTierView !=
+                          current.showSpellCardTierView ||
+                      previous.spellCardTierTotalCount !=
+                          current.spellCardTierTotalCount ||
+                      (previous.listLoadState == LoadState.loading) !=
+                          (current.listLoadState == LoadState.loading &&
+                              current.characters.isEmpty),
                   builder: (context, state) => _buildAppBar(context, state),
                 ),
                 // 工具栏（分类按钮 + 搜索框）- 只在分类或视图模式变化时重建
                 BlocBuilder<CharacterGalleryBloc, CharacterGalleryState>(
                   buildWhen: (previous, current) =>
                       previous.selectedCategory != current.selectedCategory ||
-                      previous.showSpellCardTierView != current.showSpellCardTierView,
-                  builder: (context, state) => SliverToBoxAdapter(
-                    child: _buildToolbar(state),
-                  ),
+                      previous.showSpellCardTierView !=
+                          current.showSpellCardTierView,
+                  builder: (context, state) =>
+                      SliverToBoxAdapter(child: _buildToolbar(state)),
                 ),
                 // 内容区域 - 只在内容相关状态变化时重建
                 BlocBuilder<CharacterGalleryBloc, CharacterGalleryState>(
                   buildWhen: (previous, current) =>
                       previous.listLoadState != current.listLoadState ||
                       previous.characters != current.characters ||
-                      previous.showSpellCardTierView != current.showSpellCardTierView ||
-                      previous.spellCardTierLoadState != current.spellCardTierLoadState ||
-                      previous.spellCardTierGroups != current.spellCardTierGroups ||
+                      previous.showSpellCardTierView !=
+                          current.showSpellCardTierView ||
+                      previous.spellCardTierLoadState !=
+                          current.spellCardTierLoadState ||
+                      previous.spellCardTierGroups !=
+                          current.spellCardTierGroups ||
                       previous.expandedTiers != current.expandedTiers ||
                       previous.hasMore != current.hasMore ||
                       previous.error != current.error,
-                  builder: (context, state) => _buildContentSliver(context, state),
+                  builder: (context, state) =>
+                      _buildContentSliver(context, state),
                 ),
               ],
             ),
@@ -161,10 +171,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
       toolbarHeight: 80,
       leading: IconButton(
         onPressed: () => context.pop(),
-        icon: Icon(
-          MdiIcons.arrowLeft,
-          color: colorScheme.onSurface,
-        ),
+        icon: Icon(MdiIcons.arrowLeft, color: colorScheme.onSurface),
       ),
       flexibleSpace: Container(
         decoration: BoxDecoration(
@@ -219,7 +226,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
 
   Widget _buildAppBarIcon(bool isDark) {
     final primaryColor = const Color(0xFF8B5CF6);
-    
+
     return Container(
       width: 48,
       height: 48,
@@ -255,15 +262,18 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
   }
 
   /// 构建内容区域（Sliver 版本）
-  Widget _buildContentSliver(BuildContext context, CharacterGalleryState state) {
+  Widget _buildContentSliver(
+    BuildContext context,
+    CharacterGalleryState state,
+  ) {
     // 加载中状态
     if (state.listLoadState == LoadState.loading && state.characters.isEmpty) {
       if (!state.showSpellCardTierView) {
         return SliverFillRemaining(child: _buildLoadingState());
       }
     }
-    
-    if (state.showSpellCardTierView && 
+
+    if (state.showSpellCardTierView &&
         state.spellCardTierLoadState == LoadState.loading &&
         state.spellCardTierGroups.isEmpty) {
       return SliverFillRemaining(child: _buildLoadingState());
@@ -273,8 +283,8 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
     if (state.listLoadState == LoadState.failure && state.characters.isEmpty) {
       return SliverFillRemaining(child: _buildErrorState(state.error));
     }
-    
-    if (state.showSpellCardTierView && 
+
+    if (state.showSpellCardTierView &&
         state.spellCardTierLoadState == LoadState.failure &&
         state.spellCardTierGroups.isEmpty) {
       return SliverFillRemaining(child: _buildErrorState(state.error));
@@ -295,7 +305,6 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
     );
   }
 
-
   /// 构建工具栏（分类按钮 + 搜索框）
   Widget _buildToolbar(CharacterGalleryState state) {
     final theme = Theme.of(context);
@@ -309,7 +318,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: isDark 
+              color: isDark
                   ? theme.colorScheme.surfaceContainer
                   : theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
@@ -329,7 +338,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                 Expanded(
                   child: _buildCategoryChip(
                     '東方',
-                    state.selectedCategory == CharacterCategory.touhou && 
+                    state.selectedCategory == CharacterCategory.touhou &&
                         !state.showSpellCardTierView,
                     () => _onCategoryChanged(CharacterCategory.touhou),
                     color: const Color(0xFFDC2626),
@@ -338,7 +347,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                 Expanded(
                   child: _buildCategoryChip(
                     '僵尸',
-                    state.selectedCategory == CharacterCategory.zombie && 
+                    state.selectedCategory == CharacterCategory.zombie &&
                         !state.showSpellCardTierView,
                     () => _onCategoryChanged(CharacterCategory.zombie),
                     color: const Color(0xFF16A34A),
@@ -347,7 +356,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                 Expanded(
                   child: _buildCategoryChip(
                     '普通',
-                    state.selectedCategory == CharacterCategory.normal && 
+                    state.selectedCategory == CharacterCategory.normal &&
                         !state.showSpellCardTierView,
                     () => _onCategoryChanged(CharacterCategory.normal),
                     color: const Color(0xFF2563EB),
@@ -398,9 +407,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
           label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: isSelected
-                ? chipColor
-                : theme.colorScheme.onSurfaceVariant,
+            color: isSelected ? chipColor : theme.colorScheme.onSurfaceVariant,
             fontSize: 14,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
           ),
@@ -416,7 +423,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark 
+        color: isDark
             ? theme.colorScheme.surfaceContainer
             : theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
@@ -427,16 +434,11 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
             blurRadius: 8,
           ),
         ],
-        border: Border.all(
-          color: theme.dividerColor.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
       ),
       child: TextField(
         controller: _searchController,
-        style: TextStyle(
-          color: theme.colorScheme.onSurface,
-          fontSize: 14,
-        ),
+        style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14),
         decoration: InputDecoration(
           hintText: '搜索角色名称...',
           hintStyle: TextStyle(
@@ -462,7 +464,9 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
+                        color: theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.1,
+                        ),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -526,7 +530,10 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
       child: Column(
         children: [
           for (final tierGroup in state.spellCardTierGroups)
-            _buildTierGroup(tierGroup, state.expandedTiers.contains(tierGroup.tier)),
+            _buildTierGroup(
+              tierGroup,
+              state.expandedTiers.contains(tierGroup.tier),
+            ),
           const SizedBox(height: 16),
         ],
       ),
@@ -538,7 +545,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final tierColor = _getTierColor(tierGroup.tier);
-    
+
     // 为每个评级创建 GlobalKey
     _tierKeys.putIfAbsent(tierGroup.tier, () => GlobalKey());
     final key = _tierKeys[tierGroup.tier];
@@ -550,7 +557,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
         color: theme.colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isExpanded 
+          color: isExpanded
               ? tierColor.withValues(alpha: 0.5)
               : theme.dividerColor.withValues(alpha: 0.3),
           width: isExpanded ? 1.5 : 1,
@@ -570,15 +577,18 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
           // 评级标题（可点击展开/折叠）
           _buildTierHeader(tierGroup, isExpanded, tierColor),
           // 符卡列表（展开时显示）
-          if (isExpanded)
-            _buildTierSpellCards(tierGroup.spellCards),
+          if (isExpanded) _buildTierSpellCards(tierGroup.spellCards),
         ],
       ),
     ).animate().fadeIn(duration: 200.ms);
   }
 
   /// 构建评级标题
-  Widget _buildTierHeader(SpellCardTierGroup tierGroup, bool isExpanded, Color tierColor) {
+  Widget _buildTierHeader(
+    SpellCardTierGroup tierGroup,
+    bool isExpanded,
+    Color tierColor,
+  ) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -589,7 +599,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
           final bloc = context.read<CharacterGalleryBloc>();
           final wasExpanded = bloc.state.expandedTiers.contains(tierGroup.tier);
           bloc.add(ToggleTierExpanded(tierGroup.tier));
-          
+
           // 展开时滚动到该项
           if (!wasExpanded) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -615,7 +625,10 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
             children: [
               // 评级徽章
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: tierColor.withValues(alpha: isDark ? 0.2 : 0.15),
                   borderRadius: BorderRadius.circular(8),
@@ -650,7 +663,9 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                 duration: const Duration(milliseconds: 200),
                 child: Icon(
                   Icons.keyboard_arrow_down_rounded,
-                  color: isExpanded ? tierColor : theme.colorScheme.onSurfaceVariant,
+                  color: isExpanded
+                      ? tierColor
+                      : theme.colorScheme.onSurfaceVariant,
                   size: 24,
                 ),
               ),
@@ -666,13 +681,19 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
     return Column(
       children: [
         for (int i = 0; i < spellCards.length; i++)
-          _buildSpellCardTierItem(spellCards[i], isLast: i == spellCards.length - 1),
+          _buildSpellCardTierItem(
+            spellCards[i],
+            isLast: i == spellCards.length - 1,
+          ),
       ],
     );
   }
 
   /// 构建符卡评级列表项（与桌面端完全一致）
-  Widget _buildSpellCardTierItem(SpellCardTierItem spellCard, {bool isLast = false}) {
+  Widget _buildSpellCardTierItem(
+    SpellCardTierItem spellCard, {
+    bool isLast = false,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final inkColor = CharacterGalleryTheme.getInkColor(context);
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
@@ -751,8 +772,16 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                             shadows: isDark
                                 ? null
                                 : [
-                                    const Shadow(color: Colors.white, blurRadius: 3),
-                                    Shadow(color: Colors.white.withValues(alpha: 0.8), blurRadius: 6),
+                                    const Shadow(
+                                      color: Colors.white,
+                                      blurRadius: 3,
+                                    ),
+                                    Shadow(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.8,
+                                      ),
+                                      blurRadius: 6,
+                                    ),
                                   ],
                           ),
                         ),
@@ -767,9 +796,22 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                               shadows: isDark
                                   ? null
                                   : [
-                                      const Shadow(color: Colors.white, blurRadius: 4),
-                                      Shadow(color: Colors.white.withValues(alpha: 0.9), blurRadius: 8),
-                                      Shadow(color: Colors.white.withValues(alpha: 0.7), blurRadius: 12),
+                                      const Shadow(
+                                        color: Colors.white,
+                                        blurRadius: 4,
+                                      ),
+                                      Shadow(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        blurRadius: 8,
+                                      ),
+                                      Shadow(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.7,
+                                        ),
+                                        blurRadius: 12,
+                                      ),
                                     ],
                             ),
                             maxLines: 1,
@@ -784,8 +826,14 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                           shadows: isDark
                               ? null
                               : [
-                                  const Shadow(color: Colors.white, blurRadius: 3),
-                                  Shadow(color: Colors.white.withValues(alpha: 0.8), blurRadius: 6),
+                                  const Shadow(
+                                    color: Colors.white,
+                                    blurRadius: 3,
+                                  ),
+                                  Shadow(
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    blurRadius: 6,
+                                  ),
                                 ],
                         ),
                       ],
@@ -809,7 +857,8 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                       ),
                     ),
                     // 描述
-                    if (spellCard.description != null && spellCard.description!.isNotEmpty)
+                    if (spellCard.description != null &&
+                        spellCard.description!.isNotEmpty)
                       Text(
                         spellCard.description!,
                         style: TextStyle(
@@ -820,9 +869,18 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                           shadows: isDark
                               ? null
                               : [
-                                  const Shadow(color: Colors.white, blurRadius: 4),
-                                  Shadow(color: Colors.white.withValues(alpha: 0.9), blurRadius: 8),
-                                  Shadow(color: Colors.white.withValues(alpha: 0.7), blurRadius: 12),
+                                  const Shadow(
+                                    color: Colors.white,
+                                    blurRadius: 4,
+                                  ),
+                                  Shadow(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    blurRadius: 8,
+                                  ),
+                                  Shadow(
+                                    color: Colors.white.withValues(alpha: 0.7),
+                                    blurRadius: 12,
+                                  ),
                                 ],
                         ),
                         maxLines: 2,
@@ -846,7 +904,11 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
   }
 
   /// 评级列表项属性行（与桌面端完全一致）
-  Widget _buildTierItemStats(SpellCardTierItem spellCard, Color accentColor, bool isDark) {
+  Widget _buildTierItemStats(
+    SpellCardTierItem spellCard,
+    Color accentColor,
+    bool isDark,
+  ) {
     final statItems = <Widget>[];
 
     if (spellCard.cooldown != null) {
@@ -910,7 +972,10 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
               ? null
               : [
                   const Shadow(color: Colors.white, blurRadius: 3),
-                  Shadow(color: Colors.white.withValues(alpha: 0.8), blurRadius: 6),
+                  Shadow(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    blurRadius: 6,
+                  ),
                 ],
         ),
         const SizedBox(width: 4),
@@ -924,7 +989,10 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                 ? null
                 : [
                     const Shadow(color: Colors.white, blurRadius: 3),
-                    Shadow(color: Colors.white.withValues(alpha: 0.8), blurRadius: 6),
+                    Shadow(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      blurRadius: 6,
+                    ),
                   ],
           ),
         ),
@@ -939,7 +1007,10 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                 ? null
                 : [
                     const Shadow(color: Colors.white, blurRadius: 3),
-                    Shadow(color: Colors.white.withValues(alpha: 0.8), blurRadius: 6),
+                    Shadow(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      blurRadius: 6,
+                    ),
                   ],
           ),
         ),
@@ -1110,12 +1181,16 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
               final bloc = context.read<CharacterGalleryBloc>();
               final state = bloc.state;
               if (state.showSpellCardTierView) {
-                bloc.add(LoadSpellCardTierList(type: state.spellCardTierFilter));
+                bloc.add(
+                  LoadSpellCardTierList(type: state.spellCardTierFilter),
+                );
               } else {
-                bloc.add(LoadCharacters(
-                  category: state.selectedCategory,
-                  keyword: state.keyword,
-                ));
+                bloc.add(
+                  LoadCharacters(
+                    category: state.selectedCategory,
+                    keyword: state.keyword,
+                  ),
+                );
               }
             },
             child: const Text('重试'),
@@ -1146,13 +1221,15 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
               alignment: Alignment.center,
               children: [
                 Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
-                    color: primaryColor.withValues(alpha: isDark ? 0.25 : 0.2),
-                  ),
-                )
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        color: primaryColor.withValues(
+                          alpha: isDark ? 0.25 : 0.2,
+                        ),
+                      ),
+                    )
                     .animate(onPlay: (controller) => controller.repeat())
                     .scale(duration: 1000.ms)
                     .fadeIn(duration: 500.ms),
@@ -1162,7 +1239,9 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                   child: CircularProgressIndicator(
                     strokeWidth: 3,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      isDark ? primaryColor.withValues(alpha: 0.9) : primaryColor,
+                      isDark
+                          ? primaryColor.withValues(alpha: 0.9)
+                          : primaryColor,
                     ),
                   ),
                 ),
@@ -1171,14 +1250,14 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
           ),
           const SizedBox(height: 32),
           Text(
-            '正在加载角色列表',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: isDark
-                  ? primaryColor.withValues(alpha: 0.9)
-                  : primaryColor,
-              fontWeight: FontWeight.w500,
-            ),
-          )
+                '正在加载角色列表',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: isDark
+                      ? primaryColor.withValues(alpha: 0.9)
+                      : primaryColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              )
               .animate(onPlay: (controller) => controller.repeat(reverse: true))
               .fadeIn(duration: 800.ms)
               .then(delay: 200.ms)

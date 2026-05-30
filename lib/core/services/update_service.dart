@@ -103,7 +103,8 @@ class UpdateService {
     AppUpdateInfo updateInfo,
     void Function(DownloadProgress) onProgress,
   ) async {
-    if (updateInfo.downloadUrl == null && updateInfo.fallbackDownloadUrl == null) {
+    if (updateInfo.downloadUrl == null &&
+        updateInfo.fallbackDownloadUrl == null) {
       throw const UpdateException('下载地址不可用');
     }
 
@@ -202,7 +203,8 @@ class UpdateService {
       return;
     }
 
-    if (updateInfo.downloadUrl == null && updateInfo.fallbackDownloadUrl == null) {
+    if (updateInfo.downloadUrl == null &&
+        updateInfo.fallbackDownloadUrl == null) {
       throw const UpdateException('下载地址不可用');
     }
 
@@ -341,7 +343,7 @@ class UpdateService {
     final primaryUrl = updateInfo.downloadUrl;
     final fallbackUrl = updateInfo.fallbackDownloadUrl;
 
-    if ((primaryUrl == null || primaryUrl.isEmpty) && 
+    if ((primaryUrl == null || primaryUrl.isEmpty) &&
         (fallbackUrl == null || fallbackUrl.isEmpty)) {
       throw const UpdateException('下载地址不可用');
     }
@@ -350,7 +352,9 @@ class UpdateService {
 
     // 第一阶段：尝试使用当前已有的地址进行下载（优先主地址）
     try {
-      final initialUrl = (primaryUrl != null && primaryUrl.isNotEmpty) ? primaryUrl : fallbackUrl!;
+      final initialUrl = (primaryUrl != null && primaryUrl.isNotEmpty)
+          ? primaryUrl
+          : fallbackUrl!;
       return await _updateApi.downloadUpdate(initialUrl, savePath, onProgress);
     } catch (e) {
       firstTryError = e;
@@ -366,14 +370,14 @@ class UpdateService {
     try {
       LogService.i('[UpdateService] 重新获取更新信息以刷新备用地址鉴权');
       final freshUpdateInfo = await _updateApi.checkForUpdate();
-      
+
       // 如果应用更新被后端紧急撤回
       if (!freshUpdateInfo.hasUpdate) {
         throw const UpdateException('当前更新已被服务器撤回，请稍后再试');
       }
 
       String? urlToUse;
-      
+
       if (primaryUrl != null && primaryUrl.isNotEmpty) {
         // 如果刚才失败的是主地址，这次优先尝试新的备用地址
         urlToUse = freshUpdateInfo.fallbackDownloadUrl;
@@ -385,10 +389,10 @@ class UpdateService {
         // 如果刚才失败的直接就是备用地址，那依然尝试刷新后的新备用地址
         urlToUse = freshUpdateInfo.fallbackDownloadUrl;
       }
-      
+
       // 极端兜底
       if (urlToUse == null || urlToUse.isEmpty) {
-        urlToUse = fallbackUrl ?? primaryUrl; 
+        urlToUse = fallbackUrl ?? primaryUrl;
       }
 
       if (urlToUse == null || urlToUse.isEmpty) {

@@ -250,7 +250,10 @@ class ServerApplyScoreUpdates extends ServerEvent {
   /// 实际不清，只覆盖入参里的条目，避免与本地的“无比分”状态冲突）
   final bool isSnapshot;
 
-  const ServerApplyScoreUpdates({required this.scores, required this.isSnapshot});
+  const ServerApplyScoreUpdates({
+    required this.scores,
+    required this.isSnapshot,
+  });
 
   @override
   List<Object?> get props => [scores, isSnapshot];
@@ -277,7 +280,10 @@ class ServerApplyUsersCountUpdates extends ServerEvent {
   final List<ServerUsersCount> counts;
   final bool isSnapshot;
 
-  const ServerApplyUsersCountUpdates({required this.counts, required this.isSnapshot});
+  const ServerApplyUsersCountUpdates({
+    required this.counts,
+    required this.isSnapshot,
+  });
 
   @override
   List<Object?> get props => [counts, isSnapshot];

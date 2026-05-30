@@ -65,7 +65,8 @@ class RealtimeService {
   final Set<String> _pendingSubscribeChannels = {};
 
   /// 各频道事件流控制器
-  final Map<String, StreamController<RealtimeChannelEvent>> _channelEventStreams = {};
+  final Map<String, StreamController<RealtimeChannelEvent>>
+  _channelEventStreams = {};
 
   /// 连接状态流控制器
   final StreamController<RealtimeConnectionState> _connectionStateController =
@@ -205,7 +206,9 @@ class RealtimeService {
     _connectedToken = token;
     final uri = _buildWsUri();
 
-    LogService.i('[Realtime] 正在连接: $uri (token=${token != null ? "yes" : "no"})');
+    LogService.i(
+      '[Realtime] 正在连接: $uri (token=${token != null ? "yes" : "no"})',
+    );
 
     try {
       // 优先使用带 token 的 protocols 头（部分场景 Cookie/Authorization 在握手阶段不会带上）
@@ -215,18 +218,20 @@ class RealtimeService {
       _channel = channel;
 
       // 等待 ready 后再开始监听，避免连接尚未就绪时发消息
-      channel.ready.then((_) {
-        if (_disposed) return;
-        LogService.d('[Realtime] WebSocket ready');
-        // 如果有 token，连接建立后立刻 auth（服务端 welcome 阶段身份取握手帧，
-        // 但握手帧的 Authorization 并非每个平台都能带上，统一用 auth 消息保证一致性）
-        if (token != null && token.isNotEmpty) {
-          _sendAuth(token);
-        }
-        _startHeartbeat();
-      }).catchError((Object e, StackTrace st) {
-        LogService.e('[Realtime] WebSocket ready 失败', e, st);
-      });
+      channel.ready
+          .then((_) {
+            if (_disposed) return;
+            LogService.d('[Realtime] WebSocket ready');
+            // 如果有 token，连接建立后立刻 auth（服务端 welcome 阶段身份取握手帧，
+            // 但握手帧的 Authorization 并非每个平台都能带上，统一用 auth 消息保证一致性）
+            if (token != null && token.isNotEmpty) {
+              _sendAuth(token);
+            }
+            _startHeartbeat();
+          })
+          .catchError((Object e, StackTrace st) {
+            LogService.e('[Realtime] WebSocket ready 失败', e, st);
+          });
 
       _channelSubscription = channel.stream.listen(
         _onMessage,
@@ -444,7 +449,9 @@ class RealtimeService {
   void _handleError(RealtimeIncomingMessage msg) {
     final code = msg.error;
     final channel = msg.channel;
-    LogService.w('[Realtime] error code=$code channel=$channel reqId=${msg.reqId}');
+    LogService.w(
+      '[Realtime] error code=$code channel=$channel reqId=${msg.reqId}',
+    );
 
     if (code == RealtimeErrorCodes.authRequired && channel != null) {
       _pendingSubscribeChannels.remove(channel);
@@ -535,7 +542,9 @@ class RealtimeService {
       final encoded = jsonEncode(payload);
       // 简单防爆：消息过长时截断日志，但仍然发送
       if (encoded.length > _sendChannelBufferLimit) {
-        LogService.d('[Realtime] send (${encoded.length}b) ${payload['action']}');
+        LogService.d(
+          '[Realtime] send (${encoded.length}b) ${payload['action']}',
+        );
       }
       channel.sink.add(encoded);
     } catch (e, st) {

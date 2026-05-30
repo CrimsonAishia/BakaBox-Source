@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../../../core/models/bilibili_content_models.dart';
@@ -11,11 +10,7 @@ class VideoCardMobile extends StatelessWidget {
   final BilibiliVideo video;
   final VoidCallback? onTap;
 
-  const VideoCardMobile({
-    super.key,
-    required this.video,
-    this.onTap,
-  });
+  const VideoCardMobile({super.key, required this.video, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -31,9 +26,7 @@ class VideoCardMobile extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         elevation: isDark ? 4 : 2,
         shadowColor: isDark ? Colors.black45 : Colors.black26,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -48,7 +41,9 @@ class VideoCardMobile extends StatelessWidget {
                     imageUrl: video.displayCover ?? '',
                     fit: BoxFit.cover,
                     placeholder: Container(
-                      color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                      color: isDark
+                          ? Colors.grey.shade800
+                          : Colors.grey.shade200,
                       child: const Center(
                         child: SizedBox(
                           width: 20,
@@ -58,8 +53,14 @@ class VideoCardMobile extends StatelessWidget {
                       ),
                     ),
                     errorWidget: Container(
-                      color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
-                      child: const Icon(Icons.video_library, size: 32, color: Colors.grey),
+                      color: isDark
+                          ? Colors.grey.shade800
+                          : Colors.grey.shade200,
+                      child: const Icon(
+                        Icons.video_library,
+                        size: 32,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
                   // 底部数据遮罩
@@ -83,11 +84,20 @@ class VideoCardMobile extends StatelessWidget {
                         children: [
                           _buildCoverStat(Icons.play_arrow, video.playCount),
                           const Spacer(),
-                          _buildCoverStat(Icons.thumb_up_outlined, video.likeCount),
+                          _buildCoverStat(
+                            Icons.thumb_up_outlined,
+                            video.likeCount,
+                          ),
                           const SizedBox(width: 6),
-                          _buildCoverStat(Icons.monetization_on_outlined, video.coinCount),
+                          _buildCoverStat(
+                            Icons.monetization_on_outlined,
+                            video.coinCount,
+                          ),
                           const SizedBox(width: 6),
-                          _buildCoverStat(Icons.star_border, video.favoriteCount),
+                          _buildCoverStat(
+                            Icons.star_border,
+                            video.favoriteCount,
+                          ),
                         ],
                       ),
                     ),
@@ -127,11 +137,19 @@ class VideoCardMobile extends StatelessWidget {
                               fit: BoxFit.cover,
                               placeholder: Container(
                                 color: _bilibiliBlue.withValues(alpha: 0.2),
-                                child: Icon(Icons.person, size: 12, color: _bilibiliBlue.withValues(alpha: 0.7)),
+                                child: Icon(
+                                  Icons.person,
+                                  size: 12,
+                                  color: _bilibiliBlue.withValues(alpha: 0.7),
+                                ),
                               ),
                               errorWidget: Container(
                                 color: _bilibiliBlue.withValues(alpha: 0.2),
-                                child: Icon(Icons.person, size: 12, color: _bilibiliBlue.withValues(alpha: 0.7)),
+                                child: Icon(
+                                  Icons.person,
+                                  size: 12,
+                                  color: _bilibiliBlue.withValues(alpha: 0.7),
+                                ),
                               ),
                             ),
                           ),

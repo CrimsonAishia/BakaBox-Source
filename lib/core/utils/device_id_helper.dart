@@ -32,9 +32,16 @@ class DeviceIdHelper {
   /// 表示 BIOS 未正确报告真实 UUID，需要降级兜底。
   /// 只检测全 0、全 B、全 F 这些明显的人造占位符。
   static final _placeholderPatterns = [
-    RegExp(r'^0{8}-0{4}-0{4}-0{4}-0{12}$', caseSensitive: false), // 00000000-0000-0000-0000-000000000000
-    RegExp(r'^[Bb]{8}-[Bb]{4}-[Bb]{4}-[Bb]{4}-[Bb]{12}$'), // BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB
-    RegExp(r'^[Ff]{8}-[Ff]{4}-[Ff]{4}-[Ff]{4}-[Ff]{12}$'), // FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF
+    RegExp(
+      r'^0{8}-0{4}-0{4}-0{4}-0{12}$',
+      caseSensitive: false,
+    ), // 00000000-0000-0000-0000-000000000000
+    RegExp(
+      r'^[Bb]{8}-[Bb]{4}-[Bb]{4}-[Bb]{4}-[Bb]{12}$',
+    ), // BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB
+    RegExp(
+      r'^[Ff]{8}-[Ff]{4}-[Ff]{4}-[Ff]{4}-[Ff]{12}$',
+    ), // FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF
   ];
 
   static final _random = Random();
@@ -121,9 +128,7 @@ class DeviceIdHelper {
     String fallbackId;
     try {
       fallbackId = _generateDeterministicId();
-      LogService.w(
-        '[DeviceIdHelper] 生成了确定性 fallback ID（seed: 机器名/OS/核心数）',
-      );
+      LogService.w('[DeviceIdHelper] 生成了确定性 fallback ID（seed: 机器名/OS/核心数）');
     } catch (e) {
       // 极不可能：所有确定性路径都失败
       fallbackId = _generateRandomId();
@@ -131,13 +136,15 @@ class DeviceIdHelper {
     }
 
     // 异步写入缓存（不阻塞）
-    StorageUtils.setString(_fallbackStorageKey, fallbackId).then((_) {
-      LogService.d(
-        '[DeviceIdHelper] fallback ID 已持久化: ${_maskForLog(fallbackId)}',
-      );
-    }).catchError((e) {
-      LogService.w('[DeviceIdHelper] fallback ID 持久化失败: $e');
-    });
+    StorageUtils.setString(_fallbackStorageKey, fallbackId)
+        .then((_) {
+          LogService.d(
+            '[DeviceIdHelper] fallback ID 已持久化: ${_maskForLog(fallbackId)}',
+          );
+        })
+        .catchError((e) {
+          LogService.w('[DeviceIdHelper] fallback ID 持久化失败: $e');
+        });
 
     return fallbackId;
   }
@@ -149,21 +156,19 @@ class DeviceIdHelper {
     if (!Platform.isWindows) return null;
 
     try {
-      final result = await Process.run(
-        'powershell',
-        [
-          '-NoProfile',
-          '-NonInteractive',
-          '-Command',
-          '(Get-CimInstance Win32_ComputerSystemProduct).UUID',
-        ],
-        runInShell: false,
-      );
+      final result = await Process.run('powershell', [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        '(Get-CimInstance Win32_ComputerSystemProduct).UUID',
+      ], runInShell: false);
 
       if (result.exitCode == 0) {
         final uuid = (result.stdout as String).trim();
         if (uuid.isNotEmpty && uuid.length == 36) {
-          LogService.d('[DeviceIdHelper] PowerShell 获取到 UUID: ${_maskForLog(uuid)}');
+          LogService.d(
+            '[DeviceIdHelper] PowerShell 获取到 UUID: ${_maskForLog(uuid)}',
+          );
           return uuid;
         }
       }
@@ -178,23 +183,23 @@ class DeviceIdHelper {
     if (!Platform.isWindows) return null;
 
     try {
-      final result = await Process.run(
-        'reg',
-        [
-          'query',
-          r'HKLM\SOFTWARE\Microsoft\Cryptography',
-          '/v', 'MachineGuid',
-        ],
-        runInShell: false,
-      );
+      final result = await Process.run('reg', [
+        'query',
+        r'HKLM\SOFTWARE\Microsoft\Cryptography',
+        '/v',
+        'MachineGuid',
+      ], runInShell: false);
 
       if (result.exitCode == 0) {
         final output = (result.stdout as String);
-        final match = RegExp(r'MachineGuid\s+REG_SZ\s+([a-fA-F0-9-]{36})')
-            .firstMatch(output);
+        final match = RegExp(
+          r'MachineGuid\s+REG_SZ\s+([a-fA-F0-9-]{36})',
+        ).firstMatch(output);
         if (match != null) {
           final guid = match.group(1)!;
-          LogService.d('[DeviceIdHelper] 注册表获取到 MachineGuid: ${_maskForLog(guid)}');
+          LogService.d(
+            '[DeviceIdHelper] 注册表获取到 MachineGuid: ${_maskForLog(guid)}',
+          );
           return guid;
         }
       }
@@ -209,19 +214,21 @@ class DeviceIdHelper {
     if (!Platform.isMacOS) return null;
 
     try {
-      final result = await Process.run(
-        'system_profiler',
-        ['SPHardwareDataType'],
-        runInShell: false,
-      );
+      final result = await Process.run('system_profiler', [
+        'SPHardwareDataType',
+      ], runInShell: false);
 
       if (result.exitCode == 0) {
         final output = (result.stdout as String);
-        final match = RegExp(r'Hardware UUID:\s+([A-F0-9-]+)', caseSensitive: false)
-            .firstMatch(output);
+        final match = RegExp(
+          r'Hardware UUID:\s+([A-F0-9-]+)',
+          caseSensitive: false,
+        ).firstMatch(output);
         if (match != null) {
           final uuid = match.group(1)!;
-          LogService.d('[DeviceIdHelper] system_profiler 获取到 UUID: ${_maskForLog(uuid)}');
+          LogService.d(
+            '[DeviceIdHelper] system_profiler 获取到 UUID: ${_maskForLog(uuid)}',
+          );
           return uuid;
         }
       }
@@ -236,16 +243,17 @@ class DeviceIdHelper {
     if (!Platform.isLinux) return null;
 
     try {
-      final result = await Process.run(
-        'dmidecode',
-        ['-s', 'system-uuid'],
-        runInShell: false,
-      );
+      final result = await Process.run('dmidecode', [
+        '-s',
+        'system-uuid',
+      ], runInShell: false);
 
       if (result.exitCode == 0) {
         final uuid = (result.stdout as String).trim();
         if (uuid.isNotEmpty && uuid.length >= 32) {
-          LogService.d('[DeviceIdHelper] dmidecode 获取到 UUID: ${_maskForLog(uuid)}');
+          LogService.d(
+            '[DeviceIdHelper] dmidecode 获取到 UUID: ${_maskForLog(uuid)}',
+          );
           return uuid;
         }
       }
@@ -284,7 +292,9 @@ class DeviceIdHelper {
       LogService.w('[DeviceIdHelper] 系统级设备ID获取失败，启用 fallback 兜底方案');
       final fallbackId = _getFallbackDeviceId();
       _cachedDeviceId = fallbackId;
-      LogService.d('[DeviceIdHelper] 设备ID (fallback): ${_maskForLog(fallbackId)}');
+      LogService.d(
+        '[DeviceIdHelper] 设备ID (fallback): ${_maskForLog(fallbackId)}',
+      );
       return fallbackId;
     }
 
@@ -295,7 +305,9 @@ class DeviceIdHelper {
       LogService.w('[DeviceIdHelper] 检测到无效占位符 UUID，启用 fallback 兜底方案');
       final fallbackId = _getFallbackDeviceId();
       _cachedDeviceId = fallbackId;
-      LogService.d('[DeviceIdHelper] 设备ID (fallback): ${_maskForLog(fallbackId)}');
+      LogService.d(
+        '[DeviceIdHelper] 设备ID (fallback): ${_maskForLog(fallbackId)}',
+      );
       return fallbackId;
     }
 

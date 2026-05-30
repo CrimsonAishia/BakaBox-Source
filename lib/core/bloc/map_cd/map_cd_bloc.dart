@@ -16,10 +16,7 @@ class MapCdBloc extends Bloc<MapCdEvent, MapCdState> {
     on<ClearMapCdCache>(_onClearMapCdCache);
   }
 
-  Future<void> _onLoadMapCd(
-    LoadMapCd event,
-    Emitter<MapCdState> emit,
-  ) async {
+  Future<void> _onLoadMapCd(LoadMapCd event, Emitter<MapCdState> emit) async {
     final mapName = event.mapName;
 
     // 如果缓存有效，直接返回

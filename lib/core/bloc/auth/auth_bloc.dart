@@ -31,8 +31,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthSessionExpired>(_onSessionExpired);
 
     // 监听 WS 强制登出事件
-    _forceLogoutSubscription =
-        RealtimeService().forceLogoutStream.listen((payload) {
+    _forceLogoutSubscription = RealtimeService().forceLogoutStream.listen((
+      payload,
+    ) {
       LogService.w(
         '[AuthBloc] 收到 force_logout reason=${payload.reason} '
         'message=${payload.message}',

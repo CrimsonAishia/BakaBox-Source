@@ -25,7 +25,8 @@ class DesktopWindowLauncher {
 
     // 主窗口需要单实例检查
     if (!isSubWindow) {
-      final canStart = await SingleInstanceService.instance.ensureSingleInstance(args);
+      final canStart = await SingleInstanceService.instance
+          .ensureSingleInstance(args);
       if (!canStart) {
         exit(0);
       }

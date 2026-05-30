@@ -180,14 +180,17 @@ class _WelcomeHeader extends StatelessWidget {
           children: [
             // 项目 Logo
             ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.asset(
-                'assets/images/logo.png',
-                width: 48,
-                height: 48,
-                fit: BoxFit.cover,
-              ),
-            ).animate().fadeIn(duration: 400.ms).scale(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.cover,
+                  ),
+                )
+                .animate()
+                .fadeIn(duration: 400.ms)
+                .scale(
                   begin: const Offset(0.8, 0.8),
                   end: const Offset(1.0, 1.0),
                   duration: 400.ms,
@@ -200,11 +203,15 @@ class _WelcomeHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                        username != null ? '$greeting，$username 👋' : '$greeting 👋',
+                        username != null
+                            ? '$greeting，$username 👋'
+                            : '$greeting 👋',
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.white : const Color(0xFF1E293B),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1E293B),
                         ),
                       )
                       .animate()

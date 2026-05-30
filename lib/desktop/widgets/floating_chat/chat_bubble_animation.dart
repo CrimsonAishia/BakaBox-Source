@@ -176,10 +176,7 @@ class _BubbleBody extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _TrianglePainter extends CustomPainter {
-  const _TrianglePainter({
-    required this.fillColor,
-    required this.borderColor,
-  });
+  const _TrianglePainter({required this.fillColor, required this.borderColor});
 
   final Color fillColor;
   final Color borderColor;

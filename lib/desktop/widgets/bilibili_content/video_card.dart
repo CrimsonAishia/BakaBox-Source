@@ -146,14 +146,26 @@ class _VideoCardState extends State<VideoCard> {
                     child: Row(
                       children: [
                         // 播放量（居左）
-                        _buildCoverStat(Icons.play_arrow, widget.video.playCount),
+                        _buildCoverStat(
+                          Icons.play_arrow,
+                          widget.video.playCount,
+                        ),
                         const Spacer(),
                         // 互动三连（居右）
-                        _buildCoverStat(Icons.thumb_up_outlined, widget.video.likeCount),
+                        _buildCoverStat(
+                          Icons.thumb_up_outlined,
+                          widget.video.likeCount,
+                        ),
                         const SizedBox(width: 8),
-                        _buildCoverStat(Icons.monetization_on_outlined, widget.video.coinCount),
+                        _buildCoverStat(
+                          Icons.monetization_on_outlined,
+                          widget.video.coinCount,
+                        ),
                         const SizedBox(width: 8),
-                        _buildCoverStat(Icons.star_border, widget.video.favoriteCount),
+                        _buildCoverStat(
+                          Icons.star_border,
+                          widget.video.favoriteCount,
+                        ),
                       ],
                     ),
                   ),

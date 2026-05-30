@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -16,7 +15,6 @@ import '../../../core/services/status_window_service.dart';
 import '../../../core/services/steam_user_service.dart';
 import '../../../core/utils/map_utils.dart';
 import '../../../core/utils/player_count_utils.dart';
-import '../../../core/utils/storage_utils.dart';
 import '../../../core/utils/toast_utils.dart';
 import '../../../core/widgets/map_background.dart';
 import '../../../core/widgets/csgo_manual_launch_dialog.dart';

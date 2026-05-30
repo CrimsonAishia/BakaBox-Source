@@ -75,7 +75,8 @@ class ConfigFormInput extends StatelessWidget {
             ),
           ),
           onChanged: onChanged,
-          validator: validator ?? (v) => v?.trim().isEmpty == true ? '必填' : null,
+          validator:
+              validator ?? (v) => v?.trim().isEmpty == true ? '必填' : null,
         ),
       ],
     );
@@ -228,7 +229,8 @@ class ScriptEditor extends StatelessWidget {
               contentPadding: const EdgeInsets.all(12),
             ),
             onChanged: onChanged,
-            validator: validator ??
+            validator:
+                validator ??
                 (v) {
                   if (v?.trim().isEmpty == true) return '必填';
                   if (needsKey && !KeyPlaceholderParser.hasPlaceholders(v!)) {

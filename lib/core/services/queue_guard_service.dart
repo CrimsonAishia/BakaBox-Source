@@ -174,7 +174,8 @@ class QueueGuardService {
     // 1. 全局守护回调不会误触发 finalize
     // 2. _observeConnection 内部的 onSignal 把它当成 seenLeftOldServer=true
     //    而非直接 resolve(success)
-    final consoleSwitching = consoleState.state == GameState.connecting ||
+    final consoleSwitching =
+        consoleState.state == GameState.connecting ||
         consoleState.state == GameState.loading;
     if (consoleSwitching) {
       return GuardLocation.notInGame;
@@ -207,7 +208,9 @@ class QueueGuardService {
         if (target != null) {
           final targetHost = target.split(':').first;
           final consoleHost = consoleAddr.split(':').first;
-          final isConsoleIpv4 = RegExp(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$').hasMatch(consoleHost);
+          final isConsoleIpv4 = RegExp(
+            r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$',
+          ).hasMatch(consoleHost);
           final isTargetDomain = targetHost.contains(RegExp(r'[a-zA-Z]'));
 
           if (isTargetDomain && isConsoleIpv4) {
@@ -260,8 +263,9 @@ class QueueGuardService {
     if (consoleAddress.isEmpty) return false;
 
     // 用映射服务把 IP 反查成域名（如果命中），否则原样返回
-    final normalized =
-        ServerAddressMappingService().getDomainAddress(consoleAddress);
+    final normalized = ServerAddressMappingService().getDomainAddress(
+      consoleAddress,
+    );
 
     return normalized == target;
   }

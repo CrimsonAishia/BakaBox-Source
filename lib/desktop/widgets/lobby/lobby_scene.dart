@@ -77,7 +77,9 @@ class _LobbySceneState extends State<LobbyScene> with TickerProviderStateMixin {
     final newSpriteAdded = newIds.difference(oldIds).isNotEmpty;
 
     if (newSpriteAdded) {
-      LogService.d('[LobbyScene] 发现新增 sprite，重新创建游戏: ${newIds.difference(oldIds)}');
+      LogService.d(
+        '[LobbyScene] 发现新增 sprite，重新创建游戏: ${newIds.difference(oldIds)}',
+      );
       _disposeGame();
       _createGame();
     }
@@ -115,19 +117,19 @@ class _LobbySceneState extends State<LobbyScene> with TickerProviderStateMixin {
     _mapLoadSubscription = LobbyMapLoaderService.instance
         .getStateStream(mapId)
         .listen((state) {
-      if (!mounted) return;
+          if (!mounted) return;
 
-      setState(() {
-        _currentMapState = state;
-      });
+          setState(() {
+            _currentMapState = state;
+          });
 
-      // 如果地图加载完成且正在等待，进行切换
-      if (state.isReady && _isWaitingForMapLoad && _targetMapId == mapId) {
-        LogService.d('[LobbyScene] 地图加载完成，开始切换: $mapId');
-        _isWaitingForMapLoad = false;
-        _performMapSwitch(mapId);
-      }
-    });
+          // 如果地图加载完成且正在等待，进行切换
+          if (state.isReady && _isWaitingForMapLoad && _targetMapId == mapId) {
+            LogService.d('[LobbyScene] 地图加载完成，开始切换: $mapId');
+            _isWaitingForMapLoad = false;
+            _performMapSwitch(mapId);
+          }
+        });
   }
 
   /// 执行地图切换
@@ -175,7 +177,9 @@ class _LobbySceneState extends State<LobbyScene> with TickerProviderStateMixin {
     if (!mounted) return;
 
     final state = widget.state;
-    LogService.d('[LobbyScene] _createGame: users=${state.users.length} sprites=${state.availableSprites.length}');
+    LogService.d(
+      '[LobbyScene] _createGame: users=${state.users.length} sprites=${state.availableSprites.length}',
+    );
 
     _game = LobbyGame(
       bloc: context.read<LobbyBloc>(),
@@ -260,11 +264,7 @@ class _LoadingPlaceholder extends StatelessWidget {
   final MapLoadState? mapState;
   final bool isDark;
 
-  const _LoadingPlaceholder({
-    super.key,
-    this.mapState,
-    required this.isDark,
-  });
+  const _LoadingPlaceholder({super.key, this.mapState, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -274,14 +274,8 @@ class _LoadingPlaceholder extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: isDark
-              ? [
-                  const Color(0xFF0B1120),
-                  const Color(0xFF1A1F2E),
-                ]
-              : [
-                  const Color(0xFFDDE7F7),
-                  const Color(0xFFE8EEF7),
-                ],
+              ? [const Color(0xFF0B1120), const Color(0xFF1A1F2E)]
+              : [const Color(0xFFDDE7F7), const Color(0xFFE8EEF7)],
         ),
       ),
       child: Center(
@@ -322,9 +316,7 @@ class _LoadingPlaceholder extends StatelessWidget {
                       ? Colors.white.withValues(alpha: 0.1)
                       : const Color(0xFFCBD5E1),
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    isDark
-                        ? const Color(0xFF60A5FA)
-                        : const Color(0xFF3B82F6),
+                    isDark ? const Color(0xFF60A5FA) : const Color(0xFF3B82F6),
                   ),
                 ),
               ),

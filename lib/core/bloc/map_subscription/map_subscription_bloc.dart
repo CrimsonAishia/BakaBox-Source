@@ -106,8 +106,8 @@ class MapSubscriptionBloc
   ) async {
     emit(state.copyWith(isLoadingCategories: true));
     try {
-      final apiCategories =
-          await ServerCategoryService.instance.getApiCategories();
+      final apiCategories = await ServerCategoryService.instance
+          .getApiCategories();
       final customCategories = await CustomServerService.loadCustomCategories();
 
       final allCategories = [...customCategories, ...apiCategories];

@@ -30,7 +30,11 @@ class LobbyPageMobile extends StatefulWidget {
 }
 
 class _LobbyPageMobileState extends State<LobbyPageMobile>
-    with PageLifecycleMixin, TickerProviderStateMixin, AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
+    with
+        PageLifecycleMixin,
+        TickerProviderStateMixin,
+        AutomaticKeepAliveClientMixin,
+        WidgetsBindingObserver {
   @override
   bool get wantKeepAlive => true;
   late final LobbyBloc _lobbyBloc;
@@ -156,7 +160,9 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
     }
 
     // 后台时间超过阈值，刷新 snapshot 确保数据最新
-    LogService.d('[LobbyPageMobile] 后台超过 ${_backgroundRecoveryThreshold.inMinutes} 分钟，刷新 snapshot');
+    LogService.d(
+      '[LobbyPageMobile] 后台超过 ${_backgroundRecoveryThreshold.inMinutes} 分钟，刷新 snapshot',
+    );
     _lobbyBloc.add(const LobbyAppResumed());
   }
 
@@ -498,8 +504,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
           }
 
           // ─── 更新前台保活通知 ─────────────────────────────────
-          if (Platform.isAndroid &&
-              state.pageStatus == LobbyPageStatus.ready) {
+          if (Platform.isAndroid && state.pageStatus == LobbyPageStatus.ready) {
             _updateForegroundNotification(state);
           }
         },
@@ -525,9 +530,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
             previous.queueTotal != current.queueTotal ||
             previous.queueEtaSeconds != current.queueEtaSeconds,
         builder: (context, state) {
-          return Scaffold(
-            body: _buildBody(context, state),
-          );
+          return Scaffold(body: _buildBody(context, state));
         },
       ),
     );
@@ -592,10 +595,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
                       : const Color(0xFFDDE7F7),
                 )
               : RepaintBoundary(
-                  child: LobbySceneMobile(
-                    mapConfig: mapConfig,
-                    state: state,
-                  ),
+                  child: LobbySceneMobile(mapConfig: mapConfig, state: state),
                 ),
         ),
         // 状态横幅
@@ -604,9 +604,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
             top: MediaQuery.of(context).padding.top + 12,
             left: 16,
             right: 16,
-            child: IgnorePointer(
-              child: _buildStatusBanner(context, state),
-            ),
+            child: IgnorePointer(child: _buildStatusBanner(context, state)),
           ),
         // 浮动按钮组（右下角）
         Positioned(
@@ -627,13 +625,11 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
             child: IgnorePointer(
               ignoring: true,
               child: ListenableBuilder(
-                listenable:
-                    _teleportController ?? AlwaysStoppedAnimation(0.0),
+                listenable: _teleportController ?? AlwaysStoppedAnimation(0.0),
                 builder: (context, child) {
                   final progress = _teleportAnimation?.value ?? 0.0;
                   return MosaicRevealEffect(
-                    targetContent:
-                        _buildMosaicTargetContent(_targetMapConfig!),
+                    targetContent: _buildMosaicTargetContent(_targetMapConfig!),
                     targetName: _targetMapConfig!.displayName,
                     progress: progress,
                     showTouhouDecoration: true,
@@ -645,9 +641,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
         // 传送门高亮边框（走近传送门时）
         if (state.nearbyPortal != null && !state.isTeleporting)
           const Positioned.fill(
-            child: IgnorePointer(
-              child: _PortalHighlightBorder(),
-            ),
+            child: IgnorePointer(child: _PortalHighlightBorder()),
           ),
         // 玩家加入/离开通知（右上角）
         if (state.playerNotifications.isNotEmpty)
@@ -687,21 +681,15 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
           ? const SizedBox.shrink()
           : Container(
               key: ValueKey(state.transientNotice),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.1),
-                ),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
               ),
               child: Text(
                 state.transientNotice!,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                ),
+                style: const TextStyle(color: Colors.white, fontSize: 13),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -805,10 +793,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
                 const SizedBox(height: 8),
                 Text(
                   '与其他玩家实时互动、聊天',
-                  style: TextStyle(
-                    color: textSecondary,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: textSecondary, fontSize: 14),
                 ),
                 const SizedBox(height: 32),
                 SizedBox(
@@ -845,16 +830,9 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.error_outline,
-            size: 56,
-            color: Color(0xFFEF4444),
-          ),
+          const Icon(Icons.error_outline, size: 56, color: Color(0xFFEF4444)),
           const SizedBox(height: 16),
-          const Text(
-            '加载失败，请重试',
-            style: TextStyle(fontSize: 16),
-          ),
+          const Text('加载失败，请重试', style: TextStyle(fontSize: 16)),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: () {
@@ -928,16 +906,15 @@ class _MosaicMapPreviewMobileState extends State<_MosaicMapPreviewMobile> {
   @override
   Widget build(BuildContext context) {
     if (_hasError || !_imageLoaded || _cachedImageBytes == null) {
-      return _MosaicPlaceholderMobile(
-          mapName: widget.mapConfig.displayName);
+      return _MosaicPlaceholderMobile(mapName: widget.mapConfig.displayName);
     }
     return Image.memory(
       _cachedImageBytes!,
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
-      errorBuilder: (_, __, ___) => _MosaicPlaceholderMobile(
-          mapName: widget.mapConfig.displayName),
+      errorBuilder: (_, __, ___) =>
+          _MosaicPlaceholderMobile(mapName: widget.mapConfig.displayName),
     );
   }
 }
@@ -961,8 +938,11 @@ class _MosaicPlaceholderMobile extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.map, size: 64,
-                color: Colors.cyan.withValues(alpha: 0.3)),
+            Icon(
+              Icons.map,
+              size: 64,
+              color: Colors.cyan.withValues(alpha: 0.3),
+            ),
             const SizedBox(height: 12),
             Text(
               mapName,
@@ -1001,9 +981,10 @@ class _PortalHighlightBorderState extends State<_PortalHighlightBorder>
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.3, end: 0.7).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _pulseAnimation = Tween<double>(
+      begin: 0.3,
+      end: 0.7,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -1103,17 +1084,17 @@ class _LobbyQueueScreenMobileState extends State<_LobbyQueueScreenMobile>
       vsync: this,
       duration: const Duration(seconds: 6),
     )..repeat();
-    _rotateAnimation = Tween<double>(begin: 0, end: 1.0).animate(
-      CurvedAnimation(parent: _rotateController, curve: Curves.linear),
-    );
+    _rotateAnimation = Tween<double>(
+      begin: 0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _rotateController, curve: Curves.linear));
 
     _progressGlowController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2200),
     )..repeat(reverse: true);
     _progressGlowAnimation = Tween<double>(begin: 0.3, end: 0.8).animate(
-      CurvedAnimation(
-          parent: _progressGlowController, curve: Curves.easeInOut),
+      CurvedAnimation(parent: _progressGlowController, curve: Curves.easeInOut),
     );
   }
 
@@ -1188,8 +1169,10 @@ class _LobbyQueueScreenMobileState extends State<_LobbyQueueScreenMobile>
 
                 // 中心圆环动画
                 AnimatedBuilder(
-                  animation: Listenable.merge(
-                      [_pulseAnimation, _rotateAnimation]),
+                  animation: Listenable.merge([
+                    _pulseAnimation,
+                    _rotateAnimation,
+                  ]),
                   builder: (context, child) {
                     return SizedBox(
                       width: 90,
@@ -1219,8 +1202,7 @@ class _LobbyQueueScreenMobileState extends State<_LobbyQueueScreenMobile>
                               Text(
                                 '人排队',
                                 style: TextStyle(
-                                  color:
-                                      textSecondary.withValues(alpha: 0.7),
+                                  color: textSecondary.withValues(alpha: 0.7),
                                   fontSize: 10,
                                 ),
                               ),
@@ -1245,10 +1227,7 @@ class _LobbyQueueScreenMobileState extends State<_LobbyQueueScreenMobile>
                     const SizedBox(width: 6),
                     Text(
                       '预计等待 ${_formatEta(eta)}',
-                      style: TextStyle(
-                        color: textSecondary,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: textSecondary, fontSize: 14),
                     ),
                   ],
                 ),
@@ -1265,8 +1244,7 @@ class _LobbyQueueScreenMobileState extends State<_LobbyQueueScreenMobile>
                             ? [
                                 BoxShadow(
                                   color: accentColor.withValues(
-                                    alpha: 0.15 *
-                                        _progressGlowAnimation.value,
+                                    alpha: 0.15 * _progressGlowAnimation.value,
                                   ),
                                   blurRadius: 12,
                                   spreadRadius: 1,
@@ -1284,12 +1262,11 @@ class _LobbyQueueScreenMobileState extends State<_LobbyQueueScreenMobile>
                               Container(
                                 decoration: BoxDecoration(
                                   color: isDark
-                                      ? Colors.white
-                                          .withValues(alpha: 0.06)
-                                      : const Color(0xFFCBD5E1)
-                                          .withValues(alpha: 0.5),
-                                  borderRadius:
-                                      BorderRadius.circular(6),
+                                      ? Colors.white.withValues(alpha: 0.06)
+                                      : const Color(
+                                          0xFFCBD5E1,
+                                        ).withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(6),
                                 ),
                               ),
                               // 进度
@@ -1298,13 +1275,9 @@ class _LobbyQueueScreenMobileState extends State<_LobbyQueueScreenMobile>
                                 child: Container(
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
-                                      colors: [
-                                        accentColor,
-                                        successColor,
-                                      ],
+                                      colors: [accentColor, successColor],
                                     ),
-                                    borderRadius:
-                                        BorderRadius.circular(6),
+                                    borderRadius: BorderRadius.circular(6),
                                   ),
                                 ),
                               ),
@@ -1344,8 +1317,7 @@ class _LobbyQueueScreenMobileState extends State<_LobbyQueueScreenMobile>
                         color: successColor,
                         boxShadow: [
                           BoxShadow(
-                            color:
-                                successColor.withValues(alpha: 0.5),
+                            color: successColor.withValues(alpha: 0.5),
                             blurRadius: 4,
                           ),
                         ],

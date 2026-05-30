@@ -33,12 +33,13 @@ class WebServerListWsAdapter {
     this.category,
     this.intervalSeconds = 8,
     this.once = false,
-  }) : _wsUrl = wsUrl ??
-            _buildDefaultWsUrl(
-              category: category,
-              intervalSeconds: intervalSeconds,
-              once: once,
-            );
+  }) : _wsUrl =
+           wsUrl ??
+           _buildDefaultWsUrl(
+             category: category,
+             intervalSeconds: intervalSeconds,
+             once: once,
+           );
 
   final String? category;
   final int intervalSeconds;
@@ -96,7 +97,11 @@ class WebServerListWsAdapter {
         _handleDisconnected(shouldReconnect: !_manualDisconnect);
       });
     } catch (error, stackTrace) {
-      LogService.e('[WebServerListWsAdapter] connect failed', error, stackTrace);
+      LogService.e(
+        '[WebServerListWsAdapter] connect failed',
+        error,
+        stackTrace,
+      );
       _safeAddEvent(WebServerListErrorEvent('WebSocket 初始化失败'));
       _handleDisconnected(shouldReconnect: true);
     }
@@ -123,7 +128,9 @@ class WebServerListWsAdapter {
       final data = event.data?.dartify();
 
       if (data is! String) {
-        LogService.w('[WebServerListWsAdapter] unsupported message type: ${data.runtimeType}');
+        LogService.w(
+          '[WebServerListWsAdapter] unsupported message type: ${data.runtimeType}',
+        );
         return;
       }
 
@@ -147,7 +154,11 @@ class WebServerListWsAdapter {
       final snapshot = WebServerListData.fromJson(payload);
       _safeAddEvent(WebServerListSnapshotEvent(snapshot));
     } catch (error, stackTrace) {
-      LogService.e('[WebServerListWsAdapter] parse message failed', error, stackTrace);
+      LogService.e(
+        '[WebServerListWsAdapter] parse message failed',
+        error,
+        stackTrace,
+      );
       _safeAddEvent(WebServerListErrorEvent('服务器列表数据解析失败'));
     }
   }

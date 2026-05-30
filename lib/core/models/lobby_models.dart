@@ -22,12 +22,12 @@ class LobbySprite extends Equatable {
   final String? spriteUrl;
   final String? previewUrl;
   final bool isDefault;
-  
+
   // TexturePacker 图集支持（可选）
-  final String? atlasUrl;        // 图集 URL（.atlas 文件路径）
-  final String? atlasImagePath;  // 图集图片路径（与 atlasUrl 配合使用）
-  final String? animationFrames;  // 动画帧序列（如 "frame_01,frame_02,frame_03"）
-  final double? frameDuration;    // 帧间隔（秒），默认 0.1
+  final String? atlasUrl; // 图集 URL（.atlas 文件路径）
+  final String? atlasImagePath; // 图集图片路径（与 atlasUrl 配合使用）
+  final String? animationFrames; // 动画帧序列（如 "frame_01,frame_02,frame_03"）
+  final double? frameDuration; // 帧间隔（秒），默认 0.1
 
   const LobbySprite({
     required this.id,
@@ -67,11 +67,7 @@ class LobbyPosition extends Equatable {
 
   const LobbyPosition({required this.x, required this.y});
 
-  factory LobbyPosition.lerp(
-    LobbyPosition from,
-    LobbyPosition to,
-    double t,
-  ) {
+  factory LobbyPosition.lerp(LobbyPosition from, LobbyPosition to, double t) {
     return LobbyPosition(
       x: from.x + (to.x - from.x) * t,
       y: from.y + (to.y - from.y) * t,
@@ -84,10 +80,7 @@ class LobbyPosition extends Equatable {
     required double minY,
     required double maxY,
   }) {
-    return LobbyPosition(
-      x: x.clamp(minX, maxX),
-      y: y.clamp(minY, maxY),
-    );
+    return LobbyPosition(x: x.clamp(minX, maxX), y: y.clamp(minY, maxY));
   }
 
   @override
@@ -196,9 +189,7 @@ class LobbyUser extends Equatable {
       statusText: identical(statusText, _sentinel)
           ? this.statusText
           : statusText as String?,
-      mapId: identical(mapId, _sentinel)
-          ? this.mapId
-          : mapId as String?,
+      mapId: identical(mapId, _sentinel) ? this.mapId : mapId as String?,
     );
   }
 
@@ -363,7 +354,6 @@ class LobbyWalkableArea extends Equatable {
   List<Object?> get props => [left, top, width, height];
 }
 
-
 /// 传送门固定半径（前端统一使用此大小检测碰撞）
 /// 协议说明：传送门大小由前端固定（统一尺寸），服务端只传位置坐标
 const double kLobbyPortalRadius = 30.0;
@@ -429,7 +419,14 @@ class LobbyTeleportTarget extends Equatable {
   LobbyPosition get position => LobbyPosition(x: targetX, y: targetY);
 
   @override
-  List<Object?> get props => [portalKey, label, sourceMapId, targetMapId, targetX, targetY];
+  List<Object?> get props => [
+    portalKey,
+    label,
+    sourceMapId,
+    targetMapId,
+    targetX,
+    targetY,
+  ];
 }
 
 /// 大厅 WebSocket 事件基类（sealed class）
@@ -481,21 +478,14 @@ class LobbyConnectionEvent extends LobbyWsEvent {
   final LobbyConnectionEventType status;
   final String? error;
 
-  const LobbyConnectionEvent({
-    required this.status,
-    this.error,
-  });
+  const LobbyConnectionEvent({required this.status, this.error});
 
   @override
   List<Object?> get props => [status, error];
 }
 
 /// 传送门拒绝原因
-enum LobbyPortalRejectReason {
-  invalidPayload,
-  portalNotFound,
-  unknown,
-}
+enum LobbyPortalRejectReason { invalidPayload, portalNotFound, unknown }
 
 extension LobbyPortalRejectReasonExt on LobbyPortalRejectReason {
   static LobbyPortalRejectReason fromString(String? reason) {
@@ -526,10 +516,7 @@ class LobbyPortalReject extends Equatable {
   final String reason;
   final LobbyPortalRejectReason reasonType;
 
-  const LobbyPortalReject({
-    required this.reason,
-    required this.reasonType,
-  });
+  const LobbyPortalReject({required this.reason, required this.reasonType});
 
   factory LobbyPortalReject.fromPayload(Map<String, dynamic> payload) {
     final reason = payload['reason']?.toString() ?? 'unknown';
@@ -583,6 +570,7 @@ class LobbyPageInfo extends Equatable {
 class LobbyAssets extends Equatable {
   /// 当前地图配置（从 maps 数组中根据当前 mapId 确定）
   final LobbyMapConfig? mapConfig;
+
   /// 所有可用地图配置数组
   final List<LobbyMapConfig> maps;
   final List<LobbySprite> sprites;
@@ -593,7 +581,8 @@ class LobbyAssets extends Equatable {
     this.sprites = const [],
   });
 
-  bool get isReady => (mapConfig != null || maps.isNotEmpty) && sprites.isNotEmpty;
+  bool get isReady =>
+      (mapConfig != null || maps.isNotEmpty) && sprites.isNotEmpty;
 
   /// 根据 mapId 获取地图配置
   ///
@@ -607,7 +596,8 @@ class LobbyAssets extends Equatable {
     if (map == null) return null;
 
     // 使用 LobbyAssetCacheService 获取稳定的 URL（直接取缓存，不做比较）
-    final stableBackgroundUrl = LobbyAssetCacheService.instance.getBackgroundUrlByMapId(mapId);
+    final stableBackgroundUrl = LobbyAssetCacheService.instance
+        .getBackgroundUrlByMapId(mapId);
 
     // 如果缓存中没有稳定的 URL，使用原始 URL
     if (stableBackgroundUrl == null || stableBackgroundUrl.isEmpty) {
@@ -649,5 +639,12 @@ class LobbyBroadcastMessage extends Equatable {
   });
 
   @override
-  List<Object?> get props => [messageId, userId, nickname, content, timestamp, avatarUrl];
+  List<Object?> get props => [
+    messageId,
+    userId,
+    nickname,
+    content,
+    timestamp,
+    avatarUrl,
+  ];
 }

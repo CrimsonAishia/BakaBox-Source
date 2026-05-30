@@ -272,6 +272,7 @@ class ConfigActionButton extends StatefulWidget {
   final String tooltip;
   final Color? color;
   final VoidCallback onTap;
+
   /// 是否显示审核标识点（已通过的配置修改需要重新审核）
   final bool badge;
 

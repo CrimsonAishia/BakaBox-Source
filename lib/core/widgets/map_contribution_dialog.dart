@@ -1096,10 +1096,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   void _showTagVotersDialog(String mapName, MapTag tag) {
     showDialog(
       context: context,
-      builder: (dialogContext) => _TagVotersDialog(
-        mapName: mapName,
-        tag: tag,
-      ),
+      builder: (dialogContext) => _TagVotersDialog(mapName: mapName, tag: tag),
     );
   }
 
@@ -3303,8 +3300,7 @@ class _TagGrid extends StatelessWidget {
               onDelete: () => dialogState.showDeleteTagDialog(tag),
               onCancelChangeRequest: () =>
                   dialogState.handleCancelChangeRequest(tag),
-              onShowVoters: () =>
-                  dialogState.showTagVotersDialog(mapName, tag),
+              onShowVoters: () => dialogState.showTagVotersDialog(mapName, tag),
             ),
           );
         }).toList(),
@@ -3922,10 +3918,7 @@ class _MapAllVotersDialog extends StatefulWidget {
   final String mapName;
   final String? mapLabel;
 
-  const _MapAllVotersDialog({
-    required this.mapName,
-    this.mapLabel,
-  });
+  const _MapAllVotersDialog({required this.mapName, this.mapLabel});
 
   @override
   State<_MapAllVotersDialog> createState() => _MapAllVotersDialogState();
@@ -4132,20 +4125,14 @@ class _MapAllVotersDialogState extends State<_MapAllVotersDialog> {
               ),
             ),
             // 内容区域
-            Flexible(
-              child: _buildContent(isDark, textColor, secondaryColor),
-            ),
+            Flexible(child: _buildContent(isDark, textColor, secondaryColor)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildContent(
-    bool isDark,
-    Color textColor,
-    Color secondaryColor,
-  ) {
+  Widget _buildContent(bool isDark, Color textColor, Color secondaryColor) {
     if (_isLoading) {
       return const Center(
         child: Padding(
@@ -4176,10 +4163,7 @@ class _MapAllVotersDialogState extends State<_MapAllVotersDialog> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              TextButton(
-                onPressed: _loadVotes,
-                child: const Text('重试'),
-              ),
+              TextButton(onPressed: _loadVotes, child: const Text('重试')),
             ],
           ),
         ),
@@ -4200,10 +4184,7 @@ class _MapAllVotersDialogState extends State<_MapAllVotersDialog> {
                 color: isDark ? Colors.white38 : Colors.black26,
               ),
               const SizedBox(height: 12),
-              Text(
-                '暂无投票记录',
-                style: TextStyle(color: secondaryColor),
-              ),
+              Text('暂无投票记录', style: TextStyle(color: secondaryColor)),
             ],
           ),
         ),
@@ -4240,10 +4221,7 @@ class _MapAllVotersDialogState extends State<_MapAllVotersDialog> {
                   icon: const Icon(Icons.refresh, size: 16),
                   label: Text(
                     _loadMoreError!,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: secondaryColor,
-                    ),
+                    style: TextStyle(fontSize: 12, color: secondaryColor),
                   ),
                 ),
               ),
@@ -4281,14 +4259,13 @@ class _MapAllVotersDialogState extends State<_MapAllVotersDialog> {
 
     // 标签颜色
     final tagColor = item.tagColorValue;
-    final tagBgColor = tagColor ??
-        (isDark
-            ? Colors.white.withValues(alpha: 0.1)
-            : Colors.grey[200]!);
+    final tagBgColor =
+        tagColor ??
+        (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey[200]!);
     final tagTextColor = tagColor != null
         ? (tagColor.computeLuminance() > 0.5
-            ? const Color(0xFF1F2937)
-            : Colors.white)
+              ? const Color(0xFF1F2937)
+              : Colors.white)
         : (isDark ? Colors.white70 : const Color(0xFF374151));
 
     return Container(
@@ -4422,10 +4399,7 @@ class _TagVotersDialog extends StatefulWidget {
   final String mapName;
   final MapTag tag;
 
-  const _TagVotersDialog({
-    required this.mapName,
-    required this.tag,
-  });
+  const _TagVotersDialog({required this.mapName, required this.tag});
 
   @override
   State<_TagVotersDialog> createState() => _TagVotersDialogState();
@@ -4606,7 +4580,8 @@ class _TagVotersDialogState extends State<_TagVotersDialog> {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: tagColor ??
+                                color:
+                                    tagColor ??
                                     (isDark
                                         ? Colors.white.withValues(alpha: 0.1)
                                         : Colors.grey[200]),
@@ -4614,8 +4589,12 @@ class _TagVotersDialogState extends State<_TagVotersDialog> {
                                 border: tagColor == null
                                     ? Border.all(
                                         color: isDark
-                                            ? Colors.white.withValues(alpha: 0.15)
-                                            : Colors.black.withValues(alpha: 0.1),
+                                            ? Colors.white.withValues(
+                                                alpha: 0.15,
+                                              )
+                                            : Colors.black.withValues(
+                                                alpha: 0.1,
+                                              ),
                                       )
                                     : null,
                               ),
@@ -4626,8 +4605,8 @@ class _TagVotersDialogState extends State<_TagVotersDialog> {
                                   fontWeight: FontWeight.w500,
                                   color: tagColor != null
                                       ? (tagColor.computeLuminance() > 0.5
-                                          ? const Color(0xFF1F2937)
-                                          : Colors.white)
+                                            ? const Color(0xFF1F2937)
+                                            : Colors.white)
                                       : secondaryColor,
                                 ),
                               ),
@@ -4655,20 +4634,14 @@ class _TagVotersDialogState extends State<_TagVotersDialog> {
               ),
             ),
             // 内容区域
-            Flexible(
-              child: _buildContent(isDark, textColor, secondaryColor),
-            ),
+            Flexible(child: _buildContent(isDark, textColor, secondaryColor)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildContent(
-    bool isDark,
-    Color textColor,
-    Color secondaryColor,
-  ) {
+  Widget _buildContent(bool isDark, Color textColor, Color secondaryColor) {
     if (_isLoading) {
       return const Center(
         child: Padding(
@@ -4699,10 +4672,7 @@ class _TagVotersDialogState extends State<_TagVotersDialog> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              TextButton(
-                onPressed: _loadVotes,
-                child: const Text('重试'),
-              ),
+              TextButton(onPressed: _loadVotes, child: const Text('重试')),
             ],
           ),
         ),
@@ -4723,10 +4693,7 @@ class _TagVotersDialogState extends State<_TagVotersDialog> {
                 color: isDark ? Colors.white38 : Colors.black26,
               ),
               const SizedBox(height: 12),
-              Text(
-                '暂无投票记录',
-                style: TextStyle(color: secondaryColor),
-              ),
+              Text('暂无投票记录', style: TextStyle(color: secondaryColor)),
             ],
           ),
         ),
@@ -4837,9 +4804,7 @@ class _TagVotersDialogState extends State<_TagVotersDialog> {
             decoration: BoxDecoration(
               color: voteColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: voteColor.withValues(alpha: 0.3),
-              ),
+              border: Border.all(color: voteColor.withValues(alpha: 0.3)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,

@@ -29,9 +29,9 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
   AnnouncementBloc({
     AnnouncementApi? announcementApi,
     AnnouncementReadService? readService,
-  })  : _announcementApi = announcementApi ?? AnnouncementApi(),
-        _readService = readService ?? AnnouncementReadService(),
-        super(const AnnouncementState()) {
+  }) : _announcementApi = announcementApi ?? AnnouncementApi(),
+       _readService = readService ?? AnnouncementReadService(),
+       super(const AnnouncementState()) {
     on<AnnouncementFetch>(_onFetch);
     on<AnnouncementRefresh>(_onRefresh);
     on<AnnouncementMarkAsRead>(_onMarkAsRead);

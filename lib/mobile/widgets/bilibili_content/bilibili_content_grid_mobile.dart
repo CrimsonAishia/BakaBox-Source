@@ -44,7 +44,10 @@ class LiveRoomGridMobile extends StatelessWidget {
         return GridView.builder(
           controller: scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 6),
+          padding: const EdgeInsets.symmetric(
+            horizontal: horizontalPadding,
+            vertical: 6,
+          ),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns,
             crossAxisSpacing: cardGap,
@@ -57,7 +60,9 @@ class LiveRoomGridMobile extends StatelessWidget {
               room: rooms[index],
               onTap: () {
                 context.read<BilibiliContentBloc>().add(
-                  BilibiliContentIncreaseLiveRoomViewRequested(id: rooms[index].id),
+                  BilibiliContentIncreaseLiveRoomViewRequested(
+                    id: rooms[index].id,
+                  ),
                 );
               },
             );
@@ -107,7 +112,10 @@ class VideoGridMobile extends StatelessWidget {
         return GridView.builder(
           controller: scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 6),
+          padding: const EdgeInsets.symmetric(
+            horizontal: horizontalPadding,
+            vertical: 6,
+          ),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns,
             crossAxisSpacing: cardGap,
@@ -120,7 +128,9 @@ class VideoGridMobile extends StatelessWidget {
               video: videos[index],
               onTap: () {
                 context.read<BilibiliContentBloc>().add(
-                  BilibiliContentIncreaseVideoViewRequested(id: videos[index].id),
+                  BilibiliContentIncreaseVideoViewRequested(
+                    id: videos[index].id,
+                  ),
                 );
               },
             );
@@ -145,11 +155,7 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 48,
-            color: isDark ? Colors.white24 : Colors.black26,
-          ),
+          Icon(icon, size: 48, color: isDark ? Colors.white24 : Colors.black26),
           const SizedBox(height: 12),
           Text(
             text,

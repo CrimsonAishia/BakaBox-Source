@@ -14,7 +14,8 @@ class PathInvalidDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     // 监听 SettingsBloc 的状态，如果 isPathInvalidated 变为 false，则自动关闭弹窗
     return BlocListener<SettingsBloc, SettingsState>(
-      listenWhen: (previous, current) => previous.isPathInvalidated && !current.isPathInvalidated,
+      listenWhen: (previous, current) =>
+          previous.isPathInvalidated && !current.isPathInvalidated,
       listener: (context, state) {
         if (Navigator.of(context).canPop()) {
           Navigator.of(context).pop();
@@ -24,7 +25,9 @@ class PathInvalidDialog extends StatelessWidget {
         // 阻止返回键关闭弹窗
         canPop: false,
         child: Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: Container(
             width: 600,
             padding: const EdgeInsets.all(24),
@@ -40,7 +43,11 @@ class PathInvalidDialog extends StatelessWidget {
                         color: Colors.red.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(MdiIcons.alertCircleOutline, color: Colors.red, size: 32),
+                      child: Icon(
+                        MdiIcons.alertCircleOutline,
+                        color: Colors.red,
+                        size: 32,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -49,16 +56,22 @@ class PathInvalidDialog extends StatelessWidget {
                         children: [
                           const Text(
                             '游戏路径已失效',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           BlocBuilder<SettingsBloc, SettingsState>(
                             builder: (context, state) {
                               return Text(
-                                state.pathValidationMessage ?? '由于目录移动或磁盘更换，您之前设置的 CS2 或 Steam 路径已失效。请重新配置以确保核心服务正常运行。',
+                                state.pathValidationMessage ??
+                                    '由于目录移动或磁盘更换，您之前设置的 CS2 或 Steam 路径已失效。请重新配置以确保核心服务正常运行。',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Theme.of(context).textTheme.bodySmall?.color,
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodySmall?.color,
                                 ),
                               );
                             },
@@ -77,8 +90,11 @@ class PathInvalidDialog extends StatelessWidget {
                         _PathSelector(
                           label: '游戏安装路径',
                           path: state.gamePath,
-                          placeholder: '例如: C:\\Program Files (x86)\\Steam\\steamapps\\common\\Counter-Strike Global Offensive',
-                          onDetect: () => context.read<SettingsBloc>().add(SettingsDetectGamePath()),
+                          placeholder:
+                              '例如: C:\\Program Files (x86)\\Steam\\steamapps\\common\\Counter-Strike Global Offensive',
+                          onDetect: () => context.read<SettingsBloc>().add(
+                            SettingsDetectGamePath(),
+                          ),
                           onSelect: () => _selectGamePath(context),
                           isDetecting: state.isDetectingPath,
                           errorMessage: state.gamePathError,
@@ -88,7 +104,9 @@ class PathInvalidDialog extends StatelessWidget {
                           label: 'Steam安装路径',
                           path: state.steamPath,
                           placeholder: '例如: C:\\Program Files (x86)\\Steam',
-                          onDetect: () => context.read<SettingsBloc>().add(SettingsDetectSteamPath()),
+                          onDetect: () => context.read<SettingsBloc>().add(
+                            SettingsDetectSteamPath(),
+                          ),
                           onSelect: () => _selectSteamPath(context),
                           isDetecting: state.isDetectingPath,
                           errorMessage: state.steamPathError,
@@ -105,13 +123,20 @@ class PathInvalidDialog extends StatelessWidget {
                       return FilledButton(
                         onPressed: () {
                           // 手动触发一次校验，如果成功通过，BlocListener会自动关闭弹窗
-                          context.read<SettingsBloc>().add(SettingsCheckPathsValidity());
+                          context.read<SettingsBloc>().add(
+                            SettingsCheckPathsValidity(),
+                          );
                         },
                         style: FilledButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                        child: const Text('保存并重试', style: TextStyle(fontSize: 16)),
+                        child: const Text(
+                          '保存并重试',
+                          style: TextStyle(fontSize: 16),
+                        ),
                       );
                     },
                   ),
@@ -126,7 +151,9 @@ class PathInvalidDialog extends StatelessWidget {
 
   Future<void> _selectGamePath(BuildContext context) async {
     try {
-      final result = await FilePicker.platform.getDirectoryPath(dialogTitle: '选择游戏安装目录');
+      final result = await FilePicker.platform.getDirectoryPath(
+        dialogTitle: '选择游戏安装目录',
+      );
       if (result != null && context.mounted) {
         context.read<SettingsBloc>().add(SettingsSetGamePath(result));
       }
@@ -137,7 +164,9 @@ class PathInvalidDialog extends StatelessWidget {
 
   Future<void> _selectSteamPath(BuildContext context) async {
     try {
-      final result = await FilePicker.platform.getDirectoryPath(dialogTitle: '选择Steam安装目录');
+      final result = await FilePicker.platform.getDirectoryPath(
+        dialogTitle: '选择Steam安装目录',
+      );
       if (result != null && context.mounted) {
         context.read<SettingsBloc>().add(SettingsSetSteamPath(result));
       }
@@ -184,14 +213,21 @@ class _PathSelector extends StatelessWidget {
           children: [
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                  color: isDark
+                      ? const Color(0xFF1E293B)
+                      : const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: hasError
                         ? Colors.red.withValues(alpha: 0.5)
-                        : (isDark ? const Color(0xFF475569) : const Color(0xFFE2E8F0)),
+                        : (isDark
+                              ? const Color(0xFF475569)
+                              : const Color(0xFFE2E8F0)),
                   ),
                 ),
                 child: Text(
@@ -210,17 +246,27 @@ class _PathSelector extends StatelessWidget {
             OutlinedButton(
               onPressed: isDetecting ? null : onDetect,
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
               ),
               child: isDetecting
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Text('自动检测'),
             ),
             const SizedBox(width: 10),
             OutlinedButton(
               onPressed: onSelect,
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
               ),
               child: const Text('手动选择'),
             ),

@@ -126,8 +126,10 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
       vsync: this,
       value: 1.0, // start fully visible
     );
-    _opacityAnimation = Tween<double>(begin: _minOpacity, end: _maxOpacity)
-        .animate(_opacityController);
+    _opacityAnimation = Tween<double>(
+      begin: _minOpacity,
+      end: _maxOpacity,
+    ).animate(_opacityController);
 
     // New-message notify animation (total ~700ms).
     _notifyController = AnimationController(
@@ -137,18 +139,24 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
     // Bounce: 1.0 → 1.22 → 0.93 → 1.0 using a custom curve sequence.
     _notifyScale = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween(begin: 1.0, end: 1.22)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween(
+          begin: 1.0,
+          end: 1.22,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 30,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: 1.22, end: 0.93)
-            .chain(CurveTween(curve: Curves.easeInOut)),
+        tween: Tween(
+          begin: 1.22,
+          end: 0.93,
+        ).chain(CurveTween(curve: Curves.easeInOut)),
         weight: 30,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: 0.93, end: 1.0)
-            .chain(CurveTween(curve: Curves.elasticOut)),
+        tween: Tween(
+          begin: 0.93,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.elasticOut)),
         weight: 40,
       ),
     ]).animate(_notifyController);
@@ -160,8 +168,10 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
     _rippleOpacity = TweenSequence<double>([
       TweenSequenceItem(tween: ConstantTween(0.55), weight: 20),
       TweenSequenceItem(
-        tween: Tween(begin: 0.55, end: 0.0)
-            .chain(CurveTween(curve: Curves.easeIn)),
+        tween: Tween(
+          begin: 0.55,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
         weight: 80,
       ),
     ]).animate(_notifyController);
@@ -172,25 +182,25 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
       value: 0.5, // start at connecting midpoint
       duration: const Duration(milliseconds: 600),
     );
-    _buttonColorAnimation = ColorTween(
-      begin: _disconnectedColor,
-      end: _connectedColor,
-    ).animate(CurvedAnimation(
-      parent: _connectionController,
-      curve: Curves.easeInOut,
-    ));
-    _shadowColorAnimation = ColorTween(
-      begin: _disconnectedColor.withValues(alpha: 0.3),
-      end: _connectedColor.withValues(alpha: 0.3),
-    ).animate(CurvedAnimation(
-      parent: _connectionController,
-      curve: Curves.easeInOut,
-    ));
+    _buttonColorAnimation =
+        ColorTween(begin: _disconnectedColor, end: _connectedColor).animate(
+          CurvedAnimation(
+            parent: _connectionController,
+            curve: Curves.easeInOut,
+          ),
+        );
+    _shadowColorAnimation =
+        ColorTween(
+          begin: _disconnectedColor.withValues(alpha: 0.3),
+          end: _connectedColor.withValues(alpha: 0.3),
+        ).animate(
+          CurvedAnimation(
+            parent: _connectionController,
+            curve: Curves.easeInOut,
+          ),
+        );
     _connectionIconOpacity = Tween<double>(begin: 0.6, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _connectionController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _connectionController, curve: Curves.easeInOut),
     );
 
     // Pulsing animation for connecting/reconnecting state.
@@ -213,10 +223,7 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
           curve: Curves.easeIn,
         );
         _currentConnectionStatus = LobbyConnectionStatus.disconnected;
-        _updateOpacityForState(
-          hasUnread: _hasUnread,
-          isDisconnected: true,
-        );
+        _updateOpacityForState(hasUnread: _hasUnread, isDisconnected: true);
         setState(() {});
       }
     });
@@ -355,10 +362,7 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
             );
             _currentConnectionStatus = LobbyConnectionStatus.disconnected;
             // Fade out the button since we're now in disconnected state.
-            _updateOpacityForState(
-              hasUnread: _hasUnread,
-              isDisconnected: true,
-            );
+            _updateOpacityForState(hasUnread: _hasUnread, isDisconnected: true);
             setState(() {});
           }
         });
@@ -397,7 +401,8 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
     } else {
       _stopBounceTimer();
       // Only fade out when truly disconnected/failed (not connecting/reconnecting).
-      final shouldFade = isDisconnected &&
+      final shouldFade =
+          isDisconnected &&
           _currentConnectionStatus != LobbyConnectionStatus.connecting &&
           _currentConnectionStatus != LobbyConnectionStatus.reconnecting;
       if (shouldFade) {
@@ -502,8 +507,11 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
     );
     final seed = Random().nextDouble();
     final range = _allowedAngleRange(_lastParentSize ?? const Size(800, 600));
-    final angle =
-        generateBubbleAngle(seed, angleMin: range.min, angleMax: range.max);
+    final angle = generateBubbleAngle(
+      seed,
+      angleMin: range.min,
+      angleMax: range.max,
+    );
     final text = truncateBubbleText(message.content);
     final senderName = truncateSenderName(message.displayName);
 
@@ -534,16 +542,16 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
 
     entry.controller
         .animateTo(
-      0.0,
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeIn,
-    )
+          0.0,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeIn,
+        )
         .then((_) {
-      if (_isDisposed) return;
-      entry.controller.dispose();
-      if (!mounted) return;
-      setState(() => _bubbles.removeWhere((e) => e.id == id));
-    });
+          if (_isDisposed) return;
+          entry.controller.dispose();
+          if (!mounted) return;
+          setState(() => _bubbles.removeWhere((e) => e.id == id));
+        });
   }
 
   void _onPanelClose() {
@@ -605,9 +613,9 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
                   previous.messages.last.messageId !=
                       current.messages.last.messageId),
           listener: (context, lobbyState) {
-            context
-                .read<FloatingChatCubit>()
-                .onMessagesChanged(lobbyState.messages);
+            context.read<FloatingChatCubit>().onMessagesChanged(
+              lobbyState.messages,
+            );
 
             if (lobbyState.messages.isEmpty) return;
 
@@ -641,7 +649,8 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
                 previous.unreadCount != current.unreadCount,
             listener: (context, chatState) {
               final lobbyState = context.read<LobbyBloc>().state;
-              final isDisconnected = lobbyState.connectionStatus !=
+              final isDisconnected =
+                  lobbyState.connectionStatus !=
                   LobbyConnectionStatus.connected;
               _updateOpacityForState(
                 hasUnread: chatState.unreadCount > 0,
@@ -657,7 +666,8 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
                   previous.connectionStatus != current.connectionStatus,
               listener: (context, lobbyState) {
                 final chatState = context.read<FloatingChatCubit>().state;
-                final isDisconnected = lobbyState.connectionStatus !=
+                final isDisconnected =
+                    lobbyState.connectionStatus !=
                     LobbyConnectionStatus.connected;
                 _updateOpacityForState(
                   hasUnread: chatState.unreadCount > 0,
@@ -704,10 +714,12 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
         // Bubble animation layer
         if (!_isPanelOpen)
           Positioned(
-            left: (_left ?? 0) +
+            left:
+                (_left ?? 0) +
                 _buttonSize / 2 -
                 ChatBubbleAnimation.halfContainer,
-            top: (_top ?? 0) +
+            top:
+                (_top ?? 0) +
                 _buttonSize / 2 -
                 ChatBubbleAnimation.halfContainer,
             child: ChatBubbleAnimation(
@@ -717,18 +729,20 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
           ),
         // Panel (when open)
         if (_isPanelOpen)
-          Builder(builder: (_) {
-            final layout = _computePanelLayout(parentSize);
-            return Positioned(
-              left: layout.offset.dx,
-              top: layout.offset.dy,
-              child: ChatPanel(
-                key: const ValueKey('panel'),
-                onClose: _onPanelClose,
-                expandOrigin: layout.alignment,
-              ),
-            );
-          }),
+          Builder(
+            builder: (_) {
+              final layout = _computePanelLayout(parentSize);
+              return Positioned(
+                left: layout.offset.dx,
+                top: layout.offset.dy,
+                child: ChatPanel(
+                  key: const ValueKey('panel'),
+                  onClose: _onPanelClose,
+                  expandOrigin: layout.alignment,
+                ),
+              );
+            },
+          ),
         // Draggable button — always rendered, hidden behind panel via opacity
         Positioned(
           left: _left ?? 0,
@@ -764,9 +778,10 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
     required bool isDisconnected,
     required Size parentSize,
   }) {
-    final scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _hoverController, curve: Curves.easeOut),
-    );
+    final scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.05,
+    ).animate(CurvedAnimation(parent: _hoverController, curve: Curves.easeOut));
 
     final isConnecting =
         _currentConnectionStatus == LobbyConnectionStatus.connecting ||
@@ -798,10 +813,14 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
         onPanUpdate: (details) {
           _dragDistance += details.delta.distance;
           setState(() {
-            _left = ((_left ?? 0) + details.delta.dx)
-                .clamp(0.0, parentSize.width - _buttonSize);
-            _top = ((_top ?? 0) + details.delta.dy)
-                .clamp(0.0, parentSize.height - _buttonSize);
+            _left = ((_left ?? 0) + details.delta.dx).clamp(
+              0.0,
+              parentSize.width - _buttonSize,
+            );
+            _top = ((_top ?? 0) + details.delta.dy).clamp(
+              0.0,
+              parentSize.height - _buttonSize,
+            );
           });
         },
         onPanEnd: (_) {
@@ -844,10 +863,12 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: (_buttonColorAnimation.value ??
-                                            _disconnectedColor)
-                                        .withValues(
-                                            alpha: _rippleOpacity.value),
+                                    color:
+                                        (_buttonColorAnimation.value ??
+                                                _disconnectedColor)
+                                            .withValues(
+                                              alpha: _rippleOpacity.value,
+                                            ),
                                     width: 2.5,
                                   ),
                                 ),
@@ -857,10 +878,7 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
                         ),
                       ),
                     // Button with bounce scale
-                    Transform.scale(
-                      scale: _notifyScale.value,
-                      child: child,
-                    ),
+                    Transform.scale(scale: _notifyScale.value, child: child),
                   ],
                 );
               },
@@ -899,8 +917,9 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: _connectingColor
-                                      .withValues(alpha: 0.4 * (1 - pulseT)),
+                                  color: _connectingColor.withValues(
+                                    alpha: 0.4 * (1 - pulseT),
+                                  ),
                                   width: 2.0,
                                 ),
                               ),
@@ -937,8 +956,7 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
                         Positioned(
                           top: -4,
                           right: -4,
-                          child: UnreadBadge(
-                              count: floatingState.unreadCount),
+                          child: UnreadBadge(count: floatingState.unreadCount),
                         ),
                       if (isConnecting)
                         Positioned(
@@ -994,10 +1012,7 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
       ),
       child: const Padding(
         padding: EdgeInsets.all(3),
-        child: CircularProgressIndicator(
-          strokeWidth: 1.5,
-          color: Colors.white,
-        ),
+        child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white),
       ),
     );
   }
@@ -1010,11 +1025,7 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
         color: Color(0xFFEF4444),
         shape: BoxShape.circle,
       ),
-      child: const Icon(
-        Icons.close,
-        color: Colors.white,
-        size: 10,
-      ),
+      child: const Icon(Icons.close, color: Colors.white, size: 10),
     );
   }
 }

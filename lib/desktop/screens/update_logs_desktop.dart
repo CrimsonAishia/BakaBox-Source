@@ -479,9 +479,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
           return TweenAnimationBuilder<double>(
             key: ValueKey(log.updateTime),
             tween: Tween(begin: 0.0, end: 1.0),
-            duration: Duration(
-              milliseconds: 200 + (index * 50).clamp(0, 300),
-            ),
+            duration: Duration(milliseconds: 200 + (index * 50).clamp(0, 300)),
             curve: Curves.easeOut,
             builder: (context, value, child) {
               return Opacity(

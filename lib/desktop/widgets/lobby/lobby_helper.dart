@@ -71,7 +71,8 @@ class _LobbyStatusBannerState extends State<LobbyStatusBanner>
     };
 
     // 重连状态显示特殊图标和文字
-    final bool isReconnecting = widget.connectionStatus == LobbyConnectionStatus.reconnecting;
+    final bool isReconnecting =
+        widget.connectionStatus == LobbyConnectionStatus.reconnecting;
     final IconData icon = isReconnecting ? Icons.sync : Icons.wifi_tethering;
     final String displayMessage = isReconnecting
         ? '正在重新连接大厅... ${widget.message}'
@@ -84,7 +85,9 @@ class _LobbyStatusBannerState extends State<LobbyStatusBanner>
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.55),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: accent.withValues(alpha: isReconnecting ? 0.9 : 0.75)),
+          border: Border.all(
+            color: accent.withValues(alpha: isReconnecting ? 0.9 : 0.75),
+          ),
           boxShadow: isReconnecting
               ? [
                   BoxShadow(
@@ -117,7 +120,9 @@ class _LobbyStatusBannerState extends State<LobbyStatusBanner>
                 height: 14,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(accent.withValues(alpha: 0.8)),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    accent.withValues(alpha: 0.8),
+                  ),
                 ),
               ),
             ],

@@ -56,9 +56,10 @@ class _LobbyInventoryPanelState extends State<LobbyInventoryPanel>
     _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _animController.forward();
     _loadData();
   }
@@ -80,7 +81,9 @@ class _LobbyInventoryPanelState extends State<LobbyInventoryPanel>
     }
 
     try {
-      final result = await LobbyNakamaService.instance.rpcInventoryStats(nakamaUserId);
+      final result = await LobbyNakamaService.instance.rpcInventoryStats(
+        nakamaUserId,
+      );
       if (!mounted) return;
       if (result != null && result.code == 0) {
         setState(() {
@@ -120,16 +123,10 @@ class _LobbyInventoryPanelState extends State<LobbyInventoryPanel>
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF1A1F2E),
-                  Color(0xFF0F1624),
-                ],
+                colors: [Color(0xFF1A1F2E), Color(0xFF0F1624)],
               ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: const Color(0xFF2A3A5C),
-                width: 1.5,
-              ),
+              border: Border.all(color: const Color(0xFF2A3A5C), width: 1.5),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.6),
@@ -310,9 +307,7 @@ class _LobbyInventoryPanelState extends State<LobbyInventoryPanel>
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.06),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -360,11 +355,7 @@ class _LobbyInventoryPanelState extends State<LobbyInventoryPanel>
             ),
           ),
           // 积分
-          Icon(
-            Icons.bolt,
-            color: const Color(0xFF60A5FA),
-            size: 13,
-          ),
+          Icon(Icons.bolt, color: const Color(0xFF60A5FA), size: 13),
           const SizedBox(width: 2),
           Text(
             '${_formatNumber(stats.totalPointValue.toInt())} 点',
@@ -381,14 +372,54 @@ class _LobbyInventoryPanelState extends State<LobbyInventoryPanel>
 
   Widget _buildItemGrid(pb.InventoryStatsResponse stats) {
     final items = <_InventoryItem>[
-      _InventoryItem('已购买皮肤', stats.skinCount, Icons.person_outline, const Color(0xFF8B5CF6)),
-      _InventoryItem('已解锁符卡', stats.spellCount, Icons.style_outlined, const Color(0xFFF59E0B)),
-      _InventoryItem('已解锁弹幕', stats.danmakuCount, Icons.local_fire_department, const Color(0xFFF97316)),
-      _InventoryItem('已解锁技能', stats.skillCount, Icons.auto_awesome, const Color(0xFFEAB308)),
-      _InventoryItem('已购买刀模', stats.knifeCount, Icons.content_cut, const Color(0xFF94A3B8)),
-      _InventoryItem('已购买枪模', stats.weaponCount, Icons.gps_fixed, const Color(0xFF60A5FA)),
-      _InventoryItem('已购买 Cheer', stats.cheerCount, Icons.campaign_outlined, const Color(0xFFF472B6)),
-      _InventoryItem('菜单皮肤', stats.skinmenuCount, Icons.view_sidebar_outlined, const Color(0xFF2DD4BF)),
+      _InventoryItem(
+        '已购买皮肤',
+        stats.skinCount,
+        Icons.person_outline,
+        const Color(0xFF8B5CF6),
+      ),
+      _InventoryItem(
+        '已解锁符卡',
+        stats.spellCount,
+        Icons.style_outlined,
+        const Color(0xFFF59E0B),
+      ),
+      _InventoryItem(
+        '已解锁弹幕',
+        stats.danmakuCount,
+        Icons.local_fire_department,
+        const Color(0xFFF97316),
+      ),
+      _InventoryItem(
+        '已解锁技能',
+        stats.skillCount,
+        Icons.auto_awesome,
+        const Color(0xFFEAB308),
+      ),
+      _InventoryItem(
+        '已购买刀模',
+        stats.knifeCount,
+        Icons.content_cut,
+        const Color(0xFF94A3B8),
+      ),
+      _InventoryItem(
+        '已购买枪模',
+        stats.weaponCount,
+        Icons.gps_fixed,
+        const Color(0xFF60A5FA),
+      ),
+      _InventoryItem(
+        '已购买 Cheer',
+        stats.cheerCount,
+        Icons.campaign_outlined,
+        const Color(0xFFF472B6),
+      ),
+      _InventoryItem(
+        '菜单皮肤',
+        stats.skinmenuCount,
+        Icons.view_sidebar_outlined,
+        const Color(0xFF2DD4BF),
+      ),
     ];
 
     return GridView.builder(

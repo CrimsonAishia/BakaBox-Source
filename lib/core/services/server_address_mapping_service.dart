@@ -48,7 +48,8 @@ class ServerAddressMappingService {
       _ipToDomainCache.clear();
       _defaultCategoryAddresses.clear();
 
-      final categories = await ServerCategoryService.instance.getApiCategories();
+      final categories = await ServerCategoryService.instance
+          .getApiCategories();
       for (final category in categories) {
         for (final server in category.serverList) {
           final domainAddress = server.address;
@@ -80,7 +81,9 @@ class ServerAddressMappingService {
       }
 
       _isLoaded = true;
-      LogService.d('[AddressMapping] 地址映射加载完成，共 ${_ipToDomainCache.length} 条，默认分类服务器 ${_defaultCategoryAddresses.length} 个');
+      LogService.d(
+        '[AddressMapping] 地址映射加载完成，共 ${_ipToDomainCache.length} 条，默认分类服务器 ${_defaultCategoryAddresses.length} 个',
+      );
     } catch (e) {
       LogService.e('[AddressMapping] 加载服务器地址映射失败', e);
     } finally {
@@ -120,8 +123,9 @@ class ServerAddressMappingService {
     final port = parts[1];
 
     try {
-      final addrs = await InternetAddress.lookup(host)
-          .timeout(const Duration(seconds: 2));
+      final addrs = await InternetAddress.lookup(
+        host,
+      ).timeout(const Duration(seconds: 2));
       if (addrs.isNotEmpty) {
         final ip = addrs.first.address;
         _ipToDomainCache['$ip:$port'] = address;

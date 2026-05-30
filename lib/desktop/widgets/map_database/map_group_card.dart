@@ -184,26 +184,30 @@ class _MapGroupCardState extends State<MapGroupCard> {
                                       blurRadius: 8,
                                     ),
                                     Shadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.9),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.9,
+                                      ),
                                       offset: const Offset(1, 1),
                                       blurRadius: 2,
                                     ),
                                     Shadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.9),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.9,
+                                      ),
                                       offset: const Offset(-1, -1),
                                       blurRadius: 2,
                                     ),
                                     Shadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.9),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.9,
+                                      ),
                                       offset: const Offset(1, -1),
                                       blurRadius: 2,
                                     ),
                                     Shadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.9),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.9,
+                                      ),
                                       offset: const Offset(-1, 1),
                                       blurRadius: 2,
                                     ),
@@ -238,26 +242,30 @@ class _MapGroupCardState extends State<MapGroupCard> {
                                       blurRadius: 4,
                                     ),
                                     Shadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.9),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.9,
+                                      ),
                                       offset: const Offset(1, 1),
                                       blurRadius: 2,
                                     ),
                                     Shadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.9),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.9,
+                                      ),
                                       offset: const Offset(-1, -1),
                                       blurRadius: 2,
                                     ),
                                     Shadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.9),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.9,
+                                      ),
                                       offset: const Offset(1, -1),
                                       blurRadius: 2,
                                     ),
                                     Shadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.9),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.9,
+                                      ),
                                       offset: const Offset(-1, 1),
                                       blurRadius: 2,
                                     ),

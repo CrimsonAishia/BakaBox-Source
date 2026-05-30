@@ -90,7 +90,9 @@ class _LobbyBroadcastDialogState extends State<LobbyBroadcastDialog> {
                   padding: EdgeInsets.all(widget.compact ? 16 : 24),
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                    borderRadius: BorderRadius.circular(widget.compact ? 14 : 20),
+                    borderRadius: BorderRadius.circular(
+                      widget.compact ? 14 : 20,
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.2),
@@ -165,8 +167,12 @@ class _LobbyBroadcastDialogState extends State<LobbyBroadcastDialog> {
                             hintText: isInCooldown ? '冷却中...' : '输入广播内容...',
                             hintStyle: TextStyle(color: inputHintTextColor),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.all(widget.compact ? 12 : 16),
-                            counterStyle: TextStyle(color: inputCounterTextColor),
+                            contentPadding: EdgeInsets.all(
+                              widget.compact ? 12 : 16,
+                            ),
+                            counterStyle: TextStyle(
+                              color: inputCounterTextColor,
+                            ),
                           ),
                           onChanged: (_) => setState(() {}),
                           onSubmitted: (_) => _onSubmit(),

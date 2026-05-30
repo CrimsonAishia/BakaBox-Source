@@ -24,14 +24,10 @@ class LobbyContextMenuComponent extends PositionComponent {
     required Vector2 worldPosition,
     required void Function(String itemId) onItemSelected,
     required VoidCallback onDismiss,
-  })  : _items = items,
-        _onItemSelected = onItemSelected,
-        _onDismiss = onDismiss,
-        super(
-          position: worldPosition,
-          anchor: Anchor.topLeft,
-          priority: 1000,
-        );
+  }) : _items = items,
+       _onItemSelected = onItemSelected,
+       _onDismiss = onDismiss,
+       super(position: worldPosition, anchor: Anchor.topLeft, priority: 1000);
 
   final List<ContextMenuItem> _items;
   final void Function(String itemId) _onItemSelected;
@@ -158,8 +154,10 @@ class LobbyContextMenuComponent extends PositionComponent {
     }
 
     final bgRect = Rect.fromLTWH(0, 0, size.x, size.y);
-    final bgRRect =
-        RRect.fromRectAndRadius(bgRect, const Radius.circular(_borderRadius));
+    final bgRRect = RRect.fromRectAndRadius(
+      bgRect,
+      const Radius.circular(_borderRadius),
+    );
 
     // 外阴影（柔和扩散）
     final shadowPaint = Paint()
@@ -174,8 +172,10 @@ class LobbyContextMenuComponent extends PositionComponent {
 
     // 内层微光（模拟毛玻璃高光）
     final innerGlowRect = Rect.fromLTWH(0, 0, size.x, size.y * 0.5);
-    final innerGlowRRect =
-        RRect.fromRectAndRadius(innerGlowRect, const Radius.circular(_borderRadius));
+    final innerGlowRRect = RRect.fromRectAndRadius(
+      innerGlowRect,
+      const Radius.circular(_borderRadius),
+    );
     final innerGlowPaint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,

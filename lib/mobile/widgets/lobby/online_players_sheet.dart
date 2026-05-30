@@ -65,8 +65,9 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
 
   /// 返回搜索过滤后、状态过滤前的在线用户列表
   List<LobbyUser> _getSearchedUsers(LobbyState state) {
-    final source =
-        state.allOnlineUsers.isNotEmpty ? state.allOnlineUsers : state.users;
+    final source = state.allOnlineUsers.isNotEmpty
+        ? state.allOnlineUsers
+        : state.users;
     var filtered = source.where((user) => user.isOnline).toList();
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
@@ -99,14 +100,15 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
           final countInGame = _countForFilter(searchedUsers, 'inGame');
           final countQueuing = _countForFilter(searchedUsers, 'queuing');
 
-          final displayUsers = searchedUsers
-              .where((u) => _matchesFilter(u, _statusFilter))
-              .toList()
-            ..sort((a, b) {
-              if (a.isSelf) return -1;
-              if (b.isSelf) return 1;
-              return a.displayName.compareTo(b.displayName);
-            });
+          final displayUsers =
+              searchedUsers
+                  .where((u) => _matchesFilter(u, _statusFilter))
+                  .toList()
+                ..sort((a, b) {
+                  if (a.isSelf) return -1;
+                  if (b.isSelf) return 1;
+                  return a.displayName.compareTo(b.displayName);
+                });
 
           return SafeArea(
             top: false,
@@ -130,7 +132,8 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
                 const Divider(height: 1, color: Colors.white10),
                 // 玩家列表
                 Expanded(
-                  child: state.isLoadingAllOnlineUsers &&
+                  child:
+                      state.isLoadingAllOnlineUsers &&
                           state.allOnlineUsers.isEmpty
                       ? const Center(
                           child: Column(
@@ -154,28 +157,27 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
                           ),
                         )
                       : displayUsers.isEmpty
-                          ? Center(
-                              child: Text(
-                                _searchQuery.isNotEmpty ||
-                                        _statusFilter != null
-                                    ? '没有匹配的玩家'
-                                    : '暂无在线玩家',
-                                style: const TextStyle(
-                                  color: Colors.white38,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            )
-                          : ListView.builder(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 4),
-                              itemCount: displayUsers.length,
-                              itemBuilder: (context, index) {
-                                return _PlayerTileMobile(
-                                  user: displayUsers[index],
-                                );
-                              },
+                      ? Center(
+                          child: Text(
+                            _searchQuery.isNotEmpty || _statusFilter != null
+                                ? '没有匹配的玩家'
+                                : '暂无在线玩家',
+                            style: const TextStyle(
+                              color: Colors.white38,
+                              fontSize: 14,
                             ),
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          itemCount: displayUsers.length,
+                          itemBuilder: (context, index) {
+                            return _PlayerTileMobile(user: displayUsers[index]);
+                          },
+                        ),
                 ),
               ],
             ),
@@ -204,9 +206,7 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(
-            color: Colors.white.withValues(alpha: 0.08),
-          ),
+          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
         ),
       ),
       child: Row(
@@ -286,17 +286,12 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.08),
-              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
             ),
             child: TextField(
               controller: _searchController,
               onChanged: (value) => setState(() => _searchQuery = value),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-              ),
+              style: const TextStyle(color: Colors.white, fontSize: 14),
               decoration: InputDecoration(
                 hintText: '搜索玩家...',
                 hintStyle: TextStyle(
@@ -355,8 +350,7 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
 
   Widget _buildFilterChip(String? filterValue, String label, int count) {
     final isSelected = _statusFilter == filterValue;
-    final displayText =
-        isSelected ? '$label ($count)' : label;
+    final displayText = isSelected ? '$label ($count)' : label;
 
     return GestureDetector(
       onTap: () => setState(() => _statusFilter = filterValue),
@@ -480,8 +474,7 @@ class _PlayerTileMobile extends StatelessWidget {
                       color: const Color(0xFF1D9BF0).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(4),
                       border: Border.all(
-                        color:
-                            const Color(0xFF1D9BF0).withValues(alpha: 0.4),
+                        color: const Color(0xFF1D9BF0).withValues(alpha: 0.4),
                       ),
                     ),
                     child: const Text(
@@ -560,12 +553,12 @@ class _PlayerTileMobile extends StatelessWidget {
 /// Only includes online users. Sorted: self first, then by displayName.
 /// Exposed as a top-level function for property-based testing.
 List<LobbyUser> resolvePlayerList(LobbyState state) {
-  final source =
-      state.allOnlineUsers.isNotEmpty ? state.allOnlineUsers : state.users;
-  return source.where((user) => user.isOnline).toList()
-    ..sort((a, b) {
-      if (a.isSelf) return -1;
-      if (b.isSelf) return 1;
-      return a.displayName.compareTo(b.displayName);
-    });
+  final source = state.allOnlineUsers.isNotEmpty
+      ? state.allOnlineUsers
+      : state.users;
+  return source.where((user) => user.isOnline).toList()..sort((a, b) {
+    if (a.isSelf) return -1;
+    if (b.isSelf) return 1;
+    return a.displayName.compareTo(b.displayName);
+  });
 }

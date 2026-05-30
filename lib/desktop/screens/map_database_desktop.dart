@@ -231,8 +231,12 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
                                   color: isSelected
                                       ? activeColor
                                       : (isDark
-                                            ? Colors.white.withValues(alpha: 0.07)
-                                            : Colors.black.withValues(alpha: 0.05)),
+                                            ? Colors.white.withValues(
+                                                alpha: 0.07,
+                                              )
+                                            : Colors.black.withValues(
+                                                alpha: 0.05,
+                                              )),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
                                     color: isSelected
@@ -251,8 +255,12 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
                                     color: isSelected
                                         ? Colors.white
                                         : (isDark
-                                              ? Colors.white.withValues(alpha: 0.7)
-                                              : Colors.black.withValues(alpha: 0.65)),
+                                              ? Colors.white.withValues(
+                                                  alpha: 0.7,
+                                                )
+                                              : Colors.black.withValues(
+                                                  alpha: 0.65,
+                                                )),
                                   ),
                                 ),
                               ),

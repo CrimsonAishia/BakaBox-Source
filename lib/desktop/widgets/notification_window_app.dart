@@ -124,7 +124,8 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
   double get _windowHeight {
     final notification = widget.stateNotifier.notification;
     final type = notification.type;
-    if (type == NotificationType.updateLog || _isMultilineBroadcast(notification)) {
+    if (type == NotificationType.updateLog ||
+        _isMultilineBroadcast(notification)) {
       return _updateLogCardHeight;
     }
     // 有地图中文名的通知使用更高的卡片
@@ -465,7 +466,8 @@ class _NotificationCardState extends State<_NotificationCard> {
   }
 
   double get _height {
-    if (widget.notification.type == NotificationType.updateLog || _isMultilineBroadcast(widget.notification)) {
+    if (widget.notification.type == NotificationType.updateLog ||
+        _isMultilineBroadcast(widget.notification)) {
       return _updateLogHeight;
     }
     // 有地图中文名的通知使用更高的卡片
@@ -629,7 +631,9 @@ class _NotificationCardState extends State<_NotificationCard> {
                               const SizedBox(height: 4),
                               // 消息
                               Expanded(
-                                child: isUpdateLog || _isMultilineBroadcast(notification)
+                                child:
+                                    isUpdateLog ||
+                                        _isMultilineBroadcast(notification)
                                     ? _buildUpdateLogContent(notification)
                                     : _buildMessageWidget(
                                         notification,
@@ -728,11 +732,12 @@ class _NotificationCardState extends State<_NotificationCard> {
     }
 
     // 判断是否有地图原名需要分行显示（热身通知也使用分行显示地图名）
-    final hasMapNames = (showPlayers || isWarmup) &&
+    final hasMapNames =
+        (showPlayers || isWarmup) &&
         notification.mapName != null &&
         notification.mapName!.isNotEmpty;
-    final mapNameCn = (notification.mapNameCn != null &&
-            notification.mapNameCn!.isNotEmpty)
+    final mapNameCn =
+        (notification.mapNameCn != null && notification.mapNameCn!.isNotEmpty)
         ? notification.mapNameCn!
         : '暂无译名';
 
@@ -745,10 +750,7 @@ class _NotificationCardState extends State<_NotificationCard> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // 译名（中文名）
-                    _MarqueeText(
-                      text: mapNameCn,
-                      style: textStyle,
-                    ),
+                    _MarqueeText(text: mapNameCn, style: textStyle),
                     const SizedBox(height: 2),
                     // 原名（英文名）
                     _MarqueeText(
@@ -1234,7 +1236,7 @@ class _VerticalMarqueeHtmlState extends State<_VerticalMarqueeHtml>
     super.initState();
     _scrollController = ScrollController();
     _ticker = createTicker(_onTick);
-    
+
     // 延迟2秒后开始
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
@@ -1275,16 +1277,16 @@ class _VerticalMarqueeHtmlState extends State<_VerticalMarqueeHtml>
     if (_currentScroll >= maxScroll) {
       _currentScroll = maxScroll;
       _scrollController.jumpTo(_currentScroll);
-      
+
       _isWaiting = true;
       _ticker.stop();
-      
+
       // 触底等待 3 秒
       Future.delayed(const Duration(seconds: 3), () {
         if (!mounted || !_scrollController.hasClients) return;
         _currentScroll = 0.0;
         _scrollController.jumpTo(0.0);
-        
+
         // 返回顶部后等待 2 秒再继续
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted) {
@@ -1298,7 +1300,6 @@ class _VerticalMarqueeHtmlState extends State<_VerticalMarqueeHtml>
       _scrollController.jumpTo(_currentScroll);
     }
   }
-
 
   @override
   Widget build(BuildContext context) {

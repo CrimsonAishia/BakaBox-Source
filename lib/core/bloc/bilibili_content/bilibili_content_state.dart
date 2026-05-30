@@ -45,15 +45,15 @@ class BilibiliContentState extends Equatable {
   // 各自 Tab 是否已完成初次加载
   final bool hasLoadedLiveRooms;
   final bool hasLoadedVideos;
-  
+
   // 各自 Tab 的最后加载时间
   final DateTime? liveRoomsLastFetched;
   final DateTime? videosLastFetched;
-  
+
   // 各自 Tab 的加载状态
   final bool isLoadingLiveRooms;
   final bool isLoadingVideos;
-  
+
   // 最后一次操作结果（用于Toast提示）
   final bool? lastOperationSuccess;
   final String? lastOperationMessage;

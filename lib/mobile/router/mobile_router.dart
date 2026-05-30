@@ -87,8 +87,9 @@ class MobileRouter {
         path: MobileRoutes.characterGallery,
         name: 'characterGallery',
         builder: (context, state) => BlocProvider(
-          create: (_) => CharacterGalleryBloc()
-            ..add(const ChangeCategory(CharacterCategory.touhou)),
+          create: (_) =>
+              CharacterGalleryBloc()
+                ..add(const ChangeCategory(CharacterCategory.touhou)),
           child: const CharacterGalleryMobile(),
         ),
       ),
@@ -101,8 +102,9 @@ class MobileRouter {
             state.uri.queryParameters['subModelId'] ?? '',
           );
           return BlocProvider(
-            create: (_) => CharacterGalleryBloc()
-              ..add(LoadCharacterDetail(id, initialSubModelId: subModelId)),
+            create: (_) =>
+                CharacterGalleryBloc()
+                  ..add(LoadCharacterDetail(id, initialSubModelId: subModelId)),
             child: CharacterDetailMobile(
               characterId: id,
               initialSubModelId: subModelId,

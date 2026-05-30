@@ -105,7 +105,7 @@ class MapTagChangeRequest extends Equatable {
   final int tagId;
   final String changeType; // 'edit' or 'delete'
   final AuditStatus auditStatus;
-  
+
   const MapTagChangeRequest({
     required this.id,
     required this.tagId,
@@ -333,8 +333,16 @@ class MapAllTagVoteItem extends Equatable {
   Map<String, dynamic> toJson() => _$MapAllTagVoteItemToJson(this);
 
   @override
-  List<Object?> get props =>
-      [id, tagId, tagName, tagColor, userId, username, avatar, voteType];
+  List<Object?> get props => [
+    id,
+    tagId,
+    tagName,
+    tagColor,
+    userId,
+    username,
+    avatar,
+    voteType,
+  ];
 }
 
 /// 地图所有标签投票记录响应

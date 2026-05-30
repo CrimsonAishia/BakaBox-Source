@@ -40,9 +40,10 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
       vsync: this,
       duration: const Duration(seconds: 8),
     )..repeat();
-    _rotateAnimation = Tween<double>(begin: 0, end: 2 * math.pi).animate(
-      CurvedAnimation(parent: _rotateController, curve: Curves.linear),
-    );
+    _rotateAnimation = Tween<double>(
+      begin: 0,
+      end: 2 * math.pi,
+    ).animate(CurvedAnimation(parent: _rotateController, curve: Curves.linear));
 
     _floatController = AnimationController(
       vsync: this,
@@ -70,21 +71,24 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
 
     // 步骤1：连接大厅
     final isConnected = connectionStatus == LobbyConnectionStatus.connected;
-    final isReconnecting = connectionStatus == LobbyConnectionStatus.reconnecting;
+    final isReconnecting =
+        connectionStatus == LobbyConnectionStatus.reconnecting;
     final isDisconnected =
         connectionStatus == LobbyConnectionStatus.disconnected ||
         connectionStatus == LobbyConnectionStatus.failed;
-    steps.add(_LoadingStep(
-      icon: Icons.cloud_done_outlined,
-      label: '连接大厅',
-      status: isConnected
-          ? _StepStatus.done
-          : isDisconnected
-              ? _StepStatus.failed
-              : (isReconnecting || phase == LobbyLoadingPhase.connecting)
-                  ? _StepStatus.loading
-                  : _StepStatus.pending,
-    ));
+    steps.add(
+      _LoadingStep(
+        icon: Icons.cloud_done_outlined,
+        label: '连接大厅',
+        status: isConnected
+            ? _StepStatus.done
+            : isDisconnected
+            ? _StepStatus.failed
+            : (isReconnecting || phase == LobbyLoadingPhase.connecting)
+            ? _StepStatus.loading
+            : _StepStatus.pending,
+      ),
+    );
 
     // 步骤1.5：排队（仅在排队时显示）
     if (isQueueing) {
@@ -98,12 +102,14 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
           subtitle += '，预计 ${eta >= 60 ? '${(eta / 60).ceil()} 分钟' : '$eta 秒'}';
         }
       }
-      steps.add(_LoadingStep(
-        icon: Icons.hourglass_top,
-        label: '排队等待',
-        subtitle: subtitle.isNotEmpty ? subtitle : null,
-        status: _StepStatus.loading,
-      ));
+      steps.add(
+        _LoadingStep(
+          icon: Icons.hourglass_top,
+          label: '排队等待',
+          subtitle: subtitle.isNotEmpty ? subtitle : null,
+          status: _StepStatus.loading,
+        ),
+      );
     }
 
     // 步骤2：加载素材（根据当前阶段决定状态）
@@ -123,11 +129,13 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
     } else {
       assetsStatus = _StepStatus.done;
     }
-    steps.add(_LoadingStep(
-      icon: Icons.collections_outlined,
-      label: '加载素材',
-      status: assetsStatus,
-    ));
+    steps.add(
+      _LoadingStep(
+        icon: Icons.collections_outlined,
+        label: '加载素材',
+        status: assetsStatus,
+      ),
+    );
 
     // 步骤3：获取大厅状态
     final hasSnapshot = widget.state.selfUser != null;
@@ -145,11 +153,13 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
     } else {
       snapshotStatus = _StepStatus.pending;
     }
-    steps.add(_LoadingStep(
-      icon: Icons.people_outline,
-      label: '获取大厅状态',
-      status: snapshotStatus,
-    ));
+    steps.add(
+      _LoadingStep(
+        icon: Icons.people_outline,
+        label: '获取大厅状态',
+        status: snapshotStatus,
+      ),
+    );
 
     return steps;
   }
@@ -182,7 +192,9 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
 
     final textPrimary = isDark ? Colors.white : const Color(0xFF1E293B);
     final textSecondary = isDark ? Colors.white70 : const Color(0xFF475569);
-    final ringBgColor = isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFCBD5E1);
+    final ringBgColor = isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : const Color(0xFFCBD5E1);
 
     return Container(
       decoration: BoxDecoration(
@@ -230,7 +242,10 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
               const SizedBox(height: 28),
 
               AnimatedBuilder(
-                animation: Listenable.merge([_pulseAnimation, _rotateAnimation]),
+                animation: Listenable.merge([
+                  _pulseAnimation,
+                  _rotateAnimation,
+                ]),
                 builder: (context, child) {
                   return SizedBox(
                     width: 100,
@@ -274,10 +289,7 @@ class _LobbyLoadingScreenState extends State<LobbyLoadingScreen>
                 child: Text(
                   _buildStatusText(),
                   key: ValueKey(_buildStatusText()),
-                  style: TextStyle(
-                    color: textSecondary,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: textSecondary, fontSize: 12),
                 ),
               ),
               // 连接断开时显示重新连接按钮
@@ -365,10 +377,7 @@ class _LoadingStepItem extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _StepIndicator(
-            status: step.status,
-            textSecondary: textSecondary,
-          ),
+          _StepIndicator(status: step.status, textSecondary: textSecondary),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -380,10 +389,12 @@ class _LoadingStepItem extends StatelessWidget {
                   color: step.status == _StepStatus.done
                       ? textPrimary
                       : step.status == _StepStatus.failed
-                          ? const Color(0xFFEF4444)
-                          : textSecondary,
+                      ? const Color(0xFFEF4444)
+                      : textSecondary,
                   fontSize: 14,
-                  fontWeight: step.status == _StepStatus.done ? FontWeight.w600 : FontWeight.w400,
+                  fontWeight: step.status == _StepStatus.done
+                      ? FontWeight.w600
+                      : FontWeight.w400,
                 ),
               ),
               if (step.subtitle != null)
@@ -410,10 +421,7 @@ class _StepIndicator extends StatelessWidget {
   final _StepStatus status;
   final Color textSecondary;
 
-  const _StepIndicator({
-    required this.status,
-    required this.textSecondary,
-  });
+  const _StepIndicator({required this.status, required this.textSecondary});
 
   @override
   Widget build(BuildContext context) {
@@ -445,11 +453,7 @@ class _StepIndicator extends StatelessWidget {
   Widget _buildIcon() {
     switch (status) {
       case _StepStatus.done:
-        return const Icon(
-          Icons.check,
-          color: Color(0xFF22C55E),
-          size: 16,
-        );
+        return const Icon(Icons.check, color: Color(0xFF22C55E), size: 16);
       case _StepStatus.loading:
         return const SizedBox(
           width: 16,

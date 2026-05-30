@@ -396,5 +396,5 @@ class _CustomColorButtonState extends State<_CustomColorButton> {
     );
 
     widget.onColorSelected(colorToHex(result));
-    }
+  }
 }

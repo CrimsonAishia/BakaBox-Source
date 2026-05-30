@@ -621,7 +621,8 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       LogService.d('[KeyBindingBloc] 删除配置成功: id=${event.id}');
     } catch (e) {
       LogService.e('[KeyBindingBloc] 删除配置失败', e);
-      final errorMsg = _getChangeRequestErrorMessage(e) ??
+      final errorMsg =
+          _getChangeRequestErrorMessage(e) ??
           ErrorUtils.getErrorMessage(e, defaultMessage: '删除配置失败');
       emit(state.copyWith(isLoading: false, error: errorMsg));
     }
@@ -678,7 +679,8 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       }
     } catch (e) {
       LogService.e('[KeyBindingBloc] 更新配置失败', e);
-      final errorMsg = _getChangeRequestErrorMessage(e) ??
+      final errorMsg =
+          _getChangeRequestErrorMessage(e) ??
           ErrorUtils.getErrorMessage(e, defaultMessage: '更新配置失败');
       emit(state.copyWith(isSaving: false, error: errorMsg));
     }
@@ -1106,9 +1108,7 @@ class KeyBindingBloc extends Bloc<KeyBindingEvent, KeyBindingState> {
       } else {
         errorMsg = ErrorUtils.getErrorMessage(e, defaultMessage: '撤销变更申请失败');
       }
-      emit(
-        state.copyWith(isCancellingChangeRequest: false, error: errorMsg),
-      );
+      emit(state.copyWith(isCancellingChangeRequest: false, error: errorMsg));
     }
   }
 }
