@@ -13,6 +13,7 @@ class EditServerDialog extends StatefulWidget {
   final String currentAddress;
   final String? currentNickname;
   final String categoryName;
+  final bool isReadOnlyAddress;
   final void Function(String newAddress, String? nickname) onConfirm;
 
   const EditServerDialog({
@@ -20,6 +21,7 @@ class EditServerDialog extends StatefulWidget {
     required this.currentAddress,
     this.currentNickname,
     required this.categoryName,
+    this.isReadOnlyAddress = false,
     required this.onConfirm,
   });
 
@@ -140,7 +142,9 @@ class _EditServerDialogState extends State<EditServerDialog> {
               autofocus: true,
               style: TextStyle(color: textColor),
               decoration: InputDecoration(
-                labelText: '服务器地址',
+                labelText: widget.isReadOnlyAddress
+                    ? '服务器地址 (第三方接口不可修改)'
+                    : '服务器地址',
                 labelStyle: TextStyle(color: secondaryTextColor),
                 hintText: '例如: 192.168.1.1:27015',
                 hintStyle: TextStyle(
@@ -148,7 +152,9 @@ class _EditServerDialogState extends State<EditServerDialog> {
                 ),
                 errorText: _errorText,
                 filled: true,
-                fillColor: inputBgColor,
+                fillColor: widget.isReadOnlyAddress
+                    ? (isDark ? Colors.black12 : Colors.grey[200])
+                    : inputBgColor,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(color: borderColor),
@@ -157,12 +163,20 @@ class _EditServerDialogState extends State<EditServerDialog> {
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(color: borderColor),
                 ),
+                disabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: borderColor.withValues(alpha: 0.5),
+                  ),
+                ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: const BorderSide(color: Color(0xFF0080FF)),
                 ),
                 prefixIcon: Icon(Icons.dns_outlined, color: secondaryTextColor),
               ),
+              readOnly: widget.isReadOnlyAddress,
+              enabled: !widget.isReadOnlyAddress,
               onChanged: (_) {
                 if (_errorText != null) {
                   setState(() => _errorText = null);

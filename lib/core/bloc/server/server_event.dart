@@ -113,6 +113,25 @@ class ServerAddServer extends ServerEvent {
   List<Object?> get props => [categoryName, serverAddress, nickname];
 }
 
+/// 批量添加完整服务器对象到分类
+class ServerAddServerToCategory extends ServerEvent {
+  final String categoryName;
+  final ServerItem serverItem;
+  final bool isFromApi;
+  final String? sourceApiUrl;
+  final String? sourceApiCategoryName;
+  
+  const ServerAddServerToCategory(
+    this.categoryName,
+    this.serverItem, {
+    this.isFromApi = false,
+    this.sourceApiUrl,
+    this.sourceApiCategoryName,
+  });
+  @override
+  List<Object?> get props => [categoryName, serverItem, isFromApi, sourceApiUrl, sourceApiCategoryName];
+}
+
 /// 删除自定义分类
 class ServerDeleteCategory extends ServerEvent {
   final String categoryName;

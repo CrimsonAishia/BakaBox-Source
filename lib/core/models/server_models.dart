@@ -36,12 +36,20 @@ class ServerCategory extends Equatable {
   final bool isCustom; // 标记是否为用户自定义分类
   final int? sortOrder; // 自定义分类排序顺序
 
+  @JsonKey(defaultValue: false)
+  final bool isFromApi; // 标记是否来源于第三方API
+  final String? sourceApiUrl; // 第三方接口URL
+  final String? sourceApiCategoryName; // 第三方接口的原始分类键名（用于找回数据源，防改名失效）
+
   const ServerCategory({
     this.modelName,
     this.category,
     required this.serverList,
     this.isCustom = false,
     this.sortOrder,
+    this.isFromApi = false,
+    this.sourceApiUrl,
+    this.sourceApiCategoryName,
   });
 
   factory ServerCategory.fromJson(Map<String, dynamic> json) =>
@@ -54,6 +62,9 @@ class ServerCategory extends Equatable {
     List<ServerItem>? serverList,
     bool? isCustom,
     int? sortOrder,
+    bool? isFromApi,
+    String? sourceApiUrl,
+    String? sourceApiCategoryName,
   }) {
     return ServerCategory(
       modelName: modelName ?? this.modelName,
@@ -61,6 +72,9 @@ class ServerCategory extends Equatable {
       serverList: serverList ?? this.serverList,
       isCustom: isCustom ?? this.isCustom,
       sortOrder: sortOrder ?? this.sortOrder,
+      isFromApi: isFromApi ?? this.isFromApi,
+      sourceApiUrl: sourceApiUrl ?? this.sourceApiUrl,
+      sourceApiCategoryName: sourceApiCategoryName ?? this.sourceApiCategoryName,
     );
   }
 
@@ -71,6 +85,9 @@ class ServerCategory extends Equatable {
     serverList,
     isCustom,
     sortOrder,
+    isFromApi,
+    sourceApiUrl,
+    sourceApiCategoryName,
   ];
 }
 
@@ -82,6 +99,8 @@ class ServerItem extends Equatable {
   @JsonKey(defaultValue: false)
   final bool isCustom; // 标记是否为用户自定义服务器
   final String? nickname; // 自定义服务器备注名
+  final String? dataSourceMode; // 数据更新模式：'a2s' 或 'api'
+  final String? sourceApiUrl; // 第三方接口URL
 
   const ServerItem({
     this.address,
@@ -89,6 +108,8 @@ class ServerItem extends Equatable {
     this.serverData,
     this.isCustom = false,
     this.nickname,
+    this.dataSourceMode,
+    this.sourceApiUrl,
   });
 
   factory ServerItem.fromJson(Map<String, dynamic> json) =>
@@ -109,6 +130,8 @@ class ServerItem extends Equatable {
     bool? isCustom,
     String? nickname,
     bool clearNickname = false,
+    String? dataSourceMode,
+    String? sourceApiUrl,
   }) {
     return ServerItem(
       address: address ?? this.address,
@@ -116,6 +139,8 @@ class ServerItem extends Equatable {
       serverData: serverData ?? this.serverData,
       isCustom: isCustom ?? this.isCustom,
       nickname: clearNickname ? null : (nickname ?? this.nickname),
+      dataSourceMode: dataSourceMode ?? this.dataSourceMode,
+      sourceApiUrl: sourceApiUrl ?? this.sourceApiUrl,
     );
   }
 
@@ -126,6 +151,8 @@ class ServerItem extends Equatable {
     serverData,
     isCustom,
     nickname,
+    dataSourceMode,
+    sourceApiUrl,
   ];
 }
 

@@ -15,6 +15,9 @@ ServerCategory _$ServerCategoryFromJson(Map<String, dynamic> json) =>
           .toList(),
       isCustom: json['isCustom'] as bool? ?? false,
       sortOrder: (json['sortOrder'] as num?)?.toInt(),
+      isFromApi: json['isFromApi'] as bool? ?? false,
+      sourceApiUrl: json['sourceApiUrl'] as String?,
+      sourceApiCategoryName: json['sourceApiCategoryName'] as String?,
     );
 
 Map<String, dynamic> _$ServerCategoryToJson(ServerCategory instance) =>
@@ -24,6 +27,9 @@ Map<String, dynamic> _$ServerCategoryToJson(ServerCategory instance) =>
       'serverList': instance.serverList,
       'isCustom': instance.isCustom,
       'sortOrder': instance.sortOrder,
+      'isFromApi': instance.isFromApi,
+      'sourceApiUrl': instance.sourceApiUrl,
+      'sourceApiCategoryName': instance.sourceApiCategoryName,
     };
 
 ServerItem _$ServerItemFromJson(Map<String, dynamic> json) => ServerItem(
@@ -32,6 +38,8 @@ ServerItem _$ServerItemFromJson(Map<String, dynamic> json) => ServerItem(
   serverData: json['serverData'] as Map<String, dynamic>?,
   isCustom: json['isCustom'] as bool? ?? false,
   nickname: json['nickname'] as String?,
+  dataSourceMode: json['dataSourceMode'] as String?,
+  sourceApiUrl: json['sourceApiUrl'] as String?,
 );
 
 Map<String, dynamic> _$ServerItemToJson(ServerItem instance) =>
@@ -41,6 +49,8 @@ Map<String, dynamic> _$ServerItemToJson(ServerItem instance) =>
       'serverData': instance.serverData,
       'isCustom': instance.isCustom,
       'nickname': instance.nickname,
+      'dataSourceMode': instance.dataSourceMode,
+      'sourceApiUrl': instance.sourceApiUrl,
     };
 
 ServerInfo _$ServerInfoFromJson(Map<String, dynamic> json) => ServerInfo(

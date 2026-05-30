@@ -95,6 +95,17 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
       ),
       actions: [
         TextButton(
+          onPressed: () => Navigator.of(context).pop('api_list'),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.cloud_download_outlined, size: 16),
+              SizedBox(width: 4),
+              Text('第三方接口导入'),
+            ],
+          ),
+        ),
+        TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('取消'),
         ),

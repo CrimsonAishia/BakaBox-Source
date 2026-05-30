@@ -50,7 +50,12 @@ class CustomServerService {
   }
 
   /// 添加自定义分类
-  static Future<ServerCategory> addCustomCategory(String categoryName) async {
+  static Future<ServerCategory> addCustomCategory(
+    String categoryName, {
+    bool isFromApi = false,
+    String? sourceApiUrl,
+    String? sourceApiCategoryName,
+  }) async {
     final categories = await loadCustomCategories();
 
     // 检查是否已存在
@@ -67,6 +72,9 @@ class CustomServerService {
       serverList: [],
       isCustom: true,
       sortOrder: newSortOrder,
+      isFromApi: isFromApi,
+      sourceApiUrl: sourceApiUrl,
+      sourceApiCategoryName: sourceApiCategoryName,
     );
 
     categories.add(newCategory);
@@ -154,6 +162,58 @@ class CustomServerService {
 
     LogService.i(
       '添加服务器 $serverAddress 到分类 $categoryName${nickname != null ? " (备注: $nickname)" : ""}',
+    );
+    return updatedCategory;
+  }
+
+  /// 添加完整的服务器对象到指定分类
+  static Future<ServerCategory> addServerItemToCategory(
+    String categoryName,
+    ServerItem serverItem, {
+    bool isFromApi = false,
+    String? sourceApiUrl,
+    String? sourceApiCategoryName,
+  }) async {
+    final categories = await loadCustomCategories();
+
+    final categoryIndex = categories.indexWhere(
+      (c) => c.modelName == categoryName,
+    );
+    // 自动创建分类
+    if (categoryIndex == -1) {
+      await addCustomCategory(
+        categoryName,
+        isFromApi: isFromApi,
+        sourceApiUrl: sourceApiUrl,
+        sourceApiCategoryName: sourceApiCategoryName,
+      );
+      return addServerItemToCategory(
+        categoryName,
+        serverItem,
+        isFromApi: isFromApi,
+        sourceApiUrl: sourceApiUrl,
+        sourceApiCategoryName: sourceApiCategoryName,
+      );
+    }
+
+    final category = categories[categoryIndex];
+
+    final serverAddress = serverItem.address ?? serverItem.serverAddress;
+    if (category.serverList.any(
+      (s) => (s.address ?? s.serverAddress) == serverAddress,
+    )) {
+      throw Exception('服务器已存在于该分类中');
+    }
+
+    final updatedCategory = category.copyWith(
+      serverList: [...category.serverList, serverItem],
+    );
+
+    categories[categoryIndex] = updatedCategory;
+    await saveCustomCategories(categories);
+
+    LogService.i(
+      '添加服务器对象 $serverAddress 到分类 $categoryName',
     );
     return updatedCategory;
   }

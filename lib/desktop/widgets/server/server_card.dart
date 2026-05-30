@@ -838,7 +838,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                     if (isCustomServer)
                       _buildSecondaryBtn(
                         icon: MdiIcons.pencilOutline,
-                        tooltip: '编辑服务器',
+                        tooltip: widget.server.serverItem.dataSourceMode == 'api' ? '编辑备注' : '编辑服务器',
                         color: const Color(0xFF0EA5E9),
                         onPressed: () => _showEditIpDialog(context),
                       )
@@ -1009,6 +1009,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         currentAddress: address,
         currentNickname: currentNickname,
         categoryName: categoryName,
+        isReadOnlyAddress: widget.server.serverItem.dataSourceMode == 'api',
         onConfirm: (newAddress, nickname) {
           if (mounted) {
             context.read<ServerBloc>().add(
