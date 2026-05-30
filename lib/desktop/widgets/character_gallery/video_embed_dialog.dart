@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:video_player/video_player.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_windows/webview_windows.dart' as windows_webview;
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../../../core/models/character_models.dart';
 
 /// 视频内嵌播放弹窗
@@ -41,8 +41,7 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
   // video_player 控制器（用于直链）
   VideoPlayerController? _controller;
 
-  // WebView 控制器（用于B站原始链接）
-  windows_webview.WebviewController? _webviewController;
+  // WebView 状态标志
   bool _isWebViewReady = false;
 
   bool _isPlaying = false;
@@ -78,7 +77,6 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
   @override
   void dispose() {
     _controller?.dispose();
-    _webviewController?.dispose();
     super.dispose();
   }
 
@@ -136,44 +134,10 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
   /// 使用 WebView 播放B站原始链接（iframe 嵌入）
   Future<void> _startWebViewPlayback() async {
     if (!mounted) return;
-    setState(() => _isPlaying = true);
-
-    try {
-      final controller = windows_webview.WebviewController();
-      await controller.initialize();
-      await controller.setBackgroundColor(Colors.black);
-      await controller.setPopupWindowPolicy(
-        windows_webview.WebviewPopupWindowPolicy.deny,
-      );
-
-      if (!mounted) {
-        controller.dispose();
-        return;
-      }
-
-      // 先设置控制器，让 WebView 开始渲染
-      _webviewController = controller;
-
-      // 构建B站嵌入播放器URL
-      final embedUrl = _buildBilibiliEmbedUrl(widget.videoUrl);
-      await controller.loadUrl(embedUrl);
-
-      // 延迟一小段时间确保 WebView 开始加载
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      if (mounted) {
-        setState(() {
-          _isWebViewReady = true;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _hasError = true;
-          _errorMessage = '初始化播放器失败：$e';
-        });
-      }
-    }
+    setState(() {
+      _isPlaying = true;
+      _isWebViewReady = true;
+    });
   }
 
   /// 使用 video_player 播放直链视频
@@ -351,12 +315,38 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
 
     // WebView 播放（B站原始链接）
     if (_useWebView) {
-      if (_isPlaying && _isWebViewReady && _webviewController != null) {
+      if (_isPlaying && _isWebViewReady) {
         return ClipRRect(
           borderRadius: const BorderRadius.vertical(
             bottom: Radius.circular(12),
           ),
-          child: windows_webview.Webview(_webviewController!),
+          child: Container(
+            color: Colors.black,
+            child: InAppWebView(
+              initialUrlRequest: URLRequest(url: WebUri(_buildBilibiliEmbedUrl(widget.videoUrl))),
+              initialSettings: InAppWebViewSettings(
+                transparentBackground: true,
+                supportMultipleWindows: false,
+              ),
+              onCreateWindow: (controller, createWindowAction) async {
+                return false;
+              },
+              onPermissionRequest: (controller, request) async {
+                return PermissionResponse(
+                  resources: request.resources,
+                  action: PermissionResponseAction.DENY,
+                );
+              },
+              onReceivedError: (controller, request, error) {
+                if (mounted) {
+                  setState(() {
+                    _hasError = true;
+                    _errorMessage = '加载失败: ${error.description}';
+                  });
+                }
+              },
+            ),
+          ),
         );
       }
     } else {
