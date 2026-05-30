@@ -16,6 +16,8 @@ import '../widgets/add_category_dialog.dart';
 import '../widgets/edit_category_dialog.dart';
 import '../widgets/add_server_dialog.dart';
 import '../widgets/map_subscription/map_subscription_dialog.dart';
+import '../widgets/api_provider_list_dialog.dart';
+import '../widgets/api_server_selection_dialog.dart';
 
 // ==================== 常量定义 ====================
 
@@ -1904,20 +1906,56 @@ class _ServersDesktopState extends State<ServersDesktop> {
     showDialog<String>(
       context: context,
       builder: (context) => const AddCategoryDialog(),
-    ).then((categoryName) {
+    ).then((result) {
       if (!mounted) return;
-      if (categoryName != null && categoryName.isNotEmpty) {
-        context.read<ServerBloc>().add(ServerAddCategory(categoryName));
+      if (result == 'api_list') {
+        _showApiProviderListDialog();
+      } else if (result != null && result.isNotEmpty) {
+        context.read<ServerBloc>().add(ServerAddCategory(result));
       }
     });
+  }
+
+  /// 显示第三方接口列表对话框
+  void _showApiProviderListDialog() {
+    showDialog<String>(
+      context: context,
+      builder: (context) => const ApiProviderListDialog(),
+    ).then((provider) {
+      if (!mounted || provider == null) return;
+      if (provider == 'cs2ze') {
+        _showApiServerSelectionDialog();
+      }
+    });
+  }
+
+  /// 显示 API 服务器选择与导入对话框
+  void _showApiServerSelectionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => const ApiServerSelectionDialog(),
+    );
   }
 
   /// 显示添加服务器对话框
   void _showAddServerDialog() {
     final state = context.read<ServerBloc>().state;
-    final categoryName = state.selectedCategory?.modelName;
+    final category = state.selectedCategory;
+    final categoryName = category?.modelName;
 
-    if (categoryName == null) return;
+    if (category == null || categoryName == null) return;
+
+    if (category.isFromApi) {
+      showDialog(
+        context: context,
+        builder: (context) => ApiServerSelectionDialog(
+          targetCategoryName: categoryName,
+          targetApiCategoryKey: category.sourceApiCategoryName ?? categoryName, // 回退到 categoryName 以防万一
+          existingServers: category.serverList,
+        ),
+      );
+      return;
+    }
 
     showDialog<AddServerResult>(
       context: context,

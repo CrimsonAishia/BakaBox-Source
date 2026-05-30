@@ -173,11 +173,19 @@ class CategoryCard extends StatelessWidget {
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        gradient: CategoryUtils.getCategoryGradient(category.category),
+        gradient: category.isFromApi
+            ? const LinearGradient(
+                colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : CategoryUtils.getCategoryGradient(category.category),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Icon(
-        CategoryUtils.getCategoryIcon(category.modelName),
+        category.isFromApi
+            ? Icons.api_rounded // 或者使用 Icons.language_rounded 🌐
+            : CategoryUtils.getCategoryIcon(category.modelName),
         color: Colors.white,
         size: 22,
       ),

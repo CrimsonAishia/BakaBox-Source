@@ -16,6 +16,7 @@ import '../../utils/error_utils.dart';
 import 'server_event.dart';
 import 'server_state.dart';
 import '../../services/custom_server_service.dart';
+import '../../services/third_party_api_service.dart';
 
 class ServerBloc extends Bloc<ServerEvent, ServerState> {
   // 全局 mapRuntime 缓存，key 为服务器地址
@@ -134,6 +135,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     on<ServerClearRecentlyUpdated>(_onClearRecentlyUpdated);
     on<ServerAddCategory>(_onAddCategory);
     on<ServerAddServer>(_onAddServer);
+    on<ServerAddServerToCategory>(_onAddServerToCategory);
     on<ServerDeleteCategory>(_onDeleteCategory);
     on<ServerRenameCategory>(_onRenameCategory);
     on<ServerDeleteServer>(_onDeleteServer);
@@ -249,6 +251,48 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: '加载服务器列表失败'));
       LogService.e('加载服务器列表失败: $e', e);
+    }
+  }
+
+  Future<void> _onAddServerToCategory(
+    ServerAddServerToCategory event,
+    Emitter<ServerState> emit,
+  ) async {
+    try {
+      final updatedCategory = await CustomServerService.addServerItemToCategory(
+        event.categoryName,
+        event.serverItem,
+        isFromApi: event.isFromApi,
+        sourceApiUrl: event.sourceApiUrl,
+        sourceApiCategoryName: event.sourceApiCategoryName,
+      );
+
+      // 更新分类列表
+      final categoryIndex = state.serverCategories.indexWhere(
+        (c) => c.modelName == event.categoryName,
+      );
+
+      final updatedCategories = List<ServerCategory>.from(state.serverCategories);
+      
+      if (categoryIndex != -1) {
+        updatedCategories[categoryIndex] = updatedCategory;
+      } else {
+        // 如果找不到说明是新分类
+        updatedCategories.add(updatedCategory);
+      }
+
+      emit(state.copyWith(
+        serverCategories: updatedCategories,
+        successMessage: '已添加 ${event.serverItem.nickname ?? event.serverItem.serverAddress}',
+      ));
+
+      // 如果当前选中的是这个分类，顺便刷新一下
+      if (state.selectedCategory?.modelName == event.categoryName) {
+        add(ServerSelectCategory(updatedCategory, forceRefresh: true));
+      }
+    } catch (e) {
+      LogService.e('添加服务器对象失败: $e', e);
+      // 忽略单个添加的错误或者合并成统一提示
     }
   }
 
@@ -378,30 +422,154 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     final serverApi = ServerApi();
 
     // 收集所有需要查询的服务器地址（使用 Set 去重，防止同一服务器被添加多次导致查询冲突）
-    final serverAddresses = <String>{};
+    final a2sServerAddresses = <String>{};
+    final apiServerAddresses = <String>{};
+    
     for (final server in state.servers) {
       final address =
           server.serverItem.address ?? server.serverItem.serverAddress;
       if (address != null) {
-        serverAddresses.add(address);
+        if (server.serverItem.dataSourceMode == 'api') {
+          apiServerAddresses.add(address);
+        } else {
+          a2sServerAddresses.add(address);
+        }
       }
     }
 
-    if (serverAddresses.isEmpty) return;
+    if (a2sServerAddresses.isEmpty && apiServerAddresses.isEmpty) return;
 
-    // 总耗时 = 最慢的单台服务器耗时，而非批次数 × 每批耗时
     if (requestId != _currentRequestId || emit.isDone) return;
-    await Future.wait(
-      serverAddresses.map(
-        (address) => _fetchSingleServerInfo(
-          address: address,
-          requestId: requestId,
-          serverApi: serverApi,
-          emit: emit,
+    
+    // 异步拉取第三方 API 数据
+    Future<void> fetchApiServers() async {
+      if (apiServerAddresses.isEmpty) return;
+      try {
+        final apiMap = await ThirdPartyApiService.fetchCS2ZeServersMap();
+        if (requestId != _currentRequestId || emit.isDone) return;
+
+        for (final address in apiServerAddresses) {
+          final apiServerData = apiMap[address];
+          
+          final currentIndex = state.servers.indexWhere(
+            (s) => (s.serverItem.address ?? s.serverItem.serverAddress) == address,
+          );
+          if (currentIndex == -1) continue;
+          
+          final currentServer = state.servers[currentIndex];
+          
+          if (apiServerData != null) {
+            // 解析出 API 数据
+            final hasDataChanged =
+                currentServer.serverData == null ||
+                currentServer.serverData!.players != apiServerData.players ||
+                currentServer.serverData!.map != apiServerData.map;
+            
+            // 我们重用 server_models 里面的机制，把 API 数据转为 ServerInfo
+            final info = apiServerData.toServerInfo();
+
+            final mapChanged =
+                currentServer.serverData != null &&
+                currentServer.serverData!.map != info.map;
+
+            _failureCountCache[address] = 0; // 重置失败计数
+
+            final updatedServer = currentServer.copyWith(
+              serverData: info,
+              updatedAt: DateTime.now(),
+              recentlyUpdated: hasDataChanged && currentServer.serverData != null,
+              isLoading: false,
+              hasError: false,
+              consecutiveFailures: 0,
+              mapInfo: mapChanged ? null : currentServer.mapInfo,
+            );
+
+            _updateServerByAddress(address, updatedServer, emit);
+
+            // 获取背景图信息 (如果第三方API提供了图片，我们可以封装一个 MapData)
+            if (apiServerData.imageUrl != null) {
+               final fakeMapData = MapData(
+                 id: 0,
+                 mapName: info.map ?? '',
+                 mapLabel: apiServerData.mapCn ?? info.map ?? '',
+                 mapUrl: apiServerData.imageUrl!,
+               );
+               add(ServerUpdateSingleServer(address: address, mapInfo: fakeMapData));
+            } else if (info.map != null && (mapChanged || currentServer.mapInfo == null)) {
+               _fetchMapInfoAsync(address, info.map!, requestId, serverApi);
+            }
+          } else {
+            // 未找到数据，视为离线或错误
+            final newFailureCount = currentServer.consecutiveFailures + 1;
+            final isNowOffline = newFailureCount >= _offlineThreshold;
+            _failureCountCache[address] = newFailureCount;
+            
+            if (isNowOffline) {
+              _updateServerByAddress(
+                address,
+                currentServer.copyWith(
+                  isLoading: false,
+                  hasError: true,
+                  consecutiveFailures: newFailureCount,
+                  isOffline: true,
+                  clearServerData: true,
+                  clearMapInfo: true,
+                ),
+                emit,
+              );
+            } else {
+              _updateServerByAddress(
+                address,
+                currentServer.copyWith(
+                  isLoading: false,
+                  hasError: true,
+                  consecutiveFailures: newFailureCount,
+                ),
+                emit,
+              );
+            }
+          }
+        }
+      } catch (e) {
+        LogService.e('批量加载 API 服务器失败: $e', e);
+        // 标记所有 API 服务器为错误
+        for (final address in apiServerAddresses) {
+           final currentIndex = state.servers.indexWhere(
+            (s) => (s.serverItem.address ?? s.serverItem.serverAddress) == address,
+          );
+          if (currentIndex != -1 && !emit.isDone) {
+            final currentServer = state.servers[currentIndex];
+            final newFailureCount = currentServer.consecutiveFailures + 1;
+            _failureCountCache[address] = newFailureCount;
+            _updateServerByAddress(
+              address,
+              currentServer.copyWith(
+                isLoading: false,
+                hasError: true,
+                consecutiveFailures: newFailureCount,
+              ),
+              emit,
+            );
+          }
+        }
+      }
+    }
+
+    // 并行执行 A2S 和 API
+    await Future.wait([
+      Future.wait(
+        a2sServerAddresses.map(
+          (address) => _fetchSingleServerInfo(
+            address: address,
+            requestId: requestId,
+            serverApi: serverApi,
+            emit: emit,
+          ),
         ),
+        eagerError: false,
       ),
-      eagerError: false,
-    );
+      fetchApiServers(),
+    ]);
 
     // 比分数据由 `score.updates` WS 频道推送：
     // - 订阅时服务端会下发 snapshot
