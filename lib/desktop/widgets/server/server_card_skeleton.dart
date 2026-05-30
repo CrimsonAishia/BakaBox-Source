@@ -34,7 +34,7 @@ class _ServerCardSkeletonState extends State<ServerCardSkeleton>
   Widget build(BuildContext context) {
     // 与真实卡片完全一致的布局结构
     return Container(
-      height: 140, // 固定高度与真实卡片一致
+      height: 136, // 固定高度与真实卡片一致
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.transparent, width: 2),
@@ -68,7 +68,7 @@ class _ServerCardSkeletonState extends State<ServerCardSkeleton>
             ),
             // 骨架内容 - 与真实卡片一致的 padding
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
               child: _buildContent(),
             ),
             // 底部加载文字遮罩（仅在有 loadingText 时显示）
