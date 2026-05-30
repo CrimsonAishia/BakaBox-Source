@@ -13,13 +13,11 @@ class ZombieSkillCardMobile extends StatelessWidget {
   /// 僵尸技能数据
   final ZombieSkill skill;
 
-  const ZombieSkillCardMobile({
-    super.key,
-    required this.skill,
-  });
+  const ZombieSkillCardMobile({super.key, required this.skill});
 
   /// 获取技能类型对应的样式配置（与桌面端完全一致）
-  (Color borderColor, Color bgColor, String symbol, String bgAsset) _getTypeStyle(BuildContext context) {
+  (Color borderColor, Color bgColor, String symbol, String bgAsset)
+  _getTypeStyle(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final vermillion = CharacterGalleryTheme.getVermillion(context);
     final isPassive = skill.type == ZombieSkillType.passive;
@@ -93,7 +91,13 @@ class ZombieSkillCardMobile extends StatelessWidget {
   }
 
   /// 构建头部（符号 + 名称）- 与桌面端完全一致
-  Widget _buildHeader(BuildContext context, Color inkColor, Color borderColor, String symbol, bool isDark) {
+  Widget _buildHeader(
+    BuildContext context,
+    Color inkColor,
+    Color borderColor,
+    String symbol,
+    bool isDark,
+  ) {
     return Row(
       children: [
         // 符号（与桌面端一致的阴影）
@@ -106,7 +110,10 @@ class ZombieSkillCardMobile extends StatelessWidget {
                 ? null
                 : [
                     const Shadow(color: Colors.white, blurRadius: 3),
-                    Shadow(color: Colors.white.withValues(alpha: 0.8), blurRadius: 6),
+                    Shadow(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      blurRadius: 6,
+                    ),
                   ],
           ),
         ),
@@ -123,8 +130,14 @@ class ZombieSkillCardMobile extends StatelessWidget {
                   ? null
                   : [
                       const Shadow(color: Colors.white, blurRadius: 4),
-                      Shadow(color: Colors.white.withValues(alpha: 0.9), blurRadius: 8),
-                      Shadow(color: Colors.white.withValues(alpha: 0.7), blurRadius: 12),
+                      Shadow(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        blurRadius: 8,
+                      ),
+                      Shadow(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        blurRadius: 12,
+                      ),
                     ],
             ),
           ),
@@ -167,8 +180,14 @@ class ZombieSkillCardMobile extends StatelessWidget {
             ? null
             : [
                 const Shadow(color: Colors.white, blurRadius: 4),
-                Shadow(color: Colors.white.withValues(alpha: 0.9), blurRadius: 8),
-                Shadow(color: Colors.white.withValues(alpha: 0.7), blurRadius: 12),
+                Shadow(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  blurRadius: 8,
+                ),
+                Shadow(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  blurRadius: 12,
+                ),
               ],
       ),
     );
@@ -182,7 +201,11 @@ class ZombieSkillCardMobile extends StatelessWidget {
       skill.special != null;
 
   /// 构建属性区域（与桌面端完全一致）
-  Widget _buildAttributes(BuildContext context, Color accentColor, bool isDark) {
+  Widget _buildAttributes(
+    BuildContext context,
+    Color accentColor,
+    bool isDark,
+  ) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
     final statItems = <Widget>[];
 
@@ -212,13 +235,7 @@ class ZombieSkillCardMobile extends StatelessWidget {
 
     if (skill.range != null && skill.range!.isNotEmpty) {
       statItems.add(
-        _buildStatItem(
-          Icons.radar,
-          '范围',
-          skill.range!,
-          scrollBrown,
-          isDark,
-        ),
+        _buildStatItem(Icons.radar, '范围', skill.range!, scrollBrown, isDark),
       );
     }
 
@@ -256,7 +273,10 @@ class ZombieSkillCardMobile extends StatelessWidget {
               ? null
               : [
                   const Shadow(color: Colors.white, blurRadius: 3),
-                  Shadow(color: Colors.white.withValues(alpha: 0.8), blurRadius: 6),
+                  Shadow(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    blurRadius: 6,
+                  ),
                 ],
         ),
         const SizedBox(width: 4),
@@ -270,7 +290,10 @@ class ZombieSkillCardMobile extends StatelessWidget {
                 ? null
                 : [
                     const Shadow(color: Colors.white, blurRadius: 3),
-                    Shadow(color: Colors.white.withValues(alpha: 0.8), blurRadius: 6),
+                    Shadow(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      blurRadius: 6,
+                    ),
                   ],
           ),
         ),
@@ -285,7 +308,10 @@ class ZombieSkillCardMobile extends StatelessWidget {
                 ? null
                 : [
                     const Shadow(color: Colors.white, blurRadius: 3),
-                    Shadow(color: Colors.white.withValues(alpha: 0.8), blurRadius: 6),
+                    Shadow(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      blurRadius: 6,
+                    ),
                   ],
           ),
         ),

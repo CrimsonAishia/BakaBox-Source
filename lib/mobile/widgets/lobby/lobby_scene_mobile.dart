@@ -80,15 +80,16 @@ class _LobbySceneMobileState extends State<LobbySceneMobile> {
 
   void _listenToMapLoadState(String mapId) {
     _mapLoadSubscription?.cancel();
-    _mapLoadSubscription =
-        LobbyMapLoaderService.instance.getStateStream(mapId).listen((state) {
-      if (!mounted) return;
-      setState(() => _currentMapState = state);
-      if (state.isReady && _isWaitingForMapLoad && _targetMapId == mapId) {
-        _isWaitingForMapLoad = false;
-        _performMapSwitch(mapId);
-      }
-    });
+    _mapLoadSubscription = LobbyMapLoaderService.instance
+        .getStateStream(mapId)
+        .listen((state) {
+          if (!mounted) return;
+          setState(() => _currentMapState = state);
+          if (state.isReady && _isWaitingForMapLoad && _targetMapId == mapId) {
+            _isWaitingForMapLoad = false;
+            _performMapSwitch(mapId);
+          }
+        });
   }
 
   void _performMapSwitch(String newMapId) {
@@ -211,9 +212,7 @@ class _MobileLoadingPlaceholder extends StatelessWidget {
                       ? Colors.white.withValues(alpha: 0.1)
                       : const Color(0xFFCBD5E1),
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    isDark
-                        ? const Color(0xFF60A5FA)
-                        : const Color(0xFF3B82F6),
+                    isDark ? const Color(0xFF60A5FA) : const Color(0xFF3B82F6),
                   ),
                 ),
               ),

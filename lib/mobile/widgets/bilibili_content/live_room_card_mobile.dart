@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../../../core/models/bilibili_content_models.dart';
@@ -11,11 +10,7 @@ class LiveRoomCardMobile extends StatelessWidget {
   final LiveRoom room;
   final VoidCallback? onTap;
 
-  const LiveRoomCardMobile({
-    super.key,
-    required this.room,
-    this.onTap,
-  });
+  const LiveRoomCardMobile({super.key, required this.room, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -31,9 +26,7 @@ class LiveRoomCardMobile extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         elevation: isDark ? 4 : 2,
         shadowColor: isDark ? Colors.black45 : Colors.black26,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -48,7 +41,9 @@ class LiveRoomCardMobile extends StatelessWidget {
                     imageUrl: room.displayCoverUrl,
                     fit: BoxFit.cover,
                     placeholder: Container(
-                      color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                      color: isDark
+                          ? Colors.grey.shade800
+                          : Colors.grey.shade200,
                       child: const Center(
                         child: SizedBox(
                           width: 20,
@@ -58,8 +53,14 @@ class LiveRoomCardMobile extends StatelessWidget {
                       ),
                     ),
                     errorWidget: Container(
-                      color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
-                      child: const Icon(Icons.live_tv, size: 32, color: Colors.grey),
+                      color: isDark
+                          ? Colors.grey.shade800
+                          : Colors.grey.shade200,
+                      child: const Icon(
+                        Icons.live_tv,
+                        size: 32,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
                   // 底部渐变遮罩
@@ -86,7 +87,10 @@ class LiveRoomCardMobile extends StatelessWidget {
                     top: 6,
                     left: 6,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: room.isLive ? Colors.red : _bilibiliBlue,
                         borderRadius: BorderRadius.circular(4),
@@ -109,7 +113,11 @@ class LiveRoomCardMobile extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.visibility, size: 13, color: Colors.white),
+                          const Icon(
+                            Icons.visibility,
+                            size: 13,
+                            color: Colors.white,
+                          ),
                           const SizedBox(width: 3),
                           Text(
                             _formatNumber(room.popularity),
@@ -130,7 +138,11 @@ class LiveRoomCardMobile extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.favorite, size: 13, color: Colors.white),
+                          const Icon(
+                            Icons.favorite,
+                            size: 13,
+                            color: Colors.white,
+                          ),
                           const SizedBox(width: 3),
                           Text(
                             _formatNumber(room.followerCount),
@@ -178,11 +190,19 @@ class LiveRoomCardMobile extends StatelessWidget {
                               fit: BoxFit.cover,
                               placeholder: Container(
                                 color: _bilibiliBlue.withValues(alpha: 0.2),
-                                child: Icon(Icons.person, size: 12, color: _bilibiliBlue.withValues(alpha: 0.7)),
+                                child: Icon(
+                                  Icons.person,
+                                  size: 12,
+                                  color: _bilibiliBlue.withValues(alpha: 0.7),
+                                ),
                               ),
                               errorWidget: Container(
                                 color: _bilibiliBlue.withValues(alpha: 0.2),
-                                child: Icon(Icons.person, size: 12, color: _bilibiliBlue.withValues(alpha: 0.7)),
+                                child: Icon(
+                                  Icons.person,
+                                  size: 12,
+                                  color: _bilibiliBlue.withValues(alpha: 0.7),
+                                ),
                               ),
                             ),
                           ),

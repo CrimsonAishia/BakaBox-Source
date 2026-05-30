@@ -13,9 +13,7 @@ class SettingsPageMobile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('设置'),
-      ),
+      appBar: AppBar(title: const Text('设置')),
       body: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {
           return ListView(
@@ -292,7 +290,9 @@ class SettingsPageMobile extends StatelessWidget {
                   Text(
                     title,
                     style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
                       color: isSelected ? const Color(0xFF8B5CF6) : null,
                     ),
                   ),
@@ -306,7 +306,11 @@ class SettingsPageMobile extends StatelessWidget {
               ),
             ),
             if (isSelected)
-              Icon(MdiIcons.checkCircle, color: const Color(0xFF8B5CF6), size: 20),
+              Icon(
+                MdiIcons.checkCircle,
+                color: const Color(0xFF8B5CF6),
+                size: 20,
+              ),
           ],
         ),
       ),
@@ -324,7 +328,8 @@ class SettingsPageMobile extends StatelessWidget {
         bloc: settingsBloc,
         buildWhen: (prev, curr) =>
             prev.mobileCacheDetails != curr.mobileCacheDetails ||
-            prev.isLoadingMobileCacheDetails != curr.isLoadingMobileCacheDetails,
+            prev.isLoadingMobileCacheDetails !=
+                curr.isLoadingMobileCacheDetails,
         builder: (context, state) => AlertDialog(
           title: Row(
             children: [
@@ -353,7 +358,9 @@ class SettingsPageMobile extends StatelessWidget {
           contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           content: SizedBox(
             width: double.maxFinite,
-            child: state.isLoadingMobileCacheDetails && state.mobileCacheDetails.isEmpty
+            child:
+                state.isLoadingMobileCacheDetails &&
+                    state.mobileCacheDetails.isEmpty
                 ? const Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
                     child: Center(child: CircularProgressIndicator()),
@@ -361,24 +368,28 @@ class SettingsPageMobile extends StatelessWidget {
                 : Column(
                     mainAxisSize: MainAxisSize.min,
                     children: state.mobileCacheDetails
-                        .map((item) => _buildMobileCacheItem(
-                              context,
-                              item: item,
-                              onClear: item.canClear
-                                  ? () {
-                                      Navigator.pop(dialogContext);
-                                      settingsBloc.add(
-                                        SettingsClearMobileCacheByType(item.type),
-                                      );
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('${item.name}已清理'),
-                                          backgroundColor: const Color(0xFF10B981),
+                        .map(
+                          (item) => _buildMobileCacheItem(
+                            context,
+                            item: item,
+                            onClear: item.canClear
+                                ? () {
+                                    Navigator.pop(dialogContext);
+                                    settingsBloc.add(
+                                      SettingsClearMobileCacheByType(item.type),
+                                    );
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('${item.name}已清理'),
+                                        backgroundColor: const Color(
+                                          0xFF10B981,
                                         ),
-                                      );
-                                    }
-                                  : null,
-                            ))
+                                      ),
+                                    );
+                                  }
+                                : null,
+                          ),
+                        )
                         .toList(),
                   ),
           ),
@@ -406,7 +417,9 @@ class SettingsPageMobile extends StatelessWidget {
           ),
           color: canClear
               ? null
-              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              : theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.3,
+                ),
         ),
         child: Row(
           children: [
@@ -439,7 +452,9 @@ class SettingsPageMobile extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                           color: canClear
                               ? null
-                              : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                              : theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.5,
+                                ),
                         ),
                       ),
                       if (!canClear) ...[
@@ -450,13 +465,17 @@ class SettingsPageMobile extends StatelessWidget {
                             vertical: 1,
                           ),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.08,
+                            ),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             '保留',
                             style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.4,
+                              ),
                               fontSize: 10,
                             ),
                           ),
@@ -507,7 +526,9 @@ class SettingsPageMobile extends StatelessWidget {
                         '清理',
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: item.isClearing
-                              ? theme.colorScheme.onSurface.withValues(alpha: 0.3)
+                              ? theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.3,
+                                )
                               : const Color(0xFFEF4444),
                           fontWeight: FontWeight.w600,
                         ),

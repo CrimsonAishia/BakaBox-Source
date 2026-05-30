@@ -55,11 +55,16 @@ class _ExitBehaviorSelector extends StatelessWidget {
             return InkWell(
               borderRadius: BorderRadius.circular(10),
               onTap: () {
-                context.read<SettingsBloc>().add(SettingsSetAppExitBehavior(behavior));
+                context.read<SettingsBloc>().add(
+                  SettingsSetAppExitBehavior(behavior),
+                );
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   gradient: isSelected
                       ? LinearGradient(
@@ -73,18 +78,24 @@ class _ExitBehaviorSelector extends StatelessWidget {
                       : null,
                   color: isSelected
                       ? null
-                      : (isDark ? const Color(0xFF334155) : const Color(0xFFF9FAFB)),
+                      : (isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFF9FAFB)),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: isSelected
                         ? const Color(0xFF0080FF)
-                        : (isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB)),
+                        : (isDark
+                              ? const Color(0xFF475569)
+                              : const Color(0xFFE5E7EB)),
                     width: isSelected ? 2 : 1,
                   ),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+                            color: const Color(
+                              0xFF0080FF,
+                            ).withValues(alpha: 0.15),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -106,7 +117,9 @@ class _ExitBehaviorSelector extends StatelessWidget {
                       behavior.displayName,
                       style: TextStyle(
                         fontSize: 13,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w500,
                         color: isSelected
                             ? const Color(0xFF0080FF)
                             : (isDark ? Colors.white : const Color(0xFF374151)),

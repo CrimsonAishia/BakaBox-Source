@@ -330,7 +330,11 @@ Widget buildServerCardMock(
                           if (extraCount > 0)
                             Padding(
                               padding: const EdgeInsets.only(left: 4),
-                              child: _buildObsExtraCount(queueCount, warmupCount, extraCount),
+                              child: _buildObsExtraCount(
+                                queueCount,
+                                warmupCount,
+                                extraCount,
+                              ),
                             ),
                           Text(
                             '/',

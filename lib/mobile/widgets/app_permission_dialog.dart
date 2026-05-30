@@ -130,7 +130,11 @@ class _AppPermissionDialogState extends State<AppPermissionDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.shield_outlined, size: 48, color: const Color(0xFF6366F1)),
+            Icon(
+              Icons.shield_outlined,
+              size: 48,
+              color: const Color(0xFF6366F1),
+            ),
             const SizedBox(height: 12),
             Text(
               '应用权限设置',
@@ -155,7 +159,9 @@ class _AppPermissionDialogState extends State<AppPermissionDialog> {
               description: '接收广播消息和系统通知',
               granted: _notificationGranted,
               isActive: _currentStep == 0,
-              onRequest: _currentStep == 0 && !_requesting ? _requestNotification : null,
+              onRequest: _currentStep == 0 && !_requesting
+                  ? _requestNotification
+                  : null,
               isDark: isDark,
             ),
             const SizedBox(height: 12),
@@ -165,7 +171,9 @@ class _AppPermissionDialogState extends State<AppPermissionDialog> {
               description: '防止系统在后台关闭应用，保持连接稳定',
               granted: _batteryGranted,
               isActive: _currentStep == 1,
-              onRequest: _currentStep == 1 && !_requesting ? _requestBattery : null,
+              onRequest: _currentStep == 1 && !_requesting
+                  ? _requestBattery
+                  : null,
               isDark: isDark,
             ),
             const SizedBox(height: 24),
@@ -258,8 +266,9 @@ class _AppPermissionDialogState extends State<AppPermissionDialog> {
   }) {
     const activeColor = Color(0xFF6366F1);
     const grantedColor = Color(0xFF10B981);
-    final inactiveColor =
-        isDark ? Colors.white.withValues(alpha: 0.3) : const Color(0xFFD1D5DB);
+    final inactiveColor = isDark
+        ? Colors.white.withValues(alpha: 0.3)
+        : const Color(0xFFD1D5DB);
 
     final Color borderColor;
     final Color iconColor;
@@ -289,8 +298,8 @@ class _AppPermissionDialogState extends State<AppPermissionDialog> {
         color: granted
             ? grantedColor.withValues(alpha: 0.05)
             : isActive
-                ? activeColor.withValues(alpha: 0.05)
-                : Colors.transparent,
+            ? activeColor.withValues(alpha: 0.05)
+            : Colors.transparent,
       ),
       child: Row(
         children: [
@@ -299,7 +308,9 @@ class _AppPermissionDialogState extends State<AppPermissionDialog> {
             height: 40,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: (granted ? grantedColor : iconColor).withValues(alpha: 0.1),
+              color: (granted ? grantedColor : iconColor).withValues(
+                alpha: 0.1,
+              ),
             ),
             child: Icon(
               granted ? Icons.check_rounded : icon,

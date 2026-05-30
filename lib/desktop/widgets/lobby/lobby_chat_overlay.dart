@@ -43,7 +43,9 @@ class _LobbyChatOverlayState extends State<LobbyChatOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    final recentMessages = widget.state.messages.reversed.take(100).toList(growable: false);
+    final recentMessages = widget.state.messages.reversed
+        .take(100)
+        .toList(growable: false);
     final isChatActive = widget.state.isChatActive;
 
     return SizedBox(
@@ -94,7 +96,8 @@ class _LobbyChatOverlayState extends State<LobbyChatOverlay> {
                 itemBuilder: (context, index) {
                   final message = recentMessages[index];
                   final isSystem = message.type == LobbyMessageType.system;
-                  final isBroadcast = message.type == LobbyMessageType.broadcast;
+                  final isBroadcast =
+                      message.type == LobbyMessageType.broadcast;
                   final isAnonymous = message.isAnonymous;
 
                   // 广播消息特殊样式：黄色加粗内容 + 动态底纹
@@ -121,8 +124,8 @@ class _LobbyChatOverlayState extends State<LobbyChatOverlay> {
                             color: isSystem
                                 ? const Color(0xFFFFB74D) // 系统消息：橙色
                                 : (isAnonymous
-                                    ? const Color(0xFFB0BEC5) // 匿名用户：灰蓝色
-                                    : const Color(0xFF81D4FA)), // 登录用户：浅蓝色
+                                      ? const Color(0xFFB0BEC5) // 匿名用户：灰蓝色
+                                      : const Color(0xFF81D4FA)), // 登录用户：浅蓝色
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                           ),
@@ -155,11 +158,16 @@ class _LobbyChatOverlayState extends State<LobbyChatOverlay> {
                     decoration: InputDecoration(
                       counterText: '',
                       isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       hintText: widget.state.selfUser?.isAnonymous ?? false
                           ? '登录后即可参与聊天'
                           : '输入消息',
-                      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+                      hintStyle: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.55),
+                      ),
                       filled: true,
                       fillColor: Colors.white.withValues(alpha: 0.08),
                       enabledBorder: OutlineInputBorder(
@@ -170,7 +178,10 @@ class _LobbyChatOverlayState extends State<LobbyChatOverlay> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF38BDF8), width: 1.5),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF38BDF8),
+                          width: 1.5,
+                        ),
                       ),
                       disabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -187,7 +198,9 @@ class _LobbyChatOverlayState extends State<LobbyChatOverlay> {
               GestureDetector(
                 onTap: () {
                   // 点击"按 Enter 开始聊天"时打开聊天
-                  context.read<LobbyBloc>().add(const LobbyChatModeChanged(true));
+                  context.read<LobbyBloc>().add(
+                    const LobbyChatModeChanged(true),
+                  );
                 },
                 child: Padding(
                   padding: const EdgeInsets.only(top: 8),
@@ -219,7 +232,8 @@ class _BroadcastMessageWidget extends StatefulWidget {
   });
 
   @override
-  State<_BroadcastMessageWidget> createState() => _BroadcastMessageWidgetState();
+  State<_BroadcastMessageWidget> createState() =>
+      _BroadcastMessageWidgetState();
 }
 
 class _BroadcastMessageWidgetState extends State<_BroadcastMessageWidget>
@@ -256,10 +270,16 @@ class _BroadcastMessageWidgetState extends State<_BroadcastMessageWidget>
               end: Alignment.centerRight,
               colors: [
                 // 动态底纹：从深紫色到浅紫色再到深紫色
-                Color.lerp(const Color(0xFF4C1D95), const Color(0xFF7C3AED),
-                    0.5 + 0.5 * offsetValue)!,
-                Color.lerp(const Color(0xFF7C3AED), const Color(0xFF4C1D95),
-                    offsetValue)!,
+                Color.lerp(
+                  const Color(0xFF4C1D95),
+                  const Color(0xFF7C3AED),
+                  0.5 + 0.5 * offsetValue,
+                )!,
+                Color.lerp(
+                  const Color(0xFF7C3AED),
+                  const Color(0xFF4C1D95),
+                  offsetValue,
+                )!,
               ],
               stops: const [0.0, 1.0],
             ),

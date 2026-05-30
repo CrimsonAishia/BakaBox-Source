@@ -266,7 +266,8 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
     return BlocProvider<FloatingChatCubit>.value(
       value: _floatingChatCubit,
       child: BlocListener<SettingsBloc, SettingsState>(
-        listenWhen: (previous, current) => !previous.isPathInvalidated && current.isPathInvalidated,
+        listenWhen: (previous, current) =>
+            !previous.isPathInvalidated && current.isPathInvalidated,
         listener: (context, state) {
           showDialog(
             context: context,
@@ -277,87 +278,89 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
         child: PopScope(
           canPop: false,
           onPopInvokedWithResult: (didPop, result) async {
-          if (didPop) return;
-          final shouldExit = await _handleExit();
-          if (shouldExit && context.mounted) SystemNavigator.pop();
-        },
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          body: Stack(
-            children: [
-              Row(
-                children: [
-                  DesktopNavigation(
-                    currentIndex: _currentIndex,
-                    onIndexChanged: _onIndexChanged,
-                    items: _navigationItems,
-                    onFeedbackTap: () => _onIndexChanged(8),
-                    isFeedbackSelected: _currentIndex == 8,
-                  ),
-                  Expanded(
-                    child: AnimatedBuilder(
-                      animation: _contentAnimationController,
-                      builder: (context, child) {
-                        return FadeTransition(
-                          opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
-                            CurvedAnimation(
-                              parent: _contentAnimationController,
-                              curve: Curves.easeOutCubic,
-                            ),
-                          ),
-                          child: SlideTransition(
-                            position:
-                                Tween<Offset>(
-                                  begin: const Offset(0.1, 0.0),
-                                  end: Offset.zero,
-                                ).animate(
+            if (didPop) return;
+            final shouldExit = await _handleExit();
+            if (shouldExit && context.mounted) SystemNavigator.pop();
+          },
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            body: Stack(
+              children: [
+                Row(
+                  children: [
+                    DesktopNavigation(
+                      currentIndex: _currentIndex,
+                      onIndexChanged: _onIndexChanged,
+                      items: _navigationItems,
+                      onFeedbackTap: () => _onIndexChanged(8),
+                      isFeedbackSelected: _currentIndex == 8,
+                    ),
+                    Expanded(
+                      child: AnimatedBuilder(
+                        animation: _contentAnimationController,
+                        builder: (context, child) {
+                          return FadeTransition(
+                            opacity: Tween<double>(begin: 0.0, end: 1.0)
+                                .animate(
                                   CurvedAnimation(
                                     parent: _contentAnimationController,
                                     curve: Curves.easeOutCubic,
                                   ),
                                 ),
-                            child: _buildPageContent(),
-                          ),
-                        );
-                      },
+                            child: SlideTransition(
+                              position:
+                                  Tween<Offset>(
+                                    begin: const Offset(0.1, 0.0),
+                                    end: Offset.zero,
+                                  ).animate(
+                                    CurvedAnimation(
+                                      parent: _contentAnimationController,
+                                      curve: Curves.easeOutCubic,
+                                    ),
+                                  ),
+                              child: _buildPageContent(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                if (isDesktop)
+                  Positioned(top: 8, right: 12, child: DesktopWindowControls()),
+                if (isDesktop)
+                  const Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 120,
+                    height: 56,
+                    child: DragToMoveArea(child: SizedBox.expand()),
+                  ),
+                // 浮动聊天按钮（非大厅页面显示）
+                if (isDesktop && _currentIndex != 2)
+                  const Positioned.fill(child: FloatingChatButton()),
+                // 右下角悬浮区域：广播通知卡片 + 挤服卡片（从下到上堆叠）
+                if (isDesktop)
+                  Positioned(
+                    key: const ValueKey('bottom_right_overlay'),
+                    bottom: 16,
+                    right: 16,
+                    child: const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        GlobalBroadcastBar(),
+                        SizedBox(height: 8),
+                        QueueFloatingCard(),
+                      ],
                     ),
                   ),
-                ],
-              ),
-              if (isDesktop)
-                Positioned(top: 8, right: 12, child: DesktopWindowControls()),
-              if (isDesktop)
-                const Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 120,
-                  height: 56,
-                  child: DragToMoveArea(child: SizedBox.expand()),
-                ),
-              // 浮动聊天按钮（非大厅页面显示）
-              if (isDesktop && _currentIndex != 2)
-                const Positioned.fill(child: FloatingChatButton()),
-              // 右下角悬浮区域：广播通知卡片 + 挤服卡片（从下到上堆叠）
-              if (isDesktop)
-                Positioned(
-                  key: const ValueKey('bottom_right_overlay'),
-                  bottom: 16,
-                  right: 16,
-                  child: const Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      GlobalBroadcastBar(),
-                      SizedBox(height: 8),
-                      QueueFloatingCard(),
-                    ],
-                  ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ));
+    );
   }
 
   /// 构建页面内容，使用 KeyedSubtree 确保页面切换时正确销毁

@@ -58,12 +58,7 @@ class QueueUsersJoin extends QueueUsersEvent {
   });
 
   @override
-  List<Object?> get props => [
-    odId,
-    visitorId,
-    nickname,
-    avatarUrl,
-  ];
+  List<Object?> get props => [odId, visitorId, nickname, avatarUrl];
 }
 
 /// 用户停止挤服

@@ -118,10 +118,7 @@ class _SmoothServerListItemState extends State<SmoothServerListItem>
   Widget build(BuildContext context) {
     // 还没开始过渡，只渲染骨架屏
     if (!_showRealCard) {
-      return ServerListItemSkeleton(
-        index: widget.index,
-        showShimmer: true,
-      );
+      return ServerListItemSkeleton(index: widget.index, showShimmer: true);
     }
 
     // 过渡中或已完成：始终保持完全相同的 widget 树结构
@@ -144,17 +141,11 @@ class _SmoothServerListItemState extends State<SmoothServerListItem>
                     ),
             ),
             // 真实卡片淡入（完成后 opacity=1.0）
-            Opacity(
-              opacity: animValue,
-              child: child,
-            ),
+            Opacity(opacity: animValue, child: child),
           ],
         );
       },
-      child: ServerListItem(
-        server: widget.server,
-        onTap: widget.onTap,
-      ),
+      child: ServerListItem(server: widget.server, onTap: widget.onTap),
     );
   }
 }

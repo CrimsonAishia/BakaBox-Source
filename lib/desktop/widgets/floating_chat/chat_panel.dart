@@ -70,13 +70,13 @@ class _ChatPanelState extends State<ChatPanel>
   void _closePanel() {
     _expandController
         .animateTo(
-      0.0,
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInCubic,
-    )
+          0.0,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInCubic,
+        )
         .then((_) {
-      widget.onClose();
-    });
+          widget.onClose();
+        });
   }
 
   void _sendMessage() {
@@ -113,8 +113,7 @@ class _ChatPanelState extends State<ChatPanel>
   String _formatTime(DateTime timestamp) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final messageDay =
-        DateTime(timestamp.year, timestamp.month, timestamp.day);
+    final messageDay = DateTime(timestamp.year, timestamp.month, timestamp.day);
     if (messageDay == today) {
       return _timeFormat.format(timestamp);
     }
@@ -155,7 +154,9 @@ class _ChatPanelState extends State<ChatPanel>
                     child: Column(
                       children: [
                         _buildHeader(lobbyState),
-                        Expanded(child: _buildMessageList(messages, lobbyState)),
+                        Expanded(
+                          child: _buildMessageList(messages, lobbyState),
+                        ),
                         if (!isConnected) _buildDisconnectedBanner(),
                         _buildInputRow(
                           isConnected: isConnected,
@@ -225,11 +226,7 @@ class _ChatPanelState extends State<ChatPanel>
             ),
           ),
           const Spacer(),
-          _HoverIconButton(
-            onTap: _closePanel,
-            icon: Icons.close,
-            size: 18,
-          ),
+          _HoverIconButton(onTap: _closePanel, icon: Icons.close, size: 18),
         ],
       ),
     );
@@ -336,8 +333,8 @@ class _ChatPanelState extends State<ChatPanel>
               color: isSystem
                   ? const Color(0xFFFFB74D)
                   : (isAnonymous
-                      ? const Color(0xFFB0BEC5)
-                      : const Color(0xFF81D4FA)),
+                        ? const Color(0xFFB0BEC5)
+                        : const Color(0xFF81D4FA)),
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -406,9 +403,7 @@ class _ChatPanelState extends State<ChatPanel>
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.04),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.1),
-                ),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
               ),
               alignment: Alignment.center,
               child: Text(
@@ -453,8 +448,10 @@ class _ChatPanelState extends State<ChatPanel>
                   ),
                   filled: true,
                   fillColor: Colors.white.withValues(alpha: 0.06),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 0,
+                  ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(
@@ -464,7 +461,9 @@ class _ChatPanelState extends State<ChatPanel>
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
-                        color: Color(0xFF0080FF), width: 1.5),
+                      color: Color(0xFF0080FF),
+                      width: 1.5,
+                    ),
                   ),
                   disabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -483,22 +482,18 @@ class _ChatPanelState extends State<ChatPanel>
             canBroadcast: canBroadcast,
             isAnonymous: isAnonymous,
             onTap: canBroadcast
-                ? () => context
-                    .read<LobbyBloc>()
-                    .add(const LobbyBroadcastDialogToggled())
+                ? () => context.read<LobbyBloc>().add(
+                    const LobbyBroadcastDialogToggled(),
+                  )
                 : null,
           ),
           const SizedBox(width: 8),
-          _SendButton(
-            enabled: canType,
-            onTap: _sendMessage,
-          ),
+          _SendButton(enabled: canType, onTap: _sendMessage),
         ],
       ),
     );
   }
 }
-
 
 /// 广播消息特殊样式 — uses a static gradient instead of infinite animation
 /// to avoid unnecessary GPU usage for historical broadcast messages.
@@ -520,10 +515,7 @@ class _BroadcastMessageWidget extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
-          colors: [
-            Color(0xFF4C1D95),
-            Color(0xFF7C3AED),
-          ],
+          colors: [Color(0xFF4C1D95), Color(0xFF7C3AED)],
         ),
         border: Border.all(
           color: const Color(0xFF7C3AED).withValues(alpha: 0.6),
@@ -533,11 +525,7 @@ class _BroadcastMessageWidget extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.campaign,
-            color: Color(0xFFFBBF24),
-            size: 16,
-          ),
+          const Icon(Icons.campaign, color: Color(0xFFFBBF24), size: 16),
           const SizedBox(width: 6),
           Expanded(
             child: RichText(
@@ -659,8 +647,8 @@ class _SendButtonState extends State<_SendButton> {
           decoration: BoxDecoration(
             color: widget.enabled
                 ? (_hovered
-                    ? Color.lerp(baseColor, Colors.white, 0.15)!
-                    : baseColor)
+                      ? Color.lerp(baseColor, Colors.white, 0.15)!
+                      : baseColor)
                 : disabledColor,
             borderRadius: BorderRadius.circular(10),
           ),
@@ -709,8 +697,8 @@ class _BroadcastButtonState extends State<_BroadcastButton> {
     final tooltipMsg = widget.isAnonymous
         ? '登录后可使用广播'
         : widget.cooldown > 0
-            ? '冷却中 (${widget.cooldown}s)'
-            : '全服广播';
+        ? '冷却中 (${widget.cooldown}s)'
+        : '全服广播';
 
     return Tooltip(
       message: tooltipMsg,
@@ -733,8 +721,8 @@ class _BroadcastButtonState extends State<_BroadcastButton> {
                 decoration: BoxDecoration(
                   color: widget.canBroadcast
                       ? (_hovered
-                          ? Color.lerp(baseColor, Colors.white, 0.15)!
-                          : baseColor)
+                            ? Color.lerp(baseColor, Colors.white, 0.15)!
+                            : baseColor)
                       : disabledColor,
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -753,7 +741,9 @@ class _BroadcastButtonState extends State<_BroadcastButton> {
                   right: -6,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 4, vertical: 2),
+                      horizontal: 4,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF59E0B),
                       borderRadius: BorderRadius.circular(999),

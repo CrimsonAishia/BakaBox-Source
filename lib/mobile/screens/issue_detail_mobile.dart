@@ -17,16 +17,17 @@ class IssueDetailMobile extends StatefulWidget {
 }
 
 class _IssueDetailMobileState extends State<IssueDetailMobile> {
-  final quill.QuillController _commentController = quill.QuillController.basic();
+  final quill.QuillController _commentController =
+      quill.QuillController.basic();
   final ScrollController _scrollController = ScrollController();
   final _commentEditorKey = GlobalKey<RichTextEditorState>();
   List<String> _commentImageUrls = [];
-  
+
   // 回复相关
   IssueComment? _replyToComment;
   final Map<int, GlobalKey> _commentKeys = {};
   int? _highlightedCommentId;
-  
+
   // 评论草稿相关
   bool _showCommentDraftPrompt = false;
   DraftData? _savedCommentDraft;
@@ -67,7 +68,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   /// 恢复评论草稿
   void _restoreCommentDraft() {
     if (_savedCommentDraft == null) return;
-    
+
     // 恢复内容
     if (_savedCommentDraft!.content.isNotEmpty) {
       try {
@@ -77,14 +78,14 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
         LogService.e('解码评论草稿失败', e);
       }
     }
-    
+
     // 恢复图片
     setState(() {
       _commentImageUrls = _savedCommentDraft!.imageUrls;
       _showCommentDraftPrompt = false;
       _savedCommentDraft = null;
     });
-    
+
     ToastUtils.showSuccess(context, '草稿已恢复');
   }
 
@@ -109,15 +110,17 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       return;
     }
     context.read<IssueDetailBloc>().add(IssueDetailSetUser(authState.userInfo));
-    context.read<IssueDetailBloc>().add(IssueDetailAddComment(
-      content,
-      images: _commentImageUrls,
-      replyToId: _replyToComment?.id,
-    ));
-    
+    context.read<IssueDetailBloc>().add(
+      IssueDetailAddComment(
+        content,
+        images: _commentImageUrls,
+        replyToId: _replyToComment?.id,
+      ),
+    );
+
     // 提交后删除草稿
     DraftService().deleteDraft('comment_${widget.issueId}');
-    
+
     _commentController.clear();
     _commentEditorKey.currentState?.clearImages();
     setState(() {
@@ -160,13 +163,13 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
 
     try {
       final content = QuillDeltaCodec.encode(_commentController.document);
-      
+
       await DraftService().saveDraft(
         draftId: 'comment_${widget.issueId}',
         content: content,
         imageUrls: _commentImageUrls,
       );
-      
+
       if (mounted) {
         ToastUtils.showSuccess(context, '草稿已保存');
       }
@@ -183,7 +186,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final primaryColor = const Color(0xFF0080FF);
-    
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       padding: const EdgeInsets.all(12),
@@ -195,9 +198,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           ],
         ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: primaryColor.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -207,11 +208,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
               color: primaryColor.withValues(alpha: isDark ? 0.2 : 0.15),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              Icons.restore_rounded,
-              size: 18,
-              color: primaryColor,
-            ),
+            child: Icon(Icons.restore_rounded, size: 18, color: primaryColor),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -251,7 +248,10 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 borderRadius: BorderRadius.circular(6),
               ),
             ),
-            child: const Text('恢复', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+            child: const Text(
+              '恢复',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),
@@ -276,9 +276,11 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           body: state.isLoading
               ? _buildLoadingState()
               : state.issue == null
-                  ? _buildErrorState()
-                  : _buildContent(state),
-          bottomNavigationBar: state.issue != null ? _buildBottomBar(state) : null,
+              ? _buildErrorState()
+              : _buildContent(state),
+          bottomNavigationBar: state.issue != null
+              ? _buildBottomBar(state)
+              : null,
         );
       },
     );
@@ -288,7 +290,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   Widget _buildAppBar(BuildContext context, IssueDetailState state) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return SliverAppBar(
       pinned: true,
       elevation: 0,
@@ -330,25 +332,31 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 const SizedBox(width: 8),
                 // 图标容器
                 Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0080FF), Color(0xFF0066CC)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0080FF).withValues(alpha: 0.3),
-                        offset: const Offset(0, 4),
-                        blurRadius: 12,
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0080FF), Color(0xFF0066CC)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(
+                              0xFF0080FF,
+                            ).withValues(alpha: 0.3),
+                            offset: const Offset(0, 4),
+                            blurRadius: 12,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Icon(MdiIcons.fileDocumentOutline, color: Colors.white, size: 24),
-                )
+                      child: Icon(
+                        MdiIcons.fileDocumentOutline,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    )
                     .animate()
                     .scale(
                       begin: const Offset(0.5, 0.5),
@@ -389,7 +397,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                         '问题详情',
                         style: TextStyle(
                           fontSize: 13,
-                          color: theme.appBarTheme.foregroundColor?.withValues(alpha: 0.7),
+                          color: theme.appBarTheme.foregroundColor?.withValues(
+                            alpha: 0.7,
+                          ),
                         ),
                       ).animate().fadeIn(duration: 300.ms, delay: 80.ms),
                     ],
@@ -408,7 +418,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final primaryColor = const Color(0xFF0080FF);
-    
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -424,20 +434,27 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
               alignment: Alignment.center,
               children: [
                 Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
-                    color: primaryColor.withValues(alpha: isDark ? 0.25 : 0.2),
-                  ),
-                ).animate(onPlay: (controller) => controller.repeat()).scale(duration: 1000.ms).fadeIn(duration: 500.ms),
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        color: primaryColor.withValues(
+                          alpha: isDark ? 0.25 : 0.2,
+                        ),
+                      ),
+                    )
+                    .animate(onPlay: (controller) => controller.repeat())
+                    .scale(duration: 1000.ms)
+                    .fadeIn(duration: 500.ms),
                 SizedBox(
                   width: 40,
                   height: 40,
                   child: CircularProgressIndicator(
                     strokeWidth: 3,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      isDark ? primaryColor.withValues(alpha: 0.9) : primaryColor,
+                      isDark
+                          ? primaryColor.withValues(alpha: 0.9)
+                          : primaryColor,
                     ),
                   ),
                 ),
@@ -446,12 +463,18 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           ),
           const SizedBox(height: 32),
           Text(
-            '正在加载反馈详情',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: isDark ? primaryColor.withValues(alpha: 0.9) : primaryColor,
-              fontWeight: FontWeight.w500,
-            ),
-          ).animate(onPlay: (controller) => controller.repeat(reverse: true)).fadeIn(duration: 800.ms).then(delay: 200.ms).fadeOut(duration: 800.ms),
+                '正在加载反馈详情',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: isDark
+                      ? primaryColor.withValues(alpha: 0.9)
+                      : primaryColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              )
+              .animate(onPlay: (controller) => controller.repeat(reverse: true))
+              .fadeIn(duration: 800.ms)
+              .then(delay: 200.ms)
+              .fadeOut(duration: 800.ms),
           const SizedBox(height: 8),
           Text(
             '请稍候...',
@@ -471,7 +494,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     final state = context.read<IssueDetailBloc>().state;
     final errorMessage = state.error ?? 'Issue 不存在或加载失败';
     final errorColor = const Color(0xFFDC2626);
-    
+
     return Center(
       child: Container(
         constraints: const BoxConstraints(maxWidth: 320),
@@ -523,14 +546,18 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                   Icon(
                     MdiIcons.informationOutline,
                     size: 16,
-                    color: isDark ? errorColor.withValues(alpha: 0.9) : errorColor,
+                    color: isDark
+                        ? errorColor.withValues(alpha: 0.9)
+                        : errorColor,
                   ),
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
                       errorMessage,
                       style: TextStyle(
-                        color: isDark ? errorColor.withValues(alpha: 0.9) : errorColor,
+                        color: isDark
+                            ? errorColor.withValues(alpha: 0.9)
+                            : errorColor,
                         fontSize: 13,
                       ),
                       textAlign: TextAlign.center,
@@ -541,16 +568,26 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
             ).animate().fadeIn(delay: 200.ms, duration: 300.ms),
             const SizedBox(height: 20),
             ElevatedButton.icon(
-              onPressed: () => context.read<IssueDetailBloc>().add(IssueDetailFetch(widget.issueId)),
-              icon: Icon(MdiIcons.refresh, size: 18),
-              label: const Text('重新加载'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0080FF),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ).animate().fadeIn(delay: 300.ms, duration: 300.ms).slideY(begin: 0.2, end: 0),
+                  onPressed: () => context.read<IssueDetailBloc>().add(
+                    IssueDetailFetch(widget.issueId),
+                  ),
+                  icon: Icon(MdiIcons.refresh, size: 18),
+                  label: const Text('重新加载'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0080FF),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                )
+                .animate()
+                .fadeIn(delay: 300.ms, duration: 300.ms)
+                .slideY(begin: 0.2, end: 0),
           ],
         ),
       ),
@@ -561,7 +598,8 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   Widget _buildContent(IssueDetailState state) {
     final issue = state.issue!;
     return RefreshIndicator(
-      onRefresh: () async => context.read<IssueDetailBloc>().add(IssueDetailFetch(widget.issueId)),
+      onRefresh: () async =>
+          context.read<IssueDetailBloc>().add(IssueDetailFetch(widget.issueId)),
       child: CustomScrollView(
         controller: _scrollController,
         slivers: [
@@ -572,9 +610,15 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildIssueCard(issue).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0),
+                  _buildIssueCard(issue)
+                      .animate()
+                      .fadeIn(duration: 300.ms)
+                      .slideY(begin: 0.1, end: 0),
                   const SizedBox(height: 16),
-                  _buildCommentsSection(state).animate().fadeIn(duration: 300.ms, delay: 100.ms).slideY(begin: 0.1, end: 0),
+                  _buildCommentsSection(state)
+                      .animate()
+                      .fadeIn(duration: 300.ms, delay: 100.ms)
+                      .slideY(begin: 0.1, end: 0),
                   const SizedBox(height: 80),
                 ],
               ),
@@ -585,19 +629,16 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     );
   }
 
-
   /// 构建问题详情卡片
   Widget _buildIssueCard(Issue issue) {
     final theme = Theme.of(context);
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.dividerColor.withValues(alpha: 0.5),
-        ),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -641,7 +682,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.5,
+              ),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
@@ -649,7 +692,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 CircleAvatar(
                   radius: 18,
                   backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                  backgroundImage: issue.authorAvatar != null ? NetworkImage(issue.authorAvatar!) : null,
+                  backgroundImage: issue.authorAvatar != null
+                      ? NetworkImage(issue.authorAvatar!)
+                      : null,
                   child: issue.authorAvatar == null
                       ? Text(
                           issue.authorName[0].toUpperCase(),
@@ -752,7 +797,11 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          Icon(
+            icon,
+            size: 14,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 4),
           Text(
             '$count',
@@ -772,7 +821,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
@@ -817,7 +868,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
@@ -871,21 +924,27 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   Widget _buildTypeTag(IssueType type) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     final (color, bgColor, icon) = switch (type) {
       IssueType.bug => (
         const Color(0xFFDC2626),
-        isDark ? const Color(0xFFDC2626).withValues(alpha: 0.15) : const Color(0xFFFEE2E2),
+        isDark
+            ? const Color(0xFFDC2626).withValues(alpha: 0.15)
+            : const Color(0xFFFEE2E2),
         MdiIcons.bug,
       ),
       IssueType.feature => (
         const Color(0xFF2563EB),
-        isDark ? const Color(0xFF2563EB).withValues(alpha: 0.15) : const Color(0xFFDBEAFE),
+        isDark
+            ? const Color(0xFF2563EB).withValues(alpha: 0.15)
+            : const Color(0xFFDBEAFE),
         MdiIcons.lightbulbOnOutline,
       ),
       IssueType.question => (
         const Color(0xFF059669),
-        isDark ? const Color(0xFF059669).withValues(alpha: 0.15) : const Color(0xFFD1FAE5),
+        isDark
+            ? const Color(0xFF059669).withValues(alpha: 0.15)
+            : const Color(0xFFD1FAE5),
         MdiIcons.helpCircleOutline,
       ),
     };
@@ -902,7 +961,11 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           const SizedBox(width: 5),
           Text(
             type.label,
-            style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -916,9 +979,13 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     final isOpen = status.isOpen;
     final color = isOpen ? const Color(0xFF16A34A) : const Color(0xFF6B7280);
     final bgColor = isOpen
-        ? (isDark ? const Color(0xFF16A34A).withValues(alpha: 0.15) : const Color(0xFFDCFCE7))
-        : (isDark ? const Color(0xFF6B7280).withValues(alpha: 0.15) : const Color(0xFFF3F4F6));
-    
+        ? (isDark
+              ? const Color(0xFF16A34A).withValues(alpha: 0.15)
+              : const Color(0xFFDCFCE7))
+        : (isDark
+              ? const Color(0xFF6B7280).withValues(alpha: 0.15)
+              : const Color(0xFFF3F4F6));
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
@@ -931,36 +998,34 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           Container(
             width: 6,
             height: 6,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 5),
           Text(
             status.label,
-            style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
     );
   }
 
-
   /// 构建评论区域
   Widget _buildCommentsSection(IssueDetailState state) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final primaryColor = const Color(0xFF0080FF);
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.dividerColor.withValues(alpha: 0.5),
-        ),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1018,7 +1083,10 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
             ...state.comments.asMap().entries.map((entry) {
               return _buildCommentItem(entry.value, entry.key)
                   .animate()
-                  .fadeIn(duration: 300.ms, delay: Duration(milliseconds: 50 * entry.key))
+                  .fadeIn(
+                    duration: 300.ms,
+                    delay: Duration(milliseconds: 50 * entry.key),
+                  )
                   .slideX(begin: 0.05, end: 0);
             }),
         ],
@@ -1060,7 +1128,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final primaryColor = const Color(0xFF3B82F6);
-    
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -1108,19 +1176,20 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   Widget _buildCommentItem(IssueComment comment, int index) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isLast = index == context.read<IssueDetailBloc>().state.comments.length - 1;
+    final isLast =
+        index == context.read<IssueDetailBloc>().state.comments.length - 1;
     final allComments = context.read<IssueDetailBloc>().state.comments;
     final issue = context.read<IssueDetailBloc>().state.issue;
     final isOpen = issue?.issueStatus.isOpen ?? false;
-    
+
     // 查找被回复的评论
     final replyTarget = comment.replyToId != null && comment.replyToId! > 0
         ? allComments.where((c) => c.id == comment.replyToId).firstOrNull
         : null;
-    
+
     final commentKey = _commentKeys.putIfAbsent(comment.id, () => GlobalKey());
     final isHighlighted = _highlightedCommentId == comment.id;
-    
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 500),
       curve: Curves.easeInOut,
@@ -1129,8 +1198,8 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       decoration: BoxDecoration(
         color: isHighlighted
             ? (isDark
-                ? const Color(0xFFEAB308).withValues(alpha: 0.15)
-                : const Color(0xFFFEF08A).withValues(alpha: 0.5))
+                  ? const Color(0xFFEAB308).withValues(alpha: 0.15)
+                  : const Color(0xFFFEF08A).withValues(alpha: 0.5))
             : Colors.transparent,
         border: isLast
             ? null
@@ -1150,7 +1219,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
               CircleAvatar(
                 radius: 18,
                 backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                backgroundImage: comment.authorAvatar != null ? NetworkImage(comment.authorAvatar!) : null,
+                backgroundImage: comment.authorAvatar != null
+                    ? NetworkImage(comment.authorAvatar!)
+                    : null,
                 child: comment.authorAvatar == null
                     ? Text(
                         comment.authorName[0].toUpperCase(),
@@ -1215,16 +1286,26 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                           if (comment.isAdmin) ...[
                             const SizedBox(width: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFF0080FF), Color(0xFF0066CC)],
+                                  colors: [
+                                    Color(0xFF0080FF),
+                                    Color(0xFF0066CC),
+                                  ],
                                 ),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: const Text(
                                 '管理员',
-                                style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],
@@ -1356,7 +1437,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   Widget _buildReplyQuote(IssueComment replyTarget) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return GestureDetector(
       onTap: () {
         final context = _commentKeys[replyTarget.id]?.currentContext;
@@ -1413,13 +1494,15 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     );
   }
 
-
   /// 构建底部操作栏
   Widget _buildBottomBar(IssueDetailState state) {
     final issue = state.issue!;
     final authState = context.read<AuthBloc>().state;
     final backendUserInfo = TokenService.instance.userInfo;
-    final isAuthor = authState.isAuthenticated && backendUserInfo != null && backendUserInfo.id == issue.authorId;
+    final isAuthor =
+        authState.isAuthenticated &&
+        backendUserInfo != null &&
+        backendUserInfo.id == issue.authorId;
 
     return Container(
       padding: EdgeInsets.only(
@@ -1431,7 +1514,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(
-          top: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
+          top: BorderSide(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+          ),
         ),
         boxShadow: [
           BoxShadow(
@@ -1477,7 +1562,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 : Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: issue.isVoted ? const Color(0xFF0080FF) : Colors.transparent,
+              color: issue.isVoted
+                  ? const Color(0xFF0080FF)
+                  : Colors.transparent,
               width: 1.5,
             ),
           ),
@@ -1515,8 +1602,12 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     final isOpen = issue.issueStatus.isOpen;
     final color = isOpen ? const Color(0xFFDC2626) : const Color(0xFF059669);
     final bgColor = isOpen
-        ? (isDark ? const Color(0xFFDC2626).withValues(alpha: 0.15) : const Color(0xFFFEE2E2))
-        : (isDark ? const Color(0xFF059669).withValues(alpha: 0.15) : const Color(0xFFD1FAE5));
+        ? (isDark
+              ? const Color(0xFFDC2626).withValues(alpha: 0.15)
+              : const Color(0xFFFEE2E2))
+        : (isDark
+              ? const Color(0xFF059669).withValues(alpha: 0.15)
+              : const Color(0xFFD1FAE5));
 
     return Material(
       color: Colors.transparent,
@@ -1527,7 +1618,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 if (isOpen) {
                   context.read<IssueDetailBloc>().add(const IssueDetailClose());
                 } else {
-                  context.read<IssueDetailBloc>().add(const IssueDetailReopen());
+                  context.read<IssueDetailBloc>().add(
+                    const IssueDetailReopen(),
+                  );
                 }
               },
         borderRadius: BorderRadius.circular(12),
@@ -1605,7 +1698,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
@@ -1638,7 +1733,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       builder: (sheetContext) {
         final theme = Theme.of(sheetContext);
         final isDark = theme.brightness == Brightness.dark;
-        
+
         return StatefulBuilder(
           builder: (sheetContext, setSheetState) {
             final viewInsets = MediaQuery.of(sheetContext).viewInsets.bottom;
@@ -1646,16 +1741,16 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
             final topPadding = MediaQuery.of(sheetContext).padding.top;
             // 面板最大高度：屏幕高度减去键盘高度和顶部安全区，留一点间距
             final maxSheetHeight = screenHeight - viewInsets - topPadding - 20;
-            
+
             return Padding(
-              padding: EdgeInsets.only(
-                bottom: viewInsets,
-              ),
+              padding: EdgeInsets.only(bottom: viewInsets),
               child: Container(
                 height: maxSheetHeight.clamp(300.0, screenHeight * 0.85),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -1665,13 +1760,18 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                        color: theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.3,
+                        ),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                     // 标题栏
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
@@ -1685,7 +1785,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+                              color: const Color(
+                                0xFF0080FF,
+                              ).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
@@ -1716,7 +1818,8 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                                 width: 36,
                                 height: 36,
                                 decoration: BoxDecoration(
-                                  color: theme.colorScheme.surfaceContainerHighest,
+                                  color:
+                                      theme.colorScheme.surfaceContainerHighest,
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
@@ -1785,7 +1888,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: theme.colorScheme.shadow.withValues(alpha: 0.05),
+                            color: theme.colorScheme.shadow.withValues(
+                              alpha: 0.05,
+                            ),
                             blurRadius: 10,
                             offset: const Offset(0, -2),
                           ),
@@ -1795,13 +1900,18 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                         children: [
                           // 保存草稿按钮
                           OutlinedButton.icon(
-                            onPressed: state.isSubmitting ? null : _saveCommentDraft,
+                            onPressed: state.isSubmitting
+                                ? null
+                                : _saveCommentDraft,
                             icon: const Icon(Icons.save_outlined, size: 16),
                             label: const Text('草稿'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: const Color(0xFF0080FF),
                               side: const BorderSide(color: Color(0xFF0080FF)),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -1820,7 +1930,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF0080FF),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -1836,13 +1948,19 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                                       ),
                                     )
                                   : Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Icon(MdiIcons.send, size: 18),
                                         const SizedBox(width: 8),
                                         Text(
-                                          _replyToComment != null ? '回复' : '发表评论',
-                                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                                          _replyToComment != null
+                                              ? '回复'
+                                              : '发表评论',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -1870,7 +1988,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   Widget _buildReplyBar(bool isDark, StateSetter setSheetState) {
     if (_replyToComment == null) return const SizedBox.shrink();
     final theme = Theme.of(context);
-    
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1889,10 +2007,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           const SizedBox(width: 8),
           Text(
             '回复 ',
-            style: TextStyle(
-              fontSize: 13,
-              color: theme.colorScheme.onSurface,
-            ),
+            style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface),
           ),
           Flexible(
             child: Text(

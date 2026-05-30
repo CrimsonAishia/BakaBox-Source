@@ -80,7 +80,12 @@ class UpdateTag extends MapTagEvent {
   final String? color;
   final String? editReason;
 
-  const UpdateTag({required this.tagId, required this.name, this.color, this.editReason});
+  const UpdateTag({
+    required this.tagId,
+    required this.name,
+    this.color,
+    this.editReason,
+  });
 
   @override
   List<Object?> get props => [tagId, name, color, editReason];

@@ -30,8 +30,9 @@ class LobbySettingsSheet extends StatelessWidget {
         builder: (context, state) {
           final bool anonymousCooldown =
               state.anonymousSwitchCooldownSeconds > 0;
-          final bool anonymousPending =
-              state.pendingSettings.containsKey('anonymous');
+          final bool anonymousPending = state.pendingSettings.containsKey(
+            'anonymous',
+          );
 
           return SafeArea(
             top: false,
@@ -41,73 +42,75 @@ class LobbySettingsSheet extends StatelessWidget {
                 children: [
                   _buildHandle(),
                   _buildHeader(context),
-                // 角色选择
-                const Padding(
-                  padding: EdgeInsets.only(top: 8, bottom: 4),
-                  child: Text(
-                    '角色选择',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
+                  // 角色选择
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8, bottom: 4),
+                    child: Text(
+                      '角色选择',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(
-                  height: 130,
-                  child: _LobbySpriteRow(
-                    sprites: state.availableSprites,
-                    selectedId: state.selectedSpriteId,
-                    isLocked: state.isAnonymous &&
-                        !AuthService.instance.isLoggedIn,
-                    isPending: state.isSpriteChangePending,
-                    onSelect: (id) => context
-                        .read<LobbyBloc>()
-                        .add(LobbySpriteSelected(id)),
+                  SizedBox(
+                    height: 130,
+                    child: _LobbySpriteRow(
+                      sprites: state.availableSprites,
+                      selectedId: state.selectedSpriteId,
+                      isLocked:
+                          state.isAnonymous && !AuthService.instance.isLoggedIn,
+                      isPending: state.isSpriteChangePending,
+                      onSelect: (id) => context.read<LobbyBloc>().add(
+                        LobbySpriteSelected(id),
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                // 匿名模式
-                _buildSwitchTile(
-                  title: '匿名模式',
-                  subtitle: anonymousCooldown
-                      ? '冷却中 ${state.anonymousSwitchCooldownSeconds}s'
-                      : null,
-                  value: state.isAnonymous,
-                  onChanged: !AuthService.instance.isLoggedIn || (anonymousCooldown || anonymousPending)
-                      ? null
-                      : (value) {
-                          context
-                              .read<LobbyBloc>()
-                              .add(LobbyAnonymousToggled(value));
-                        },
-                ),
-                // 显示名牌
-                _buildSwitchTile(
-                  title: '显示名牌',
-                  value: state.showNameplates,
-                  onChanged: state.pendingSettings.containsKey('nameplates')
-                      ? null
-                      : (value) {
-                          context
-                              .read<LobbyBloc>()
-                              .add(LobbyNameplatesToggled(value));
-                        },
-                ),
-                // 显示聊天气泡
-                _buildSwitchTile(
-                  title: '显示聊天气泡',
-                  value: state.showChatBubbles,
-                  onChanged: state.pendingSettings.containsKey('chatBubbles')
-                      ? null
-                      : (value) {
-                          context
-                              .read<LobbyBloc>()
-                              .add(LobbyChatBubblesToggled(value));
-                        },
-                ),
-                const SizedBox(height: 8),
-              ],
-            ),
+                  const SizedBox(height: 4),
+                  // 匿名模式
+                  _buildSwitchTile(
+                    title: '匿名模式',
+                    subtitle: anonymousCooldown
+                        ? '冷却中 ${state.anonymousSwitchCooldownSeconds}s'
+                        : null,
+                    value: state.isAnonymous,
+                    onChanged:
+                        !AuthService.instance.isLoggedIn ||
+                            (anonymousCooldown || anonymousPending)
+                        ? null
+                        : (value) {
+                            context.read<LobbyBloc>().add(
+                              LobbyAnonymousToggled(value),
+                            );
+                          },
+                  ),
+                  // 显示名牌
+                  _buildSwitchTile(
+                    title: '显示名牌',
+                    value: state.showNameplates,
+                    onChanged: state.pendingSettings.containsKey('nameplates')
+                        ? null
+                        : (value) {
+                            context.read<LobbyBloc>().add(
+                              LobbyNameplatesToggled(value),
+                            );
+                          },
+                  ),
+                  // 显示聊天气泡
+                  _buildSwitchTile(
+                    title: '显示聊天气泡',
+                    value: state.showChatBubbles,
+                    onChanged: state.pendingSettings.containsKey('chatBubbles')
+                        ? null
+                        : (value) {
+                            context.read<LobbyBloc>().add(
+                              LobbyChatBubblesToggled(value),
+                            );
+                          },
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
             ),
           );
         },
@@ -134,15 +137,16 @@ class LobbySettingsSheet extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(
-            color: Colors.white.withValues(alpha: 0.08),
-          ),
+          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
         ),
       ),
       child: Row(
         children: [
-          Icon(Icons.settings_outlined,
-              size: 20, color: Colors.white.withValues(alpha: 0.9)),
+          Icon(
+            Icons.settings_outlined,
+            size: 20,
+            color: Colors.white.withValues(alpha: 0.9),
+          ),
           const SizedBox(width: 8),
           const Text(
             '大厅设置',
@@ -166,8 +170,10 @@ class LobbySettingsSheet extends StatelessWidget {
     return SwitchListTile(
       title: Text(title, style: const TextStyle(color: Colors.white)),
       subtitle: subtitle != null
-          ? Text(subtitle,
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.5)))
+          ? Text(
+              subtitle,
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+            )
           : null,
       value: value,
       onChanged: onChanged,

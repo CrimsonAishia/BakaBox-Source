@@ -19,12 +19,12 @@ class ServerCategoriesPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<ServerBloc, ServerState>(
       builder: (context, state) {
-        final officialCategories = state.serverCategories.where(
-          (cat) => !cat.isCustom,
-        ).toList();
+        final officialCategories = state.serverCategories
+            .where((cat) => !cat.isCustom)
+            .toList();
 
-        final isLoading = !state.hasEverLoadedOnlineCounts ||
-            state.isLoadingOnlineCounts;
+        final isLoading =
+            !state.hasEverLoadedOnlineCounts || state.isLoadingOnlineCounts;
 
         return Container(
               width: double.infinity,
@@ -99,8 +99,9 @@ class ServerCategoriesPanel extends StatelessWidget {
                         itemCount: officialCategories.length,
                         itemBuilder: (context, index) {
                           final category = officialCategories[index];
-                          final onlineCount = state.categoryOnlineCounts[
-                                  category.modelName ?? ''] ??
+                          final onlineCount =
+                              state.categoryOnlineCounts[category.modelName ??
+                                  ''] ??
                               0;
                           final serverCount = category.serverList.length;
 
@@ -108,7 +109,9 @@ class ServerCategoriesPanel extends StatelessWidget {
                             padding: const EdgeInsets.only(bottom: 10),
                             child: _CategoryItem(
                               categoryName:
-                                  category.modelName ?? category.category ?? '未知分类',
+                                  category.modelName ??
+                                  category.category ??
+                                  '未知分类',
                               onlineCount: onlineCount,
                               serverCount: serverCount,
                               isDark: isDark,
@@ -234,11 +237,7 @@ class _CategoryItem extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.person,
-                  size: 14,
-                  color: statusColor,
-                ),
+                Icon(Icons.person, size: 14, color: statusColor),
                 const SizedBox(width: 4),
                 Text(
                   '$onlineCount',

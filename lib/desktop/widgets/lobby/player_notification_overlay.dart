@@ -4,14 +4,19 @@ import 'package:flutter/material.dart';
 class _PlayerNotificationItem extends StatefulWidget {
   /// 玩家显示名称
   final String playerName;
+
   /// 通知类型（0=join, 1=leave, 2=teleport, 3=teleportIn）
   final int type;
+
   /// 目标地图名称（teleport 类型使用）
   final String? targetMapName;
+
   /// 来源地图名称（teleportIn 类型使用）
   final String? sourceMapName;
+
   /// 通知ID
   final String notificationId;
+
   /// 回调：当动画完成时通知父组件移除此通知
   final void Function(String id) onExpire;
 
@@ -25,7 +30,8 @@ class _PlayerNotificationItem extends StatefulWidget {
   });
 
   @override
-  State<_PlayerNotificationItem> createState() => _PlayerNotificationItemState();
+  State<_PlayerNotificationItem> createState() =>
+      _PlayerNotificationItemState();
 }
 
 class _PlayerNotificationItemState extends State<_PlayerNotificationItem>
@@ -36,12 +42,16 @@ class _PlayerNotificationItemState extends State<_PlayerNotificationItem>
   /// CS2 风格配色
   /// 背景：半透明黑色（约60%）
   static const _backgroundColor = Color(0x99000000);
+
   /// 加入玩家：绿色
   static const _joinColor = Color(0xFF6BBF59);
+
   /// 离开玩家：橙色
   static const _leaveColor = Color(0xFFFFB74D);
+
   /// 传送玩家：浅蓝色
   static const _teleportColor = Color(0xFF64B5F6);
+
   /// 文字主色：白色
   static const _textColor = Color(0xFFE0E0E0);
 
@@ -53,12 +63,10 @@ class _PlayerNotificationItemState extends State<_PlayerNotificationItem>
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOut,
-      ),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _controller.forward();
 

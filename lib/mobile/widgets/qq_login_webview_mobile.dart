@@ -41,8 +41,7 @@ class _QQLoginWebViewMobileState extends State<QQLoginWebViewMobile> {
 
     // 1. 检测是否离开了初始登录页面（跳转到 QQ 登录）
     if (!_hasLeftInitialPage &&
-        (url.contains('graph.qq.com') ||
-            url.contains('ptlogin2.qq.com'))) {
+        (url.contains('graph.qq.com') || url.contains('ptlogin2.qq.com'))) {
       _hasLeftInitialPage = true;
       LogService.d('[QQLogin] 用户开始 QQ 登录流程');
     }
@@ -54,8 +53,7 @@ class _QQLoginWebViewMobileState extends State<QQLoginWebViewMobile> {
         !url.contains('graph.qq.com') &&
         !url.contains('ptlogin2.qq.com') &&
         (url.contains('connect.php') ||
-            (url.contains('member.php') &&
-                url.contains('mod=connect')))) {
+            (url.contains('member.php') && url.contains('mod=connect')))) {
       if (!_isExtracting) {
         LogService.d('[QQLogin] 检测到登录回调，立即显示 loading');
         setState(() {
@@ -102,7 +100,9 @@ class _QQLoginWebViewMobileState extends State<QQLoginWebViewMobile> {
         })();
       ''';
 
-      final resultObj = await _webViewController!.evaluateJavascript(source: checkScript);
+      final resultObj = await _webViewController!.evaluateJavascript(
+        source: checkScript,
+      );
       final resultStr = resultObj?.toString() ?? '';
       LogService.d('[QQLogin] 页面检测结果: $resultStr');
 
@@ -116,7 +116,9 @@ class _QQLoginWebViewMobileState extends State<QQLoginWebViewMobile> {
       final isPageLoaded = containsKey(resultStr, 'isPageLoaded');
 
       if (hasBindSuccess || hasWelcomeBack) {
-        LogService.d('[QQLogin] 检测到登录成功（${hasBindSuccess ? "绑定成功" : "欢迎回来"}），提取Cookie');
+        LogService.d(
+          '[QQLogin] 检测到登录成功（${hasBindSuccess ? "绑定成功" : "欢迎回来"}），提取Cookie',
+        );
         await _extractCookiesAndLogin();
         return;
       }
@@ -126,7 +128,9 @@ class _QQLoginWebViewMobileState extends State<QQLoginWebViewMobile> {
         await Future.delayed(const Duration(milliseconds: 1500));
         if (!mounted) return;
 
-        final retryObj = await _webViewController!.evaluateJavascript(source: checkScript);
+        final retryObj = await _webViewController!.evaluateJavascript(
+          source: checkScript,
+        );
         final retryStr = retryObj?.toString() ?? '';
         LogService.d('[QQLogin] 重试检测结果: $retryStr');
 
@@ -174,10 +178,9 @@ class _QQLoginWebViewMobileState extends State<QQLoginWebViewMobile> {
 
       // 使用原生 MethodChannel 获取所有 Cookie（包括 HttpOnly）
       const channel = MethodChannel('cc.aishia.bakabox/cookie');
-      final result = await channel.invokeMethod<List<dynamic>>(
-        'getCookies',
-        {'url': 'https://bbs.zombieden.cn/'},
-      );
+      final result = await channel.invokeMethod<List<dynamic>>('getCookies', {
+        'url': 'https://bbs.zombieden.cn/',
+      });
 
       if (result == null || result.isEmpty) {
         LogService.w('[QQLogin] 未获取到任何 Cookie');
@@ -197,10 +200,7 @@ class _QQLoginWebViewMobileState extends State<QQLoginWebViewMobile> {
         final value = cookieMap['value'] as String? ?? '';
 
         if (name.isNotEmpty && value.isNotEmpty) {
-          cookieList.add({
-            'name': name,
-            'value': value,
-          });
+          cookieList.add({'name': name, 'value': value});
 
           if (name == 'auth' || name.endsWith('_auth')) {
             hasAuthCookie = true;
@@ -208,7 +208,9 @@ class _QQLoginWebViewMobileState extends State<QQLoginWebViewMobile> {
         }
       }
 
-      LogService.d('[QQLogin] 提取到的Cookie: ${cookieList.map((c) => c['name']).join(", ")}');
+      LogService.d(
+        '[QQLogin] 提取到的Cookie: ${cookieList.map((c) => c['name']).join(", ")}',
+      );
       LogService.d('[QQLogin] 是否包含 auth Cookie: $hasAuthCookie');
 
       if (!hasAuthCookie) {
@@ -222,9 +224,7 @@ class _QQLoginWebViewMobileState extends State<QQLoginWebViewMobile> {
 
       if (mounted) {
         LogService.i('[QQLogin] 触发 AuthQQLoginRequested 事件');
-        context.read<AuthBloc>().add(
-          AuthQQLoginRequested(cookies: cookieList),
-        );
+        context.read<AuthBloc>().add(AuthQQLoginRequested(cookies: cookieList));
         Navigator.of(context).pop();
       }
     } catch (e) {
@@ -310,14 +310,9 @@ class _QQLoginWebViewMobileState extends State<QQLoginWebViewMobile> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const CircularProgressIndicator(
-                      color: Color(0xFF0080FF),
-                    ),
+                    const CircularProgressIndicator(color: Color(0xFF0080FF)),
                     const SizedBox(height: 16),
-                    Text(
-                      '登录成功，正在获取信息...',
-                      style: TextStyle(color: textColor),
-                    ),
+                    Text('登录成功，正在获取信息...', style: TextStyle(color: textColor)),
                   ],
                 ),
               ),

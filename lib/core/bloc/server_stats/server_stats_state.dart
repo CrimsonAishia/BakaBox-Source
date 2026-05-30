@@ -7,7 +7,12 @@ class ServerStatsState extends Equatable {
   final ServerStatsResponse? stats;
   final DateTime? lastFetched;
 
-  const ServerStatsState({this.isLoading = false, this.error, this.stats, this.lastFetched});
+  const ServerStatsState({
+    this.isLoading = false,
+    this.error,
+    this.stats,
+    this.lastFetched,
+  });
 
   ServerStatsState copyWith({
     bool? isLoading,

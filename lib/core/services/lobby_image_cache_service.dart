@@ -51,11 +51,13 @@ class LobbyImageCacheService {
     if (_initialized) return;
 
     try {
-      _dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 30),
-        sendTimeout: const Duration(seconds: 10),
-      ));
+      _dio = Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 30),
+          sendTimeout: const Duration(seconds: 10),
+        ),
+      );
 
       await _ensureCacheDir();
       await _loadDiskMapping();
@@ -77,7 +79,10 @@ class LobbyImageCacheService {
 
   /// 获取缓存目录路径
   String _getCacheDir() {
-    return '${AppDirectoryService.cachePath}${'/'}$_cacheDirName'.replaceAll('/', Platform.pathSeparator);
+    return '${AppDirectoryService.cachePath}${'/'}$_cacheDirName'.replaceAll(
+      '/',
+      Platform.pathSeparator,
+    );
   }
 
   /// 从 URL 生成稳定的文件名
@@ -112,7 +117,12 @@ class LobbyImageCacheService {
   /// 加载磁盘映射表
   Future<void> _loadDiskMapping() async {
     try {
-      final file = File('${_getCacheDir()}${'/'}$_urlMappingFile'.replaceAll('/', Platform.pathSeparator));
+      final file = File(
+        '${_getCacheDir()}${'/'}$_urlMappingFile'.replaceAll(
+          '/',
+          Platform.pathSeparator,
+        ),
+      );
       if (await file.exists()) {
         final content = await file.readAsString();
         final Map<String, dynamic> data = Map<String, dynamic>.from(
@@ -131,9 +141,17 @@ class LobbyImageCacheService {
   /// 保存磁盘映射表
   Future<void> _saveDiskMapping() async {
     try {
-      final file = File('${_getCacheDir()}${'/'}$_urlMappingFile'.replaceAll('/', Platform.pathSeparator));
+      final file = File(
+        '${_getCacheDir()}${'/'}$_urlMappingFile'.replaceAll(
+          '/',
+          Platform.pathSeparator,
+        ),
+      );
       final content = _diskMapping.entries
-          .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+          .map(
+            (e) =>
+                '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
+          )
           .join('&');
       await file.writeAsString(content);
     } catch (e) {
@@ -188,7 +206,9 @@ class LobbyImageCacheService {
       onProgress?.call(completed, total);
     }
 
-    LogService.d('[LobbyImageCache] 预下载完成: $completed/$total (失败 ${total - completed})');
+    LogService.d(
+      '[LobbyImageCache] 预下载完成: $completed/$total (失败 ${total - completed})',
+    );
   }
 
   /// 下载并缓存图片
@@ -267,7 +287,12 @@ class LobbyImageCacheService {
     // 磁盘缓存
     final fileName = _diskMapping[stableUrl];
     if (fileName != null) {
-      final file = File('${_getCacheDir()}${'/'}$fileName'.replaceAll('/', Platform.pathSeparator));
+      final file = File(
+        '${_getCacheDir()}${'/'}$fileName'.replaceAll(
+          '/',
+          Platform.pathSeparator,
+        ),
+      );
       if (await file.exists()) return true;
     }
 
@@ -280,7 +305,12 @@ class LobbyImageCacheService {
     if (fileName == null) return null;
 
     try {
-      final file = File('${_getCacheDir()}${'/'}$fileName'.replaceAll('/', Platform.pathSeparator));
+      final file = File(
+        '${_getCacheDir()}${'/'}$fileName'.replaceAll(
+          '/',
+          Platform.pathSeparator,
+        ),
+      );
       if (!await file.exists()) {
         // 文件不存在，移除映射
         _diskMapping.remove(stableUrl);
@@ -297,7 +327,12 @@ class LobbyImageCacheService {
   /// 保存图片到磁盘
   Future<void> _saveToDisk(String stableUrl, Uint8List data) async {
     final fileName = _urlToFileName(stableUrl);
-    final file = File('${_getCacheDir()}${'/'}$fileName'.replaceAll('/', Platform.pathSeparator));
+    final file = File(
+      '${_getCacheDir()}${'/'}$fileName'.replaceAll(
+        '/',
+        Platform.pathSeparator,
+      ),
+    );
 
     try {
       await file.writeAsBytes(data);

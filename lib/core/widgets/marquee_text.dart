@@ -98,8 +98,9 @@ class _MarqueeTextState extends State<MarqueeText> {
       if (!mounted || !_needsScroll || !_scrollController.hasClients) break;
 
       final maxScroll = _scrollController.position.maxScrollExtent;
-      final target =
-          _measuredOverflowWidth > maxScroll ? _measuredOverflowWidth : maxScroll;
+      final target = _measuredOverflowWidth > maxScroll
+          ? _measuredOverflowWidth
+          : maxScroll;
       if (target <= 0) break;
 
       try {

@@ -46,22 +46,20 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
   Widget build(BuildContext context) {
     return BlocBuilder<CharacterGalleryBloc, CharacterGalleryState>(
       builder: (context, state) {
-        return Scaffold(
-          body: _buildBody(context, state),
-        );
+        return Scaffold(body: _buildBody(context, state));
       },
     );
   }
 
   Widget _buildBody(BuildContext context, CharacterGalleryState state) {
     // 加载中状态 - 显示骨架屏
-    if (state.detailLoadState == LoadState.loading && 
+    if (state.detailLoadState == LoadState.loading &&
         state.selectedCharacter == null) {
       return _buildSkeleton();
     }
 
     // 错误状态
-    if (state.detailLoadState == LoadState.failure && 
+    if (state.detailLoadState == LoadState.failure &&
         state.selectedCharacter == null) {
       return _buildErrorState(state.error);
     }
@@ -75,7 +73,6 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
     return _buildSkeleton();
   }
 
-
   /// 构建内容区域
   Widget _buildContent(BuildContext context, CharacterGalleryState state) {
     return RefreshIndicator(
@@ -83,7 +80,10 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
         // 刷新时保持当前选中的子模型
         final currentSubModelId = state.selectedSubModelId;
         context.read<CharacterGalleryBloc>().add(
-          LoadCharacterDetail(widget.characterId, initialSubModelId: currentSubModelId),
+          LoadCharacterDetail(
+            widget.characterId,
+            initialSubModelId: currentSubModelId,
+          ),
         );
       },
       child: CustomScrollView(
@@ -106,12 +106,14 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
                   const SizedBox(height: 16),
                   _buildDescription(state),
                   // 東方角色显示符卡
-                  if (state.selectedCharacter?.category == CharacterCategory.touhou) ...[
+                  if (state.selectedCharacter?.category ==
+                      CharacterCategory.touhou) ...[
                     const SizedBox(height: 24),
                     _buildSpellCardsSection(state),
                   ],
                   // 僵尸角色显示技能
-                  if (state.selectedCharacter?.category == CharacterCategory.zombie) ...[
+                  if (state.selectedCharacter?.category ==
+                      CharacterCategory.zombie) ...[
                     const SizedBox(height: 24),
                     _buildZombieSkillsSection(state),
                   ],
@@ -139,10 +141,7 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
       toolbarHeight: 56,
       leading: IconButton(
         onPressed: () => context.pop(),
-        icon: Icon(
-          MdiIcons.arrowLeft,
-          color: colorScheme.onSurface,
-        ),
+        icon: Icon(MdiIcons.arrowLeft, color: colorScheme.onSurface),
       ),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,8 +179,8 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
 
   /// 构建预览图区域
   Widget _buildPreviewSection(CharacterGalleryState state) {
-    final preview = state.currentSubModel?.preview ?? 
-        state.selectedCharacter?.preview;
+    final preview =
+        state.currentSubModel?.preview ?? state.selectedCharacter?.preview;
     final characterName = state.selectedCharacter?.name;
 
     return CharacterPreviewMobile(
@@ -195,11 +194,7 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
       onImageTap: () {
         final imageUrl = state.currentPreviewImage;
         if (imageUrl != null && imageUrl.isNotEmpty) {
-          FullscreenImageViewer.show(
-            context,
-            imageUrl,
-            title: characterName,
-          );
+          FullscreenImageViewer.show(context, imageUrl, title: characterName);
         }
       },
     );
@@ -230,84 +225,89 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
     };
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark 
-            ? theme.colorScheme.surfaceContainer
-            : theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: categoryColor.withValues(alpha: isDark ? 0.2 : 0.15),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: categoryColor.withValues(alpha: isDark ? 0.1 : 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 角色名称带装饰
-                    Row(
-                      children: [
-                        Container(
-                          width: 4,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            color: categoryColor,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            displayName,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.onSurface,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (character.nameEn != null && character.nameEn!.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 14),
-                        child: Text(
-                          character.nameEn!,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark
+                ? theme.colorScheme.surfaceContainer
+                : theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: categoryColor.withValues(alpha: isDark ? 0.2 : 0.15),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: categoryColor.withValues(alpha: isDark ? 0.1 : 0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
-              // 获取渠道徽章（僵尸角色不显示，与桌面端一致）
-              if (character.category != CharacterCategory.zombie)
-                _buildAcquisitionBadge(acquisition),
             ],
           ),
-        ],
-      ),
-    ).animate().fadeIn(duration: 300.ms, delay: 100.ms).slideY(begin: 0.05, end: 0);
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 角色名称带装饰
+                        Row(
+                          children: [
+                            Container(
+                              width: 4,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: categoryColor,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                displayName,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.onSurface,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (character.nameEn != null &&
+                            character.nameEn!.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 14),
+                            child: Text(
+                              character.nameEn!,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: theme.colorScheme.onSurfaceVariant
+                                    .withValues(alpha: 0.8),
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  // 获取渠道徽章（僵尸角色不显示，与桌面端一致）
+                  if (character.category != CharacterCategory.zombie)
+                    _buildAcquisitionBadge(acquisition),
+                ],
+              ),
+            ],
+          ),
+        )
+        .animate()
+        .fadeIn(duration: 300.ms, delay: 100.ms)
+        .slideY(begin: 0.05, end: 0);
   }
 
   /// 获取渠道徽章（与桌面端一致）
@@ -380,16 +380,14 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
   /// 构建子模型选择器
   Widget _buildSubModelSelector(CharacterGalleryState state) {
     final subModels = state.selectedCharacter?.subModels ?? [];
-    final selectedId = state.selectedSubModelId ?? 
-        state.selectedCharacter?.defaultSubModelId;
+    final selectedId =
+        state.selectedSubModelId ?? state.selectedCharacter?.defaultSubModelId;
 
     return SubModelSelectorMobile(
       subModels: subModels,
       selectedId: selectedId,
       onSelected: (id) {
-        context.read<CharacterGalleryBloc>().add(
-          SelectSubModel(id),
-        );
+        context.read<CharacterGalleryBloc>().add(SelectSubModel(id));
       },
     ).animate().fadeIn(duration: 300.ms, delay: 150.ms);
   }
@@ -405,77 +403,84 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
         : (state.selectedCharacter?.description ?? '暂无介绍');
 
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark 
-            ? theme.colorScheme.surfaceContainer
-            : theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.dividerColor.withValues(alpha: isDark ? 0.3 : 0.2),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: isDark ? 0.15 : 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  MdiIcons.textBoxOutline,
-                  size: 18,
-                  color: theme.colorScheme.primary,
-                ),
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark
+                ? theme.colorScheme.surfaceContainer
+                : theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: theme.dividerColor.withValues(alpha: isDark ? 0.3 : 0.2),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-              const SizedBox(width: 12),
-              Text(
-                '角色介绍',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
-                  letterSpacing: 0.3,
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(
+                        alpha: isDark ? 0.15 : 0.1,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      MdiIcons.textBoxOutline,
+                      size: 18,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '角色介绍',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurface,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? theme.colorScheme.surfaceContainerHighest.withValues(
+                          alpha: 0.5,
+                        )
+                      : theme.colorScheme.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: theme.dividerColor.withValues(alpha: 0.15),
+                  ),
+                ),
+                child: Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.7,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
-                  : theme.colorScheme.surfaceContainerLowest,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.dividerColor.withValues(alpha: 0.15),
-              ),
-            ),
-            child: Text(
-              description,
-              style: TextStyle(
-                fontSize: 14,
-                height: 1.7,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
-              ),
-            ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn(duration: 300.ms, delay: 200.ms).slideY(begin: 0.05, end: 0);
+        )
+        .animate()
+        .fadeIn(duration: 300.ms, delay: 200.ms)
+        .slideY(begin: 0.05, end: 0);
   }
 
   /// 构建符卡区域（東方角色）
@@ -486,81 +491,91 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
     final vermillionColor = CharacterGalleryTheme.getVermillion(context);
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark 
-            ? theme.colorScheme.surfaceContainer
-            : theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: vermillionColor.withValues(alpha: isDark ? 0.2 : 0.15),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: vermillionColor.withValues(alpha: isDark ? 0.1 : 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark
+                ? theme.colorScheme.surfaceContainer
+                : theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: vermillionColor.withValues(alpha: isDark ? 0.2 : 0.15),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: vermillionColor.withValues(alpha: isDark ? 0.1 : 0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: vermillionColor.withValues(alpha: isDark ? 0.15 : 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  MdiIcons.cardsOutline,
-                  size: 18,
-                  color: vermillionColor,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                '符卡',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface,
-                  letterSpacing: 0.3,
-                ),
-              ),
-              const Spacer(),
-              if (state.spellCards.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: vermillionColor.withValues(alpha: isDark ? 0.15 : 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${state.spellCards.length} 张',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: vermillionColor.withValues(
+                        alpha: isDark ? 0.15 : 0.1,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      MdiIcons.cardsOutline,
+                      size: 18,
                       color: vermillionColor,
                     ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '符卡',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (state.spellCards.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: vermillionColor.withValues(
+                          alpha: isDark ? 0.15 : 0.1,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${state.spellCards.length} 张',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: vermillionColor,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // 根据加载状态显示不同内容
+              if (state.spellCardsLoadState == LoadState.loading)
+                _buildSpellCardsSkeleton()
+              else if (state.spellCards.isEmpty)
+                _buildSpellCardsEmpty()
+              else
+                _buildSpellCardsGrouped(state.spellCards),
             ],
           ),
-          const SizedBox(height: 16),
-          // 根据加载状态显示不同内容
-          if (state.spellCardsLoadState == LoadState.loading)
-            _buildSpellCardsSkeleton()
-          else if (state.spellCards.isEmpty)
-            _buildSpellCardsEmpty()
-          else
-            _buildSpellCardsGrouped(state.spellCards),
-        ],
-      ),
-    ).animate().fadeIn(duration: 300.ms, delay: 250.ms).slideY(begin: 0.05, end: 0);
+        )
+        .animate()
+        .fadeIn(duration: 300.ms, delay: 250.ms)
+        .slideY(begin: 0.05, end: 0);
   }
 
   /// 构建符卡加载骨架屏
@@ -631,9 +646,7 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.dividerColor.withValues(alpha: 0.5),
-        ),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
       ),
       child: Column(
         children: [
@@ -645,9 +658,7 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
           const SizedBox(height: 12),
           Text(
             '暂无符卡数据',
-            style: TextStyle(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -729,9 +740,7 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: isDark
-                    ? color.withValues(alpha: 0.9)
-                    : color,
+                color: isDark ? color.withValues(alpha: 0.9) : color,
               ),
             ),
             const SizedBox(width: 8),
@@ -775,78 +784,86 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
     final zombieColor = const Color(0xFF16A34A);
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark 
-            ? theme.colorScheme.surfaceContainer
-            : theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: zombieColor.withValues(alpha: isDark ? 0.2 : 0.15),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: zombieColor.withValues(alpha: isDark ? 0.1 : 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark
+                ? theme.colorScheme.surfaceContainer
+                : theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: zombieColor.withValues(alpha: isDark ? 0.2 : 0.15),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: zombieColor.withValues(alpha: isDark ? 0.1 : 0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: zombieColor.withValues(alpha: isDark ? 0.15 : 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  MdiIcons.flashOutline,
-                  size: 18,
-                  color: zombieColor,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                '技能',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface,
-                  letterSpacing: 0.3,
-                ),
-              ),
-              const Spacer(),
-              if (skills.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: zombieColor.withValues(alpha: isDark ? 0.15 : 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${skills.length} 个',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: zombieColor.withValues(alpha: isDark ? 0.15 : 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      MdiIcons.flashOutline,
+                      size: 18,
                       color: zombieColor,
                     ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '技能',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (skills.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: zombieColor.withValues(
+                          alpha: isDark ? 0.15 : 0.1,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${skills.length} 个',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: zombieColor,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (skills.isEmpty)
+                _buildZombieSkillsEmpty()
+              else
+                _buildZombieSkillsGrouped(skills),
             ],
           ),
-          const SizedBox(height: 16),
-          if (skills.isEmpty)
-            _buildZombieSkillsEmpty()
-          else
-            _buildZombieSkillsGrouped(skills),
-        ],
-      ),
-    ).animate().fadeIn(duration: 300.ms, delay: 250.ms).slideY(begin: 0.05, end: 0);
+        )
+        .animate()
+        .fadeIn(duration: 300.ms, delay: 250.ms)
+        .slideY(begin: 0.05, end: 0);
   }
 
   /// 构建僵尸技能空状态
@@ -859,9 +876,7 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.dividerColor.withValues(alpha: 0.5),
-        ),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
       ),
       child: Column(
         children: [
@@ -873,9 +888,7 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
           const SizedBox(height: 12),
           Text(
             '暂无技能数据',
-            style: TextStyle(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -945,9 +958,7 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: isDark
-                    ? color.withValues(alpha: 0.9)
-                    : color,
+                color: isDark ? color.withValues(alpha: 0.9) : color,
               ),
             ),
             const SizedBox(width: 8),
@@ -974,14 +985,15 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
           final index = entry.key;
           final skill = entry.value;
           return Padding(
-            padding: EdgeInsets.only(bottom: index < skills.length - 1 ? 12 : 0),
+            padding: EdgeInsets.only(
+              bottom: index < skills.length - 1 ? 12 : 0,
+            ),
             child: ZombieSkillCardMobile(skill: skill),
           );
         }),
       ],
     );
   }
-
 
   /// 构建骨架屏
   Widget _buildSkeleton() {
@@ -1076,21 +1088,17 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
     required Color shimmerHighlightColor,
   }) {
     return Container(
-      width: width ?? double.infinity,
-      height: height,
-      decoration: BoxDecoration(
-        color: shimmerBaseColor,
-        borderRadius: BorderRadius.circular(borderRadius),
-      ),
-    )
+          width: width ?? double.infinity,
+          height: height,
+          decoration: BoxDecoration(
+            color: shimmerBaseColor,
+            borderRadius: BorderRadius.circular(borderRadius),
+          ),
+        )
         .animate(onPlay: (controller) => controller.repeat())
         .shimmer(
           duration: 1500.ms,
-          colors: [
-            shimmerBaseColor,
-            shimmerHighlightColor,
-            shimmerBaseColor,
-          ],
+          colors: [shimmerBaseColor, shimmerHighlightColor, shimmerBaseColor],
         );
   }
 
@@ -1127,7 +1135,9 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
                 child: Icon(
                   MdiIcons.alertCircleOutline,
                   size: 36,
-                  color: isDark ? errorColor.withValues(alpha: 0.9) : errorColor,
+                  color: isDark
+                      ? errorColor.withValues(alpha: 0.9)
+                      : errorColor,
                 ),
               ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
               const SizedBox(height: 20),
@@ -1141,7 +1151,10 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
               ).animate().fadeIn(delay: 100.ms, duration: 300.ms),
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: isDark
                       ? errorColor.withValues(alpha: 0.1)
@@ -1159,14 +1172,18 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
                     Icon(
                       MdiIcons.informationOutline,
                       size: 16,
-                      color: isDark ? errorColor.withValues(alpha: 0.9) : errorColor,
+                      color: isDark
+                          ? errorColor.withValues(alpha: 0.9)
+                          : errorColor,
                     ),
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
                         error ?? '角色不存在或加载失败',
                         style: TextStyle(
-                          color: isDark ? errorColor.withValues(alpha: 0.9) : errorColor,
+                          color: isDark
+                              ? errorColor.withValues(alpha: 0.9)
+                              : errorColor,
                           fontSize: 13,
                         ),
                         textAlign: TextAlign.center,
@@ -1177,22 +1194,31 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
               ).animate().fadeIn(delay: 200.ms, duration: 300.ms),
               const SizedBox(height: 20),
               ElevatedButton.icon(
-                onPressed: () {
-                  context.read<CharacterGalleryBloc>().add(
-                    LoadCharacterDetail(widget.characterId, initialSubModelId: widget.initialSubModelId),
-                  );
-                },
-                icon: Icon(MdiIcons.refresh, size: 18),
-                label: const Text('重新加载'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0080FF),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ).animate().fadeIn(delay: 300.ms, duration: 300.ms).slideY(begin: 0.2, end: 0),
+                    onPressed: () {
+                      context.read<CharacterGalleryBloc>().add(
+                        LoadCharacterDetail(
+                          widget.characterId,
+                          initialSubModelId: widget.initialSubModelId,
+                        ),
+                      );
+                    },
+                    icon: Icon(MdiIcons.refresh, size: 18),
+                    label: const Text('重新加载'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0080FF),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(delay: 300.ms, duration: 300.ms)
+                  .slideY(begin: 0.2, end: 0),
             ],
           ),
         ),

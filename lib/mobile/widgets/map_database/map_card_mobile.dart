@@ -15,11 +15,7 @@ class MapCardMobile extends StatefulWidget {
   final MapInfo mapInfo;
   final VoidCallback onTap;
 
-  const MapCardMobile({
-    super.key,
-    required this.mapInfo,
-    required this.onTap,
-  });
+  const MapCardMobile({super.key, required this.mapInfo, required this.onTap});
 
   @override
   State<MapCardMobile> createState() => _MapCardMobileState();
@@ -180,8 +176,11 @@ class _MapCardMobileState extends State<MapCardMobile> {
     if (tags.isEmpty) {
       return Row(
         children: [
-          Icon(Icons.label_off_outlined,
-              size: 13, color: Colors.white.withValues(alpha: 0.6)),
+          Icon(
+            Icons.label_off_outlined,
+            size: 13,
+            color: Colors.white.withValues(alpha: 0.6),
+          ),
           const SizedBox(width: 4),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -189,7 +188,9 @@ class _MapCardMobileState extends State<MapCardMobile> {
               color: Colors.white.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(4),
               border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.15), width: 1),
+                color: Colors.white.withValues(alpha: 0.15),
+                width: 1,
+              ),
             ),
             child: Text(
               '暂无标签',
@@ -206,8 +207,11 @@ class _MapCardMobileState extends State<MapCardMobile> {
 
     return Row(
       children: [
-        Icon(Icons.label_outline,
-            size: 13, color: Colors.white.withValues(alpha: 0.8)),
+        Icon(
+          Icons.label_outline,
+          size: 13,
+          color: Colors.white.withValues(alpha: 0.8),
+        ),
         const SizedBox(width: 4),
         Expanded(child: _AutoScrollTagRow(tags: tags)),
       ],
@@ -236,10 +240,10 @@ class _AutoScrollTagRowState extends State<_AutoScrollTagRow> {
   static const double _tagSpacing = 5.0;
 
   TextStyle get _baseStyle => TextStyle(
-        color: Colors.white.withValues(alpha: 0.9),
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-      );
+    color: Colors.white.withValues(alpha: 0.9),
+    fontSize: 11,
+    fontWeight: FontWeight.w600,
+  );
 
   @override
   void initState() {
@@ -304,7 +308,8 @@ class _AutoScrollTagRowState extends State<_AutoScrollTagRow> {
         await _scrollController.animateTo(
           max,
           duration: Duration(
-              milliseconds: (max * 0.05).toInt().clamp(2000, 8000)),
+            milliseconds: (max * 0.05).toInt().clamp(2000, 8000),
+          ),
           curve: Curves.linear,
         );
       } catch (_) {
@@ -348,9 +353,7 @@ class _AutoScrollTagRowState extends State<_AutoScrollTagRow> {
                 : const NeverScrollableScrollPhysics(),
             child: ConstrainedBox(
               constraints: BoxConstraints(minWidth: constraints.maxWidth),
-              child: Row(
-                children: _buildChips(),
-              ),
+              child: Row(children: _buildChips()),
             ),
           ),
         );
@@ -391,9 +394,10 @@ class _AutoScrollTagRowState extends State<_AutoScrollTagRow> {
           border: Border.all(color: color.withValues(alpha: 0.7), width: 1),
           boxShadow: [
             BoxShadow(
-                color: color.withValues(alpha: 0.3),
-                blurRadius: 4,
-                offset: const Offset(0, 1)),
+              color: color.withValues(alpha: 0.3),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
           ],
         ),
         child: Text(
@@ -405,9 +409,10 @@ class _AutoScrollTagRowState extends State<_AutoScrollTagRow> {
             shadows: [
               Shadow(color: color.withValues(alpha: 0.8), blurRadius: 2),
               Shadow(
-                  color: Colors.black.withValues(alpha: 0.6),
-                  blurRadius: 1,
-                  offset: const Offset(1, 1)),
+                color: Colors.black.withValues(alpha: 0.6),
+                blurRadius: 1,
+                offset: const Offset(1, 1),
+              ),
             ],
           ),
         ),
@@ -418,8 +423,10 @@ class _AutoScrollTagRowState extends State<_AutoScrollTagRow> {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
-        border:
-            Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+          width: 1,
+        ),
       ),
       child: Text(tag.name, style: _baseStyle),
     );
@@ -470,15 +477,21 @@ class _MapCdBadgeMobile extends StatelessWidget {
           content = Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.touch_app_rounded,
-                  size: 13, color: const Color(0xFF818CF8)),
+              Icon(
+                Icons.touch_app_rounded,
+                size: 13,
+                color: const Color(0xFF818CF8),
+              ),
               const SizedBox(width: 4),
-              const Text('点击获取CD',
-                  style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF818CF8),
-                      height: 1)),
+              const Text(
+                '点击获取CD',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF818CF8),
+                  height: 1,
+                ),
+              ),
             ],
           );
         } else if (isLoading) {
@@ -492,17 +505,21 @@ class _MapCdBadgeMobile extends StatelessWidget {
                 height: 11,
                 child: CircularProgressIndicator(
                   strokeWidth: 1.8,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(Colors.blue.shade300),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Colors.blue.shade300,
+                  ),
                 ),
               ),
               const SizedBox(width: 5),
-              Text('获取中',
-                  style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue.shade300,
-                      height: 1)),
+              Text(
+                '获取中',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue.shade300,
+                  height: 1,
+                ),
+              ),
             ],
           );
         } else if (error != null) {
@@ -512,15 +529,21 @@ class _MapCdBadgeMobile extends StatelessWidget {
           content = Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.warning_amber_rounded,
-                  size: 13, color: Colors.orange.shade300),
+              Icon(
+                Icons.warning_amber_rounded,
+                size: 13,
+                color: Colors.orange.shade300,
+              ),
               const SizedBox(width: 4),
-              Text('失败',
-                  style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.orange.shade300,
-                      height: 1)),
+              Text(
+                '失败',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange.shade300,
+                  height: 1,
+                ),
+              ),
             ],
           );
         } else if (cdInfo == null) {
@@ -529,22 +552,29 @@ class _MapCdBadgeMobile extends StatelessWidget {
           content = Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.remove_circle_outline,
-                  size: 13, color: Colors.white38),
+              Icon(
+                Icons.remove_circle_outline,
+                size: 13,
+                color: Colors.white38,
+              ),
               const SizedBox(width: 4),
-              Text('无数据',
-                  style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white.withValues(alpha: 0.4),
-                      height: 1)),
+              Text(
+                '无数据',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white.withValues(alpha: 0.4),
+                  height: 1,
+                ),
+              ),
             ],
           );
         } else {
           final cd = cdInfo.currentNominateCd;
           final isAvailable = cd == 0;
-          final accentColor =
-              isAvailable ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+          final accentColor = isAvailable
+              ? const Color(0xFF10B981)
+              : const Color(0xFFEF4444);
           borderColor = accentColor.withValues(alpha: 0.8);
           glowColor = accentColor.withValues(alpha: 0.3);
           onTap = () => _refresh(context);
@@ -552,19 +582,19 @@ class _MapCdBadgeMobile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                  isAvailable
-                      ? Icons.check_circle_rounded
-                      : Icons.schedule,
-                  size: 13,
-                  color: accentColor),
+                isAvailable ? Icons.check_circle_rounded : Icons.schedule,
+                size: 13,
+                color: accentColor,
+              ),
               const SizedBox(width: 4),
               Text(
                 isAvailable ? '可预订' : 'CD：$cd',
                 style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: accentColor,
-                    height: 1),
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: accentColor,
+                  height: 1,
+                ),
               ),
             ],
           );
@@ -578,18 +608,19 @@ class _MapCdBadgeMobile extends StatelessWidget {
             border: Border.all(color: borderColor, width: 1.5),
             boxShadow: glowColor != Colors.transparent
                 ? [
+                    BoxShadow(color: glowColor, blurRadius: 8, spreadRadius: 1),
                     BoxShadow(
-                        color: glowColor, blurRadius: 8, spreadRadius: 1),
-                    BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.4),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2)),
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
                   ]
                 : [
                     BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.4),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2)),
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
                   ],
           ),
           child: Column(

@@ -130,7 +130,8 @@ class MapSubscriptionService {
       defaultValue: true,
     );
     _isTtsEnabled = StorageUtils.getBool(_storageKeyTtsEnabled);
-    _cooldownSeconds = StorageUtils.getInt(_storageKeyCooldownSeconds) ??
+    _cooldownSeconds =
+        StorageUtils.getInt(_storageKeyCooldownSeconds) ??
         _defaultCooldownSeconds;
     _globalCategories = StorageUtils.getStringList(_storageKeyGlobalCategories);
 
@@ -359,12 +360,10 @@ class MapSubscriptionService {
     if (oldMap == null || oldMap == newMap) return;
 
     final lowerNewMap = newMap.toLowerCase();
-    final subscription = _subscriptions
-        .cast<MapSubscription?>()
-        .firstWhere(
-          (s) => s!.mapName.toLowerCase() == lowerNewMap,
-          orElse: () => null,
-        );
+    final subscription = _subscriptions.cast<MapSubscription?>().firstWhere(
+      (s) => s!.mapName.toLowerCase() == lowerNewMap,
+      orElse: () => null,
+    );
 
     if (subscription == null) return;
 
@@ -374,15 +373,14 @@ class MapSubscriptionService {
     }
 
     final categoryName = _serverCategoryMap[entry.serverAddress];
-    final serverName = entry.hostName ??
+    final serverName =
+        entry.hostName ??
         _serverNameMap[entry.serverAddress] ??
         entry.serverAddress;
 
     if (categoryName == null) {
       // 不在我们维护的分类列表里（比如自定义分组中的私人服务器），跳过
-      LogService.d(
-        '[MapSubscription] 服务器不在已知分类，跳过: ${entry.serverAddress}',
-      );
+      LogService.d('[MapSubscription] 服务器不在已知分类，跳过: ${entry.serverAddress}');
       return;
     }
 
@@ -403,8 +401,8 @@ class MapSubscriptionService {
     final lastNotifyMs = _notificationCooldown[cooldownKey];
     if (lastNotifyMs != null) {
       final elapsed = DateTime.now()
-              .difference(DateTime.fromMillisecondsSinceEpoch(lastNotifyMs))
-              .inSeconds;
+          .difference(DateTime.fromMillisecondsSinceEpoch(lastNotifyMs))
+          .inSeconds;
       if (elapsed < _cooldownSeconds) {
         LogService.d(
           '[MapSubscription] 冷却中，跳过通知: $cooldownKey (${_cooldownSeconds - elapsed}s 剩余)',
@@ -424,7 +422,11 @@ class MapSubscriptionService {
         final ip = parts[0];
         final port = int.tryParse(parts[1]);
         if (port != null) {
-          final serverInfo = await SourceServerService.getServerInfo(ip, port, timeout: 3000);
+          final serverInfo = await SourceServerService.getServerInfo(
+            ip,
+            port,
+            timeout: 3000,
+          );
           if (serverInfo != null) {
             currentPlayers = serverInfo.players;
           }
@@ -505,8 +507,8 @@ class MapSubscriptionService {
 
   Future<List<ServerCategory>> _loadAndMergeCategories() async {
     final customCategories = await CustomServerService.loadCustomCategories();
-    final apiCategories =
-        await ServerCategoryService.instance.getApiCategories();
+    final apiCategories = await ServerCategoryService.instance
+        .getApiCategories();
     return _mergeCategories(customCategories, apiCategories);
   }
 

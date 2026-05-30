@@ -26,45 +26,51 @@ class FloatingChatCubit extends Cubit<FloatingChatState> {
     // historical messages loaded on startup, not new incoming messages.
     if (!_initialized) {
       _initialized = true;
-      emit(state.copyWith(
-        unreadCount: 0,
-        lastSeenMessageCount: serverMessages.length,
-      ));
+      emit(
+        state.copyWith(
+          unreadCount: 0,
+          lastSeenMessageCount: serverMessages.length,
+        ),
+      );
       return;
     }
 
     if (state.isPanelOpen) {
       // Panel is open: keep unreadCount at 0, just update lastSeenMessageCount
-      emit(state.copyWith(
-        unreadCount: 0,
-        lastSeenMessageCount: serverMessages.length,
-      ));
+      emit(
+        state.copyWith(
+          unreadCount: 0,
+          lastSeenMessageCount: serverMessages.length,
+        ),
+      );
     } else {
       // Panel is closed: accumulate delta
       final delta = serverMessages.length - state.lastSeenMessageCount;
       if (delta > 0) {
-        emit(state.copyWith(
-          unreadCount: state.unreadCount + delta,
-          lastSeenMessageCount: serverMessages.length,
-        ));
+        emit(
+          state.copyWith(
+            unreadCount: state.unreadCount + delta,
+            lastSeenMessageCount: serverMessages.length,
+          ),
+        );
       } else if (delta < 0) {
         // Message count shrank (e.g. deduplication removed a local_ message).
         // Sync the baseline so the next real message produces delta = 1,
         // not an inflated value.
-        emit(state.copyWith(
-          lastSeenMessageCount: serverMessages.length,
-        ));
+        emit(state.copyWith(lastSeenMessageCount: serverMessages.length));
       }
     }
   }
 
   /// Called when the chat panel is opened.
   void panelOpened() {
-    emit(state.copyWith(
-      isPanelOpen: true,
-      unreadCount: 0,
-      lastSeenMessageCount: _currentMessages.length,
-    ));
+    emit(
+      state.copyWith(
+        isPanelOpen: true,
+        unreadCount: 0,
+        lastSeenMessageCount: _currentMessages.length,
+      ),
+    );
   }
 
   /// Called when the chat panel is closed.
@@ -74,9 +80,11 @@ class FloatingChatCubit extends Cubit<FloatingChatState> {
 
   /// Called when the user navigates to the lobby page.
   void onLobbyPageEntered() {
-    emit(state.copyWith(
-      unreadCount: 0,
-      lastSeenMessageCount: _currentMessages.length,
-    ));
+    emit(
+      state.copyWith(
+        unreadCount: 0,
+        lastSeenMessageCount: _currentMessages.length,
+      ),
+    );
   }
 }

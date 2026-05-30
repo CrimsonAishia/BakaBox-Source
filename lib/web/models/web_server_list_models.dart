@@ -178,10 +178,7 @@ class WebServerTag {
   final String name;
   final Color? color;
 
-  const WebServerTag({
-    required this.name,
-    this.color,
-  });
+  const WebServerTag({required this.name, this.color});
 
   factory WebServerTag.fromJson(Map<String, dynamic> json) {
     return WebServerTag(

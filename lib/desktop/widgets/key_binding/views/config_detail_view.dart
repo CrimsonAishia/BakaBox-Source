@@ -120,7 +120,8 @@ class DetailHeader extends StatelessWidget {
       buildWhen: (prev, curr) =>
           prev.isCancellingChangeRequest != curr.isCancellingChangeRequest,
       builder: (context, state) {
-        final hasPending = config.isApproved && isOwner && config.hasPendingChange;
+        final hasPending =
+            config.isApproved && isOwner && config.hasPendingChange;
 
         return Container(
           padding: const EdgeInsets.all(16),
@@ -215,9 +216,7 @@ class DetailHeader extends StatelessWidget {
                     if (canEdit) ...[
                       common.ConfigActionButton(
                         icon: MdiIcons.pencilOutline,
-                        tooltip: config.isApproved
-                            ? '编辑配置（需重新审核）'
-                            : '编辑配置',
+                        tooltip: config.isApproved ? '编辑配置（需重新审核）' : '编辑配置',
                         badge: config.isApproved,
                         onTap: () => onEditConfig?.call(config),
                       ),
@@ -226,9 +225,7 @@ class DetailHeader extends StatelessWidget {
                     if (canDelete)
                       common.ConfigActionButton(
                         icon: MdiIcons.deleteOutline,
-                        tooltip: config.isApproved
-                            ? '删除配置（需重新审核）'
-                            : '删除配置',
+                        tooltip: config.isApproved ? '删除配置（需重新审核）' : '删除配置',
                         color: const Color(0xFFef4444),
                         badge: config.isApproved,
                         onTap: () => _confirmDelete(context, config),

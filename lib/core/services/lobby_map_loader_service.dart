@@ -10,10 +10,13 @@ import 'lobby_image_cache_service.dart';
 enum MapLoadStatus {
   /// 地图未加载
   unloaded,
+
   /// 正在加载
   loading,
+
   /// 已加载完成
   loaded,
+
   /// 加载失败
   error,
 }
@@ -51,7 +54,8 @@ class MapLoadState {
   }
 
   @override
-  String toString() => 'MapLoadState(mapId: $mapId, status: $status, progress: $progress)';
+  String toString() =>
+      'MapLoadState(mapId: $mapId, status: $status, progress: $progress)';
 }
 
 /// Lobby 地图加载状态管理服务
@@ -124,13 +128,15 @@ class LobbyMapLoaderService {
     // 如果正在加载，等待完成
     if (_loadingMaps.contains(mapId)) {
       LogService.d('[LobbyMapLoader] 地图正在加载中: $mapId，等待完成');
-      return await waitForMapReady(mapId).then((_) => true).timeout(
-        _mapLoadTimeout,
-        onTimeout: () {
-          LogService.w('[LobbyMapLoader] 等待地图加载超时: $mapId');
-          return false;
-        },
-      );
+      return await waitForMapReady(mapId)
+          .then((_) => true)
+          .timeout(
+            _mapLoadTimeout,
+            onTimeout: () {
+              LogService.w('[LobbyMapLoader] 等待地图加载超时: $mapId');
+              return false;
+            },
+          );
     }
 
     return _doLoadMap(mapConfig);
@@ -142,72 +148,88 @@ class LobbyMapLoaderService {
     final backgroundUrl = mapConfig.backgroundUrl;
 
     _loadingMaps.add(mapId);
-    _updateState(MapLoadState(
-      mapId: mapId,
-      status: MapLoadStatus.loading,
-      progress: 0.0,
-    ));
+    _updateState(
+      MapLoadState(mapId: mapId, status: MapLoadStatus.loading, progress: 0.0),
+    );
 
     try {
-      LogService.d('[LobbyMapLoader] 开始加载地图: $mapId, backgroundUrl: $backgroundUrl');
+      LogService.d(
+        '[LobbyMapLoader] 开始加载地图: $mapId, backgroundUrl: $backgroundUrl',
+      );
 
       // 如果没有背景 URL，认为地图配置有效但无需加载图片
       if (backgroundUrl == null || backgroundUrl.isEmpty) {
-        _updateState(MapLoadState(
-          mapId: mapId,
-          status: MapLoadStatus.loaded,
-          progress: 1.0,
-        ));
+        _updateState(
+          MapLoadState(
+            mapId: mapId,
+            status: MapLoadStatus.loaded,
+            progress: 1.0,
+          ),
+        );
         LogService.d('[LobbyMapLoader] 地图无背景图，标记为已加载: $mapId');
         return true;
       }
 
       // 更新进度
-      _updateState(MapLoadState(
-        mapId: mapId,
-        status: MapLoadStatus.loading,
-        progress: 0.2,
-      ));
+      _updateState(
+        MapLoadState(
+          mapId: mapId,
+          status: MapLoadStatus.loading,
+          progress: 0.2,
+        ),
+      );
 
       // 下载图片
-      final bytes = await LobbyImageCacheService.instance.downloadWithStableKey(backgroundUrl);
+      final bytes = await LobbyImageCacheService.instance.downloadWithStableKey(
+        backgroundUrl,
+      );
 
-      _updateState(MapLoadState(
-        mapId: mapId,
-        status: MapLoadStatus.loading,
-        progress: 0.8,
-      ));
+      _updateState(
+        MapLoadState(
+          mapId: mapId,
+          status: MapLoadStatus.loading,
+          progress: 0.8,
+        ),
+      );
 
       if (bytes != null) {
         // 解码图片确保可用（用于验证图片有效）
         await LobbyImageCacheService.instance.getDecodedImage(backgroundUrl);
 
-        _updateState(MapLoadState(
-          mapId: mapId,
-          status: MapLoadStatus.loaded,
-          progress: 1.0,
-        ));
+        _updateState(
+          MapLoadState(
+            mapId: mapId,
+            status: MapLoadStatus.loaded,
+            progress: 1.0,
+          ),
+        );
 
-        LogService.d('[LobbyMapLoader] 地图加载成功: $mapId, size: ${bytes.length} bytes');
+        LogService.d(
+          '[LobbyMapLoader] 地图加载成功: $mapId, size: ${bytes.length} bytes',
+        );
         return true;
       } else {
         // 下载失败但仍标记为已加载（允许显示默认背景）
-        _updateState(MapLoadState(
-          mapId: mapId,
-          status: MapLoadStatus.loaded,
-          progress: 1.0,
-          errorMessage: '图片下载失败',
-        ));
+        _updateState(
+          MapLoadState(
+            mapId: mapId,
+            status: MapLoadStatus.loaded,
+            progress: 1.0,
+            errorMessage: '图片下载失败',
+          ),
+        );
         LogService.w('[LobbyMapLoader] 地图图片下载失败: $mapId，使用默认背景');
         return true;
       }
     } catch (e, stack) {
       LogService.e('[LobbyMapLoader] 地图加载失败: $mapId', e, stack);
-      _updateState(MapLoadState(
-        mapId: mapId,
-        status: MapLoadStatus.error,
-        errorMessage: e.toString(),
-      ));
+      _updateState(
+        MapLoadState(
+          mapId: mapId,
+          status: MapLoadStatus.error,
+          errorMessage: e.toString(),
+        ),
+      );
       return false;
     } finally {
       _loadingMaps.remove(mapId);
@@ -231,17 +253,19 @@ class LobbyMapLoaderService {
     final subject = _getOrCreateSubject(mapId);
 
     try {
-      await subject.firstWhere((state) => state.isReady || state.isError).timeout(
-        timeoutDuration,
-        onTimeout: () {
-          LogService.w('[LobbyMapLoader] 等待地图加载超时: $mapId');
-          return MapLoadState(
-            mapId: mapId,
-            status: MapLoadStatus.error,
-            errorMessage: '加载超时',
+      await subject
+          .firstWhere((state) => state.isReady || state.isError)
+          .timeout(
+            timeoutDuration,
+            onTimeout: () {
+              LogService.w('[LobbyMapLoader] 等待地图加载超时: $mapId');
+              return MapLoadState(
+                mapId: mapId,
+                status: MapLoadStatus.error,
+                errorMessage: '加载超时',
+              );
+            },
           );
-        },
-      );
 
       final finalState = _stateCache[mapId];
       return finalState?.isReady ?? false;
@@ -266,10 +290,8 @@ class LobbyMapLoaderService {
     var subject = _stateSubjects[mapId];
     if (subject == null || subject.isClosed) {
       subject = BehaviorSubject<MapLoadState>.seeded(
-        _stateCache[mapId] ?? MapLoadState(
-          mapId: mapId,
-          status: MapLoadStatus.unloaded,
-        ),
+        _stateCache[mapId] ??
+            MapLoadState(mapId: mapId, status: MapLoadStatus.unloaded),
       );
       _stateSubjects[mapId] = subject;
     }

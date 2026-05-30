@@ -36,9 +36,7 @@ class ServerListItem extends StatelessWidget {
     // 确保中文名不为空字符串
     final chineseName = (mapLabel?.isNotEmpty == true) ? mapLabel : null;
     // 显示格式：有中文名时 "中文名 (英文名)"，否则只显示英文名
-    return chineseName != null
-        ? '$chineseName ($_mapName)'
-        : _mapName;
+    return chineseName != null ? '$chineseName ($_mapName)' : _mapName;
   }
 
   int get _currentPlayers => _serverInfo?.players ?? 0;
@@ -233,7 +231,9 @@ class ServerListItem extends StatelessWidget {
   }
 
   String get _serverAddress {
-    return server.serverItem.address ?? server.serverItem.serverAddress ?? '未知地址';
+    return server.serverItem.address ??
+        server.serverItem.serverAddress ??
+        '未知地址';
   }
 
   void _copyConnectCommand(BuildContext context, String address) {
@@ -254,7 +254,11 @@ class ServerListItem extends StatelessWidget {
               fontWeight: FontWeight.bold,
               color: Colors.white,
               shadows: [
-                Shadow(color: Colors.black45, offset: Offset(1, 1), blurRadius: 2),
+                Shadow(
+                  color: Colors.black45,
+                  offset: Offset(1, 1),
+                  blurRadius: 2,
+                ),
               ],
             ),
             maxLines: 1,
@@ -278,7 +282,11 @@ class ServerListItem extends StatelessWidget {
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                     shadows: [
-                      Shadow(color: Colors.black54, offset: Offset(1, 1), blurRadius: 3),
+                      Shadow(
+                        color: Colors.black54,
+                        offset: Offset(1, 1),
+                        blurRadius: 3,
+                      ),
                     ],
                   ),
                 ),
@@ -302,7 +310,11 @@ class ServerListItem extends StatelessWidget {
                   fontSize: 14,
                   fontFamily: 'monospace',
                   shadows: [
-                    Shadow(color: Colors.black, blurRadius: 2, offset: Offset(0, 1)),
+                    Shadow(
+                      color: Colors.black,
+                      blurRadius: 2,
+                      offset: Offset(0, 1),
+                    ),
                     Shadow(color: Colors.black, blurRadius: 6),
                   ],
                 ),
@@ -312,11 +324,7 @@ class ServerListItem extends StatelessWidget {
                 onTap: () => _copyConnectCommand(context, _serverAddress),
                 child: const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: Icon(
-                    Icons.copy,
-                    size: 16,
-                    color: Colors.white70,
-                  ),
+                  child: Icon(Icons.copy, size: 16, color: Colors.white70),
                 ),
               ),
             ],
@@ -349,7 +357,11 @@ class ServerListItem extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.access_time, size: 14, color: Colors.green.shade300),
+                      Icon(
+                        Icons.access_time,
+                        size: 14,
+                        color: Colors.green.shade300,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         _getMapRuntimeDisplay(),

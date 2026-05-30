@@ -38,12 +38,14 @@ class _PortalConfirmDialogMobileState extends State<PortalConfirmDialogMobile>
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
     _rotateController = AnimationController(
       duration: const Duration(seconds: 4),
       vsync: this,
@@ -78,8 +80,7 @@ class _PortalConfirmDialogMobileState extends State<PortalConfirmDialogMobile>
             onTap: _handleCancel,
             behavior: HitTestBehavior.opaque,
             child: Container(
-              color:
-                  Colors.black.withValues(alpha: 0.6 * _fadeAnimation.value),
+              color: Colors.black.withValues(alpha: 0.6 * _fadeAnimation.value),
               child: Center(
                 child: GestureDetector(
                   onTap: () {}, // 阻止点击穿透
@@ -100,20 +101,17 @@ class _PortalConfirmDialogMobileState extends State<PortalConfirmDialogMobile>
                         ),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                          color:
-                              Colors.purpleAccent.withValues(alpha: 0.3),
+                          color: Colors.purpleAccent.withValues(alpha: 0.3),
                           width: 1,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.purpleAccent
-                                .withValues(alpha: 0.2),
+                            color: Colors.purpleAccent.withValues(alpha: 0.2),
                             blurRadius: 30,
                             spreadRadius: 5,
                           ),
                           BoxShadow(
-                            color:
-                                Colors.cyanAccent.withValues(alpha: 0.1),
+                            color: Colors.cyanAccent.withValues(alpha: 0.1),
                             blurRadius: 50,
                             spreadRadius: 10,
                           ),
@@ -122,8 +120,7 @@ class _PortalConfirmDialogMobileState extends State<PortalConfirmDialogMobile>
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          _PortalIconMobile(
-                              rotation: _rotateController.value),
+                          _PortalIconMobile(rotation: _rotateController.value),
                           const SizedBox(height: 16),
                           Text(
                             '传送门',
@@ -142,11 +139,13 @@ class _PortalConfirmDialogMobileState extends State<PortalConfirmDialogMobile>
                               color: Colors.white,
                               shadows: [
                                 Shadow(
-                                    color: Colors.purpleAccent,
-                                    blurRadius: 20),
+                                  color: Colors.purpleAccent,
+                                  blurRadius: 20,
+                                ),
                                 Shadow(
-                                    color: Colors.cyanAccent,
-                                    blurRadius: 30),
+                                  color: Colors.cyanAccent,
+                                  blurRadius: 30,
+                                ),
                               ],
                             ),
                           ),
@@ -221,9 +220,7 @@ class _MobileDialogButton extends StatelessWidget {
                     end: Alignment.bottomRight,
                   )
                 : null,
-            color: isPrimary
-                ? null
-                : Colors.white.withValues(alpha: 0.05),
+            color: isPrimary ? null : Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isPrimary

@@ -15,7 +15,8 @@ import 'lobby_context_menu_component.dart';
 
 /// 大厅场景游戏引擎
 /// 负责高效渲染地图背景、渐变叠加层和角色节点
-class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, HoverCallbacks {
+class LobbyGame extends FlameGame
+    with HasCollisionDetection, TapCallbacks, HoverCallbacks {
   /// 当前活跃的 LobbyGame 实例（供面板等外部组件调用）
   static LobbyGame? activeInstance;
 
@@ -26,12 +27,12 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     required List<LobbySprite> sprites,
     required bool showNameplates,
     required bool showChatBubbles,
-  })  : _bloc = bloc,
-        _initialMapConfig = mapConfig,
-        _initialUsers = users,
-        _initialSprites = sprites,
-        _initialShowNameplates = showNameplates,
-        _initialShowChatBubbles = showChatBubbles {
+  }) : _bloc = bloc,
+       _initialMapConfig = mapConfig,
+       _initialUsers = users,
+       _initialSprites = sprites,
+       _initialShowNameplates = showNameplates,
+       _initialShowChatBubbles = showChatBubbles {
     _init();
   }
 
@@ -46,7 +47,8 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
   final Map<String, List<LobbyPlayerComponent>> _waitingForSprite = {};
 
   /// 查询某个 spriteId 是否已预加载完成
-  ui.Image? getPreloadedSpriteImage(String spriteId) => _preloadedSpriteImages[spriteId];
+  ui.Image? getPreloadedSpriteImage(String spriteId) =>
+      _preloadedSpriteImages[spriteId];
 
   /// 注册一个玩家组件等待某个 spriteId 的贴图加载完成
   void registerSpriteWaiter(String spriteId, LobbyPlayerComponent component) {
@@ -68,7 +70,8 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     // 收集当前场景中用到的所有 spriteId，并按使用人数降序排列（优先加载多人用的）
     final spriteUsageCount = <String, int>{};
     for (final user in _initialUsers) {
-      spriteUsageCount[user.spriteId] = (spriteUsageCount[user.spriteId] ?? 0) + 1;
+      spriteUsageCount[user.spriteId] =
+          (spriteUsageCount[user.spriteId] ?? 0) + 1;
     }
 
     // 按使用人数降序排序，优先加载最多人使用的 sprite
@@ -118,7 +121,8 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
       image = await LobbyImageCacheService.instance.getDecodedImage(url);
       if (image == null) {
         // 尝试网络下载
-        final bytes = await LobbyImageCacheService.instance.downloadWithStableKey(url);
+        final bytes = await LobbyImageCacheService.instance
+            .downloadWithStableKey(url);
         if (bytes != null) {
           image = await LobbyImageCacheService.instance.getDecodedImage(url);
         }
@@ -126,7 +130,9 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
 
       if (image != null) {
         _preloadedSpriteImages[spriteId] = image;
-        LogService.d('[LobbyGame] 贴图预加载完成: $spriteId, 通知 ${_waitingForSprite[spriteId]?.length ?? 0} 个玩家');
+        LogService.d(
+          '[LobbyGame] 贴图预加载完成: $spriteId, 通知 ${_waitingForSprite[spriteId]?.length ?? 0} 个玩家',
+        );
 
         // 通知所有等待该 spriteId 的玩家组件
         final waiters = _waitingForSprite.remove(spriteId);
@@ -205,10 +211,13 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
 
   /// 传送门组件列表
   final List<PortalComponent> _portalComponents = [];
+
   /// 当前悬停的传送门
   PortalComponent? _hoveredPortal;
+
   /// 当前悬停的玩家
   LobbyPlayerComponent? _hoveredPlayer;
+
   /// 传送门更新锁，防止并发更新
   bool _portalUpdateInProgress = false;
 
@@ -244,7 +253,9 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     if (_hoveredPlayer == null) return false;
     final user = _hoveredPlayer!.user;
     // 有 businessUserId 且非自己才可交互
-    if (user.businessUserId == null || user.businessUserId!.isEmpty) return false;
+    if (user.businessUserId == null || user.businessUserId!.isEmpty) {
+      return false;
+    }
     if (user.isSelf) return false;
     return true;
   }
@@ -316,7 +327,9 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
       await _addPlayerComponent(user);
     }
 
-    LogService.d('[LobbyGame] onLoad 完成: playersAdded=${_initialUsers.length} worldChildren=${_world.children.length}');
+    LogService.d(
+      '[LobbyGame] onLoad 完成: playersAdded=${_initialUsers.length} worldChildren=${_world.children.length}',
+    );
 
     // 初始相机跟随当前玩家（如果有）
     _followCurrentPlayer();
@@ -420,7 +433,10 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     // 边界限制：相机不能超出世界范围
     // 当有面板偏移时，允许相机右边界额外扩展 effectiveOffset * 2（整个面板宽度），
     // 这样地图右边缘的玩家也能正确显示在面板左侧
-    final maxX = math.max(0.0, _worldSize.x - viewportWidth + effectiveOffset * 2);
+    final maxX = math.max(
+      0.0,
+      _worldSize.x - viewportWidth + effectiveOffset * 2,
+    );
     final maxY = math.max(0.0, _worldSize.y - _cameraComponent.viewport.size.y);
     targetCamX = targetCamX.clamp(0.0, maxX);
     targetCamY = targetCamY.clamp(0.0, maxY);
@@ -568,8 +584,9 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
         // 更新现有用户
         _playerComponents[user.userId]!.updateUser(user, _sprites);
         // 刷新关注状态（基于 businessUserId，用户登出后 businessUserId 会变空）
-        _playerComponents[user.userId]!.isFollowed =
-            isBusinessUserFollowed(user.businessUserId);
+        _playerComponents[user.userId]!.isFollowed = isBusinessUserFollowed(
+          user.businessUserId,
+        );
       } else if (!_pendingUserIds.contains(user.userId)) {
         // 添加新用户（但不在待处理队列中）
         _addPlayerComponent(user);
@@ -579,7 +596,8 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
 
   Future<void> _addPlayerComponent(LobbyUser user) async {
     // 检测重复添加（既不在现有组件中，也不在待处理队列中）
-    if (_playerComponents.containsKey(user.userId) || _pendingUserIds.contains(user.userId)) {
+    if (_playerComponents.containsKey(user.userId) ||
+        _pendingUserIds.contains(user.userId)) {
       return;
     }
 
@@ -592,11 +610,13 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
       try {
         sprite = _sprites.firstWhere((s) => s.id == user.spriteId);
       } catch (_) {
-        sprite = _sprites.where((s) => s.isDefault).firstOrNull ?? const LobbySprite(
-          id: 'sprite_01',
-          label: '默认角色',
-          accentColor: Color(0xFF60A5FA),
-        );
+        sprite =
+            _sprites.where((s) => s.isDefault).firstOrNull ??
+            const LobbySprite(
+              id: 'sprite_01',
+              label: '默认角色',
+              accentColor: Color(0xFF60A5FA),
+            );
       }
 
       final component = LobbyPlayerComponent(
@@ -747,7 +767,11 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
   // ========== 玩家交互菜单 ==========
 
   /// 为目标玩家显示交互菜单（左键靠近时触发）
-  void _showContextMenuForPlayer(LobbyPlayerComponent targetPlayer, double worldX, double worldY) {
+  void _showContextMenuForPlayer(
+    LobbyPlayerComponent targetPlayer,
+    double worldX,
+    double worldY,
+  ) {
     // 先关闭已有菜单
     _dismissContextMenu();
 
@@ -767,10 +791,7 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     final isFollowed = isBusinessUserFollowed(user.businessUserId);
     final items = [
       const ContextMenuItem(id: 'investigate', label: '调查'),
-      ContextMenuItem(
-        id: 'follow',
-        label: isFollowed ? '取消关注' : '关注',
-      ),
+      ContextMenuItem(id: 'follow', label: isFollowed ? '取消关注' : '关注'),
     ];
 
     // 计算菜单位置（在点击位置附近显示）
@@ -901,7 +922,8 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
         final selfUser = _bloc.state.selfUser;
         if (selfUser != null) {
           final selfComp = _playerComponents[selfUser.userId];
-          final selfPos = selfComp?.currentRenderPosition ?? selfUser.renderPosition;
+          final selfPos =
+              selfComp?.currentRenderPosition ?? selfUser.renderPosition;
           final targetPos = targetPlayer.currentRenderPosition;
           final distX = selfPos.x - targetPos.x;
           final distY = selfPos.y - targetPos.y;
@@ -1027,7 +1049,9 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
 
   /// 检查右键菜单目标玩家是否移动超出范围
   void _checkContextMenuDistance() {
-    if (_contextMenuTarget == null || _contextMenuTargetOriginPos == null) return;
+    if (_contextMenuTarget == null || _contextMenuTargetOriginPos == null) {
+      return;
+    }
 
     final currentPos = _contextMenuTarget!.currentRenderPosition;
     final originPos = _contextMenuTargetOriginPos!;
@@ -1035,7 +1059,8 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
     final dy = currentPos.y - originPos.y;
     final distSq = dx * dx + dy * dy;
 
-    if (distSq > _contextMenuAutoCloseDistance * _contextMenuAutoCloseDistance) {
+    if (distSq >
+        _contextMenuAutoCloseDistance * _contextMenuAutoCloseDistance) {
       _dismissContextMenu();
     }
   }
@@ -1060,13 +1085,14 @@ class LobbyGame extends FlameGame with HasCollisionDetection, TapCallbacks, Hove
 }
 
 /// 背景层组件：负责渲染地图背景图片
-class BackgroundComponent extends PositionComponent with HasGameReference<LobbyGame> {
+class BackgroundComponent extends PositionComponent
+    with HasGameReference<LobbyGame> {
   BackgroundComponent({
     required LobbyMapConfig mapConfig,
     required Vector2 worldSize,
-  })  : _mapConfig = mapConfig,
-        _worldSize = worldSize,
-        super(priority: -2);
+  }) : _mapConfig = mapConfig,
+       _worldSize = worldSize,
+       super(priority: -2);
 
   final LobbyMapConfig _mapConfig;
   Vector2 _worldSize;
@@ -1090,20 +1116,24 @@ class BackgroundComponent extends PositionComponent with HasGameReference<LobbyG
       size = _worldSize;
 
       // 加载背景（优先从本地缓存，fallback 到网络）
-      if (_mapConfig.backgroundUrl != null && _mapConfig.backgroundUrl!.isNotEmpty) {
+      if (_mapConfig.backgroundUrl != null &&
+          _mapConfig.backgroundUrl!.isNotEmpty) {
         try {
           // 优先从本地缓存获取
-          final imageInfo = await _loadCachedOrNetworkImage(_mapConfig.backgroundUrl!);
+          final imageInfo = await _loadCachedOrNetworkImage(
+            _mapConfig.backgroundUrl!,
+          );
           if (imageInfo != null && !_disposed) {
             final sprite = Sprite(imageInfo);
             final bgComponent = SpriteComponent(
               sprite: sprite,
               size: _worldSize,
             );
-            bgComponent.paint = Paint()..colorFilter = const ColorFilter.mode(
-              Color(0x3D000000),
-              BlendMode.darken,
-            );
+            bgComponent.paint = Paint()
+              ..colorFilter = const ColorFilter.mode(
+                Color(0x3D000000),
+                BlendMode.darken,
+              );
             await add(bgComponent);
             _loaded = true;
             return;
@@ -1127,7 +1157,9 @@ class BackgroundComponent extends PositionComponent with HasGameReference<LobbyG
     }
 
     // 优先从本地缓存获取
-    final cachedImage = await LobbyImageCacheService.instance.getDecodedImage(url);
+    final cachedImage = await LobbyImageCacheService.instance.getDecodedImage(
+      url,
+    );
     if (cachedImage != null) {
       LogService.d('[BackgroundComponent] 从本地缓存加载背景: $url');
       return cachedImage;
@@ -1172,19 +1204,14 @@ class BackgroundComponent extends PositionComponent with HasGameReference<LobbyG
 
   Future<void> _addDefaultBackground() async {
     final paint = Paint()..color = const Color(0xFF0B1120);
-    add(
-      RectangleComponent(
-        size: _worldSize,
-        paint: paint,
-      ),
-    );
+    add(RectangleComponent(size: _worldSize, paint: paint));
   }
 
   void updateMapConfig(LobbyMapConfig mapConfig) {
     // 重置状态并重新加载
     children.toList().forEach((c) => c.removeFromParent());
     _loaded = false;
-    _loading = false;  // 重置加载状态，允许重新加载
+    _loading = false; // 重置加载状态，允许重新加载
     _loadBackground();
   }
 
@@ -1274,15 +1301,16 @@ class PortalComponent extends PositionComponent with TapCallbacks {
     ..color = Colors.white.withValues(alpha: 0.8)
     ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
 
-  PortalComponent({
-    required this.portal,
-    required this.onClick,
-  }) : super(
-          position: Vector2(portal.x - kLobbyPortalRadius, portal.y - kLobbyPortalRadius),
-          size: Vector2(kLobbyPortalRadius * 2, kLobbyPortalRadius * 2),
-          anchor: Anchor.topLeft,
-          priority: 10,
-        );
+  PortalComponent({required this.portal, required this.onClick})
+    : super(
+        position: Vector2(
+          portal.x - kLobbyPortalRadius,
+          portal.y - kLobbyPortalRadius,
+        ),
+        size: Vector2(kLobbyPortalRadius * 2, kLobbyPortalRadius * 2),
+        anchor: Anchor.topLeft,
+        priority: 10,
+      );
 
   @override
   Future<void> onLoad() async {
@@ -1303,27 +1331,24 @@ class PortalComponent extends PositionComponent with TapCallbacks {
   /// 创建环绕传送门的发光粒子
   Particle _createOrbitingParticle() {
     final colors = [Colors.purpleAccent, Colors.cyanAccent, Colors.pinkAccent];
-    
+
     return Particle.generate(
       count: 12,
       generator: (i) {
         // 交替使用紫色和青色
         final color = colors[i % colors.length];
-        
+
         // 创建带初始角度偏移的圆周运动粒子
         final angle = (i / 12) * math.pi * 2;
         final radius = kLobbyPortalRadius * 0.7;
-        
+
         return AcceleratedParticle(
           // 初始位置在圆周上，速度沿切线方向
           position: Vector2(
             kLobbyPortalRadius + math.cos(angle) * radius,
             kLobbyPortalRadius + math.sin(angle) * radius,
           ),
-          speed: Vector2(
-            -math.sin(angle) * 25,
-            math.cos(angle) * 25,
-          ),
+          speed: Vector2(-math.sin(angle) * 25, math.cos(angle) * 25),
           acceleration: Vector2.zero(),
           child: CircleParticle(
             radius: 2.5 + (i % 2) * 1.0,
@@ -1405,10 +1430,21 @@ class PortalComponent extends PositionComponent with TapCallbacks {
     _drawCore(canvas, center, actualRadius * 0.3);
 
     // 默认显示标签，hover 时更明显
-    _drawLabel(canvas, center, actualRadius, isHovered: _isHovered || _glowIntensity > 0.3);
+    _drawLabel(
+      canvas,
+      center,
+      actualRadius,
+      isHovered: _isHovered || _glowIntensity > 0.3,
+    );
   }
 
-  void _drawGlowRing(Canvas canvas, Vector2 center, double radius, double intensity, double blur) {
+  void _drawGlowRing(
+    Canvas canvas,
+    Vector2 center,
+    double radius,
+    double intensity,
+    double blur,
+  ) {
     // 外发光
     final outerPaint = Paint()
       ..color = Colors.purpleAccent.withValues(alpha: intensity * 0.5)
@@ -1484,7 +1520,12 @@ class PortalComponent extends PositionComponent with TapCallbacks {
     canvas.drawCircle(center.toOffset(), radius * 0.2, _centerBrightPaint);
   }
 
-  void _drawLabel(Canvas canvas, Vector2 center, double radius, {bool isHovered = false}) {
+  void _drawLabel(
+    Canvas canvas,
+    Vector2 center,
+    double radius, {
+    bool isHovered = false,
+  }) {
     // 缓存标签 TextPainter（标签文字不变）
     if (_cachedLabelPainter == null) {
       final pixelTextStyle = TextStyle(
@@ -1536,17 +1577,17 @@ class PortalComponent extends PositionComponent with TapCallbacks {
 ///
 /// 这是一个独立的粒子组件，位于世界空间中，不跟随角色移动。
 /// 角色移动时会在脚底位置创建此组件，粒子效果完成后自动从父组件移除。
-class DustCloudComponent extends PositionComponent with HasGameReference<LobbyGame> {
-  DustCloudComponent({
-    required Vector2 worldPosition,
-  }) : super(
-          position: worldPosition,
-          anchor: Anchor.bottomCenter,
-          // size.y = 0 让组件的视觉原点精确对齐世界坐标（脚底位置），
-          // size.x = 40 控制粒子水平扩散范围
-          size: Vector2(40.0, 0.0),
-          priority: 0, // 扬尘在角色下方
-        );
+class DustCloudComponent extends PositionComponent
+    with HasGameReference<LobbyGame> {
+  DustCloudComponent({required Vector2 worldPosition})
+    : super(
+        position: worldPosition,
+        anchor: Anchor.bottomCenter,
+        // size.y = 0 让组件的视觉原点精确对齐世界坐标（脚底位置），
+        // size.x = 40 控制粒子水平扩散范围
+        size: Vector2(40.0, 0.0),
+        priority: 0, // 扬尘在角色下方
+      );
 
   @override
   Future<void> onLoad() async {
@@ -1568,10 +1609,7 @@ class DustCloudComponent extends PositionComponent with HasGameReference<LobbyGa
             (math.Random().nextDouble() - 0.5) * 20.0,
             -15.0 - math.Random().nextDouble() * 10.0,
           ),
-          acceleration: Vector2(
-            (math.Random().nextDouble() - 0.5) * 8.0,
-            -3.0,
-          ),
+          acceleration: Vector2((math.Random().nextDouble() - 0.5) * 8.0, -3.0),
           lifespan: 0.5,
           child: CircleParticle(
             radius: 3.0 + math.Random().nextDouble() * 2.0,
@@ -1583,9 +1621,7 @@ class DustCloudComponent extends PositionComponent with HasGameReference<LobbyGa
       },
     );
 
-    final particleSystem = ParticleSystemComponent(
-      particle: particle,
-    );
+    final particleSystem = ParticleSystemComponent(particle: particle);
 
     await add(particleSystem);
 
@@ -1602,15 +1638,15 @@ class DustCloudComponent extends PositionComponent with HasGameReference<LobbyGa
 ///
 /// 当角色移动时，在目标位置显示一个醒目的红色叉号，
 /// 到达后自动消失。
-class TargetMarkerComponent extends PositionComponent with HasGameReference<LobbyGame> {
-  TargetMarkerComponent({
-    required Vector2 worldPosition,
-  }) : super(
-          position: worldPosition,
-          anchor: Anchor.bottomCenter,
-          size: Vector2(32.0, 32.0),
-          priority: 2,
-        );
+class TargetMarkerComponent extends PositionComponent
+    with HasGameReference<LobbyGame> {
+  TargetMarkerComponent({required Vector2 worldPosition})
+    : super(
+        position: worldPosition,
+        anchor: Anchor.bottomCenter,
+        size: Vector2(32.0, 32.0),
+        priority: 2,
+      );
 
   double _pulsePhase = 0.0;
 
@@ -1676,7 +1712,12 @@ class TargetMarkerComponent extends PositionComponent with HasGameReference<Lobb
     _drawRotatingRing(canvas, centerX, centerY, pulseAlpha);
   }
 
-  void _drawRotatingRing(Canvas canvas, double centerX, double centerY, double alpha) {
+  void _drawRotatingRing(
+    Canvas canvas,
+    double centerX,
+    double centerY,
+    double alpha,
+  ) {
     final ringRadius = 22.0;
     const dashCount = 12;
     const dashLength = 4.0;

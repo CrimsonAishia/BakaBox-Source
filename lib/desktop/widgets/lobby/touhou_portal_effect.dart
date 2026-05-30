@@ -92,7 +92,9 @@ class _TouhouPortalEffectState extends State<TouhouPortalEffect>
                         child: CustomPaint(
                           size: const Size(500, 500),
                           painter: _MagicCirclePainter(
-                            color: const Color(0xFF9B59B6).withValues(alpha: 0.7),
+                            color: const Color(
+                              0xFF9B59B6,
+                            ).withValues(alpha: 0.7),
                             points: 8,
                             innerRadius: 0.15,
                             outerRadius: 1.0,
@@ -117,7 +119,9 @@ class _TouhouPortalEffectState extends State<TouhouPortalEffect>
                         child: CustomPaint(
                           size: const Size(360, 360),
                           painter: _MagicCirclePainter(
-                            color: const Color(0xFFE91E63).withValues(alpha: 0.75),
+                            color: const Color(
+                              0xFFE91E63,
+                            ).withValues(alpha: 0.75),
                             points: 6,
                             innerRadius: 0.2,
                             outerRadius: 0.95,
@@ -142,7 +146,9 @@ class _TouhouPortalEffectState extends State<TouhouPortalEffect>
                         child: CustomPaint(
                           size: const Size(220, 220),
                           painter: _MagicCirclePainter(
-                            color: const Color(0xFF00BCD4).withValues(alpha: 0.6),
+                            color: const Color(
+                              0xFF00BCD4,
+                            ).withValues(alpha: 0.6),
                             points: 12,
                             innerRadius: 0.25,
                             outerRadius: 0.9,
@@ -180,12 +186,16 @@ class _TouhouPortalEffectState extends State<TouhouPortalEffect>
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF00E5FF).withValues(alpha: 0.8),
+                              color: const Color(
+                                0xFF00E5FF,
+                              ).withValues(alpha: 0.8),
                               blurRadius: 40,
                               spreadRadius: 15,
                             ),
                             BoxShadow(
-                              color: const Color(0xFFE91E63).withValues(alpha: 0.5),
+                              color: const Color(
+                                0xFFE91E63,
+                              ).withValues(alpha: 0.5),
                               blurRadius: 60,
                               spreadRadius: 25,
                             ),
@@ -199,12 +209,10 @@ class _TouhouPortalEffectState extends State<TouhouPortalEffect>
 
               // 边缘光晕
               ...List.generate(4, (index) {
-                final angle = _ringController.value * math.pi * 2 + (index * math.pi / 2);
+                final angle =
+                    _ringController.value * math.pi * 2 + (index * math.pi / 2);
                 return Transform.translate(
-                  offset: Offset(
-                    math.cos(angle) * 280,
-                    math.sin(angle) * 280,
-                  ),
+                  offset: Offset(math.cos(angle) * 280, math.sin(angle) * 280),
                   child: Container(
                     width: 80,
                     height: 80,
@@ -289,9 +297,7 @@ class _MagicCirclePainter extends CustomPainter {
     final path = Path();
     for (int i = 0; i <= points * 2; i++) {
       final angle = (i * math.pi) / points;
-      final radius = i.isEven
-          ? outerCircleRadius * 0.75
-          : innerCircleRadius;
+      final radius = i.isEven ? outerCircleRadius * 0.75 : innerCircleRadius;
 
       final point = Offset(
         center.dx + radius * math.cos(angle - math.pi / 2),
@@ -453,10 +459,7 @@ class _StarField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size.infinite,
-      painter: _StarFieldPainter(),
-    );
+    return CustomPaint(size: Size.infinite, painter: _StarFieldPainter());
   }
 }
 

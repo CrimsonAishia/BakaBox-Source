@@ -69,14 +69,14 @@ class MapSubscription extends Equatable {
 
   /// 转为 JSON
   Map<String, dynamic> toJson() => {
-        'mapName': mapName,
-        'mapLabel': mapLabel,
-        'mapBackground': mapBackground,
-        'categoryNames': categoryNames,
-        'serverAddresses': serverAddresses,
-        'createdAt': createdAt.toIso8601String(),
-        'cachedAt': cachedAt?.toIso8601String(),
-      };
+    'mapName': mapName,
+    'mapLabel': mapLabel,
+    'mapBackground': mapBackground,
+    'categoryNames': categoryNames,
+    'serverAddresses': serverAddresses,
+    'createdAt': createdAt.toIso8601String(),
+    'cachedAt': cachedAt?.toIso8601String(),
+  };
 
   /// 复制并修改
   MapSubscription copyWith({
@@ -120,12 +120,12 @@ class MapSubscription extends Equatable {
 
   @override
   List<Object?> get props => [
-        mapName,
-        mapLabel,
-        mapBackground,
-        categoryNames,
-        serverAddresses,
-        createdAt,
-        cachedAt,
-      ];
+    mapName,
+    mapLabel,
+    mapBackground,
+    categoryNames,
+    serverAddresses,
+    createdAt,
+    cachedAt,
+  ];
 }

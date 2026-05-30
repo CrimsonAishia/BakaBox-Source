@@ -38,7 +38,9 @@ class FloatingWindowLauncher {
 
     if (Platform.isWindows) {
       _visibilityTimer?.cancel();
-      _visibilityTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+      _visibilityTimer = Timer.periodic(const Duration(seconds: 2), (
+        timer,
+      ) async {
         if (!FullscreenDetector.instance.canCreateWindow()) {
           if (!_isHiddenByFullscreen) {
             _isHiddenByFullscreen = true;

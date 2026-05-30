@@ -55,10 +55,7 @@ class LobbyFloatingActionsMobile extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         // 设置按钮
-        _MobileActionButton(
-          icon: MdiIcons.cogOutline,
-          onTap: onSettingsTap,
-        ),
+        _MobileActionButton(icon: MdiIcons.cogOutline, onTap: onSettingsTap),
         const SizedBox(height: 12),
         // 聊天按钮
         _MobileActionButton(
@@ -140,8 +137,7 @@ class _MobileActionButton extends StatelessWidget {
                       borderRadius: BorderRadius.circular(2),
                       boxShadow: [
                         BoxShadow(
-                          color:
-                              const Color(0xFFEF4444).withValues(alpha: 0.6),
+                          color: const Color(0xFFEF4444).withValues(alpha: 0.6),
                           blurRadius: 4,
                         ),
                       ],
@@ -156,8 +152,7 @@ class _MobileActionButton extends StatelessWidget {
             top: -6,
             right: -6,
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
               decoration: BoxDecoration(
                 color: badgeColor ?? const Color(0xFFEF4444),
                 borderRadius: BorderRadius.circular(999),

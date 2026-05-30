@@ -109,8 +109,10 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   // ========== 聊天气泡动画系统 ==========
   /// 气泡整体透明度
   double _bubbleOpacity = 0.0;
+
   /// 气泡整体缩放
   double _bubbleScale = 0.0;
+
   /// 气泡缩放速度（弹簧物理）
   double _bubbleScaleVelocity = 0.0;
 
@@ -124,8 +126,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   static const double _exitSpringDamping = 18.0;
 
   // 消息文字切换动画
-  String? _displayedMessage;       // 当前显示的消息文字
-  String? _outgoingMessage;        // 正在退出的旧消息文字
+  String? _displayedMessage; // 当前显示的消息文字
+  String? _outgoingMessage; // 正在退出的旧消息文字
   double _msgTransitionProgress = 1.0; // 0→1，1=新消息完全显示
   static const double _msgTransitionSpeed = 4.5; // 切换速度
 
@@ -277,7 +279,9 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         // 设置超时兜底：如果 5 秒后仍未收到通知，走独立加载
         Future.delayed(const Duration(seconds: 5), () {
           if (!_disposed && !isRemoved && !_spriteLoaded) {
-            LogService.w('[LobbyPlayerComponent] 等待预加载超时，走独立加载: $_currentSpriteId');
+            LogService.w(
+              '[LobbyPlayerComponent] 等待预加载超时，走独立加载: $_currentSpriteId',
+            );
             game.unregisterSpriteWaiter(_currentSpriteId, this);
             _loadNetworkSprite();
           }
@@ -633,14 +637,18 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         case FlipState.turningToLeft:
           // 正在转向左边：若服务器要求朝右，立即反转
           if (targetFacing == FlipState.idleRight) {
-            debugPrint('[LobbyPlayerComponent] 服务器朝向变化，立即转向右边: ${_user.userId}');
+            debugPrint(
+              '[LobbyPlayerComponent] 服务器朝向变化，立即转向右边: ${_user.userId}',
+            );
             _flipState = FlipState.turningToRight;
           }
           break;
         case FlipState.turningToRight:
           // 正在转向右边：若服务器要求朝左，立即反转
           if (targetFacing == FlipState.idleLeft) {
-            debugPrint('[LobbyPlayerComponent] 服务器朝向变化，立即转向左边: ${_user.userId}');
+            debugPrint(
+              '[LobbyPlayerComponent] 服务器朝向变化，立即转向左边: ${_user.userId}',
+            );
             _flipState = FlipState.turningToLeft;
           }
           break;
@@ -813,7 +821,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
     if (point.x < cx - halfWidth || point.x > cx + halfWidth) return false;
     // 仅角色贴图的垂直范围
-    if (point.y < _characterSlotTopY || point.y > _characterSlotTopY + _characterDisplayHeight) {
+    if (point.y < _characterSlotTopY ||
+        point.y > _characterSlotTopY + _characterDisplayHeight) {
       return false;
     }
 
@@ -951,7 +960,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     // 当气泡处于活跃阶段（entering/visible）但消息已过期，且 _bubbleWasVisible
     // 未被正确更新时（例如 app 在后台期间收到消息，updateUser 设置了 phase
     // 但游戏循环未运行导致 _bubbleWasVisible 未同步），强制触发退场动画。
-    if (!hasVisibleMessage && !_bubbleWasVisible &&
+    if (!hasVisibleMessage &&
+        !_bubbleWasVisible &&
         (_bubblePhase == 1 || _bubblePhase == 2)) {
       _bubblePhase = 3; // exiting
       _bubbleScaleVelocity = 1.5;
@@ -1005,13 +1015,15 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
         break;
 
       case 2: // visible - 弹簧回弹（消息切换时的小弹跳）
-        if ((_bubbleScale - 1.0).abs() > 0.002 || _bubbleScaleVelocity.abs() > 0.05) {
+        if ((_bubbleScale - 1.0).abs() > 0.002 ||
+            _bubbleScaleVelocity.abs() > 0.05) {
           final displacement = _bubbleScale - 1.0;
           final springForce = -_springStiffness * displacement;
           final dampingForce = -_springDamping * _bubbleScaleVelocity;
           _bubbleScaleVelocity += (springForce + dampingForce) * dt;
           _bubbleScale += _bubbleScaleVelocity * dt;
-          if ((displacement).abs() < 0.002 && _bubbleScaleVelocity.abs() < 0.05) {
+          if ((displacement).abs() < 0.002 &&
+              _bubbleScaleVelocity.abs() < 0.05) {
             _bubbleScale = 1.0;
             _bubbleScaleVelocity = 0.0;
           }
@@ -1045,7 +1057,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
     // 消息文字切换动画进度
     if (_msgTransitionProgress < 1.0) {
-      _msgTransitionProgress = (_msgTransitionProgress + _msgTransitionSpeed * dt).clamp(0.0, 1.0);
+      _msgTransitionProgress =
+          (_msgTransitionProgress + _msgTransitionSpeed * dt).clamp(0.0, 1.0);
       if (_msgTransitionProgress >= 1.0) {
         _outgoingMessage = null;
       }
@@ -1086,9 +1099,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
                 '[LobbyPlayerComponent] 排队的切换与当前一致，跳过: ${queued.spriteId}',
               );
             } else {
-              debugPrint(
-                '[LobbyPlayerComponent] 处理排队的切换: ${queued.spriteId}',
-              );
+              debugPrint('[LobbyPlayerComponent] 处理排队的切换: ${queued.spriteId}');
               _triggerSpriteSwitch(queued.spriteId, queued.sprite);
             }
           }
@@ -1238,7 +1249,9 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       glowAlpha = 0.4 * _spriteOpacity;
     } else {
       // 关注用户：金黄色常驻描边
-      outlineColor = const Color(0xFFFFD740).withValues(alpha: 0.75 * _spriteOpacity);
+      outlineColor = const Color(
+        0xFFFFD740,
+      ).withValues(alpha: 0.75 * _spriteOpacity);
       outlineWidth = 1.5;
       glowAlpha = 0.3 * _spriteOpacity;
     }
@@ -1298,9 +1311,15 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       canvas.save();
       canvas.translate(baseX + offset.dx, baseY + offset.dy);
       if (walkAngle != 0) {
-        canvas.translate(_characterDisplayWidth / 2, _characterDisplayHeight / 2);
+        canvas.translate(
+          _characterDisplayWidth / 2,
+          _characterDisplayHeight / 2,
+        );
         canvas.rotate(walkAngle);
-        canvas.translate(-_characterDisplayWidth / 2, -_characterDisplayHeight / 2);
+        canvas.translate(
+          -_characterDisplayWidth / 2,
+          -_characterDisplayHeight / 2,
+        );
       }
       activeSprite.render(
         canvas,
@@ -1315,9 +1334,15 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       canvas.save();
       canvas.translate(baseX + offset.dx, baseY + offset.dy);
       if (walkAngle != 0) {
-        canvas.translate(_characterDisplayWidth / 2, _characterDisplayHeight / 2);
+        canvas.translate(
+          _characterDisplayWidth / 2,
+          _characterDisplayHeight / 2,
+        );
         canvas.rotate(walkAngle);
-        canvas.translate(-_characterDisplayWidth / 2, -_characterDisplayHeight / 2);
+        canvas.translate(
+          -_characterDisplayWidth / 2,
+          -_characterDisplayHeight / 2,
+        );
       }
       activeSprite.render(
         canvas,
@@ -1350,8 +1375,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       final nameColor = _isContextMenuTarget
           ? const Color(0xFF40C4FF) // 电光蓝（聚焦）
           : _isFollowed
-              ? const Color(0xFFFFD740) // 亮金黄色（关注）
-              : Colors.white;
+          ? const Color(0xFFFFD740) // 亮金黄色（关注）
+          : Colors.white;
 
       final pixelTextStyle = TextStyle(
         fontFamily: null,
@@ -1370,8 +1395,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       final strokeColor = _isContextMenuTarget
           ? const Color(0xFF01579B) // 深蓝描边（聚焦）
           : _isFollowed
-              ? const Color(0xFF8B4500) // 深橙棕色描边（关注）
-              : Colors.black.withValues(alpha: 0.7);
+          ? const Color(0xFF8B4500) // 深橙棕色描边（关注）
+          : Colors.black.withValues(alpha: 0.7);
 
       final strokeStyle = TextStyle(
         fontFamily: null,
@@ -1391,7 +1416,9 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     // 居中绘制，名字紧贴角色头顶上方
     final offsetX = (_spriteWidth - _cachedNamePainter!.width) / 2;
     final offsetY =
-        _characterSlotTopY - _cachedNamePainter!.height - _nameGapAboveCharacter;
+        _characterSlotTopY -
+        _cachedNamePainter!.height -
+        _nameGapAboveCharacter;
 
     _cachedNameStrokePainter!.paint(canvas, Offset(offsetX, offsetY));
     _cachedNamePainter!.paint(canvas, Offset(offsetX, offsetY));
@@ -1526,8 +1553,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       final statusColor = _isContextMenuTarget
           ? const Color(0xFF81D4FA) // 浅电光蓝（聚焦）
           : _isFollowed
-              ? const Color(0xFFFFD54F) // 浅金黄色（关注）
-              : const Color(0xFFE2E8F0);
+          ? const Color(0xFFFFD54F) // 浅金黄色（关注）
+          : const Color(0xFFE2E8F0);
 
       final textStyle = TextStyle(
         fontFamily: null,
@@ -1545,8 +1572,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       final strokeColor = _isContextMenuTarget
           ? const Color(0xFF01579B) // 深蓝描边（聚焦）
           : _isFollowed
-              ? const Color(0xFF6D4C00) // 深金棕色描边（关注）
-              : Colors.black.withValues(alpha: 0.6);
+          ? const Color(0xFF6D4C00) // 深金棕色描边（关注）
+          : Colors.black.withValues(alpha: 0.6);
 
       final strokeStyle = TextStyle(
         fontFamily: null,
@@ -1650,16 +1677,17 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
     // 顶部高光弧线
     final highlightPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.center,
-        colors: [
-          Colors.white.withValues(alpha: 0.5 * _bubbleOpacity),
-          Colors.white.withValues(alpha: 0.0),
-        ],
-      ).createShader(
-        Rect.fromLTWH(bubbleX, bubbleY, bubbleWidth, bubbleHeight * 0.45),
-      );
+      ..shader =
+          LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.center,
+            colors: [
+              Colors.white.withValues(alpha: 0.5 * _bubbleOpacity),
+              Colors.white.withValues(alpha: 0.0),
+            ],
+          ).createShader(
+            Rect.fromLTWH(bubbleX, bubbleY, bubbleWidth, bubbleHeight * 0.45),
+          );
     canvas.drawRRect(rrect, highlightPaint);
 
     // 边框（带角色主题色微光）

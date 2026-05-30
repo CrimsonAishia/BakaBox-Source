@@ -270,7 +270,7 @@ class SettingsState extends Equatable {
   // 路径错误信息
   final String? gamePathError;
   final String? steamPathError;
-  
+
   // 是否检测到已配置的路径失效
   final bool isPathInvalidated;
   final String? pathValidationMessage;
@@ -444,7 +444,8 @@ class SettingsState extends Equatable {
           updateLogNotificationEnabled ?? this.updateLogNotificationEnabled,
       appExitBehavior: appExitBehavior ?? this.appExitBehavior,
       serverSortMode: serverSortMode ?? this.serverSortMode,
-      broadcastNotificationType: broadcastNotificationType ?? this.broadcastNotificationType,
+      broadcastNotificationType:
+          broadcastNotificationType ?? this.broadcastNotificationType,
     );
   }
 

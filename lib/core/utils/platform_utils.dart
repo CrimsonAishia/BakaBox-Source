@@ -2,7 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'platform_info_stub.dart'
-    if (dart.library.io) 'platform_info_io.dart' as platform_info;
+    if (dart.library.io) 'platform_info_io.dart'
+    as platform_info;
 import 'store_detection_utils.dart';
 
 /// 平台工具类 - 提供全局的平台检测功能

@@ -119,9 +119,7 @@ class _ChangeRequestsViewState extends State<ChangeRequestsView> {
     return BlocBuilder<KeyBindingBloc, KeyBindingState>(
       builder: (context, state) {
         if (state.isLoadingChangeRequests && state.changeRequests.isEmpty) {
-          return const Center(
-            child: CircularProgressIndicator(strokeWidth: 2),
-          );
+          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
         }
 
         if (state.changeRequests.isEmpty) {
@@ -176,7 +174,11 @@ class _ChangeRequestCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isEdit = request.changeType == KeyConfigChangeType.edit;
 
-    final (statusColor, statusIcon, statusLabel) = switch (request.auditStatus) {
+    final (
+      statusColor,
+      statusIcon,
+      statusLabel,
+    ) = switch (request.auditStatus) {
       KeyConfigAuditStatus.pending => (
         const Color(0xFFF59E0B),
         MdiIcons.clockOutline,
@@ -217,17 +219,20 @@ class _ChangeRequestCard extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: (isEdit
-                            ? const Color(0xFF8b5cf6)
-                            : const Color(0xFFEF4444))
-                        .withValues(alpha: 0.1),
+                    color:
+                        (isEdit
+                                ? const Color(0xFF8b5cf6)
+                                : const Color(0xFFEF4444))
+                            .withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(5),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        isEdit ? MdiIcons.pencilOutline : MdiIcons.deleteOutline,
+                        isEdit
+                            ? MdiIcons.pencilOutline
+                            : MdiIcons.deleteOutline,
                         size: 12,
                         color: isEdit
                             ? const Color(0xFF8b5cf6)

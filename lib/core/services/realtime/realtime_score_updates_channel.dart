@@ -41,8 +41,7 @@ class RealtimeScoreUpdatesChannel {
   Map<String, ServerScore> get latestSnapshot =>
       Map.unmodifiable(_latestSnapshot);
 
-  ServerScore? scoreFor(String serverAddress) =>
-      _latestSnapshot[serverAddress];
+  ServerScore? scoreFor(String serverAddress) => _latestSnapshot[serverAddress];
 
   void subscribe() {
     _refCount += 1;

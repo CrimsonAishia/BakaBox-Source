@@ -174,19 +174,24 @@ class _LoginPromptView extends StatelessWidget {
                     onPressed: () => launchUrl(
                       Uri.parse('https://bbs.zombieden.cn/forum.php'),
                     ),
-                    icon: Icon(Icons.forum_outlined, size: 14,
-                        color: _getSecondaryTextColor(isDark)),
-                    label: Text('论坛入口',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: _getSecondaryTextColor(isDark),
-                        )),
+                    icon: Icon(
+                      Icons.forum_outlined,
+                      size: 14,
+                      color: _getSecondaryTextColor(isDark),
+                    ),
+                    label: Text(
+                      '论坛入口',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: _getSecondaryTextColor(isDark),
+                      ),
+                    ),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                          color: _getBorderColor(isDark)),
+                      side: BorderSide(color: _getBorderColor(isDark)),
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6)),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
                     ),
                   ),
                 ),
@@ -196,22 +201,26 @@ class _LoginPromptView extends StatelessWidget {
                 child: SizedBox(
                   height: 32,
                   child: OutlinedButton.icon(
-                    onPressed: () => launchUrl(
-                      Uri.parse('https://baka.aishia.cc'),
+                    onPressed: () =>
+                        launchUrl(Uri.parse('https://baka.aishia.cc')),
+                    icon: Icon(
+                      Icons.language,
+                      size: 14,
+                      color: _getSecondaryTextColor(isDark),
                     ),
-                    icon: Icon(Icons.language, size: 14,
-                        color: _getSecondaryTextColor(isDark)),
-                    label: Text('官方网站',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: _getSecondaryTextColor(isDark),
-                        )),
+                    label: Text(
+                      '官方网站',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: _getSecondaryTextColor(isDark),
+                      ),
+                    ),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                          color: _getBorderColor(isDark)),
+                      side: BorderSide(color: _getBorderColor(isDark)),
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6)),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
                     ),
                   ),
                 ),
@@ -331,18 +340,24 @@ class _LoggedInView extends StatelessWidget {
                       onPressed: () => launchUrl(
                         Uri.parse('https://bbs.zombieden.cn/forum.php'),
                       ),
-                      icon: Icon(Icons.forum_outlined, size: 14,
-                          color: _getSecondaryTextColor(isDark)),
-                      label: Text('论坛入口',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: _getSecondaryTextColor(isDark),
-                          )),
+                      icon: Icon(
+                        Icons.forum_outlined,
+                        size: 14,
+                        color: _getSecondaryTextColor(isDark),
+                      ),
+                      label: Text(
+                        '论坛入口',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: _getSecondaryTextColor(isDark),
+                        ),
+                      ),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: _getBorderColor(isDark)),
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6)),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
                       ),
                     ),
                   ),
@@ -352,21 +367,26 @@ class _LoggedInView extends StatelessWidget {
                   child: SizedBox(
                     height: 32,
                     child: OutlinedButton.icon(
-                      onPressed: () => launchUrl(
-                        Uri.parse('https://baka.aishia.cc'),
+                      onPressed: () =>
+                          launchUrl(Uri.parse('https://baka.aishia.cc')),
+                      icon: Icon(
+                        Icons.language,
+                        size: 14,
+                        color: _getSecondaryTextColor(isDark),
                       ),
-                      icon: Icon(Icons.language, size: 14,
-                          color: _getSecondaryTextColor(isDark)),
-                      label: Text('官方网站',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: _getSecondaryTextColor(isDark),
-                          )),
+                      label: Text(
+                        '官方网站',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: _getSecondaryTextColor(isDark),
+                        ),
+                      ),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: _getBorderColor(isDark)),
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6)),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
                       ),
                     ),
                   ),

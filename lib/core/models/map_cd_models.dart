@@ -48,15 +48,15 @@ class MapCdInfo extends Equatable {
 
   @override
   List<Object?> get props => [
-        rank,
-        mapName,
-        currentCd,
-        currentNominateCd,
-        dayRunCount,
-        weekRunCount,
-        monthRunCount,
-        lastRunTime,
-      ];
+    rank,
+    mapName,
+    currentCd,
+    currentNominateCd,
+    dayRunCount,
+    weekRunCount,
+    monthRunCount,
+    lastRunTime,
+  ];
 }
 
 /// 地图CD响应

@@ -45,8 +45,9 @@ class _BroadcastDialogMobileState extends State<BroadcastDialogMobile> {
     final isDark = theme.brightness == Brightness.dark;
 
     final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
-    final secondaryTextColor =
-        isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF64748B);
+    final secondaryTextColor = isDark
+        ? Colors.white.withValues(alpha: 0.6)
+        : const Color(0xFF64748B);
     final inputBg = isDark
         ? Colors.white.withValues(alpha: 0.05)
         : const Color(0xFFF1F5F9);
@@ -149,19 +150,13 @@ class _BroadcastDialogMobileState extends State<BroadcastDialogMobile> {
                     maxLines: 3,
                     minLines: 2,
                     enabled: !isInCooldown,
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 15,
-                    ),
+                    style: TextStyle(color: textColor, fontSize: 15),
                     decoration: InputDecoration(
                       hintText: isInCooldown ? '冷却中...' : '输入广播内容...',
                       hintStyle: TextStyle(color: hintColor),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.all(14),
-                      counterStyle: TextStyle(
-                        color: hintColor,
-                        fontSize: 11,
-                      ),
+                      counterStyle: TextStyle(color: hintColor, fontSize: 11),
                     ),
                     onChanged: (_) => setState(() {}),
                   ),

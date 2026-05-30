@@ -43,8 +43,8 @@ class _ConfigCardState extends State<ConfigCard> {
       borderColor = widget.config.isPending
           ? const Color(0xFFF59E0B).withValues(alpha: 0.4)
           : widget.config.hasPendingChange
-              ? const Color(0xFFF59E0B).withValues(alpha: 0.4)
-              : const Color(0xFFEF4444).withValues(alpha: 0.4);
+          ? const Color(0xFFF59E0B).withValues(alpha: 0.4)
+          : const Color(0xFFEF4444).withValues(alpha: 0.4);
     } else if (widget.selected) {
       borderColor = const Color(0xFF0080FF);
     } else if (_hovered) {
@@ -336,7 +336,11 @@ class _ConfigCardState extends State<ConfigCard> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(MdiIcons.clockOutline, size: 12, color: const Color(0xFFF59E0B)),
+            Icon(
+              MdiIcons.clockOutline,
+              size: 12,
+              color: const Color(0xFFF59E0B),
+            ),
             const SizedBox(width: 6),
             const Text(
               '变更审核中',

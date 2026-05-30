@@ -26,13 +26,17 @@ class LobbyFloatingActions extends StatelessWidget {
           isDisabled: state.isAnonymous || state.broadcastCooldownSeconds > 0,
           showDisabledStrike: true,
           onTap: !state.isAnonymous && state.broadcastCooldownSeconds <= 0
-              ? () => context.read<LobbyBloc>().add(const LobbyBroadcastDialogToggled())
+              ? () => context.read<LobbyBloc>().add(
+                  const LobbyBroadcastDialogToggled(),
+                )
               : null,
         ),
         const SizedBox(height: 12),
         LobbyActionButton(
           icon: MdiIcons.accountGroup,
-          badge: state.serverOnlineCount > 999 ? '999+' : '${state.serverOnlineCount}',
+          badge: state.serverOnlineCount > 999
+              ? '999+'
+              : '${state.serverOnlineCount}',
           isActive: state.isPlayersPanelOpen,
           onTap: () =>
               context.read<LobbyBloc>().add(const LobbyPlayersPanelToggled()),
@@ -84,7 +88,9 @@ class _LobbyActionButtonState extends State<LobbyActionButton> {
     final buttonWidget = MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      cursor: widget.isDisabled ? SystemMouseCursors.forbidden : SystemMouseCursors.click,
+      cursor: widget.isDisabled
+          ? SystemMouseCursors.forbidden
+          : SystemMouseCursors.click,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -97,19 +103,19 @@ class _LobbyActionButtonState extends State<LobbyActionButton> {
               color: widget.isDisabled
                   ? Colors.black.withValues(alpha: 0.24)
                   : (widget.isActive
-                      ? Colors.white.withValues(alpha: 0.18)
-                      : (isHovered
-                          ? Colors.white.withValues(alpha: 0.12)
-                          : Colors.black.withValues(alpha: 0.48))),
+                        ? Colors.white.withValues(alpha: 0.18)
+                        : (isHovered
+                              ? Colors.white.withValues(alpha: 0.12)
+                              : Colors.black.withValues(alpha: 0.48))),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: widget.isDisabled
                     ? Colors.white.withValues(alpha: 0.04)
                     : (widget.isActive
-                        ? const Color(0xFF38BDF8).withValues(alpha: 0.6)
-                        : (isHovered
-                            ? Colors.white.withValues(alpha: 0.2)
-                            : Colors.white.withValues(alpha: 0.08))),
+                          ? const Color(0xFF38BDF8).withValues(alpha: 0.6)
+                          : (isHovered
+                                ? Colors.white.withValues(alpha: 0.2)
+                                : Colors.white.withValues(alpha: 0.08))),
               ),
               boxShadow: isHovered && !widget.isDisabled
                   ? [

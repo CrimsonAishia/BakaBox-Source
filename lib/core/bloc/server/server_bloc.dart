@@ -2413,35 +2413,6 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     }
   }
 
-  /// 用户确认应用待更新的分类列表
-  void _onApplyPendingCategories(
-    ServerApplyPendingCategories event,
-    Emitter<ServerState> emit,
-  ) {
-    final pending = state.pendingCategories;
-    if (pending == null || pending.isEmpty) return;
-
-    emit(
-      state.copyWith(serverCategories: pending, clearPendingCategories: true),
-    );
-
-    LogService.i('已应用新分类列表：${pending.length} 个分类');
-
-    // 如果当前选中的分类在新列表中仍然存在，触发刷新；否则清除选中
-    final selected = state.selectedCategory;
-    if (selected != null) {
-      final stillExists = pending.any((c) => c.modelName == selected.modelName);
-      if (stillExists) {
-        final updated = pending.firstWhere(
-          (c) => c.modelName == selected.modelName,
-        );
-        add(ServerSelectCategory(updated, forceRefresh: true));
-      } else {
-        add(ServerClearCategory());
-      }
-    }
-  }
-
   /// 用户忽略待更新的分类列表
   void _onDismissPendingCategories(
     ServerDismissPendingCategories event,

@@ -14,10 +14,7 @@ import '../widgets/web_mobile_server_list_item.dart';
 class WebServerListPage extends StatefulWidget {
   final WebServerListData? initialData;
 
-  const WebServerListPage({
-    super.key,
-    this.initialData,
-  });
+  const WebServerListPage({super.key, this.initialData});
 
   @override
   State<WebServerListPage> createState() => _WebServerListPageState();
@@ -44,7 +41,8 @@ class _WebServerListPageState extends State<WebServerListPage> {
   void initState() {
     super.initState();
     _data = widget.initialData ?? WebServerListData.empty();
-    _hasReceivedFirstSnapshot = widget.initialData != null && widget.initialData!.categories.isNotEmpty;
+    _hasReceivedFirstSnapshot =
+        widget.initialData != null && widget.initialData!.categories.isNotEmpty;
     _selectedCategories = _data.categories.map((e) => e.name).toSet();
     _wsAdapter = WebServerListWsAdapter();
     _wsSubscription = _wsAdapter.events.listen(_handleWsEvent);
@@ -57,7 +55,8 @@ class _WebServerListPageState extends State<WebServerListPage> {
     super.didUpdateWidget(oldWidget);
 
     final incomingData = widget.initialData;
-    if (incomingData != null && !identical(oldWidget.initialData, incomingData)) {
+    if (incomingData != null &&
+        !identical(oldWidget.initialData, incomingData)) {
       _data = incomingData;
       _syncSelectedCategories();
     }
@@ -133,7 +132,9 @@ class _WebServerListPageState extends State<WebServerListPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF3F4F6),
+      backgroundColor: isDark
+          ? const Color(0xFF0F172A)
+          : const Color(0xFFF3F4F6),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -224,8 +225,12 @@ class _WebServerListPageState extends State<WebServerListPage> {
   }
 
   Widget _buildConnectionBanner(bool isDark) {
-    final message = _connectionMessage ?? (_isConnected ? 'WebSocket 已连接' : '正在连接 WebSocket');
-    final accentColor = _isConnected ? const Color(0xFF10B981) : const Color(0xFFF59E0B);
+    final message =
+        _connectionMessage ??
+        (_isConnected ? 'WebSocket 已连接' : '正在连接 WebSocket');
+    final accentColor = _isConnected
+        ? const Color(0xFF10B981)
+        : const Color(0xFFF59E0B);
 
     return Container(
       width: double.infinity,
@@ -234,7 +239,9 @@ class _WebServerListPageState extends State<WebServerListPage> {
       child: Row(
         children: [
           Icon(
-            _isConnected ? Icons.wifi_rounded : Icons.wifi_tethering_error_rounded,
+            _isConnected
+                ? Icons.wifi_rounded
+                : Icons.wifi_tethering_error_rounded,
             size: 16,
             color: accentColor,
           ),
@@ -267,7 +274,9 @@ class _WebServerListPageState extends State<WebServerListPage> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: _data.categories.isEmpty ? null : () => _showFilterDialog(isDark),
+          onTap: _data.categories.isEmpty
+              ? null
+              : () => _showFilterDialog(isDark),
           borderRadius: BorderRadius.circular(10),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -310,7 +319,9 @@ class _WebServerListPageState extends State<WebServerListPage> {
                       style: TextStyle(
                         fontSize: 10,
                         height: 1.1,
-                        color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                        color: isDark
+                            ? Colors.white38
+                            : const Color(0xFF9CA3AF),
                       ),
                     ),
                   ],
@@ -327,7 +338,11 @@ class _WebServerListPageState extends State<WebServerListPage> {
                   ),
                 ],
                 const SizedBox(width: 4),
-                Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: accentColor),
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 16,
+                  color: accentColor,
+                ),
               ],
             ),
           ),
@@ -404,7 +419,9 @@ class _WebServerListPageState extends State<WebServerListPage> {
               ),
             ),
             child: Icon(
-              _isCompactMode ? Icons.grid_view_rounded : Icons.view_list_rounded,
+              _isCompactMode
+                  ? Icons.grid_view_rounded
+                  : Icons.view_list_rounded,
               size: 20,
               color: _isCompactMode
                   ? const Color(0xFF3B82F6)
@@ -442,7 +459,8 @@ class _WebServerListPageState extends State<WebServerListPage> {
             void toggleAll() {
               setState(() {
                 final allNames = _data.categories.map((e) => e.name).toSet();
-                if (_selectedCategories.length == allNames.length && allNames.isNotEmpty) {
+                if (_selectedCategories.length == allNames.length &&
+                    allNames.isNotEmpty) {
                   _selectedCategories = {allNames.first};
                 } else {
                   _selectedCategories = allNames;
@@ -460,7 +478,9 @@ class _WebServerListPageState extends State<WebServerListPage> {
                   color: isDark ? const Color(0xFF1E293B) : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFE5E7EB),
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -492,7 +512,9 @@ class _WebServerListPageState extends State<WebServerListPage> {
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.white : const Color(0xFF1F2937),
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF1F2937),
                                 ),
                               ),
                               Text(
@@ -539,7 +561,9 @@ class _WebServerListPageState extends State<WebServerListPage> {
                                 child: Icon(
                                   Icons.close_rounded,
                                   size: 18,
-                                  color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                                  color: isDark
+                                      ? Colors.white38
+                                      : const Color(0xFF9CA3AF),
                                 ),
                               ),
                             ),
@@ -549,7 +573,9 @@ class _WebServerListPageState extends State<WebServerListPage> {
                     ),
                     Divider(
                       height: 1,
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE5E7EB),
                     ),
                     Flexible(
                       child: ListView.builder(
@@ -558,7 +584,9 @@ class _WebServerListPageState extends State<WebServerListPage> {
                         itemCount: _data.categories.length,
                         itemBuilder: (_, index) {
                           final category = _data.categories[index];
-                          final isSelected = _selectedCategories.contains(category.name);
+                          final isSelected = _selectedCategories.contains(
+                            category.name,
+                          );
                           final activeColor = const Color(0xFF3B82F6);
 
                           return InkWell(
@@ -575,7 +603,9 @@ class _WebServerListPageState extends State<WebServerListPage> {
                                     width: 20,
                                     height: 20,
                                     decoration: BoxDecoration(
-                                      color: isSelected ? activeColor : Colors.transparent,
+                                      color: isSelected
+                                          ? activeColor
+                                          : Colors.transparent,
                                       borderRadius: BorderRadius.circular(5),
                                       border: Border.all(
                                         color: isSelected
@@ -644,7 +674,11 @@ class _WebServerListPageState extends State<WebServerListPage> {
     if (url == null || url.isEmpty) return url;
     final uri = Uri.tryParse(url);
     if (uri == null) return url;
-    return uri.replace(query: '', fragment: '').toString().replaceAll('?', '').replaceAll('#', '');
+    return uri
+        .replace(query: '', fragment: '')
+        .toString()
+        .replaceAll('?', '')
+        .replaceAll('#', '');
   }
 
   /// 获取页面级缓存的地图背景 Widget
@@ -791,7 +825,9 @@ class _WebServerListPageState extends State<WebServerListPage> {
         const spacing = 12.0;
         final availableWidth = constraints.maxWidth;
         final columns = availableWidth.isFinite
-            ? ((availableWidth + spacing) / (maxCardWidth + spacing)).floor().clamp(1, servers.length)
+            ? ((availableWidth + spacing) / (maxCardWidth + spacing))
+                  .floor()
+                  .clamp(1, servers.length)
             : 1;
         final contentWidth = columns * maxCardWidth + (columns - 1) * spacing;
 
@@ -1183,7 +1219,11 @@ class _WebServerListPageState extends State<WebServerListPage> {
     );
   }
 
-  Widget _buildCompactTableRow(bool isDark, WebServerItem server, {required bool isLast}) {
+  Widget _buildCompactTableRow(
+    bool isDark,
+    WebServerItem server, {
+    required bool isLast,
+  }) {
     final isOffline = server.isOffline;
     final isLoading = server.isLoading;
     final players = server.players ?? 0;
@@ -1279,7 +1319,12 @@ class _WebServerListPageState extends State<WebServerListPage> {
             const SizedBox(width: 8),
             SizedBox(
               width: 70,
-              child: _buildCompactPlayerCount(isDark, players, maxPlayers, isOffline),
+              child: _buildCompactPlayerCount(
+                isDark,
+                players,
+                maxPlayers,
+                isOffline,
+              ),
             ),
             SizedBox(
               width: 50,
@@ -1298,10 +1343,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
               width: 70,
               child: _buildCompactScoreColumn(isDark, server),
             ),
-            SizedBox(
-              width: 100,
-              child: _buildCompactActionButtons(server),
-            ),
+            SizedBox(width: 100, child: _buildCompactActionButtons(server)),
           ],
         ),
       ),
@@ -1585,11 +1627,13 @@ class _WebServerListPageState extends State<WebServerListPage> {
         else
           Column(
             children: item.servers
-                .map((server) => WebMobileServerListItem(
-                      key: ValueKey('mobile_${server.id}'),
-                      server: server,
-                      mapBackground: getMapBackground(server),
-                    ))
+                .map(
+                  (server) => WebMobileServerListItem(
+                    key: ValueKey('mobile_${server.id}'),
+                    server: server,
+                    mapBackground: getMapBackground(server),
+                  ),
+                )
                 .toList(),
           ),
         const SizedBox(height: 12),
@@ -1655,6 +1699,7 @@ class _WebCategoryServers {
 
 class _WebImmersiveServerCard extends StatefulWidget {
   final WebServerItem server;
+
   /// 由父级页面提供的缓存地图背景 Widget
   final Widget mapBackground;
 
@@ -1665,7 +1710,8 @@ class _WebImmersiveServerCard extends StatefulWidget {
   });
 
   @override
-  State<_WebImmersiveServerCard> createState() => _WebImmersiveServerCardState();
+  State<_WebImmersiveServerCard> createState() =>
+      _WebImmersiveServerCardState();
 }
 
 class _WebImmersiveServerCardState extends State<_WebImmersiveServerCard> {
@@ -1711,7 +1757,8 @@ class _WebImmersiveServerCardState extends State<_WebImmersiveServerCard> {
     final players = server.players ?? 0;
     final maxPlayers = server.maxPlayers ?? 0;
     final showRuntime = server.mapName != null && !server.isCustom;
-    final hasValidScore = server.score != null &&
+    final hasValidScore =
+        server.score != null &&
         (server.score!.ctScore > 0 || server.score!.tScore > 0);
 
     // 紧凑间距
@@ -1743,9 +1790,7 @@ class _WebImmersiveServerCardState extends State<_WebImmersiveServerCard> {
           borderRadius: BorderRadius.circular(6),
           child: Stack(
             children: [
-              Positioned.fill(
-                child: widget.mapBackground,
-              ),
+              Positioned.fill(child: widget.mapBackground),
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
@@ -1763,7 +1808,12 @@ class _WebImmersiveServerCardState extends State<_WebImmersiveServerCard> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 10),
+                padding: const EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 12,
+                  bottom: 10,
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1788,8 +1838,14 @@ class _WebImmersiveServerCardState extends State<_WebImmersiveServerCard> {
                                     offset: Offset(0, 1),
                                   ),
                                   Shadow(color: Colors.black, blurRadius: 8),
-                                  Shadow(color: Colors.black, offset: Offset(1, 1)),
-                                  Shadow(color: Colors.black, offset: Offset(-1, -1)),
+                                  Shadow(
+                                    color: Colors.black,
+                                    offset: Offset(1, 1),
+                                  ),
+                                  Shadow(
+                                    color: Colors.black,
+                                    offset: Offset(-1, -1),
+                                  ),
                                 ],
                               ),
                               maxLines: 1,
@@ -1818,7 +1874,10 @@ class _WebImmersiveServerCardState extends State<_WebImmersiveServerCard> {
                                           blurRadius: 2,
                                           offset: Offset(0, 1),
                                         ),
-                                        Shadow(color: Colors.black, blurRadius: 6),
+                                        Shadow(
+                                          color: Colors.black,
+                                          blurRadius: 6,
+                                        ),
                                       ],
                                     ),
                                     maxLines: 1,
@@ -1849,7 +1908,10 @@ class _WebImmersiveServerCardState extends State<_WebImmersiveServerCard> {
                                         blurRadius: 2,
                                         offset: Offset(0, 1),
                                       ),
-                                      Shadow(color: Colors.black, blurRadius: 6),
+                                      Shadow(
+                                        color: Colors.black,
+                                        blurRadius: 6,
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -1857,8 +1919,7 @@ class _WebImmersiveServerCardState extends State<_WebImmersiveServerCard> {
                             ),
                             const SizedBox(height: verticalSpacing),
                             // 地图标签行（hover 时隐藏）
-                            if (!_isHovered)
-                              _WebMapTagRow(tags: server.tags),
+                            if (!_isHovered) _WebMapTagRow(tags: server.tags),
                           ],
                         ),
                       ),
@@ -1867,7 +1928,10 @@ class _WebImmersiveServerCardState extends State<_WebImmersiveServerCard> {
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _PlayerCountBadge(players: players, maxPlayers: maxPlayers),
+                        _PlayerCountBadge(
+                          players: players,
+                          maxPlayers: maxPlayers,
+                        ),
                         if (showRuntime) ...[
                           const SizedBox(height: 6),
                           _RuntimeBadge(
@@ -1883,11 +1947,7 @@ class _WebImmersiveServerCardState extends State<_WebImmersiveServerCard> {
                   ],
                 ),
               ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: _StatusDot(server: server),
-              ),
+              Positioned(top: 8, right: 8, child: _StatusDot(server: server)),
               // Hover 时的毛玻璃操作层
               _buildHoverActionOverlay(),
             ],
@@ -2105,10 +2165,7 @@ class _WebTagChip extends StatelessWidget {
             stops: const [0.0, 0.5, 1.0],
           ),
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: tagColor.withValues(alpha: 0.7),
-            width: 1,
-          ),
+          border: Border.all(color: tagColor.withValues(alpha: 0.7), width: 1),
           boxShadow: [
             BoxShadow(
               color: tagColor.withValues(alpha: 0.3),
@@ -2289,7 +2346,11 @@ class _RuntimeBadge extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(MdiIcons.clockOutline, size: 12, color: const Color(0xFF6B7280)),
+              Icon(
+                MdiIcons.clockOutline,
+                size: 12,
+                color: const Color(0xFF6B7280),
+              ),
               const SizedBox(width: 4),
               Text(
                 _formatRuntimeMinutes(runtimeMinutes),
@@ -2452,10 +2513,7 @@ class _StatusDot extends StatelessWidget {
         color: color,
         shape: BoxShape.circle,
         boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.6),
-            blurRadius: 8,
-          ),
+          BoxShadow(color: color.withValues(alpha: 0.6), blurRadius: 8),
         ],
       ),
     );
@@ -2520,4 +2578,3 @@ class _WebServerCardSkeletonState extends State<_WebServerCardSkeleton>
     );
   }
 }
-

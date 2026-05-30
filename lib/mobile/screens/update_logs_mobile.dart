@@ -49,13 +49,20 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
 
   void _onScroll() {
     final shouldShow = _scrollController.offset > 200;
-    if (_showScrollToTop != shouldShow) setState(() => _showScrollToTop = shouldShow);
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8) {
+    if (_showScrollToTop != shouldShow) {
+      setState(() => _showScrollToTop = shouldShow);
+    }
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent * 0.8) {
       context.read<UpdateLogBloc>().add(UpdateLogLoadMore());
     }
   }
 
-  void _scrollToTop() => _scrollController.animateTo(0, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+  void _scrollToTop() => _scrollController.animateTo(
+    0,
+    duration: const Duration(milliseconds: 500),
+    curve: Curves.easeInOut,
+  );
 
   void _performSearch(String query) {
     _debounceTimer?.cancel();
@@ -84,14 +91,20 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.red.withValues(alpha: 0.6)),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.red.withValues(alpha: 0.6),
+                  ),
                   const SizedBox(height: 16),
                   Text(state.error!, textAlign: TextAlign.center),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
                       context.read<UpdateLogBloc>().add(UpdateLogClearError());
-                      context.read<UpdateLogBloc>().add(UpdateLogFetch(_searchController.text));
+                      context.read<UpdateLogBloc>().add(
+                        UpdateLogFetch(_searchController.text),
+                      );
                     },
                     child: const Text('重试'),
                   ),
@@ -100,7 +113,9 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
             );
           }
           return RefreshIndicator(
-            onRefresh: () async => context.read<UpdateLogBloc>().add(UpdateLogFetch(_searchController.text)),
+            onRefresh: () async => context.read<UpdateLogBloc>().add(
+              UpdateLogFetch(_searchController.text),
+            ),
             child: CustomScrollView(
               controller: _scrollController,
               slivers: [
@@ -113,12 +128,15 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
       ),
       floatingActionButton: _showScrollToTop
           ? FloatingActionButton(
-              onPressed: _scrollToTop,
-              backgroundColor: const Color(0xFFEF4444),
-              foregroundColor: Colors.white,
-              elevation: 6,
-              child: const Icon(Icons.keyboard_arrow_up_rounded, size: 28),
-            ).animate().fadeIn(duration: 200.ms).scale(begin: const Offset(0.8, 0.8), duration: 200.ms)
+                  onPressed: _scrollToTop,
+                  backgroundColor: const Color(0xFFEF4444),
+                  foregroundColor: Colors.white,
+                  elevation: 6,
+                  child: const Icon(Icons.keyboard_arrow_up_rounded, size: 28),
+                )
+                .animate()
+                .fadeIn(duration: 200.ms)
+                .scale(begin: const Offset(0.8, 0.8), duration: 200.ms)
           : null,
     );
   }
@@ -146,10 +164,7 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
       toolbarHeight: 80,
       leading: IconButton(
         onPressed: () => context.pop(),
-        icon: Icon(
-          Icons.arrow_back,
-          color: colorScheme.onSurface,
-        ),
+        icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
       ),
       flexibleSpace: Container(
         decoration: BoxDecoration(
@@ -204,7 +219,7 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
 
   Widget _buildAppBarIcon(bool isDark) {
     final primaryColor = const Color(0xFFEF4444);
-    
+
     return Container(
       width: 48,
       height: 48,
@@ -239,14 +254,16 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
         else if (state.logs.isEmpty)
           _buildEmptyState(context)
         else
-          ...state.logs.asMap().entries.map((entry) => Padding(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
-                child: UpdateLogItem(
-                  log: entry.value,
-                  isLatest: entry.key == 0 && _searchController.text.isEmpty,
-                  keyword: _searchController.text,
-                ),
-              )),
+          ...state.logs.asMap().entries.map(
+            (entry) => Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+              child: UpdateLogItem(
+                log: entry.value,
+                isLatest: entry.key == 0 && _searchController.text.isEmpty,
+                keyword: _searchController.text,
+              ),
+            ),
+          ),
         if (state.logs.isNotEmpty && state.hasMore) _buildLoadMore(state),
         const SizedBox(height: 20),
       ]),
@@ -269,7 +286,9 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.08),
+              color: Theme.of(
+                context,
+              ).colorScheme.shadow.withValues(alpha: 0.08),
               offset: const Offset(0, 2),
               blurRadius: 8,
             ),
@@ -281,33 +300,54 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
         ),
         child: TextField(
           controller: _searchController,
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 14,
+          ),
           decoration: InputDecoration(
             hintText: '搜索更新内容...',
-            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14),
+            hintStyle: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 14,
+            ),
             prefixIcon: Container(
               margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.search_rounded, color: Theme.of(context).colorScheme.primary, size: 20),
+              child: Icon(
+                Icons.search_rounded,
+                color: Theme.of(context).colorScheme.primary,
+                size: 20,
+              ),
             ),
             suffixIcon: _searchController.text.isNotEmpty
                 ? Container(
                     margin: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: IconButton(
-                      icon: Icon(Icons.clear_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 18),
+                      icon: Icon(
+                        Icons.clear_rounded,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        size: 18,
+                      ),
                       onPressed: _clearSearch,
                     ),
                   )
                 : null,
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 16,
+            ),
           ),
           onChanged: (value) {
             setState(() {});
@@ -333,7 +373,11 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
                 color: const Color(0xFFEF4444).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(60),
               ),
-              child: Icon(Icons.article_outlined, size: 64, color: const Color(0xFFEF4444).withValues(alpha: 0.6)),
+              child: Icon(
+                Icons.article_outlined,
+                size: 64,
+                color: const Color(0xFFEF4444).withValues(alpha: 0.6),
+              ),
             ).animate().fadeIn(duration: 300.ms),
             const SizedBox(height: 24),
             Text(
@@ -361,8 +405,13 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFEF4444),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ).animate().fadeIn(duration: 300.ms, delay: 200.ms),
             ],
@@ -396,13 +445,20 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
                     const SizedBox(
                       width: 24,
                       height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFEF4444))),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color(0xFFEF4444),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Text(
                       '正在加载更多...',
                       style: TextStyle(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
                         fontSize: 14,
                       ),
                     ),
@@ -431,26 +487,41 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
               alignment: Alignment.center,
               children: [
                 Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
-                    color: const Color(0xFFEF4444).withValues(alpha: 0.2),
-                  ),
-                ).animate(onPlay: (controller) => controller.repeat()).scale(duration: 1000.ms).fadeIn(duration: 500.ms),
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+                      ),
+                    )
+                    .animate(onPlay: (controller) => controller.repeat())
+                    .scale(duration: 1000.ms)
+                    .fadeIn(duration: 500.ms),
                 const SizedBox(
                   width: 40,
                   height: 40,
-                  child: CircularProgressIndicator(strokeWidth: 3, valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFEF4444))),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFFEF4444),
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 32),
           Text(
-            '正在获取更新日志',
-            style: theme.textTheme.titleMedium?.copyWith(color: const Color(0xFFEF4444), fontWeight: FontWeight.w500),
-          ).animate(onPlay: (controller) => controller.repeat(reverse: true)).fadeIn(duration: 800.ms).then(delay: 200.ms).fadeOut(duration: 800.ms),
+                '正在获取更新日志',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: const Color(0xFFEF4444),
+                  fontWeight: FontWeight.w500,
+                ),
+              )
+              .animate(onPlay: (controller) => controller.repeat(reverse: true))
+              .fadeIn(duration: 800.ms)
+              .then(delay: 200.ms)
+              .fadeOut(duration: 800.ms),
           const SizedBox(height: 8),
           Text(
             '请稍候...',

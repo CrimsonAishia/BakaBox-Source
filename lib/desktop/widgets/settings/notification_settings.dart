@@ -50,7 +50,9 @@ class NotificationSettings extends StatelessWidget {
         SettingsItem(
           label: '收到广播时的通知方式',
           description: '收到全服广播时，右下角浮动卡片始终显示。此处控制是否额外弹出独立通知窗口或系统通知。',
-          control: _BroadcastNotificationTypeSelector(settingsState: settingsState),
+          control: _BroadcastNotificationTypeSelector(
+            settingsState: settingsState,
+          ),
           alignTop: true,
         ),
       ],
@@ -532,7 +534,9 @@ class _BroadcastNotificationTypeSelector extends StatelessWidget {
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+                            color: const Color(
+                              0xFF0080FF,
+                            ).withValues(alpha: 0.15),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -554,8 +558,9 @@ class _BroadcastNotificationTypeSelector extends StatelessWidget {
                       type.displayName,
                       style: TextStyle(
                         fontSize: 13,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w500,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w500,
                         color: isSelected
                             ? const Color(0xFF0080FF)
                             : (isDark ? Colors.white : const Color(0xFF374151)),
@@ -672,17 +677,13 @@ class _BroadcastNotificationTestButtonState
                   height: 14,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: isDark
-                        ? Colors.white54
-                        : const Color(0xFF6366F1),
+                    color: isDark ? Colors.white54 : const Color(0xFF6366F1),
                   ),
                 )
               : const Icon(Icons.notifications_active_outlined, size: 16),
           label: Text(_isSending ? '已发送' : '发送测试通知'),
           style: OutlinedButton.styleFrom(
-            foregroundColor: isDark
-                ? Colors.white70
-                : const Color(0xFF6366F1),
+            foregroundColor: isDark ? Colors.white70 : const Color(0xFF6366F1),
             side: BorderSide(
               color: isDark
                   ? Colors.white.withValues(alpha: 0.15)

@@ -50,11 +50,7 @@ class LobbyKickedOverlay extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                _icon,
-                size: 56,
-                color: _iconColor,
-              ),
+              Icon(_icon, size: 56, color: _iconColor),
               const SizedBox(height: 16),
               Text(
                 _title,

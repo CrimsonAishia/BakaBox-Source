@@ -18,10 +18,10 @@ class NakamaConfig {
 
   /// 从环境配置（EnvConfig）读取 Nakama 服务器配置
   factory NakamaConfig.fromEnv() => NakamaConfig(
-        host: EnvConfig.nakamaHost,
-        port: EnvConfig.nakamaPort,
-        grpcPort: EnvConfig.nakamaGrpcPort,
-        serverKey: EnvConfig.nakamaServerKey,
-        ssl: EnvConfig.nakamaSsl,
-      );
+    host: EnvConfig.nakamaHost,
+    port: EnvConfig.nakamaPort,
+    grpcPort: EnvConfig.nakamaGrpcPort,
+    serverKey: EnvConfig.nakamaServerKey,
+    ssl: EnvConfig.nakamaSsl,
+  );
 }

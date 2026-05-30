@@ -81,10 +81,7 @@ class _NotificationsMobileState extends State<NotificationsMobile>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
-          _AnnouncementTab(),
-          _NotificationTab(),
-        ],
+        children: [_AnnouncementTab(), _NotificationTab()],
       ),
     );
   }
@@ -108,7 +105,6 @@ class _NotificationsMobileState extends State<NotificationsMobile>
   }
 }
 
-
 /// 公告 Tab
 class _AnnouncementTab extends StatelessWidget {
   @override
@@ -122,7 +118,8 @@ class _AnnouncementTab extends StatelessWidget {
         if (state.error != null && state.announcements.isEmpty) {
           return _ErrorState(
             error: state.error!,
-            onRetry: () => context.read<AnnouncementBloc>().add(AnnouncementFetch()),
+            onRetry: () =>
+                context.read<AnnouncementBloc>().add(AnnouncementFetch()),
           );
         }
 
@@ -172,170 +169,209 @@ class _AnnouncementItem extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final content = announcement.content;
 
-    final accentColor = announcement.isSticky ? colorScheme.error : colorScheme.primary;
+    final accentColor = announcement.isSticky
+        ? colorScheme.error
+        : colorScheme.primary;
 
     return GestureDetector(
-      onTap: () {
-        if (!isRead) {
-          context.read<AnnouncementBloc>().add(AnnouncementMarkAsRead(announcement.id));
-        }
-        // 获取详情并增加阅读量
-        context.read<AnnouncementBloc>().add(AnnouncementFetchDetail(announcement.id));
-        _showDetailSheet(
-          context: context,
-          icon: announcement.isSticky ? MdiIcons.pin : MdiIcons.bullhornOutline,
-          iconColor: accentColor,
-          title: announcement.title,
-          subtitle: _formatTimestamp(announcement.createdAt),
-          content: announcement.content,
-          badge: announcement.isSticky ? '置顶' : null,
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            if (!isRead) {
+              context.read<AnnouncementBloc>().add(
+                AnnouncementMarkAsRead(announcement.id),
+              );
+            }
+            // 获取详情并增加阅读量
+            context.read<AnnouncementBloc>().add(
+              AnnouncementFetchDetail(announcement.id),
+            );
+            _showDetailSheet(
+              context: context,
+              icon: announcement.isSticky
+                  ? MdiIcons.pin
+                  : MdiIcons.bullhornOutline,
+              iconColor: accentColor,
+              title: announcement.title,
+              subtitle: _formatTimestamp(announcement.createdAt),
+              content: announcement.content,
+              badge: announcement.isSticky ? '置顶' : null,
+            );
+          },
           child: Container(
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
+            margin: const EdgeInsets.only(bottom: 12),
+            child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: !isRead
-                    ? accentColor.withValues(alpha: 0.3)
-                    : colorScheme.outlineVariant.withValues(alpha: 0.3),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.shadow.withValues(alpha: 0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (!isRead)
-                  Container(
-                    height: 3,
-                    color: accentColor,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: !isRead
+                        ? accentColor.withValues(alpha: 0.3)
+                        : colorScheme.outlineVariant.withValues(alpha: 0.3),
+                    width: 1,
                   ),
-                Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: accentColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          announcement.isSticky ? MdiIcons.pin : MdiIcons.bullhornOutline,
-                          color: accentColor,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                if (announcement.isSticky)
-                                  Container(
-                                    margin: const EdgeInsets.only(right: 6),
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: colorScheme.error,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: const Text(
-                                      '置顶',
-                                      style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
-                                    ),
-                                  ),
-                                Expanded(
-                                  child: Text(
-                                    announcement.title,
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      fontWeight: isRead ? FontWeight.w500 : FontWeight.w600,
-                                      color: colorScheme.onSurface,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.shadow.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (!isRead) Container(height: 3, color: accentColor),
+                    Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: accentColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            if (content.isNotEmpty) ...[
-                              const SizedBox(height: 6),
-                              SizedBox(
-                                height: 40,
-                                child: ShaderMask(
-                                  shaderCallback: (Rect bounds) {
-                                    return LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [Colors.white, Colors.white, Colors.transparent],
-                                      stops: const [0.0, 0.6, 1.0],
-                                    ).createShader(bounds);
-                                  },
-                                  blendMode: BlendMode.dstIn,
-                                  child: SingleChildScrollView(
-                                    physics: const NeverScrollableScrollPhysics(),
-                                    child: MarkdownBody(
-                                      data: content,
-                                      shrinkWrap: true,
-                                      fitContent: true,
-                                      styleSheet: MarkdownStyleSheet(
-                                        p: theme.textTheme.bodySmall?.copyWith(
-                                          color: colorScheme.onSurfaceVariant,
-                                          height: 1.4,
+                            child: Icon(
+                              announcement.isSticky
+                                  ? MdiIcons.pin
+                                  : MdiIcons.bullhornOutline,
+                              color: accentColor,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    if (announcement.isSticky)
+                                      Container(
+                                        margin: const EdgeInsets.only(right: 6),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
                                         ),
-                                        a: TextStyle(
-                                          color: colorScheme.primary,
-                                          fontSize: 12,
+                                        decoration: BoxDecoration(
+                                          color: colorScheme.error,
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          '置顶',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
                                       ),
-                                      onTapLink: (text, href, title) {
-                                        if (href != null) {
-                                          launchUrl(Uri.parse(href), mode: LaunchMode.externalApplication);
-                                        }
+                                    Expanded(
+                                      child: Text(
+                                        announcement.title,
+                                        style: theme.textTheme.bodyLarge
+                                            ?.copyWith(
+                                              fontWeight: isRead
+                                                  ? FontWeight.w500
+                                                  : FontWeight.w600,
+                                              color: colorScheme.onSurface,
+                                            ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (content.isNotEmpty) ...[
+                                  const SizedBox(height: 6),
+                                  SizedBox(
+                                    height: 40,
+                                    child: ShaderMask(
+                                      shaderCallback: (Rect bounds) {
+                                        return LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Colors.white,
+                                            Colors.white,
+                                            Colors.transparent,
+                                          ],
+                                          stops: const [0.0, 0.6, 1.0],
+                                        ).createShader(bounds);
                                       },
+                                      blendMode: BlendMode.dstIn,
+                                      child: SingleChildScrollView(
+                                        physics:
+                                            const NeverScrollableScrollPhysics(),
+                                        child: MarkdownBody(
+                                          data: content,
+                                          shrinkWrap: true,
+                                          fitContent: true,
+                                          styleSheet: MarkdownStyleSheet(
+                                            p: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                                  color: colorScheme
+                                                      .onSurfaceVariant,
+                                                  height: 1.4,
+                                                ),
+                                            a: TextStyle(
+                                              color: colorScheme.primary,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          onTapLink: (text, href, title) {
+                                            if (href != null) {
+                                              launchUrl(
+                                                Uri.parse(href),
+                                                mode: LaunchMode
+                                                    .externalApplication,
+                                              );
+                                            }
+                                          },
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Icon(MdiIcons.clockOutline, size: 12, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _formatTimestamp(announcement.createdAt),
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                                  ),
+                                ],
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      MdiIcons.clockOutline,
+                                      size: 12,
+                                      color: colorScheme.onSurfaceVariant
+                                          .withValues(alpha: 0.6),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      _formatTimestamp(announcement.createdAt),
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                            color: colorScheme.onSurfaceVariant
+                                                .withValues(alpha: 0.6),
+                                          ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
-    ).animate().fadeIn(duration: 300.ms, delay: (index * 40).ms).slideY(begin: 0.08);
+        )
+        .animate()
+        .fadeIn(duration: 300.ms, delay: (index * 40).ms)
+        .slideY(begin: 0.08);
   }
 
   String _formatTimestamp(int timestamp) {
@@ -350,7 +386,6 @@ class _AnnouncementItem extends StatelessWidget {
     return '${dateTime.month}月${dateTime.day}日';
   }
 }
-
 
 /// 消息 Tab
 class _NotificationTab extends StatefulWidget {
@@ -376,7 +411,8 @@ class _NotificationTabState extends State<_NotificationTab> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       final state = context.read<NotificationBloc>().state;
       if (!state.isLoadingMore && state.hasMore) {
         context.read<NotificationBloc>().add(const NotificationLoadMore());
@@ -402,72 +438,92 @@ class _NotificationTabState extends State<_NotificationTab> {
         _wasAuthenticated = authState.isAuthenticated;
       },
       child: BlocBuilder<AuthBloc, AuthState>(
-      builder: (context, authState) {
-        // 未登录时显示提示
-        if (!authState.isAuthenticated) {
-          return const _NotLoggedInState();
-        }
+        builder: (context, authState) {
+          // 未登录时显示提示
+          if (!authState.isAuthenticated) {
+            return const _NotLoggedInState();
+          }
 
-        return BlocBuilder<NotificationBloc, NotificationState>(
-          builder: (context, state) {
-            if (state.isLoading && state.notifications.isEmpty) {
-              return const _LoadingState();
-            }
+          return BlocBuilder<NotificationBloc, NotificationState>(
+            builder: (context, state) {
+              if (state.isLoading && state.notifications.isEmpty) {
+                return const _LoadingState();
+              }
 
-            if (state.error != null && state.notifications.isEmpty) {
-              return _ErrorState(
-                error: state.error!,
-                onRetry: () => context.read<NotificationBloc>().add(const NotificationFetch()),
-              );
-            }
-
-            if (state.notifications.isEmpty) {
-              return const _EmptyState(isAnnouncement: false);
-            }
-
-            return Column(
-              children: [
-                if (state.hasUnread)
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton.icon(
-                          onPressed: () => context.read<NotificationBloc>().add(const NotificationMarkAllRead()),
-                          icon: Icon(Icons.done_all, size: 18, color: colorScheme.primary),
-                          label: Text('全部已读', style: TextStyle(color: colorScheme.primary)),
-                        ),
-                      ],
-                    ),
+              if (state.error != null && state.notifications.isEmpty) {
+                return _ErrorState(
+                  error: state.error!,
+                  onRetry: () => context.read<NotificationBloc>().add(
+                    const NotificationFetch(),
                   ),
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: () async {
-                      context.read<NotificationBloc>().add(const NotificationRefresh());
-                      await Future.delayed(const Duration(milliseconds: 500));
-                    },
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      padding: EdgeInsets.fromLTRB(16, state.hasUnread ? 4 : 12, 16, 16),
-                      itemCount: state.notifications.length + (state.isLoadingMore ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index == state.notifications.length) {
-                          return const _LoadMoreIndicator();
-                        }
-                        return _NotificationItemWidget(
-                          notification: state.notifications[index],
-                          index: index,
+                );
+              }
+
+              if (state.notifications.isEmpty) {
+                return const _EmptyState(isAnnouncement: false);
+              }
+
+              return Column(
+                children: [
+                  if (state.hasUnread)
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton.icon(
+                            onPressed: () => context
+                                .read<NotificationBloc>()
+                                .add(const NotificationMarkAllRead()),
+                            icon: Icon(
+                              Icons.done_all,
+                              size: 18,
+                              color: colorScheme.primary,
+                            ),
+                            label: Text(
+                              '全部已读',
+                              style: TextStyle(color: colorScheme.primary),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        context.read<NotificationBloc>().add(
+                          const NotificationRefresh(),
                         );
+                        await Future.delayed(const Duration(milliseconds: 500));
                       },
+                      child: ListView.builder(
+                        controller: _scrollController,
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          state.hasUnread ? 4 : 12,
+                          16,
+                          16,
+                        ),
+                        itemCount:
+                            state.notifications.length +
+                            (state.isLoadingMore ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index == state.notifications.length) {
+                            return const _LoadMoreIndicator();
+                          }
+                          return _NotificationItemWidget(
+                            notification: state.notifications[index],
+                            index: index,
+                          );
+                        },
+                      ),
                     ),
                   ),
-                ),
-              ],
-            );
-          },
-        );
-      },
+                ],
+              );
+            },
+          );
+        },
       ),
     );
   }
@@ -490,128 +546,152 @@ class _NotificationItemWidget extends StatelessWidget {
     final typeColor = _getTypeColor(notification.type);
 
     return Dismissible(
-      key: Key('notification_${notification.id}'),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: colorScheme.error,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Icon(Icons.delete_outline, color: Colors.white, size: 24),
-      ),
-      onDismissed: (_) {
-        context.read<NotificationBloc>().add(NotificationDelete(notification.id));
-      },
-      child: GestureDetector(
-        onTap: () {
-          if (!notification.isRead) {
-            context.read<NotificationBloc>().add(NotificationMarkRead(notification.id));
-          }
-          _showDetailSheet(
-            context: context,
-            icon: _getTypeIcon(notification.type),
-            iconColor: typeColor,
-            title: notification.title,
-            subtitle: Formatters.formatDateTime(notification.createdAt),
-            content: notification.content,
-          );
-        },
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+          key: Key('notification_${notification.id}'),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: colorScheme.error,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.delete_outline,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          onDismissed: (_) {
+            context.read<NotificationBloc>().add(
+              NotificationDelete(notification.id),
+            );
+          },
+          child: GestureDetector(
+            onTap: () {
+              if (!notification.isRead) {
+                context.read<NotificationBloc>().add(
+                  NotificationMarkRead(notification.id),
+                );
+              }
+              _showDetailSheet(
+                context: context,
+                icon: _getTypeIcon(notification.type),
+                iconColor: typeColor,
+                title: notification.title,
+                subtitle: Formatters.formatDateTime(notification.createdAt),
+                content: notification.content,
+              );
+            },
             child: Container(
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
+              margin: const EdgeInsets.only(bottom: 12),
+              child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: !notification.isRead
-                      ? typeColor.withValues(alpha: 0.3)
-                      : colorScheme.outlineVariant.withValues(alpha: 0.3),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: colorScheme.shadow.withValues(alpha: 0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (!notification.isRead)
-                    Container(
-                      height: 3,
-                      color: typeColor,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: !notification.isRead
+                          ? typeColor.withValues(alpha: 0.3)
+                          : colorScheme.outlineVariant.withValues(alpha: 0.3),
+                      width: 1,
                     ),
-                  Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: typeColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(_getTypeIcon(notification.type), color: typeColor, size: 20),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                notification.title,
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.w600,
-                                  color: colorScheme.onSurface,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                    boxShadow: [
+                      BoxShadow(
+                        color: colorScheme.shadow.withValues(alpha: 0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (!notification.isRead)
+                        Container(height: 3, color: typeColor),
+                      Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: typeColor.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              const SizedBox(height: 6),
-                              Text(
-                                notification.content,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                  height: 1.4,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
+                              child: Icon(
+                                _getTypeIcon(notification.type),
+                                color: typeColor,
+                                size: 20,
                               ),
-                              const SizedBox(height: 8),
-                              Row(
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(MdiIcons.clockOutline, size: 12, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
-                                  const SizedBox(width: 4),
                                   Text(
-                                    Formatters.formatDate(notification.createdAt),
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                                    notification.title,
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      fontWeight: notification.isRead
+                                          ? FontWeight.w500
+                                          : FontWeight.w600,
+                                      color: colorScheme.onSurface,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    notification.content,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                      height: 1.4,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        MdiIcons.clockOutline,
+                                        size: 12,
+                                        color: colorScheme.onSurfaceVariant
+                                            .withValues(alpha: 0.6),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        Formatters.formatDate(
+                                          notification.createdAt,
+                                        ),
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
+                                              color: colorScheme
+                                                  .onSurfaceVariant
+                                                  .withValues(alpha: 0.6),
+                                            ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
-    ).animate().fadeIn(duration: 300.ms, delay: (index * 40).ms).slideY(begin: 0.08);
+        )
+        .animate()
+        .fadeIn(duration: 300.ms, delay: (index * 40).ms)
+        .slideY(begin: 0.08);
   }
 
   IconData _getTypeIcon(String type) {
@@ -641,7 +721,6 @@ class _NotificationItemWidget extends StatelessWidget {
   }
 }
 
-
 // ==================== 共享组件 ====================
 
 /// 加载状态
@@ -666,10 +745,7 @@ class _LoadingState extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             '加载中...',
-            style: TextStyle(
-              color: colorScheme.onSurfaceVariant,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14),
           ),
         ],
       ),
@@ -697,11 +773,15 @@ class _EmptyState extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                color: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                isAnnouncement ? MdiIcons.bullhornOutline : MdiIcons.bellOffOutline,
+                isAnnouncement
+                    ? MdiIcons.bullhornOutline
+                    : MdiIcons.bellOffOutline,
                 size: 48,
                 color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
               ),
@@ -746,7 +826,9 @@ class _NotLoggedInState extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                color: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -920,14 +1002,21 @@ void _showDetailSheet({
                           if (badge != null)
                             Container(
                               margin: const EdgeInsets.only(right: 8),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
                               decoration: BoxDecoration(
                                 color: colorScheme.error,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 badge,
-                                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                         ],
@@ -943,7 +1032,11 @@ void _showDetailSheet({
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(MdiIcons.clockOutline, size: 13, color: colorScheme.onSurfaceVariant),
+                          Icon(
+                            MdiIcons.clockOutline,
+                            size: 13,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             subtitle,
@@ -959,7 +1052,10 @@ void _showDetailSheet({
               ],
             ),
           ),
-          Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+          Divider(
+            height: 1,
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
           // 内容
           Flexible(
             child: SingleChildScrollView(
@@ -971,7 +1067,10 @@ void _showDetailSheet({
                   selectable: true,
                   onTapLink: (text, href, title) {
                     if (href != null) {
-                      launchUrl(Uri.parse(href), mode: LaunchMode.externalApplication);
+                      launchUrl(
+                        Uri.parse(href),
+                        mode: LaunchMode.externalApplication,
+                      );
                     }
                   },
                   styleSheet: MarkdownStyleSheet(
@@ -1002,10 +1101,7 @@ void _showDetailSheet({
                     ),
                     blockquoteDecoration: BoxDecoration(
                       border: Border(
-                        left: BorderSide(
-                          color: colorScheme.primary,
-                          width: 3,
-                        ),
+                        left: BorderSide(color: colorScheme.primary, width: 3),
                       ),
                     ),
                     a: TextStyle(
@@ -1027,7 +1123,9 @@ void _showDetailSheet({
                   onPressed: () => Navigator.pop(context),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: const Text('知道了'),
                 ),

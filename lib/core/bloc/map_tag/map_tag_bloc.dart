@@ -99,11 +99,13 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
       // 合并并按创建时间降序排列
       final allUserTags = [...pendingTags, ...rejectedTags]
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      emit(state.copyWith(
-        userTags: allUserTags,
-        myChangeRequests: changeRequests,
-        isLoadingUserTags: false,
-      ));
+      emit(
+        state.copyWith(
+          userTags: allUserTags,
+          myChangeRequests: changeRequests,
+          isLoadingUserTags: false,
+        ),
+      );
     } catch (e) {
       emit(
         state.copyWith(error: _getErrorMessage(e), isLoadingUserTags: false),
@@ -181,7 +183,10 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
     emit(state.copyWith(isSubmitting: true, clearError: true));
 
     try {
-      final success = await _api.deleteTag(event.tagId, editReason: event.editReason);
+      final success = await _api.deleteTag(
+        event.tagId,
+        editReason: event.editReason,
+      );
       if (success) {
         if (event.editReason != null && event.editReason!.isNotEmpty) {
           // 已通过标签走变更申请流程：刷新用户标签列表（含变更申请）以同步状态
@@ -214,7 +219,10 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
   }
 
   /// 撤销变更申请
-  Future<void> _onCancelTagChangeRequest(CancelTagChangeRequest event, Emitter<MapTagState> emit) async {
+  Future<void> _onCancelTagChangeRequest(
+    CancelTagChangeRequest event,
+    Emitter<MapTagState> emit,
+  ) async {
     emit(state.copyWith(isSubmitting: true, clearError: true));
 
     try {

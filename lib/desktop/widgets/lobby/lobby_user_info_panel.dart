@@ -57,9 +57,10 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
     _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _animController.forward();
     _loadUserInfo();
   }
@@ -83,7 +84,9 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
     }
 
     try {
-      final result = await LobbyNakamaService.instance.rpcSteamUserInfo(nakamaUserId);
+      final result = await LobbyNakamaService.instance.rpcSteamUserInfo(
+        nakamaUserId,
+      );
       if (!mounted) return;
       if (result != null && result.code == 0) {
         setState(() {
@@ -123,16 +126,10 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF1A1F2E),
-                  Color(0xFF0F1624),
-                ],
+                colors: [Color(0xFF1A1F2E), Color(0xFF0F1624)],
               ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: const Color(0xFF2A3A5C),
-                width: 1.5,
-              ),
+              border: Border.all(color: const Color(0xFF2A3A5C), width: 1.5),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.6),
@@ -318,8 +315,8 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
     final color = level >= 10
         ? const Color(0xFFFFD700)
         : level >= 5
-            ? const Color(0xFFFF8C00)
-            : const Color(0xFF4ADE80);
+        ? const Color(0xFFFF8C00)
+        : const Color(0xFF4ADE80);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
@@ -474,9 +471,7 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.06),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Column(
         children: items.asMap().entries.map((entry) {
@@ -507,10 +502,7 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
                 ),
               ),
               if (!isLast)
-                Divider(
-                  height: 1,
-                  color: Colors.white.withValues(alpha: 0.04),
-                ),
+                Divider(height: 1, color: Colors.white.withValues(alpha: 0.04)),
             ],
           );
         }).toList(),
@@ -520,18 +512,36 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
 
   Widget _buildPtsRankCard(pb.SteamUserInfoResponse info) {
     final modes = <_PtsMode>[
-      _PtsMode('娱乐服', info.mgPts.toInt(), info.mgPtsRank.toInt(), info.mgPtsTotal.toInt()),
-      _PtsMode('滑翔服', info.surfPts.toInt(), info.surfPtsRank.toInt(), info.surfPtsTotal.toInt()),
-      _PtsMode('连跳服', info.bhopPts.toInt(), info.bhopPtsRank.toInt(), info.bhopPtsTotal.toInt()),
-      _PtsMode('攀岩服', info.kzPts.toInt(), info.kzPtsRank.toInt(), info.kzPtsTotal.toInt()),
+      _PtsMode(
+        '娱乐服',
+        info.mgPts.toInt(),
+        info.mgPtsRank.toInt(),
+        info.mgPtsTotal.toInt(),
+      ),
+      _PtsMode(
+        '滑翔服',
+        info.surfPts.toInt(),
+        info.surfPtsRank.toInt(),
+        info.surfPtsTotal.toInt(),
+      ),
+      _PtsMode(
+        '连跳服',
+        info.bhopPts.toInt(),
+        info.bhopPtsRank.toInt(),
+        info.bhopPtsTotal.toInt(),
+      ),
+      _PtsMode(
+        '攀岩服',
+        info.kzPts.toInt(),
+        info.kzPtsRank.toInt(),
+        info.kzPtsTotal.toInt(),
+      ),
     ];
 
     // 只显示有数据的模式
     final activeModes = modes.where((m) => m.pts > 0 || m.rank > 0).toList();
     if (activeModes.isEmpty) {
-      return _buildInfoCard([
-        const _InfoItem('PTS 排名', '暂无数据'),
-      ]);
+      return _buildInfoCard([const _InfoItem('PTS 排名', '暂无数据')]);
     }
 
     return Container(
@@ -539,9 +549,7 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.06),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Column(
         children: [
@@ -587,50 +595,52 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
             ),
           ),
           Divider(height: 1, color: Colors.white.withValues(alpha: 0.06)),
-          ...activeModes.map((mode) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        mode.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
+          ...activeModes.map(
+            (mode) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      mode.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    Expanded(
-                      child: Text(
-                        mode.pts > 0 ? _formatNumber(mode.pts) : '--',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: mode.pts > 0
-                              ? const Color(0xFF4ADE80)
-                              : Colors.white.withValues(alpha: 0.3),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      mode.pts > 0 ? _formatNumber(mode.pts) : '--',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: mode.pts > 0
+                            ? const Color(0xFF4ADE80)
+                            : Colors.white.withValues(alpha: 0.3),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    Expanded(
-                      child: Text(
-                        mode.rank > 0 ? '#${mode.rank}' : '--',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: mode.rank > 0
-                              ? const Color(0xFFFFD700)
-                              : Colors.white.withValues(alpha: 0.3),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      mode.rank > 0 ? '#${mode.rank}' : '--',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: mode.rank > 0
+                            ? const Color(0xFFFFD700)
+                            : Colors.white.withValues(alpha: 0.3),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ],
-                ),
-              )),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -681,9 +691,18 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
             info.csgoTttTraitorPts.toInt() > 0) ...[
           const SizedBox(height: 8),
           _buildInfoCard([
-            _InfoItem('TTT 平民 PTS', _formatNumber(info.csgoTttInnocentPts.toInt())),
-            _InfoItem('TTT 侦探 PTS', _formatNumber(info.csgoTttDetectivePts.toInt())),
-            _InfoItem('TTT 叛徒 PTS', _formatNumber(info.csgoTttTraitorPts.toInt())),
+            _InfoItem(
+              'TTT 平民 PTS',
+              _formatNumber(info.csgoTttInnocentPts.toInt()),
+            ),
+            _InfoItem(
+              'TTT 侦探 PTS',
+              _formatNumber(info.csgoTttDetectivePts.toInt()),
+            ),
+            _InfoItem(
+              'TTT 叛徒 PTS',
+              _formatNumber(info.csgoTttTraitorPts.toInt()),
+            ),
           ]),
         ],
       ],
@@ -711,15 +730,17 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
             if (info.cssZombieProLevel.toInt() > 0)
               _InfoItem('高玩等级', '${info.cssZombieProLevel}'),
           ]),
-        if (info.cssTitanPts.toInt() > 0 ||
-            info.cssTitanKills.toInt() > 0) ...[
+        if (info.cssTitanPts.toInt() > 0 || info.cssTitanKills.toInt() > 0) ...[
           const SizedBox(height: 8),
           _buildInfoCard([
             _InfoItem('進撃の巨人 PTS', _formatNumber(info.cssTitanPts.toInt())),
             if (info.cssTitanKills.toInt() > 0)
               _InfoItem('巨人击杀', _formatNumber(info.cssTitanKills.toInt())),
             if (info.cssTitanSpecialKills.toInt() > 0)
-              _InfoItem('特殊击杀', _formatNumber(info.cssTitanSpecialKills.toInt())),
+              _InfoItem(
+                '特殊击杀',
+                _formatNumber(info.cssTitanSpecialKills.toInt()),
+              ),
             if (info.cssTitanHumanKills.toInt() > 0)
               _InfoItem('人类击杀', _formatNumber(info.cssTitanHumanKills.toInt())),
             if (info.cssTitanAssists.toInt() > 0)

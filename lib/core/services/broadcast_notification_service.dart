@@ -50,11 +50,16 @@ class BroadcastNotificationService {
     try {
       // 获取应用图标路径（exe 同级 data/flutter_assets/assets/images/logo.ico）
       final exeDir = File(Platform.resolvedExecutable).parent.path;
-      final iconPath = '$exeDir\\data\\flutter_assets\\assets\\images\\logo.ico';
+      final iconPath =
+          '$exeDir\\data\\flutter_assets\\assets\\images\\logo.ico';
 
       final key = Registry.currentUser.createKey(_registryPath);
       key.createValue(
-        const RegistryValue('DisplayName', RegistryValueType.string, _appDisplayName),
+        const RegistryValue(
+          'DisplayName',
+          RegistryValueType.string,
+          _appDisplayName,
+        ),
       );
       key.createValue(
         RegistryValue('IconUri', RegistryValueType.string, iconPath),
@@ -91,7 +96,11 @@ class BroadcastNotificationService {
       );
       _plugin!.showNotificationCustomTemplate(
         message,
-        _buildToastXml(sender: sender, content: content, localAvatarPath: localAvatarPath),
+        _buildToastXml(
+          sender: sender,
+          content: content,
+          localAvatarPath: localAvatarPath,
+        ),
       );
     } catch (e) {
       LogService.e('[BroadcastNotification] 显示通知失败', e);
@@ -101,7 +110,9 @@ class BroadcastNotificationService {
   /// 下载头像到临时目录，返回本地文件路径；失败返回 null
   Future<String?> _downloadAvatarToTemp(String url) async {
     try {
-      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 5));
       if (response.statusCode != 200) return null;
 
       final tempDir = await getTemporaryDirectory();
@@ -131,7 +142,9 @@ class BroadcastNotificationService {
     final safeSender = _escapeXml(sender);
     final safeContent = _escapeXml(content);
     final exeDir = File(Platform.resolvedExecutable).parent.path;
-    final iconPath = _escapeXml('$exeDir\\data\\flutter_assets\\assets\\images\\logo.png');
+    final iconPath = _escapeXml(
+      '$exeDir\\data\\flutter_assets\\assets\\images\\logo.png',
+    );
 
     final imageSrc = localAvatarPath != null
         ? _escapeXml(localAvatarPath)

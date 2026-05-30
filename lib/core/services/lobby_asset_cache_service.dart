@@ -52,7 +52,9 @@ class LobbyAssetCacheService {
         for (final entry in data.entries) {
           _spriteMemoryCache[entry.key] = _SpriteUrlCache.fromJson(entry.value);
         }
-        LogService.d('[LobbyAssetCache] 已加载 ${_spriteMemoryCache.length} 个 sprite 缓存');
+        LogService.d(
+          '[LobbyAssetCache] 已加载 ${_spriteMemoryCache.length} 个 sprite 缓存',
+        );
       }
 
       // 加载 map 缓存
@@ -62,7 +64,9 @@ class LobbyAssetCacheService {
         for (final entry in data.entries) {
           _mapMemoryCache[entry.key] = _MapUrlCache.fromJson(entry.value);
         }
-        LogService.d('[LobbyAssetCache] 已加载 ${_mapMemoryCache.length} 个 map 缓存');
+        LogService.d(
+          '[LobbyAssetCache] 已加载 ${_mapMemoryCache.length} 个 map 缓存',
+        );
       }
 
       _initialized = true;
@@ -119,8 +123,12 @@ class LobbyAssetCacheService {
     for (final sprite in sprites) {
       if (sprite.id.isEmpty) continue;
 
-      final stableSpriteUrl = sprite.spriteUrl != null ? _stripAuthParams(sprite.spriteUrl!) : null;
-      final stablePreviewUrl = sprite.previewUrl != null ? _stripAuthParams(sprite.previewUrl!) : null;
+      final stableSpriteUrl = sprite.spriteUrl != null
+          ? _stripAuthParams(sprite.spriteUrl!)
+          : null;
+      final stablePreviewUrl = sprite.previewUrl != null
+          ? _stripAuthParams(sprite.previewUrl!)
+          : null;
 
       final existing = _spriteMemoryCache[sprite.id];
       // 用去掉鉴权参数后的稳定路径做比较
@@ -158,8 +166,9 @@ class LobbyAssetCacheService {
   Future<void> cacheMap(LobbyMapConfig? mapConfig) async {
     if (mapConfig == null || mapConfig.mapId.isEmpty) return;
 
-    final stableBackgroundUrl =
-        mapConfig.backgroundUrl != null ? _stripAuthParams(mapConfig.backgroundUrl!) : null;
+    final stableBackgroundUrl = mapConfig.backgroundUrl != null
+        ? _stripAuthParams(mapConfig.backgroundUrl!)
+        : null;
     final existing = _mapMemoryCache[mapConfig.mapId];
 
     if (existing == null || existing.backgroundUrl != stableBackgroundUrl) {
@@ -171,7 +180,8 @@ class LobbyAssetCacheService {
       LogService.d('[LobbyAssetCache] 缓存了地图背景: ${mapConfig.mapId}');
 
       // 触发图片下载到本地（使用原始 URL，后台执行不阻塞）
-      if (mapConfig.backgroundUrl != null && mapConfig.backgroundUrl!.isNotEmpty) {
+      if (mapConfig.backgroundUrl != null &&
+          mapConfig.backgroundUrl!.isNotEmpty) {
         _downloadImagesWithRawUrls([mapConfig.backgroundUrl!]);
       }
     }
@@ -227,7 +237,8 @@ class LobbyAssetCacheService {
   }
 
   /// 检查是否有缓存的 sprite
-  bool hasSpriteCache(String spriteId) => _spriteMemoryCache.containsKey(spriteId);
+  bool hasSpriteCache(String spriteId) =>
+      _spriteMemoryCache.containsKey(spriteId);
 
   /// 检查是否有缓存的 map 背景
   bool hasMapCache(String mapId) => _mapMemoryCache.containsKey(mapId);
@@ -337,10 +348,7 @@ class _MapUrlCache {
   final String? backgroundUrl;
   final int lastUpdated;
 
-  const _MapUrlCache({
-    this.backgroundUrl,
-    required this.lastUpdated,
-  });
+  const _MapUrlCache({this.backgroundUrl, required this.lastUpdated});
 
   factory _MapUrlCache.fromJson(Map<String, dynamic> json) {
     return _MapUrlCache(

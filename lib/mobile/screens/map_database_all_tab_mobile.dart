@@ -69,17 +69,14 @@ class _MapDatabaseAllTabMobileState extends State<MapDatabaseAllTabMobile>
 
   void _loadPage(int page) {
     context.read<MapContributionBloc>().add(
-          LoadAllMaps(
-            request: MapListRequest(
-              pagination: PaginationParams(
-                pageIndex: page,
-                pageSize: _pageSize,
-              ),
-              mapName: _searchKeyword.isEmpty ? null : _searchKeyword,
-              mapType: _selectedMapType,
-            ),
-          ),
-        );
+      LoadAllMaps(
+        request: MapListRequest(
+          pagination: PaginationParams(pageIndex: page, pageSize: _pageSize),
+          mapName: _searchKeyword.isEmpty ? null : _searchKeyword,
+          mapType: _selectedMapType,
+        ),
+      ),
+    );
   }
 
   void _reset() {
@@ -201,7 +198,9 @@ class _MapDatabaseAllTabMobileState extends State<MapDatabaseAllTabMobile>
                     ? Colors.white.withValues(alpha: 0.06)
                     : Colors.black.withValues(alpha: 0.04),
                 contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 10),
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide.none,
@@ -313,17 +312,18 @@ class _MapDatabaseAllTabMobileState extends State<MapDatabaseAllTabMobile>
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 6),
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? activeColor
                         : (isDark
-                            ? Colors.white.withValues(alpha: 0.07)
-                            : Colors.black.withValues(alpha: 0.05)),
+                              ? Colors.white.withValues(alpha: 0.07)
+                              : Colors.black.withValues(alpha: 0.05)),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color:
-                          isSelected ? activeColor : Colors.transparent,
+                      color: isSelected ? activeColor : Colors.transparent,
                       width: 1.5,
                     ),
                   ),
@@ -337,8 +337,8 @@ class _MapDatabaseAllTabMobileState extends State<MapDatabaseAllTabMobile>
                       color: isSelected
                           ? Colors.white
                           : (isDark
-                              ? Colors.white.withValues(alpha: 0.7)
-                              : Colors.black.withValues(alpha: 0.65)),
+                                ? Colors.white.withValues(alpha: 0.7)
+                                : Colors.black.withValues(alpha: 0.65)),
                     ),
                   ),
                 ),

@@ -273,11 +273,15 @@ class _LobbyDesktopState extends State<LobbyDesktop>
 
     if (remaining <= 0) {
       // 已满足最小动画时间，立即进入阶段2
-      LogService.d('[LobbyDesktop] _onTeleportDataReady: 已满足最小时间(${elapsed}ms)，进入阶段2');
+      LogService.d(
+        '[LobbyDesktop] _onTeleportDataReady: 已满足最小时间(${elapsed}ms)，进入阶段2',
+      );
       _startPhase2();
     } else {
       // 未满足最小动画时间，等待剩余时间后再进入阶段2
-      LogService.d('[LobbyDesktop] _onTeleportDataReady: 未满足最小时间(${elapsed}ms)，等待${remaining}ms');
+      LogService.d(
+        '[LobbyDesktop] _onTeleportDataReady: 未满足最小时间(${elapsed}ms)，等待${remaining}ms',
+      );
       _teleportDataReady = true;
       _minDurationTimer?.cancel();
       _minDurationTimer = Timer(Duration(milliseconds: remaining), () {
@@ -316,9 +320,7 @@ class _LobbyDesktopState extends State<LobbyDesktop>
   void _scheduleHideOverlay() {
     _teleportHideTimer?.cancel();
 
-    LogService.d(
-      '[LobbyDesktop] 计划 ${_holdDurationMs}ms 后隐藏覆盖层',
-    );
+    LogService.d('[LobbyDesktop] 计划 ${_holdDurationMs}ms 后隐藏覆盖层');
 
     _teleportHideTimer = Timer(Duration(milliseconds: _holdDurationMs), () {
       if (mounted) {
@@ -342,7 +344,9 @@ class _LobbyDesktopState extends State<LobbyDesktop>
         _scheduleHideOverlay();
       } else {
         // 阶段1完成（停在 70%），等待传送数据就绪
-        LogService.d('[LobbyDesktop] 阶段1动画完成（${(value * 100).toInt()}%），等待传送数据');
+        LogService.d(
+          '[LobbyDesktop] 阶段1动画完成（${(value * 100).toInt()}%），等待传送数据',
+        );
         // 如果数据已经就绪（在阶段1动画期间到达），立即进入阶段2
         if (_teleportDataReady) {
           _startPhase2();
@@ -392,10 +396,13 @@ class _LobbyDesktopState extends State<LobbyDesktop>
           previous.transientNotice != current.transientNotice ||
           previous.kickedReason != current.kickedReason ||
           previous.serverOnlineCount != current.serverOnlineCount ||
-          previous.broadcastCooldownSeconds != current.broadcastCooldownSeconds ||
+          previous.broadcastCooldownSeconds !=
+              current.broadcastCooldownSeconds ||
           previous.isAnonymous != current.isAnonymous ||
-          previous.anonymousSwitchCooldownSeconds != current.anonymousSwitchCooldownSeconds ||
-          previous.steamNameSwitchCooldownSeconds != current.steamNameSwitchCooldownSeconds ||
+          previous.anonymousSwitchCooldownSeconds !=
+              current.anonymousSwitchCooldownSeconds ||
+          previous.steamNameSwitchCooldownSeconds !=
+              current.steamNameSwitchCooldownSeconds ||
           previous.pendingSettings != current.pendingSettings ||
           previous.isSpriteChangePending != current.isSpriteChangePending ||
           previous.allOnlineUsers != current.allOnlineUsers ||
@@ -535,313 +542,305 @@ class _LobbyDesktopState extends State<LobbyDesktop>
     final mapConfig = state.mapConfig;
     // ignore: deprecated_member_use
     return RawKeyboardListener(
-          focusNode: _sceneFocusNode,
-          autofocus: true,
-          onKey: (event) {
-            // ignore: deprecated_member_use
-            if (event is! RawKeyDownEvent) return;
+      focusNode: _sceneFocusNode,
+      autofocus: true,
+      onKey: (event) {
+        // ignore: deprecated_member_use
+        if (event is! RawKeyDownEvent) return;
 
-            // 面板打开时忽略键盘事件
-            if (state.isPlayersPanelOpen || state.isSettingsPanelOpen) {
-              return;
-            }
+        // 面板打开时忽略键盘事件
+        if (state.isPlayersPanelOpen || state.isSettingsPanelOpen) {
+          return;
+        }
 
-            if (event.logicalKey == LogicalKeyboardKey.enter) {
-              // 聊天栏已打开时，尝试发送消息
-              if (state.isChatActive) {
-                final text = _chatController.text;
-                if (text.trim().isNotEmpty) {
-                  context.read<LobbyBloc>().add(LobbyChatSubmitted(text));
-                } else {
-                  // 空消息回车关闭聊天栏
-                  context.read<LobbyBloc>().add(const LobbyChatModeChanged(false));
-                }
-              } else {
-                // 直接打开聊天栏，让用户看到输入框的占位提示
-                context.read<LobbyBloc>().add(const LobbyChatModeChanged(true));
-              }
-            } else if (event.logicalKey == LogicalKeyboardKey.escape) {
-              // Escape 关闭聊天（如果已打开）或面板
-              if (state.isChatActive) {
-                context.read<LobbyBloc>().add(
-                  const LobbyChatModeChanged(false),
-                );
-              }
+        if (event.logicalKey == LogicalKeyboardKey.enter) {
+          // 聊天栏已打开时，尝试发送消息
+          if (state.isChatActive) {
+            final text = _chatController.text;
+            if (text.trim().isNotEmpty) {
+              context.read<LobbyBloc>().add(LobbyChatSubmitted(text));
+            } else {
+              // 空消息回车关闭聊天栏
+              context.read<LobbyBloc>().add(const LobbyChatModeChanged(false));
             }
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.only(
-                topRight: Radius.circular(22),
-                bottomRight: Radius.circular(22),
+          } else {
+            // 直接打开聊天栏，让用户看到输入框的占位提示
+            context.read<LobbyBloc>().add(const LobbyChatModeChanged(true));
+          }
+        } else if (event.logicalKey == LogicalKeyboardKey.escape) {
+          // Escape 关闭聊天（如果已打开）或面板
+          if (state.isChatActive) {
+            context.read<LobbyBloc>().add(const LobbyChatModeChanged(false));
+          }
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: const BorderRadius.only(
+            topRight: Radius.circular(22),
+            bottomRight: Radius.circular(22),
+          ),
+          color: isDark ? const Color(0xFF0B1120) : const Color(0xFFDDE7F7),
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topRight: Radius.circular(22),
+            bottomRight: Radius.circular(22),
+          ),
+          child: Stack(
+            children: [
+              // 地图场景
+              Positioned.fill(
+                child: mapConfig == null
+                    ? const SizedBox.shrink()
+                    : LobbyScene(
+                        mapConfig: mapConfig,
+                        state: state,
+                        sceneFocusNode: _sceneFocusNode,
+                      ),
               ),
-              color: isDark ? const Color(0xFF0B1120) : const Color(0xFFDDE7F7),
-            ),
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topRight: Radius.circular(22),
-                bottomRight: Radius.circular(22),
-              ),
-              child: Stack(
-                children: [
-                  // 地图场景
-                  Positioned.fill(
-                    child: mapConfig == null
+              // 状态横幅
+              Positioned(
+                top: 20,
+                left: 24,
+                right: 24,
+                child: IgnorePointer(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    child: state.transientNotice == null
                         ? const SizedBox.shrink()
-                        : LobbyScene(
-                            mapConfig: mapConfig,
-                            state: state,
-                            sceneFocusNode: _sceneFocusNode,
+                        : LobbyStatusBanner(
+                            key: ValueKey(state.transientNotice),
+                            message: state.transientNotice!,
+                            connectionStatus: state.connectionStatus,
                           ),
                   ),
-                  // 状态横幅
-                  Positioned(
-                    top: 20,
-                    left: 24,
-                    right: 24,
-                    child: IgnorePointer(
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 250),
-                        child: state.transientNotice == null
-                            ? const SizedBox.shrink()
-                            : LobbyStatusBanner(
-                                key: ValueKey(state.transientNotice),
-                                message: state.transientNotice!,
-                                connectionStatus: state.connectionStatus,
-                              ),
-                      ),
-                    ),
-                  ),
-                  // 聊天激活时的背景遮罩（排除聊天输入框区域，点击其他地方关闭聊天）
-                  if (state.isChatActive &&
-                      !state.isPlayersPanelOpen &&
-                      !state.isSettingsPanelOpen)
-                    Positioned.fill(
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          // 聊天输入框的位置：left: 24, bottom: 24, 宽度 360
-                          final chatWidth = 360.0;
-                          final chatHeight = 360.0; // 估算高度（消息列表300 + 输入框等）
-                          final chatLeft = 24.0;
-                          final chatBottom = 24.0;
-                          final chatRight =
-                              constraints.maxWidth - chatLeft - chatWidth;
-
-                          return Stack(
-                            children: [
-                              // 遮罩层 - 排除聊天输入框区域
-                              Positioned(
-                                top: 0,
-                                left: 0,
-                                right: chatRight,
-                                bottom: 0,
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () {
-                                    context.read<LobbyBloc>().add(
-                                      const LobbyChatModeChanged(false),
-                                    );
-                                    _sceneFocusNode.requestFocus();
-                                  },
-                                  child: Container(color: Colors.transparent),
-                                ),
-                              ),
-                              Positioned(
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom:
-                                    constraints.maxHeight -
-                                    chatBottom -
-                                    chatHeight,
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () {
-                                    context.read<LobbyBloc>().add(
-                                      const LobbyChatModeChanged(false),
-                                    );
-                                    _sceneFocusNode.requestFocus();
-                                  },
-                                  child: Container(color: Colors.transparent),
-                                ),
-                              ),
-                              Positioned(
-                                top: 0,
-                                right: 0,
-                                bottom: 0,
-                                width:
-                                    constraints.maxWidth - chatLeft - chatWidth,
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () {
-                                    context.read<LobbyBloc>().add(
-                                      const LobbyChatModeChanged(false),
-                                    );
-                                    _sceneFocusNode.requestFocus();
-                                  },
-                                  child: Container(color: Colors.transparent),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
-                  // 聊天输入（放在遮罩层上面，确保能接收点击事件）
-                  // 聊天未激活时开启 IgnorePointer 允许鼠标事件穿透到游戏场景
-                  Positioned(
-                    left: 24,
-                    bottom: 24,
-                    child: IgnorePointer(
-                      ignoring: !state.isChatActive,
-                      child: LobbyChatOverlay(
-                        state: state,
-                        controller: _chatController,
-                        focusNode: _chatFocusNode,
-                      ),
-                    ),
-                  ),
-                  // 浮动按钮
-                  Positioned(
-                    right: 24,
-                    bottom: 24,
-                    child: LobbyFloatingActions(state: state),
-                  ),
-                  // 面板打开时的背景遮罩（使用 opaque 确保点击任意位置都能关闭面板）
-                  // 注意：此时如果聊天也激活，聊天输入框在面板下面，不应该被遮挡
-                  if (state.isPlayersPanelOpen || state.isSettingsPanelOpen)
-                    Positioned.fill(
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () {
-                          context.read<LobbyBloc>().add(
-                            const LobbyPanelsDismissed(),
-                          );
-                          _sceneFocusNode.requestFocus();
-                        },
-                        child: Container(color: Colors.transparent),
-                      ),
-                    ),
-                  // 玩家抽屉
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
-                    width: 320,
-                    child: SlideTransition(
-                      position: _playersDrawerSlideAnimation,
-                      child: FadeTransition(
-                        opacity: _playersDrawerFadeAnimation,
-                        child: state.isPlayersPanelOpen
-                            ? _PlayersDrawer(
-                                state: state,
-                                onClose: () => context.read<LobbyBloc>().add(
-                                  const LobbyPanelsDismissed(),
-                                ),
-                              )
-                            : const SizedBox.shrink(),
-                      ),
-                    ),
-                  ),
-                  // 设置面板
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 90,
-                    child: Center(
-                      child: SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          switchInCurve: Curves.easeOut,
-                          switchOutCurve: Curves.easeIn,
-                          transitionBuilder: (child, animation) {
-                            return FadeTransition(
-                              opacity: animation,
-                              child: SlideTransition(
-                                position: Tween<Offset>(
-                                  begin: const Offset(0, -0.2),
-                                  end: Offset.zero,
-                                ).animate(animation),
-                                child: child,
-                              ),
-                            );
-                          },
-                          child: state.isSettingsPanelOpen
-                              ? LobbySettingsPanel(
-                                  key: const ValueKey('settings'),
-                                  state: state,
-                                )
-                              : SizedBox.shrink(
-                                  key: const ValueKey('settings_empty'),
-                                ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // 传送动画层
-                  if (_showTeleportOverlay && _targetMapConfig != null)
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        ignoring: true,
-                        child: ListenableBuilder(
-                          listenable:
-                              _teleportController ??
-                              AlwaysStoppedAnimation(0.0),
-                          builder: (context, child) {
-                            final progress = _teleportAnimation?.value ?? 0.0;
-                            return MosaicRevealEffect(
-                              targetContent: _buildMosaicTargetContent(
-                                _targetMapConfig!,
-                              ),
-                              targetName: _targetMapConfig!.displayName,
-                              progress: progress,
-                              showTouhouDecoration: true,
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  // 玩家加入/离开通知
-                  if (state.playerNotifications.isNotEmpty)
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: PlayerNotificationOverlay(
-                          notifications: state.playerNotifications,
-                          onNotificationExpire: (id) {
-                            context.read<LobbyBloc>().add(
-                              LobbyNotificationExpired(id),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  // 传送门询问对话框
-                  if (state.nearbyPortal != null && !state.isTeleporting)
-                    Positioned.fill(
-                      child: PortalConfirmDialog(
-                        portal: state.nearbyPortal!,
-                        onConfirm: () {
-                          context.read<LobbyBloc>().add(
-                            LobbyPortalConfirmRequested(
-                              state.nearbyPortal!.key,
-                            ),
-                          );
-                        },
-                        onCancel: () {
-                          context.read<LobbyBloc>().add(
-                            const LobbyPortalDialogDismissed(),
-                          );
-                        },
-                      ),
-                    ),
-                  // 广播发送弹窗
-                  if (state.isBroadcastDialogOpen) const LobbyBroadcastDialog(),
-                ],
+                ),
               ),
-            ),
+              // 聊天激活时的背景遮罩（排除聊天输入框区域，点击其他地方关闭聊天）
+              if (state.isChatActive &&
+                  !state.isPlayersPanelOpen &&
+                  !state.isSettingsPanelOpen)
+                Positioned.fill(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      // 聊天输入框的位置：left: 24, bottom: 24, 宽度 360
+                      final chatWidth = 360.0;
+                      final chatHeight = 360.0; // 估算高度（消息列表300 + 输入框等）
+                      final chatLeft = 24.0;
+                      final chatBottom = 24.0;
+                      final chatRight =
+                          constraints.maxWidth - chatLeft - chatWidth;
+
+                      return Stack(
+                        children: [
+                          // 遮罩层 - 排除聊天输入框区域
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: chatRight,
+                            bottom: 0,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                context.read<LobbyBloc>().add(
+                                  const LobbyChatModeChanged(false),
+                                );
+                                _sceneFocusNode.requestFocus();
+                              },
+                              child: Container(color: Colors.transparent),
+                            ),
+                          ),
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom:
+                                constraints.maxHeight - chatBottom - chatHeight,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                context.read<LobbyBloc>().add(
+                                  const LobbyChatModeChanged(false),
+                                );
+                                _sceneFocusNode.requestFocus();
+                              },
+                              child: Container(color: Colors.transparent),
+                            ),
+                          ),
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            bottom: 0,
+                            width: constraints.maxWidth - chatLeft - chatWidth,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                context.read<LobbyBloc>().add(
+                                  const LobbyChatModeChanged(false),
+                                );
+                                _sceneFocusNode.requestFocus();
+                              },
+                              child: Container(color: Colors.transparent),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              // 聊天输入（放在遮罩层上面，确保能接收点击事件）
+              // 聊天未激活时开启 IgnorePointer 允许鼠标事件穿透到游戏场景
+              Positioned(
+                left: 24,
+                bottom: 24,
+                child: IgnorePointer(
+                  ignoring: !state.isChatActive,
+                  child: LobbyChatOverlay(
+                    state: state,
+                    controller: _chatController,
+                    focusNode: _chatFocusNode,
+                  ),
+                ),
+              ),
+              // 浮动按钮
+              Positioned(
+                right: 24,
+                bottom: 24,
+                child: LobbyFloatingActions(state: state),
+              ),
+              // 面板打开时的背景遮罩（使用 opaque 确保点击任意位置都能关闭面板）
+              // 注意：此时如果聊天也激活，聊天输入框在面板下面，不应该被遮挡
+              if (state.isPlayersPanelOpen || state.isSettingsPanelOpen)
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      context.read<LobbyBloc>().add(
+                        const LobbyPanelsDismissed(),
+                      );
+                      _sceneFocusNode.requestFocus();
+                    },
+                    child: Container(color: Colors.transparent),
+                  ),
+                ),
+              // 玩家抽屉
+              Positioned(
+                top: 0,
+                right: 0,
+                bottom: 0,
+                width: 320,
+                child: SlideTransition(
+                  position: _playersDrawerSlideAnimation,
+                  child: FadeTransition(
+                    opacity: _playersDrawerFadeAnimation,
+                    child: state.isPlayersPanelOpen
+                        ? _PlayersDrawer(
+                            state: state,
+                            onClose: () => context.read<LobbyBloc>().add(
+                              const LobbyPanelsDismissed(),
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ),
+              ),
+              // 设置面板
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 90,
+                child: Center(
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.6,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0, -0.2),
+                              end: Offset.zero,
+                            ).animate(animation),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: state.isSettingsPanelOpen
+                          ? LobbySettingsPanel(
+                              key: const ValueKey('settings'),
+                              state: state,
+                            )
+                          : SizedBox.shrink(
+                              key: const ValueKey('settings_empty'),
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+              // 传送动画层
+              if (_showTeleportOverlay && _targetMapConfig != null)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    ignoring: true,
+                    child: ListenableBuilder(
+                      listenable:
+                          _teleportController ?? AlwaysStoppedAnimation(0.0),
+                      builder: (context, child) {
+                        final progress = _teleportAnimation?.value ?? 0.0;
+                        return MosaicRevealEffect(
+                          targetContent: _buildMosaicTargetContent(
+                            _targetMapConfig!,
+                          ),
+                          targetName: _targetMapConfig!.displayName,
+                          progress: progress,
+                          showTouhouDecoration: true,
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              // 玩家加入/离开通知
+              if (state.playerNotifications.isNotEmpty)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: PlayerNotificationOverlay(
+                      notifications: state.playerNotifications,
+                      onNotificationExpire: (id) {
+                        context.read<LobbyBloc>().add(
+                          LobbyNotificationExpired(id),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              // 传送门询问对话框
+              if (state.nearbyPortal != null && !state.isTeleporting)
+                Positioned.fill(
+                  child: PortalConfirmDialog(
+                    portal: state.nearbyPortal!,
+                    onConfirm: () {
+                      context.read<LobbyBloc>().add(
+                        LobbyPortalConfirmRequested(state.nearbyPortal!.key),
+                      );
+                    },
+                    onCancel: () {
+                      context.read<LobbyBloc>().add(
+                        const LobbyPortalDialogDismissed(),
+                      );
+                    },
+                  ),
+                ),
+              // 广播发送弹窗
+              if (state.isBroadcastDialogOpen) const LobbyBroadcastDialog(),
+            ],
           ),
-        );
+        ),
+      ),
+    );
   }
 }
 
@@ -984,6 +983,7 @@ class _PlayersDrawer extends StatefulWidget {
 class _PlayersDrawerState extends State<_PlayersDrawer> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+
   /// 状态筛选：null=全部, 'online'=在线, 'inGame'=游戏中, 'queuing'=挤服中
   String? _statusFilter;
 
@@ -1015,7 +1015,12 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
   }
 
   /// 显示玩家右键菜单
-  void _showPlayerContextMenu(BuildContext context, LobbyUser user, Offset globalPosition, bool isFollowed) {
+  void _showPlayerContextMenu(
+    BuildContext context,
+    LobbyUser user,
+    Offset globalPosition,
+    bool isFollowed,
+  ) {
     setState(() {
       _highlightedUserId = user.userId;
     });
@@ -1041,11 +1046,15 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
           if (isFollowed) {
             _followedIds.remove(user.businessUserId);
           } else {
-            if (user.businessUserId != null && user.businessUserId!.isNotEmpty) {
+            if (user.businessUserId != null &&
+                user.businessUserId!.isNotEmpty) {
               _followedIds.add(user.businessUserId!);
             }
           }
-          StorageUtils.setStringList('lobby_followed_user_ids', _followedIds.toList());
+          StorageUtils.setStringList(
+            'lobby_followed_user_ids',
+            _followedIds.toList(),
+          );
           // 通知游戏刷新角色关注状态
           LobbyGame.activeInstance?.reloadFollowedUsers();
           LobbyGame.activeInstance?.cancelFocus();
@@ -1100,20 +1109,19 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
     switch (filter) {
       case 'online':
         return !status.contains('游戏中') &&
-               !status.contains('挤服') &&
-               !status.contains('热身') &&
-               !status.contains('主菜单');
+            !status.contains('挤服') &&
+            !status.contains('热身') &&
+            !status.contains('主菜单');
       case 'inGame':
         return status.contains('游戏中') ||
-               status.contains('热身') ||
-               status.contains('主菜单');
+            status.contains('热身') ||
+            status.contains('主菜单');
       case 'queuing':
         return status.contains('挤服');
       default:
         return true;
     }
   }
-
 
   /// 计算指定筛选条件下的人数（基于搜索后列表，随搜索词动态变化）
   int _countForFilter(List<LobbyUser> searchedUsers, String? filter) {
@@ -1128,7 +1136,8 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
         ? widget.state.totalOnlineCount
         : widget.state.onlineCount;
     final isLoading =
-        widget.state.isLoadingAllOnlineUsers && widget.state.allOnlineUsers.isEmpty;
+        widget.state.isLoadingAllOnlineUsers &&
+        widget.state.allOnlineUsers.isEmpty;
 
     // 基于搜索结果计算各分类人数（状态过滤前），供 chip 动态显示
     final searchedUsers = _getSearchedUsers();
@@ -1137,19 +1146,18 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
     final countInGame = _countForFilter(searchedUsers, 'inGame');
     final countQueuing = _countForFilter(searchedUsers, 'queuing');
 
-    final displayUsers = searchedUsers
-        .where((u) => _matchesFilter(u, _statusFilter))
-        .toList()
-      ..sort((a, b) {
-        if (a.isSelf) return -1;
-        if (b.isSelf) return 1;
-        // 关注用户排在前面
-        final aFollowed = _followedIds.contains(a.businessUserId);
-        final bFollowed = _followedIds.contains(b.businessUserId);
-        if (aFollowed && !bFollowed) return -1;
-        if (!aFollowed && bFollowed) return 1;
-        return a.displayName.compareTo(b.displayName);
-      });
+    final displayUsers =
+        searchedUsers.where((u) => _matchesFilter(u, _statusFilter)).toList()
+          ..sort((a, b) {
+            if (a.isSelf) return -1;
+            if (b.isSelf) return 1;
+            // 关注用户排在前面
+            final aFollowed = _followedIds.contains(a.businessUserId);
+            final bFollowed = _followedIds.contains(b.businessUserId);
+            if (aFollowed && !bFollowed) return -1;
+            if (!aFollowed && bFollowed) return 1;
+            return a.displayName.compareTo(b.displayName);
+          });
 
     return Row(
       children: [
@@ -1223,7 +1231,10 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
                           _searchQuery.isNotEmpty || _statusFilter != null
                               ? '没有匹配的玩家'
                               : '暂无在线玩家',
-                          style: const TextStyle(color: Colors.white38, fontSize: 14),
+                          style: const TextStyle(
+                            color: Colors.white38,
+                            fontSize: 14,
+                          ),
                         ),
                       )
                     : ListView.builder(
@@ -1231,8 +1242,11 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
                         itemCount: displayUsers.length,
                         itemBuilder: (context, index) {
                           final user = displayUsers[index];
-                          final isFollowed = _followedIds.contains(user.businessUserId);
-                          final isHighlighted = _highlightedUserId == user.userId;
+                          final isFollowed = _followedIds.contains(
+                            user.businessUserId,
+                          );
+                          final isHighlighted =
+                              _highlightedUserId == user.userId;
                           // 判断用户是否在本地图：检查 state.users（当前地图用户列表）中是否存在该用户
                           final isOnCurrentMap = widget.state.users.any(
                             (u) => u.userId == user.userId,
@@ -1241,8 +1255,13 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
                           String? userMapName;
                           if (isOnCurrentMap) {
                             userMapName = widget.state.mapConfig?.displayName;
-                          } else if (user.mapId != null && user.mapId!.isNotEmpty) {
-                            userMapName = widget.state.assets.getMapById(user.mapId!)?.displayName ?? user.mapId;
+                          } else if (user.mapId != null &&
+                              user.mapId!.isNotEmpty) {
+                            userMapName =
+                                widget.state.assets
+                                    .getMapById(user.mapId!)
+                                    ?.displayName ??
+                                user.mapId;
                           }
                           return _PlayerListTile(
                             user: user,
@@ -1255,10 +1274,16 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
                             onTapAt: user.isSelf
                                 ? null
                                 : user.isAnonymous
-                                    ? null
-                                    : (offset) => _showPlayerContextMenu(context, user, offset, isFollowed),
+                                ? null
+                                : (offset) => _showPlayerContextMenu(
+                                    context,
+                                    user,
+                                    offset,
+                                    isFollowed,
+                                  ),
                             onSelfTap: user.isSelf && !widget.state.isAnonymous
-                                ? () => LobbyUserProfilePanel.show(context, user)
+                                ? () =>
+                                      LobbyUserProfilePanel.show(context, user)
                                 : null,
                           );
                         },
@@ -1287,17 +1312,12 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.08),
-              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
             ),
             child: TextField(
               controller: _searchController,
               onChanged: (value) => setState(() => _searchQuery = value),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-              ),
+              style: const TextStyle(color: Colors.white, fontSize: 13),
               decoration: InputDecoration(
                 hintText: '搜索玩家...',
                 hintStyle: TextStyle(
@@ -1339,11 +1359,11 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
-                _buildFilterChip(null,     '全部',   countAll),
+                _buildFilterChip(null, '全部', countAll),
                 const SizedBox(width: 6),
-                _buildFilterChip('online',  '在线',   countOnline),
+                _buildFilterChip('online', '在线', countOnline),
                 const SizedBox(width: 6),
-                _buildFilterChip('inGame',  '游戏中', countInGame),
+                _buildFilterChip('inGame', '游戏中', countInGame),
                 const SizedBox(width: 6),
                 _buildFilterChip('queuing', '挤服中', countQueuing),
               ],
@@ -1358,7 +1378,7 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
     final isSelected = _statusFilter == filterValue;
     return _HoverFilterChip(
       label: label,
-      count: isSelected ? count : null,  // 只有选中时才传入人数
+      count: isSelected ? count : null, // 只有选中时才传入人数
       isSelected: isSelected,
       onTap: () => setState(() => _statusFilter = filterValue),
     );
@@ -1367,6 +1387,7 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
 
 class _HoverFilterChip extends StatefulWidget {
   final String label;
+
   /// 仅选中时传入，用于显示动态人数；null 表示不显示人数
   final int? count;
   final bool isSelected;
@@ -1405,15 +1426,15 @@ class _HoverFilterChipState extends State<_HoverFilterChip> {
             color: widget.isSelected
                 ? const Color(0xFF1D9BF0).withValues(alpha: 0.25)
                 : _hovered
-                    ? Colors.white.withValues(alpha: 0.10)
-                    : Colors.white.withValues(alpha: 0.04),
+                ? Colors.white.withValues(alpha: 0.10)
+                : Colors.white.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: widget.isSelected
                   ? const Color(0xFF1D9BF0).withValues(alpha: 0.5)
                   : _hovered
-                      ? Colors.white.withValues(alpha: 0.18)
-                      : Colors.white.withValues(alpha: 0.08),
+                  ? Colors.white.withValues(alpha: 0.18)
+                  : Colors.white.withValues(alpha: 0.08),
             ),
           ),
           child: Text(
@@ -1422,8 +1443,8 @@ class _HoverFilterChipState extends State<_HoverFilterChip> {
               color: widget.isSelected
                   ? const Color(0xFF1D9BF0)
                   : _hovered
-                      ? Colors.white.withValues(alpha: 0.85)
-                      : Colors.white.withValues(alpha: 0.5),
+                  ? Colors.white.withValues(alpha: 0.85)
+                  : Colors.white.withValues(alpha: 0.5),
               fontSize: 11,
               fontWeight: widget.isSelected ? FontWeight.w700 : FontWeight.w500,
             ),
@@ -1533,25 +1554,25 @@ class _PlayerListTileState extends State<_PlayerListTile> {
         onTapDown: widget.onTapAt != null
             ? (details) => widget.onTapAt!(details.globalPosition)
             : widget.onSelfTap != null
-                ? (_) => widget.onSelfTap!()
-                : null,
+            ? (_) => widget.onSelfTap!()
+            : null,
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
             color: isHighlighted
                 ? const Color(0xFF40C4FF).withValues(alpha: 0.10)
                 : _isHovered
-                    ? Colors.white.withValues(alpha: 0.06)
-                    : Colors.white.withValues(alpha: 0.04),
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.white.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: isHighlighted
                   ? const Color(0xFF40C4FF).withValues(alpha: 0.7)
                   : user.isSelf
-                      ? const Color(0xFF1D9BF0).withValues(alpha: 0.4)
-                      : _isHovered
-                          ? Colors.white.withValues(alpha: 0.12)
-                          : Colors.white.withValues(alpha: 0.05),
+                  ? const Color(0xFF1D9BF0).withValues(alpha: 0.4)
+                  : _isHovered
+                  ? Colors.white.withValues(alpha: 0.12)
+                  : Colors.white.withValues(alpha: 0.05),
               width: isHighlighted ? 1.5 : 1,
             ),
             boxShadow: isHighlighted
@@ -1584,8 +1605,8 @@ class _PlayerListTileState extends State<_PlayerListTile> {
                             color: isFollowed
                                 ? const Color(0xFFFFD740)
                                 : isHighlighted
-                                    ? const Color(0xFF40C4FF)
-                                    : Colors.white,
+                                ? const Color(0xFF40C4FF)
+                                : Colors.white,
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                           ),
@@ -1642,8 +1663,8 @@ class _PlayerListTileState extends State<_PlayerListTile> {
                         child: Text(
                           widget.isOnCurrentMap
                               ? widget.currentMapName != null
-                                  ? '${widget.currentMapName}（本地图）'
-                                  : '本地图'
+                                    ? '${widget.currentMapName}（本地图）'
+                                    : '本地图'
                               : (widget.currentMapName ?? '其他地图'),
                           style: TextStyle(
                             color: widget.isOnCurrentMap
@@ -1764,10 +1785,7 @@ class _PlayerPopupMenu extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _PopupMenuItem(
-                    label: '调查',
-                    onTap: onInvestigate,
-                  ),
+                  _PopupMenuItem(label: '调查', onTap: onInvestigate),
                   _PopupMenuItem(
                     label: isFollowed ? '取消关注' : '关注',
                     onTap: onToggleFollow,
@@ -1919,9 +1937,10 @@ class _LobbyQueueScreenState extends State<_LobbyQueueScreen>
       vsync: this,
       duration: const Duration(seconds: 6),
     )..repeat();
-    _rotateAnimation = Tween<double>(begin: 0, end: 1.0).animate(
-      CurvedAnimation(parent: _rotateController, curve: Curves.linear),
-    );
+    _rotateAnimation = Tween<double>(
+      begin: 0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _rotateController, curve: Curves.linear));
 
     _progressGlowController = AnimationController(
       vsync: this,
@@ -2020,7 +2039,10 @@ class _LobbyQueueScreenState extends State<_LobbyQueueScreen>
 
               // 中心圆环动画（与 loading screen 风格一致）
               AnimatedBuilder(
-                animation: Listenable.merge([_pulseAnimation, _rotateAnimation]),
+                animation: Listenable.merge([
+                  _pulseAnimation,
+                  _rotateAnimation,
+                ]),
                 builder: (context, child) {
                   return SizedBox(
                     width: 100,
@@ -2065,123 +2087,122 @@ class _LobbyQueueScreenState extends State<_LobbyQueueScreen>
 
               // 预计等待时间
               Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.schedule,
-                      color: textSecondary.withValues(alpha: 0.6),
-                      size: 16,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '预计等待 ${_formatEta(eta)}',
-                      style: TextStyle(
-                        color: textSecondary,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.schedule,
+                    color: textSecondary.withValues(alpha: 0.6),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '预计等待 ${_formatEta(eta)}',
+                    style: TextStyle(color: textSecondary, fontSize: 14),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
 
-                // 进度条（带发光动画）
-                AnimatedBuilder(
-                  animation: _progressGlowAnimation,
-                  builder: (context, child) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(6),
-                        boxShadow: progress > 0
-                            ? [
-                                BoxShadow(
-                                  color: accentColor.withValues(
-                                    alpha: 0.15 * _progressGlowAnimation.value,
-                                  ),
-                                  blurRadius: 12,
-                                  spreadRadius: 1,
+              // 进度条（带发光动画）
+              AnimatedBuilder(
+                animation: _progressGlowAnimation,
+                builder: (context, child) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(6),
+                      boxShadow: progress > 0
+                          ? [
+                              BoxShadow(
+                                color: accentColor.withValues(
+                                  alpha: 0.15 * _progressGlowAnimation.value,
                                 ),
-                              ]
-                            : null,
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: SizedBox(
-                          height: 10,
-                          child: Stack(
-                            children: [
-                              // 背景
-                              Container(
+                                blurRadius: 12,
+                                spreadRadius: 1,
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: SizedBox(
+                        height: 10,
+                        child: Stack(
+                          children: [
+                            // 背景
+                            Container(
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.06)
+                                    : const Color(
+                                        0xFFCBD5E1,
+                                      ).withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                            // 进度
+                            FractionallySizedBox(
+                              widthFactor: progress,
+                              child: Container(
                                 decoration: BoxDecoration(
-                                  color: isDark
-                                      ? Colors.white.withValues(alpha: 0.06)
-                                      : const Color(0xFFCBD5E1).withValues(alpha: 0.5),
+                                  gradient: LinearGradient(
+                                    colors: [accentColor, successColor],
+                                  ),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                               ),
-                              // 进度
-                              FractionallySizedBox(
-                                widthFactor: progress,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [accentColor, successColor],
-                                    ),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 12),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
 
-                // 进度信息行
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '第 $position / $total 位',
-                      style: TextStyle(
-                        color: textSecondary.withValues(alpha: 0.7),
-                        fontSize: 11,
-                      ),
+              // 进度信息行
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '第 $position / $total 位',
+                    style: TextStyle(
+                      color: textSecondary.withValues(alpha: 0.7),
+                      fontSize: 11,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
 
-                // 连接状态指示
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: successColor,
-                        boxShadow: [
-                          BoxShadow(
-                            color: successColor.withValues(alpha: 0.5),
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
+              // 连接状态指示
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: successColor,
+                      boxShadow: [
+                        BoxShadow(
+                          color: successColor.withValues(alpha: 0.5),
+                          blurRadius: 4,
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '连接正常 · 排队中',
-                      style: TextStyle(
-                        color: textSecondary.withValues(alpha: 0.5),
-                        fontSize: 11,
-                      ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '连接正常 · 排队中',
+                    style: TextStyle(
+                      color: textSecondary.withValues(alpha: 0.5),
+                      fontSize: 11,
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

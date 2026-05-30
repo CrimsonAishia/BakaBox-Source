@@ -1,6 +1,12 @@
 part of 'lobby_bloc.dart';
 
-enum LobbyConnectionStatus { disconnected, connecting, connected, reconnecting, failed }
+enum LobbyConnectionStatus {
+  disconnected,
+  connecting,
+  connected,
+  reconnecting,
+  failed,
+}
 
 /// 大厅页面加载状态（区分进入页面的不同阶段）
 enum LobbyPageStatus { idle, loading, ready, error }
@@ -9,12 +15,16 @@ enum LobbyPageStatus { idle, loading, ready, error }
 enum LobbyLoadingPhase {
   /// 等待 WebSocket 连接建立
   connecting,
+
   /// 连接已建立，等待数据
   waiting,
+
   /// 正在排队等待进入
   queueing,
+
   /// 正在加载素材数据
   loadingAssets,
+
   /// 素材加载完成，正在获取大厅状态
   loadingSnapshot,
 }
@@ -23,10 +33,13 @@ enum LobbyLoadingPhase {
 enum PlayerNotificationType {
   /// 玩家上线（同地图或跨地图）
   online,
+
   /// 玩家下线（同地图或跨地图）
   offline,
+
   /// 玩家传送到其他地图（同地图传送离开）
   teleport,
+
   /// 玩家从其他地图传送进来（同地图传送到达）
   teleportIn,
 }
@@ -35,14 +48,19 @@ enum PlayerNotificationType {
 class PlayerNotification {
   /// 通知唯一ID
   final String id;
+
   /// 通知类型
   final PlayerNotificationType type;
+
   /// 玩家显示名称
   final String playerName;
+
   /// 目标地图名称（teleport 类型使用）
   final String? targetMapName;
+
   /// 来源地图名称（teleportIn 类型使用）
   final String? sourceMapName;
+
   /// 通知创建时间
   final DateTime createdAt;
 
@@ -73,14 +91,17 @@ class PlayerNotification {
 class LobbyState extends Equatable {
   final LobbyConnectionStatus connectionStatus;
   final LobbyPageStatus pageStatus;
+
   /// 大厅页面对应的活动文字（如"在看服务器列表"）
   final String pageActivityText;
+
   /// Loading 界面的具体加载阶段
   final LobbyLoadingPhase loadingPhase;
   final LobbyAssets assets;
   final List<LobbyUser> users;
   final List<LobbyMessage> messages;
   final String selectedSpriteId;
+
   /// 角色切换是否正在等待服务端响应
   final bool isSpriteChangePending;
   final bool isAnonymous;
@@ -92,59 +113,82 @@ class LobbyState extends Equatable {
   final bool showChatBubbles;
   final bool useSteamName;
   final String? transientNotice;
+
   /// 每次设置 transientNotice 时递增，确保相同内容也能触发 listener
   final int transientNoticeSeq;
   final LobbyTeleportTarget? teleportTarget;
   final bool isTeleporting;
   final LobbyPageInfo? pageInfo;
   final bool isLoadingMore;
+
   /// 待重发的消息队列（messageId -> content）
   final Map<String, String> pendingMessages;
+
   /// 聊天冷却剩余秒数（0 表示不在冷却中）
   final int chatCooldownSeconds;
+
   /// 广播冷却剩余秒数（0 表示不在冷却中）
   final int broadcastCooldownSeconds;
+
   /// 匿名切换冷却剩余秒数（0 表示不在冷却中）
   final int anonymousSwitchCooldownSeconds;
+
   /// Steam名称切换冷却剩余秒数（0 表示不在冷却中）
   final int steamNameSwitchCooldownSeconds;
+
   /// 广播弹窗是否打开
   final bool isBroadcastDialogOpen;
+
   /// 当前显示询问对话框的传送门
   final LobbyPortal? nearbyPortal;
+
   /// 正在走向的传送门（到达后自动显示对话框）
   final LobbyPortal? pendingPortal;
+
   /// 传送门是否被鼠标悬停
   final bool isPortalHovered;
+
   /// 全服在线用户列表（用于玩家面板，从 online.stats 接口获取）
   final List<LobbyUser> allOnlineUsers;
+
   /// 是否正在加载全服用户列表
   final bool isLoadingAllOnlineUsers;
+
   /// 服务器在线总人数（定时刷新，用于玩家按钮徽章）
   final int serverOnlineCount;
+
   /// 设置选项的 pending 状态（用于服务器确认/拒绝）
   final Map<String, bool> pendingSettings;
+
   /// pending 状态的超时时间（key: 设置项名, value: 超时截止时间）
   final Map<String, DateTime> pendingSettingsTimeouts;
+
   /// 玩家加入/离开通知列表
   final List<PlayerNotification> playerNotifications;
+
   /// 被踢出原因（null 表示未被踢出）
   /// 取值：duplicate_login / device_conflict / admin_kick
   final String? kickedReason;
+
   /// 被踢出时服务端附带的消息（admin_kick 时有管理员填写的原因）
   final String? kickedMessage;
 
   /// ===== 排队系统相关 =====
   /// 排队令牌（非空表示正在排队中）
   final String? queueTicket;
+
   /// 当前排队位置（1-based）
   final int queuePosition;
+
   /// 队列总长度
   final int queueTotal;
+
   /// 预计等待时间（秒）
   final int queueEtaSeconds;
+
   /// 排队是否已过期
   final bool queueExpired;
+
   /// 排队过期原因
   final String? queueExpireReason;
 
@@ -261,7 +305,8 @@ class LobbyState extends Equatable {
   int get onlineCount => users.where((user) => user.isOnline).length;
 
   /// 全服在线人数
-  int get totalOnlineCount => allOnlineUsers.where((user) => user.isOnline).length;
+  int get totalOnlineCount =>
+      allOnlineUsers.where((user) => user.isOnline).length;
 
   LobbyState copyWith({
     LobbyConnectionStatus? connectionStatus,
@@ -282,7 +327,8 @@ class LobbyState extends Equatable {
     bool? showChatBubbles,
     bool? useSteamName,
     Object? transientNotice = _stateSentinel,
-    bool clearTransientNotice = false,    Object? teleportTarget = _stateSentinel,
+    bool clearTransientNotice = false,
+    Object? teleportTarget = _stateSentinel,
     bool clearTeleportTarget = false,
     bool? isTeleporting,
     Object? pageInfo = _stateSentinel,
@@ -327,7 +373,8 @@ class LobbyState extends Equatable {
       users: users ?? this.users,
       messages: messages ?? this.messages,
       selectedSpriteId: selectedSpriteId ?? this.selectedSpriteId,
-      isSpriteChangePending: isSpriteChangePending ?? this.isSpriteChangePending,
+      isSpriteChangePending:
+          isSpriteChangePending ?? this.isSpriteChangePending,
       isAnonymous: isAnonymous ?? this.isAnonymous,
       isChatActive: isChatActive ?? this.isChatActive,
       isPlayersPanelOpen: isPlayersPanelOpen ?? this.isPlayersPanelOpen,
@@ -362,8 +409,10 @@ class LobbyState extends Equatable {
           ? this.pendingMessages
           : Map<String, String>.from(pendingMessages as Map),
       chatCooldownSeconds: chatCooldownSeconds ?? this.chatCooldownSeconds,
-      broadcastCooldownSeconds: broadcastCooldownSeconds ?? this.broadcastCooldownSeconds,
-      isBroadcastDialogOpen: isBroadcastDialogOpen ?? this.isBroadcastDialogOpen,
+      broadcastCooldownSeconds:
+          broadcastCooldownSeconds ?? this.broadcastCooldownSeconds,
+      isBroadcastDialogOpen:
+          isBroadcastDialogOpen ?? this.isBroadcastDialogOpen,
       nearbyPortal: clearNearbyPortal
           ? null
           : identical(nearbyPortal, _stateSentinel)
@@ -378,16 +427,20 @@ class LobbyState extends Equatable {
       allOnlineUsers: identical(allOnlineUsers, _stateSentinel)
           ? this.allOnlineUsers
           : allOnlineUsers as List<LobbyUser>,
-      isLoadingAllOnlineUsers: isLoadingAllOnlineUsers ?? this.isLoadingAllOnlineUsers,
+      isLoadingAllOnlineUsers:
+          isLoadingAllOnlineUsers ?? this.isLoadingAllOnlineUsers,
       serverOnlineCount: serverOnlineCount ?? this.serverOnlineCount,
       pendingSettings: identical(pendingSettings, _stateSentinel)
           ? this.pendingSettings
           : pendingSettings as Map<String, bool>,
-      pendingSettingsTimeouts: identical(pendingSettingsTimeouts, _stateSentinel)
+      pendingSettingsTimeouts:
+          identical(pendingSettingsTimeouts, _stateSentinel)
           ? this.pendingSettingsTimeouts
           : pendingSettingsTimeouts as Map<String, DateTime>,
-      anonymousSwitchCooldownSeconds: anonymousSwitchCooldownSeconds ?? this.anonymousSwitchCooldownSeconds,
-      steamNameSwitchCooldownSeconds: steamNameSwitchCooldownSeconds ?? this.steamNameSwitchCooldownSeconds,
+      anonymousSwitchCooldownSeconds:
+          anonymousSwitchCooldownSeconds ?? this.anonymousSwitchCooldownSeconds,
+      steamNameSwitchCooldownSeconds:
+          steamNameSwitchCooldownSeconds ?? this.steamNameSwitchCooldownSeconds,
       playerNotifications: identical(playerNotifications, _stateSentinel)
           ? this.playerNotifications
           : playerNotifications as List<PlayerNotification>,

@@ -36,7 +36,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       'update_log_notification_enabled';
   static const String _keyAppExitBehavior = 'app_exit_behavior';
   static const String _keyServerSortMode = 'server_sort_mode';
-  static const String _keyBroadcastNotificationType = 'broadcast_notification_type';
+  static const String _keyBroadcastNotificationType =
+      'broadcast_notification_type';
 
   final AudioService _audioService = AudioService();
   final GamePathService _gamePathService = GamePathService();
@@ -99,12 +100,14 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       // 即使已初始化，也重新加载游戏设置（可能在 OOBE 中设置了路径）
       await _loadGameSettings(emit);
     }
-    
+
     // 初始化完成后检查路径是否失效
     add(SettingsCheckPathsValidity());
 
     // 监听底层服务主动发出的路径失效事件
-    _pathInvalidSubscription ??= _gamePathService.onPathInvalidStream.listen((result) {
+    _pathInvalidSubscription ??= _gamePathService.onPathInvalidStream.listen((
+      result,
+    ) {
       if (!result.isValid) {
         add(SettingsCheckPathsValidity());
       }
@@ -151,7 +154,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       final appExitBehaviorIndex =
           StorageUtils.getInt(_keyAppExitBehavior) ?? AppExitBehavior.ask.index;
       final serverSortModeIndex =
-          StorageUtils.getInt(_keyServerSortMode) ?? ServerSortMode.manual.index;
+          StorageUtils.getInt(_keyServerSortMode) ??
+          ServerSortMode.manual.index;
       final broadcastNotificationTypeIndex =
           StorageUtils.getInt(_keyBroadcastNotificationType) ??
           BroadcastNotificationType.software.index;
@@ -498,11 +502,13 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       }
 
       await StorageUtils.setString(_keyGamePath, event.path);
-      emit(state.copyWith(
-        gamePath: event.path, 
-        gamePathError: null,
-        isPathInvalidated: false, // 重新设置成功后清除失效标记
-      ));
+      emit(
+        state.copyWith(
+          gamePath: event.path,
+          gamePathError: null,
+          isPathInvalidated: false, // 重新设置成功后清除失效标记
+        ),
+      );
 
       // 同步到 GameLauncherService
       await GameLauncherService().setGamePath(event.path);
@@ -536,11 +542,13 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       }
 
       await StorageUtils.setString(_keySteamPath, event.path);
-      emit(state.copyWith(
-        steamPath: event.path, 
-        steamPathError: null,
-        isPathInvalidated: false, // 重新设置成功后清除失效标记
-      ));
+      emit(
+        state.copyWith(
+          steamPath: event.path,
+          steamPathError: null,
+          isPathInvalidated: false, // 重新设置成功后清除失效标记
+        ),
+      );
 
       // 同步到 GameLauncherService
       await GameLauncherService().setSteamPath(event.path);
@@ -1240,10 +1248,12 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     emit(state.copyWith(isLoadingMobileCacheDetails: true));
     try {
       final details = await _calculateMobileCacheInfo();
-      emit(state.copyWith(
-        mobileCacheDetails: details,
-        isLoadingMobileCacheDetails: false,
-      ));
+      emit(
+        state.copyWith(
+          mobileCacheDetails: details,
+          isLoadingMobileCacheDetails: false,
+        ),
+      );
     } catch (e) {
       LogService.e('加载移动端缓存详情失败', e);
       emit(state.copyWith(isLoadingMobileCacheDetails: false));
@@ -1270,7 +1280,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     } catch (e) {
       LogService.e('清除移动端缓存失败', e);
       final restored = state.mobileCacheDetails.map((item) {
-        if (item.type == event.cacheType) return item.copyWith(isClearing: false);
+        if (item.type == event.cacheType) {
+          return item.copyWith(isClearing: false);
+        }
         return item;
       }).toList();
       emit(state.copyWith(mobileCacheDetails: restored));
@@ -1282,14 +1294,17 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     final List<MobileCacheItemInfo> details = [];
 
     // 1. 服务器背景图片（DiskImageCacheService → cache/images/）
-    final serverImagesSize = await DiskImageCacheService.instance.getCacheSize();
-    details.add(MobileCacheItemInfo(
-      type: MobileCacheType.serverImages,
-      name: '服务器背景图片',
-      description: '服务器列表中的背景图片',
-      sizeInBytes: serverImagesSize,
-      canClear: true,
-    ));
+    final serverImagesSize = await DiskImageCacheService.instance
+        .getCacheSize();
+    details.add(
+      MobileCacheItemInfo(
+        type: MobileCacheType.serverImages,
+        name: '服务器背景图片',
+        description: '服务器列表中的背景图片',
+        sizeInBytes: serverImagesSize,
+        canClear: true,
+      ),
+    );
 
     // 2. 服务器数据（StorageUtils 中的缓存键）
     int serverDataSize = 0;
@@ -1297,13 +1312,15 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     if (cachedServerList != null) serverDataSize += cachedServerList.length;
     final cachedMapInfo = StorageUtils.getString('cached_map_info');
     if (cachedMapInfo != null) serverDataSize += cachedMapInfo.length;
-    details.add(MobileCacheItemInfo(
-      type: MobileCacheType.serverData,
-      name: '服务器数据',
-      description: '服务器列表、地图信息等缓存数据',
-      sizeInBytes: serverDataSize,
-      canClear: true,
-    ));
+    details.add(
+      MobileCacheItemInfo(
+        type: MobileCacheType.serverData,
+        name: '服务器数据',
+        description: '服务器列表、地图信息等缓存数据',
+        sizeInBytes: serverDataSize,
+        canClear: true,
+      ),
+    );
 
     // 3. 日志文件
     int logsSize = 0;
@@ -1311,13 +1328,15 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     if (await logsDir.exists()) {
       logsSize = await _calculateDirectorySize(logsDir);
     }
-    details.add(MobileCacheItemInfo(
-      type: MobileCacheType.logs,
-      name: '日志文件',
-      description: '应用运行日志',
-      sizeInBytes: logsSize,
-      canClear: true,
-    ));
+    details.add(
+      MobileCacheItemInfo(
+        type: MobileCacheType.logs,
+        name: '日志文件',
+        description: '应用运行日志',
+        sizeInBytes: logsSize,
+        canClear: true,
+      ),
+    );
 
     // 4. 大厅图片（LobbyImageCacheService → cache/lobby_images/，只读）
     int lobbyImagesSize = 0;
@@ -1327,13 +1346,15 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     if (await lobbyDir.exists()) {
       lobbyImagesSize = await _calculateDirectorySize(lobbyDir);
     }
-    details.add(MobileCacheItemInfo(
-      type: MobileCacheType.lobbyImages,
-      name: '大厅图片',
-      description: '大厅背景及角色图片，用于离线显示',
-      sizeInBytes: lobbyImagesSize,
-      canClear: false,
-    ));
+    details.add(
+      MobileCacheItemInfo(
+        type: MobileCacheType.lobbyImages,
+        name: '大厅图片',
+        description: '大厅背景及角色图片，用于离线显示',
+        sizeInBytes: lobbyImagesSize,
+        canClear: false,
+      ),
+    );
 
     return details;
   }

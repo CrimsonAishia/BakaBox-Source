@@ -171,16 +171,16 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
   }
 
   void _startTokenPolling() {
-    _tokenCheckTimer = Timer.periodic(
-      const Duration(milliseconds: 500),
-      (timer) async {
-        if (!mounted) {
-          timer.cancel();
-          return;
-        }
-        try {
-          // 检查隐藏字段的值（论坛验证码成功后会写入这个字段）
-          final result = await _controller.executeScript('''
+    _tokenCheckTimer = Timer.periodic(const Duration(milliseconds: 500), (
+      timer,
+    ) async {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      try {
+        // 检查隐藏字段的值（论坛验证码成功后会写入这个字段）
+        final result = await _controller.executeScript('''
 (function() {
   var el = document.getElementById('dx_captcha_verify_logging');
   if (el && el.value && el.value.length > 10) {
@@ -190,22 +190,21 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
 })();
 ''');
 
-          final token = result?.toString().trim() ?? '';
-          if (token.isNotEmpty && token != 'null' && token.length > 10) {
-            timer.cancel();
-            setState(() {
-              _captchaToken = token;
-            });
-            // 延迟关闭
-            Future.delayed(const Duration(milliseconds: 800), () {
-              if (mounted) {
-                Navigator.of(context).pop(_captchaToken);
-              }
-            });
-          }
-        } catch (_) {}
-      },
-    );
+        final token = result?.toString().trim() ?? '';
+        if (token.isNotEmpty && token != 'null' && token.length > 10) {
+          timer.cancel();
+          setState(() {
+            _captchaToken = token;
+          });
+          // 延迟关闭
+          Future.delayed(const Duration(milliseconds: 800), () {
+            if (mounted) {
+              Navigator.of(context).pop(_captchaToken);
+            }
+          });
+        }
+      } catch (_) {}
+    });
   }
 
   @override
@@ -222,9 +221,7 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
 
     return Dialog(
       backgroundColor: bgColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
         width: 360,
         height: 300,
@@ -238,17 +235,18 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
               children: [
                 const Text(
                   '安全验证',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 Row(
                   children: [
                     if (_captchaToken != null)
                       const Row(
                         children: [
-                          Icon(Icons.check_circle, color: Colors.green, size: 16),
+                          Icon(
+                            Icons.check_circle,
+                            color: Colors.green,
+                            size: 16,
+                          ),
                           SizedBox(width: 4),
                           Text(
                             '验证成功',

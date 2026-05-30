@@ -72,7 +72,9 @@ class BilibiliContentBloc
         emit(
           state.copyWith(
             status: BilibiliContentStatus.loaded,
-            liveRooms: targetPageIndex == 1 ? liveRooms : [...state.liveRooms, ...liveRooms],
+            liveRooms: targetPageIndex == 1
+                ? liveRooms
+                : [...state.liveRooms, ...liveRooms],
             liveRoomsTotal: liveRoomsTotal,
             isRefreshing: false,
             hasLoadedLiveRooms: true,
@@ -96,7 +98,9 @@ class BilibiliContentBloc
         emit(
           state.copyWith(
             status: BilibiliContentStatus.loaded,
-            videos: targetPageIndex == 1 ? videos : [...state.videos, ...videos],
+            videos: targetPageIndex == 1
+                ? videos
+                : [...state.videos, ...videos],
             videosTotal: videosTotal,
             isRefreshing: false,
             hasLoadedVideos: true,
@@ -226,12 +230,12 @@ class BilibiliContentBloc
         // 如果事件中没有提供额外数据，且我们需要它们作为兜底
         int? popularity = event.popularity;
         int? followerCount = event.followerCount;
-        
+
         if (popularity == null) {
           final roomStatus = await _bilibiliService.getRoomStatus(roomId);
           popularity = roomStatus?.viewCount;
         }
-        
+
         if (followerCount == null && roomInfo.userId != null) {
           final userInfo = await _bilibiliService.getUserInfo(roomInfo.userId!);
           followerCount = userInfo?.follower;
@@ -325,10 +329,12 @@ class BilibiliContentBloc
       if (event.contentType == BilibiliContentType.liveRoom) {
         int? popularity = event.popularity;
         int? followerCount = event.followerCount;
-        
+
         // 当更新直播间但缺乏新数据时，尝试拉取一下
         if (event.roomId != null && popularity == null) {
-          final roomStatus = await _bilibiliService.getRoomStatus(event.roomId!);
+          final roomStatus = await _bilibiliService.getRoomStatus(
+            event.roomId!,
+          );
           popularity = roomStatus?.viewCount;
         }
         if (event.ownerUid != null && followerCount == null) {
@@ -371,7 +377,7 @@ class BilibiliContentBloc
         int? likeCount = event.likeCount;
         int? coinCount = event.coinCount;
         int? favoriteCount = event.favoriteCount;
-        
+
         // 当更新视频且有 bvid 时，作为兜底拉取最新统计
         if (event.bvid != null && playCount == null) {
           final videoInfo = await _bilibiliService.getVideoInfo(event.bvid!);

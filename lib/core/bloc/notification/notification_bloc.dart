@@ -4,10 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../api/notification_api.dart';
 import '../../models/notification_models.dart';
-import '../../models/realtime_models.dart';
 import '../../services/auth_service.dart';
 import '../../services/realtime/realtime_notifications_channel.dart';
-import '../../services/realtime_service.dart';
 import '../../utils/log_service.dart';
 import 'notification_event.dart';
 import 'notification_state.dart';
@@ -30,8 +28,8 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   static const int _pageSize = 20;
 
   NotificationBloc({NotificationApi? notificationApi})
-      : _notificationApi = notificationApi ?? NotificationApi(),
-        super(const NotificationState()) {
+    : _notificationApi = notificationApi ?? NotificationApi(),
+      super(const NotificationState()) {
     on<NotificationFetch>(_onFetch);
     on<NotificationRefresh>(_onRefresh);
     on<NotificationLoadMore>(_onLoadMore);
@@ -97,7 +95,8 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
 
     final filterType = state.filterType;
     final filterIsRead = state.filterIsRead;
-    final matchesFilter = (filterType == null ||
+    final matchesFilter =
+        (filterType == null ||
             filterType == NotificationType.all ||
             filterType == item.type) &&
         (filterIsRead == null || filterIsRead == item.isRead);
@@ -106,7 +105,9 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         ? [item, ...state.notifications.where((n) => n.id != item.id)]
         : state.notifications;
 
-    final newUnreadCount = item.isRead ? state.unreadCount : state.unreadCount + 1;
+    final newUnreadCount = item.isRead
+        ? state.unreadCount
+        : state.unreadCount + 1;
 
     emit(
       state.copyWith(
@@ -274,7 +275,9 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     updatedList[index] = updatedList[index].copyWith(isRead: true);
     final newUnreadCount = state.unreadCount > 0 ? state.unreadCount - 1 : 0;
 
-    emit(state.copyWith(notifications: updatedList, unreadCount: newUnreadCount));
+    emit(
+      state.copyWith(notifications: updatedList, unreadCount: newUnreadCount),
+    );
 
     try {
       await _notificationApi.markAsRead(event.id);
@@ -377,10 +380,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     emit(state.copyWith(clearError: true));
   }
 
-  void _onClear(
-    NotificationClear event,
-    Emitter<NotificationState> emit,
-  ) {
+  void _onClear(NotificationClear event, Emitter<NotificationState> emit) {
     _stopRealtime();
     emit(const NotificationState());
     LogService.d('消息数据已清除');

@@ -36,8 +36,7 @@ class ServerMonitorData {
     if (_lastNotifiedOldMap != oldMap || _lastNotifiedNewMap != newMap) {
       return true;
     }
-    final elapsed =
-        DateTime.now().difference(_lastNotificationTime!).inSeconds;
+    final elapsed = DateTime.now().difference(_lastNotificationTime!).inSeconds;
     return elapsed > 30;
   }
 
@@ -254,7 +253,11 @@ class MapChangeMonitorService {
         final ip = parts[0];
         final port = int.tryParse(parts[1]);
         if (port != null) {
-          final serverInfo = await SourceServerService.getServerInfo(ip, port, timeout: 3000);
+          final serverInfo = await SourceServerService.getServerInfo(
+            ip,
+            port,
+            timeout: 3000,
+          );
           if (serverInfo != null) {
             currentPlayers = serverInfo.players;
           }

@@ -1132,8 +1132,13 @@ class _ServersDesktopState extends State<ServersDesktop> {
         controller: _serversScrollController,
         padding: const EdgeInsets.symmetric(horizontal: 15),
         itemCount: servers.length,
-        itemBuilder: (context, index) =>
-            _buildServerCardItem(context, state, servers[index], index, index == servers.length - 1),
+        itemBuilder: (context, index) => _buildServerCardItem(
+          context,
+          state,
+          servers[index],
+          index,
+          index == servers.length - 1,
+        ),
       ),
     );
   }

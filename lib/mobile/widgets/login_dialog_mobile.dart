@@ -300,7 +300,8 @@ class _LoginDialogMobileState extends State<LoginDialogMobile> {
                     SizedBox(
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: (_isLoading ||
+                        onPressed:
+                            (_isLoading ||
                                 _captchaToken == null ||
                                 _captchaToken!.isEmpty)
                             ? null
@@ -308,10 +309,12 @@ class _LoginDialogMobileState extends State<LoginDialogMobile> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0080FF),
                           foregroundColor: Colors.white,
-                          disabledBackgroundColor:
-                              const Color(0xFF0080FF).withValues(alpha: 0.3),
-                          disabledForegroundColor:
-                              Colors.white.withValues(alpha: 0.5),
+                          disabledBackgroundColor: const Color(
+                            0xFF0080FF,
+                          ).withValues(alpha: 0.3),
+                          disabledForegroundColor: Colors.white.withValues(
+                            alpha: 0.5,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),

@@ -87,7 +87,9 @@ class _MosaicRevealEffectState extends State<MosaicRevealEffect>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    (isDark ? Colors.black : Colors.black).withValues(alpha: 0.6),
+                    (isDark ? Colors.black : Colors.black).withValues(
+                      alpha: 0.6,
+                    ),
                     Colors.transparent,
                   ],
                 ),
@@ -108,8 +110,7 @@ class _MosaicRevealEffectState extends State<MosaicRevealEffect>
           ),
 
           // 角落装饰
-          if (widget.showTouhouDecoration)
-            ..._buildCornerDecorations(),
+          if (widget.showTouhouDecoration) ..._buildCornerDecorations(),
         ],
       ),
     );
@@ -121,10 +122,7 @@ class _MosaicRevealEffectState extends State<MosaicRevealEffect>
       Positioned(
         top: 20,
         left: 20,
-        child: _CornerDecoration(
-          angle: 0,
-          glowProgress: _glowController.value,
-        ),
+        child: _CornerDecoration(angle: 0, glowProgress: _glowController.value),
       ),
       // 右上角
       Positioned(
@@ -153,9 +151,9 @@ class _LeftToRightRevealClipper extends CustomClipper<Rect> {
     // 马赛克层显示在右边（从左往右逐渐清除马赛克，露出清晰地图）
     // progress=0: 全屏马赛克; progress=1: 无马赛克
     return Rect.fromLTWH(
-      size.width * progress,  // 左边起点随 progress 移动
+      size.width * progress, // 左边起点随 progress 移动
       0,
-      size.width * (1 - progress),  // 宽度逐渐减小
+      size.width * (1 - progress), // 宽度逐渐减小
       size.height,
     );
   }
@@ -171,10 +169,7 @@ class _MosaicOverlay extends StatelessWidget {
   final double glowProgress;
   final bool isDark;
 
-  const _MosaicOverlay({
-    required this.glowProgress,
-    required this.isDark,
-  });
+  const _MosaicOverlay({required this.glowProgress, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -185,9 +180,7 @@ class _MosaicOverlay extends StatelessWidget {
             : const Color(0xFF1A1F2E).withValues(alpha: 0.95),
       ),
       child: CustomPaint(
-        painter: _MosaicPatternPainter(
-          glowProgress: glowProgress,
-        ),
+        painter: _MosaicPatternPainter(glowProgress: glowProgress),
       ),
     );
   }
@@ -221,7 +214,8 @@ class _MosaicPatternPainter extends CustomPainter {
     }
 
     // 绘制扫描光效
-    final scanLineY = (glowProgress * size.height * 2) % (size.height + 100) - 50;
+    final scanLineY =
+        (glowProgress * size.height * 2) % (size.height + 100) - 50;
     final scanPaint = Paint()
       ..shader = ui.Gradient.linear(
         Offset(0, scanLineY - 30),
@@ -373,12 +367,7 @@ class _BottomInfoBar extends StatelessWidget {
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 1.5,
-                    shadows: [
-                      Shadow(
-                        color: Colors.cyan,
-                        blurRadius: 10,
-                      ),
-                    ],
+                    shadows: [Shadow(color: Colors.cyan, blurRadius: 10)],
                   ),
                 ),
               ],
@@ -421,10 +410,7 @@ class _CornerDecoration extends StatelessWidget {
   final double angle;
   final double glowProgress;
 
-  const _CornerDecoration({
-    required this.angle,
-    required this.glowProgress,
-  });
+  const _CornerDecoration({required this.angle, required this.glowProgress});
 
   @override
   Widget build(BuildContext context) {

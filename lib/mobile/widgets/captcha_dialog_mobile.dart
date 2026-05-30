@@ -100,7 +100,8 @@ class _CaptchaDialogMobileState extends State<CaptchaDialogMobile> {
 
     // 注入 viewport meta 标签，让桌面端 UA 的页面在手机上正常缩放显示
     try {
-      await _controller!.evaluateJavascript(source: '''
+      await _controller!.evaluateJavascript(
+        source: '''
 (function() {
   var meta = document.querySelector('meta[name="viewport"]');
   if (!meta) {
@@ -110,7 +111,8 @@ class _CaptchaDialogMobileState extends State<CaptchaDialogMobile> {
   }
   meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes';
 })();
-''');
+''',
+      );
     } catch (_) {}
 
     // 注入 JS 隐藏其他元素
@@ -129,15 +131,16 @@ class _CaptchaDialogMobileState extends State<CaptchaDialogMobile> {
   }
 
   void _startTokenPolling() {
-    _tokenCheckTimer = Timer.periodic(
-      const Duration(milliseconds: 500),
-      (timer) async {
-        if (!mounted || _controller == null) {
-          timer.cancel();
-          return;
-        }
-        try {
-          final result = await _controller!.evaluateJavascript(source: '''
+    _tokenCheckTimer = Timer.periodic(const Duration(milliseconds: 500), (
+      timer,
+    ) async {
+      if (!mounted || _controller == null) {
+        timer.cancel();
+        return;
+      }
+      try {
+        final result = await _controller!.evaluateJavascript(
+          source: '''
 (function() {
   var el = document.getElementById('dx_captcha_verify_logging');
   if (el && el.value && el.value.length > 10) {
@@ -145,24 +148,24 @@ class _CaptchaDialogMobileState extends State<CaptchaDialogMobile> {
   }
   return '';
 })();
-''');
+''',
+        );
 
-          final token = result?.toString().trim() ?? '';
-          if (token.isNotEmpty && token != 'null' && token.length > 10) {
-            timer.cancel();
-            setState(() {
-              _captchaToken = token;
-            });
-            // 延迟关闭，返回 token
-            Future.delayed(const Duration(milliseconds: 800), () {
-              if (mounted) {
-                Navigator.of(context).pop(_captchaToken);
-              }
-            });
-          }
-        } catch (_) {}
-      },
-    );
+        final token = result?.toString().trim() ?? '';
+        if (token.isNotEmpty && token != 'null' && token.length > 10) {
+          timer.cancel();
+          setState(() {
+            _captchaToken = token;
+          });
+          // 延迟关闭，返回 token
+          Future.delayed(const Duration(milliseconds: 800), () {
+            if (mounted) {
+              Navigator.of(context).pop(_captchaToken);
+            }
+          });
+        }
+      } catch (_) {}
+    });
   }
 
   @override
@@ -252,7 +255,8 @@ class _CaptchaDialogMobileState extends State<CaptchaDialogMobile> {
             }
           },
           onReceivedError: (controller, request, error) {
-            if (mounted && request.url.toString().contains('bbs.zombieden.cn')) {
+            if (mounted &&
+                request.url.toString().contains('bbs.zombieden.cn')) {
               setState(() {
                 _errorMessage = '加载验证码失败: ${error.description}';
                 _isLoading = false;

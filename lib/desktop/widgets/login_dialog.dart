@@ -76,9 +76,9 @@ class _LoginDialogState extends State<LoginDialog> {
   Future<void> _handleGetCaptcha() async {
     // 主动打开验证码对话框
     final captchaToken = await CaptchaDialog.show(context);
-    
+
     if (!mounted) return;
-    
+
     if (captchaToken != null && captchaToken.isNotEmpty) {
       setState(() {
         _captchaToken = captchaToken;
@@ -301,7 +301,9 @@ class _LoginDialogState extends State<LoginDialog> {
                   child: OutlinedButton.icon(
                     onPressed: _isLoading ? null : _handleGetCaptcha,
                     icon: Icon(
-                      _captchaToken != null ? Icons.check_circle : Icons.security,
+                      _captchaToken != null
+                          ? Icons.check_circle
+                          : Icons.security,
                       size: 18,
                       color: _captchaToken != null ? Colors.green : null,
                     ),
@@ -331,8 +333,11 @@ class _LoginDialogState extends State<LoginDialog> {
                 SizedBox(
                   height: 44,
                   child: ElevatedButton(
-                    onPressed: (_isLoading || _captchaToken == null || _captchaToken!.isEmpty) 
-                        ? null 
+                    onPressed:
+                        (_isLoading ||
+                            _captchaToken == null ||
+                            _captchaToken!.isEmpty)
+                        ? null
                         : _handleBind,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0080FF),
@@ -343,7 +348,9 @@ class _LoginDialogState extends State<LoginDialog> {
                       disabledBackgroundColor: const Color(
                         0xFF0080FF,
                       ).withValues(alpha: 0.3),
-                      disabledForegroundColor: Colors.white.withValues(alpha: 0.5),
+                      disabledForegroundColor: Colors.white.withValues(
+                        alpha: 0.5,
+                      ),
                     ),
                     child: _isLoading
                         ? const SizedBox(

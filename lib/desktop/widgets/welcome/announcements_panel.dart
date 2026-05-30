@@ -32,8 +32,7 @@ class AnnouncementsPanel extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color:
-                        Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -218,11 +217,15 @@ class _AnnouncementItemState extends State<_AnnouncementItem> {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: typeColor.withValues(alpha: widget.isRead ? 0.08 : 0.15),
+                  color: typeColor.withValues(
+                    alpha: widget.isRead ? 0.08 : 0.15,
+                  ),
                   borderRadius: BorderRadius.circular(7),
                 ),
                 child: Icon(
-                  widget.item.isSticky ? MdiIcons.pin : MdiIcons.bullhornOutline,
+                  widget.item.isSticky
+                      ? MdiIcons.pin
+                      : MdiIcons.bullhornOutline,
                   size: 14,
                   color: widget.isRead
                       ? typeColor.withValues(alpha: 0.5)
@@ -256,9 +259,13 @@ class _AnnouncementItemState extends State<_AnnouncementItem> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 12.5,
-                              fontWeight: widget.isRead ? FontWeight.w400 : FontWeight.w600,
+                              fontWeight: widget.isRead
+                                  ? FontWeight.w400
+                                  : FontWeight.w600,
                               color: widget.isDark
-                                  ? Colors.white.withValues(alpha: widget.isRead ? 0.5 : 0.9)
+                                  ? Colors.white.withValues(
+                                      alpha: widget.isRead ? 0.5 : 0.9,
+                                    )
                                   : (widget.isRead
                                         ? const Color(0xFF94A3B8)
                                         : const Color(0xFF1E293B)),
@@ -312,7 +319,8 @@ class _AnnouncementItemState extends State<_AnnouncementItem> {
     final dt = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
     final now = DateTime.now();
     final diff = now.difference(dt);
-    final timeStr = '${dt.hour.toString().padLeft(2, '0')}时${dt.minute.toString().padLeft(2, '0')}分';
+    final timeStr =
+        '${dt.hour.toString().padLeft(2, '0')}时${dt.minute.toString().padLeft(2, '0')}分';
 
     final today = DateTime(now.year, now.month, now.day);
     final dateDay = DateTime(dt.year, dt.month, dt.day);
@@ -357,7 +365,9 @@ class _AnnouncementDetailDialog extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
               decoration: BoxDecoration(
                 color: typeColor.withValues(alpha: 0.06),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,7 +391,9 @@ class _AnnouncementDetailDialog extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1E293B),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -405,7 +417,10 @@ class _AnnouncementDetailDialog extends StatelessWidget {
                       color: isDark ? Colors.white54 : const Color(0xFF9CA3AF),
                     ),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
                   ),
                 ],
               ),
@@ -444,7 +459,8 @@ class _AnnouncementDetailDialog extends StatelessWidget {
     final dt = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
     final now = DateTime.now();
     final diff = now.difference(dt);
-    final timeStr = '${dt.hour.toString().padLeft(2, '0')}时${dt.minute.toString().padLeft(2, '0')}分';
+    final timeStr =
+        '${dt.hour.toString().padLeft(2, '0')}时${dt.minute.toString().padLeft(2, '0')}分';
 
     final today = DateTime(now.year, now.month, now.day);
     final dateDay = DateTime(dt.year, dt.month, dt.day);

@@ -36,13 +36,15 @@ class _PortalConfirmDialogState extends State<PortalConfirmDialog>
       vsync: this,
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _rotateController = AnimationController(
       duration: const Duration(seconds: 4),
@@ -136,14 +138,8 @@ class _PortalConfirmDialogState extends State<PortalConfirmDialog>
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                           shadows: [
-                            Shadow(
-                              color: Colors.purpleAccent,
-                              blurRadius: 20,
-                            ),
-                            Shadow(
-                              color: Colors.cyanAccent,
-                              blurRadius: 30,
-                            ),
+                            Shadow(color: Colors.purpleAccent, blurRadius: 20),
+                            Shadow(color: Colors.cyanAccent, blurRadius: 30),
                           ],
                         ),
                       ),
@@ -230,8 +226,8 @@ class _DialogButtonState extends State<_DialogButton> {
             color: widget.isPrimary
                 ? null
                 : (_isHovered
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.white.withValues(alpha: 0.05)),
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.white.withValues(alpha: 0.05)),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: widget.isPrimary
@@ -276,9 +272,7 @@ class _PortalIcon extends StatelessWidget {
     return SizedBox(
       width: 120,
       height: 120,
-      child: CustomPaint(
-        painter: _PortalIconPainter(rotation: rotation),
-      ),
+      child: CustomPaint(painter: _PortalIconPainter(rotation: rotation)),
     );
   }
 }

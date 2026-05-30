@@ -29,10 +29,8 @@ class MapHistorySheetMobile extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => MapHistorySheetMobile(
-        mapName: mapName,
-        mapLabel: mapLabel,
-      ),
+      builder: (_) =>
+          MapHistorySheetMobile(mapName: mapName, mapLabel: mapLabel),
     );
   }
 
@@ -69,8 +67,11 @@ class MapHistorySheetMobile extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 8, 16, 12),
             child: Row(
               children: [
-                Icon(MdiIcons.history,
-                    color: const Color(0xFF0080FF), size: 22),
+                Icon(
+                  MdiIcons.history,
+                  color: const Color(0xFF0080FF),
+                  size: 22,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -280,9 +281,11 @@ class _MapHistoryContentMobileState extends State<MapHistoryContentMobile> {
 
   String _formatShortTime(DateTime dt) {
     final now = DateTime.now();
-    final diffDays = DateTime(now.year, now.month, now.day)
-        .difference(DateTime(dt.year, dt.month, dt.day))
-        .inDays;
+    final diffDays = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).difference(DateTime(dt.year, dt.month, dt.day)).inDays;
     final hm =
         '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     if (diffDays == 0) return '今天 $hm';
@@ -330,10 +333,7 @@ class _MapHistoryContentMobileState extends State<MapHistoryContentMobile> {
             const SizedBox(height: 12),
             Text(_error!),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _fetchHistory,
-              child: const Text('重试'),
-            ),
+            ElevatedButton(onPressed: _fetchHistory, child: const Text('重试')),
           ],
         ),
       );
@@ -510,10 +510,12 @@ class _HistoryItemMobileState extends State<_HistoryItemMobile>
       if (_isExpanded && _trendData == null && widget.getTrendData != null) {
         final data = widget.getTrendData!();
         _trendData = data
-            .map((info) => PlayerTrendInfo(
-                  playerCount: info.playerCount,
-                  createdAt: info.createdAt.toIso8601String(),
-                ))
+            .map(
+              (info) => PlayerTrendInfo(
+                playerCount: info.playerCount,
+                createdAt: info.createdAt.toIso8601String(),
+              ),
+            )
             .toList();
       }
     });
@@ -534,8 +536,8 @@ class _HistoryItemMobileState extends State<_HistoryItemMobile>
           color: _isExpanded
               ? const Color(0xFF0080FF).withValues(alpha: 0.4)
               : (widget.isDark
-                  ? Colors.white.withValues(alpha: 0.07)
-                  : Colors.black.withValues(alpha: 0.07)),
+                    ? Colors.white.withValues(alpha: 0.07)
+                    : Colors.black.withValues(alpha: 0.07)),
         ),
         color: widget.isDark ? const Color(0xFF0F172A) : Colors.white,
       ),
@@ -552,15 +554,13 @@ class _HistoryItemMobileState extends State<_HistoryItemMobile>
                   Row(
                     children: [
                       Icon(
-                        widget.isLatest
-                            ? MdiIcons.fire
-                            : MdiIcons.clockOutline,
+                        widget.isLatest ? MdiIcons.fire : MdiIcons.clockOutline,
                         size: 15,
                         color: widget.isLatest
                             ? const Color(0xFFF59E0B)
                             : (widget.isDark
-                                ? Colors.white.withValues(alpha: 0.5)
-                                : Colors.black.withValues(alpha: 0.5)),
+                                  ? Colors.white.withValues(alpha: 0.5)
+                                  : Colors.black.withValues(alpha: 0.5)),
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -571,8 +571,8 @@ class _HistoryItemMobileState extends State<_HistoryItemMobile>
                           color: widget.isLatest
                               ? const Color(0xFFF59E0B)
                               : (widget.isDark
-                                  ? Colors.white.withValues(alpha: 0.8)
-                                  : Colors.black.withValues(alpha: 0.8)),
+                                    ? Colors.white.withValues(alpha: 0.8)
+                                    : Colors.black.withValues(alpha: 0.8)),
                         ),
                       ),
                       const Spacer(),
@@ -607,14 +607,18 @@ class _HistoryItemMobileState extends State<_HistoryItemMobile>
                     children: [
                       _buildStat(MdiIcons.clockOutline, widget.duration),
                       const SizedBox(width: 14),
-                      _buildStat(MdiIcons.accountGroup,
-                          '${widget.maxPlayers}/${widget.totalSlots}'),
+                      _buildStat(
+                        MdiIcons.accountGroup,
+                        '${widget.maxPlayers}/${widget.totalSlots}',
+                      ),
                       const SizedBox(width: 14),
                       _buildStat(MdiIcons.chartLine, '${widget.dataPoints}点'),
                       if (widget.hasFinalScore) ...[
                         const SizedBox(width: 14),
                         _buildScoreBadge(
-                            widget.finalCtScore!, widget.finalTScore!),
+                          widget.finalCtScore!,
+                          widget.finalTScore!,
+                        ),
                       ],
                     ],
                   ),
@@ -638,8 +642,11 @@ class _HistoryItemMobileState extends State<_HistoryItemMobile>
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Icon(MdiIcons.chartLine,
-                          color: const Color(0xFFFBBF24), size: 15),
+                      Icon(
+                        MdiIcons.chartLine,
+                        color: const Color(0xFFFBBF24),
+                        size: 15,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         '玩家趋势',
@@ -668,7 +675,8 @@ class _HistoryItemMobileState extends State<_HistoryItemMobile>
                     const SizedBox(
                       height: 160,
                       child: Center(
-                          child: CircularProgressIndicator(strokeWidth: 2)),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
                     ),
                 ],
               ),
@@ -735,11 +743,14 @@ class _HistoryItemMobileState extends State<_HistoryItemMobile>
           ),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 3),
-            child: Text(':',
-                style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600)),
+            child: Text(
+              ':',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
           Text(
             '$tScore',

@@ -21,8 +21,10 @@ class GamePathService {
   static const String _keySteamPath = 'steam_path';
 
   // 路径失效事件流
-  final _pathInvalidController = StreamController<PathValidationResult>.broadcast();
-  Stream<PathValidationResult> get onPathInvalidStream => _pathInvalidController.stream;
+  final _pathInvalidController =
+      StreamController<PathValidationResult>.broadcast();
+  Stream<PathValidationResult> get onPathInvalidStream =>
+      _pathInvalidController.stream;
 
   // ==================== 路径获取 ====================
 
@@ -166,7 +168,7 @@ class GamePathService {
     final steamPath = await getSteamPath();
 
     // 如果都没配置，则不存在"路径失效"的问题
-    if ((gamePath == null || gamePath.isEmpty) && 
+    if ((gamePath == null || gamePath.isEmpty) &&
         (steamPath == null || steamPath.isEmpty)) {
       return const PathValidationResult(isValid: true);
     }
@@ -174,7 +176,10 @@ class GamePathService {
     if (gamePath != null && gamePath.isNotEmpty) {
       final result = await validateGamePath(gamePath);
       if (!result.isValid) {
-        final errorResult = PathValidationResult(isValid: false, error: '游戏路径已失效: ${result.error}');
+        final errorResult = PathValidationResult(
+          isValid: false,
+          error: '游戏路径已失效: ${result.error}',
+        );
         _pathInvalidController.add(errorResult);
         return errorResult;
       }
@@ -183,7 +188,10 @@ class GamePathService {
     if (steamPath != null && steamPath.isNotEmpty) {
       final result = await validateSteamPath(steamPath);
       if (!result.isValid) {
-        final errorResult = PathValidationResult(isValid: false, error: 'Steam路径已失效: ${result.error}');
+        final errorResult = PathValidationResult(
+          isValid: false,
+          error: 'Steam路径已失效: ${result.error}',
+        );
         _pathInvalidController.add(errorResult);
         return errorResult;
       }

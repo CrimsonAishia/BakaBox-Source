@@ -7,7 +7,7 @@ import '../../../core/widgets/disk_cached_image.dart';
 import '../../../desktop/widgets/character_gallery/character_gallery_theme.dart';
 
 /// 移动端角色预览图组件
-/// 
+///
 /// 支持六角度切换（正面、左侧、右侧、背面、手部、腿部）和点击打开全屏图片查看器
 /// 采用现代化设计风格，与桌面端保持视觉一致性
 class CharacterPreviewMobile extends StatelessWidget {
@@ -76,7 +76,6 @@ class CharacterPreviewMobile extends StatelessWidget {
     );
   }
 
-
   /// 构建预览图区域
   Widget _buildPreviewImage(
     BuildContext context,
@@ -90,99 +89,112 @@ class CharacterPreviewMobile extends StatelessWidget {
     final vermillionColor = CharacterGalleryTheme.getVermillion(context);
 
     return GestureDetector(
-      onTap: hasValidImage ? onImageTap : null,
-      child: Container(
-        height: 300,
-        decoration: BoxDecoration(
-          color: washiColor,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: goldColor.withValues(alpha: isDark ? 0.4 : 0.5),
-            width: 2.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: goldColor.withValues(alpha: isDark ? 0.15 : 0.2),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-              spreadRadius: -2,
-            ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            // 背景纹理
-            Positioned.fill(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(17),
-                child: CustomPaint(
-                  painter: _WashiBackgroundPainter(
-                    color: scrollBrown.withValues(alpha: isDark ? 0.03 : 0.02),
-                  ),
-                ),
+          onTap: hasValidImage ? onImageTap : null,
+          child: Container(
+            height: 300,
+            decoration: BoxDecoration(
+              color: washiColor,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: goldColor.withValues(alpha: isDark ? 0.4 : 0.5),
+                width: 2.5,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: goldColor.withValues(alpha: isDark ? 0.15 : 0.2),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                  spreadRadius: -2,
+                ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            // 图片内容
-            ClipRRect(
-              borderRadius: BorderRadius.circular(17),
-              child: hasValidImage
-                  ? DiskCachedImage(
-                      imageUrl: imageUrl,
-                      fit: BoxFit.contain,
-                      width: double.infinity,
-                      height: double.infinity,
-                      placeholder: _buildLoadingPlaceholder(context, vermillionColor),
-                      errorWidget: _buildErrorPlaceholder(washiColor, scrollBrown),
-                    )
-                  : _buildErrorPlaceholder(washiColor, scrollBrown),
-            ),
-            // 角落装饰
-            ..._buildCornerDecorations(goldColor, isDark),
-            // 点击提示图标
-            if (hasValidImage)
-              Positioned(
-                right: 14,
-                bottom: 14,
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? Colors.black.withValues(alpha: 0.6)
-                        : Colors.white.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.15),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+            child: Stack(
+              children: [
+                // 背景纹理
+                Positioned.fill(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(17),
+                    child: CustomPaint(
+                      painter: _WashiBackgroundPainter(
+                        color: scrollBrown.withValues(
+                          alpha: isDark ? 0.03 : 0.02,
+                        ),
                       ),
-                    ],
-                    border: Border.all(
-                      color: goldColor.withValues(alpha: 0.3),
-                      width: 1,
                     ),
                   ),
-                  child: Icon(
-                    MdiIcons.magnifyPlusOutline,
-                    size: 20,
-                    color: vermillionColor,
+                ),
+                // 图片内容
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(17),
+                  child: hasValidImage
+                      ? DiskCachedImage(
+                          imageUrl: imageUrl,
+                          fit: BoxFit.contain,
+                          width: double.infinity,
+                          height: double.infinity,
+                          placeholder: _buildLoadingPlaceholder(
+                            context,
+                            vermillionColor,
+                          ),
+                          errorWidget: _buildErrorPlaceholder(
+                            washiColor,
+                            scrollBrown,
+                          ),
+                        )
+                      : _buildErrorPlaceholder(washiColor, scrollBrown),
+                ),
+                // 角落装饰
+                ..._buildCornerDecorations(goldColor, isDark),
+                // 点击提示图标
+                if (hasValidImage)
+                  Positioned(
+                    right: 14,
+                    bottom: 14,
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.black.withValues(alpha: 0.6)
+                            : Colors.white.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(
+                              alpha: isDark ? 0.3 : 0.15,
+                            ),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: goldColor.withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(
+                        MdiIcons.magnifyPlusOutline,
+                        size: 20,
+                        color: vermillionColor,
+                      ),
+                    ).animate().fadeIn(delay: 300.ms, duration: 200.ms),
                   ),
-                ).animate().fadeIn(delay: 300.ms, duration: 200.ms),
-              ),
-          ],
-        ),
-      ),
-    ).animate().fadeIn(duration: 350.ms).scale(
-      begin: const Offset(0.95, 0.95),
-      end: const Offset(1.0, 1.0),
-      duration: 350.ms,
-      curve: Curves.easeOutCubic,
-    );
+              ],
+            ),
+          ),
+        )
+        .animate()
+        .fadeIn(duration: 350.ms)
+        .scale(
+          begin: const Offset(0.95, 0.95),
+          end: const Offset(1.0, 1.0),
+          duration: 350.ms,
+          curve: Curves.easeOutCubic,
+        );
   }
 
   /// 构建角落装饰
@@ -285,51 +297,50 @@ class CharacterPreviewMobile extends StatelessWidget {
     final availablePositions = _getAvailablePositions();
 
     return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: isDark 
-            ? theme.colorScheme.surfaceContainer
-            : theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.dividerColor.withValues(alpha: 0.3),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: availablePositions.map((item) {
-          final (position, label, icon) = item;
-          return Expanded(
-            child: _PositionButton(
-              position: position,
-              label: label,
-              icon: icon,
-              isSelected: currentPosition == position,
-              onTap: () => onPositionChanged(position),
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: isDark
+                ? theme.colorScheme.surfaceContainer
+                : theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: theme.dividerColor.withValues(alpha: 0.3),
             ),
-          );
-        }).toList(),
-      ),
-    ).animate().fadeIn(duration: 300.ms, delay: 150.ms).slideY(begin: 0.1, end: 0);
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: availablePositions.map((item) {
+              final (position, label, icon) = item;
+              return Expanded(
+                child: _PositionButton(
+                  position: position,
+                  label: label,
+                  icon: icon,
+                  isSelected: currentPosition == position,
+                  onTap: () => onPositionChanged(position),
+                ),
+              );
+            }).toList(),
+          ),
+        )
+        .animate()
+        .fadeIn(duration: 300.ms, delay: 150.ms)
+        .slideY(begin: 0.1, end: 0);
   }
 }
-
 
 /// 角落装饰组件
 class _CornerDecoration extends StatelessWidget {
   final Color color;
   final int rotation;
 
-  const _CornerDecoration({
-    required this.color,
-    required this.rotation,
-  });
+  const _CornerDecoration({required this.color, required this.rotation});
 
   @override
   Widget build(BuildContext context) {
@@ -338,9 +349,7 @@ class _CornerDecoration extends StatelessWidget {
       child: SizedBox(
         width: 16,
         height: 16,
-        child: CustomPaint(
-          painter: _CornerPainter(color: color),
-        ),
+        child: CustomPaint(painter: _CornerPainter(color: color)),
       ),
     );
   }
@@ -430,12 +439,12 @@ class _PositionButton extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 3),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected 
+          color: isSelected
               ? vermillion.withValues(alpha: isDark ? 0.2 : 0.15)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected 
+            color: isSelected
                 ? vermillion.withValues(alpha: isDark ? 0.5 : 0.4)
                 : Colors.transparent,
             width: 1.5,
@@ -453,7 +462,9 @@ class _PositionButton extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? vermillion : inkColor.withValues(alpha: 0.7),
+                color: isSelected
+                    ? vermillion
+                    : inkColor.withValues(alpha: 0.7),
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 fontSize: 11,
               ),
@@ -470,11 +481,7 @@ class FullscreenImageViewer extends StatelessWidget {
   final String imageUrl;
   final String? title;
 
-  const FullscreenImageViewer({
-    super.key,
-    required this.imageUrl,
-    this.title,
-  });
+  const FullscreenImageViewer({super.key, required this.imageUrl, this.title});
 
   static void show(BuildContext context, String imageUrl, {String? title}) {
     Navigator.of(context).push(
@@ -483,16 +490,10 @@ class FullscreenImageViewer extends StatelessWidget {
         barrierColor: Colors.black87,
         barrierDismissible: true,
         pageBuilder: (context, animation, secondaryAnimation) {
-          return FullscreenImageViewer(
-            imageUrl: imageUrl,
-            title: title,
-          );
+          return FullscreenImageViewer(imageUrl: imageUrl, title: title);
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
+          return FadeTransition(opacity: animation, child: child);
         },
       ),
     );
@@ -517,7 +518,11 @@ class FullscreenImageViewer extends StatelessWidget {
                     child: CircularProgressIndicator(color: Colors.white),
                   ),
                   errorWidget: const Center(
-                    child: Icon(Icons.broken_image, color: Colors.white54, size: 64),
+                    child: Icon(
+                      Icons.broken_image,
+                      color: Colors.white54,
+                      size: 64,
+                    ),
                   ),
                 ),
               ),
@@ -532,7 +537,11 @@ class FullscreenImageViewer extends StatelessWidget {
                 ),
                 child: IconButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close_rounded, color: Colors.white, size: 24),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                 ),
               ),
             ),
@@ -542,7 +551,10 @@ class FullscreenImageViewer extends StatelessWidget {
                 left: 16,
                 right: 80,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black54,
                     borderRadius: BorderRadius.circular(12),

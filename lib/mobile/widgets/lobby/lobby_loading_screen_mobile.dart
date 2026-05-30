@@ -43,9 +43,10 @@ class _LobbyLoadingScreenMobileState extends State<LobbyLoadingScreenMobile>
       vsync: this,
       duration: const Duration(seconds: 8),
     )..repeat();
-    _rotateAnimation = Tween<double>(begin: 0, end: 2 * math.pi).animate(
-      CurvedAnimation(parent: _rotateController, curve: Curves.linear),
-    );
+    _rotateAnimation = Tween<double>(
+      begin: 0,
+      end: 2 * math.pi,
+    ).animate(CurvedAnimation(parent: _rotateController, curve: Curves.linear));
 
     _floatController = AnimationController(
       vsync: this,
@@ -78,25 +79,29 @@ class _LobbyLoadingScreenMobileState extends State<LobbyLoadingScreenMobile>
         connectionStatus == LobbyConnectionStatus.failed;
 
     // 步骤1：连接大厅
-    steps.add(_LoadingStep(
-      icon: Icons.cloud_done_outlined,
-      label: '连接大厅',
-      status: isConnected
-          ? _StepStatus.done
-          : isDisconnected
-              ? _StepStatus.failed
-              : (isReconnecting || phase == LobbyLoadingPhase.connecting)
-                  ? _StepStatus.loading
-                  : _StepStatus.pending,
-    ));
+    steps.add(
+      _LoadingStep(
+        icon: Icons.cloud_done_outlined,
+        label: '连接大厅',
+        status: isConnected
+            ? _StepStatus.done
+            : isDisconnected
+            ? _StepStatus.failed
+            : (isReconnecting || phase == LobbyLoadingPhase.connecting)
+            ? _StepStatus.loading
+            : _StepStatus.pending,
+      ),
+    );
 
     // 步骤1.5：排队（仅在排队时显示）
     if (isQueueing) {
-      steps.add(_LoadingStep(
-        icon: Icons.hourglass_top,
-        label: '排队等待',
-        status: _StepStatus.loading,
-      ));
+      steps.add(
+        _LoadingStep(
+          icon: Icons.hourglass_top,
+          label: '排队等待',
+          status: _StepStatus.loading,
+        ),
+      );
     }
 
     // 步骤2：加载素材
@@ -116,11 +121,13 @@ class _LobbyLoadingScreenMobileState extends State<LobbyLoadingScreenMobile>
     } else {
       assetsStatus = _StepStatus.done;
     }
-    steps.add(_LoadingStep(
-      icon: Icons.collections_outlined,
-      label: '加载素材',
-      status: assetsStatus,
-    ));
+    steps.add(
+      _LoadingStep(
+        icon: Icons.collections_outlined,
+        label: '加载素材',
+        status: assetsStatus,
+      ),
+    );
 
     // 步骤3：获取大厅状态
     final hasSnapshot = widget.state.selfUser != null;
@@ -138,11 +145,13 @@ class _LobbyLoadingScreenMobileState extends State<LobbyLoadingScreenMobile>
     } else {
       snapshotStatus = _StepStatus.pending;
     }
-    steps.add(_LoadingStep(
-      icon: Icons.people_outline,
-      label: '获取大厅状态',
-      status: snapshotStatus,
-    ));
+    steps.add(
+      _LoadingStep(
+        icon: Icons.people_outline,
+        label: '获取大厅状态',
+        status: snapshotStatus,
+      ),
+    );
 
     return steps;
   }
@@ -179,8 +188,9 @@ class _LobbyLoadingScreenMobileState extends State<LobbyLoadingScreenMobile>
 
     final textPrimary = isDark ? Colors.white : const Color(0xFF1E293B);
     final textSecondary = isDark ? Colors.white70 : const Color(0xFF475569);
-    final ringBgColor =
-        isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFCBD5E1);
+    final ringBgColor = isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : const Color(0xFFCBD5E1);
 
     return Container(
       color: isDark ? const Color(0xFF0B1120) : const Color(0xFFDDE7F7),
@@ -211,8 +221,10 @@ class _LobbyLoadingScreenMobileState extends State<LobbyLoadingScreenMobile>
                 ),
                 const SizedBox(height: 28),
                 AnimatedBuilder(
-                  animation: Listenable.merge(
-                      [_pulseAnimation, _rotateAnimation]),
+                  animation: Listenable.merge([
+                    _pulseAnimation,
+                    _rotateAnimation,
+                  ]),
                   builder: (context, child) {
                     return SizedBox(
                       width: 90,
@@ -334,8 +346,8 @@ class _LoadingStepItem extends StatelessWidget {
               color: step.status == _StepStatus.done
                   ? textPrimary
                   : step.status == _StepStatus.failed
-                      ? const Color(0xFFEF4444)
-                      : textSecondary,
+                  ? const Color(0xFFEF4444)
+                  : textSecondary,
               fontSize: 14,
               fontWeight: step.status == _StepStatus.done
                   ? FontWeight.w600
@@ -359,10 +371,7 @@ class _StepIndicator extends StatelessWidget {
       duration: const Duration(milliseconds: 400),
       width: 28,
       height: 28,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: _bgColor,
-      ),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: _bgColor),
       child: _buildIcon(),
     );
   }
@@ -448,9 +457,7 @@ class _MobileRingPainter extends CustomPainter {
           endAngle: 4.71,
           colors: [
             const Color(0xFF38BDF8),
-            hasSnapshot
-                ? const Color(0xFF22C55E)
-                : const Color(0xFF38BDF8),
+            hasSnapshot ? const Color(0xFF22C55E) : const Color(0xFF38BDF8),
             const Color(0xFF38BDF8).withValues(alpha: 0.1),
           ],
           stops: const [0.0, 0.6, 1.0],
