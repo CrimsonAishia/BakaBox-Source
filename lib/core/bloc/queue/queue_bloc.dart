@@ -77,6 +77,7 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
       state.copyWith(
         isInitialized: true,
         serverAddress: event.serverAddress,
+        serverName: event.serverName,
         isCustomServer: event.isCustomServer,
         isGameRunning: currentState.isGameRunning,
         config: config,
@@ -208,6 +209,7 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
 
     final success = await _statusService.startQueue(
       serverAddress: state.serverAddress ?? '',
+      serverName: state.serverName,
       config: state.config,
       serverInfo: state.serverInfo,
       mapInfo: state.mapInfo,

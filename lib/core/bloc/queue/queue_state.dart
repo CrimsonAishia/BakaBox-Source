@@ -72,6 +72,9 @@ class QueueBlocState extends Equatable {
   /// 服务器地址
   final String? serverAddress;
 
+  /// 自定义服务器名称（通常是用户设置的备注名，如果没有则是官方名）
+  final String? serverName;
+
   /// 是否为自定义服务器
   final bool isCustomServer;
 
@@ -93,6 +96,7 @@ class QueueBlocState extends Equatable {
     this.error,
     this.isInitialized = false,
     this.serverAddress,
+    this.serverName,
     this.isCustomServer = false,
     this.needManualLaunch = false,
   });
@@ -136,6 +140,7 @@ class QueueBlocState extends Equatable {
     String? error,
     bool? isInitialized,
     String? serverAddress,
+    String? serverName,
     bool? isCustomServer,
     bool? needManualLaunch,
   }) {
@@ -154,6 +159,7 @@ class QueueBlocState extends Equatable {
       error: error,
       isInitialized: isInitialized ?? this.isInitialized,
       serverAddress: serverAddress ?? this.serverAddress,
+      serverName: serverName ?? this.serverName,
       isCustomServer: isCustomServer ?? this.isCustomServer,
       needManualLaunch: needManualLaunch ?? this.needManualLaunch,
     );
@@ -175,6 +181,7 @@ class QueueBlocState extends Equatable {
     error,
     isInitialized,
     serverAddress,
+    serverName,
     isCustomServer,
     needManualLaunch,
   ];

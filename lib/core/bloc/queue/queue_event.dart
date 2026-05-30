@@ -22,8 +22,11 @@ class QueueInitialize extends QueueEvent {
   /// 初始地图信息（可选）
   final MapData? initialMapInfo;
 
+  final String? serverName;
+
   const QueueInitialize(
     this.serverAddress, {
+    this.serverName,
     this.isCustomServer = false,
     this.initialServerInfo,
     this.initialMapInfo,
@@ -32,6 +35,7 @@ class QueueInitialize extends QueueEvent {
   @override
   List<Object?> get props => [
     serverAddress,
+    serverName,
     isCustomServer,
     initialServerInfo,
     initialMapInfo,

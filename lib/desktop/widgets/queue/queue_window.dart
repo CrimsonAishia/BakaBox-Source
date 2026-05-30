@@ -44,6 +44,9 @@ class QueueWindow extends StatefulWidget {
   /// 初始地图信息（可选）
   final MapData? initialMapInfo;
 
+  /// 自定义服务器名称（通常是用户设置的备注名，如果没有则是官方名）
+  final String? serverName;
+
   const QueueWindow({
     super.key,
     required this.serverAddress,
@@ -51,6 +54,7 @@ class QueueWindow extends StatefulWidget {
     this.onClose,
     this.initialServerInfo,
     this.initialMapInfo,
+    this.serverName,
   });
 
   @override
@@ -74,6 +78,7 @@ class _QueueWindowState extends State<QueueWindow> {
           isCustomServer: widget.isCustomServer,
           initialServerInfo: widget.initialServerInfo,
           initialMapInfo: widget.initialMapInfo,
+          serverName: widget.serverName,
         ),
       );
 
@@ -423,7 +428,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
                 const Spacer(),
                 // 服务器名称
                 Text(
-                  serverInfo?.hostName ?? '加载中...',
+                  state.serverName ?? serverInfo?.hostName ?? '加载中...',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -867,16 +872,9 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
 
     // 构建 QueueUsersJoin 事件，包含当前用户信息
     // 后端不返回当前用户，需要在客户端把自己加入列表
-    usersBloc.add(
-      QueueUsersJoin(
-        nickname: nickname,
-        avatarUrl: avatarUrl,
-      ),
-    );
+    usersBloc.add(QueueUsersJoin(nickname: nickname, avatarUrl: avatarUrl));
     queueBloc.add(const QueueStart());
   }
-
-
 
   Widget _buildLaunchGameButton(BuildContext context, QueueBlocState state) {
     // 正在启动游戏时显示启动中状态（优先级最高）
