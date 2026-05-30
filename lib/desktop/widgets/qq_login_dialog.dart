@@ -1,8 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:webview_windows/webview_windows.dart' as windows_webview;
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../../core/bloc/auth/auth_bloc.dart';
 import '../../core/bloc/auth/auth_event.dart';
 import '../../core/bloc/auth/auth_state.dart';
@@ -26,8 +25,7 @@ class QQLoginDialog extends StatefulWidget {
 }
 
 class _QQLoginDialogState extends State<QQLoginDialog> {
-  windows_webview.WebviewController? _webViewController;
-  StreamSubscription? _urlSubscription; // URL 监听订阅
+  InAppWebViewController? _webViewController;
   Timer? _loadingTimer;
   bool _isLoading = true;
   bool _isInitialized = false;
@@ -54,89 +52,62 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
     _loadingTimer?.cancel();
     _loadingTimer = null;
 
-    // 取消 URL 订阅
-    _urlSubscription?.cancel();
-    _urlSubscription = null;
-
-    // 释放 WebView 控制器
-    _webViewController?.dispose();
     _webViewController = null;
 
     super.dispose();
   }
 
-  Future<void> _initializeWebView() async {
-    try {
-      _webViewController = windows_webview.WebviewController();
-      await _webViewController!.initialize();
+  void _handleUrlChange(String url) {
+    if (!mounted || _loginDetected || _isDisposed) return;
 
-      await _webViewController!.setUserAgent(
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      );
+    LogService.d('[QQLogin] URL 变化: $url');
 
-      // 监听 URL 变化事件 - 保存订阅引用以便取消
-      _urlSubscription = _webViewController!.url.listen((url) {
-        if (!mounted || _loginDetected || _isDisposed) return;
+    // 1. 检测是否离开了初始登录页面（跳转到 QQ 登录）
+    if (!_hasLeftInitialPage &&
+        (url.contains('graph.qq.com') || url.contains('ptlogin2.qq.com'))) {
+      _hasLeftInitialPage = true;
+      LogService.d('[QQLogin] 用户开始 QQ 登录流程');
+    }
 
-        LogService.d('[QQLogin] URL 变化: $url');
+    // 2. 检测 QQ 登录后的回调页面
+    if (_hasLeftInitialPage &&
+        url.contains('bbs.zombieden.cn') &&
+        !url.contains('op=init') &&
+        !url.contains('graph.qq.com') &&
+        !url.contains('ptlogin2.qq.com') &&
+        (url.contains('connect.php') ||
+            (url.contains('member.php') && url.contains('mod=connect')))) {
+      // 第一时间进入 loading 状态，遮住 WebView
+      if (!_isExtracting) {
+        LogService.d('[QQLogin] 检测到登录回调，立即显示 loading');
+        _isExtracting = true;
+        _loginDetected = true;
 
-        // 1. 检测是否离开了初始登录页面（跳转到 QQ 登录）
-        if (!_hasLeftInitialPage &&
-            (url.contains('graph.qq.com') || url.contains('ptlogin2.qq.com'))) {
-          _hasLeftInitialPage = true;
-          LogService.d('[QQLogin] 用户开始 QQ 登录流程');
+        // 立即触发 UI 更新
+        if (mounted) {
+          setState(() {});
         }
 
-        // 2. 检测 QQ 登录后的回调页面
-        // 包括两种情况:
-        //   - connect.php (登录成功)
-        //   - member.php?mod=connect (未绑定账号)
-        if (_hasLeftInitialPage &&
-            url.contains('bbs.zombieden.cn') &&
-            !url.contains('op=init') &&
-            !url.contains('graph.qq.com') &&
-            !url.contains('ptlogin2.qq.com') &&
-            (url.contains('connect.php') ||
-                (url.contains('member.php') && url.contains('mod=connect')))) {
-          // 第一时间进入 loading 状态，遮住 WebView
-          if (!_isExtracting) {
-            LogService.d('[QQLogin] 检测到登录回调，立即显示 loading');
-            _isExtracting = true;
-            _loginDetected = true;
-
-            // 立即触发 UI 更新
-            if (mounted) {
-              setState(() {});
-            }
-
-            // 然后异步执行登录检查
-            _checkLoginStatus();
-          }
-        }
-      });
-
-      if (!mounted) return;
-      setState(() {
-        _isInitialized = true;
-        _isLoading = true;
-      });
-
-      await _webViewController!.loadUrl(_forumQQLoginUrl);
-
-      // 2秒后关闭 loading
-      _loadingTimer = Timer(const Duration(seconds: 2), () {
-        if (mounted && !_isDisposed) {
-          setState(() => _isLoading = false);
-        }
-      });
-    } catch (e) {
-      LogService.e('WebView 初始化失败', e);
-      if (mounted && !_isDisposed) {
-        setState(() => _isLoading = false);
-        ToastUtils.showError(context, 'WebView 初始化失败');
-        Navigator.of(context).pop();
+        // 然后异步执行登录检查
+        _checkLoginStatus();
       }
     }
+  }
+
+  Future<void> _initializeWebView() async {
+    // Initialization is handled by InAppWebView widget
+    if (!mounted) return;
+    setState(() {
+      _isInitialized = true;
+      _isLoading = true;
+    });
+
+    // 2秒后关闭 loading
+    _loadingTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted && !_isDisposed) {
+        setState(() => _isLoading = false);
+      }
+    });
   }
 
   /// 检查登录状态
@@ -192,7 +163,7 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
         })();
       ''';
 
-      final result = await _webViewController!.executeScript(checkScript);
+      final result = await _webViewController!.evaluateJavascript(source: checkScript);
       if (result != null) {
         final resultStr = result.toString();
         LogService.d('[QQLogin] 页面检测结果: $resultStr');
@@ -226,8 +197,8 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
           if (_isDisposed || !mounted) return;
 
           // 重新检测
-          final retryResult = await _webViewController!.executeScript(
-            checkScript,
+          final retryResult = await _webViewController!.evaluateJavascript(
+            source: checkScript,
           );
           if (retryResult != null) {
             final retryStr = retryResult.toString();
@@ -316,25 +287,16 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
     if (!mounted || _webViewController == null || _isDisposed) return;
 
     try {
-      // 使用 CDP 获取所有 Cookie（包括 HttpOnly）
-      final cookieJson = await _webViewController!.getCookiesForUrl(
-        'https://bbs.zombieden.cn/',
+      final cookies = await CookieManager.instance().getCookies(
+        url: WebUri('https://bbs.zombieden.cn/'),
       );
-
-      if (cookieJson == null || cookieJson.isEmpty) {
-        throw Exception('无法获取 Cookie');
-      }
-
-      final cookieData = jsonDecode(cookieJson) as Map<String, dynamic>;
-      final cookies = cookieData['cookies'] as List<dynamic>? ?? [];
 
       final forumCookies = <Map<String, String>>[];
       bool hasAuthCookie = false;
 
       for (final cookie in cookies) {
-        final cookieMap = cookie as Map<String, dynamic>;
-        final name = cookieMap['name'] as String? ?? '';
-        final value = cookieMap['value'] as String? ?? '';
+        final name = cookie.name;
+        final value = cookie.value;
 
         if (name.isNotEmpty && value.isNotEmpty) {
           forumCookies.add({'name': name, 'value': value});
@@ -455,8 +417,31 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
                 borderRadius: BorderRadius.circular(8),
                 child: Stack(
                   children: [
-                    if (_isInitialized && _webViewController != null)
-                      windows_webview.Webview(_webViewController!),
+                    if (_isInitialized)
+                      InAppWebView(
+                        initialUrlRequest: URLRequest(url: WebUri(_forumQQLoginUrl)),
+                        initialSettings: InAppWebViewSettings(
+                          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        ),
+                        onWebViewCreated: (controller) {
+                          _webViewController = controller;
+                        },
+                        onLoadStart: (controller, url) {
+                          if (url != null) _handleUrlChange(url.toString());
+                        },
+                        onUpdateVisitedHistory: (controller, url, isReload) {
+                          if (url != null) _handleUrlChange(url.toString());
+                        },
+                        onLoadStop: (controller, url) {
+                          if (url != null) _handleUrlChange(url.toString());
+                        },
+                        onPermissionRequest: (controller, request) async {
+                          return PermissionResponse(
+                            resources: request.resources,
+                            action: PermissionResponseAction.DENY,
+                          );
+                        },
+                      ),
 
                     // Loading 遮罩
                     if (_isLoading || !_isInitialized)

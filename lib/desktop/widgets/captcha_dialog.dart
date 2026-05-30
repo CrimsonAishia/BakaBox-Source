@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:webview_windows/webview_windows.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 /// 顶象验证码对话框
 /// 加载论坛登录页面，通过 JS 注入隐藏其他元素只显示验证码，
@@ -25,7 +25,7 @@ class CaptchaDialog extends StatefulWidget {
 }
 
 class _CaptchaDialogState extends State<CaptchaDialog> {
-  final _controller = WebviewController();
+  InAppWebViewController? _controller;
   bool _isLoading = true;
   bool _isWebViewReady = false;
   String? _errorMessage;
@@ -104,34 +104,7 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
   @override
   void initState() {
     super.initState();
-    _initWebView();
-  }
-
-  Future<void> _initWebView() async {
-    try {
-      await _controller.initialize();
-
-      // 清除 Cookie，避免论坛已登录状态导致验证码不显示
-      await _controller.clearCookies();
-
-      // 监听页面加载完成
-      _controller.loadingState.listen((state) {
-        if (state == LoadingState.navigationCompleted) {
-          // 页面加载完成后注入 JS 隐藏其他元素，并开始轮询 token
-          _injectAndStartPolling();
-        }
-      });
-
-      // 加载论坛登录页面
-      await _controller.loadUrl(
-        'https://bbs.zombieden.cn/member.php?mod=logging&action=login',
-      );
-    } catch (e) {
-      setState(() {
-        _errorMessage = '初始化验证码失败: $e';
-        _isLoading = false;
-      });
-    }
+    // WebView is initialized via InAppWebView widget's onWebViewCreated
   }
 
   Future<void> _injectAndStartPolling() async {
@@ -142,7 +115,7 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
 
     // 检测验证码容器是否存在，不存在说明论坛已登录，直接退出
     try {
-      final hasCaptcha = await _controller.executeScript('''
+      final hasCaptcha = await _controller?.evaluateJavascript(source: '''
 (function() {
   return document.getElementById('dx_page_logging_input') ? 'yes' : 'no';
 })();
@@ -158,7 +131,7 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
 
     // 注入 JS 隐藏其他元素
     try {
-      await _controller.executeScript(_injectJs);
+      await _controller?.evaluateJavascript(source: _injectJs);
     } catch (_) {}
 
     setState(() {
@@ -171,6 +144,7 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
   }
 
   void _startTokenPolling() {
+    _tokenCheckTimer?.cancel();
     _tokenCheckTimer = Timer.periodic(const Duration(milliseconds: 500), (
       timer,
     ) async {
@@ -180,7 +154,7 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
       }
       try {
         // 检查隐藏字段的值（论坛验证码成功后会写入这个字段）
-        final result = await _controller.executeScript('''
+        final result = await _controller?.evaluateJavascript(source: '''
 (function() {
   var el = document.getElementById('dx_captcha_verify_logging');
   if (el && el.value && el.value.length > 10) {
@@ -210,7 +184,6 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
   @override
   void dispose() {
     _tokenCheckTimer?.cancel();
-    _controller.dispose();
     super.dispose();
   }
 
@@ -297,22 +270,63 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
       );
     }
 
-    if (_isLoading || !_isWebViewReady) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('正在加载验证码...'),
-          ],
-        ),
-      );
-    }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
-      child: Webview(_controller),
+      child: Stack(
+        children: [
+          InAppWebView(
+            initialSettings: InAppWebViewSettings(
+              transparentBackground: true,
+              disableContextMenu: true,
+            ),
+            onWebViewCreated: (controller) async {
+              _controller = controller;
+              await CookieManager.instance().deleteAllCookies();
+              if (mounted) {
+                await controller.loadUrl(
+                  urlRequest: URLRequest(
+                    url: WebUri('https://bbs.zombieden.cn/member.php?mod=logging&action=login'),
+                  ),
+                );
+              }
+            },
+            onLoadStop: (controller, url) async {
+              _injectAndStartPolling();
+            },
+            onPermissionRequest: (controller, request) async {
+              return PermissionResponse(
+                resources: request.resources,
+                action: PermissionResponseAction.DENY,
+              );
+            },
+            onReceivedError: (controller, request, error) {
+              if (mounted) {
+                setState(() {
+                  _errorMessage = '加载验证码失败: ${error.description}';
+                  _isLoading = false;
+                });
+              }
+            },
+          ),
+          if (_isLoading || !_isWebViewReady)
+            Container(
+              color: bgColor,
+              child: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('正在加载验证码...'),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
