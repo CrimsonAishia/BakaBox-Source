@@ -190,7 +190,7 @@ class CategoryCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 分类名称（允许最多两行）
+        // 分类名称（允许最多三行）
         Text(
           category.modelName ?? '未知分类',
           style: TextStyle(
@@ -199,7 +199,7 @@ class CategoryCard extends StatelessWidget {
             fontSize: 15,
             height: 1.2,
           ),
-          maxLines: 2,
+          maxLines: 3,
           overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 2),

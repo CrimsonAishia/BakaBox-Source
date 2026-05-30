@@ -317,7 +317,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(6), // 内部圆角略小，配合边框
         child: SizedBox(
-          height: 136, // 140 - 2*2 边框
+          height: 132, // 136 - 2*2 边框
           child: Stack(
             children: [
               // 地图背景
@@ -445,7 +445,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   /// 内容区域 - 左右布局
   Widget _buildContent() {
     return Padding(
-      padding: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 12),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 10, bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -763,8 +763,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
           padding: const EdgeInsets.only(
             left: 14,
             right: 14,
-            top: 12,
-            bottom: 8,
+            top: 8,
+            bottom: 5,
           ),
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -1167,20 +1167,47 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         !widget.server.isLoading &&
         !widget.server.serverItem.isCustom;
 
-    // hover 时紧凑间距，非 hover 时稍宽松间距
-    final verticalSpacing = _isHovered ? 6.0 : 6.0;
+    Color bgColor;
+    if (players >= maxPlayers && maxPlayers > 0) {
+      bgColor = const Color(0xFFFEEAEA);
+    } else if (players >= maxPlayers * 0.8 && maxPlayers > 0) {
+      bgColor = const Color(0xFFFFF9E6);
+    } else {
+      bgColor = Colors.white;
+    }
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // 玩家数量
-        _buildPlayerCount(players, maxPlayers),
-        // 地图运行时间（自定义服务器不显示）
-        if (showRuntime) ...[
-          SizedBox(height: verticalSpacing),
-          _buildRuntimeInfo(),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: bgColor.withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
-      ],
+      ),
+      child: IntrinsicWidth(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(child: _buildPlayerCount(players, maxPlayers)),
+            if (showRuntime) ...[
+              const SizedBox(height: 6),
+              SizedBox(
+                height: 1,
+                child: CustomPaint(painter: _DashedLinePainter()),
+              ),
+              const SizedBox(height: 6),
+              Center(child: _buildRuntimeInfo()),
+            ],
+          ],
+        ),
+      ),
     );
   }
 
@@ -1247,82 +1274,60 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
   Widget _buildPlayerCount(int players, int maxPlayers) {
     Color primaryColor;
-    Color bgColor;
 
     if (players >= maxPlayers && maxPlayers > 0) {
       primaryColor = const Color(0xFFF44336);
-      bgColor = const Color(0xFFFEEAEA);
     } else if (players >= maxPlayers * 0.8 && maxPlayers > 0) {
       primaryColor = const Color(0xFFFF9800);
-      bgColor = const Color(0xFFFFF9E6);
     } else {
       primaryColor = const Color(0xFF0080FF);
-      bgColor = Colors.white;
     }
 
     final int queueCount = widget.server.queueCount;
     final int warmupCount = widget.server.warmupCount;
     final int extraCount = queueCount + warmupCount;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: bgColor.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        // 当前人数（大字）
+        Text(
+          '$players',
+          style: TextStyle(
+            color: primaryColor,
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            height: 1,
           ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
-        children: [
-          // 当前人数（大字）
-          Text(
-            '$players',
+        ),
+        if (extraCount > 0)
+          _buildExtraCount(queueCount, warmupCount, extraCount),
+        // 斜杠
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 2),
+          child: Text(
+            '/',
             style: TextStyle(
-              color: primaryColor,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
+              color: Color(0xFF9CA3AF),
+              fontSize: 18,
+              fontWeight: FontWeight.w300,
               height: 1,
             ),
           ),
-          if (extraCount > 0)
-            Padding(
-              padding: const EdgeInsets.only(left: 4),
-              child: _buildExtraCount(queueCount, warmupCount, extraCount),
-            ),
-          // 斜杠
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: const Text(
-              '/',
-              style: TextStyle(
-                color: Color(0xFF9CA3AF),
-                fontSize: 18,
-                fontWeight: FontWeight.w300,
-                height: 1,
-              ),
-            ),
+        ),
+        // 最大人数（小字）
+        Text(
+          '$maxPlayers',
+          style: const TextStyle(
+            color: Color(0xFF6B7280),
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            height: 1,
           ),
-          // 最大人数（小字）
-          Text(
-            '$maxPlayers',
-            style: const TextStyle(
-              color: Color(0xFF6B7280),
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              height: 1,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -1391,104 +1396,81 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
     Color iconColor;
     Color textColor;
-    Color bgColor;
-    Color borderColor;
 
     if (hasError) {
       iconColor = const Color(0xFFF0A020);
       textColor = const Color(0xFFF0A020);
-      bgColor = const Color(0xFFF0A020).withValues(alpha: 0.15);
-      borderColor = const Color(0xFFF0A020).withValues(alpha: 0.3);
     } else if (_isWarmingUp) {
       iconColor = const Color(0xFFFF9800);
       textColor = const Color(0xFFE65100);
-      bgColor = Colors.white.withValues(alpha: 0.98);
-      borderColor = const Color(0xFFFF9800);
     } else if (isLoading) {
       iconColor = const Color(0xFF9CA3AF);
       textColor = const Color(0xFF6B7280);
-      bgColor = const Color(0xFF9CA3AF).withValues(alpha: 0.15);
-      borderColor = const Color(0xFF9CA3AF).withValues(alpha: 0.2);
     } else {
       iconColor = const Color(0xFF10B981);
       textColor = const Color(0xFF1F2937);
-      bgColor = Colors.white.withValues(alpha: 0.95);
-      borderColor = Colors.white.withValues(alpha: 0.3);
     }
 
     final weeklyOccurrences = widget.server.mapRuntime?.weeklyOccurrences;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: borderColor, width: _isWarmingUp ? 2 : 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 运行时间
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(MdiIcons.clockOutline, size: 12, color: iconColor),
-              const SizedBox(width: 4),
-              Text(
-                displayText,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          // 比分显示（非热身且有有效比分数据时，0:0不显示）或周出现次数
-          if (!_isWarmingUp &&
-              widget.server.teamScores?.ctScore != null &&
-              widget.server.teamScores?.tScore != null &&
-              (widget.server.teamScores!.ctScore! > 0 ||
-                  widget.server.teamScores!.tScore! > 0)) ...[
-            const SizedBox(height: 2),
-            _buildScoreDisplay(
-              widget.server.teamScores!.ctScore!,
-              widget.server.teamScores!.tScore!,
-              mapName,
-              dataQuality: widget.server.teamScores!.dataQuality,
-            ),
-          ] else if (weeklyOccurrences != null) ...[
-            const SizedBox(height: 2),
-            RichText(
-              text: TextSpan(
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF6B7280),
-                ),
-                children: [
-                  const TextSpan(text: '一周内出现'),
-                  TextSpan(
-                    text: ' $weeklyOccurrences ',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF3B82F6),
-                    ),
-                  ),
-                  const TextSpan(text: '次'),
-                ],
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 运行时间
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(MdiIcons.clockOutline, size: 12, color: iconColor),
+            const SizedBox(width: 4),
+            Text(
+              displayText,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
+        ),
+        // 周出现次数
+        if (weeklyOccurrences != null) ...[
+          const SizedBox(height: 2),
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF6B7280),
+              ),
+              children: [
+                const TextSpan(text: '一周内出现'),
+                TextSpan(
+                  text: ' $weeklyOccurrences ',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF3B82F6),
+                  ),
+                ),
+                const TextSpan(text: '次'),
+              ],
+            ),
+          ),
         ],
-      ),
+        // 比分显示（非热身且有有效比分数据时，0:0不显示）
+        if (!_isWarmingUp &&
+            widget.server.teamScores?.ctScore != null &&
+            widget.server.teamScores?.tScore != null &&
+            (widget.server.teamScores!.ctScore! > 0 ||
+                widget.server.teamScores!.tScore! > 0)) ...[
+          const SizedBox(height: 2),
+          _buildScoreDisplay(
+            widget.server.teamScores!.ctScore!,
+            widget.server.teamScores!.tScore!,
+            mapName,
+            dataQuality: widget.server.teamScores!.dataQuality,
+          ),
+        ],
+      ],
     );
   }
 
@@ -2428,4 +2410,23 @@ class _FloatingYellowDotState extends State<_FloatingYellowDot>
       },
     );
   }
+}
+
+class _DashedLinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.grey.withValues(alpha: 0.4)
+      ..strokeWidth = 1;
+    const dashWidth = 4.0;
+    const dashSpace = 3.0;
+    double startX = 0;
+    while (startX < size.width) {
+      canvas.drawLine(Offset(startX, 0), Offset(startX + dashWidth, 0), paint);
+      startX += dashWidth + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

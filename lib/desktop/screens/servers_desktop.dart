@@ -123,7 +123,6 @@ class _ServersDesktopState extends State<ServersDesktop> {
     }
   }
 
-
   /// 延迟获取所有服务器的 ping（防抖 + 并行获取）
   void _scheduleDelayedPingFetch() {
     // 沉浸模式下不触发 ping 获取
@@ -522,8 +521,13 @@ class _ServersDesktopState extends State<ServersDesktop> {
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          padding: const EdgeInsets.fromLTRB(15, 50, 15, 0),
-          child: _buildMainContent(),
+          padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
+          child: Column(
+            children: [
+              _buildTopBar(),
+              Expanded(child: _buildMainContent()),
+            ],
+          ),
         ),
       ),
     );
@@ -814,20 +818,15 @@ class _ServersDesktopState extends State<ServersDesktop> {
           color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 列标题和添加按钮
-          _buildServersHeader(),
-          // 服务器列表
-          Expanded(child: _buildServersList()),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.only(top: 5, bottom: 10),
+        child: _buildServersList(),
       ),
     );
   }
 
-  /// 服务器列表头部（包含添加按钮和倒计时）
-  Widget _buildServersHeader() {
+  /// 顶部工具栏（包含操作按钮）
+  Widget _buildTopBar() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return BlocBuilder<ServerBloc, ServerState>(
       builder: (context, state) {
@@ -835,137 +834,149 @@ class _ServersDesktopState extends State<ServersDesktop> {
         final categoryName = state.selectedCategory?.modelName ?? '';
 
         return Padding(
-          padding: const EdgeInsets.fromLTRB(15, 4, 15, 5),
+          padding: const EdgeInsets.symmetric(vertical: 5),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              // 服务器标题
-              Text(
-                '服务器',
-                style: TextStyle(
-                  color: isDark ? Colors.white70 : const Color(0xFF6B7280),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
+              // 页面大标题（好看的样式）
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 4,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0080FF),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '服务器列表',
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF111827),
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
               ),
               const Spacer(),
-              // 倒计时刷新组件
-              if (state.selectedCategory != null) ...[
-                const SizedBox(width: 12),
-                // 热身通知开关（仅非自定义分类显示）
-                if (!canAddServer) ...[
-                  _buildWarmupNotificationToggle(isDark),
-                  const SizedBox(width: 8),
-                ],
-                // 启动游戏按钮
-                _buildLaunchGameButton(isDark),
+              // 操作按钮组
+              // 热身通知开关（仅非自定义分类显示）
+              if (!canAddServer) ...[
+                _buildWarmupNotificationToggle(isDark),
                 const SizedBox(width: 8),
-                // 添加服务器按钮（仅自定义分类显示）
-                if (canAddServer) ...[
-                  Tooltip(
-                    message: '添加服务器',
-                    child: InkWell(
-                      onTap: _showAddServerDialog,
-                      borderRadius: BorderRadius.circular(6),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Icon(
-                          Icons.add_rounded,
-                          size: 20,
-                          color: Color(0xFF10B981),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                // 地图订阅按钮
-                Tooltip(
-                  message: '地图订阅',
-                  child: InkWell(
-                    onTap: () {
-                      // ignore: avoid_dynamic_calls
-                      MapSubscriptionDialog.show(context);
-                    },
-                    borderRadius: BorderRadius.circular(6),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.08)
-                            : Colors.black.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Icon(
-                        Icons.star_rounded,
-                        size: 20,
-                        color: isDark
-                            ? const Color(0xFFF59E0B)
-                            : const Color(0xFFD97706),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // 沉浸式模式按钮
-                Tooltip(
-                  message: '沉浸模式',
-                  child: InkWell(
-                    onTap: () async {
-                      // 进入沉浸模式前暂停正常模式的刷新机制
-                      _isInImmersiveMode = true;
-                      _serverBloc?.add(ServerStopPeriodicRefresh());
-                      _stopCategoryCountsRefreshTimer();
-                      await ImmersiveModeOverlay.show(context);
-                      // 退出沉浸模式后恢复正常模式的刷新机制
-                      if (mounted) {
-                        _isInImmersiveMode = false;
-                        _serverBloc?.add(ServerStartPeriodicRefresh());
-                        _startCategoryCountsRefreshTimer();
-                        // 立即刷新一次，防止数据过旧
-                        _serverBloc?.add(ServerRefreshServers());
-                        // 立即触发 ping 获取
-                        _scheduleDelayedPingFetch();
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(6),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.08)
-                            : Colors.black.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Icon(
-                        Icons.grid_view_rounded,
-                        size: 20,
-                        color: isDark
-                            ? Colors.white70
-                            : const Color(0xFF6B7280),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // 服务器设置按钮（仅自定义分类显示）
-                if (canAddServer) ...[
-                  _buildServerSettingsButton(isDark),
-                  const SizedBox(width: 8),
-                ],
-                CompactRefreshProgress(
-                  key: ValueKey(
-                    'refresh_${categoryName}_${state.countdownResetKey}',
-                  ),
-                  refreshInterval: _kRefreshInterval,
-                  onRefresh: () => _handleRefresh(state),
-                  onForceRefresh: () => _handleForceRefresh(),
-                ),
               ],
+              // 启动游戏按钮
+              _buildLaunchGameButton(isDark),
+              const SizedBox(width: 8),
+              // 添加服务器按钮（仅自定义分类显示）
+              if (canAddServer) ...[
+                Tooltip(
+                  message: '添加服务器',
+                  child: InkWell(
+                    onTap: _showAddServerDialog,
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Icon(
+                        Icons.add_rounded,
+                        size: 20,
+                        color: Color(0xFF10B981),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              // 地图订阅按钮
+              Tooltip(
+                message: '地图订阅',
+                child: InkWell(
+                  onTap: () {
+                    // ignore: avoid_dynamic_calls
+                    MapSubscriptionDialog.show(context);
+                  },
+                  borderRadius: BorderRadius.circular(6),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : Colors.black.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(
+                      Icons.star_rounded,
+                      size: 20,
+                      color: isDark
+                          ? const Color(0xFFF59E0B)
+                          : const Color(0xFFD97706),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // 沉浸式模式按钮
+              Tooltip(
+                message: '沉浸模式',
+                child: InkWell(
+                  onTap: () async {
+                    // 进入沉浸模式前暂停正常模式的刷新机制
+                    _isInImmersiveMode = true;
+                    _serverBloc?.add(ServerStopPeriodicRefresh());
+                    _stopCategoryCountsRefreshTimer();
+                    await ImmersiveModeOverlay.show(context);
+                    // 退出沉浸模式后恢复正常模式的刷新机制
+                    if (mounted) {
+                      _isInImmersiveMode = false;
+                      _serverBloc?.add(ServerStartPeriodicRefresh());
+                      _startCategoryCountsRefreshTimer();
+                      // 立即刷新一次，防止数据过旧
+                      _serverBloc?.add(ServerRefreshServers());
+                      // 立即触发 ping 获取
+                      _scheduleDelayedPingFetch();
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(6),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : Colors.black.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(
+                      Icons.grid_view_rounded,
+                      size: 20,
+                      color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // 服务器设置按钮（仅自定义分类显示）
+              if (canAddServer) ...[
+                _buildServerSettingsButton(isDark),
+                const SizedBox(width: 8),
+              ],
+              CompactRefreshProgress(
+                key: ValueKey(
+                  'refresh_${categoryName}_${state.countdownResetKey}',
+                ),
+                refreshInterval: _kRefreshInterval,
+                onRefresh: () => _handleRefresh(state),
+                onForceRefresh: () => _handleForceRefresh(),
+              ),
+              // 占位符，使得按钮区域右边界对齐下方的服务器列表分栏 (Categories宽度300 + 间距5)
+              const SizedBox(width: 305),
             ],
           ),
         );
@@ -1119,10 +1130,10 @@ class _ServersDesktopState extends State<ServersDesktop> {
       thumbVisibility: true,
       child: ListView.builder(
         controller: _serversScrollController,
-        padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+        padding: const EdgeInsets.symmetric(horizontal: 15),
         itemCount: servers.length,
         itemBuilder: (context, index) =>
-            _buildServerCardItem(context, state, servers[index], index),
+            _buildServerCardItem(context, state, servers[index], index, index == servers.length - 1),
       ),
     );
   }
@@ -1139,7 +1150,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
       thumbVisibility: true,
       child: ReorderableListView.builder(
         scrollController: _serversScrollController,
-        padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+        padding: const EdgeInsets.symmetric(horizontal: 15),
         itemCount: servers.length,
         buildDefaultDragHandles: false, // 禁用默认拖拽手柄，使用自定义的
         onReorder: (oldIndex, newIndex) {
@@ -1205,6 +1216,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
             state: state,
             server: server,
             index: index,
+            isLast: index == servers.length - 1,
           );
         },
       ),
@@ -1217,6 +1229,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
     ServerState state,
     ExtendedServerItem server,
     int index,
+    bool isLast,
   ) {
     final showSkeleton = server.isLoading && server.serverData == null;
     // 在 A2S 加载阶段显示加载文字
@@ -1226,7 +1239,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
         : null;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 4),
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: showSkeleton
@@ -1269,6 +1282,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
     required ServerState state,
     required ExtendedServerItem server,
     required int index,
+    required bool isLast,
   }) {
     final showSkeleton = server.isLoading && server.serverData == null;
 
@@ -1284,8 +1298,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
             onDelete: () {
               final categoryName = state.selectedCategory?.modelName;
               final address =
-                  server.serverItem.address ??
-                  server.serverItem.serverAddress;
+                  server.serverItem.address ?? server.serverItem.serverAddress;
               if (categoryName != null && address != null) {
                 context.read<ServerBloc>().add(
                   ServerDeleteServer(
@@ -1299,23 +1312,21 @@ class _ServersDesktopState extends State<ServersDesktop> {
 
     return Padding(
       key: key,
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 4),
       // 使用自定义长按监听器，长按 500ms 后触发拖拽
-      child: _LongPressDraggableWrapper(
-        index: index,
-        child: cardContent,
-      ),
+      child: _LongPressDraggableWrapper(index: index, child: cardContent),
     );
   }
 
   /// 加载中列表
   Widget _buildLoadingList(int count) {
+    final itemCount = count.clamp(1, 6);
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
-      itemCount: count.clamp(1, 6),
-      itemBuilder: (context, index) => const Padding(
-        padding: EdgeInsets.only(bottom: 15),
-        child: ServerCardSkeleton(),
+      padding: const EdgeInsets.symmetric(horizontal: 15),
+      itemCount: itemCount,
+      itemBuilder: (context, index) => Padding(
+        padding: EdgeInsets.only(bottom: index == itemCount - 1 ? 0 : 4),
+        child: const ServerCardSkeleton(),
       ),
     );
   }
@@ -1504,7 +1515,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
                               Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+                                  color: const Color(
+                                    0xFF0080FF,
+                                  ).withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Icon(
@@ -1616,7 +1629,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
                                     borderRadius: BorderRadius.circular(6),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF0080FF).withValues(alpha: 0.4),
+                                        color: const Color(
+                                          0xFF0080FF,
+                                        ).withValues(alpha: 0.4),
                                         blurRadius: 8,
                                         offset: const Offset(0, 2),
                                       ),
@@ -1818,7 +1833,8 @@ class _ServersDesktopState extends State<ServersDesktop> {
       transitionBuilder: (child, animation) {
         // animation 对新 child 是 0→1（进入），对旧 child 是 1→0（退出）
         // 新内容从下方轻微滑入，旧内容原地淡出（不位移，避免方向混乱）
-        final isEntering = animation.status == AnimationStatus.forward ||
+        final isEntering =
+            animation.status == AnimationStatus.forward ||
             animation.status == AnimationStatus.completed;
         return FadeTransition(
           opacity: animation,
@@ -1988,7 +2004,8 @@ class _ServerSettingsDialog extends StatelessWidget {
                         mode: ServerSortMode.manual,
                         title: '手动排序',
                         description: '通过长按拖动调整服务器顺序',
-                        isSelected: state.serverSortMode == ServerSortMode.manual,
+                        isSelected:
+                            state.serverSortMode == ServerSortMode.manual,
                         isDark: isDark,
                       ),
                       const SizedBox(height: 8),
@@ -1997,7 +2014,8 @@ class _ServerSettingsDialog extends StatelessWidget {
                         mode: ServerSortMode.pinOnline,
                         title: '置顶在线服务器',
                         description: '在线服务器自动排在前面，离线服务器自动排在后面',
-                        isSelected: state.serverSortMode == ServerSortMode.pinOnline,
+                        isSelected:
+                            state.serverSortMode == ServerSortMode.pinOnline,
                         isDark: isDark,
                       ),
                     ],
@@ -2114,16 +2132,15 @@ class _LongPressDraggableWrapper extends StatefulWidget {
   final int index;
   final Widget child;
 
-  const _LongPressDraggableWrapper({
-    required this.index,
-    required this.child,
-  });
+  const _LongPressDraggableWrapper({required this.index, required this.child});
 
   @override
-  State<_LongPressDraggableWrapper> createState() => _LongPressDraggableWrapperState();
+  State<_LongPressDraggableWrapper> createState() =>
+      _LongPressDraggableWrapperState();
 }
 
-class _LongPressDraggableWrapperState extends State<_LongPressDraggableWrapper> {
+class _LongPressDraggableWrapperState
+    extends State<_LongPressDraggableWrapper> {
   // 是否正在长按（按下但未松开）
   bool _isLongPressing = false;
 
@@ -2160,10 +2177,7 @@ class _LongPressDraggableWrapperState extends State<_LongPressDraggableWrapper> 
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
             border: _isLongPressing
-                ? Border.all(
-                    color: const Color(0xFF0080FF),
-                    width: 2,
-                  )
+                ? Border.all(color: const Color(0xFF0080FF), width: 2)
                 : null,
             boxShadow: _isLongPressing
                 ? [
@@ -2370,8 +2384,7 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
         itemBuilder: (context, index) {
           final category = filteredCategories[index];
           final categoryName = category.modelName ?? '';
-          final isSelected =
-              state.selectedCategory?.modelName == categoryName;
+          final isSelected = state.selectedCategory?.modelName == categoryName;
           final onlineCount = state.getCategoryOnlineCount(categoryName);
           final isLoadingOnlineCount =
               !state.hasEverLoadedOnlineCounts &&
@@ -2392,8 +2405,8 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
                   : null,
               onDelete: category.isCustom
                   ? () => context.read<ServerBloc>().add(
-                        ServerDeleteCategory(categoryName),
-                      )
+                      ServerDeleteCategory(categoryName),
+                    )
                   : null,
             ),
           );
@@ -2408,8 +2421,7 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
       itemBuilder: (context, index) {
         final category = filteredCategories[index];
         final categoryName = category.modelName ?? '';
-        final isSelected =
-            state.selectedCategory?.modelName == categoryName;
+        final isSelected = state.selectedCategory?.modelName == categoryName;
         final onlineCount = state.getCategoryOnlineCount(categoryName);
         final isLoadingOnlineCount =
             !state.hasEverLoadedOnlineCounts &&
@@ -2427,18 +2439,15 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
               : null,
           onDelete: category.isCustom
               ? () => context.read<ServerBloc>().add(
-                    ServerDeleteCategory(categoryName),
-                  )
+                  ServerDeleteCategory(categoryName),
+                )
               : null,
         );
       },
     );
   }
 
-  Widget _buildScrollIndicator({
-    required bool isTop,
-    required Color bgColor,
-  }) {
+  Widget _buildScrollIndicator({required bool isTop, required Color bgColor}) {
     return IgnorePointer(
       child: Container(
         height: 48,
@@ -2456,7 +2465,9 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
         ),
         child: Center(
           child: Icon(
-            isTop ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+            isTop
+                ? Icons.keyboard_arrow_up_rounded
+                : Icons.keyboard_arrow_down_rounded,
             color: bgColor.computeLuminance() > 0.5
                 ? Colors.black26
                 : Colors.white24,
