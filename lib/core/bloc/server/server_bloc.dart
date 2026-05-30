@@ -580,6 +580,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
               ? null
               : currentServer.mapRuntimeLastFetched,
           mapRuntimeError: mapChanged ? false : currentServer.mapRuntimeError,
+          clearTeamScores: mapChanged,
         );
 
         _updateServerByAddress(address, updatedServer, emit);
@@ -2328,6 +2329,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       clearMapRuntime: true,
       clearMapInfo: true,
       mapRuntimeError: false,
+      clearTeamScores: true,
     );
     emit(state.copyWith(servers: servers));
 
