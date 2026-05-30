@@ -92,11 +92,13 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
   if (th) th.style.setProperty('display', 'none', 'important');
 
   // 让验证码贴底显示
+  captchaDiv.style.setProperty('position', 'fixed', 'important');
+  captchaDiv.style.setProperty('bottom', '10px', 'important');
+  captchaDiv.style.setProperty('left', '0', 'important');
+  captchaDiv.style.setProperty('right', '0', 'important');
   captchaDiv.style.setProperty('display', 'flex', 'important');
   captchaDiv.style.setProperty('justify-content', 'center', 'important');
-  captchaDiv.style.setProperty('align-items', 'flex-end', 'important');
-  captchaDiv.style.setProperty('height', '100vh', 'important');
-  captchaDiv.style.setProperty('padding', '0 10px 10px 10px', 'important');
+  captchaDiv.style.setProperty('z-index', '99999', 'important');
   captchaDiv.style.setProperty('background', '#f5f5f5', 'important');
 })();
 ''';
@@ -115,11 +117,13 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
 
     // 检测验证码容器是否存在，不存在说明论坛已登录，直接退出
     try {
-      final hasCaptcha = await _controller?.evaluateJavascript(source: '''
+      final hasCaptcha = await _controller?.evaluateJavascript(
+        source: '''
 (function() {
   return document.getElementById('dx_page_logging_input') ? 'yes' : 'no';
 })();
-''');
+''',
+      );
       if (hasCaptcha?.toString().trim() == 'no') {
         if (mounted) {
           // 返回空字符串标记"已登录"状态，与用户取消(null)区分
@@ -154,7 +158,8 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
       }
       try {
         // 检查隐藏字段的值（论坛验证码成功后会写入这个字段）
-        final result = await _controller?.evaluateJavascript(source: '''
+        final result = await _controller?.evaluateJavascript(
+          source: '''
 (function() {
   var el = document.getElementById('dx_captcha_verify_logging');
   if (el && el.value && el.value.length > 10) {
@@ -162,7 +167,8 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
   }
   return '';
 })();
-''');
+''',
+        );
 
         final token = result?.toString().trim() ?? '';
         if (token.isNotEmpty && token != 'null' && token.length > 10) {
@@ -197,7 +203,7 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
         width: 360,
-        height: 300,
+        height: 320,
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -288,7 +294,9 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
               if (mounted) {
                 await controller.loadUrl(
                   urlRequest: URLRequest(
-                    url: WebUri('https://bbs.zombieden.cn/member.php?mod=logging&action=login'),
+                    url: WebUri(
+                      'https://bbs.zombieden.cn/member.php?mod=logging&action=login',
+                    ),
                   ),
                 );
               }
