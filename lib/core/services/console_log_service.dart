@@ -1077,6 +1077,20 @@ class ConsoleLogService {
           rawLine: line,
         );
       } else if (event.state >= 5) {
+        if (_currentState.serverAddress.isEmpty) {
+          LogService.d('[ConsoleLog] 忽略无地址的进入游戏状态（推测为主菜单背景）');
+          _updateConnectionState(
+            GameState.mainMenu,
+            serverAddress: '',
+            mapName: '',
+            rawLine: line,
+          );
+          _targetServer = '';
+          _isLoopbackFallback = false;
+          _isInLoopbackMode = true;
+          return;
+        }
+
         _updateConnectionState(
           GameState.inGame,
           serverAddress: _currentState.serverAddress,
