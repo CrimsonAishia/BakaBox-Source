@@ -10,6 +10,7 @@ import 'notification_window_service.dart';
 import 'realtime/realtime_server_map_runtime_channel.dart';
 import 'scheduler_service.dart';
 import 'server_address_mapping_service.dart';
+import '../utils/server_resolver_utils.dart';
 
 /// 热身监控服务（单例）
 ///
@@ -283,6 +284,12 @@ class WarmupMonitorService {
         _currentServerDomainAddress = _addressMapping.getDomainAddress(
           serverAddress,
         );
+        _currentServerName = null;
+
+        _tryResolveServerName(
+          _currentServerDomainAddress ?? _currentServerAddress!,
+        );
+
         _currentMapName = null;
         _currentMapRuntime = null;
         _currentMapRuntimeFetchedAt = null;
@@ -315,6 +322,18 @@ class WarmupMonitorService {
       _currentMapRuntime = null;
       _currentMapRuntimeFetchedAt = null;
       _stopRealtime();
+    }
+  }
+
+  Future<void> _tryResolveServerName(String address) async {
+    try {
+      final name = await ServerResolverUtils.resolveServerName(address);
+      if (name != null) {
+        _currentServerName = name;
+        LogService.d('[WarmupMonitor] 全局解析到服务器名称: $_currentServerName');
+      }
+    } catch (e) {
+      LogService.e('[WarmupMonitor] 尝试解析服务器名称失败: $address', e);
     }
   }
 

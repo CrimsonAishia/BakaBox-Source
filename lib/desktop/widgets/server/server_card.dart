@@ -1599,6 +1599,9 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
           isCustomServer: widget.server.serverItem.isCustom,
           initialServerInfo: widget.server.serverData,
           initialMapInfo: widget.server.mapInfo,
+          serverName: widget.server.serverItem.getDisplayName(
+            widget.server.serverData?.hostName,
+          ),
           onClose: () => Navigator.of(context).pop(),
         ),
       ),

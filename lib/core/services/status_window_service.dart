@@ -694,6 +694,7 @@ class StatusWindowService {
   /// 开始挤服
   Future<bool> startQueue({
     required String serverAddress,
+    String? serverName,
     QueueConfig? config,
     ServerInfo? serverInfo,
     MapData? mapInfo,
@@ -777,7 +778,7 @@ class StatusWindowService {
         status: OperationStatus.running,
         message: _Messages.queueing,
         serverAddress: serverAddress,
-        serverName: serverInfo?.hostName ?? serverAddress,
+        serverName: serverName ?? serverInfo?.hostName ?? serverAddress,
         serverInfo: serverInfo,
         mapInfo: mapInfo,
         queueConfig: finalConfig,
@@ -805,7 +806,7 @@ class StatusWindowService {
     await _showWindow(
       type: FloatingWindowType.queue,
       serverAddress: serverAddress,
-      title: serverInfo?.hostName ?? serverAddress,
+      title: serverName ?? serverInfo?.hostName ?? serverAddress,
       state: 'queueing',
       message: _Messages.queueing,
       mapName: serverInfo?.map,
@@ -1069,9 +1070,9 @@ class StatusWindowService {
     // 降级 2：地址映射未就绪
     if (!ServerAddressMappingService().isLoaded) {
       try {
-        await ServerAddressMappingService()
-            .load()
-            .timeout(const Duration(seconds: 3));
+        await ServerAddressMappingService().load().timeout(
+          const Duration(seconds: 3),
+        );
       } catch (e) {
         LogService.w('[StatusWindowService] 映射服务未就绪且加载失败，跳过守护进程: $e');
         return;
@@ -1374,9 +1375,7 @@ class StatusWindowService {
     final loc = QueueGuardService().location;
     if (loc == GuardLocation.inTargetServer ||
         loc == GuardLocation.inUnknownServer) {
-      LogService.i(
-        '[StatusWindowService] 挤服条件检查：守护进程判定已在游戏中 ($loc)，跳过连接',
-      );
+      LogService.i('[StatusWindowService] 挤服条件检查：守护进程判定已在游戏中 ($loc)，跳过连接');
       _finalizeOnce(_handleAlreadyInGame);
       return;
     }
@@ -1530,7 +1529,8 @@ class StatusWindowService {
     Timer? extendedTimer;
     bool seenLeftOldServer = false;
     // 切服场景：旧服的引擎 disconnect 不算失败，仅吞一次
-    bool consumedSwitchDisconnect = startLocation != GuardLocation.inOtherServer;
+    bool consumedSwitchDisconnect =
+        startLocation != GuardLocation.inOtherServer;
 
     void resolve(ConnectionOutcome outcome) {
       if (completer.isCompleted) return;
@@ -1601,9 +1601,7 @@ class StatusWindowService {
           if (!consumedSwitchDisconnect) {
             consumedSwitchDisconnect = true;
             seenLeftOldServer = true;
-            LogService.d(
-              '[StatusWindowService] [Observe] 吞掉切服过渡的 disconnect',
-            );
+            LogService.d('[StatusWindowService] [Observe] 吞掉切服过渡的 disconnect');
             return;
           }
           resolve(ConnectionOutcome.refused);
@@ -1680,7 +1678,9 @@ class StatusWindowService {
     LogService.w('[StatusWindowService] 连接失败: $reason');
 
     if (_outcomeFinalized) {
-      LogService.d('[StatusWindowService] _handleQueueConnectionFailure: 已 finalize，忽略');
+      LogService.d(
+        '[StatusWindowService] _handleQueueConnectionFailure: 已 finalize，忽略',
+      );
       return;
     }
 
@@ -1774,9 +1774,7 @@ class StatusWindowService {
     final guardLoc = QueueGuardService().location;
     if (guardLoc == GuardLocation.inTargetServer ||
         guardLoc == GuardLocation.inUnknownServer) {
-      LogService.i(
-        '[StatusWindowService] 自动重试取消：守护进程判定已在游戏中 ($guardLoc)',
-      );
+      LogService.i('[StatusWindowService] 自动重试取消：守护进程判定已在游戏中 ($guardLoc)');
       _finalizeOnce(_handleAlreadyInGame);
       return;
     }
@@ -1801,16 +1799,12 @@ class StatusWindowService {
         final settledLoc = QueueGuardService().location;
         if (settledLoc == GuardLocation.inTargetServer ||
             settledLoc == GuardLocation.inUnknownServer) {
-          LogService.i(
-            '[StatusWindowService] 自动重试取消：等待期间进入目标服 ($settledLoc)',
-          );
+          LogService.i('[StatusWindowService] 自动重试取消：等待期间进入目标服 ($settledLoc)');
           _finalizeOnce(_handleAlreadyInGame);
           return;
         }
         if (settledLoc == GuardLocation.inOtherServer) {
-          LogService.i(
-            '[StatusWindowService] 等待期间用户进入其他服，继续重试流程',
-          );
+          LogService.i('[StatusWindowService] 等待期间用户进入其他服，继续重试流程');
           // 不切换文案，保持原有的重试中文案
           // fall through，继续重试
         }
@@ -1845,9 +1839,7 @@ class StatusWindowService {
     final locAfterWait = QueueGuardService().location;
     if (locAfterWait == GuardLocation.inTargetServer ||
         locAfterWait == GuardLocation.inUnknownServer) {
-      LogService.i(
-        '[StatusWindowService] 自动重试取消：等待主菜单期间守护进程判定在游戏中',
-      );
+      LogService.i('[StatusWindowService] 自动重试取消：等待主菜单期间守护进程判定在游戏中');
       _finalizeOnce(_handleAlreadyInGame);
       return;
     }
@@ -2102,7 +2094,7 @@ class StatusWindowService {
         mapNameCn: mapNameCn,
         mapBackground: mapBackground,
       );
-      
+
       // 如果更新成功，_windowId 会保留。如果更新失败且窗口已关闭，_windowId 会被置空。
       // 此时我们继续往下执行创建新窗口的逻辑。
       if (_windowId != null) {
