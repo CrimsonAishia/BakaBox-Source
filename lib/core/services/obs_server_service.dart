@@ -550,6 +550,21 @@ class ObsServerService {
 
   /// 刷新当前连接的服务器数据
   Future<void> _refreshCurrentServerData() async {
+    // 检查游戏是否正在运行
+    bool isGameRunning = false;
+    try {
+      isGameRunning = GameStatusService().isGameRunning;
+    } catch (_) {}
+
+    if (!isGameRunning) {
+      // 游戏已关闭，直接清空显示
+      if (_currentData['isCleared'] != true) {
+        _logger.i('[OBS] 检测到游戏已关闭，清空 OBS 显示');
+        clearDisplay();
+      }
+      return;
+    }
+
     // 获取 ConsoleLogService 状态
     final consoleLogService = ConsoleLogService();
     final consoleState = consoleLogService.currentState;
@@ -561,9 +576,11 @@ class ObsServerService {
       final targetWaitingText = _getWaitingText();
       if (_currentData['isConnected'] == true ||
           _queriedServerInfo != null ||
-          _currentData['serverName'] != targetWaitingText) {
+          _currentData['serverName'] != targetWaitingText ||
+          _currentData['isCleared'] == true) {
         _queriedServerInfo = null;
         _currentData['isConnected'] = false;
+        _currentData['isCleared'] = false;
         // 修改为显示等待进入服务器提示
         _currentData['serverName'] = targetWaitingText;
         _currentData['ping'] = '0';
@@ -630,11 +647,13 @@ class ObsServerService {
             prevInfo.name != info.name ||
             prevInfo.map != info.map ||
             prevInfo.players != info.players ||
-            prevInfo.maxPlayers != info.maxPlayers;
+            prevInfo.maxPlayers != info.maxPlayers ||
+            _currentData['isCleared'] == true;
 
         if (dataChanged) {
           // 推送完整数据
           _currentData['isConnected'] = true;
+          _currentData['isCleared'] = false;
           // 清除错误状态
           _currentData.remove('error');
           _currentData.remove('errorCode');
