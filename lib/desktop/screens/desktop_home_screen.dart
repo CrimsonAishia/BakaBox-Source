@@ -10,6 +10,7 @@ import '../widgets/exit_dialog.dart';
 import '../widgets/desktop_window_controls.dart';
 import '../widgets/desktop_navigation.dart';
 import '../widgets/queue/queue_floating_card.dart';
+import '../widgets/warmup/warmup_floating_card.dart';
 
 import 'welcome_screen.dart';
 import 'servers_desktop.dart';
@@ -24,6 +25,10 @@ import 'lobby_desktop.dart';
 import '../../core/services/game_status_service.dart';
 import '../widgets/global_broadcast_bar.dart';
 import '../widgets/floating_chat/floating_chat_button.dart';
+import '../widgets/warmup/warmup_countdown_dialog.dart';
+import '../../core/widgets/csgo_manual_launch_dialog.dart';
+import '../../core/bloc/warmup/warmup_bloc.dart';
+import '../../core/bloc/warmup/warmup_state.dart';
 
 /// 桌面端主屏幕
 class DesktopHomeScreen extends StatefulWidget {
@@ -40,6 +45,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
   StreamSubscription<GameStatusEvent>? _gameStatusSubscription;
   bool _shownObsWarningForCurrentGame = false;
   late final FloatingChatCubit _floatingChatCubit;
+  Route? _warmupCountdownRoute;
 
   final List<NavigationItem> _navigationItems = [
     NavigationItem(
@@ -201,6 +207,10 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
   void dispose() {
     _contentAnimationController.dispose();
     _gameStatusSubscription?.cancel();
+    if (_warmupCountdownRoute != null) {
+      Navigator.of(context).removeRoute(_warmupCountdownRoute!);
+      _warmupCountdownRoute = null;
+    }
     _floatingChatCubit.close();
     super.dispose();
   }
@@ -263,18 +273,83 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
     final isDesktop =
         Platform.isWindows || Platform.isLinux || Platform.isMacOS;
 
-    return BlocProvider<FloatingChatCubit>.value(
-      value: _floatingChatCubit,
-      child: BlocListener<SettingsBloc, SettingsState>(
-        listenWhen: (previous, current) =>
-            !previous.isPathInvalidated && current.isPathInvalidated,
-        listener: (context, state) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) => const PathInvalidDialog(),
-          );
-        },
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: WarmupBloc.instance),
+        BlocProvider<FloatingChatCubit>.value(value: _floatingChatCubit),
+      ],
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<SettingsBloc, SettingsState>(
+            listenWhen: (previous, current) =>
+                !previous.isPathInvalidated && current.isPathInvalidated,
+            listener: (context, state) {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const PathInvalidDialog(),
+              );
+            },
+          ),
+          BlocListener<WarmupBloc, WarmupBlocState>(
+            listenWhen: (previous, current) {
+              if (!previous.needManualLaunch && current.needManualLaunch) return true;
+              if (current.needManualLaunch) return false;
+              if (previous.error != current.error && current.error != null) return true;
+
+              final wasCountdown = previous.status == WarmupStatus.countdown || previous.status == WarmupStatus.launching;
+              final isCountdown = current.status == WarmupStatus.countdown || current.status == WarmupStatus.launching;
+              if (wasCountdown != isCountdown) return true;
+
+              return false;
+            },
+            listener: (context, state) {
+              // 需要手动启动 CSGO
+              if (state.needManualLaunch) {
+                showDialog(
+                  context: context,
+                  builder: (context) => CsgoManualLaunchDialog(
+                    serverAddress: state.serverAddress ?? '',
+                  ),
+                );
+                return;
+              }
+
+              // 错误提示
+              if (state.error != null) {
+                ToastUtils.showError(context, state.error!);
+                return;
+              }
+
+              // 全局倒计时弹窗处理
+              final isCountdown = state.status == WarmupStatus.countdown || state.status == WarmupStatus.launching;
+              if (isCountdown && _warmupCountdownRoute == null) {
+                final warmupBloc = context.read<WarmupBloc>();
+                _warmupCountdownRoute = DialogRoute(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (dialogContext) {
+                    return BlocProvider.value(
+                      value: warmupBloc,
+                      child: BlocBuilder<WarmupBloc, WarmupBlocState>(
+                        builder: (context, dialogState) {
+                          return Material(
+                            color: Colors.transparent,
+                            child: WarmupCountdownDialog(state: dialogState),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                );
+                Navigator.of(context).push(_warmupCountdownRoute!);
+              } else if (!isCountdown && _warmupCountdownRoute != null) {
+                Navigator.of(context).removeRoute(_warmupCountdownRoute!);
+                _warmupCountdownRoute = null;
+              }
+            },
+          ),
+        ],
         child: PopScope(
           canPop: false,
           onPopInvokedWithResult: (didPop, result) async {
@@ -350,6 +425,8 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         GlobalBroadcastBar(),
+                        SizedBox(height: 8),
+                        WarmupFloatingCard(),
                         SizedBox(height: 8),
                         QueueFloatingCard(),
                       ],

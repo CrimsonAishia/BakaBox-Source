@@ -19,6 +19,7 @@ import '../../../core/widgets/csgo_manual_launch_dialog.dart';
 import 'server_history_dialog.dart';
 import 'server_card_skeleton.dart';
 import '../queue/queue_window.dart';
+import '../warmup/warmup_window.dart';
 import '../../../core/widgets/map_contribution_dialog.dart';
 import '../edit_server_dialog.dart';
 
@@ -708,10 +709,14 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     final isGlobalBusy =
         globalState.type != OperationType.none &&
         globalState.status == OperationStatus.running;
+
+    // 暖服是后台操作，允许进入所有服务器，因此暖服时不阻塞"连接"按钮（需求6）
+    final isConnectBlockingBusy =
+        isGlobalBusy && globalState.type != OperationType.warming;
     final isCurrentServerBusy =
-        globalState.serverAddress == address && isGlobalBusy;
+        globalState.serverAddress == address && isConnectBlockingBusy;
     final isOtherServerBusy =
-        globalState.serverAddress != address && isGlobalBusy;
+        globalState.serverAddress != address && isConnectBlockingBusy;
 
     // 检查是否正在挤服
     final isQueueing =
@@ -721,6 +726,15 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         isQueueing && globalState.serverAddress == address;
     final isOtherServerQueueing =
         isQueueing && globalState.serverAddress != address;
+
+    // 检查是否正在暖服
+    final isWarming =
+        globalState.type == OperationType.warming &&
+        globalState.status == OperationStatus.running;
+    final isCurrentServerWarming =
+        isWarming && globalState.serverAddress == address;
+    final isOtherServerWarming =
+        isWarming && globalState.serverAddress != address;
 
     // 确定连接按钮的文本和状态
     // 离线状态也允许连接（让用户可以重试）
@@ -795,14 +809,30 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                     text: isCurrentServerQueueing ? '挤服中' : '挤服',
                     icon: MdiIcons.accountGroup,
                     bgColor: const Color(0xFFFF6E6E),
+                    // 暖服期间不允许挤服：所有服务器的挤服按钮都置灰（需求7）
                     // 离线状态也允许挤服（让用户可以重试），只在加载中时禁用
-                    onPressed: isLoading || address == null
+                    onPressed: isLoading || address == null || isWarming
                         ? null
                         : isCurrentServerQueueing
                         ? () => _openQueueDialog(context, address)
                         : isOtherServerQueueing
                         ? () => _showQueueBusyTip(context)
                         : () => _showQueueWindow(context),
+                  ),
+                  _buildActionBtn(
+                    text: isCurrentServerWarming ? '暖服中' : '暖服',
+                    icon: MdiIcons.fire,
+                    bgColor: const Color(0xFFF59E0B),
+                    // 离线状态也允许暖服，只在加载中时禁用
+                    onPressed: isLoading || address == null || isCurrentServerQueueing
+                        ? null
+                        : isCurrentServerWarming
+                        ? () => _openWarmupDialog(context, address)
+                        : isOtherServerWarming
+                        ? () => _showWarmupBusyTip(context)
+                        : isOtherServerQueueing
+                        ? () => _showQueueBusyTip(context)
+                        : () => _showWarmupWindow(context),
                   ),
                 ],
               ),
@@ -1603,6 +1633,60 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
           serverName: widget.server.serverItem.getDisplayName(
             widget.server.serverData?.hostName,
           ),
+          onClose: () => Navigator.of(context).pop(),
+        ),
+      ),
+    );
+  }
+
+  void _showWarmupWindow(BuildContext context) async {
+    final address =
+        widget.server.serverItem.address ??
+        widget.server.serverItem.serverAddress;
+    if (address == null) return;
+
+    final statusService = StatusWindowService();
+    final currentState = statusService.state;
+
+    // 检查是否有正在进行的暖服
+    if (currentState.type == OperationType.warming &&
+        currentState.status == OperationStatus.running) {
+      // 如果是同一个服务器，直接打开对话框查看详情
+      if (currentState.serverAddress == address) {
+        _openWarmupDialog(context, address);
+        return;
+      }
+
+      // 不同服务器，提示无法切换
+      _showWarmupBusyTip(context);
+      return;
+    }
+
+    // 打开暖服对话框
+    if (context.mounted) {
+      _openWarmupDialog(context, address);
+    }
+  }
+
+  void _showWarmupBusyTip(BuildContext context) {
+    ToastUtils.showWarning(context, '正在暖服中，无法切换服务器');
+  }
+
+  void _openWarmupDialog(BuildContext context, String address) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: WarmupWindow(
+          serverAddress: address,
+          isCustomServer: widget.server.serverItem.isCustom,
+          initialServerInfo: widget.server.serverData,
+          initialMapInfo: widget.server.mapInfo,
+          serverName: widget.server.serverItem.getDisplayName(
+            widget.server.serverData?.hostName,
+          ),
+          queueCount: widget.server.queueCount,
           onClose: () => Navigator.of(context).pop(),
         ),
       ),

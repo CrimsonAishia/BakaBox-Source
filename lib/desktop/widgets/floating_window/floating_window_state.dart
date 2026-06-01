@@ -34,6 +34,7 @@ class FloatingWindowState {
   bool get isConnecting => state == 'connecting';
   bool get isLaunching => state == 'launching';
   bool get isQueueing => state == 'queueing';
+  bool get isWarming => state == 'warming';
   bool get isPaused => state == 'paused';
   bool get isIdle => state == 'idle';
 

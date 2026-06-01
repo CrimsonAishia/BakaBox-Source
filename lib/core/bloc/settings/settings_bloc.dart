@@ -67,6 +67,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     // 音效设置事件
     on<SettingsSetAudioVolume>(_onSetAudioVolume);
     on<SettingsTestAudio>(_onTestAudio);
+    on<SettingsSetWarmupAudioVolume>(_onSetWarmupAudioVolume);
+    on<SettingsTestWarmupAudio>(_onTestWarmupAudio);
     // 详细缓存管理事件
     on<SettingsLoadCacheDetails>(_onLoadCacheDetails);
     on<SettingsClearCacheByType>(_onClearCacheByType);
@@ -763,8 +765,11 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   Future<void> _loadAudioSettings(Emitter<SettingsState> emit) async {
     try {
       await _audioService.initialize();
-      emit(state.copyWith(audioVolume: _audioService.volume));
-      LogService.d('音效设置已加载: volume=${_audioService.volume}');
+      emit(state.copyWith(
+        audioVolume: _audioService.volume,
+        warmupAudioVolume: _audioService.warmupVolume,
+      ));
+      LogService.d('音效设置已加载: volume=${_audioService.volume}, warmupVolume=${_audioService.warmupVolume}');
     } catch (e) {
       LogService.e('加载音效设置失败', e);
     }
@@ -792,6 +797,31 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       LogService.d('测试音效播放');
     } catch (e) {
       LogService.e('测试音效失败', e);
+    }
+  }
+
+  Future<void> _onSetWarmupAudioVolume(
+    SettingsSetWarmupAudioVolume event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      await _audioService.setWarmupVolume(event.volume);
+      emit(state.copyWith(warmupAudioVolume: event.volume));
+      LogService.d('暖服音量已设置: ${(event.volume * 100).toInt()}%');
+    } catch (e) {
+      LogService.e('设置暖服音量失败', e);
+    }
+  }
+
+  Future<void> _onTestWarmupAudio(
+    SettingsTestWarmupAudio event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      await _audioService.testWarmupSound();
+      LogService.d('测试暖服音效播放');
+    } catch (e) {
+      LogService.e('测试暖服音效失败', e);
     }
   }
 

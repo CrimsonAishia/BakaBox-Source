@@ -47,6 +47,35 @@ class AppSettings extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(height: 16),
+        AppSettingItem(
+          title: '暖服倒计时音效音量',
+          description: '调节暖服人数达标倒计时播放音效的音量大小',
+          value: _WarmupVolumeSlider(settingsState: settingsState),
+          action: ElevatedButton.icon(
+            onPressed: settingsState.warmupAudioVolume <= 0
+                ? null
+                : () {
+                    context.read<SettingsBloc>().add(SettingsTestWarmupAudio());
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '测试暖服音效播放，音量: ${(settingsState.warmupAudioVolume * 100).toInt()}%',
+                        ),
+                        duration: const Duration(seconds: 1),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                  },
+            icon: Icon(MdiIcons.play, size: 14),
+            label: const Text('试听'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -89,6 +118,63 @@ class _VolumeSlider extends StatelessWidget {
               label: '$volumePercent%',
               onChanged: (value) {
                 context.read<SettingsBloc>().add(SettingsSetAudioVolume(value));
+              },
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 50,
+          child: Text(
+            isMuted ? '静音' : '$volumePercent%',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: isMuted ? Colors.grey : const Color(0xFF374151),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _WarmupVolumeSlider extends StatelessWidget {
+  final SettingsState settingsState;
+
+  const _WarmupVolumeSlider({required this.settingsState});
+
+  @override
+  Widget build(BuildContext context) {
+    final volumePercent = (settingsState.warmupAudioVolume * 100).toInt();
+    final isMuted = settingsState.warmupAudioVolume <= 0;
+
+    return Row(
+      children: [
+        Icon(
+          isMuted ? MdiIcons.volumeOff : MdiIcons.volumeHigh,
+          size: 20,
+          color: isMuted ? Colors.grey : Colors.orange,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: Colors.orange,
+              inactiveTrackColor: Colors.orange.withValues(alpha: 0.2),
+              thumbColor: Colors.orange,
+              overlayColor: Colors.orange.withValues(alpha: 0.2),
+              trackHeight: 4,
+            ),
+            child: Slider(
+              value: settingsState.warmupAudioVolume,
+              min: 0.0,
+              max: 1.0,
+              divisions: 20,
+              label: '$volumePercent%',
+              onChanged: (value) {
+                context.read<SettingsBloc>().add(SettingsSetWarmupAudioVolume(value));
               },
             ),
           ),
