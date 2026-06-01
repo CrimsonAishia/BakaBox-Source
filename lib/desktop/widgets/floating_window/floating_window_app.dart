@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
@@ -190,21 +191,24 @@ class _FloatingWindowInitializerState
 
   Future<void> _initWindow() async {
     try {
-      debugPrint('[FloatingWindow] Starting initialization...');
-
       // 等待窗口就绪事件
       await windowManager.waitUntilReady();
-
-      // windowManager 已在 main.dart 中初始化
-      debugPrint('[FloatingWindow] windowManager ready');
 
       final size = widget.config.windowSize;
 
       // 获取屏幕尺寸
+      // 注意：fork 的 window_manager 在 Windows 端这样设计：
+      //   - getPrimaryScreenSize: 返回 GetSystemMetrics 的【物理像素】
+      //   - setPosition / setSize: C++ 端把传入值乘以 devicePixelRatio
+      //     ⇒ Dart 这一侧期望传入【逻辑像素】
+      // 两个 API 的坐标系不一致，必须把屏幕物理像素手动除以 DPR 才能给 setPosition 用，
+      // 否则在高 DPI 屏（如 200% 缩放）下会把窗口扔到屏幕外。
       final screenInfo = await windowManager.getPrimaryScreenSize();
-      final screenWidth = screenInfo['screenWidth']!;
-      final workAreaHeight = screenInfo['workAreaHeight']!;
-      final workAreaY = screenInfo['workAreaY']!;
+      final dpr =
+          PlatformDispatcher.instance.implicitView?.devicePixelRatio ?? 1.0;
+      final screenWidth = screenInfo['screenWidth']! / dpr;
+      final workAreaHeight = screenInfo['workAreaHeight']! / dpr;
+      final workAreaY = screenInfo['workAreaY']! / dpr;
 
       // 从设置中读取浮窗位置
       final position = await _calculateFloatingPosition(
@@ -214,16 +218,9 @@ class _FloatingWindowInitializerState
         size,
       );
 
-      final windowOptions = WindowOptions(
-        size: size,
-        center: false,
-        backgroundColor: Colors.transparent,
-        skipTaskbar: true,
-        titleBarStyle: TitleBarStyle.hidden,
-        alwaysOnTop: true,
-      );
-
-      await windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.waitUntilReadyToShow(null, () async {
+        await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
+        await windowManager.setSize(size);
         await windowManager.setPosition(position);
         await windowManager.setMinimumSize(
           Size(size.width - 60, size.height - 60),
@@ -231,11 +228,16 @@ class _FloatingWindowInitializerState
         await windowManager.setMaximumSize(
           Size(size.width + 100, size.height + 100),
         );
+        await windowManager.setSkipTaskbar(true);
+        await windowManager.setAlwaysOnTop(true);
+        await windowManager.setBackgroundColor(Colors.transparent);
         if (Platform.isWindows) {
           await windowManager.setAsFrameless();
+          // 浮窗不抢焦点
+          await windowManager.showWithoutActivating();
+        } else {
+          await windowManager.show();
         }
-        await windowManager.show();
-        await windowManager.focus();
       });
 
       if (mounted) {

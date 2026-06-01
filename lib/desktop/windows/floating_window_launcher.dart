@@ -37,6 +37,11 @@ class FloatingWindowLauncher {
     await _setupMethodHandler(controller, stateNotifier);
 
     if (Platform.isWindows) {
+      // 启动时若已处于独占全屏，先标记为隐藏，避免后续 show 抢前台
+      if (!FullscreenDetector.instance.canCreateWindow()) {
+        _isHiddenByFullscreen = true;
+      }
+
       _visibilityTimer?.cancel();
       _visibilityTimer = Timer.periodic(const Duration(seconds: 2), (
         timer,
