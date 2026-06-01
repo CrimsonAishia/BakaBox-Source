@@ -223,6 +223,14 @@ class _NakamaSocketManager {
     required bool ssl,
     required String token,
   }) async {
+    // 防御性清理：建立新连接前，先关闭可能存在的旧连接，避免连接泄漏。
+    // 由于每次使用唯一 key（NakamaWebsocketClient.init 按 key 缓存），
+    // SDK 不会自动复用或关闭旧连接，必须显式断开，否则重连会不断累积新连接。
+    if (_socket != null) {
+      LogService.w('[NakamaSocketManager] 检测到已存在的连接，先断开旧连接再重连');
+      await disconnect();
+    }
+
     // 使用唯一 key 避免缓存问题（NakamaWebsocketClient.init 按 key 缓存）
     final key = 'lobby_${DateTime.now().millisecondsSinceEpoch}';
 
@@ -408,6 +416,9 @@ class _NakamaSocketManager {
     LogService.w('[NakamaSocketManager] WebSocket 已断开');
     _isConnected = false;
     _currentMatchId = null;
+    // SDK 已在底层关闭连接，主动清空引用，避免后续误判 _socket != null
+    // 仍持有有效连接（典型场景：服务端主动断开后客户端重连）。
+    _socket = null;
     _disconnectController.add(null);
   }
 
@@ -994,6 +1005,11 @@ class LobbyNakamaService {
         _matchEventSubscription = null;
         await _disconnectSubscription?.cancel();
         _disconnectSubscription = null;
+
+        // 关键修复：重连前先断开旧的 WebSocket 连接，避免在服务端累积大量僵尸连接。
+        // _doConnect() 会重新调用 _socketManager.connect() 建立新连接，
+        // 若不先 disconnect，旧的 socket 仍保持打开状态，重试机制会持续创建新连接。
+        await _socketManager.disconnect();
 
         await _doConnect();
       },
