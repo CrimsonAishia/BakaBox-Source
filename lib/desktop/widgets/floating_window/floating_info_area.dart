@@ -51,8 +51,8 @@ class FloatingInfoArea extends StatelessWidget {
   }
 
   Widget _buildContentArea() {
-    // 挤服模式：显示人数+线程+地图
-    if (state.isQueueing) {
+    // 挤服模式/暖服模式：显示人数+线程+地图
+    if (state.isQueueing || state.isWarming) {
       return _buildQueueContent();
     }
 
@@ -314,6 +314,7 @@ class FloatingInfoArea extends StatelessWidget {
     if (state.isIdle) return '准备中';
     if (state.isLaunching) return '启动游戏';
     if (state.isQueueing) return '挤服中';
+    if (state.isWarming) return '暖服中';
     if (state.isConnecting) return '连接中';
     if (state.isLoading) return '加载地图';
     if (state.isSuccess) {

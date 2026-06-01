@@ -12,6 +12,7 @@ import '../utils/storage_utils.dart';
 /// 浮窗类型
 enum FloatingWindowType {
   queue, // 挤服
+  warmup, // 暖服
   launch, // 启动游戏
   connect, // 连接服务器
   status, // 通用状态

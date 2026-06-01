@@ -277,6 +277,7 @@ class SettingsState extends Equatable {
 
   // 音效设置
   final double audioVolume;
+  final double warmupAudioVolume;
 
   // 详细缓存信息
   final List<CacheItemInfo> cacheDetails;
@@ -327,6 +328,7 @@ class SettingsState extends Equatable {
     this.isPathInvalidated = false,
     this.pathValidationMessage,
     this.audioVolume = 0.8,
+    this.warmupAudioVolume = 0.8,
     this.cacheDetails = const [],
     this.isLoadingCacheDetails = false,
     this.mobileCacheDetails = const [],
@@ -398,6 +400,7 @@ class SettingsState extends Equatable {
     bool? isPathInvalidated,
     String? pathValidationMessage,
     double? audioVolume,
+    double? warmupAudioVolume,
     List<CacheItemInfo>? cacheDetails,
     bool? isLoadingCacheDetails,
     List<MobileCacheItemInfo>? mobileCacheDetails,
@@ -428,6 +431,7 @@ class SettingsState extends Equatable {
       isPathInvalidated: isPathInvalidated ?? this.isPathInvalidated,
       pathValidationMessage: pathValidationMessage,
       audioVolume: audioVolume ?? this.audioVolume,
+      warmupAudioVolume: warmupAudioVolume ?? this.warmupAudioVolume,
       cacheDetails: cacheDetails ?? this.cacheDetails,
       isLoadingCacheDetails:
           isLoadingCacheDetails ?? this.isLoadingCacheDetails,
@@ -467,6 +471,7 @@ class SettingsState extends Equatable {
     isPathInvalidated,
     pathValidationMessage,
     audioVolume,
+    warmupAudioVolume,
     cacheDetails,
     isLoadingCacheDetails,
     mobileCacheDetails,

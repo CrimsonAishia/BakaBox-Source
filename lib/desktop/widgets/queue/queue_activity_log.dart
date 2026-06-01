@@ -52,10 +52,14 @@ class QueueActivityLog extends StatefulWidget {
   /// 最大显示条数
   final int maxItems;
 
+  /// 是否为暖服模式
+  final bool isWarmup;
+
   const QueueActivityLog({
     super.key,
     required this.activities,
     this.maxItems = 50,
+    this.isWarmup = false,
   });
 
   @override
@@ -206,6 +210,7 @@ class _QueueActivityLogState extends State<QueueActivityLog> {
                       return _ActivityItemWidget(
                         activity: displayActivities[index],
                         isDark: isDark,
+                        isWarmup: widget.isWarmup,
                       );
                     },
                   ),
@@ -219,8 +224,13 @@ class _QueueActivityLogState extends State<QueueActivityLog> {
 class _ActivityItemWidget extends StatelessWidget {
   final QueueActivityItem activity;
   final bool isDark;
+  final bool isWarmup;
 
-  const _ActivityItemWidget({required this.activity, required this.isDark});
+  const _ActivityItemWidget({
+    required this.activity, 
+    required this.isDark,
+    this.isWarmup = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -283,11 +293,12 @@ class _ActivityItemWidget extends StatelessWidget {
   }
 
   (IconData, Color, String) _getActivityInfo() {
+    final actionName = isWarmup ? '暖服' : '挤服';
     switch (activity.type) {
       case QueueActivityType.join:
-        return (MdiIcons.accountPlus, const Color(0xFF22C55E), '加入了挤服');
+        return (MdiIcons.accountPlus, const Color(0xFF22C55E), '加入了$actionName');
       case QueueActivityType.leave:
-        return (MdiIcons.accountMinus, const Color(0xFFF59E0B), '离开了挤服');
+        return (MdiIcons.accountMinus, const Color(0xFFF59E0B), '离开了$actionName');
       case QueueActivityType.success:
         return (MdiIcons.checkCircle, const Color(0xFF3B82F6), '成功进入服务器！');
     }

@@ -91,6 +91,15 @@ class SettingsSetAudioVolume extends SettingsEvent {
 
 class SettingsTestAudio extends SettingsEvent {}
 
+class SettingsSetWarmupAudioVolume extends SettingsEvent {
+  final double volume;
+  const SettingsSetWarmupAudioVolume(this.volume);
+  @override
+  List<Object?> get props => [volume];
+}
+
+class SettingsTestWarmupAudio extends SettingsEvent {}
+
 // 详细缓存管理事件
 class SettingsLoadCacheDetails extends SettingsEvent {}
 

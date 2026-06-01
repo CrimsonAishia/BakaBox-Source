@@ -5,6 +5,8 @@ import 'dart:math';
 import '../api/server_api.dart';
 import '../bloc/queue_users/queue_users_bloc.dart';
 import '../bloc/queue_users/queue_users_event.dart';
+import '../bloc/warmup_users/warmup_users_bloc.dart';
+import '../bloc/warmup_users/warmup_users_event.dart';
 import '../models/server_models.dart';
 import '../utils/log_service.dart';
 import 'audio_service.dart';
@@ -21,6 +23,7 @@ enum OperationType {
   none, // 无操作
   launching, // 启动游戏
   queueing, // 挤服中
+  warming, // 暖服中
   connecting, // 连接服务器
 }
 
@@ -126,6 +129,9 @@ class OperationState {
   final bool needCsgoLegacy; // 是否需要安装 CSGO Legacy
   final bool needManualLaunch; // 是否需要手动启动 CSGO
 
+  // 暖服专用
+  final int warmupTargetPlayers;
+
   const OperationState({
     this.type = OperationType.none,
     this.status = OperationStatus.idle,
@@ -140,6 +146,7 @@ class OperationState {
     this.error,
     this.needCsgoLegacy = false,
     this.needManualLaunch = false,
+    this.warmupTargetPlayers = 0,
   });
 
   OperationState copyWith({
@@ -156,6 +163,7 @@ class OperationState {
     String? error,
     bool? needCsgoLegacy,
     bool? needManualLaunch,
+    int? warmupTargetPlayers,
   }) {
     return OperationState(
       type: type ?? this.type,
@@ -171,12 +179,17 @@ class OperationState {
       error: error,
       needCsgoLegacy: needCsgoLegacy ?? this.needCsgoLegacy,
       needManualLaunch: needManualLaunch ?? this.needManualLaunch,
+      warmupTargetPlayers: warmupTargetPlayers ?? this.warmupTargetPlayers,
     );
   }
 
   /// 是否正在挤服
   bool get isQueueing =>
       type == OperationType.queueing && status == OperationStatus.running;
+
+  /// 是否正在暖服
+  bool get isWarming =>
+      type == OperationType.warming && status == OperationStatus.running;
 
   /// 是否正在连接
   bool get isConnecting =>
@@ -217,6 +230,9 @@ class StatusWindowService {
   bool _isTriggeredConnection = false; // 防止重复触发连接
   bool _isFetching = false; // 防止并发请求
   bool _isQueueWindowOpen = false; // 挤服窗口是否打开
+  bool _isWarmupWindowOpen = false; // 暖服窗口是否打开
+  bool _warmupFloatingWindowEnabled = true; // 暖服原生悬浮窗是否启用
+  DateTime? _windowCreatedAt; // 窗口创建时间，用于跳过初始化期间的 IPC 推送
   final Set<int> _activeThreadIds = {};
   String? _lastMapName;
   int _consecutiveFailures = 0;
@@ -243,6 +259,9 @@ class StatusWindowService {
   /// 挤服窗口是否打开
   bool get isQueueWindowOpen => _isQueueWindowOpen;
 
+  /// 暖服窗口是否打开
+  bool get isWarmupWindowOpen => _isWarmupWindowOpen;
+
   /// 设置挤服窗口打开状态
   void setQueueWindowOpen(bool isOpen) {
     if (_isQueueWindowOpen != isOpen) {
@@ -250,6 +269,50 @@ class StatusWindowService {
       // 通知监听者状态变化
       _stateController.add(_state);
     }
+  }
+
+  /// 设置暖服窗口打开状态
+  void setWarmupWindowOpen(bool isOpen) {
+    if (_isWarmupWindowOpen != isOpen) {
+      _isWarmupWindowOpen = isOpen;
+      // 通知监听者状态变化
+      _stateController.add(_state);
+    }
+  }
+
+  /// 暖服原生悬浮窗是否启用
+  bool get isWarmupFloatingWindowEnabled => _warmupFloatingWindowEnabled;
+
+  /// 实时开关暖服原生悬浮窗
+  ///
+  /// 暖服进行中用户在面板里切换"浮动窗口显示"时调用：
+  /// - 关闭：立即关闭已有悬浮窗
+  /// - 开启：立即创建并同步当前状态
+  void setWarmupFloatingWindowEnabled(bool enabled) {
+    _warmupFloatingWindowEnabled = enabled;
+
+    if (_state.type != OperationType.warming) return;
+
+    if (!enabled) {
+      // 立即关闭悬浮窗
+      _cancelCloseTimer();
+      closeWindow();
+      return;
+    }
+
+    // 重新创建悬浮窗并同步当前状态
+    _showWindow(
+      type: FloatingWindowType.warmup,
+      serverAddress: _state.serverAddress,
+      title: _state.serverName ?? _state.serverAddress ?? '',
+      state: 'warming',
+      message: _state.message ?? '暖服中...',
+      mapName: _state.serverInfo?.map,
+      mapNameCn: _state.mapInfo?.mapLabel,
+      mapBackground: _state.mapInfo?.mapUrl,
+      currentPlayers: _state.serverInfo?.players,
+      targetPlayers: _state.warmupTargetPlayers,
+    );
   }
 
   /// 当前操作类型
@@ -881,6 +944,150 @@ class StatusWindowService {
     LogService.d('[StatusWindowService] 挤服已暂停');
   }
 
+  /// 开始暖服
+  Future<bool> startWarmup({
+    required String serverAddress,
+    String? serverName,
+    ServerInfo? serverInfo,
+    MapData? mapInfo,
+    required int targetPlayers,
+    bool showFloatingWindow = true,
+  }) async {
+    // 检查是否有其他操作正在进行
+    if (_state.type != OperationType.none &&
+        _state.type != OperationType.warming) {
+      LogService.w('[StatusWindowService] 有其他操作正在进行，无法暖服');
+      return false;
+    }
+
+    _warmupFloatingWindowEnabled = showFloatingWindow;
+
+    _updateState(
+      _state.copyWith(
+        type: OperationType.warming,
+        status: OperationStatus.running,
+        serverAddress: serverAddress,
+        serverName: serverName ?? serverInfo?.hostName ?? serverAddress,
+        serverInfo: serverInfo,
+        mapInfo: mapInfo,
+        message: '暖服中...',
+        warmupTargetPlayers: targetPlayers,
+      ),
+    );
+
+    // 创建原生悬浮窗（仅在启用浮窗显示时）
+    if (showFloatingWindow) {
+      await _showWindow(
+        type: FloatingWindowType.warmup,
+        serverAddress: serverAddress,
+        title: serverName ?? serverInfo?.hostName ?? serverAddress,
+        state: 'warming',
+        message: '暖服中...',
+        mapName: serverInfo?.map,
+        mapNameCn: mapInfo?.mapLabel,
+        mapBackground: mapInfo?.mapUrl,
+        currentPlayers: serverInfo?.players,
+        targetPlayers: _state.warmupTargetPlayers,
+      );
+    }
+
+    LogService.d('[StatusWindowService] 暖服已开始: $serverAddress');
+    return true;
+  }
+
+  /// 供 WarmupBloc 更新状态并同步给原生悬浮窗
+  void updateWarmupState({
+    int? currentPlayers,
+    int? targetPlayers,
+    String? message,
+    OperationStatus? status,
+    MapData? mapInfo,
+    String? mapName,
+    int? maxPlayers,
+  }) {
+    if (_state.type != OperationType.warming) return;
+
+    ServerInfo? updatedServerInfo = _state.serverInfo;
+    // 只要人数、地图或最大人数任一发生变化，就重建 serverInfo
+    if (currentPlayers != null || mapName != null || maxPlayers != null) {
+      updatedServerInfo = ServerInfo(
+        protocol: _state.serverInfo?.protocol,
+        hostName: _state.serverInfo?.hostName ?? _state.serverName,
+        // 关键修复：地图换图后使用最新的 mapName，避免悬浮窗显示旧地图
+        map: mapName ?? _state.serverInfo?.map ?? '',
+        modDir: _state.serverInfo?.modDir,
+        modDesc: _state.serverInfo?.modDesc,
+        appId: _state.serverInfo?.appId,
+        players: currentPlayers ?? _state.serverInfo?.players,
+        maxPlayers: maxPlayers ?? _state.serverInfo?.maxPlayers ?? 0,
+        bots: _state.serverInfo?.bots,
+        dedicated: _state.serverInfo?.dedicated,
+        os: _state.serverInfo?.os,
+        password: _state.serverInfo?.password,
+        secure: _state.serverInfo?.secure,
+        version: _state.serverInfo?.version,
+        extraDataFlags: _state.serverInfo?.extraDataFlags,
+        gamePort: _state.serverInfo?.gamePort,
+        steamId: _state.serverInfo?.steamId,
+        gameTags: _state.serverInfo?.gameTags,
+        gameId: _state.serverInfo?.gameId,
+        ip: _state.serverInfo?.ip ?? _state.serverAddress,
+        pingLatency: _state.serverInfo?.pingLatency,
+        pingStatus: _state.serverInfo?.pingStatus,
+        gameType: _state.serverInfo?.gameType,
+      );
+    }
+
+    _updateState(
+      _state.copyWith(
+        serverInfo: updatedServerInfo,
+        warmupTargetPlayers: targetPlayers ?? _state.warmupTargetPlayers,
+        message: message ?? _state.message,
+        status: status ?? _state.status,
+        mapInfo: mapInfo ?? _state.mapInfo,
+      ),
+    );
+
+    // 如果浮窗被禁用，则不向原生悬浮窗推送更新
+    if (!_warmupFloatingWindowEnabled) return;
+
+    // 地图信息或服务器信息发生变化，主动触发一次悬浮窗更新（含人数）
+    _updateWindow(
+      currentPlayers: currentPlayers ?? updatedServerInfo?.players,
+      targetPlayers: targetPlayers ?? _state.warmupTargetPlayers,
+      mapName: updatedServerInfo?.map,
+      mapNameCn: mapInfo?.mapLabel ?? _state.mapInfo?.mapLabel,
+      mapBackground: mapInfo?.mapUrl ?? _state.mapInfo?.mapUrl,
+    );
+  }
+
+  /// 暂停/停止暖服
+  void pauseWarmup() {
+    if (_state.type != OperationType.warming) return;
+
+    // 断开暖服 WebSocket 连接
+    final usersBloc = WarmupUsersBloc.instance;
+    usersBloc.add(const WarmupUsersLeave());
+    usersBloc.add(const WarmupUsersDisconnect());
+
+    _updateState(
+      _state.copyWith(
+        type: OperationType.none, // 重置操作类型
+        status: OperationStatus.paused,
+        message: '已停止暖服',
+      ),
+    );
+
+    _updateWindow(
+      state: 'paused',
+      message: '已停止暖服',
+      autoDismissSeconds: 1,
+    );
+    _scheduleClose(seconds: 0);
+
+    LogService.d('[StatusWindowService] 暖服已停止');
+  }
+
   /// 更新挤服配置
   void updateQueueConfig(QueueConfig config) {
     if (_state.type != OperationType.queueing) return;
@@ -964,6 +1171,10 @@ class StatusWindowService {
     usersBloc.add(const QueueUsersLeave());
     usersBloc.add(const QueueUsersDisconnect());
 
+    final warmupUsersBloc = WarmupUsersBloc.instance;
+    warmupUsersBloc.add(const WarmupUsersLeave());
+    warmupUsersBloc.add(const WarmupUsersDisconnect());
+
     _updateState(
       _state.copyWith(
         type: OperationType.none, // 重置操作类型
@@ -1000,6 +1211,10 @@ class StatusWindowService {
     final usersBloc = QueueUsersBloc.instance;
     usersBloc.add(const QueueUsersLeave());
     usersBloc.add(const QueueUsersDisconnect());
+
+    final warmupUsersBloc = WarmupUsersBloc.instance;
+    warmupUsersBloc.add(const WarmupUsersLeave());
+    warmupUsersBloc.add(const WarmupUsersDisconnect());
 
     _updateState(
       OperationState(isGameRunning: _gameStatusService.isGameRunning),
@@ -1898,6 +2113,64 @@ class StatusWindowService {
     _scheduleClose(seconds: 5);
   }
 
+  Future<void> _updateWindow({
+    String? state,
+    String? message,
+    int? currentPlayers,
+    int? targetPlayers,
+    List<String>? threadStatuses,
+    String? mapName,
+    String? mapNameCn,
+    String? mapBackground,
+    int? autoDismissSeconds,
+  }) async {
+    if (_windowId == null) return;
+
+    // 暖服浮窗刚创建时子进程还在初始化 IPC handler，跳过推送。
+    // 初始状态已通过 config.extra 传递给子窗口，不需要立即再推一次。
+    // 仅对暖服类型生效（挤服的 _updateWindow 调用时机不会触发此问题）。
+    if (_state.type == OperationType.warming &&
+        _windowCreatedAt != null &&
+        DateTime.now().difference(_windowCreatedAt!) <
+            const Duration(seconds: 3)) {
+      return;
+    }
+
+    final stateObj = this.state;
+    final finalTargetPlayers = targetPlayers ??
+        (stateObj.type == OperationType.queueing
+            ? stateObj.queueConfig.targetPlayers
+            : stateObj.type == OperationType.warming
+                ? stateObj.warmupTargetPlayers
+                : null);
+
+    final success = await _windowService.sendStateUpdate(
+      _windowId!,
+      state: state ??
+          (stateObj.type == OperationType.queueing
+              ? 'queueing'
+              : stateObj.type == OperationType.warming
+                  ? 'warming'
+                  : 'connecting'),
+      message: message ?? stateObj.message,
+      currentPlayers: currentPlayers ?? stateObj.serverInfo?.players,
+      targetPlayers: finalTargetPlayers,
+      threadStatuses:
+          threadStatuses ?? stateObj.threadStatuses.map((s) => s.name).toList(),
+      mapName: mapName ?? stateObj.serverInfo?.map,
+      mapNameCn: mapNameCn ?? stateObj.mapInfo?.mapLabel,
+      mapBackground: mapBackground ?? stateObj.mapInfo?.mapUrl,
+      autoDismissSeconds: autoDismissSeconds,
+    );
+
+    // 如果发送失败且窗口已不在活跃列表中，清理 _windowId
+    // 这样后续的 _showWindow 调用能正确创建新窗口
+    if (!success && _windowId != null && !_windowService.isWindowActive(_windowId!)) {
+      LogService.d('[StatusWindowService] Window $_windowId is no longer active, clearing reference');
+      _windowId = null;
+    }
+  }
+
   /// 等待游戏状态稳定（变为 inGame 或 mainMenu）
   ///
   /// 返回最终稳定的状态，超时返回 null
@@ -2095,11 +2368,12 @@ class StatusWindowService {
         mapBackground: mapBackground,
       );
 
-      // 如果更新成功，_windowId 会保留。如果更新失败且窗口已关闭，_windowId 会被置空。
-      // 此时我们继续往下执行创建新窗口的逻辑。
-      if (_windowId != null) {
+      // sendStateUpdate 在 CHANNEL_UNREGISTERED 时会把窗口从 _activeWindows 移除，
+      // 但不会清理 _windowId。这里重新检查：如果窗口已不活跃，置空 _windowId 并继续创建新窗口。
+      if (_windowId != null && _windowService.isWindowActive(_windowId!)) {
         return;
       }
+      // 窗口已失效，继续往下创建新窗口
     }
 
     // 窗口不存在或已关闭，清理并创建新窗口
@@ -2123,77 +2397,10 @@ class StatusWindowService {
           },
         ),
       );
+      _windowCreatedAt = DateTime.now();
       LogService.d('[StatusWindowService] Window created: $_windowId');
     } catch (e) {
       LogService.e('[StatusWindowService] Create window error', e);
-    }
-  }
-
-  /// 更新窗口
-  Future<void> _updateWindow({
-    String? state,
-    String? message,
-    int? currentPlayers,
-    int? targetPlayers,
-    List<String>? threadStatuses,
-    String? mapName,
-    String? mapNameCn,
-    String? mapBackground,
-    int? autoDismissSeconds,
-  }) async {
-    if (_windowId == null) return;
-
-    // 使用地图信息
-    final effectiveMapNameCn = mapNameCn ?? _state.mapInfo?.mapLabel;
-    final effectiveMapBackground = mapBackground ?? _state.mapInfo?.mapUrl;
-
-    final success = await _windowService.sendStateUpdate(
-      _windowId!,
-      state: state ?? _getWindowState(),
-      message: message ?? _state.message ?? '',
-      currentPlayers: currentPlayers ?? _state.serverInfo?.players,
-      targetPlayers: targetPlayers ?? _state.queueConfig.targetPlayers,
-      threadStatuses:
-          threadStatuses ?? _state.threadStatuses.map((s) => s.name).toList(),
-      mapName: mapName ?? _state.serverInfo?.map,
-      mapNameCn: effectiveMapNameCn,
-      mapBackground: effectiveMapBackground,
-      autoDismissSeconds: autoDismissSeconds,
-    );
-
-    // 如果发送失败（窗口可能已关闭），清理windowId
-    if (!success && !_windowService.isWindowActive(_windowId!)) {
-      LogService.w(
-        '[StatusWindowService] Window $_windowId no longer active, clearing reference',
-      );
-      _windowId = null;
-    }
-  }
-
-  /// 获取窗口状态字符串
-  String _getWindowState() {
-    switch (_state.status) {
-      case OperationStatus.success:
-        return 'success';
-      case OperationStatus.failed:
-        return 'failed';
-      case OperationStatus.serverFull:
-        return 'serverFull';
-      case OperationStatus.paused:
-        return 'paused';
-      case OperationStatus.running:
-        switch (_state.type) {
-          case OperationType.launching:
-            return 'launching';
-          case OperationType.queueing:
-            return 'queueing';
-          case OperationType.connecting:
-            return 'connecting';
-          default:
-            return 'idle';
-        }
-      default:
-        return 'idle';
     }
   }
 
@@ -2227,6 +2434,10 @@ class StatusWindowService {
     final usersBloc = QueueUsersBloc.instance;
     usersBloc.add(const QueueUsersLeave());
     usersBloc.add(const QueueUsersDisconnect());
+
+    final warmupUsersBloc = WarmupUsersBloc.instance;
+    warmupUsersBloc.add(const WarmupUsersLeave());
+    warmupUsersBloc.add(const WarmupUsersDisconnect());
 
     _gameStatusSubscription?.cancel();
     _cancelCloseTimer();

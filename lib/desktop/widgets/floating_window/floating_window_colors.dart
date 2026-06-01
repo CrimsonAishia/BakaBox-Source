@@ -8,6 +8,7 @@ class FloatingWindowColors {
   static const Color connecting = Color(0xFF0080FF);
   static const Color loading = Color(0xFFF59E0B);
   static const Color queueing = Color(0xFF0080FF);
+  static const Color warming = Color(0xFFFF6B00); // 暖服的专属火热橙色
   static const Color success = Color(0xFF10B981);
   static const Color failed = Color(0xFFEF4444);
   static const Color serverFull = Color(0xFFF59E0B);
@@ -24,6 +25,7 @@ class FloatingWindowColors {
     if (state.isConnecting) return connecting;
     if (state.isLoading) return loading;
     if (state.isQueueing) return queueing;
+    if (state.isWarming) return warming;
     if (state.isSuccess) return success;
     if (state.isFailed) return failed;
     if (state.isServerFull) return serverFull;

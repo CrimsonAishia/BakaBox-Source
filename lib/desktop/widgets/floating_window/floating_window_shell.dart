@@ -388,6 +388,8 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
     switch (widget.config.type) {
       case FloatingWindowType.queue:
         return Icons.people_alt;
+      case FloatingWindowType.warmup:
+        return Icons.local_fire_department;
       case FloatingWindowType.launch:
         return Icons.rocket_launch;
       case FloatingWindowType.connect:
@@ -404,6 +406,8 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
     switch (widget.config.type) {
       case FloatingWindowType.queue:
         return 'Queue Status';
+      case FloatingWindowType.warmup:
+        return 'Warmup Status';
       case FloatingWindowType.launch:
         return 'Launch Game';
       case FloatingWindowType.connect:

@@ -90,6 +90,9 @@ class QueueArena extends StatefulWidget {
   /// 基础头像大小
   final double avatarSize;
 
+  /// 是否是暖服
+  final bool isWarmup;
+
   const QueueArena({
     super.key,
     required this.users,
@@ -100,6 +103,7 @@ class QueueArena extends StatefulWidget {
     this.onAnimationTriggered,
     this.onUserSuccessAnimationComplete,
     this.avatarSize = 36,
+    this.isWarmup = false,
   });
 
   @override
@@ -527,7 +531,7 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
         opacity: state.opacity.clamp(0.0, 1.0),
         child: Transform.scale(
           scale: scale,
-          child: QueueUserAvatar(user: state.user, size: state.size),
+          child: QueueUserAvatar(user: state.user, size: state.size, isWarmup: widget.isWarmup),
         ),
       ),
     );
