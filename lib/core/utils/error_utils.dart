@@ -64,6 +64,10 @@ class ErrorUtils {
       return '没有权限执行此操作';
     }
 
+    if (errorStr.contains('429') || errorStr.contains('Too Many Requests')) {
+      return '操作太频繁，请稍后再试';
+    }
+
     // 文件相关错误
     if (errorStr.contains('FileSystemException')) {
       return '文件操作失败';
@@ -104,5 +108,59 @@ class ErrorUtils {
     return errorStr.contains('401') ||
         errorStr.contains('Unauthorized') ||
         errorStr.contains('登录');
+  }
+
+  /// 判断是否为限速错误（429）
+  static bool isRateLimitError(Object e) {
+    if (e is ApiException) {
+      return e.code == 429;
+    }
+    final errorStr = e.toString();
+    return errorStr.contains('429') ||
+        errorStr.contains('Too Many Requests');
+  }
+
+  /// 判断是否为资源不存在（404）
+  static bool isNotFoundError(Object e) {
+    if (e is ApiException) {
+      return e.code == 404;
+    }
+    final errorStr = e.toString();
+    return errorStr.contains('404') ||
+        errorStr.contains('Not Found');
+  }
+
+  /// 判断是否为权限不足（403）
+  static bool isForbiddenError(Object e) {
+    if (e is ApiException) {
+      return e.code == 403;
+    }
+    final errorStr = e.toString();
+    return errorStr.contains('403') ||
+        errorStr.contains('Forbidden');
+  }
+
+  /// 判断是否为数据冲突（409）
+  static bool isConflictError(Object e) {
+    if (e is ApiException) {
+      return e.code == 409;
+    }
+    final errorStr = e.toString();
+    return errorStr.contains('409') ||
+        errorStr.contains('Conflict');
+  }
+
+  /// 判断是否为服务端错误（5xx）
+  static bool isServerError(Object e) {
+    if (e is ApiException) {
+      return e.code >= 500 && e.code < 600;
+    }
+    final errorStr = e.toString();
+    return errorStr.contains('500') ||
+        errorStr.contains('502') ||
+        errorStr.contains('503') ||
+        errorStr.contains('Internal Server Error') ||
+        errorStr.contains('Bad Gateway') ||
+        errorStr.contains('Service Unavailable');
   }
 }

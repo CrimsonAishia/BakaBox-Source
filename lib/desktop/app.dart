@@ -6,6 +6,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:flutter_portal/flutter_portal.dart';
 
 import '../core/core.dart';
+import '../core/bootstrap/app_initializer.dart';
 import '../core/services/game_launcher_service.dart';
 import '../core/services/game_status_service.dart';
 import '../core/services/gsi_service.dart';
@@ -83,6 +84,11 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
         ),
         BlocProvider(create: (_) => LobbyBloc()),
         BlocProvider(create: (_) => MapCdBloc()),
+        BlocProvider(create: (context) {
+          final bloc = GuideCategoriesBloc();
+          AppInitializer.preheatGuideCategories(bloc);
+          return bloc;
+        }),
       ],
       child: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {

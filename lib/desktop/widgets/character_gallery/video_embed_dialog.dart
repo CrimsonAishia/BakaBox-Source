@@ -1,11 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:video_player/video_player.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../../../core/models/character_models.dart';
+import '../../../core/services/bilibili_service.dart';
 
 /// 视频内嵌播放弹窗
 ///
@@ -85,9 +84,12 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
     setState(() => _isFetchingCover = true);
 
     try {
-      final bvid = _extractBvid(widget.videoUrl);
-      if (bvid != null) {
-        await _fetchCoverByBvid(bvid);
+      final meta = await BilibiliService.fetchMeta(widget.videoUrl);
+      if (mounted && meta != null) {
+        setState(() {
+          _coverUrl = meta.coverUrl;
+          _videoTitle = meta.title;
+        });
       }
     } catch (_) {}
 
@@ -102,33 +104,17 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
       // 优先使用原始地址
       final originUrl = widget.videoOriginUrl;
       if (originUrl != null && originUrl.isNotEmpty) {
-        final bvid = _extractBvid(originUrl);
-        if (bvid != null) {
-          await _fetchCoverByBvid(bvid);
+        final meta = await BilibiliService.fetchMeta(originUrl);
+        if (mounted && meta != null) {
+          setState(() {
+            _coverUrl = meta.coverUrl;
+            _videoTitle = meta.title;
+          });
         }
       }
     } catch (_) {}
 
     if (mounted) setState(() => _isFetchingCover = false);
-  }
-
-  /// 通过BV号获取封面
-  Future<void> _fetchCoverByBvid(String bvid) async {
-    final response = await http
-        .get(
-          Uri.parse('https://api.bilibili.com/x/web-interface/view?bvid=$bvid'),
-        )
-        .timeout(const Duration(seconds: 5));
-
-    if (mounted && response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data['code'] == 0) {
-        setState(() {
-          _coverUrl = data['data']['pic'];
-          _videoTitle = data['data']['title'];
-        });
-      }
-    }
   }
 
   /// 使用 WebView 播放B站原始链接（iframe 嵌入）
@@ -652,8 +638,7 @@ bool _isDirectVideo(String url) {
 
 /// 从 B站 URL 提取 BV 号
 String? _extractBvid(String url) {
-  final match = RegExp(r'BV[\w]+').firstMatch(url);
-  return match?.group(0);
+  return BilibiliService.extractBvid(url);
 }
 
 /// 构建 B站 embed URL（autoplay + 高画质 + 无弹幕）

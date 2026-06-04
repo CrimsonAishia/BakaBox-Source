@@ -11,7 +11,21 @@ import 'map_database_desktop.dart';
 
 /// 工具箱页面
 class ToolsScreen extends StatefulWidget {
-  const ToolsScreen({super.key});
+  /// 外部指定的初始工具 ID（由 DesktopNavigator 跳转时传入）
+  final String? initialToolId;
+
+  /// 外部传入的工具参数（例如 {'mapName': 'ze_minecraft'}）
+  final Map<String, dynamic>? initialToolArgs;
+
+  /// 参数消费完毕后的回调，通知外部清空 pending 状态
+  final VoidCallback? onArgsConsumed;
+
+  const ToolsScreen({
+    super.key,
+    this.initialToolId,
+    this.initialToolArgs,
+    this.onArgsConsumed,
+  });
 
   @override
   State<ToolsScreen> createState() => _ToolsScreenState();
@@ -20,6 +34,33 @@ class ToolsScreen extends StatefulWidget {
 class _ToolsScreenState extends State<ToolsScreen> {
   /// 当前打开的工具ID
   String? _openedToolId;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialToolId != null) {
+      _openedToolId = widget.initialToolId;
+      // frame end 后通知外部已消费参数
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onArgsConsumed?.call();
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant ToolsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 如果外部传入了新的 initialToolId，自动打开对应工具
+    if (widget.initialToolId != null &&
+        widget.initialToolId != oldWidget.initialToolId) {
+      setState(() {
+        _openedToolId = widget.initialToolId;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onArgsConsumed?.call();
+      });
+    }
+  }
 
   static final List<_ToolItem> _tools = [
     _ToolItem(
@@ -113,9 +154,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
           child: const KeyBindingTool(),
         );
       case 'map_database':
+        final initialMapName = widget.initialToolArgs?['mapName'] as String?;
         return BlocProvider(
           create: (context) => MapContributionBloc(),
-          child: const MapDatabaseDesktop(),
+          child: MapDatabaseDesktop(initialMapName: initialMapName),
         );
       case 'obs_overlay':
         return const ObsTool();

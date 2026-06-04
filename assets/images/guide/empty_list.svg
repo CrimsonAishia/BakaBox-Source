@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+  <!-- 空态：未找到攻略 — 替换为正式设计稿 -->
+  <rect width="240" height="240" fill="none"/>
+  <circle cx="120" cy="100" r="48" fill="#E2E8F0"/>
+  <path d="M104 96h32M108 108h24" stroke="#94A3B8" stroke-width="2" stroke-linecap="round"/>
+  <text x="120" y="180" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#64748B">
+    暂无攻略
+  </text>
+</svg>

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/quill_delta_codec.dart';
+import 'embeds/divider_embed_builder.dart';
+import 'embeds/hover_info_embed_builder.dart';
+import 'embeds/resizable_image_embed_builder.dart';
 
 /// 只读富文本显示组件
 ///
@@ -16,11 +19,15 @@ class RichTextViewer extends StatefulWidget {
   /// 是否紧凑模式（减少间距）
   final bool compact;
 
+  /// 自定义 Embed 渲染器列表（如 BilibiliEmbedBuilder）
+  final List<EmbedBuilder>? embedBuilders;
+
   const RichTextViewer({
     super.key,
     required this.content,
     this.textStyle,
     this.compact = false,
+    this.embedBuilders,
   });
 
   @override
@@ -74,6 +81,14 @@ class _RichTextViewerState extends State<RichTextViewer> {
           color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF374151),
         );
 
+    // 合并 embed builders：传入的 + 始终注册 resizableImage / hoverInfo / divider 只读版
+    final List<EmbedBuilder> mergedEmbedBuilders = [
+      if (widget.embedBuilders != null) ...widget.embedBuilders!,
+      const ResizableImageEmbedBuilder(readOnly: true),
+      const HoverInfoEmbedBuilder(),
+      const DividerEmbedBuilder(),
+    ];
+
     return QuillEditor.basic(
       controller: _controller,
       scrollController: _scrollController,
@@ -83,6 +98,7 @@ class _RichTextViewerState extends State<RichTextViewer> {
         expands: false,
         padding: EdgeInsets.zero,
         onLaunchUrl: _handleLaunchUrl,
+        embedBuilders: mergedEmbedBuilders,
         customStyles: _buildStyles(isDark, baseTextStyle),
       ),
     );
@@ -209,6 +225,17 @@ class _RichTextViewerState extends State<RichTextViewer> {
         color: const Color(0xFF0080FF),
         decoration: TextDecoration.underline,
         decorationColor: const Color(0xFF0080FF).withValues(alpha: 0.5),
+      ),
+      inlineCode: InlineCodeStyle(
+        backgroundColor:
+            isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
+        radius: const Radius.circular(4),
+        style: TextStyle(
+          fontFamily: 'Consolas, Monaco, monospace',
+          fontSize: 14,
+          color:
+              isDark ? const Color(0xFFE879F9) : const Color(0xFFDC2626),
+        ),
       ),
     );
   }

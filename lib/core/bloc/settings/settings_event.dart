@@ -184,3 +184,25 @@ class SettingsSetBroadcastNotificationType extends SettingsEvent {
   @override
   List<Object?> get props => [notificationType];
 }
+
+// ==================== 黑名单管理事件 ====================
+
+/// 加载黑名单列表
+class SettingsLoadBlocklist extends SettingsEvent {}
+
+/// 拉黑用户
+class SettingsBlockUser extends SettingsEvent {
+  final int userId;
+  final String userName;
+  const SettingsBlockUser({required this.userId, required this.userName});
+  @override
+  List<Object?> get props => [userId, userName];
+}
+
+/// 取消拉黑用户
+class SettingsUnblockUser extends SettingsEvent {
+  final int userId;
+  const SettingsUnblockUser(this.userId);
+  @override
+  List<Object?> get props => [userId];
+}

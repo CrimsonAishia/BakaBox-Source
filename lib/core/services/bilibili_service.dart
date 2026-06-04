@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import '../models/guide_models.dart';
+
 /// B站 API 服务
 ///
 /// 用于获取B站直播间和视频的相关数据
@@ -41,6 +43,13 @@ class BilibiliService {
 
   /// 直播状态缓存有效期（30秒）
   static const Duration _liveStatusCacheDuration = Duration(seconds: 30);
+
+  /// 视频元数据缓存（用于攻略社区 fetchMeta）
+  /// Key: bvid, Value: { data: VideoEmbed, timestamp: int }
+  static final Map<String, _CacheEntry<VideoEmbed>> _videoMetaCache = {};
+
+  /// 视频元数据缓存有效期（30分钟）
+  static const Duration _videoMetaCacheDuration = Duration(minutes: 30);
 
   /// 从URL中提取直播间ID
   /// 支持格式:
@@ -83,6 +92,62 @@ class BilibiliService {
     final regex = RegExp(r'BV[\w]+');
     final match = regex.firstMatch(input);
     return match?.group(0);
+  }
+
+  /// 获取B站视频元数据（封面/标题/时长），带 30 分钟内存缓存 + 失败兜底返回 null
+  ///
+  /// 用于攻略社区视频嵌入场景。
+  /// [url] B站视频链接或 BV 号
+  /// 返回: [VideoEmbed]，失败时返回 null（不抛异常）
+  static Future<VideoEmbed?> fetchMeta(String url) async {
+    if (url.isEmpty) return null;
+
+    final bvid = extractBvid(url);
+    if (bvid == null) return null;
+
+    // 检查缓存
+    final cached = _videoMetaCache[bvid];
+    if (cached != null && !cached.isExpired) {
+      return cached.data;
+    }
+
+    try {
+      final response = await http
+          .get(
+            Uri.parse(
+              'https://api.bilibili.com/x/web-interface/view?bvid=$bvid',
+            ),
+            headers: _headers,
+          )
+          .timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 0 && data['data'] != null) {
+          final videoData = data['data'] as Map<String, dynamic>;
+          final videoEmbed = VideoEmbed(
+            bvid: bvid,
+            url: 'https://www.bilibili.com/video/$bvid/',
+            title: videoData['title'] as String?,
+            coverUrl: videoData['pic'] as String?,
+            durationSec: videoData['duration'] as int?,
+          );
+
+          // 写入缓存
+          _videoMetaCache[bvid] = _CacheEntry(
+            data: videoEmbed,
+            timestamp: DateTime.now().millisecondsSinceEpoch,
+            cacheDuration: _videoMetaCacheDuration,
+          );
+
+          return videoEmbed;
+        }
+      }
+    } catch (_) {
+      // 失败兜底：返回 null，不抛异常
+    }
+
+    return null;
   }
 
   /// 获取直播间信息（带缓存，默认1小时）

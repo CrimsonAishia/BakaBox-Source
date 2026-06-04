@@ -21,6 +21,7 @@ export 'api/server_stats_api.dart';
 export 'api/update_api.dart';
 export 'api/update_log_api.dart';
 export 'api/issue_api.dart';
+export 'api/guide_api.dart';
 export 'api/character_api.dart';
 
 // Exceptions
@@ -38,6 +39,7 @@ export 'models/issue_models.dart';
 export 'models/character_models.dart';
 export 'models/map_subscription_models.dart';
 export 'models/bilibili_content_models.dart';
+export 'models/guide_models.dart';
 export 'models/lobby_models.dart';
 export 'models/nakama_config.dart';
 export 'models/lobby_envelope.dart';
@@ -69,6 +71,7 @@ export 'services/app_permission_service.dart';
 export 'services/scheduler_service.dart';
 export 'services/realtime_service.dart';
 export 'services/realtime/realtime.dart';
+export 'services/desktop_navigator.dart';
 
 // Desktop-only services（桌面端直接 import，不通过 core.dart 导出）
 // - game_launcher_service.dart
@@ -102,8 +105,29 @@ export 'widgets/page_view_with_listener.dart';
 export 'widgets/navigation/app_navigation.dart';
 export 'widgets/update_dialog.dart';
 export 'widgets/rich_text_editor.dart';
+export 'widgets/embeds/bilibili_embed_builder.dart';
+export 'widgets/embeds/bilibili_insert_button.dart';
 export 'widgets/image_viewer_dialog.dart';
 export 'widgets/clickable_image.dart';
 export 'widgets/map_background.dart';
 export 'widgets/rich_text_viewer.dart';
 export 'widgets/lobby_kicked_overlay.dart';
+export 'widgets/guide/guide_report_dialog.dart';
+export 'widgets/guide/guide_map_picker_sheet.dart';
+export 'widgets/guide/guide_tokens.dart';
+export 'widgets/guide/guide_map_badge_chip.dart';
+export 'widgets/guide/guide_map_banner.dart';
+export 'widgets/guide/guide_map_header.dart';
+export 'widgets/guide/guide_compact_card.dart';
+export 'widgets/guide/guide_hero_banner.dart';
+export 'widgets/guide/guide_category_tab_bar.dart';
+export 'widgets/guide/guide_filter_bar.dart';
+export 'widgets/guide/guide_article_card.dart';
+export 'widgets/guide/guide_card_skeleton.dart';
+export 'widgets/guide/guide_pinned_hero_card.dart';
+export 'widgets/guide/guide_author_bar.dart';
+export 'widgets/guide/guide_status_banner.dart';
+export 'widgets/guide/guide_reading_progress.dart';
+export 'widgets/guide/guide_interaction_dock.dart';
+export 'widgets/guide/guide_comment_bubble.dart';
+export 'widgets/guide/guide_comment_section.dart';
