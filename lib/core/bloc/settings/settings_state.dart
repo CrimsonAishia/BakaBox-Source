@@ -252,6 +252,22 @@ class CacheItemInfo extends Equatable {
   List<Object?> get props => [type, name, description, sizeInBytes, isClearing];
 }
 
+/// 被拉黑的用户信息
+class BlockedUserInfo extends Equatable {
+  final int userId;
+  final String userName;
+  final DateTime blockedAt;
+
+  const BlockedUserInfo({
+    required this.userId,
+    required this.userName,
+    required this.blockedAt,
+  });
+
+  @override
+  List<Object?> get props => [userId, userName, blockedAt];
+}
+
 class SettingsState extends Equatable {
   final String appVersion;
   final String buildNumber;
@@ -311,6 +327,10 @@ class SettingsState extends Equatable {
   // 广播通知方式
   final BroadcastNotificationType broadcastNotificationType;
 
+  // 黑名单
+  final List<BlockedUserInfo> blockedUsers;
+  final bool isLoadingBlocklist;
+
   const SettingsState({
     this.appVersion = '',
     this.buildNumber = '',
@@ -341,6 +361,8 @@ class SettingsState extends Equatable {
     this.appExitBehavior = AppExitBehavior.ask,
     this.serverSortMode = ServerSortMode.manual,
     this.broadcastNotificationType = BroadcastNotificationType.software,
+    this.blockedUsers = const [],
+    this.isLoadingBlocklist = false,
   });
 
   /// 获取总缓存大小（字节）
@@ -383,6 +405,11 @@ class SettingsState extends Equatable {
   bool get hasGamePath => gamePath != null && gamePath!.isNotEmpty;
   bool get hasSteamPath => steamPath != null && steamPath!.isNotEmpty;
 
+  /// 检查某用户是否在黑名单中
+  bool isUserBlocked(int userId) {
+    return blockedUsers.any((u) => u.userId == userId);
+  }
+
   SettingsState copyWith({
     String? appVersion,
     String? buildNumber,
@@ -413,6 +440,8 @@ class SettingsState extends Equatable {
     AppExitBehavior? appExitBehavior,
     ServerSortMode? serverSortMode,
     BroadcastNotificationType? broadcastNotificationType,
+    List<BlockedUserInfo>? blockedUsers,
+    bool? isLoadingBlocklist,
   }) {
     return SettingsState(
       appVersion: appVersion ?? this.appVersion,
@@ -450,6 +479,8 @@ class SettingsState extends Equatable {
       serverSortMode: serverSortMode ?? this.serverSortMode,
       broadcastNotificationType:
           broadcastNotificationType ?? this.broadcastNotificationType,
+      blockedUsers: blockedUsers ?? this.blockedUsers,
+      isLoadingBlocklist: isLoadingBlocklist ?? this.isLoadingBlocklist,
     );
   }
 
@@ -484,5 +515,7 @@ class SettingsState extends Equatable {
     appExitBehavior,
     serverSortMode,
     broadcastNotificationType,
+    blockedUsers,
+    isLoadingBlocklist,
   ];
 }

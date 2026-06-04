@@ -75,9 +75,9 @@ class DesktopNavigation extends StatelessWidget {
   /// 构建 Logo 区域
   Widget _buildLogoArea(bool isDark) {
     return Container(
-          height: 120,
+          height: 95,
           width: double.infinity,
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(

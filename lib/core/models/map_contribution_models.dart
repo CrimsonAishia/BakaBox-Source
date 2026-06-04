@@ -359,6 +359,10 @@ class MapInfo extends Equatable {
   @JsonKey(defaultValue: <MapTagSimple>[])
   final List<MapTagSimple> tags;
 
+  /// 该地图关联的攻略数量（后端未下发时为 null）
+  @JsonKey(name: 'guideCount')
+  final int? guideCount;
+
   const MapInfo({
     required this.mapName,
     required this.mapLabel,
@@ -367,6 +371,7 @@ class MapInfo extends Equatable {
     this.nameCount = 0,
     this.backgroundCount = 0,
     this.tags = const [],
+    this.guideCount,
   });
 
   factory MapInfo.fromJson(Map<String, dynamic> json) =>
@@ -382,6 +387,7 @@ class MapInfo extends Equatable {
     nameCount,
     backgroundCount,
     tags,
+    guideCount,
   ];
 }
 

@@ -15,7 +15,10 @@ import '../widgets/map_database/map_database_my_tab.dart';
 /// 显示所有地图的贡献信息和用户自己的贡献
 /// 包含两个 Tab：全部地图、我的贡献
 class MapDatabaseDesktop extends StatefulWidget {
-  const MapDatabaseDesktop({super.key});
+  /// 外部传入的初始地图名称，用于自动定位到该地图详情
+  final String? initialMapName;
+
+  const MapDatabaseDesktop({super.key, this.initialMapName});
 
   @override
   State<MapDatabaseDesktop> createState() => _MapDatabaseDesktopState();
@@ -44,6 +47,13 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
     // 初始加载全部地图数据
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAllMaps();
+
+      // 如果有外部传入的初始地图名称，自动搜索定位到该地图
+      if (widget.initialMapName != null &&
+          widget.initialMapName!.isNotEmpty) {
+        _searchController.text = widget.initialMapName!;
+        _onSearch(widget.initialMapName!);
+      }
     });
   }
 
@@ -66,11 +76,11 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
         // 重置页码
         _currentPage = 1;
 
-        // 切换到"全部地图"时重置状态筛选
         if (_tabController.index == 0) {
+          // 切换到"全部地图"时重置状态筛选
           _selectedStatus = null;
           _loadAllMaps();
-        } else {
+        } else if (_tabController.index == 1) {
           _loadMyMaps();
         }
       });
@@ -157,7 +167,7 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
 
     if (_tabController.index == 0) {
       _loadAllMaps(page: 1);
-    } else {
+    } else if (_tabController.index == 1) {
       _loadMyMaps(page: 1);
     }
   }
@@ -333,6 +343,7 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
     final isDark = theme.brightness == Brightness.dark;
 
     return BlocListener<MapContributionBloc, MapContributionState>(
+      listenWhen: (prev, curr) => prev.error != curr.error,
       listener: (context, state) {
         if (state.error != null) {
           ToastUtils.showError(context, state.error!);
@@ -342,194 +353,198 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
         }
       },
       child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Column(
-          children: [
-            // Tab 栏和搜索栏合并
-            Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : Colors.black.withValues(alpha: 0.05),
-                    width: 1,
+            child: Column(
+              children: [
+                // Tab 栏和搜索栏合并
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : Colors.black.withValues(alpha: 0.05),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      // Tab 栏
+                      Expanded(
+                        child: TabBar(
+                          controller: _tabController,
+                          indicator: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: const Color(0xFF0080FF),
+                                width: 3,
+                              ),
+                            ),
+                          ),
+                          indicatorSize: TabBarIndicatorSize.tab,
+                          dividerColor: Colors.transparent,
+                          labelColor: const Color(0xFF0080FF),
+                          unselectedLabelColor: isDark
+                              ? Colors.white.withValues(alpha: 0.6)
+                              : Colors.black.withValues(alpha: 0.6),
+                          labelStyle: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          unselectedLabelStyle: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          tabs: [
+                            const Tab(
+                              height: 56,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.public, size: 20),
+                                  SizedBox(width: 8),
+                                  Text('全部地图'),
+                                ],
+                              ),
+                            ),
+                            Tab(
+                              height: 56,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.person, size: 20),
+                                  const SizedBox(width: 8),
+                                  const Text('我的贡献'),
+                                  const SizedBox(width: 12),
+                                  _buildStatusDropdown(isDark),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // 搜索框（紧凑版）
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          right: 24,
+                          top: 8,
+                          bottom: 8,
+                        ),
+                        child: SizedBox(
+                          width: 280,
+                          height: 40,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.05)
+                                  : Colors.black.withValues(alpha: 0.03),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.1)
+                                    : Colors.black.withValues(alpha: 0.1),
+                              ),
+                            ),
+                            child: ValueListenableBuilder<TextEditingValue>(
+                              valueListenable: _searchController,
+                              builder: (context, value, child) {
+                                return TextField(
+                                  controller: _searchController,
+                                  onChanged: _onSearchChanged,
+                                  onSubmitted: _onSearch,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color:
+                                        isDark ? Colors.white : Colors.black,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: '搜索地图...',
+                                    hintStyle: TextStyle(
+                                      fontSize: 14,
+                                      color: isDark
+                                          ? Colors.white.withValues(alpha: 0.4)
+                                          : Colors.black.withValues(
+                                              alpha: 0.4),
+                                    ),
+                                    prefixIcon: Icon(
+                                      Icons.search,
+                                      size: 20,
+                                      color: isDark
+                                          ? Colors.white.withValues(alpha: 0.5)
+                                          : Colors.black.withValues(
+                                              alpha: 0.5),
+                                    ),
+                                    suffixIcon: value.text.isNotEmpty
+                                        ? IconButton(
+                                            icon: Icon(
+                                              Icons.clear,
+                                              size: 18,
+                                              color: isDark
+                                                  ? Colors.white.withValues(
+                                                      alpha: 0.5,
+                                                    )
+                                                  : Colors.black.withValues(
+                                                      alpha: 0.5,
+                                                    ),
+                                            ),
+                                            onPressed: () {
+                                              _searchController.clear();
+                                              _onSearch('');
+                                            },
+                                          )
+                                        : null,
+                                    border: InputBorder.none,
+                                    contentPadding:
+                                        const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 10,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  // Tab 栏
-                  Expanded(
-                    child: TabBar(
-                      controller: _tabController,
-                      indicator: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: const Color(0xFF0080FF),
-                            width: 3,
-                          ),
-                        ),
-                      ),
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      dividerColor: Colors.transparent,
-                      labelColor: const Color(0xFF0080FF),
-                      unselectedLabelColor: isDark
-                          ? Colors.white.withValues(alpha: 0.6)
-                          : Colors.black.withValues(alpha: 0.6),
-                      labelStyle: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      unselectedLabelStyle: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      tabs: [
-                        const Tab(
-                          height: 56,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.public, size: 20),
-                              SizedBox(width: 8),
-                              Text('全部地图'),
-                            ],
-                          ),
-                        ),
-                        Tab(
-                          height: 56,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.person, size: 20),
-                              const SizedBox(width: 8),
-                              const Text('我的贡献'),
-                              const SizedBox(width: 12),
-                              _buildStatusDropdown(isDark),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
 
-                  // 搜索框（紧凑版）
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      right: 24,
-                      top: 8,
-                      bottom: 8,
-                    ),
-                    child: SizedBox(
-                      width: 280,
-                      height: 40,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.05)
-                              : Colors.black.withValues(alpha: 0.03),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.1)
-                                : Colors.black.withValues(alpha: 0.1),
-                          ),
-                        ),
-                        child: ValueListenableBuilder<TextEditingValue>(
-                          valueListenable: _searchController,
-                          builder: (context, value, child) {
-                            return TextField(
-                              controller: _searchController,
-                              onChanged: _onSearchChanged,
-                              onSubmitted: _onSearch,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: isDark ? Colors.white : Colors.black,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: '搜索地图...',
-                                hintStyle: TextStyle(
-                                  fontSize: 14,
-                                  color: isDark
-                                      ? Colors.white.withValues(alpha: 0.4)
-                                      : Colors.black.withValues(alpha: 0.4),
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.search,
-                                  size: 20,
-                                  color: isDark
-                                      ? Colors.white.withValues(alpha: 0.5)
-                                      : Colors.black.withValues(alpha: 0.5),
-                                ),
-                                suffixIcon: value.text.isNotEmpty
-                                    ? IconButton(
-                                        icon: Icon(
-                                          Icons.clear,
-                                          size: 18,
-                                          color: isDark
-                                              ? Colors.white.withValues(
-                                                  alpha: 0.5,
-                                                )
-                                              : Colors.black.withValues(
-                                                  alpha: 0.5,
-                                                ),
-                                        ),
-                                        onPressed: () {
-                                          _searchController.clear();
-                                          _onSearch('');
-                                        },
-                                      )
-                                    : null,
-                                border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 10,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+                // 地图类型筛选栏（仅全部地图 tab 显示）
+                _buildMapTypeBar(isDark),
+
+                // Tab 内容
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      MapDatabaseAllTab(
+                        currentPage: _currentPage,
+                        onPageChanged: _onPageChanged,
                       ),
-                    ),
+                      MapDatabaseMyTab(
+                        currentPage: _currentPage,
+                        onPageChanged: _onPageChanged,
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-
-            // 地图类型筛选栏（仅全部地图 tab 显示）
-            _buildMapTypeBar(isDark),
-
-            // Tab 内容
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  MapDatabaseAllTab(
-                    currentPage: _currentPage,
-                    onPageChanged: _onPageChanged,
-                  ),
-                  MapDatabaseMyTab(
-                    currentPage: _currentPage,
-                    onPageChanged: _onPageChanged,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 }

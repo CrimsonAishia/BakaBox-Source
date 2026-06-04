@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+  <!-- 空态：草稿箱为空 — 替换为正式设计稿 -->
+  <rect width="240" height="240" fill="none"/>
+  <circle cx="120" cy="100" r="48" fill="#E2E8F0"/>
+  <path d="M100 88h40v40h-40z" fill="none" stroke="#94A3B8" stroke-width="2"/>
+  <path d="M110 104h20M110 112h14" stroke="#94A3B8" stroke-width="2" stroke-linecap="round"/>
+  <text x="120" y="180" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#64748B">
+    暂无草稿
+  </text>
+</svg>

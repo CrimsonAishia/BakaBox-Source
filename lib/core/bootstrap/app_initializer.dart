@@ -1,3 +1,5 @@
+import '../bloc/guide_categories/guide_categories_bloc.dart';
+import '../bloc/guide_categories/guide_categories_event.dart';
 import '../services/analytics_service.dart';
 import '../services/app_info_service.dart';
 import '../services/update_service.dart';
@@ -42,6 +44,16 @@ class AppInitializer {
     await LogService.init();
     // 检查并上报安装成功（必须在 LogService 和 StorageUtils 初始化后）
     await _checkInstallSuccess();
+  }
+
+  /// 预热攻略分类数据（失败不阻塞启动）
+  static void preheatGuideCategories(GuideCategoriesBloc categoriesBloc) {
+    try {
+      categoriesBloc.add(const LoadCategories());
+    } catch (e) {
+      // 失败不阻塞启动，静默处理
+      LogService.e('预热攻略分类失败', e);
+    }
   }
 
   /// 检查并上报安装成功

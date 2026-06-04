@@ -12,6 +12,7 @@ import '../../utils/platform_utils.dart';
 import '../../utils/storage_utils.dart';
 import '../../services/disk_image_cache_service.dart';
 import '../../api/server_api.dart';
+import '../../api/guide_api.dart';
 import '../../services/game_launcher_service.dart';
 import '../../services/game_path_service.dart';
 import '../../services/audio_service.dart';
@@ -89,6 +90,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<SettingsSetAppExitBehavior>(_onSetAppExitBehavior);
     on<SettingsSetServerSortMode>(_onSetServerSortMode);
     on<SettingsSetBroadcastNotificationType>(_onSetBroadcastNotificationType);
+    // 黑名单管理事件
+    on<SettingsLoadBlocklist>(_onLoadBlocklist);
+    on<SettingsBlockUser>(_onBlockUser);
+    on<SettingsUnblockUser>(_onUnblockUser);
   }
 
   Future<void> _onInit(SettingsInit event, Emitter<SettingsState> emit) async {
@@ -1408,5 +1413,93 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         // 大厅图片不允许清理
         break;
     }
+  }
+
+  // ==================== 黑名单管理事件处理 ====================
+
+  final GuideApi _guideApi = GuideApi();
+
+  Future<void> _onLoadBlocklist(
+    SettingsLoadBlocklist event,
+    Emitter<SettingsState> emit,
+  ) async {
+    emit(state.copyWith(isLoadingBlocklist: true));
+    try {
+      // 从本地存储加载黑名单
+      final blockedJson = StorageUtils.getStringList('blocked_users');
+      final users = <BlockedUserInfo>[];
+      for (final item in blockedJson) {
+        final parts = item.split('|');
+        if (parts.length >= 3) {
+          users.add(BlockedUserInfo(
+            userId: int.tryParse(parts[0]) ?? 0,
+            userName: parts[1],
+            blockedAt: DateTime.tryParse(parts[2]) ?? DateTime.now(),
+          ));
+        }
+      }
+      emit(state.copyWith(blockedUsers: users, isLoadingBlocklist: false));
+    } catch (e) {
+      LogService.e('加载黑名单失败', e);
+      emit(state.copyWith(isLoadingBlocklist: false));
+    }
+  }
+
+  Future<void> _onBlockUser(
+    SettingsBlockUser event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      // 立即本地更新
+      final newUser = BlockedUserInfo(
+        userId: event.userId,
+        userName: event.userName,
+        blockedAt: DateTime.now(),
+      );
+      final updatedList = [...state.blockedUsers, newUser];
+      emit(state.copyWith(blockedUsers: updatedList));
+
+      // 持久化到本地存储
+      await _persistBlocklist(updatedList);
+
+      // 调用远程 API
+      await _guideApi.block(event.userId);
+
+      LogService.d('已拉黑用户: ${event.userName} (${event.userId})');
+    } catch (e) {
+      // API 失败不回滚本地状态（本地兜底 + 服务端权威的设计）
+      LogService.e('拉黑用户 API 调用失败（本地已生效）', e);
+    }
+  }
+
+  Future<void> _onUnblockUser(
+    SettingsUnblockUser event,
+    Emitter<SettingsState> emit,
+  ) async {
+    try {
+      // 立即本地移除
+      final updatedList = state.blockedUsers
+          .where((u) => u.userId != event.userId)
+          .toList();
+      emit(state.copyWith(blockedUsers: updatedList));
+
+      // 持久化到本地存储
+      await _persistBlocklist(updatedList);
+
+      // 调用远程 API
+      await _guideApi.unblock(event.userId);
+
+      LogService.d('已取消拉黑用户: ${event.userId}');
+    } catch (e) {
+      LogService.e('取消拉黑用户 API 调用失败（本地已生效）', e);
+    }
+  }
+
+  /// 持久化黑名单到本地存储
+  Future<void> _persistBlocklist(List<BlockedUserInfo> users) async {
+    final serialized = users.map((u) {
+      return '${u.userId}|${u.userName}|${u.blockedAt.toIso8601String()}';
+    }).toList();
+    await StorageUtils.setStringList('blocked_users', serialized);
   }
 }

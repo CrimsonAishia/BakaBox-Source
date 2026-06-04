@@ -134,6 +134,7 @@ MapInfo _$MapInfoFromJson(Map<String, dynamic> json) => MapInfo(
           ?.map((e) => MapTagSimple.fromJson(e as Map<String, dynamic>))
           .toList() ??
       [],
+  guideCount: (json['guideCount'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$MapInfoToJson(MapInfo instance) => <String, dynamic>{
@@ -144,6 +145,7 @@ Map<String, dynamic> _$MapInfoToJson(MapInfo instance) => <String, dynamic>{
   'nameCount': instance.nameCount,
   'backgroundCount': instance.backgroundCount,
   'tags': instance.tags,
+  'guideCount': instance.guideCount,
 };
 
 MapContributionGroup _$MapContributionGroupFromJson(

@@ -22,6 +22,7 @@ import '../widgets/settings/path_invalid_dialog.dart';
 import 'character_gallery_desktop.dart';
 import 'bilibili_content_screen.dart';
 import 'lobby_desktop.dart';
+import 'community_guide_screen.dart';
 import '../../core/services/game_status_service.dart';
 import '../widgets/global_broadcast_bar.dart';
 import '../widgets/floating_chat/floating_chat_button.dart';
@@ -39,13 +40,21 @@ class DesktopHomeScreen extends StatefulWidget {
 }
 
 class _DesktopHomeScreenState extends State<DesktopHomeScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin
+    implements DesktopNavigator {
   int _currentIndex = 0;
   late AnimationController _contentAnimationController;
   StreamSubscription<GameStatusEvent>? _gameStatusSubscription;
   bool _shownObsWarningForCurrentGame = false;
   late final FloatingChatCubit _floatingChatCubit;
   Route? _warmupCountdownRoute;
+
+  // 攻略模块 GlobalKey，供 DesktopNavigator 调用
+  final GlobalKey<CommunityGuideScreenState> _guideHostKey = GlobalKey();
+
+  // 跨模块跳转到工具箱时的待消费参数
+  String? _pendingTool;
+  Map<String, dynamic>? _pendingArgs;
 
   final List<NavigationItem> _navigationItems = [
     NavigationItem(
@@ -84,6 +93,13 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
       inactiveColor: const Color(0xFF64748B),
     ),
     NavigationItem(
+      icon: MdiIcons.bookOpenPageVariantOutline,
+      selectedIcon: MdiIcons.bookOpenPageVariant,
+      label: '攻略',
+      activeColor: const Color(0xFF0080FF),
+      inactiveColor: const Color(0xFF64748B),
+    ),
+    NavigationItem(
       icon: MdiIcons.fileDocumentOutline,
       selectedIcon: MdiIcons.fileDocument,
       label: '更新日志',
@@ -114,10 +130,18 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
       2 => const LobbyDesktop(),
       3 => const CharacterGalleryDesktop(),
       4 => const BilibiliContentScreen(),
-      5 => const UpdateLogsDesktop(),
-      6 => const ToolsScreen(),
-      7 => const SettingsDesktop(),
-      8 => const IssuesDesktop(),
+      5 => CommunityGuideScreen(key: _guideHostKey),
+      6 => const UpdateLogsDesktop(),
+      7 => ToolsScreen(
+          initialToolId: _pendingTool,
+          initialToolArgs: _pendingArgs,
+          onArgsConsumed: () => setState(() {
+            _pendingTool = null;
+            _pendingArgs = null;
+          }),
+        ),
+      8 => const SettingsDesktop(),
+      9 => const IssuesDesktop(),
       _ => const SizedBox.shrink(),
     };
   }
@@ -240,15 +264,18 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
         newActivityText = '在看视频/直播';
         break;
       case 5:
-        newActivityText = '在看更新日志';
+        newActivityText = '在看攻略';
         break;
       case 6:
-        newActivityText = '在使用工具箱';
+        newActivityText = '在看更新日志';
         break;
       case 7:
-        newActivityText = '在看设置';
+        newActivityText = '在使用工具箱';
         break;
       case 8:
+        newActivityText = '在看设置';
+        break;
+      case 9:
         newActivityText = '在看问题反馈';
         break;
     }
@@ -259,6 +286,84 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
       _contentAnimationController.reset();
       _contentAnimationController.forward();
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // DesktopNavigator 实现
+  // ---------------------------------------------------------------------------
+
+  @override
+  void openGuides({String? mapName}) {
+    _navigateToGuideHostWithLeaveCheck(() {
+      _guideHostKey.currentState?.showList(mapName: mapName);
+    });
+  }
+
+  @override
+  void openGuideDetail(int id) {
+    _navigateToGuideHostWithLeaveCheck(() {
+      _guideHostKey.currentState?.showDetail(id);
+    });
+  }
+
+  @override
+  void openGuideEditor({int? guideId, String? prefillMapName}) {
+    _navigateToGuideHostWithLeaveCheck(() {
+      _guideHostKey.currentState?.showEditor(
+        guideId: guideId,
+        prefillMapName: prefillMapName,
+      );
+    });
+  }
+
+  @override
+  void openMine() {
+    _navigateToGuideHostWithLeaveCheck(() {
+      _guideHostKey.currentState?.showMine();
+    });
+  }
+
+  @override
+  void openMapDatabase({String? mapName}) {
+    _performWithLeaveCheck(() {
+      setState(() {
+        _pendingTool = 'map_database';
+        _pendingArgs = mapName != null ? {'mapName': mapName} : null;
+      });
+      _onIndexChanged(7); // 工具箱 index
+    });
+  }
+
+  /// 辅助：在切换前检查编辑器是否有未保存内容，通过后执行跳转
+  void _performWithLeaveCheck(VoidCallback action) async {
+    final hostState = _guideHostKey.currentState;
+    if (hostState != null) {
+      final canLeave = await hostState.canLeaveCurrentView();
+      if (!canLeave) return; // 用户选择取消，中止跳转
+    }
+    action();
+  }
+
+  /// 辅助：切换到攻略页面并在帧结束后调用回调（带 leave 检查）
+  void _navigateToGuideHostWithLeaveCheck(VoidCallback afterSwitch) async {
+    const guideIndex = 5;
+
+    // 如果当前在攻略页面，先检查能否离开当前视图（编辑器）
+    if (_currentIndex == guideIndex) {
+      final hostState = _guideHostKey.currentState;
+      if (hostState != null) {
+        final canLeave = await hostState.canLeaveCurrentView();
+        if (!canLeave) return; // 用户选择取消，中止跳转
+      }
+      afterSwitch();
+    } else {
+      // 从其他模块跳到攻略，无需 leave 检查
+      _onIndexChanged(guideIndex);
+      // 等待页面 build 完成后再操作 Host
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        afterSwitch();
+      });
+    }
   }
 
   Future<bool> _handleExit() async {
@@ -278,7 +383,9 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
         BlocProvider.value(value: WarmupBloc.instance),
         BlocProvider<FloatingChatCubit>.value(value: _floatingChatCubit),
       ],
-      child: MultiBlocListener(
+      child: DesktopNavigatorProvider(
+        navigator: this,
+        child: MultiBlocListener(
         listeners: [
           BlocListener<SettingsBloc, SettingsState>(
             listenWhen: (previous, current) =>
@@ -367,8 +474,8 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
                       currentIndex: _currentIndex,
                       onIndexChanged: _onIndexChanged,
                       items: _navigationItems,
-                      onFeedbackTap: () => _onIndexChanged(8),
-                      isFeedbackSelected: _currentIndex == 8,
+                      onFeedbackTap: () => _onIndexChanged(9),
+                      isFeedbackSelected: _currentIndex == 9,
                     ),
                     Expanded(
                       child: AnimatedBuilder(
@@ -436,6 +543,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
             ),
           ),
         ),
+      ),
       ),
     );
   }

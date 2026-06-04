@@ -11,6 +11,35 @@ class AnalyticsService {
 
   AnalyticsService._internal();
 
+  /// 上报通用业务事件（fire-and-forget，不阻塞调用方）
+  ///
+  /// [event] 事件名称，如 `guide_list_view`
+  /// [params] 事件附加参数
+  void trackEvent(String event, [Map<String, dynamic>? params]) {
+    // fire-and-forget：异步执行，不阻塞用户交互
+    _doTrackEvent(event, params);
+  }
+
+  Future<void> _doTrackEvent(
+    String event,
+    Map<String, dynamic>? params,
+  ) async {
+    try {
+      final data = <String, dynamic>{
+        'event': event,
+        'timestamp': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        'platform': PlatformUtils.platformName,
+        if (params != null) ...params,
+      };
+
+      await Api.post('/api/stub', body: data);
+      LogService.d('埋点上报成功: $event $params');
+    } catch (e) {
+      // 埋点失败静默处理，不影响业务
+      LogService.d('埋点上报失败: $event - $e');
+    }
+  }
+
   /// 应用启动时间，在 main() 中设置
   DateTime? _appStartTime;
 
