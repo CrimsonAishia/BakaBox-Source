@@ -85,7 +85,13 @@ class CS2LogParser {
 
     final connectedMatch = _regConnected.firstMatch(line);
     if (connectedMatch != null) {
-      return EvSignonState(2, 'SIGNONSTATE_CONNECTED');
+      // "Connected to 'IP:port'" 同时携带地址，作为 serverAddress 的兜底来源
+      final addr = connectedMatch.group(1)?.trim();
+      return EvSignonState(
+        2,
+        'SIGNONSTATE_CONNECTED',
+        address: (addr != null && addr.isNotEmpty) ? addr : null,
+      );
     }
 
     return null;

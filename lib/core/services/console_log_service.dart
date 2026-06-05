@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'parser/cs2_engine_events.dart';
@@ -218,6 +219,17 @@ class ConsoleLogService {
   int _lastFileSize = 0;
   int _lastReadPos = 0;
   String? _logFilePath;
+
+  // 未处理完的字节缓冲（处理"半行"和跨 chunk 的多字节 UTF-8）
+  //
+  // 500ms 轮询可能读到尚未写完整的行（结尾没有 \n），或一个多字节 UTF-8
+  // 字符被切成两半。直接按当前 chunk split('\n') + fromCharCodes 会丢失这一
+  // 行的信号（如进服 / 满员），从而触发误重试。这里以字节为单位缓冲，仅在
+  // 遇到换行符 0x0A 时才把完整行交给解析器，剩余不完整的尾部留待下次拼接。
+  final List<int> _pendingBytes = [];
+
+  // 缓冲上限：防止异常情况下（始终没有换行符）无限增长
+  static const int _maxPendingBytes = 1024 * 1024; // 1MB
 
   // 游戏路径检测缓存（避免重复检测）
   bool _gamePathDetectionAttempted = false;
@@ -558,6 +570,7 @@ class ConsoleLogService {
         final stat = await file.stat();
         _lastFileSize = stat.size;
         _lastReadPos = stat.size;
+        _pendingBytes.clear();
         LogService.d('[ConsoleLog] 监控从文件位置 $_lastReadPos 开始（只读取新内容）');
 
         // 分析历史日志，恢复当前状态
@@ -565,6 +578,7 @@ class ConsoleLogService {
       } else {
         _lastFileSize = 0;
         _lastReadPos = 0;
+        _pendingBytes.clear();
       }
     }
 
@@ -596,6 +610,7 @@ class ConsoleLogService {
       _isInLoopbackMode = false;
       _lastFileSize = 0;
       _lastReadPos = 0;
+      _pendingBytes.clear();
       _updateState(_currentState);
     }
   }
@@ -882,6 +897,7 @@ class ConsoleLogService {
       // 文件不存在时重置读取位置
       _lastFileSize = 0;
       _lastReadPos = 0;
+      _pendingBytes.clear();
       return;
     }
 
@@ -908,6 +924,7 @@ class ConsoleLogService {
         LogService.d('[ConsoleLog] 检测到日志文件被截断（游戏可能重启），重置读取位置');
         _lastReadPos = 0;
         _lastFileSize = 0;
+        _pendingBytes.clear();
         // 重置连接追踪状态
         _targetServer = '';
         _isLoopbackFallback = false;
@@ -938,13 +955,12 @@ class ConsoleLogService {
           await raf.setPosition(_lastReadPos);
         }
 
-        // 读取新内容
+        // 读取新内容（字节）
         final newContent = await raf.read(currentSize - _lastReadPos);
-        final lines = String.fromCharCodes(newContent).split('\n');
 
-        for (final line in lines) {
-          _parseLine(line);
-        }
+        // 交给字节缓冲处理：仅完整行（以 \n 结尾）会被解析，
+        // 不完整的尾部留到下次读取时拼接。
+        _processBytes(newContent);
 
         _lastReadPos = currentSize;
       } finally {
@@ -953,6 +969,45 @@ class ConsoleLogService {
     } catch (e) {
       LogService.e('[ConsoleLog] 读取日志文件失败', e);
       _lastReadPos = 0;
+      _pendingBytes.clear();
+    }
+  }
+
+  /// 将新读到的字节追加到缓冲，按换行符切出完整行交给解析器
+  ///
+  /// - 以字节（而非字符串）为单位查找换行符 0x0A，避免跨 chunk 的多字节
+  ///   UTF-8 字符被 [String.fromCharCodes] 错误解码导致整行匹配失败。
+  /// - 每个完整行用 [utf8] 解码（allowMalformed，遇到坏字节不抛异常）。
+  /// - 最后不完整的一段（无换行符结尾）保留在 [_pendingBytes] 等待下次拼接。
+  void _processBytes(List<int> newBytes) {
+    if (newBytes.isEmpty) return;
+
+    _pendingBytes.addAll(newBytes);
+
+    int start = 0;
+    for (int i = 0; i < _pendingBytes.length; i++) {
+      if (_pendingBytes[i] == 0x0A) {
+        // [start, i) 为一行（不含换行符），兼容 \r\n（去掉结尾 \r）
+        var end = i;
+        if (end > start && _pendingBytes[end - 1] == 0x0D) {
+          end--;
+        }
+        final lineBytes = _pendingBytes.sublist(start, end);
+        final line = utf8.decode(lineBytes, allowMalformed: true);
+        _parseLine(line);
+        start = i + 1;
+      }
+    }
+
+    // 移除已处理的完整行，保留不完整的尾部
+    if (start > 0) {
+      _pendingBytes.removeRange(0, start);
+    }
+
+    // 防御：缓冲异常膨胀（始终无换行符）时丢弃，避免内存无限增长
+    if (_pendingBytes.length > _maxPendingBytes) {
+      LogService.w('[ConsoleLog] 行缓冲超过上限，丢弃未完成内容');
+      _pendingBytes.clear();
     }
   }
 
@@ -1074,7 +1129,30 @@ class ConsoleLogService {
       LogService.d('[ConsoleLog] 解析到握手状态: ${event.state} (${event.stateName})');
 
       if (event.state == 2) {
-        _updateConnectionState(GameState.loading, rawLine: line);
+        // "[Client] CL: Connected to 'addr'" 可能携带地址。若此前的
+        // "Sending connect to" 行被漏读（半行/轮询间隙）导致 serverAddress
+        // 为空，这里用它兜底，避免后续 signon>=5 因缺地址被误判为"主菜单背景"。
+        final addr = event.address;
+        if (addr != null && addr.contains('loopback')) {
+          // 实为主菜单背景的 loopback 连接
+          _targetServer = '';
+          _isLoopbackFallback = false;
+          _isInLoopbackMode = true;
+          return;
+        }
+        if (addr != null &&
+            addr.isNotEmpty &&
+            _currentState.serverAddress.isEmpty) {
+          _targetServer = addr;
+          LogService.d('[ConsoleLog] 用 Connected 行兜底服务器地址: $addr');
+          _updateConnectionState(
+            GameState.loading,
+            serverAddress: addr,
+            rawLine: line,
+          );
+        } else {
+          _updateConnectionState(GameState.loading, rawLine: line);
+        }
       } else if (event.state >= 5) {
         if (_currentState.serverAddress.isEmpty) {
           LogService.d('[ConsoleLog] 忽略无地址的进入游戏状态（推测为主菜单背景）');
