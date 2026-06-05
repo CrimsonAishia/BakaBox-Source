@@ -111,12 +111,15 @@ class QueueBlocState extends Equatable {
   /// 是否成功加入
   bool get isJoinedSuccessfully => status == QueueStatus.success;
 
-  /// 是否应该连接（玩家数小于目标人数）
+  /// 是否应该连接（当前玩家数小于等于目标人数时触发挤入）
+  ///
+  /// 与权威逻辑 [StatusWindowService._checkQueueCondition] 保持一致，
+  /// 使用 `players <= targetPlayers`（含等于）作为触发条件。
   bool get shouldConnect {
     if (serverInfo == null || serverInfo!.maxPlayers == null) return false;
     // 如果服务器未启动完全也不加入
     if (serverInfo?.map == "graphics_settings") return false;
-    return (serverInfo!.players ?? 0) < config.targetPlayers;
+    return (serverInfo!.players ?? 0) <= config.targetPlayers;
   }
 
   /// 当前玩家数
