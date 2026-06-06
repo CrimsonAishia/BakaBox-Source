@@ -248,7 +248,7 @@ class _NavigationItemWidget extends StatelessWidget {
                 curve: Curves.easeOutCubic,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
-                  vertical: 14,
+                  vertical: 13,
                 ),
                 decoration: BoxDecoration(
                   color: isSelected
@@ -306,6 +306,15 @@ class _NavigationItemWidget extends StatelessWidget {
                             ) ??
                             const TextStyle(),
                         child: Text(item.label),
+                      ),
+                    ),
+                    AnimatedOpacity(
+                      opacity: isSelected ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 12,
+                        color: Colors.white,
                       ),
                     ),
                   ],
