@@ -6,12 +6,15 @@ import '../../../core/bloc/settings/settings_bloc.dart';
 import '../../../core/bloc/settings/settings_event.dart';
 import '../../../core/bloc/settings/settings_state.dart';
 import '../../../core/utils/log_service.dart';
+import '../../../core/widgets/skip_warning_dialog.dart';
 
 class PathInvalidDialog extends StatelessWidget {
   const PathInvalidDialog({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     // 监听 SettingsBloc 的状态，如果 isPathInvalidated 变为 false，则自动关闭弹窗
     return BlocListener<SettingsBloc, SettingsState>(
       listenWhen: (previous, current) =>
@@ -35,7 +38,9 @@ class PathInvalidDialog extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 顶部：标题区 + 右上角跳过按钮（OOBE 风格）
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -54,19 +59,29 @@ class PathInvalidDialog extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            '游戏路径已失效',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          BlocBuilder<SettingsBloc, SettingsState>(
+                            buildWhen: (p, c) =>
+                                p.isGamePathInvalid != c.isGamePathInvalid ||
+                                p.isSteamPathInvalid != c.isSteamPathInvalid,
+                            builder: (context, state) {
+                              return Text(
+                                _buildTitle(state),
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              );
+                            },
                           ),
                           const SizedBox(height: 4),
                           BlocBuilder<SettingsBloc, SettingsState>(
+                            buildWhen: (p, c) =>
+                                p.pathValidationMessage !=
+                                c.pathValidationMessage,
                             builder: (context, state) {
                               return Text(
                                 state.pathValidationMessage ??
-                                    '由于目录移动或磁盘更换，您之前设置的 CS2 或 Steam 路径已失效。请重新配置以确保核心服务正常运行。',
+                                    '由于目录移动或磁盘更换，您之前设置的路径已失效。请重新配置以确保核心服务正常运行。',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Theme.of(
@@ -79,14 +94,37 @@ class PathInvalidDialog extends StatelessWidget {
                         ],
                       ),
                     ),
+                    // 右上角跳过按钮（OOBE 顶部跳过按钮同款样式）
+                    TextButton(
+                      onPressed: () => _confirmAndSkip(context),
+                      child: Text(
+                        '跳过',
+                        style: TextStyle(
+                          color: isDark
+                              ? Colors.white54
+                              : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
                 BlocBuilder<SettingsBloc, SettingsState>(
+                  // 仅当具体失效项变化时重建，避免无关 state 变更（如音量调整）触发重绘
+                  buildWhen: (previous, current) =>
+                      previous.isGamePathInvalid != current.isGamePathInvalid ||
+                      previous.isSteamPathInvalid !=
+                          current.isSteamPathInvalid ||
+                      previous.gamePath != current.gamePath ||
+                      previous.steamPath != current.steamPath ||
+                      previous.gamePathError != current.gamePathError ||
+                      previous.steamPathError != current.steamPathError ||
+                      previous.isDetectingPath != current.isDetectingPath,
                   builder: (context, state) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                    final selectors = <Widget>[];
+
+                    if (state.isGamePathInvalid) {
+                      selectors.add(
                         _PathSelector(
                           label: '游戏安装路径',
                           path: state.gamePath,
@@ -99,7 +137,14 @@ class PathInvalidDialog extends StatelessWidget {
                           isDetecting: state.isDetectingPath,
                           errorMessage: state.gamePathError,
                         ),
-                        const SizedBox(height: 20),
+                      );
+                    }
+
+                    if (state.isSteamPathInvalid) {
+                      if (selectors.isNotEmpty) {
+                        selectors.add(const SizedBox(height: 20));
+                      }
+                      selectors.add(
                         _PathSelector(
                           label: 'Steam安装路径',
                           path: state.steamPath,
@@ -111,34 +156,46 @@ class PathInvalidDialog extends StatelessWidget {
                           isDetecting: state.isDetectingPath,
                           errorMessage: state.steamPathError,
                         ),
-                      ],
+                      );
+                    }
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: selectors,
                     );
                   },
                 ),
-                const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  child: BlocBuilder<SettingsBloc, SettingsState>(
-                    builder: (context, state) {
-                      return FilledButton(
-                        onPressed: () {
-                          // 手动触发一次校验，如果成功通过，BlocListener会自动关闭弹窗
-                          context.read<SettingsBloc>().add(
-                            SettingsCheckPathsValidity(),
-                          );
-                        },
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.blue.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        MdiIcons.informationOutline,
+                        color: Colors.blue,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '选择有效路径后将自动关闭此弹窗，无需手动确认。',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.color,
                           ),
                         ),
-                        child: const Text(
-                          '保存并重试',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      );
-                    },
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -147,6 +204,62 @@ class PathInvalidDialog extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// 根据失效项动态构造标题
+  String _buildTitle(SettingsState state) {
+    if (state.isGamePathInvalid && state.isSteamPathInvalid) {
+      return '游戏路径与 Steam 路径已失效';
+    }
+    if (state.isGamePathInvalid) {
+      return '游戏路径已失效';
+    }
+    if (state.isSteamPathInvalid) {
+      return 'Steam 路径已失效';
+    }
+    // 兜底：理论上不会出现（弹窗不会在两者都有效时显示）
+    return '路径已失效';
+  }
+
+  /// 弹出 OOBE 同款警告弹窗，确认后清空所有失效路径
+  Future<void> _confirmAndSkip(BuildContext context) async {
+    final state = context.read<SettingsBloc>().state;
+    if (!state.isGamePathInvalid && !state.isSteamPathInvalid) return;
+
+    // 根据失效项动态生成标题与影响列表
+    final brokenPaths = <String>[];
+    if (state.isGamePathInvalid) brokenPaths.add('游戏路径');
+    if (state.isSteamPathInvalid) brokenPaths.add('Steam 路径');
+
+    final confirmed = await SkipWarningDialog.show(
+      context,
+      title: '跳过${brokenPaths.join("与")}设置？',
+      description: '清空失效路径后，以下功能将无法使用：',
+      items: [
+        SkipWarningItem(
+          icon: MdiIcons.rocketLaunchOutline,
+          text: '一键加入服务器',
+        ),
+        SkipWarningItem(
+          icon: MdiIcons.accountGroupOutline,
+          text: '自动挤服 / 控制台监控',
+        ),
+        SkipWarningItem(icon: MdiIcons.cogOutline, text: '自动配置游戏参数'),
+      ],
+      hint: '你可以稍后在「设置 → 游戏设置」中重新配置。',
+    );
+
+    if (!confirmed || !context.mounted) return;
+
+    final bloc = context.read<SettingsBloc>();
+    if (state.isGamePathInvalid) {
+      bloc.add(SettingsClearGamePath());
+    }
+    if (state.isSteamPathInvalid) {
+      bloc.add(SettingsClearSteamPath());
+    }
+    // SettingsClearGamePath/SteamPath 内部已经会触发 SettingsCheckPathsValidity，
+    // 校验通过后 BlocListener 会自动关闭本弹窗。
   }
 
   Future<void> _selectGamePath(BuildContext context) async {

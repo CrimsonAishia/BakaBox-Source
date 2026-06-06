@@ -92,113 +92,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   /// 显示跳过游戏路径设置的警告对话框
-  Future<bool> _showSkipPathWarning() async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  MdiIcons.alertCircleOutline,
-                  color: const Color(0xFFF59E0B),
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                '跳过游戏路径设置？',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: isDark ? Colors.white : const Color(0xFF1E293B),
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '未设置游戏路径将导致以下功能无法使用：',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark ? Colors.white70 : const Color(0xFF64748B),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildWarningItem(
-                MdiIcons.rocketLaunchOutline,
-                '一键加入服务器',
-                isDark,
-              ),
-              const SizedBox(height: 8),
-              _buildWarningItem(MdiIcons.accountGroupOutline, '自动挤服', isDark),
-              const SizedBox(height: 8),
-              _buildWarningItem(MdiIcons.cogOutline, '自动配置游戏参数', isDark),
-              const SizedBox(height: 16),
-              Text(
-                '你可以稍后在「设置」中配置游戏路径。',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(
-                '返回设置',
-                style: TextStyle(
-                  color: isDark ? Colors.white70 : const Color(0xFF64748B),
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF59E0B),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text('仍然跳过'),
-            ),
-          ],
-        );
-      },
-    );
-    return result ?? false;
-  }
-
-  /// 构建警告项
-  Widget _buildWarningItem(IconData icon, String text, bool isDark) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: const Color(0xFFEF4444)),
-        const SizedBox(width: 8),
-        Text(
-          text,
-          style: TextStyle(
-            fontSize: 13,
-            color: isDark ? Colors.white : const Color(0xFF374151),
-          ),
+  Future<bool> _showSkipPathWarning() {
+    return SkipWarningDialog.show(
+      context,
+      title: '跳过游戏路径设置？',
+      description: '未设置游戏路径将导致以下功能无法使用：',
+      items: [
+        SkipWarningItem(
+          icon: MdiIcons.rocketLaunchOutline,
+          text: '一键加入服务器',
         ),
+        SkipWarningItem(
+          icon: MdiIcons.accountGroupOutline,
+          text: '自动挤服',
+        ),
+        SkipWarningItem(icon: MdiIcons.cogOutline, text: '自动配置游戏参数'),
       ],
+      hint: '你可以稍后在「设置」中配置游戏路径。',
     );
   }
 
