@@ -489,7 +489,7 @@ class _SortToggle extends StatelessWidget {
 
 // ─── 评论输入框 ────────────────────────────────────────────────────────────────
 
-class _CommentInputBox extends StatelessWidget {
+class _CommentInputBox extends StatefulWidget {
   final QuillController controller;
   final String hintText;
   final bool posting;
@@ -505,6 +505,15 @@ class _CommentInputBox extends StatelessWidget {
     this.onSubmit,
     this.onCancel,
   });
+
+  @override
+  State<_CommentInputBox> createState() => _CommentInputBoxState();
+}
+
+class _CommentInputBoxState extends State<_CommentInputBox> {
+  final GlobalKey<RichTextEditorState> _editorKey =
+      GlobalKey<RichTextEditorState>();
+  List<String> _imageUrls = const [];
 
   @override
   Widget build(BuildContext context) {
@@ -527,16 +536,20 @@ class _CommentInputBox extends StatelessWidget {
           // 编辑器
           ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight: compact ? 60 : 80,
+              minHeight: widget.compact ? 60 : 80,
               maxHeight: 160,
             ),
             child: RichTextEditor(
-              controller: controller,
-              hintText: hintText,
+              key: _editorKey,
+              controller: widget.controller,
+              hintText: widget.hintText,
               compactMode: true,
               maxLength: 500,
               maxImages: 3,
               imageMode: ImageMode.attachment,
+              onImagesChanged: (urls) {
+                _imageUrls = urls;
+              },
             ),
           ),
           // 操作栏
@@ -548,9 +561,9 @@ class _CommentInputBox extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                if (onCancel != null) ...[
+                if (widget.onCancel != null) ...[
                   TextButton(
-                    onPressed: onCancel,
+                    onPressed: widget.onCancel,
                     style: TextButton.styleFrom(
                       minimumSize: const Size(48, 30),
                       padding: const EdgeInsets.symmetric(
@@ -567,14 +580,14 @@ class _CommentInputBox extends StatelessWidget {
                   const SizedBox(width: GuideTokens.space8),
                 ],
                 FilledButton(
-                  onPressed: posting ? null : () => _handleSubmit(),
+                  onPressed: widget.posting ? null : () => _handleSubmit(),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(56, 30),
                     padding: const EdgeInsets.symmetric(
                       horizontal: GuideTokens.space12,
                     ),
                   ),
-                  child: posting
+                  child: widget.posting
                       ? const SizedBox(
                           width: 14,
                           height: 14,
@@ -600,10 +613,11 @@ class _CommentInputBox extends StatelessWidget {
   }
 
   void _handleSubmit() {
-    final plainText = controller.document.toPlainText().trim();
+    final plainText = widget.controller.document.toPlainText().trim();
     if (plainText.isEmpty) return;
 
-    // TODO: Extract images from editor state when imageMode=attachment
-    onSubmit?.call(plainText, []);
+    widget.onSubmit?.call(plainText, _imageUrls);
+    _editorKey.currentState?.clearImages();
+    _imageUrls = const [];
   }
 }
