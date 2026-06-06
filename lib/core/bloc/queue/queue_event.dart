@@ -72,6 +72,26 @@ class QueueSetThreadCount extends QueueEvent {
   List<Object?> get props => [threadCount];
 }
 
+/// 设置是否启用多线程（仅自定义服务器可关闭）
+class QueueSetMultiThreadEnabled extends QueueEvent {
+  final bool enabled;
+
+  const QueueSetMultiThreadEnabled(this.enabled);
+
+  @override
+  List<Object?> get props => [enabled];
+}
+
+/// 设置单线程模式下的请求间隔（秒，1-6）
+class QueueSetRequestInterval extends QueueEvent {
+  final int seconds;
+
+  const QueueSetRequestInterval(this.seconds);
+
+  @override
+  List<Object?> get props => [seconds];
+}
+
 /// 设置自动重试
 class QueueSetAutoRetry extends QueueEvent {
   final bool enable;

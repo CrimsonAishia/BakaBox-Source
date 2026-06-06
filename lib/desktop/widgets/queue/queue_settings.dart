@@ -15,10 +15,14 @@ class QueueSettings extends StatelessWidget {
   final String? gameType; // 游戏类型，用于判断是否为 CSGO
   final String? mapName; // 地图名称，用于判断是否显示捐助者选项
   final bool isCustomServer; // 是否为自定义服务器
+  final bool multiThreadEnabled; // 是否启用多线程（仅自定义服务器可关闭）
+  final int requestIntervalSeconds; // 单线程模式下的请求间隔（秒）
   final ValueChanged<int>? onTargetPlayersChanged;
   final ValueChanged<int>? onThreadCountChanged;
   final ValueChanged<bool>? onAutoRetryChanged;
   final ValueChanged<bool>? onDonatorChanged;
+  final ValueChanged<bool>? onMultiThreadEnabledChanged;
+  final ValueChanged<int>? onRequestIntervalChanged;
 
   const QueueSettings({
     super.key,
@@ -32,10 +36,14 @@ class QueueSettings extends StatelessWidget {
     this.gameType,
     this.mapName,
     this.isCustomServer = false,
+    this.multiThreadEnabled = true,
+    this.requestIntervalSeconds = 1,
     this.onTargetPlayersChanged,
     this.onThreadCountChanged,
     this.onAutoRetryChanged,
     this.onDonatorChanged,
+    this.onMultiThreadEnabledChanged,
+    this.onRequestIntervalChanged,
   });
 
   @override
@@ -87,8 +95,17 @@ class QueueSettings extends StatelessWidget {
           _buildTargetPlayersSlider(context, isDark),
           const SizedBox(height: 16),
 
-          // 线程数量设置
-          _buildThreadCountSlider(context, isDark),
+          // 多线程开关（仅自定义服务器显示）
+          if (isCustomServer) ...[
+            _buildMultiThreadSwitch(context, isDark),
+            const SizedBox(height: 16),
+          ],
+
+          // 自定义服务器关闭多线程时显示请求间隔，否则显示线程数
+          if (isCustomServer && !multiThreadEnabled)
+            _buildRequestIntervalSlider(context, isDark)
+          else
+            _buildThreadCountSlider(context, isDark),
 
           // 捐助者选项（只在 ze_ 和 zm_ 地图显示，放在自动重试上边）
           if (shouldShowDonatorOption) ...[
@@ -300,6 +317,189 @@ class QueueSettings extends StatelessWidget {
           ),
         ),
         Switch(value: isDonator, onChanged: disabled ? null : onDonatorChanged),
+      ],
+    );
+  }
+
+  Widget _buildMultiThreadSwitch(BuildContext context, bool isDark) {
+    final theme = Theme.of(context);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              Icon(
+                MdiIcons.cpu64Bit,
+                size: 16,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Row(
+                  children: [
+                    Text(
+                      '多线程',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.8,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Tooltip(
+                      richMessage: TextSpan(
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: '这是啥？\n',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                          TextSpan(
+                            text: '开启：使用多线程并发请求，速度更快\n',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white70 : Colors.black54,
+                            ),
+                          ),
+                          TextSpan(
+                            text: '关闭：单线程按固定间隔轮询，避免触发服务器请求阈值',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white70 : Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      preferBelow: false,
+                      verticalOffset: 20,
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.help,
+                        child: Icon(
+                          MdiIcons.helpCircleOutline,
+                          size: 18,
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.7,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        Switch(
+          value: multiThreadEnabled,
+          onChanged: disabled ? null : onMultiThreadEnabledChanged,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRequestIntervalSlider(BuildContext context, bool isDark) {
+    final theme = Theme.of(context);
+    final effectiveInterval = requestIntervalSeconds.clamp(1, 6);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  MdiIcons.timerOutline,
+                  size: 16,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '请求间隔(N秒获取一次服务器数据)',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.secondary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                '$effectiveInterval秒',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.secondary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            trackHeight: 4,
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+          ),
+          child: Slider(
+            value: effectiveInterval.toDouble(),
+            min: 1,
+            max: 6,
+            divisions: 5,
+            onChanged: disabled
+                ? null
+                : (value) {
+                    onRequestIntervalChanged?.call(value.toInt());
+                  },
+          ),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '1秒',
+              style: TextStyle(
+                fontSize: 11,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+            ),
+            Text(
+              '6秒',
+              style: TextStyle(
+                fontSize: 11,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }

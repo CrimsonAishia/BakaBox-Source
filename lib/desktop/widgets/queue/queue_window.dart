@@ -517,6 +517,8 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
               gameType: state.serverInfo?.gameType,
               mapName: state.serverInfo?.map,
               isCustomServer: state.isCustomServer,
+              multiThreadEnabled: state.config.multiThreadEnabled,
+              requestIntervalSeconds: state.config.requestIntervalSeconds,
               onTargetPlayersChanged: (value) {
                 context.read<QueueBloc>().add(QueueSetTargetPlayers(value));
               },
@@ -528,6 +530,16 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
               },
               onDonatorChanged: (value) {
                 context.read<QueueBloc>().add(QueueSetDonator(value));
+              },
+              onMultiThreadEnabledChanged: (value) {
+                context
+                    .read<QueueBloc>()
+                    .add(QueueSetMultiThreadEnabled(value));
+              },
+              onRequestIntervalChanged: (value) {
+                context
+                    .read<QueueBloc>()
+                    .add(QueueSetRequestInterval(value));
               },
             ),
           const SizedBox(height: 16),
