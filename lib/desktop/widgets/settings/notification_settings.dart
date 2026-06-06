@@ -78,14 +78,18 @@ class _NotificationPositionEditorWrapperState
   Timer? _notificationAutoCloseTimer;
   Timer? _floatingAutoCloseTimer;
 
-  // 通知窗口尺寸（与 notification_window_service.dart 一致）
-  static const double _notificationWidth = 300.0;
-  static const double _notificationCardHeight = 72.0;
-  static const double _notificationSpacing = 8.0;
-  static const int _maxNotifications = 5;
-  // 通知区域总高度 = 5张卡片 + 4个间距
+  // 通知窗口尺寸（直接引用 NotificationWindowService 常量，保持一致）
+  static const double _notificationWidth = NotificationWindowService.windowWidth;
+  // 换图、热身、地图订阅通知现在使用两行显示（译名/原名），统一用 mapCardHeight 估算预览区域
+  static const double _notificationCardHeight =
+      NotificationWindowService.mapCardHeight;
+  static const double _notificationSpacing =
+      NotificationWindowService.cardSpacing;
+  static const int _maxNotifications =
+      NotificationWindowService.maxVisibleNotifications;
   static const double _notificationTopPadding =
-      5.0; // 与 notification_window_service.dart 一致
+      NotificationWindowService.topPadding;
+  // 通知区域总高度 = 5张卡片 + 4个间距
   static const double _notificationTotalHeight =
       _notificationCardHeight * _maxNotifications +
       _notificationSpacing * (_maxNotifications - 1);
