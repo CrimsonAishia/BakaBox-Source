@@ -19,11 +19,13 @@ import 'issues_desktop.dart';
 import 'tools_screen.dart';
 import 'settings_desktop.dart';
 import '../widgets/settings/path_invalid_dialog.dart';
+import '../widgets/cs2_crash_dialog.dart';
 import 'character_gallery_desktop.dart';
 import 'bilibili_content_screen.dart';
 import 'lobby_desktop.dart';
 import 'community_guide_screen.dart';
 import '../../core/services/game_status_service.dart';
+import '../../core/services/cs2_crash_monitor_service.dart';
 import '../widgets/global_broadcast_bar.dart';
 import '../widgets/floating_chat/floating_chat_button.dart';
 import '../widgets/warmup/warmup_countdown_dialog.dart';
@@ -45,6 +47,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
   int _currentIndex = 0;
   late AnimationController _contentAnimationController;
   StreamSubscription<GameStatusEvent>? _gameStatusSubscription;
+  StreamSubscription<Cs2CrashDetectedEvent>? _crashSubscription;
   bool _shownObsWarningForCurrentGame = false;
   late final FloatingChatCubit _floatingChatCubit;
   Route? _warmupCountdownRoute;
@@ -212,6 +215,12 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
         }
       }
     });
+
+    // 监听 CS2 崩溃 (.mdmp) 检测事件，弹窗展示分析报告
+    _crashSubscription = Cs2CrashMonitorService().crashStream.listen((event) {
+      if (!mounted) return;
+      Cs2CrashDialog.show(context, event.summary);
+    });
   }
 
   void _showObsWarningDialog() {
@@ -243,6 +252,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
   void dispose() {
     _contentAnimationController.dispose();
     _gameStatusSubscription?.cancel();
+    _crashSubscription?.cancel();
     if (_warmupCountdownRoute != null) {
       Navigator.of(context).removeRoute(_warmupCountdownRoute!);
       _warmupCountdownRoute = null;
