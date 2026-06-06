@@ -50,6 +50,15 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   bool _isConnecting = false;
   bool _isHovered = false;
 
+  // 卡片侧边 Tag popover：hover 卡片 200ms 后在卡片左/右侧弹出
+  final OverlayPortalController _tagPortalController =
+      OverlayPortalController();
+  final LayerLink _cardLink = LayerLink();
+  Timer? _tagPopoverShowTimer;
+  Timer? _tagPopoverHideTimer;
+  bool _showPopoverOnRight = true; // popover 显示在卡片右侧（默认）还是左侧
+  bool _hasTagOverflow = false; // 标签是否被截断（出现 +N 徽章）
+
   // 监听 StatusWindowService 状态
   final StatusWindowService _statusService = StatusWindowService();
   StreamSubscription<OperationState>? _stateSubscription;
@@ -233,6 +242,11 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     _stateSubscription?.cancel();
     _monitorSubscription?.cancel();
     _warmupRefreshTimer?.cancel();
+    _tagPopoverShowTimer?.cancel();
+    _tagPopoverHideTimer?.cancel();
+    if (_tagPortalController.isShowing) {
+      _tagPortalController.hide();
+    }
     _rgbController?.dispose();
     _marchingAntsController?.dispose();
     super.dispose();
@@ -244,6 +258,70 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
     if (_isHovered != isHovered) {
       setState(() => _isHovered = isHovered);
+    }
+
+    if (isHovered) {
+      _scheduleShowTagPopover();
+    } else {
+      _scheduleHideTagPopover();
+    }
+  }
+
+  /// 计划显示 Tag popover（200ms 延迟）
+  void _scheduleShowTagPopover() {
+    final tags = widget.server.mapInfo?.tags ?? const [];
+    if (tags.isEmpty) return;
+    // 没有溢出（标签全部显示）就不需要 popover
+    if (!_hasTagOverflow) return;
+
+    _tagPopoverHideTimer?.cancel();
+    if (_tagPortalController.isShowing) return;
+
+    _tagPopoverShowTimer?.cancel();
+    _tagPopoverShowTimer = Timer(const Duration(milliseconds: 200), () {
+      if (!mounted || !_isHovered) return;
+      // 二次校验：可能在延迟期间布局变化导致不再溢出
+      if (!_hasTagOverflow) return;
+      _decideTagPopoverDirection();
+      _tagPortalController.show();
+    });
+  }
+
+  /// 计划隐藏 Tag popover（150ms 延迟，给鼠标跨越间隙留余地）
+  void _scheduleHideTagPopover() {
+    _tagPopoverShowTimer?.cancel();
+    _tagPopoverHideTimer?.cancel();
+    _tagPopoverHideTimer = Timer(const Duration(milliseconds: 150), () {
+      if (!mounted) return;
+      if (_tagPortalController.isShowing) {
+        _tagPortalController.hide();
+      }
+    });
+  }
+
+  /// 根据卡片在屏幕中的位置决定 popover 弹出方向（左 / 右）
+  void _decideTagPopoverDirection() {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) {
+      _showPopoverOnRight = true;
+      return;
+    }
+    final topLeft = box.localToGlobal(Offset.zero);
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    final spaceRight = screenWidth - (topLeft.dx + box.size.width);
+    final spaceLeft = topLeft.dx;
+
+    // 期望的最小可用宽度（含 gap + 安全边距）
+    const required = _kPopoverMinWidth + _kPopoverGap + _kPopoverScreenMargin;
+
+    // 右侧空间够 → 弹右；否则若左侧空间够 → 弹左；都不够也选更宽的一侧
+    if (spaceRight >= required) {
+      _showPopoverOnRight = true;
+    } else if (spaceLeft >= required) {
+      _showPopoverOnRight = false;
+    } else {
+      _showPopoverOnRight = spaceRight >= spaceLeft;
     }
   }
 
@@ -263,17 +341,211 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => _onCardHoverChanged(true),
-      onExit: (_) => _onCardHoverChanged(false),
-      child: _rgbController != null
-          ? AnimatedBuilder(
-              animation: _rgbController!,
-              builder: (context, child) =>
-                  _buildCardContent(_getRgbColor(_rgbController!.value)),
-            )
-          : _buildCardContent(const Color(0xFF0080FF)),
+    return CompositedTransformTarget(
+      link: _cardLink,
+      child: OverlayPortal(
+        controller: _tagPortalController,
+        overlayChildBuilder: (overlayContext) => _buildTagPopoverFollower(),
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          onEnter: (_) => _onCardHoverChanged(true),
+          onExit: (_) => _onCardHoverChanged(false),
+          child: _rgbController != null
+              ? AnimatedBuilder(
+                  animation: _rgbController!,
+                  builder: (context, child) =>
+                      _buildCardContent(_getRgbColor(_rgbController!.value)),
+                )
+              : _buildCardContent(const Color(0xFF0080FF)),
+        ),
+      ),
+    );
+  }
+
+  /// Tag popover 尺寸常量（统一管理，方便调整）
+  static const double _kPopoverMinWidth = 240;
+  static const double _kPopoverMaxWidth = 360;
+  static const double _kPopoverMaxHeight = 360;
+  static const double _kPopoverGap = 0; // 与卡片间的间距（箭头尖端贴卡片）
+  static const double _kPopoverScreenMargin = 16; // 与屏幕边缘的安全边距
+
+  /// Tag popover 跟随层（卡片左/右侧弹出，带指向卡片的箭头）
+  Widget _buildTagPopoverFollower() {
+    final tags = widget.server.mapInfo?.tags ?? const [];
+    final followerAnchor =
+        _showPopoverOnRight ? Alignment.centerLeft : Alignment.centerRight;
+    final targetAnchor =
+        _showPopoverOnRight ? Alignment.centerRight : Alignment.centerLeft;
+    // 箭头紧贴卡片，面板在箭头外侧；offset 用于面板与卡片间总间距
+    final offset = _showPopoverOnRight
+        ? const Offset(_kPopoverGap, 0)
+        : const Offset(-_kPopoverGap, 0);
+
+    // 根据当前可用空间动态钳制 popover 最大宽度，保证不超出屏幕
+    final box = context.findRenderObject() as RenderBox?;
+    double availableMaxWidth = _kPopoverMaxWidth;
+    if (box != null && box.hasSize) {
+      final topLeft = box.localToGlobal(Offset.zero);
+      final screenWidth = MediaQuery.of(context).size.width;
+      final spaceRight = screenWidth - (topLeft.dx + box.size.width);
+      final spaceLeft = topLeft.dx;
+      final available =
+          (_showPopoverOnRight ? spaceRight : spaceLeft) -
+          _kPopoverGap -
+          _kPopoverScreenMargin;
+      // 钳制到 [_kPopoverMinWidth, _kPopoverMaxWidth] 区间
+      availableMaxWidth = available
+          .clamp(_kPopoverMinWidth, _kPopoverMaxWidth)
+          .toDouble();
+    }
+
+    // 面板背景色与边框（与下面 Container 保持一致）
+    const panelColor = Color(0xF21A1A1A);
+    final borderColor = Colors.white.withValues(alpha: 0.12);
+
+    final arrow = CustomPaint(
+      size: const Size(8, 14),
+      painter: _PopoverArrowPainter(
+        pointingRight: !_showPopoverOnRight, // 在卡片右侧时箭头朝左指向卡片
+        fillColor: panelColor,
+        borderColor: borderColor,
+      ),
+    );
+
+    final panel = Material(
+      color: Colors.transparent,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: _kPopoverMinWidth.clamp(0, availableMaxWidth),
+          maxWidth: availableMaxWidth,
+          maxHeight: _kPopoverMaxHeight,
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: panelColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: borderColor, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.5),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      MdiIcons.tagMultipleOutline,
+                      size: 14,
+                      color: Colors.white.withValues(alpha: 0.6),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '全部标签 · ${tags.length}',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: tags.map(_buildPopoverTagChip).toList(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // 箭头与面板并排：popover 在右侧时为 [箭头][面板]，反之 [面板][箭头]
+    final content = Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: _showPopoverOnRight ? [arrow, panel] : [panel, arrow],
+    );
+
+    return CompositedTransformFollower(
+      link: _cardLink,
+      showWhenUnlinked: false,
+      followerAnchor: followerAnchor,
+      targetAnchor: targetAnchor,
+      offset: offset,
+      child: content,
+    );
+  }
+
+  /// popover 内的标签 chip（与卡片内 chip 样式一致）
+  Widget _buildPopoverTagChip(MapTagSimple tag) {
+    final tagColorValue = tag.colorValue;
+
+    if (tagColorValue != null) {
+      final darkColor = Color.lerp(tagColorValue, Colors.black, 0.2)!;
+      final lightColor = Color.lerp(tagColorValue, Colors.white, 0.6)!;
+
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              lightColor.withValues(alpha: 0.4),
+              tagColorValue.withValues(alpha: 0.5),
+              darkColor.withValues(alpha: 0.45),
+            ],
+            stops: const [0.0, 0.5, 1.0],
+          ),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: tagColorValue.withValues(alpha: 0.7),
+            width: 1,
+          ),
+        ),
+        child: Text(
+          tag.name,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            shadows: [
+              Shadow(color: Colors.black54, blurRadius: 1, offset: Offset(1, 1)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        tag.name,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.9),
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 
@@ -574,7 +846,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
             _buildPingBadge(ping),
           ],
         ),
-        // 地图标签（非 hover 时显示，hover 时隐藏）
+        // 地图标签（非 hover 时显示，hover 时隐藏，让位给底部操作层）
         if (!_isHovered) ...[
           SizedBox(height: verticalSpacing),
           _buildMapTagRow(widget.server.mapInfo?.tags ?? []),
@@ -632,7 +904,22 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
           color: Colors.white.withValues(alpha: 0.8),
         ),
         const SizedBox(width: 6),
-        Expanded(child: _MarqueeTagRow(tags: tags)),
+        Expanded(
+          child: _OverflowTagRow(
+            tags: tags,
+            onOverflowChanged: (overflow) {
+              if (!mounted) return;
+              if (_hasTagOverflow != overflow) {
+                _hasTagOverflow = overflow;
+                // 不再溢出时主动关闭已打开的 popover
+                if (!overflow && _tagPortalController.isShowing) {
+                  _tagPortalController.hide();
+                  _tagPopoverShowTimer?.cancel();
+                }
+              }
+            },
+          ),
+        ),
       ],
     );
   }
@@ -1900,25 +2187,33 @@ class _MarqueeTextState extends State<_MarqueeText> {
   }
 }
 
-/// 滚动标签行组件 - 标签过多时自动水平滚动
-class _MarqueeTagRow extends StatefulWidget {
+/// 标签行组件（截断 + +N 徽章）
+///
+/// 在固定宽度内尽可能多展示标签，溢出部分用 `+N` 徽章代替。
+/// 完整列表由父级 `ServerCard` 在卡片左/右侧弹出 popover 展示。
+///
+/// 通过 [onOverflowChanged] 通知父级是否发生了截断（出现 +N），
+/// 父级据此决定是否调度 popover。
+class _OverflowTagRow extends StatefulWidget {
   final List<MapTagSimple> tags;
+  final ValueChanged<bool>? onOverflowChanged;
 
-  const _MarqueeTagRow({required this.tags});
+  const _OverflowTagRow({required this.tags, this.onOverflowChanged});
 
   @override
-  State<_MarqueeTagRow> createState() => _MarqueeTagRowState();
+  State<_OverflowTagRow> createState() => _OverflowTagRowState();
 }
 
-class _MarqueeTagRowState extends State<_MarqueeTagRow> {
-  ScrollController? _scrollController;
-  bool _needsScroll = false;
-  bool _isScrolling = false;
-  double _totalScrollWidth = 0;
-  double _containerWidth = 0;
-
-  // 固定间距（spacing: 6）
+class _OverflowTagRowState extends State<_OverflowTagRow> {
   static const double _tagSpacing = 6.0;
+
+  bool? _lastReportedOverflow;
+
+  // 测量缓存：tags 引用 + maxWidth 都没变就直接复用结果，避免高频 layout 时反复
+  // 走 TextPainter（窗口缩放、列表滚动场景）
+  List<MapTagSimple>? _cachedTags;
+  double? _cachedMaxWidth;
+  int? _cachedHiddenCount;
 
   // 标签样式（与 _buildTagChip 保持一致）
   TextStyle get _tagTextStyle => TextStyle(
@@ -1934,40 +2229,81 @@ class _MarqueeTagRowState extends State<_MarqueeTagRow> {
     ],
   );
 
-  @override
-  void initState() {
-    super.initState();
-    _scrollController = ScrollController();
-    // 容器宽度会在 LayoutBuilder 的 build 中通过 _checkOverflowWithContainerWidth 获取
+  /// 测量单个标签的渲染宽度
+  ///
+  /// 注意：`Container` 的 `Border.all(width: 1)` 会**额外**占用宽度（左右各 1px），
+  /// 必须把 border 算进来，否则会出现累计误差导致 Row 溢出且 +N 不触发。
+  double _measureTagWidth(String text) {
+    final textPainter = TextPainter(
+      text: TextSpan(text: text, style: _tagTextStyle),
+      maxLines: 1,
+      textDirection: Directionality.of(context),
+    )..layout();
+    // padding(horizontal: 8 * 2) + border(1 * 2) + ceil(textWidth) 防亚像素误差
+    final width = textPainter.width.ceilToDouble() + 16 + 2;
+    // Flutter 3.10+ 后 TextPainter 持有 image 资源，需主动释放
+    textPainter.dispose();
+    return width;
   }
 
-  @override
-  void didUpdateWidget(_MarqueeTagRow oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // 标签数量或内容变化时重新检测
-    if (oldWidget.tags != widget.tags) {
-      _stopScrolling();
-      _scrollController?.jumpTo(0);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _containerWidth > 0) {
-          _checkOverflowWithContainerWidth(_containerWidth);
-        }
-      });
+  /// 计算溢出标签数量
+  ///
+  /// 全量渲染 + 浮动 +N 徽章覆盖：测量目的不是控制渲染，而是判断
+  /// 在固定容器宽度下，哪些 chip 会被右侧浮动 +N 徽章遮住，从而算出 +N 数字。
+  ///
+  /// 规则：可见区域 = `maxWidth - +N徽章宽度 - spacing`
+  /// 任何末端落在可见区域之外的 chip 都视为"被遮住"，计入 hiddenCount。
+  ///
+  /// 缓存：tags 引用 + maxWidth 都没变就直接复用上次结果。
+  int _calculateHiddenCount(double maxWidth) {
+    if (widget.tags.isEmpty) return 0;
+    if (maxWidth <= 0) return 0;
+
+    // 命中缓存（注意 List 用 identical 比对，依赖 tags 列表的不变性传递）
+    if (identical(_cachedTags, widget.tags) &&
+        _cachedMaxWidth == maxWidth &&
+        _cachedHiddenCount != null) {
+      return _cachedHiddenCount!;
     }
+
+    final hidden = _computeHiddenCount(maxWidth);
+
+    _cachedTags = widget.tags;
+    _cachedMaxWidth = maxWidth;
+    _cachedHiddenCount = hidden;
+    return hidden;
   }
 
-  @override
-  void dispose() {
-    _stopScrolling();
-    _scrollController?.dispose();
-    super.dispose();
+  int _computeHiddenCount(double maxWidth) {
+    // 先看不加 +N 的情况下能不能全部塞下
+    double total = 0;
+    for (int i = 0; i < widget.tags.length; i++) {
+      total += _measureTagWidth(widget.tags[i].name);
+      if (i < widget.tags.length - 1) total += _tagSpacing;
+    }
+    if (total <= maxWidth) return 0; // 全部能塞下，不需要 +N
+
+    // 需要 +N：可见区域要扣掉 +N 徽章宽度 + spacing
+    final plusBadgeWidth = _measureTagWidth('+99');
+    final visibleArea = maxWidth - plusBadgeWidth - _tagSpacing;
+    if (visibleArea <= 0) return widget.tags.length;
+
+    double used = 0;
+    int visible = 0;
+    for (int i = 0; i < widget.tags.length; i++) {
+      final tagWidth = _measureTagWidth(widget.tags[i].name);
+      final addition = (i == 0 ? 0 : _tagSpacing) + tagWidth;
+      if (used + addition <= visibleArea) {
+        used += addition;
+        visible = i + 1;
+      } else {
+        break;
+      }
+    }
+    return widget.tags.length - visible;
   }
 
-  void _stopScrolling() {
-    _isScrolling = false;
-  }
-
-  /// 构建单个标签 Widget
+  /// 构建单个标签 chip
   Widget _buildTagChip(MapTagSimple tag) {
     final tagColorValue = tag.colorValue;
 
@@ -2029,7 +2365,7 @@ class _MarqueeTagRowState extends State<_MarqueeTagRow> {
       );
     }
 
-    // 无颜色时的处理
+    // 无颜色时
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -2044,133 +2380,58 @@ class _MarqueeTagRowState extends State<_MarqueeTagRow> {
     );
   }
 
-  /// 测量单个标签的宽度
-  double _measureTagWidth(MapTagSimple tag) {
-    final textPainter = TextPainter(
-      text: TextSpan(text: tag.name, style: _tagTextStyle),
-      maxLines: 1,
-      textDirection: Directionality.of(context),
-    )..layout();
-
-    // padding(horizontal: 8 * 2) + textWidth
-    return textPainter.width + 16;
-  }
-
-  /// 检查是否需要滚动（通过 LayoutBuilder 获取容器宽度）
-  void _checkOverflowWithContainerWidth(double maxWidth) {
-    if (!mounted) return;
-
-    _containerWidth = maxWidth;
-    if (_containerWidth <= 0) return;
-
-    // 计算所有标签的总宽度
-    double totalWidth = 0;
-    for (int i = 0; i < widget.tags.length; i++) {
-      totalWidth += _measureTagWidth(widget.tags[i]);
-      if (i < widget.tags.length - 1) {
-        totalWidth += _tagSpacing;
-      }
-    }
-
-    final needsScroll = totalWidth > _containerWidth;
-
-    if (needsScroll != _needsScroll ||
-        (needsScroll && (totalWidth - _totalScrollWidth).abs() > 1)) {
-      setState(() {
-        _needsScroll = needsScroll;
-        _totalScrollWidth = totalWidth;
-      });
-    }
-
-    if (_needsScroll && !_isScrolling) {
-      _startScrolling();
-    }
-  }
-
-  /// 开始滚动动画
-  void _startScrolling() async {
-    if (!mounted || !_needsScroll || _scrollController == null) return;
-    if (!_scrollController!.hasClients) return;
-
-    _isScrolling = true;
-
-    while (mounted && _needsScroll && _isScrolling) {
-      // 等待 2 秒后开始滚动
-      await Future.delayed(const Duration(seconds: 2));
-      if (!mounted || !_needsScroll || _scrollController == null) break;
-      if (!_scrollController!.hasClients) break;
-
-      final maxScroll = _scrollController!.position.maxScrollExtent;
-      if (maxScroll <= 0) break;
-
-      // 滚动到末尾
-      try {
-        await _scrollController!.animateTo(
-          maxScroll,
-          duration: Duration(
-            milliseconds: (maxScroll * 0.05).toInt().clamp(3000, 10000),
-          ),
-          curve: Curves.linear,
-        );
-      } catch (_) {
-        break;
-      }
-
-      if (!mounted) break;
-      // 到达末尾后等待 1 秒
-      await Future.delayed(const Duration(seconds: 1));
-      if (!mounted) break;
-
-      // 快速回到开头
-      try {
-        await _scrollController!.animateTo(
-          0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      } catch (_) {
-        break;
-      }
-
-      if (!mounted) break;
-      // 回到开头后等待 1 秒再继续
-      await Future.delayed(const Duration(seconds: 1));
-    }
-
-    _isScrolling = false;
-  }
-
   @override
   Widget build(BuildContext context) {
-    // 离屏渲染时（如 screenshot captureFromLongWidget）没有 View ancestor，
-    // SingleChildScrollView 内部会调用 View.of(context) 导致断言失败，
-    // 此时降级为普通 Row + ellipsis
-    if (View.maybeOf(context) == null) {
-      return Row(
-        children: [
-          ..._buildTagRow().take(5), // 最多显示 5 个标签
-          if (widget.tags.length > 5)
-            Text('...', style: _tagTextStyle.copyWith(color: Colors.white54)),
-        ],
-      );
+    if (widget.tags.isEmpty) {
+      _reportOverflow(false);
+      return const SizedBox.shrink();
     }
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // 布局完成后检查是否需要滚动
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _checkOverflowWithContainerWidth(constraints.maxWidth);
-        });
+        final maxWidth = constraints.maxWidth;
+        final hiddenCount = _calculateHiddenCount(maxWidth);
+        _reportOverflow(hiddenCount > 0);
+
+        // 构建全量 tag Row（用 SizedBox + OverflowBox 让 Row 在无限宽下展开，永远不溢出报错）
+        final fullRow = Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (int i = 0; i < widget.tags.length; i++) ...[
+              if (i > 0) const SizedBox(width: _tagSpacing),
+              _buildTagChip(widget.tags[i]),
+            ],
+          ],
+        );
+
+        // SizedBox 给一个固定宽度让父级约束确定，OverflowBox 解除子级宽度约束
+        final unbounded = SizedBox(
+          width: maxWidth,
+          child: OverflowBox(
+            alignment: Alignment.centerLeft,
+            maxWidth: double.infinity,
+            child: fullRow,
+          ),
+        );
+
         return ClipRect(
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            scrollDirection: Axis.horizontal,
-            physics: _needsScroll
-                ? const ClampingScrollPhysics()
-                : const NeverScrollableScrollPhysics(),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minWidth: constraints.maxWidth),
-              child: Row(children: _buildTagRow()),
+          child: SizedBox(
+            height: 27,
+            width: maxWidth,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // 底层：全量 tag Row（被 ClipRect 裁掉右边）
+                Positioned.fill(child: unbounded),
+                // 右侧渐变羽化 + +N 徽章浮层（仅在溢出时显示）
+                if (hiddenCount > 0)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: _buildOverflowOverlay(hiddenCount),
+                  ),
+              ],
             ),
           ),
         );
@@ -2178,15 +2439,63 @@ class _MarqueeTagRowState extends State<_MarqueeTagRow> {
     );
   }
 
-  List<Widget> _buildTagRow() {
-    final List<Widget> widgets = [];
-    for (int i = 0; i < widget.tags.length; i++) {
-      widgets.add(_buildTagChip(widget.tags[i]));
-      if (i < widget.tags.length - 1) {
-        widgets.add(const SizedBox(width: _tagSpacing));
-      }
-    }
-    return widgets;
+  /// 右侧渐变遮罩 + +N 徽章浮层
+  ///
+  /// 布局：
+  ///   - 第一层：遮罩横铺整个右侧区域，左缘羽化渐变、右段完全不透明，挡住所有被裁的 tag
+  ///   - 第二层：+N 徽章浮在遮罩之上
+  /// 遮罩颜色根据当前主题：暗色 → 黑、亮色 → 白
+  Widget _buildOverflowOverlay(int hiddenCount) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fadeBaseColor = isDark ? Colors.black : Colors.white;
+
+    // 用绿色 MapTagSimple 复用普通 chip 的渐变/边框/阴影/文字样式
+    final overflowTag = MapTagSimple(name: '+$hiddenCount', color: '#22C55E');
+
+    // +N 徽章宽度估算（padding 16 + border 2 + 文字宽度）；超出时整个浮层至少这么宽
+    return Stack(
+      alignment: Alignment.centerRight,
+      children: [
+        // 第一层：羽化遮罩（覆盖整个右侧）
+        IgnorePointer(
+          child: Container(
+            // 整体宽度 = 羽化区 + +N 徽章占位（用足够宽度托住徽章）
+            width: 96,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  fadeBaseColor.withValues(alpha: 0.0),
+                  fadeBaseColor.withValues(alpha: 0.7),
+                  fadeBaseColor.withValues(alpha: 1.0),
+                  fadeBaseColor.withValues(alpha: 1.0),
+                ],
+                stops: const [0.0, 0.35, 0.65, 1.0],
+              ),
+            ),
+          ),
+        ),
+        // 第二层：+N 徽章浮在遮罩上
+        Padding(
+          padding: const EdgeInsets.only(right: 0),
+          child: _buildTagChip(overflowTag),
+        ),
+      ],
+    );
+  }
+
+  /// 通知父级溢出状态（去抖：状态未变化不重复回调）
+  void _reportOverflow(bool overflow) {
+    if (_lastReportedOverflow == overflow) return;
+    _lastReportedOverflow = overflow;
+    final cb = widget.onOverflowChanged;
+    if (cb == null) return;
+    // 在 build 期间调用，延后到帧结束后通知，避免触发父级 setState 警告
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      cb(overflow);
+    });
   }
 }
 
@@ -2517,4 +2826,69 @@ class _DashedLinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Popover 箭头指针绘制器
+///
+/// [pointingRight] 为 true 表示箭头指向右侧（popover 显示在卡片左侧时使用），
+/// 反之指向左侧（popover 显示在卡片右侧时使用）。
+class _PopoverArrowPainter extends CustomPainter {
+  final bool pointingRight;
+  final Color fillColor;
+  final Color borderColor;
+
+  _PopoverArrowPainter({
+    required this.pointingRight,
+    required this.fillColor,
+    required this.borderColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final midY = h / 2;
+
+    final path = Path();
+    if (pointingRight) {
+      // 三角形顶点指向右侧（卡片在右）
+      path.moveTo(0, 0);
+      path.lineTo(w, midY);
+      path.lineTo(0, h);
+      path.close();
+    } else {
+      // 三角形顶点指向左侧（卡片在左）
+      path.moveTo(w, 0);
+      path.lineTo(0, midY);
+      path.lineTo(w, h);
+      path.close();
+    }
+
+    // 填充（与面板背景同色，营造融为一体的感觉）
+    final fillPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = fillColor;
+    canvas.drawPath(path, fillPaint);
+
+    // 描边：仅画两条斜边，与面板侧边接缝处不画线，避免破坏融合感
+    final borderPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = borderColor;
+
+    if (pointingRight) {
+      canvas.drawLine(const Offset(0, 0), Offset(w, midY), borderPaint);
+      canvas.drawLine(Offset(w, midY), Offset(0, h), borderPaint);
+    } else {
+      canvas.drawLine(Offset(w, 0), Offset(0, midY), borderPaint);
+      canvas.drawLine(Offset(0, midY), Offset(w, h), borderPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PopoverArrowPainter oldDelegate) {
+    return oldDelegate.pointingRight != pointingRight ||
+        oldDelegate.fillColor != fillColor ||
+        oldDelegate.borderColor != borderColor;
+  }
 }
