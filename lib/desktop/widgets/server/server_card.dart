@@ -1650,8 +1650,9 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   }
 
   Widget _buildExtraCount(int queueCount, int warmupCount, int extraCount) {
+    final Widget badge;
     if (queueCount > 0 && warmupCount > 0) {
-      return ShaderMask(
+      badge = ShaderMask(
         shaderCallback: (bounds) => const LinearGradient(
           colors: [Color(0xFFF44336), Color(0xFFF59E0B)], // 红色到黄色渐变
           begin: Alignment.centerLeft,
@@ -1668,7 +1669,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         ),
       );
     } else if (queueCount > 0) {
-      return Text(
+      badge = Text(
         '+$extraCount',
         style: const TextStyle(
           color: Color(0xFFF44336), // 红色 - 挤服
@@ -1678,7 +1679,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         ),
       );
     } else {
-      return Text(
+      badge = Text(
         '+$extraCount',
         style: const TextStyle(
           color: Color(0xFFF59E0B), // 黄色 - 暖服
@@ -1688,6 +1689,23 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         ),
       );
     }
+
+    // 拼装 tooltip 文案：仅挤服 / 仅暖服 / 两者都有
+    final lines = <String>[
+      if (queueCount > 0) '🔴 挤服中 $queueCount 人',
+      if (warmupCount > 0) '🟡 暖服中 $warmupCount 人',
+    ];
+    return Tooltip(
+      message: lines.join('\n'),
+      preferBelow: false, // 强制显示在上方
+      waitDuration: const Duration(milliseconds: 300),
+      verticalOffset: 16,
+      // 用透明 padding 扩大 hover 命中范围
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        child: badge,
+      ),
+    );
   }
 
   Widget _buildRuntimeInfo() {
