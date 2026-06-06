@@ -177,7 +177,8 @@ class NotificationWindowService {
   static const double windowWidth = 300.0;
   static const double normalCardHeight = 72.0;
   static const double mapCardHeight = 88.0;
-  static const double updateLogCardHeight = 110.0;
+  static const double updateLogCardHeight = 120.0;
+  static const double broadcastMultilineCardHeight = 120.0;
   static const double cardSpacing = 8.0;
   static const double topPadding = 5.0;
   static const int maxVisibleNotifications = 5;
@@ -216,9 +217,11 @@ class NotificationWindowService {
 
   /// 计算通知的卡片高度
   double _getCardHeight(NotificationData notification) {
-    if (notification.type == NotificationType.updateLog ||
-        _isMultilineBroadcast(notification)) {
+    if (notification.type == NotificationType.updateLog) {
       return updateLogCardHeight;
+    }
+    if (_isMultilineBroadcast(notification)) {
+      return broadcastMultilineCardHeight;
     }
     if (_isMapNotification(notification)) {
       return mapCardHeight;

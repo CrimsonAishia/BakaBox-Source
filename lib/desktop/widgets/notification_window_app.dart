@@ -115,12 +115,6 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
   int _totalCountdownSeconds = 0;
   Timer? _countdownTimer;
 
-  /// 判断是否为多行广播
-  bool _isMultilineBroadcast(NotificationData notification) {
-    return notification.type == NotificationType.broadcast &&
-        notification.message.contains('<br>');
-  }
-
   double get _windowHeight {
     final notification = widget.stateNotifier.notification;
     final type = notification.type;
@@ -133,6 +127,12 @@ class _SingleNotificationWindowState extends State<_SingleNotificationWindow>
       return _mapCardHeight;
     }
     return _normalCardHeight;
+  }
+
+  /// 判断是否为多行广播
+  bool _isMultilineBroadcast(NotificationData notification) {
+    return notification.type == NotificationType.broadcast &&
+        notification.message.contains('<br>');
   }
 
   /// 判断是否为需要分行显示地图名的通知
