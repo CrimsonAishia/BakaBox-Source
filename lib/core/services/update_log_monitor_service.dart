@@ -5,24 +5,16 @@ import '../utils/log_service.dart';
 import '../utils/storage_utils.dart';
 import '../utils/time_utils.dart';
 import 'notification_window_service.dart';
-import 'scheduler_service.dart';
+import 'realtime/realtime_workshop_changelog_channel.dart';
 
 /// 更新日志监控服务（单例）
 ///
-/// 定期检查更新日志，当有新更新时发送通知
+/// 通过 WebSocket 实时推送接收更新日志通知，当有新更新时发送桌面通知。
 class UpdateLogMonitorService {
   static final UpdateLogMonitorService _instance =
       UpdateLogMonitorService._internal();
   factory UpdateLogMonitorService() => _instance;
   UpdateLogMonitorService._internal();
-
-  final SchedulerService _scheduler = SchedulerService();
-
-  /// 监控间隔（秒）
-  static const int monitorIntervalSeconds = 300; // 5分钟检查一次
-
-  /// 任务 ID
-  static const String _taskId = 'update_log_monitor';
 
   /// 存储 key - 上次检查的更新时间
   static const String _lastCheckTimeKey = 'update_log_last_check_time';
@@ -37,44 +29,43 @@ class UpdateLogMonitorService {
   final UpdateLogApi _updateLogApi = UpdateLogApi();
   final NotificationWindowService _notificationService =
       NotificationWindowService();
+  final RealtimeWorkshopChangelogChannel _channel =
+      RealtimeWorkshopChangelogChannel();
+
+  /// WebSocket 事件订阅
+  StreamSubscription<WorkshopChangelogEvent>? _subscription;
 
   /// 初始化服务（应用启动时调用）
   Future<void> initialize() async {
     if (_initialized) return;
     _initialized = true;
 
-    _startMonitorLoop();
-    LogService.i('[UpdateLogMonitor] 服务已初始化');
-  }
+    _subscribeRealtime();
 
-  /// 启动监控循环
-  void _startMonitorLoop() {
-    if (_scheduler.hasTask(_taskId)) return;
-
-    _scheduler.register(
-      ScheduledTask(
-        id: _taskId,
-        name: '更新日志监控',
-        interval: Intervals.fiveMinutes,
-        callback: () async => checkForUpdates(),
-      ),
-    );
-
-    // 延迟10秒后执行首次检查，避免启动时立即弹出通知
+    // 延迟 10 秒主动检查一次，覆盖应用关闭期间漏掉的更新
     Future.delayed(const Duration(seconds: 10), () => checkForUpdates());
+
+    LogService.i('[UpdateLogMonitor] 服务已初始化（实时推送模式）');
   }
 
-  /// 停止监控循环
-  void _stopMonitorLoop() {
-    _scheduler.cancel(_taskId);
+  /// 订阅实时推送频道
+  void _subscribeRealtime() {
+    _channel.subscribe();
+    _subscription = _channel.events.listen(_onWorkshopChangelogEvent);
   }
 
-  /// 检查更新日志
+  /// 取消订阅实时推送频道
+  void _unsubscribeRealtime() {
+    _subscription?.cancel();
+    _subscription = null;
+    _channel.unsubscribe();
+  }
+
+  /// 启动时主动检查一次更新（覆盖离线期间的更新）
   Future<void> checkForUpdates() async {
     try {
       final lastCheckTime = StorageUtils.getString(_lastCheckTimeKey);
 
-      // 获取最新的更新日志
       final response = await _updateLogApi.getUpdateLogs(
         pageIndex: 1,
         pageSize: 1,
@@ -86,82 +77,148 @@ class UpdateLogMonitorService {
       final latestLog = response.items.first;
       final latestUpdateTime = latestLog.updateTime;
 
-      // 如果是首次检查（没有记录），只记录时间不通知
+      // 首次检查（没有记录），只记录时间不通知
       if (lastCheckTime == null || lastCheckTime.isEmpty) {
         await StorageUtils.setString(_lastCheckTimeKey, latestUpdateTime);
         LogService.i('[UpdateLogMonitor] 首次检查，记录时间: $latestUpdateTime');
         return;
       }
 
-      // 使用时间戳比较，避免字符串格式不一致导致的问题
       final latestTime = TimeUtils.parseServerTime(latestUpdateTime);
       final lastTime = TimeUtils.parseServerTime(lastCheckTime);
 
       if (latestTime == null || lastTime == null) {
-        LogService.w('[UpdateLogMonitor] 时间解析失败，使用字符串比较');
-        // 降级到字符串比较
         if (latestUpdateTime != lastCheckTime) {
-          await _sendUpdateNotification(latestLog, latestUpdateTime);
+          await _sendNotification(latestLog, latestUpdateTime);
         }
         return;
       }
 
-      // 比较时间戳，如果有新更新则通知
       if (latestTime.isAfter(lastTime)) {
         LogService.i(
-          '[UpdateLogMonitor] 检测到新更新: $latestUpdateTime (上次: $lastCheckTime)',
+          '[UpdateLogMonitor] 检测到离线期间新更新: $latestUpdateTime (上次: $lastCheckTime)',
         );
-        await _sendUpdateNotification(latestLog, latestUpdateTime);
+        await _sendNotification(latestLog, latestUpdateTime);
       }
     } catch (e) {
-      LogService.e('[UpdateLogMonitor] 检查更新失败', e);
-      // 异常时不影响应用运行，静默处理
+      LogService.e('[UpdateLogMonitor] 启动检查更新失败', e);
     }
   }
 
-  /// 发送更新通知
-  Future<void> _sendUpdateNotification(
-    dynamic latestLog,
-    String latestUpdateTime,
-  ) async {
-    // 如果通知已禁用，不发送
+  /// 处理实时推送事件
+  Future<void> _onWorkshopChangelogEvent(WorkshopChangelogEvent event) async {
+    LogService.i(
+      '[UpdateLogMonitor] 收到实时推送: workshopItemId=${event.workshopItemId}, '
+      'updateTime=${event.updateTime}',
+    );
+
     if (!_enabled) {
-      LogService.d('[UpdateLogMonitor] 通知已禁用，跳过发送');
-      // 仍然更新记录的时间，避免下次启用时重复通知
-      await StorageUtils.setString(_lastCheckTimeKey, latestUpdateTime);
+      LogService.d('[UpdateLogMonitor] 通知已禁用，跳过');
       return;
     }
 
     try {
-      // 格式化时间（去掉秒）
-      final displayTime = _formatUpdateTime(latestUpdateTime);
+      // 使用推送中的内容直接通知
+      if (event.content.isNotEmpty) {
+        final displayTime = _formatUnixTime(event.updateTime);
+        await _notificationService.showUpdateLogNotification(
+          updateTime: displayTime,
+          content: event.content,
+        );
+        // 更新本地记录时间（转为服务端北京时间格式，与 API 返回格式一致）
+        await StorageUtils.setString(
+          _lastCheckTimeKey,
+          _unixToServerTimeString(event.updateTime),
+        );
+        return;
+      }
 
-      // 发送通知（优先使用 rawHtml，否则使用 content）
-      final htmlContent = latestLog.rawHtml.isNotEmpty
-          ? latestLog.rawHtml
-          : latestLog.content;
-      await _notificationService.showUpdateLogNotification(
-        updateTime: displayTime,
-        content: htmlContent,
-      );
-
-      // 更新记录的时间（保存原始时间用于比较）
-      await StorageUtils.setString(_lastCheckTimeKey, latestUpdateTime);
+      // 如果推送中没有内容，回退到 API 获取最新日志详情
+      await _fetchAndNotify();
     } catch (e) {
-      LogService.e('[UpdateLogMonitor] 发送通知失败', e);
+      LogService.e('[UpdateLogMonitor] 处理实时推送失败', e);
     }
   }
 
-  /// 格式化更新时间（转换为用户本地时区）
-  String _formatUpdateTime(String updateTime) {
-    // 使用 TimeUtils 解析服务器时间（北京时间 UTC+8）并转换为本地时间
-    final localDateTime = TimeUtils.parseServerTime(updateTime);
-    if (localDateTime == null) {
-      // 解析失败时返回原始字符串
-      return updateTime;
+  /// 通过 API 获取最新日志并发送通知
+  Future<void> _fetchAndNotify() async {
+    try {
+      final response = await _updateLogApi.getUpdateLogs(
+        pageIndex: 1,
+        pageSize: 1,
+        keyword: '',
+      );
+
+      if (response.items.isEmpty) return;
+
+      final latestLog = response.items.first;
+      await _sendNotification(latestLog, latestLog.updateTime);
+    } catch (e) {
+      LogService.e('[UpdateLogMonitor] 获取最新日志失败', e);
     }
-    // 格式化为本地时间显示
-    return '${localDateTime.year}年${localDateTime.month.toString().padLeft(2, '0')}月${localDateTime.day.toString().padLeft(2, '0')}日 ${localDateTime.hour.toString().padLeft(2, '0')}时${localDateTime.minute.toString().padLeft(2, '0')}分';
+  }
+
+  /// 发送通知并更新本地记录时间
+  Future<void> _sendNotification(
+    dynamic latestLog,
+    String latestUpdateTime,
+  ) async {
+    if (!_enabled) {
+      // 即使通知禁用，仍更新记录时间，避免启用后重复通知
+      await StorageUtils.setString(_lastCheckTimeKey, latestUpdateTime);
+      return;
+    }
+
+    final displayTime = _formatUpdateTime(latestUpdateTime);
+    final htmlContent = latestLog.rawHtml.isNotEmpty
+        ? latestLog.rawHtml
+        : latestLog.content;
+
+    await _notificationService.showUpdateLogNotification(
+      updateTime: displayTime,
+      content: htmlContent,
+    );
+    await StorageUtils.setString(_lastCheckTimeKey, latestUpdateTime);
+  }
+
+  /// 格式化 Unix 时间戳（秒）为本地时间显示
+  String _formatUnixTime(int unixSeconds) {
+    if (unixSeconds <= 0) return '';
+    final dateTime = DateTime.fromMillisecondsSinceEpoch(
+      unixSeconds * 1000,
+      isUtc: true,
+    ).toLocal();
+    return '${dateTime.year}年${dateTime.month.toString().padLeft(2, '0')}月'
+        '${dateTime.day.toString().padLeft(2, '0')}日 '
+        '${dateTime.hour.toString().padLeft(2, '0')}时'
+        '${dateTime.minute.toString().padLeft(2, '0')}分';
+  }
+
+  /// 将 Unix 时间戳（秒）转为服务端北京时间格式字符串
+  /// 格式："2025-06-06 15:30:00"，与 API 返回的 updateTime 格式一致
+  String _unixToServerTimeString(int unixSeconds) {
+    if (unixSeconds <= 0) return '';
+    // Unix 时间戳是 UTC，加 8 小时得到北京时间
+    final beijingTime = DateTime.fromMillisecondsSinceEpoch(
+      unixSeconds * 1000,
+      isUtc: true,
+    ).add(const Duration(hours: 8));
+    return '${beijingTime.year}-'
+        '${beijingTime.month.toString().padLeft(2, '0')}-'
+        '${beijingTime.day.toString().padLeft(2, '0')} '
+        '${beijingTime.hour.toString().padLeft(2, '0')}:'
+        '${beijingTime.minute.toString().padLeft(2, '0')}:'
+        '${beijingTime.second.toString().padLeft(2, '0')}';
+  }
+
+  /// 格式化更新时间字符串（服务器北京时间）为本地时间显示
+  String _formatUpdateTime(String updateTime) {
+    final localDateTime = TimeUtils.parseServerTime(updateTime);
+    if (localDateTime == null) return updateTime;
+    return '${localDateTime.year}年${localDateTime.month.toString().padLeft(2, '0')}月'
+        '${localDateTime.day.toString().padLeft(2, '0')}日 '
+        '${localDateTime.hour.toString().padLeft(2, '0')}时'
+        '${localDateTime.minute.toString().padLeft(2, '0')}分';
   }
 
   /// 获取最新的更新日志（用于测试）
@@ -181,7 +238,6 @@ class UpdateLogMonitorService {
       final latestLog = response.items.first;
       final displayTime = _formatUpdateTime(latestLog.updateTime);
 
-      // 优先使用 rawHtml，否则使用 content
       final htmlContent = latestLog.rawHtml.isNotEmpty
           ? latestLog.rawHtml
           : latestLog.content;
@@ -196,7 +252,7 @@ class UpdateLogMonitorService {
 
   /// 销毁服务
   void dispose() {
-    _stopMonitorLoop();
+    _unsubscribeRealtime();
     _initialized = false;
   }
 
