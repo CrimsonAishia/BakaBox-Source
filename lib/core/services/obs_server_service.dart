@@ -11,6 +11,7 @@ import '../services/console_log_service.dart';
 import '../services/source_server_service.dart';
 import '../services/server_address_mapping_service.dart';
 import '../services/game_status_service.dart';
+import '../services/realtime/realtime_server_map_runtime_channel.dart';
 
 String _getWaitingText() {
   try {
@@ -38,6 +39,13 @@ class ObsServerService {
   // ConsoleLogService 订阅，用于获取用户当前所在的服务器
   StreamSubscription? _consoleLogSubscription;
   String? _currentServerAddress; // 用户当前所在服务器的地址
+
+  // server.map.runtime WS 频道订阅：用于在服务端推送换图时立即更新 OBS 推送
+  // 单例频道，跟 ServerBloc / WarmupMonitorService 共享底层 WS 订阅
+  final RealtimeServerMapRuntimeChannel _mapRuntimeChannel =
+      RealtimeServerMapRuntimeChannel();
+  StreamSubscription<ServerMapRuntimeEvent>? _mapRuntimeSubscription;
+  bool _mapRuntimeSubscribed = false;
 
   // 当前直接查询的服务器数据
   SourceServerInfo? _queriedServerInfo;
@@ -170,6 +178,9 @@ class ObsServerService {
 
       // 订阅 ServerBloc 数据
       _subscribeToServerBloc();
+
+      // 订阅 server.map.runtime 频道：服务端推送换图时立即更新 OBS
+      _subscribeToMapRuntime();
 
       // 启动独立的 OBS 数据刷新定时器（不依赖全局刷新）
       _startObsRefreshTimer();
@@ -323,6 +334,121 @@ class ObsServerService {
     _logger.i('[OBS] 已订阅 ServerBloc 数据');
   }
 
+  /// 订阅 server.map.runtime 频道
+  ///
+  /// 服务端在玩家所在服务器换图时会推 `changed` 事件，比 A2S 轮询更及时。
+  /// 收到当前服务器的换图后，立即把 OBS 推送的地图字段（map / mapName / mapLabel /
+  /// mapUrl）更新成新地图，避免推流端要等到下一轮 A2S 才看到新数据。
+  void _subscribeToMapRuntime() {
+    if (_mapRuntimeSubscribed) return;
+    _mapRuntimeSubscribed = true;
+    _mapRuntimeChannel.subscribe();
+    _mapRuntimeSubscription = _mapRuntimeChannel.events.listen(
+      _onMapRuntimeEvent,
+      onError: (error) {
+        _logger.e('[OBS] map.runtime 频道出错: $error');
+      },
+    );
+    _logger.i('[OBS] 已订阅 server.map.runtime 频道');
+  }
+
+  void _unsubscribeFromMapRuntime() {
+    if (!_mapRuntimeSubscribed) return;
+    _mapRuntimeSubscribed = false;
+    _mapRuntimeSubscription?.cancel();
+    _mapRuntimeSubscription = null;
+    _mapRuntimeChannel.unsubscribe();
+  }
+
+  /// 处理 server.map.runtime 推送
+  void _onMapRuntimeEvent(ServerMapRuntimeEvent event) {
+    // snapshot 仅用于初始化频道缓存，不主动改 OBS 数据；
+    // 真正的换图通过后续 changed 事件触发。
+    if (event.kind != ServerMapRuntimeEventKind.changed) return;
+
+    // 没有连接到任何服务器时不处理
+    final myAddress = _currentServerAddress;
+    if (myAddress == null || myAddress.isEmpty) return;
+
+    // 已被显式清空显示（游戏未运行 / stop 等场景）：不处理推送，
+    // 避免广播一个 isCleared=true 但 map 是新地图的奇怪中间状态。
+    if (_currentData['isCleared'] == true) return;
+
+    // 推送里的 serverAddress 是域名形式，本地存的是从游戏日志解析出的 IP。
+    // 这里把本地地址也映射成域名再做对比，跟 WarmupMonitorService 保持一致。
+    final addressMapping = ServerAddressMappingService();
+    final myDomain = addressMapping.getDomainAddress(myAddress);
+
+    for (final entry in event.entries) {
+      if (entry.serverAddress != myDomain && entry.serverAddress != myAddress) {
+        continue;
+      }
+      _applyRealtimeMapChange(entry);
+      break;
+    }
+  }
+
+  /// 应用 WS 推送的换图：更新 _currentData 中的地图字段并广播
+  Future<void> _applyRealtimeMapChange(ServerMapRuntimeEntry entry) async {
+    final newMap = entry.mapName;
+    if (newMap.isEmpty) return;
+
+    // 跟现有数据一致就跳过，避免重复广播
+    if (_currentData['map'] == newMap && _currentData['mapName'] == newMap) {
+      return;
+    }
+
+    _logger.i(
+      '[OBS] 收到 WS 换图推送: ${_currentData['map']} -> $newMap @${entry.serverAddress}',
+    );
+
+    _currentData['map'] = newMap;
+    _currentData['mapName'] = newMap;
+
+    // 换图后 runtime 应当重置；交给后续矫正 / A2S 刷新填新值
+    _currentData['runtime'] = '';
+
+    // 已缓存的查询结果里 map 字段过期了，置空，让下一次 A2S 一定推新数据
+    _queriedServerInfo = null;
+
+    // 优先用 ServerBloc 列表里的地图缓存（含译名 + 背景），没有再回落到 API
+    MapData? cachedMapData;
+    if (_serverBloc != null) {
+      final state = _serverBloc!.state;
+      final listServer = _getConnectedServer(state.servers, entry.serverAddress)
+          ?? _getConnectedServer(state.servers, _currentServerAddress!);
+      final mapInfo = listServer?.mapInfo;
+      if (mapInfo != null &&
+          mapInfo.mapLabel.isNotEmpty &&
+          // 列表缓存的 mapInfo 必须就是新地图
+          (listServer?.serverData?.map == newMap ||
+              mapInfo.mapName == newMap)) {
+        cachedMapData = mapInfo;
+      }
+    }
+
+    if (cachedMapData != null) {
+      _currentData['mapUrl'] = cachedMapData.mapUrl;
+      _currentData['mapLabel'] = cachedMapData.mapLabel;
+      _broadcast();
+    } else {
+      // 先广播一次让 OBS 端尽快显示新地图原名（即使没有译名 / 背景图）
+      _currentData['mapUrl'] = '';
+      _currentData['mapLabel'] = '';
+      _broadcast();
+      // 再异步拉地图详情，拿到后再广播一次。
+      // 注意：API 回包期间用户可能已经离开服务器、换图、或被 stop()/clearDisplay() 清空，
+      // 此时 _fetchMapInfo 会写入 _currentData 但我们不能广播，否则会出现"等待进入服务器
+      // + 旧地图背景"这种诡异组合。回来后只在状态没变的前提下广播。
+      await _fetchMapInfo(newMap);
+      if (_currentData['map'] == newMap &&
+          _currentData['isCleared'] != true &&
+          _currentData['isConnected'] == true) {
+        _broadcast();
+      }
+    }
+  }
+
   void _serveHtml(HttpRequest request) {
     request.response
       ..headers.contentType = ContentType.html
@@ -429,6 +555,9 @@ class ObsServerService {
     _consoleLogSubscription?.cancel();
     _consoleLogSubscription = null;
     _currentServerAddress = null;
+
+    // 取消 server.map.runtime 频道订阅
+    _unsubscribeFromMapRuntime();
 
     // 取消 ServerBloc 订阅
     _serverBlocSubscription?.cancel();
