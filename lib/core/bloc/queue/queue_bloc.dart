@@ -16,6 +16,8 @@ import 'queue_state.dart';
 const String _keyQueueTargetPlayers = 'queue_target_players';
 const String _keyQueueThreadCount = 'queue_thread_count';
 const String _keyQueueIsDonator = 'queue_is_donator';
+const String _keyQueueMultiThreadEnabled = 'queue_multi_thread_enabled';
+const String _keyQueueRequestInterval = 'queue_request_interval';
 
 /// 挤服Bloc
 ///
@@ -33,6 +35,8 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
     on<QueuePause>(_onPause);
     on<QueueSetTargetPlayers>(_onSetTargetPlayers);
     on<QueueSetThreadCount>(_onSetThreadCount);
+    on<QueueSetMultiThreadEnabled>(_onSetMultiThreadEnabled);
+    on<QueueSetRequestInterval>(_onSetRequestInterval);
     on<QueueSetAutoRetry>(_onSetAutoRetry);
     on<QueueSetDonator>(_onSetDonator);
     on<QueueLaunchGame>(_onLaunchGame);
@@ -73,6 +77,12 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
       }
     }
 
+    // 多线程开关只对自定义服务器生效；非自定义服务器始终走多线程模式
+    // 避免用户在自定义服务器关了多线程后，影响其他服务器的挤服速度
+    if (!event.isCustomServer && !config.multiThreadEnabled) {
+      config = config.copyWith(multiThreadEnabled: true);
+    }
+
     emit(
       state.copyWith(
         isInitialized: true,
@@ -103,11 +113,19 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
         _keyQueueIsDonator,
         defaultValue: false,
       );
+      final multiThreadEnabled = StorageUtils.getBool(
+        _keyQueueMultiThreadEnabled,
+        defaultValue: true,
+      );
+      final requestIntervalSeconds =
+          (StorageUtils.getInt(_keyQueueRequestInterval) ?? 1).clamp(1, 6);
       return QueueConfig(
         targetPlayers: targetPlayers,
         threadCount: threadCount,
         enableAutoRetry: false, // 自动重试不保存，每次默认关闭
         isDonator: isDonator,
+        multiThreadEnabled: multiThreadEnabled,
+        requestIntervalSeconds: requestIntervalSeconds,
       );
     } catch (e) {
       LogService.e('[QueueBloc] 加载配置失败', e);
@@ -121,6 +139,14 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
       await StorageUtils.setInt(_keyQueueTargetPlayers, config.targetPlayers);
       await StorageUtils.setInt(_keyQueueThreadCount, config.threadCount);
       await StorageUtils.setBool(_keyQueueIsDonator, config.isDonator);
+      await StorageUtils.setBool(
+        _keyQueueMultiThreadEnabled,
+        config.multiThreadEnabled,
+      );
+      await StorageUtils.setInt(
+        _keyQueueRequestInterval,
+        config.requestIntervalSeconds,
+      );
     } catch (e) {
       LogService.e('[QueueBloc] 保存配置失败', e);
     }
@@ -246,6 +272,29 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
   ) async {
     _statusService.setThreadCount(event.threadCount);
     final newConfig = state.config.copyWith(threadCount: event.threadCount);
+    emit(state.copyWith(config: newConfig));
+    await _saveConfig(newConfig);
+  }
+
+  /// 设置是否启用多线程
+  Future<void> _onSetMultiThreadEnabled(
+    QueueSetMultiThreadEnabled event,
+    Emitter<QueueBlocState> emit,
+  ) async {
+    _statusService.setMultiThreadEnabled(event.enabled);
+    final newConfig = state.config.copyWith(multiThreadEnabled: event.enabled);
+    emit(state.copyWith(config: newConfig));
+    await _saveConfig(newConfig);
+  }
+
+  /// 设置单线程模式下的请求间隔
+  Future<void> _onSetRequestInterval(
+    QueueSetRequestInterval event,
+    Emitter<QueueBlocState> emit,
+  ) async {
+    final clamped = event.seconds.clamp(1, 6);
+    _statusService.setRequestIntervalSeconds(clamped);
+    final newConfig = state.config.copyWith(requestIntervalSeconds: clamped);
     emit(state.copyWith(config: newConfig));
     await _saveConfig(newConfig);
   }
@@ -431,7 +480,8 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
       }
     }).toList();
 
-    // 保留用户设置的目标人数和线程数量，只同步自动重试状态
+    // 保留用户设置的目标人数、线程数量、多线程开关、请求间隔
+    // 只同步自动重试状态
     final updatedConfig = state.config.copyWith(
       enableAutoRetry: serviceState.queueConfig.enableAutoRetry,
     );

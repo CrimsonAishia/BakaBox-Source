@@ -83,11 +83,22 @@ class QueueConfig {
   final bool enableAutoRetry;
   final bool isDonator;
 
+  /// 是否启用多线程（仅自定义服务器可关闭）
+  ///
+  /// - true：使用 [threadCount] 个线程并发请求（默认行为）
+  /// - false：单线程模式，按 [requestIntervalSeconds] 间隔轮询
+  final bool multiThreadEnabled;
+
+  /// 单线程模式下的请求间隔（秒，1-6）
+  final int requestIntervalSeconds;
+
   const QueueConfig({
     this.targetPlayers = 60,
     this.threadCount = 3,
     this.enableAutoRetry = false,
     this.isDonator = false,
+    this.multiThreadEnabled = true,
+    this.requestIntervalSeconds = 1,
   });
 
   QueueConfig copyWith({
@@ -95,14 +106,22 @@ class QueueConfig {
     int? threadCount,
     bool? enableAutoRetry,
     bool? isDonator,
+    bool? multiThreadEnabled,
+    int? requestIntervalSeconds,
   }) {
     return QueueConfig(
       targetPlayers: targetPlayers ?? this.targetPlayers,
       threadCount: threadCount ?? this.threadCount,
       enableAutoRetry: enableAutoRetry ?? this.enableAutoRetry,
       isDonator: isDonator ?? this.isDonator,
+      multiThreadEnabled: multiThreadEnabled ?? this.multiThreadEnabled,
+      requestIntervalSeconds:
+          requestIntervalSeconds ?? this.requestIntervalSeconds,
     );
   }
+
+  /// 实际生效的线程数（多线程关闭时强制为 1）
+  int get effectiveThreadCount => multiThreadEnabled ? threadCount : 1;
 }
 
 /// 操作状态数据
@@ -830,7 +849,7 @@ class StatusWindowService {
 
     // 初始化线程状态
     final threadStatuses = List<ThreadStatus>.filled(
-      finalConfig.threadCount,
+      finalConfig.effectiveThreadCount,
       ThreadStatus.idle,
     );
 
@@ -898,7 +917,7 @@ class StatusWindowService {
     }
 
     LogService.d(
-      '[StatusWindowService] 挤服已开始: ${finalConfig.threadCount}个线程, 自动重试=${finalConfig.enableAutoRetry}',
+      '[StatusWindowService] 挤服已开始: ${finalConfig.effectiveThreadCount}个线程(多线程=${finalConfig.multiThreadEnabled}, 间隔=${finalConfig.requestIntervalSeconds}s), 自动重试=${finalConfig.enableAutoRetry}',
     );
     return true;
   }
@@ -1094,10 +1113,10 @@ class StatusWindowService {
 
     _updateState(_state.copyWith(queueConfig: config));
 
-    // 更新线程状态数组大小
-    if (config.threadCount != _state.threadStatuses.length) {
+    // 更新线程状态数组大小（按生效线程数）
+    if (config.effectiveThreadCount != _state.threadStatuses.length) {
       final newStatuses = List<ThreadStatus>.filled(
-        config.threadCount,
+        config.effectiveThreadCount,
         ThreadStatus.idle,
       );
       _updateState(_state.copyWith(threadStatuses: newStatuses));
@@ -1117,14 +1136,43 @@ class StatusWindowService {
   /// 设置线程数量
   void setThreadCount(int threadCount) {
     if (_state.type != OperationType.queueing) return;
+    final newConfig = _state.queueConfig.copyWith(threadCount: threadCount);
     final newStatuses = List<ThreadStatus>.filled(
-      threadCount,
+      newConfig.effectiveThreadCount,
       ThreadStatus.idle,
     );
     _updateState(
+      _state.copyWith(queueConfig: newConfig, threadStatuses: newStatuses),
+    );
+  }
+
+  /// 设置是否启用多线程（仅自定义服务器场景）
+  ///
+  /// 切换会同步重置线程状态数组：
+  /// - 关闭：变为 1 个槽位
+  /// - 开启：恢复为 [QueueConfig.threadCount] 个槽位
+  void setMultiThreadEnabled(bool enabled) {
+    if (_state.type != OperationType.queueing) return;
+    final newConfig =
+        _state.queueConfig.copyWith(multiThreadEnabled: enabled);
+    final newStatuses = List<ThreadStatus>.filled(
+      newConfig.effectiveThreadCount,
+      ThreadStatus.idle,
+    );
+    _updateState(
+      _state.copyWith(queueConfig: newConfig, threadStatuses: newStatuses),
+    );
+  }
+
+  /// 设置单线程模式下的请求间隔（秒，1-6）
+  void setRequestIntervalSeconds(int seconds) {
+    if (_state.type != OperationType.queueing) return;
+    final clamped = seconds.clamp(1, 6);
+    _updateState(
       _state.copyWith(
-        queueConfig: _state.queueConfig.copyWith(threadCount: threadCount),
-        threadStatuses: newStatuses,
+        queueConfig: _state.queueConfig.copyWith(
+          requestIntervalSeconds: clamped,
+        ),
       ),
     );
   }
@@ -2239,11 +2287,15 @@ class StatusWindowService {
     _isThreadsRunning = true;
     _activeThreadIds.clear();
 
-    for (int i = 0; i < _state.queueConfig.threadCount; i++) {
+    final effectiveThreadCount = _state.queueConfig.effectiveThreadCount;
+    // 单线程模式下不需要错峰启动；多线程模式保留 500ms 错峰
+    final isSingleThread = !_state.queueConfig.multiThreadEnabled;
+
+    for (int i = 0; i < effectiveThreadCount; i++) {
       final threadIndex = i;
       final threadId = DateTime.now().millisecondsSinceEpoch + i;
       _activeThreadIds.add(threadId);
-      final delay = i * 500;
+      final delay = isSingleThread ? 0 : i * 500;
 
       Future.delayed(Duration(milliseconds: delay), () {
         if (_isQueueRunning && _activeThreadIds.contains(threadId)) {
@@ -2312,6 +2364,12 @@ class StatusWindowService {
 
   /// 计算下次请求间隔
   int _calculateNextInterval(int threadIndex) {
+    // 单线程模式：使用用户设置的固定秒数（1-6 秒），并 clamp
+    if (!_state.queueConfig.multiThreadEnabled) {
+      final seconds = _state.queueConfig.requestIntervalSeconds.clamp(1, 6);
+      return seconds * 1000;
+    }
+
     int baseInterval = max(600, 350);
 
     if (_consecutiveFailures > 15) {
