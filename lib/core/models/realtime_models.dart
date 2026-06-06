@@ -8,6 +8,7 @@
 /// - `score.updates` GSI 共识比分变化推送（订阅时下发 snapshot）
 /// - `notifications` 个人消息推送（仅登录态）
 /// - `announcements` 公告/更新日志推送
+/// - `workshop.changelog` Steam 创意工坊更新日志推送
 library;
 
 /// 频道名称常量
@@ -20,6 +21,7 @@ class RealtimeChannels {
   static const String serverUsersCount = 'server.users.count';
   static const String notifications = 'notifications';
   static const String announcements = 'announcements';
+  static const String workshopChangelog = 'workshop.changelog';
 
   /// 所有支持的频道
   static const List<String> all = [
@@ -29,6 +31,7 @@ class RealtimeChannels {
     serverUsersCount,
     notifications,
     announcements,
+    workshopChangelog,
   ];
 
   /// 需要登录的用户级频道
@@ -89,6 +92,8 @@ class RealtimeEventTypes {
   static const String announcementStatusChanged = 'status_changed';
   static const String announcementStickyChanged = 'sticky_changed';
   static const String announcementDeleted = 'deleted';
+  // workshop.changelog
+  static const String workshopChangelogNew = 'new';
 }
 
 /// 服务端 → 客户端原始消息封装
