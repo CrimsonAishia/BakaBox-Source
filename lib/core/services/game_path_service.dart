@@ -3,12 +3,24 @@ import 'dart:async';
 import '../utils/log_service.dart';
 import '../utils/storage_utils.dart';
 
+/// 路径失效类型
+enum InvalidPathType {
+  game, // 游戏路径失效
+  steam, // Steam 路径失效
+}
+
 /// 游戏路径验证结果
 class PathValidationResult {
   final bool isValid;
   final String? error;
+  // 当 isValid=false 时，标识具体哪条路径失效（仅在 verifyCurrentPaths 中填充）
+  final InvalidPathType? invalidType;
 
-  const PathValidationResult({required this.isValid, this.error});
+  const PathValidationResult({
+    required this.isValid,
+    this.error,
+    this.invalidType,
+  });
 }
 
 /// 游戏路径服务 - 统一管理 CS2 和 Steam 路径的检测、验证、存储
@@ -173,31 +185,80 @@ class GamePathService {
       return const PathValidationResult(isValid: true);
     }
 
+    PathValidationResult? gameFailure;
+    PathValidationResult? steamFailure;
+
     if (gamePath != null && gamePath.isNotEmpty) {
       final result = await validateGamePath(gamePath);
       if (!result.isValid) {
-        final errorResult = PathValidationResult(
+        gameFailure = PathValidationResult(
           isValid: false,
           error: '游戏路径已失效: ${result.error}',
+          invalidType: InvalidPathType.game,
         );
-        _pathInvalidController.add(errorResult);
-        return errorResult;
       }
     }
 
     if (steamPath != null && steamPath.isNotEmpty) {
       final result = await validateSteamPath(steamPath);
       if (!result.isValid) {
-        final errorResult = PathValidationResult(
+        steamFailure = PathValidationResult(
           isValid: false,
           error: 'Steam路径已失效: ${result.error}',
+          invalidType: InvalidPathType.steam,
         );
-        _pathInvalidController.add(errorResult);
-        return errorResult;
       }
     }
 
-    return const PathValidationResult(isValid: true);
+    // 没有任何失效
+    if (gameFailure == null && steamFailure == null) {
+      return const PathValidationResult(isValid: true);
+    }
+
+    // 仅一项失效：返回该项的具体类型
+    if (gameFailure != null && steamFailure == null) {
+      _pathInvalidController.add(gameFailure);
+      return gameFailure;
+    }
+    if (steamFailure != null && gameFailure == null) {
+      _pathInvalidController.add(steamFailure);
+      return steamFailure;
+    }
+
+    // 双项失效：合并错误信息，invalidType 留空表示两者都失效（消费者应通过细分字段判断）
+    final combined = PathValidationResult(
+      isValid: false,
+      error: '${gameFailure!.error}\n${steamFailure!.error}',
+    );
+    _pathInvalidController.add(combined);
+    return combined;
+  }
+
+  /// 单独检查游戏路径是否仍然有效（不发流，仅用于细分判断）
+  Future<bool> isGamePathStillValid() async {
+    try {
+      final path = await getGamePath();
+      if (path == null || path.isEmpty) return true; // 未配置视为不失效
+      final result = await validateGamePath(path);
+      return result.isValid;
+    } catch (e) {
+      // 网络盘断开、未挂载磁盘、IO 错误等：视为失效，让上层提示用户
+      LogService.w('[GamePathService] 校验游戏路径时发生异常，视为失效: $e');
+      return false;
+    }
+  }
+
+  /// 单独检查 Steam 路径是否仍然有效（不发流，仅用于细分判断）
+  Future<bool> isSteamPathStillValid() async {
+    try {
+      final path = await getSteamPath();
+      if (path == null || path.isEmpty) return true; // 未配置视为不失效
+      final result = await validateSteamPath(path);
+      return result.isValid;
+    } catch (e) {
+      LogService.w('[GamePathService] 校验Steam路径时发生异常，视为失效: $e');
+      return false;
+    }
   }
 
   // ==================== 路径工具 ====================

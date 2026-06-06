@@ -112,10 +112,13 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     add(SettingsCheckPathsValidity());
 
     // 监听底层服务主动发出的路径失效事件
+    // 注意：state.isPathInvalidated 已经为 true 时跳过，避免与 verifyCurrentPaths
+    // 内部的 _pathInvalidController.add 形成自激反馈循环（SettingsCheckPathsValidity
+    // -> verifyCurrentPaths -> 流再次发射 -> 又触发 SettingsCheckPathsValidity）。
     _pathInvalidSubscription ??= _gamePathService.onPathInvalidStream.listen((
       result,
     ) {
-      if (!result.isValid) {
+      if (!result.isValid && !state.isPathInvalidated) {
         add(SettingsCheckPathsValidity());
       }
     });
@@ -466,21 +469,38 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     Emitter<SettingsState> emit,
   ) async {
     try {
-      final validationResult = await _gamePathService.verifyCurrentPaths();
-      if (!validationResult.isValid) {
+      // 分别检查两条路径，避免一次返回只能反映一项
+      final gameValid = await _gamePathService.isGamePathStillValid();
+      final steamValid = await _gamePathService.isSteamPathStillValid();
+      final anyInvalid = !gameValid || !steamValid;
+
+      if (anyInvalid) {
+        // 拼接精确的失效信息
+        final messages = <String>[];
+        if (!gameValid) messages.add('游戏路径已失效');
+        if (!steamValid) messages.add('Steam 路径已失效');
+
         emit(
           state.copyWith(
             isPathInvalidated: true,
-            pathValidationMessage: validationResult.error,
+            isGamePathInvalid: !gameValid,
+            isSteamPathInvalid: !steamValid,
+            pathValidationMessage: messages.join('；'),
           ),
         );
-        LogService.w('检测到已配置的游戏路径失效: ${validationResult.error}');
+        LogService.w(
+          '检测到已配置的路径失效: gameValid=$gameValid, steamValid=$steamValid',
+        );
       } else {
-        // 如果有效，清除失效标记
-        if (state.isPathInvalidated) {
+        // 全部有效：清除失效标记
+        if (state.isPathInvalidated ||
+            state.isGamePathInvalid ||
+            state.isSteamPathInvalid) {
           emit(
             state.copyWith(
               isPathInvalidated: false,
+              isGamePathInvalid: false,
+              isSteamPathInvalid: false,
               pathValidationMessage: null,
             ),
           );
@@ -513,13 +533,15 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         state.copyWith(
           gamePath: event.path,
           gamePathError: null,
-          isPathInvalidated: false, // 重新设置成功后清除失效标记
         ),
       );
 
       // 同步到 GameLauncherService
       await GameLauncherService().setGamePath(event.path);
       LogService.d('游戏路径已设置: ${event.path}');
+
+      // 重新整体校验：仅当所有已配置的路径都有效时，才会清除 isPathInvalidated
+      add(SettingsCheckPathsValidity());
     } catch (e) {
       LogService.e('设置游戏路径失败', e);
       emit(
@@ -553,13 +575,15 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         state.copyWith(
           steamPath: event.path,
           steamPathError: null,
-          isPathInvalidated: false, // 重新设置成功后清除失效标记
         ),
       );
 
       // 同步到 GameLauncherService
       await GameLauncherService().setSteamPath(event.path);
       LogService.d('Steam路径已设置: ${event.path}');
+
+      // 重新整体校验：仅当所有已配置的路径都有效时，才会清除 isPathInvalidated
+      add(SettingsCheckPathsValidity());
     } catch (e) {
       LogService.e('设置Steam路径失败', e);
       emit(
@@ -594,6 +618,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         // 同步到 GameLauncherService
         await _gameLauncherService.setGamePath(gamePath);
         LogService.d('自动检测到游戏路径: $gamePath');
+
+        // 重新整体校验，可能关闭失效弹窗
+        add(SettingsCheckPathsValidity());
       } else {
         emit(
           state.copyWith(
@@ -638,6 +665,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         // 同步到 GameLauncherService
         await _gameLauncherService.setSteamPath(steamPath);
         LogService.d('自动检测到Steam路径: $steamPath');
+
+        // 重新整体校验，可能关闭失效弹窗
+        add(SettingsCheckPathsValidity());
       } else {
         emit(
           state.copyWith(
@@ -746,7 +776,12 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     try {
       await StorageUtils.remove(_keyGamePath);
       emit(state.copyWith(gamePath: '', gamePathError: null));
+      // 重置 GameLauncherService 的检测缓存，避免之后重新检测时返回陈旧的 null 结果
+      _gameLauncherService.resetPathCache();
       LogService.d('游戏路径已清除');
+
+      // 路径清空后视为"未配置"，重新校验以更新失效状态
+      add(SettingsCheckPathsValidity());
     } catch (e) {
       LogService.e('清除游戏路径失败', e);
     }
@@ -759,7 +794,12 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     try {
       await StorageUtils.remove(_keySteamPath);
       emit(state.copyWith(steamPath: '', steamPathError: null));
+      // 重置 GameLauncherService 的检测缓存，避免之后重新检测时返回陈旧的 null 结果
+      _gameLauncherService.resetPathCache();
       LogService.d('Steam路径已清除');
+
+      // 路径清空后视为"未配置"，重新校验以更新失效状态
+      add(SettingsCheckPathsValidity());
     } catch (e) {
       LogService.e('清除Steam路径失败', e);
     }

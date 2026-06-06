@@ -158,6 +158,18 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
 
     // 应用启动时立即连接大厅 WebSocket 并预加载大厅数据
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 进入主页时检查路径是否已失效（处理冷启动场景：
+      // SettingsBloc 在 splash 屏幕期间已完成校验并将 isPathInvalidated 设为 true，
+      // 此时 BlocListener 监听不到 false→true 的转变，需要主动检查初始 state）
+      final settingsState = context.read<SettingsBloc>().state;
+      if (settingsState.isPathInvalidated && mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const PathInvalidDialog(),
+        );
+      }
+
       LobbyNakamaService.instance.initialize();
 
       final bloc = context.read<AnnouncementBloc>();

@@ -128,5 +128,6 @@ export 'widgets/guide/guide_author_bar.dart';
 export 'widgets/guide/guide_status_banner.dart';
 export 'widgets/guide/guide_reading_progress.dart';
 export 'widgets/guide/guide_interaction_dock.dart';
+export 'widgets/skip_warning_dialog.dart';
 export 'widgets/guide/guide_comment_bubble.dart';
 export 'widgets/guide/guide_comment_section.dart';
