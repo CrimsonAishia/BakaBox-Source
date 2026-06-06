@@ -121,7 +121,6 @@ export 'widgets/guide/guide_map_header.dart';
 export 'widgets/guide/guide_compact_card.dart';
 export 'widgets/guide/guide_hero_banner.dart';
 export 'widgets/guide/guide_category_tab_bar.dart';
-export 'widgets/guide/guide_filter_bar.dart';
 export 'widgets/guide/guide_article_card.dart';
 export 'widgets/guide/guide_card_skeleton.dart';
 export 'widgets/guide/guide_pinned_hero_card.dart';

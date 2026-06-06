@@ -316,6 +316,8 @@ class _CoverUploadSlotState extends State<_CoverUploadSlot> {
       // 上传到图床（与 RichTextEditor 走同一服务）
       final uploadResult = await _uploadService.uploadToImageBed(file);
 
+      if (!mounted) return;
+
       // 存为 fileId 引用，与项目其他模块一致（评论 / 攻略正文 / 头像等）
       final ref = ImageUrlService.createFileIdRef(uploadResult.fileId);
       context.read<GuideEditorBloc>().add(UpdateCover(ref));
