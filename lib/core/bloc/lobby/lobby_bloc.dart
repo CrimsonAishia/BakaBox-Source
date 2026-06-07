@@ -18,6 +18,7 @@ import '../../services/lobby_map_loader_service.dart';
 import '../../services/lobby_nakama_service.dart';
 import '../../services/notification_window_service.dart';
 import '../../services/broadcast_notification_service.dart';
+import '../../services/realtime/realtime_server_map_runtime_channel.dart';
 import '../../services/server_address_mapping_service.dart';
 import '../../services/status_window_service.dart';
 import '../../services/steam_user_service.dart';
@@ -69,6 +70,18 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     // 订阅 GSI 状态变化，用于获取游戏内详细状态
     _gsiSubscription = GsiService().stateStream.listen((event) {
       if (_isDisposed) return;
+      add(_LobbyGameStatusChanged(GameStatusService().isGameRunning));
+    });
+
+    // 订阅 server.map.runtime 实时频道：服务端推送的权威换图事件
+    // 用于在本地 ConsoleLog/GSI 滞后或失效时仍能正确刷新 statusText 中的地图名
+    _serverMapRuntimeChannel.subscribe();
+    _serverMapRuntimeSubscription = _serverMapRuntimeChannel.events.listen((
+      _,
+    ) {
+      if (_isDisposed) return;
+      // 收到 snapshot / changed 事件时，重新计算 statusText（_resolveMapNameForServer
+      // 会从频道缓存读取最新地图名，因此无需关心事件具体内容）
       add(_LobbyGameStatusChanged(GameStatusService().isGameRunning));
     });
 
@@ -157,6 +170,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   StreamSubscription<OperationState>? _operationStateSubscription;
   StreamSubscription<ConsoleLogState>? _consoleLogSubscription;
   StreamSubscription<GsiGameState?>? _gsiSubscription;
+
+  /// `server.map.runtime` 频道适配器（单例）
+  final RealtimeServerMapRuntimeChannel _serverMapRuntimeChannel =
+      RealtimeServerMapRuntimeChannel();
+  StreamSubscription<ServerMapRuntimeEvent>? _serverMapRuntimeSubscription;
   Timer? _movementTimer;
   Timer? _bubbleExpiryTimer;
   Timer? _chatCooldownTimer;
@@ -1196,6 +1214,19 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       if (effectiveMapName == null || effectiveMapName.isEmpty) {
         effectiveMapName = ConsoleLogService().currentState.mapName;
       }
+      // 仍然没有时，回退到服务端 realtime 频道推送的地图
+      if (effectiveMapName.isEmpty) {
+        final consoleAddress = ConsoleLogService().currentState.serverAddress;
+        if (consoleAddress.isNotEmpty) {
+          final domainAddress = ServerAddressMappingService().getDomainAddress(
+            consoleAddress,
+          );
+          final entry = _serverMapRuntimeChannel.snapshotFor(domainAddress);
+          if (entry != null && entry.mapName.isNotEmpty) {
+            effectiveMapName = entry.mapName;
+          }
+        }
+      }
       final displayMap = _getMapDisplayName(
         effectiveMapName.isNotEmpty ? effectiveMapName : null,
       );
@@ -1211,18 +1242,31 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   ///
   /// 当 GSI 未提供有意义的状态（_resolveGsiStatusText 返回 null），
   /// 但 ConsoleLogService 显示用户在服务器中时，尝试从多个来源获取地图名：
-  /// 1. ConsoleLogService.currentState.mapName
-  /// 2. GSI 的 map.name（即使 activity 不是 playing，map 数据可能仍然有效）
+  /// 1. `server.map.runtime` 频道（服务端权威推送，最及时，先做 IP→domain 映射后查找）
+  /// 2. ConsoleLogService.currentState.mapName
+  /// 3. GSI 的 map.name（即使 activity 不是 playing，map 数据可能仍然有效）
   String? _resolveMapNameForServer(
     ConsoleLogState consoleState,
     GsiGameState? gsiState,
   ) {
-    // 优先使用 ConsoleLog 的地图名（最可靠，直接从控制台日志解析）
+    // 优先使用服务端 realtime 频道推送的地图（最权威，不依赖本地日志/GSI）
+    final serverAddress = consoleState.serverAddress;
+    if (serverAddress.isNotEmpty) {
+      final domainAddress = ServerAddressMappingService().getDomainAddress(
+        serverAddress,
+      );
+      final entry = _serverMapRuntimeChannel.snapshotFor(domainAddress);
+      if (entry != null && entry.mapName.isNotEmpty) {
+        return _getMapDisplayName(entry.mapName);
+      }
+    }
+
+    // 其次使用 ConsoleLog 的地图名（本地日志解析）
     if (consoleState.mapName.isNotEmpty) {
       return _getMapDisplayName(consoleState.mapName);
     }
 
-    // 其次尝试 GSI 的地图名（GSI 可能有延迟或处于过渡状态）
+    // 最后尝试 GSI 的地图名（GSI 可能有延迟或处于过渡状态）
     if (gsiState != null) {
       final gsiMapName = gsiState.map?.name;
       if (gsiMapName != null && gsiMapName.isNotEmpty) {
@@ -3671,6 +3715,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _operationStateSubscription?.cancel();
     _consoleLogSubscription?.cancel();
     _gsiSubscription?.cancel();
+    _serverMapRuntimeSubscription?.cancel();
+    _serverMapRuntimeSubscription = null;
+    _serverMapRuntimeChannel.unsubscribe();
     _snapshotOnAssetsReceived?.cancel();
     _snapshotOnAssetsReceived = null;
     _assetsTimeoutTimer?.cancel();
