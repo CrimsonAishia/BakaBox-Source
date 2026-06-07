@@ -1562,17 +1562,17 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         // 旧匿名自己：userId='self', isSelf=true, isAnonymous=true
         // 新用户 serverId = loginUserId
         var migratedUsers = state.users;
+        var migratedAllOnline = state.allOnlineUsers;
         if (loginUserId.isNotEmpty && loginUserId != _selfUserId) {
-          // 查找旧匿名自己（userId='self' 且 isSelf=true）
-          final oldSelfIdx = migratedUsers.indexWhere(
-            (u) => u.userId == _selfUserId && u.isSelf,
-          );
-          if (oldSelfIdx >= 0) {
-            // 替换为新的登录用户（保留 userId='self' 但更新所有登录信息）
-            // 注意：LoginSuccessResponse 没有 avatarUrl 字段，保留原有值
-            final oldSelf = migratedUsers[oldSelfIdx];
-            migratedUsers = [
-              ...migratedUsers.sublist(0, oldSelfIdx),
+          // 迁移函数：把列表中的旧匿名自己替换为新登录用户
+          List<LobbyUser> migrateSelf(List<LobbyUser> list) {
+            final idx = list.indexWhere(
+              (u) => u.userId == _selfUserId && u.isSelf,
+            );
+            if (idx < 0) return list;
+            final oldSelf = list[idx];
+            return [
+              ...list.sublist(0, idx),
               oldSelf.copyWith(
                 nickname: loginNickname.isNotEmpty
                     ? loginNickname
@@ -1580,15 +1580,25 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
                 isAnonymous: false,
                 serverUserId: loginUserId,
               ),
-              ...migratedUsers.sublist(oldSelfIdx + 1),
+              ...list.sublist(idx + 1),
             ];
+          }
+
+          final before = migratedUsers;
+          migratedUsers = migrateSelf(migratedUsers);
+          if (!identical(before, migratedUsers)) {
             LogService.d('[LobbyBloc] login.success 迁移匿名自己 -> 登录用户');
+          }
+          // 面板列表同步迁移，避免残留旧 serverUserId 的自己
+          if (migratedAllOnline.isNotEmpty) {
+            migratedAllOnline = migrateSelf(migratedAllOnline);
           }
         }
 
         emit(
           state.copyWith(
             users: migratedUsers,
+            allOnlineUsers: migratedAllOnline,
             isAnonymous: false,
             transientNotice: state.isAnonymous ? '身份升级成功' : '登录成功',
           ),
@@ -2144,39 +2154,50 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         if (oldUserId.isEmpty && newUserId.isEmpty) break;
 
         // 通过 oldUserId 找到对应用户并更新其身份信息
-        final identityUpdatedUsers = state.users
-            .map((user) {
-              // 匹配条件：serverUserId 或 userId 与 oldUserId 相符
-              final matches =
-                  (user.serverUserId != null &&
-                      user.serverUserId == oldUserId) ||
-                  user.userId == oldUserId;
-              if (!matches) return user;
+        LobbyUser applyIdentityChange(LobbyUser user) {
+          // 匹配条件：serverUserId 或 userId 与 oldUserId 相符
+          final matches =
+              (user.serverUserId != null && user.serverUserId == oldUserId) ||
+              user.userId == oldUserId;
+          if (!matches) return user;
 
-              return user.copyWith(
-                nickname: identityNickname.isNotEmpty
-                    ? identityNickname
-                    : user.nickname,
-                avatarUrl: identityAvatarUrl.isNotEmpty
-                    ? identityAvatarUrl
-                    : user.avatarUrl,
-                spriteId: identitySpriteId.isNotEmpty
-                    ? identitySpriteId
-                    : user.spriteId,
-                isAnonymous: identityIsAnonymous,
-                // 更新 serverUserId 为新的 userId（退出登录后变为匿名 UUID）
-                serverUserId: newUserId.isNotEmpty
-                    ? newUserId
-                    : user.serverUserId,
-                // 更新 businessUserId（登出时为空字符串，登录时为新业务 ID）
-                businessUserId: identityBusinessUserId.isEmpty
-                    ? null
-                    : identityBusinessUserId,
-              );
-            })
+          return user.copyWith(
+            nickname: identityNickname.isNotEmpty
+                ? identityNickname
+                : user.nickname,
+            avatarUrl: identityAvatarUrl.isNotEmpty
+                ? identityAvatarUrl
+                : user.avatarUrl,
+            spriteId: identitySpriteId.isNotEmpty
+                ? identitySpriteId
+                : user.spriteId,
+            isAnonymous: identityIsAnonymous,
+            // 更新 serverUserId 为新的 userId（退出登录后变为匿名 UUID）
+            serverUserId: newUserId.isNotEmpty ? newUserId : user.serverUserId,
+            // 更新 businessUserId（登出时为空字符串，登录时为新业务 ID）
+            businessUserId: identityBusinessUserId.isEmpty
+                ? null
+                : identityBusinessUserId,
+          );
+        }
+
+        final identityUpdatedUsers = state.users
+            .map(applyIdentityChange)
             .toList(growable: false);
 
-        emit(state.copyWith(users: _pinSelfSpriteIfPending(identityUpdatedUsers)));
+        // 同步更新 allOnlineUsers，避免面板列表残留旧 serverUserId 导致去重失效
+        final identityUpdatedAllOnline = state.allOnlineUsers.isEmpty
+            ? state.allOnlineUsers
+            : state.allOnlineUsers
+                  .map(applyIdentityChange)
+                  .toList(growable: false);
+
+        emit(
+          state.copyWith(
+            users: _pinSelfSpriteIfPending(identityUpdatedUsers),
+            allOnlineUsers: identityUpdatedAllOnline,
+          ),
+        );
         break;
       case 'move.broadcast':
         var updatedUsers = _applyMoveBroadcast(
@@ -2366,6 +2387,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         final userId = anonChangedResp.userId;
         final isAnonymous = anonChangedResp.isAnonymous;
 
+        // 同步更新 allOnlineUsers，保持面板列表与场景一致
+        final nextAllOnline = state.allOnlineUsers.isEmpty
+            ? state.allOnlineUsers
+            : _applyAnonymousChanged(state.allOnlineUsers, anonChangedResp);
+
         // 清除 anonymous 设置项的 pending 状态
         final updatedPending = Map<String, bool>.from(state.pendingSettings);
         updatedPending.remove('anonymous');
@@ -2377,6 +2403,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         emit(
           state.copyWith(
             users: nextUsers,
+            allOnlineUsers: nextAllOnline,
             isAnonymous: _isSelfServerUserId(userId)
                 ? isAnonymous
                 : state.isAnonymous,
@@ -2760,16 +2787,41 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     });
   }
 
-  /// 通过 serverUserId 判断两个用户是否为同一人
-  /// 优先用 serverUserId 唯一标识匹配；回退到 userId
+  /// 判断两个用户是否为同一人。
+  ///
+  /// 匹配优先级（从强到弱）：
+  /// 1. 「自己」特判：两边都是 self（userId=='self' 或 isSelf）即同一人。
+  ///    自己的 serverUserId 会随身份切换（匿名↔登录、登出）而改变，
+  ///    但 userId 恒为 [_selfUserId]，因此必须优先用此特判，
+  ///    否则 presence.delta 的 joined 帧会因 serverUserId 变化把「自己」
+  ///    当成新用户重复插入。
+  /// 2. businessUserId（账户级稳定 ID）：登录用户即使 serverUserId 变化也能匹配。
+  /// 3. serverUserId / userId 交叉匹配（兜底匿名用户等无 businessUserId 场景）。
   bool _matchesServerUserId(LobbyUser existing, LobbyUser target) {
-    // 情况1：target 有 serverUserId，尝试用它匹配
+    // 情况1：自己 — 用恒定的 user 标识判断，规避 serverUserId 漂移
+    final existingIsSelf = existing.isSelf || existing.userId == _selfUserId;
+    final targetIsSelf = target.isSelf || target.userId == _selfUserId;
+    if (existingIsSelf || targetIsSelf) {
+      return existingIsSelf && targetIsSelf;
+    }
+
+    // 情况2：双方都有 businessUserId 时，用账户级 ID 精确匹配
+    final existingBiz = existing.businessUserId;
+    final targetBiz = target.businessUserId;
+    if (existingBiz != null &&
+        existingBiz.isNotEmpty &&
+        targetBiz != null &&
+        targetBiz.isNotEmpty) {
+      return existingBiz == targetBiz;
+    }
+
+    // 情况3：target 有 serverUserId，尝试用它做交叉匹配
     if (target.serverUserId != null) {
       return existing.serverUserId == target.serverUserId ||
           existing.userId == target.serverUserId ||
           existing.serverUserId == target.userId;
     }
-    // 情况2：target 无 serverUserId，回退到 userId 匹配
+    // 情况4：target 无 serverUserId，回退到 userId 匹配
     return existing.userId == target.userId;
   }
 
