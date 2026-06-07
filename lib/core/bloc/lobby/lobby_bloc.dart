@@ -241,6 +241,13 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   /// 模型切换前的 spriteId（用于 reject 时回滚）
   String? _previousSpriteId;
 
+  /// 用户最后一次请求切换的 spriteId（本地乐观意图的真实来源）
+  ///
+  /// 用于：
+  /// 1. pending 期间把 self 的 spriteId 钉为该值，避免被携带旧值的服务端帧覆盖
+  /// 2. change.success 时判断是否为「最终确认」，防止较早的确认覆盖更新的选择
+  String? _lastRequestedSpriteId;
+
   /// 处理 AuthService 登录状态变化
   void _onAuthStateChanged(bool isLoggedIn) {
     if (_isDisposed) return;
@@ -302,6 +309,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _selfMapId = null;
     _lastSentStatusText = null;
     _previousSpriteId = null;
+    _lastRequestedSpriteId = null;
     _isLobbyEntered = true;
     _isDisposed = false;
     _lastDeltaSeq = null;
@@ -882,6 +890,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     // _previousSpriteId 记录"最后一次服务端确认的 spriteId"
     // 首次切换时初始化为当前值（即服务端已确认的值）
     _previousSpriteId ??= state.selectedSpriteId;
+
+    // 记录用户最后请求的 spriteId（pending 期间作为 self 模型的权威本地值）
+    _lastRequestedSpriteId = event.spriteId;
 
     emit(
       state.copyWith(
@@ -1743,7 +1754,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
                 .toList();
             mergedUsers = [...state.users, ...newUsers];
           } else {
-            mergedUsers = snapshotState.users;
+            // 全量替换：若 snapshot 中某用户缺失 spriteId（空串），用本地已有的
+            // 非空 spriteId 兜底，避免模型被重置为默认值后又恢复造成来回切换。
+            mergedUsers = _preserveSpritesFromPrevious(
+              snapshotState.users,
+              state.users,
+            );
           }
 
           // 如果用户已登录、token 有效，且还没发送过 login，则补发。
@@ -1783,8 +1799,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
               .where((u) => u.isSelf && u.spriteId.isNotEmpty)
               .firstOrNull
               ?.spriteId;
-          final newSelectedSpriteId =
-              selfUserSpriteId ?? state.selectedSpriteId;
+          final newSelectedSpriteId = _resolveSelectedSpriteId(
+            selfUserSpriteId ?? state.selectedSpriteId,
+          );
+
+          // pending 切换期间，钉住 self 的 spriteId，避免被 snapshot 里的旧值覆盖
+          final pinnedMergedUsers = _pinSelfSpriteIfPending(mergedUsers);
 
           // snapshot 收到时 assets 已经在 _requestAssetsAndSnapshot 中处理了
           // 首次 snapshot 收到后立即进入 ready 状态，分页加载不影响页面状态
@@ -1805,7 +1825,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             pageStatus: isFirstSnapshot
                 ? LobbyPageStatus.ready
                 : state.pageStatus,
-            users: mergedUsers,
+            users: pinnedMergedUsers,
             messages: state.isLoadingMore
                 ? state.messages
                 : snapshotState.messages,
@@ -1915,9 +1935,11 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         );
 
         // 如果是自己，同步 selectedSpriteId（服务端知道用户上次用的模型）
-        final newSelectedSpriteId = isSelfUser && user.spriteId.isNotEmpty
-            ? user.spriteId
-            : state.selectedSpriteId;
+        final newSelectedSpriteId = _resolveSelectedSpriteId(
+          isSelfUser && user.spriteId.isNotEmpty
+              ? user.spriteId
+              : state.selectedSpriteId,
+        );
 
         // 构建玩家加入通知（自己加入时不显示通知；从其他地图传送过来时显示传送通知）
         final sourceMapId = presenceJoinResp.sourceMapId;
@@ -1958,7 +1980,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
         emit(
           state.copyWith(
-            users: _upsertUser(state.users, user),
+            users: _pinSelfSpriteIfPending(_upsertUser(state.users, user)),
             selectedSpriteId: newSelectedSpriteId,
             playerNotifications: updatedNotifications,
             allOnlineUsers: updatedAllOnlineUsers,
@@ -2110,7 +2132,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             })
             .toList(growable: false);
 
-        emit(state.copyWith(users: identityUpdatedUsers));
+        emit(state.copyWith(users: _pinSelfSpriteIfPending(identityUpdatedUsers)));
         break;
       case 'move.broadcast':
         var updatedUsers = _applyMoveBroadcast(
@@ -2189,11 +2211,12 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         final changedUserId = spriteChangedResp.userId;
         emit(
           state.copyWith(
-            users: nextUsers,
-            selectedSpriteId:
-                _isSelfServerUserId(changedUserId) && changedSpriteId.isNotEmpty
-                ? changedSpriteId
-                : state.selectedSpriteId,
+            users: _pinSelfSpriteIfPending(nextUsers),
+            selectedSpriteId: _resolveSelectedSpriteId(
+              _isSelfServerUserId(changedUserId) && changedSpriteId.isNotEmpty
+                  ? changedSpriteId
+                  : state.selectedSpriteId,
+            ),
           ),
         );
         break;
@@ -2205,27 +2228,40 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         if (confirmedSpriteId.isNotEmpty) {
           _previousSpriteId = confirmedSpriteId;
 
-          // 如果当前 state 与服务端确认的不一致（reject 回滚后又收到了之前的 success），
-          // 同步到服务端确认值
-          if (state.selectedSpriteId != confirmedSpriteId) {
-            emit(
-              state.copyWith(
-                selectedSpriteId: confirmedSpriteId,
-                isSpriteChangePending: false,
-                users: state.users
-                    .map(
-                      (user) => user.isSelf
-                          ? user.copyWith(spriteId: confirmedSpriteId)
-                          : user,
-                    )
-                    .toList(growable: false),
-              ),
-            );
-          } else {
-            emit(state.copyWith(isSpriteChangePending: false));
+          // 是否为「最终确认」：服务端确认值与用户最后请求值一致。
+          // 存在多个在途切换时（如 A→B→C），较早的 success(B) 会先到达，
+          // 此时不能结束 pending，也不能把选择翻回 B，否则会与后续 success(C)
+          // 造成来回切换。仅当确认值 == 最后请求值时才解除 pending 并对齐。
+          final isFinalConfirmation =
+              _lastRequestedSpriteId == null ||
+              confirmedSpriteId == _lastRequestedSpriteId;
+
+          if (isFinalConfirmation) {
+            _lastRequestedSpriteId = null;
+            // 解除 pending，对齐到服务端确认值（处理 reject 回滚后又收到之前 success 的情况）
+            if (state.selectedSpriteId != confirmedSpriteId) {
+              emit(
+                state.copyWith(
+                  selectedSpriteId: confirmedSpriteId,
+                  isSpriteChangePending: false,
+                  users: state.users
+                      .map(
+                        (user) => user.isSelf
+                            ? user.copyWith(spriteId: confirmedSpriteId)
+                            : user,
+                      )
+                      .toList(growable: false),
+                ),
+              );
+            } else {
+              emit(state.copyWith(isSpriteChangePending: false));
+            }
           }
+          // 非最终确认（中间态 success）：保持 pending 与本地乐观值不变，
+          // 等待最后请求值对应的 success/reject。
         } else {
           _previousSpriteId = state.selectedSpriteId;
+          _lastRequestedSpriteId = null;
           emit(state.copyWith(isSpriteChangePending: false));
         }
         break;
@@ -2253,6 +2289,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         // 回滚到切换前的 spriteId
         final rollbackSpriteId = _previousSpriteId;
         _previousSpriteId = null;
+        _lastRequestedSpriteId = null;
 
         if (rollbackSpriteId != null &&
             rollbackSpriteId != state.selectedSpriteId) {
@@ -2708,9 +2745,52 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   List<LobbyUser> _replaceUser(List<LobbyUser> users, LobbyUser targetUser) {
     return users
         .map(
-          (user) => _matchesServerUserId(user, targetUser) ? targetUser : user,
+          (user) => _matchesServerUserId(user, targetUser)
+              ? _mergePreservingSprite(user, targetUser)
+              : user,
         )
         .toList(growable: false);
+  }
+
+  /// 合并用户时保护 spriteId：
+  ///
+  /// 服务端的部分 presence 重广播帧（presence.join / presence.delta /
+  /// snapshot）可能不携带 sprite_id（proto3 string 缺省为空串）。若直接整体
+  /// 替换，会把已有的正确模型覆盖成空，触发组件回退到默认模型 sprite_01，
+  /// 下一帧权威数据又恢复，从而表现为模型在「真实模型 ↔ 默认模型」之间
+  /// 反复来回切换（间隔不固定，取决于 presence 帧到达时刻）。
+  ///
+  /// 因此：当传入帧的 spriteId 为空、而本地已有非空 spriteId 时，保留本地值。
+  LobbyUser _mergePreservingSprite(LobbyUser existing, LobbyUser incoming) {
+    if (incoming.spriteId.isEmpty && existing.spriteId.isNotEmpty) {
+      return incoming.copyWith(spriteId: existing.spriteId);
+    }
+    return incoming;
+  }
+
+  /// 全量替换用户列表时，用旧列表中的非空 spriteId 兜底新列表中的空 spriteId。
+  /// 用于 snapshot 等整表替换场景，防止缺失字段导致模型被重置。
+  List<LobbyUser> _preserveSpritesFromPrevious(
+    List<LobbyUser> incomingUsers,
+    List<LobbyUser> previousUsers,
+  ) {
+    if (previousUsers.isEmpty) return incomingUsers;
+
+    var changed = false;
+    final result = incomingUsers
+        .map((incoming) {
+          if (incoming.spriteId.isNotEmpty) return incoming;
+          final prev = previousUsers
+              .where((p) => _matchesServerUserId(p, incoming))
+              .firstOrNull;
+          if (prev != null && prev.spriteId.isNotEmpty) {
+            changed = true;
+            return incoming.copyWith(spriteId: prev.spriteId);
+          }
+          return incoming;
+        })
+        .toList(growable: false);
+    return changed ? result : incomingUsers;
   }
 
   List<LobbyUser> _upsertUser(List<LobbyUser> users, LobbyUser targetUser) {
@@ -3197,6 +3277,39 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     ]);
 
     return _ChatState(users: updatedUsers, messages: finalMessages);
+  }
+
+  /// 在 pending 切换窗口内，将 self 用户的 spriteId 钉为本地乐观值。
+  ///
+  /// 服务端的部分帧（snapshot / presence.join / presence.delta /
+  /// identity.changed 等）可能携带切换前的旧 spriteId。若直接采用，会把乐观
+  /// 更新冲掉，导致角色模型在「新→旧→新」之间来回切换。pending 期间以本地
+  /// 最后请求值为准，等待服务端最终 success/reject 后再解钉。
+  List<LobbyUser> _pinSelfSpriteIfPending(List<LobbyUser> users) {
+    if (!state.isSpriteChangePending) return users;
+    final pinnedSpriteId = _lastRequestedSpriteId ?? state.selectedSpriteId;
+    if (pinnedSpriteId.isEmpty) return users;
+
+    var changed = false;
+    final result = users
+        .map((user) {
+          if (user.isSelf && user.spriteId != pinnedSpriteId) {
+            changed = true;
+            return user.copyWith(spriteId: pinnedSpriteId);
+          }
+          return user;
+        })
+        .toList(growable: false);
+    return changed ? result : users;
+  }
+
+  /// 计算同步后的 selectedSpriteId：pending 期间保持本地乐观值，
+  /// 忽略服务端帧里 self 携带的旧 spriteId。
+  String _resolveSelectedSpriteId(String serverCandidate) {
+    if (state.isSpriteChangePending) {
+      return _lastRequestedSpriteId ?? state.selectedSpriteId;
+    }
+    return serverCandidate;
   }
 
   List<LobbyUser> _applySpriteChanged(
@@ -4090,7 +4203,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
     emit(
       state.copyWith(
-        users: updatedUsers,
+        users: _pinSelfSpriteIfPending(updatedUsers),
         playerNotifications: updatedNotifications,
         allOnlineUsers: updatedAllOnline,
       ),

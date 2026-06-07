@@ -555,7 +555,10 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     // 避免服务端反复广播+回滚时产生无意义的重复切换
     final newSpriteId = user.spriteId;
     final effectiveSpriteId = _queuedSpriteSwitch?.spriteId ?? _currentSpriteId;
-    final spriteIdChanged = effectiveSpriteId != newSpriteId;
+    // 防御：空 spriteId 不是合法模型意图（服务端帧可能缺失该字段），忽略，
+    // 避免被误判为「切换到默认模型」后又恢复，造成模型来回切换。
+    final spriteIdChanged =
+        newSpriteId.isNotEmpty && effectiveSpriteId != newSpriteId;
     if (spriteIdChanged) {
       debugPrint(
         '[LobbyPlayerComponent] 检测到模型切换: $effectiveSpriteId -> $newSpriteId',
