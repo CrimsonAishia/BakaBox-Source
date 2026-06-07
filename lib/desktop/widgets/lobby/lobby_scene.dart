@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/bloc/lobby/lobby_bloc.dart';
@@ -218,7 +219,15 @@ class _LobbySceneState extends State<LobbyScene> with TickerProviderStateMixin {
               });
             }
           },
-          child: _buildMainContent(isDark),
+          child: Stack(
+            children: [
+              Positioned.fill(child: _buildMainContent(isDark)),
+              // 聚焦角色时的周围模糊高亮特效
+              Positioned.fill(
+                child: IgnorePointer(child: _buildFocusOverlay()),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -256,6 +265,13 @@ class _LobbySceneState extends State<LobbyScene> with TickerProviderStateMixin {
       gameFactory: () => _game!,
       backgroundBuilder: (_) => const SizedBox.expand(),
     );
+  }
+
+  /// 聚焦特效层：每帧从游戏拉取聚光灯位置，舞台剧式聚光（周围变暗 + 顶部光束）
+  Widget _buildFocusOverlay() {
+    final game = _game;
+    if (game == null) return const SizedBox.shrink();
+    return _LobbyFocusSpotlightOverlay(game: game);
   }
 }
 
@@ -349,5 +365,195 @@ class _LoadingPlaceholder extends StatelessWidget {
       case MapLoadStatus.unloaded:
         return '等待加载...';
     }
+  }
+}
+
+/// 舞台剧式聚光灯特效层
+///
+/// 当聚焦某个角色时：
+/// 1. 整个场景变暗（暗色蒙版）
+/// 2. 角色周围保留一圈柔和的亮区（聚光池）
+/// 3. 从屏幕顶部向角色打下一束渐隐的光束（舞台灯效果）
+///
+/// 自带 [Ticker] 每帧主动从 [LobbyGame] 拉取聚光灯位置，
+/// 避免在 Flame 游戏循环里触发 Flutter 重建导致的 setState during build 异常。
+class _LobbyFocusSpotlightOverlay extends StatefulWidget {
+  final LobbyGame game;
+
+  const _LobbyFocusSpotlightOverlay({required this.game});
+
+  @override
+  State<_LobbyFocusSpotlightOverlay> createState() =>
+      _LobbyFocusSpotlightOverlayState();
+}
+
+class _LobbyFocusSpotlightOverlayState
+    extends State<_LobbyFocusSpotlightOverlay>
+    with SingleTickerProviderStateMixin {
+  late final Ticker _ticker;
+
+  /// 当前聚光灯信息（每帧从游戏拉取）
+  LobbyFocusSpotlight? _spotlight;
+
+  /// 最近一次有效的聚光灯信息（用于淡出时保持位置）
+  LobbyFocusSpotlight? _lastSpotlight;
+
+  /// 0~1 特效强度（用于淡入淡出）
+  double _intensity = 0.0;
+
+  Duration _lastTick = Duration.zero;
+
+  static const double _fadeInSpeed = 3.2; // 约 0.31 秒淡入
+  static const double _fadeOutSpeed = 4.5; // 约 0.22 秒淡出
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = createTicker(_onTick)..start();
+  }
+
+  void _onTick(Duration elapsed) {
+    final dt = _lastTick == Duration.zero
+        ? 0.0
+        : (elapsed - _lastTick).inMicroseconds / 1e6;
+    _lastTick = elapsed;
+
+    final next = widget.game.computeFocusSpotlight();
+    if (next != null) _lastSpotlight = next;
+
+    // 目标强度：有聚焦 -> 1，无聚焦 -> 0
+    final target = next != null ? 1.0 : 0.0;
+    double newIntensity = _intensity;
+    if (target > _intensity) {
+      newIntensity = (_intensity + dt * _fadeInSpeed).clamp(0.0, 1.0);
+    } else if (target < _intensity) {
+      newIntensity = (_intensity - dt * _fadeOutSpeed).clamp(0.0, 1.0);
+    }
+
+    final changed = next != _spotlight || newIntensity != _intensity;
+    if (changed && mounted) {
+      setState(() {
+        _spotlight = next;
+        _intensity = newIntensity;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_intensity <= 0.001) return const SizedBox.shrink();
+    final spotlight = _spotlight ?? _lastSpotlight;
+    if (spotlight == null) return const SizedBox.shrink();
+
+    return CustomPaint(
+      painter: _SpotlightPainter(spotlight: spotlight, intensity: _intensity),
+    );
+  }
+}
+
+/// 绘制舞台聚光灯：暗场蒙版 + 中心亮池 + 顶部光束
+class _SpotlightPainter extends CustomPainter {
+  final LobbyFocusSpotlight spotlight;
+
+  /// 0~1 特效强度（用于淡入淡出）
+  final double intensity;
+
+  _SpotlightPainter({required this.spotlight, required this.intensity});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = spotlight.center;
+    final radius = spotlight.radius;
+    final fullRect = Offset.zero & size;
+
+    // ── 1. 暗场蒙版：整体变暗，仅在角色周围精确挖出一个柔和亮池 ──
+    // 用 saveLayer + dstOut 精确控制亮池半径（像素级），只聚焦这个人。
+    canvas.saveLayer(fullRect, Paint());
+    // 全屏暗色
+    canvas.drawRect(
+      fullRect,
+      Paint()..color = Colors.black.withValues(alpha: 0.74 * intensity),
+    );
+    // 挖空中心亮池（dstOut：径向渐变，中心完全清除、边缘平滑过渡）
+    final holePaint = Paint()
+      ..blendMode = BlendMode.dstOut
+      ..shader = RadialGradient(
+        colors: [
+          Colors.black,
+          Colors.black,
+          Colors.black.withValues(alpha: 0.0),
+        ],
+        stops: const [0.0, 0.62, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: radius));
+    canvas.drawCircle(center, radius, holePaint);
+    canvas.restore();
+
+    // ── 2. 顶部光束：从屏幕顶部向角色打下的梯形光锥 ──
+    _drawLightBeam(canvas, size, center, radius);
+
+    // ── 3. 中心亮池：角色身上的柔和高光，强化聚光感 ──
+    final poolPaint = Paint()
+      ..blendMode = BlendMode.plus
+      ..shader = RadialGradient(
+        colors: [
+          const Color(0xFFFFF6D8).withValues(alpha: 0.20 * intensity),
+          const Color(0xFFFFF1C4).withValues(alpha: 0.07 * intensity),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.5, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: radius));
+    canvas.drawCircle(center, radius, poolPaint);
+  }
+
+  /// 绘制从顶部打向角色的梯形光束
+  void _drawLightBeam(
+    Canvas canvas,
+    Size size,
+    Offset center,
+    double radius,
+  ) {
+    // 光束顶部（屏幕外上方）较窄，底部（角色处）略宽，形成贴合角色的光锥
+    final topWidth = radius * 0.4;
+    final bottomWidth = radius * 1.25;
+    final topY = -40.0;
+    final bottomY = center.dy + radius * 0.45;
+    final apexX = center.dx;
+
+    final beamPath = Path()
+      ..moveTo(apexX - topWidth / 2, topY)
+      ..lineTo(apexX + topWidth / 2, topY)
+      ..lineTo(apexX + bottomWidth / 2, bottomY)
+      ..lineTo(apexX - bottomWidth / 2, bottomY)
+      ..close();
+
+    // 光束渐变：顶部更亮，向下逐渐淡出
+    final beamPaint = Paint()
+      ..blendMode = BlendMode.plus
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          const Color(0xFFFFF8E1).withValues(alpha: 0.18 * intensity),
+          const Color(0xFFFFF3D0).withValues(alpha: 0.10 * intensity),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.55, 1.0],
+      ).createShader(Rect.fromLTRB(apexX - bottomWidth / 2, topY,
+          apexX + bottomWidth / 2, bottomY))
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14);
+
+    canvas.drawPath(beamPath, beamPaint);
+  }
+
+  @override
+  bool shouldRepaint(_SpotlightPainter oldDelegate) {
+    return oldDelegate.spotlight != spotlight ||
+        oldDelegate.intensity != intensity;
   }
 }

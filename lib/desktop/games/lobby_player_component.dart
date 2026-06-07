@@ -106,6 +106,9 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   bool _isContextMenuTarget = false;
   double _contextMenuPulse = 0.0; // 0~1 脉冲动画进度
 
+  /// 自己角色的持续呼吸高亮相位（仅 isSelf 时驱动）
+  double _selfGlowPhase = 0.0;
+
   // ========== 聊天气泡动画系统 ==========
   /// 气泡整体透明度
   double _bubbleOpacity = 0.0;
@@ -161,6 +164,20 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
   /// 当前渲染位置（插值中的实际位置，供外部相机跟随使用）
   LobbyPosition get currentRenderPosition => _currentRenderPosition;
+
+  /// 角色身体中心点的世界坐标（供聚焦聚光灯定位使用）
+  /// 组件 anchor 为 bottomCenter，身体槽中心在组件内部偏上的位置。
+  Vector2 get characterCenterWorld {
+    final centerY =
+        _currentRenderPosition.y -
+        size.y +
+        _characterSlotTopY +
+        _characterDisplayHeight / 2;
+    return Vector2(_currentRenderPosition.x, centerY);
+  }
+
+  /// 角色贴图显示高度（供外部计算聚光灯半径）
+  double get characterDisplayHeight => _characterDisplayHeight;
 
   // 移动插值速度必须与 LobbyBloc._moveSpeed (2.8) 保持一致，避免判断时机不同导致抖动
   static const double _moveSpeed = 2.8;
@@ -860,6 +877,12 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       _contextMenuPulse += dt * 4.0; // 约 0.25 秒一个周期
       if (_contextMenuPulse > 1.0) _contextMenuPulse -= 1.0;
     }
+
+    // 自己角色的呼吸高亮相位（约 2 秒一个完整呼吸周期）
+    if (_user.isSelf) {
+      _selfGlowPhase += dt * 0.5;
+      if (_selfGlowPhase > 1.0) _selfGlowPhase -= 1.0;
+    }
   }
 
   /// ========== 行走节奏动画实现（方案一）==========
@@ -1196,8 +1219,8 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
 
   @override
   void render(Canvas canvas) {
-    // 关注用户常驻高亮描边、右键菜单目标或悬停高亮
-    if (_isContextMenuTarget || _isHovered || _isFollowed) {
+    // 关注用户常驻高亮描边、右键菜单目标、悬停高亮，或自己角色的专属高亮
+    if (_isContextMenuTarget || _isHovered || _isFollowed || _user.isSelf) {
       _renderSpriteOutline(canvas);
     }
 
@@ -1247,13 +1270,20 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       outlineColor = Colors.white.withValues(alpha: 0.95 * _spriteOpacity);
       outlineWidth = 2.0;
       glowAlpha = 0.4 * _spriteOpacity;
-    } else {
+    } else if (_isFollowed) {
       // 关注用户：金黄色常驻描边
       outlineColor = const Color(
         0xFFFFD740,
       ).withValues(alpha: 0.75 * _spriteOpacity);
       outlineWidth = 1.5;
       glowAlpha = 0.3 * _spriteOpacity;
+    } else {
+      // 自己角色：青绿色呼吸描边（专属，区别于关注/聚焦/悬停）
+      final breath = (math.sin(_selfGlowPhase * math.pi * 2) + 1.0) / 2.0;
+      final alpha = (0.55 + breath * 0.35) * _spriteOpacity;
+      outlineColor = const Color(0xFF18FFC9).withValues(alpha: alpha);
+      outlineWidth = 2.0 + breath * 0.8;
+      glowAlpha = (0.35 + breath * 0.25) * _spriteOpacity;
     }
 
     // 创建纯色滤镜 Paint：保留图片透明度，将不透明像素替换为 outlineColor
@@ -1261,7 +1291,15 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       ..colorFilter = ColorFilter.mode(outlineColor, BlendMode.srcIn);
 
     // 外发光 Paint（模糊效果增强视觉）
-    final glowBlurRadius = _isContextMenuTarget ? 6.0 : 3.0;
+    final double glowBlurRadius;
+    if (_isContextMenuTarget) {
+      glowBlurRadius = 6.0;
+    } else if (!_isHovered && !_isFollowed && _user.isSelf) {
+      // 自己角色发光更柔和、扩散更大
+      glowBlurRadius = 7.0;
+    } else {
+      glowBlurRadius = 3.0;
+    }
     final glowPaint = Paint()
       ..colorFilter = ColorFilter.mode(
         outlineColor.withValues(alpha: glowAlpha),
