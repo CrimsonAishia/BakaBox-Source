@@ -1047,6 +1047,32 @@ class LobbyGame extends FlameGame
     _checkContextMenuDistance();
   }
 
+  /// 计算当前聚焦角色在屏幕上的聚光灯位置与半径（无聚焦返回 null）。
+  /// 由 LobbyScene 的特效层每帧主动拉取，避免在游戏循环中触发 Flutter 重建。
+  LobbyFocusSpotlight? computeFocusSpotlight() {
+    // onLoad 完成前 _cameraComponent 等尚未初始化，避免 LateInitializationError
+    if (!_isInitialized) return null;
+
+    final focusedId = _focusedUserId;
+    if (focusedId == null) return null;
+
+    final comp = _playerComponents[focusedId];
+    if (comp == null || comp.isRemoved) return null;
+
+    // 世界坐标 -> 屏幕坐标：减去相机偏移
+    final cameraOffset = _cameraComponent.viewfinder.position;
+    final worldCenter = comp.characterCenterWorld;
+    final screenCenter = Offset(
+      worldCenter.x - cameraOffset.x,
+      worldCenter.y - cameraOffset.y,
+    );
+
+    // 高亮半径：贴合角色本身，略大一点留出余量
+    final radius = comp.characterDisplayHeight * 1.2 + 32.0;
+
+    return LobbyFocusSpotlight(center: screenCenter, radius: radius);
+  }
+
   /// 检查右键菜单目标玩家是否移动超出范围
   void _checkContextMenuDistance() {
     if (_contextMenuTarget == null || _contextMenuTargetOriginPos == null) {
@@ -1082,6 +1108,24 @@ class LobbyGame extends FlameGame
     _pendingUserIds.clear();
     super.onRemove();
   }
+}
+
+/// 聚焦聚光灯信息：屏幕坐标中心点与高亮半径。
+/// 用于在聚焦某个角色时，对周围场景做模糊处理并在中心保留清晰高亮区域。
+class LobbyFocusSpotlight {
+  final Offset center;
+  final double radius;
+
+  const LobbyFocusSpotlight({required this.center, required this.radius});
+
+  @override
+  bool operator ==(Object other) =>
+      other is LobbyFocusSpotlight &&
+      other.center == center &&
+      other.radius == radius;
+
+  @override
+  int get hashCode => Object.hash(center, radius);
 }
 
 /// 背景层组件：负责渲染地图背景图片
