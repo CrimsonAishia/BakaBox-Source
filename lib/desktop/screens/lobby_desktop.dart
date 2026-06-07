@@ -1141,6 +1141,54 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
     return searchedUsers.where((u) => _matchesFilter(u, filter)).length;
   }
 
+  /// 兜底去重，确保列表中同一用户只出现一次。
+  ///
+  /// 去重键优先级：businessUserId（账户级稳定 ID）> userId。
+  /// 同时保证最多只有一个"自己"（isSelf），并且当某个非 self 记录与 self
+  /// 共享同一 businessUserId 时（例如 online.stats 自身识别失败、本地注入的
+  /// self 与服务端返回的同账号记录并存）也会被折叠，避免身份切换/丢帧造成
+  /// 重复"自己"导致点击高亮多行或多行显示"你"标签。
+  /// 保留各分组首次出现的元素，维持原有排序。
+  List<LobbyUser> _dedupUsers(List<LobbyUser> users) {
+    // 先确定"自己"的账户级 ID，用于折叠同账号的非 self 记录
+    String? selfBizId;
+    for (final user in users) {
+      if (user.isSelf &&
+          user.businessUserId != null &&
+          user.businessUserId!.isNotEmpty) {
+        selfBizId = user.businessUserId;
+        break;
+      }
+    }
+
+    final seen = <String>{};
+    var selfKept = false;
+    final result = <LobbyUser>[];
+    for (final user in users) {
+      if (user.isSelf) {
+        if (selfKept) continue;
+        selfKept = true;
+        result.add(user);
+        continue;
+      }
+      // 非 self 但与自己同账号 → 视为重复的"自己"，丢弃
+      if (selfBizId != null &&
+          user.businessUserId != null &&
+          user.businessUserId!.isNotEmpty &&
+          user.businessUserId == selfBizId) {
+        continue;
+      }
+      final key =
+          (user.businessUserId != null && user.businessUserId!.isNotEmpty)
+          ? 'biz_${user.businessUserId}'
+          : 'uid_${user.userId}';
+      if (seen.add(key)) {
+        result.add(user);
+      }
+    }
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1171,6 +1219,9 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
             if (!aFollowed && bFollowed) return 1;
             return a.displayName.compareTo(b.displayName);
           });
+    // 兜底去重：防止身份切换/丢帧场景下同一用户（尤其是"自己"）重复出现，
+    // 导致点击一个高亮多行、或多行显示"你"标签。
+    final dedupedUsers = _dedupUsers(displayUsers);
 
     return Row(
       children: [
@@ -1252,9 +1303,9 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.symmetric(vertical: 8),
-                        itemCount: displayUsers.length,
+                        itemCount: dedupedUsers.length,
                         itemBuilder: (context, index) {
-                          final user = displayUsers[index];
+                          final user = dedupedUsers[index];
                           final isFollowed = _followedIds.contains(
                             user.businessUserId,
                           );
@@ -1277,6 +1328,13 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
                                 user.mapId;
                           }
                           return _PlayerListTile(
+                            // 稳定 key：去重后 businessUserId/userId 唯一，
+                            // 避免列表重排时 StatefulWidget 状态错位到相邻用户
+                            key: ValueKey(
+                              user.businessUserId?.isNotEmpty == true
+                                  ? 'biz_${user.businessUserId}'
+                                  : 'uid_${user.userId}',
+                            ),
                             user: user,
                             isFollowed: isFollowed,
                             isHighlighted: isHighlighted,
@@ -1536,6 +1594,7 @@ class _PlayerListTile extends StatefulWidget {
   final VoidCallback? onSelfTap;
 
   const _PlayerListTile({
+    super.key,
     required this.user,
     this.isFollowed = false,
     this.isHighlighted = false,
