@@ -76,6 +76,16 @@ class RealtimeService {
   final StreamController<RealtimeForceLogoutPayload> _forceLogoutController =
       StreamController<RealtimeForceLogoutPayload>.broadcast();
 
+  /// 重连成功流（仅在断线后重新建立连接时触发，首次连接不触发）
+  ///
+  /// 长连接只在数据变化时推送，断线期间发生的变更不会补发。
+  /// 对于「订阅时不回放 snapshot」的频道（map.info / announcements /
+  /// notifications / workshop.changelog），业务侧应监听此流，
+  /// 在重连成功后通过各自的 REST 接口主动对账一次，防止数据不及时。
+  /// 带 snapshot 的频道（server.map.runtime / score.updates）靠重订阅自动补齐，无需处理。
+  final StreamController<void> _reconnectedController =
+      StreamController<void>.broadcast();
+
   /// 重连延迟（指数退避）
   Duration _nextReconnectDelay = _initialReconnectDelay;
 
@@ -84,6 +94,12 @@ class RealtimeService {
 
   /// 是否已启动（调用 [start] 后置 true）
   bool _started = false;
+
+  /// 是否曾经成功建立过连接（收到至少一次 welcome）
+  ///
+  /// 用于区分「首次连接」与「断线重连」：首次连接业务侧通常已在初始化时
+  /// 加载过数据，无需重复对账；只有重连才需要补拉。
+  bool _hasConnectedBefore = false;
 
   /// 当前连接所使用的 token（用于检测 token 变化时主动重连）
   String? _connectedToken;
@@ -112,6 +128,11 @@ class RealtimeService {
   /// 强制登出事件流（服务端 force_logout）
   Stream<RealtimeForceLogoutPayload> get forceLogoutStream =>
       _forceLogoutController.stream;
+
+  /// 重连成功事件流（仅断线重连触发，首次连接不触发）
+  ///
+  /// change-only 频道的业务侧可监听此流，在重连后主动调一次 REST 对账。
+  Stream<void> get reconnectedStream => _reconnectedController.stream;
 
   /// 启动服务（应用启动时调用一次）
   Future<void> start() async {
@@ -188,6 +209,7 @@ class RealtimeService {
     _channelEventStreams.clear();
     await _connectionStateController.close();
     await _forceLogoutController.close();
+    await _reconnectedController.close();
     _setConnectionState(RealtimeConnectionState.disposed);
   }
 
@@ -385,6 +407,16 @@ class RealtimeService {
 
     // 重连后补发所有引用计数 > 0 的频道订阅
     _resubscribeAll();
+
+    // 区分首次连接与断线重连：仅重连时通知业务侧主动对账一次
+    if (_hasConnectedBefore) {
+      LogService.i('[Realtime] 重连成功，通知业务侧对账');
+      if (!_reconnectedController.isClosed) {
+        _reconnectedController.add(null);
+      }
+    } else {
+      _hasConnectedBefore = true;
+    }
   }
 
   void _handleAuthAck(RealtimeIncomingMessage msg) {
