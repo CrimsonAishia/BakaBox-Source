@@ -166,4 +166,93 @@ class CharacterGalleryTheme {
         ? const Color(0xFFCE93D8) // 暗色模式：浅紫色
         : const Color(0xFF9C27B0); // 浅色模式：深紫色
   }
+
+  // 颜色按字段语义选取，避免与上面已有的 cooldown/damage/P点/B点/range/special 撞色。
+
+  /// 弹幕初速颜色（青色系，流动/速度感）
+  static Color getSpeedColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF4DD0E1) // 暗色模式：浅 cyan
+        : const Color(0xFF0097A7); // 浅色模式：深 cyan
+  }
+
+  /// 弹幕数量颜色（蓝紫色系，群体感）
+  static Color getCountColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF9575CD) // 暗色模式：浅蓝紫
+        : const Color(0xFF5E35B1); // 浅色模式：深蓝紫
+  }
+
+  /// 散射角度颜色（黄绿色系，扇形/光线感）
+  static Color getAngleColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFFC0CA33) // 暗色模式：亮黄绿
+        : const Color(0xFF827717); // 浅色模式：深橄榄
+  }
+
+  /// 穿刺次数颜色（玫红系，锐利穿透感）
+  static Color getPunctureColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFFF06292) // 暗色模式：粉玫红
+        : const Color(0xFFAD1457); // 浅色模式：深玫红
+  }
+
+  /// 反弹次数颜色（金黄系，弹性活力感）
+  static Color getBounceColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFFFFF176) // 暗色模式：浅柠檬黄
+        : const Color(0xFFFBC02D); // 浅色模式：金黄
+  }
+
+  /// 影响范围颜色（火橙红系，爆炸扩散感）
+  static Color getExplodeColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFFFF8A65) // 暗色模式：浅橙红
+        : const Color(0xFFD84315); // 浅色模式：深橙红
+  }
+
+  /// 持续时间颜色（茶褐系，沙漏/时间感）
+  static Color getHoldTimeColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFFA1887F) // 暗色模式：浅茶褐
+        : const Color(0xFF6D4C41); // 浅色模式：深茶褐
+  }
+
+  /// 追踪转向颜色（翠绿系，瞄准锁定感）
+  static Color getTrackSpeedColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF81C784) // 暗色模式：浅翠绿
+        : const Color(0xFF2E7D32); // 浅色模式：深翠绿
+  }
+
+  /// 内置CD逻辑颜色（蓝灰系，配置/中性标志）
+  static Color getCustomCdColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFFB0BEC5) // 暗色模式：浅蓝灰
+        : const Color(0xFF546E7A); // 浅色模式：深蓝灰
+  }
+
+  /// 符卡/技能整卡蒙版装饰
+  static BoxDecoration getCardBottomGradientDecoration(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: isDark
+            ? [
+                Colors.black.withValues(alpha: 0.0),
+                Colors.black.withValues(alpha: 0.1),
+                Colors.black.withValues(alpha: 0.8),
+              ]
+            : [
+                Colors.white.withValues(alpha: 0.0),
+                Colors.white.withValues(alpha: 0.15),
+                Colors.white.withValues(alpha: 0.96),
+              ],
+        // 加深拐点上移到 0.3，给两排 stats 留出足够蒙版高度
+        stops: const [0.0, 0.3, 1.0],
+      ),
+    );
+  }
 }

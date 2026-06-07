@@ -84,6 +84,18 @@ SpellCard _$SpellCardFromJson(Map<String, dynamic> json) => SpellCard(
   cooldown: (json['cooldown'] as num?)?.toDouble(),
   damage: json['damage'] as String?,
   tips: (json['tips'] as List<dynamic>?)?.map((e) => e as String).toList(),
+  speed: (json['speed'] as num?)?.toDouble(),
+  count: (json['count'] as num?)?.toInt(),
+  angle: (json['angle'] as num?)?.toDouble(),
+  customCd: (json['customCd'] as num?)?.toDouble(),
+  puncture: (json['puncture'] as num?)?.toInt(),
+  bounce: (json['bounce'] as num?)?.toInt(),
+  explode: (json['explode'] as num?)?.toDouble(),
+  holdTime: (json['holdTime'] as num?)?.toDouble(),
+  trackSpeed: (json['trackSpeed'] as num?)?.toDouble(),
+  exclusive: json['exclusive'] as bool?,
+  chat: json['chat'] as bool?,
+  customSpellSound: json['customSpellSound'] as bool?,
 );
 
 Map<String, dynamic> _$SpellCardToJson(SpellCard instance) => <String, dynamic>{
@@ -103,6 +115,18 @@ Map<String, dynamic> _$SpellCardToJson(SpellCard instance) => <String, dynamic>{
   'cooldown': instance.cooldown,
   'damage': instance.damage,
   'tips': instance.tips,
+  'speed': instance.speed,
+  'count': instance.count,
+  'angle': instance.angle,
+  'customCd': instance.customCd,
+  'puncture': instance.puncture,
+  'bounce': instance.bounce,
+  'explode': instance.explode,
+  'holdTime': instance.holdTime,
+  'trackSpeed': instance.trackSpeed,
+  'exclusive': instance.exclusive,
+  'chat': instance.chat,
+  'customSpellSound': instance.customSpellSound,
 };
 
 const _$SpellCardTypeEnumMap = {
@@ -571,6 +595,15 @@ SpellCardEditItem _$SpellCardEditItemFromJson(Map<String, dynamic> json) =>
       previewType: json['previewType'] as String?,
       previewFileId: (json['previewFileId'] as num?)?.toInt(),
       previewVideoUrl: json['previewVideoUrl'] as String?,
+      speed: (json['speed'] as num?)?.toDouble(),
+      count: (json['count'] as num?)?.toInt(),
+      angle: (json['angle'] as num?)?.toDouble(),
+      customCd: (json['customCd'] as num?)?.toDouble(),
+      puncture: (json['puncture'] as num?)?.toInt(),
+      bounce: (json['bounce'] as num?)?.toInt(),
+      explode: (json['explode'] as num?)?.toDouble(),
+      holdTime: (json['holdTime'] as num?)?.toDouble(),
+      trackSpeed: (json['trackSpeed'] as num?)?.toDouble(),
     );
 
 Map<String, dynamic> _$SpellCardEditItemToJson(SpellCardEditItem instance) =>
@@ -585,6 +618,15 @@ Map<String, dynamic> _$SpellCardEditItemToJson(SpellCardEditItem instance) =>
       'previewType': instance.previewType,
       'previewFileId': instance.previewFileId,
       'previewVideoUrl': instance.previewVideoUrl,
+      'speed': instance.speed,
+      'count': instance.count,
+      'angle': instance.angle,
+      'customCd': instance.customCd,
+      'puncture': instance.puncture,
+      'bounce': instance.bounce,
+      'explode': instance.explode,
+      'holdTime': instance.holdTime,
+      'trackSpeed': instance.trackSpeed,
     };
 
 SpellCardCreateItem _$SpellCardCreateItemFromJson(Map<String, dynamic> json) =>
@@ -601,6 +643,15 @@ SpellCardCreateItem _$SpellCardCreateItemFromJson(Map<String, dynamic> json) =>
       previewType: json['previewType'] as String?,
       previewFileId: (json['previewFileId'] as num?)?.toInt(),
       previewVideoUrl: json['previewVideoUrl'] as String?,
+      speed: (json['speed'] as num?)?.toDouble(),
+      count: (json['count'] as num?)?.toInt(),
+      angle: (json['angle'] as num?)?.toDouble(),
+      customCd: (json['customCd'] as num?)?.toDouble(),
+      puncture: (json['puncture'] as num?)?.toInt(),
+      bounce: (json['bounce'] as num?)?.toInt(),
+      explode: (json['explode'] as num?)?.toDouble(),
+      holdTime: (json['holdTime'] as num?)?.toDouble(),
+      trackSpeed: (json['trackSpeed'] as num?)?.toDouble(),
     );
 
 Map<String, dynamic> _$SpellCardCreateItemToJson(
@@ -618,6 +669,15 @@ Map<String, dynamic> _$SpellCardCreateItemToJson(
   'previewType': instance.previewType,
   'previewFileId': instance.previewFileId,
   'previewVideoUrl': instance.previewVideoUrl,
+  'speed': instance.speed,
+  'count': instance.count,
+  'angle': instance.angle,
+  'customCd': instance.customCd,
+  'puncture': instance.puncture,
+  'bounce': instance.bounce,
+  'explode': instance.explode,
+  'holdTime': instance.holdTime,
+  'trackSpeed': instance.trackSpeed,
 };
 
 SpellCardsEditData _$SpellCardsEditDataFromJson(Map<String, dynamic> json) =>
@@ -1019,6 +1079,15 @@ SpellCardTierItem _$SpellCardTierItemFromJson(Map<String, dynamic> json) =>
       cost: (json['cost'] as num?)?.toDouble(),
       cooldown: (json['cooldown'] as num?)?.toDouble(),
       damage: json['damage'] as String?,
+      speed: (json['speed'] as num?)?.toDouble(),
+      count: (json['count'] as num?)?.toInt(),
+      angle: (json['angle'] as num?)?.toDouble(),
+      customCd: (json['customCd'] as num?)?.toDouble(),
+      puncture: (json['puncture'] as num?)?.toInt(),
+      bounce: (json['bounce'] as num?)?.toInt(),
+      explode: (json['explode'] as num?)?.toDouble(),
+      holdTime: (json['holdTime'] as num?)?.toDouble(),
+      trackSpeed: (json['trackSpeed'] as num?)?.toDouble(),
     );
 
 Map<String, dynamic> _$SpellCardTierItemToJson(SpellCardTierItem instance) =>
@@ -1035,6 +1104,15 @@ Map<String, dynamic> _$SpellCardTierItemToJson(SpellCardTierItem instance) =>
       'cost': instance.cost,
       'cooldown': instance.cooldown,
       'damage': instance.damage,
+      'speed': instance.speed,
+      'count': instance.count,
+      'angle': instance.angle,
+      'customCd': instance.customCd,
+      'puncture': instance.puncture,
+      'bounce': instance.bounce,
+      'explode': instance.explode,
+      'holdTime': instance.holdTime,
+      'trackSpeed': instance.trackSpeed,
     };
 
 SpellCardTierGroup _$SpellCardTierGroupFromJson(Map<String, dynamic> json) =>

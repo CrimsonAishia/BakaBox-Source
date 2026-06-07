@@ -170,7 +170,7 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
       case HoverInfoType.knife:
         return 220;
       case HoverInfoType.spellCard:
-        return 280;
+        return 360;
       case HoverInfoType.map:
         return 140;
     }
@@ -556,6 +556,41 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
                       ? const Color(0xFFF59E0B)
                       : const Color(0xFF8B5CF6),
                 ),
+                
+              if (card.speed != null)
+                _buildStat(Icons.speed, '弹幕初速',
+                    _formatNum(card.speed!), const Color(0xFF0097A7)), // 青
+              if (card.count != null)
+                _buildStat(Icons.scatter_plot, '弹幕数量',
+                    card.count!.toString(), const Color(0xFF5E35B1)), // 蓝紫
+              if (card.angle != null)
+                _buildStat(Icons.architecture, '散射角度',
+                    '${_formatNum(card.angle!)}°',
+                    const Color(0xFF827717)), // 橄榄黄绿
+              if (card.puncture != null)
+                _buildStat(Icons.swap_horiz, '穿刺次数',
+                    card.puncture!.toString(),
+                    const Color(0xFFAD1457)), // 玫红
+              if (card.bounce != null)
+                _buildStat(Icons.replay, '反弹次数',
+                    card.bounce!.toString(),
+                    const Color(0xFFFBC02D)), // 金黄
+              if (card.explode != null)
+                _buildStat(Icons.brightness_5, '影响范围',
+                    _formatNum(card.explode!),
+                    const Color(0xFFD84315)), // 火橙红
+              if (card.holdTime != null)
+                _buildStat(Icons.hourglass_bottom, '持续时间',
+                    '${_formatNum(card.holdTime!)}s',
+                    const Color(0xFF6D4C41)), // 茶褐
+              if (card.trackSpeed != null)
+                _buildStat(Icons.gps_fixed, '追踪转向',
+                    _formatNum(card.trackSpeed!),
+                    const Color(0xFF2E7D32)), // 翠绿
+              if (card.customCd != null)
+                _buildStat(Icons.settings, '内置CD',
+                    '${_formatNum(card.customCd!)}s',
+                    const Color(0xFF546E7A)), // 蓝灰
             ],
           ),
         ],
@@ -566,7 +601,16 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
   bool _hasSpellCardStats(SpellCardTierItem card) =>
       card.cooldown != null ||
       (card.damage != null && card.damage!.isNotEmpty) ||
-      card.cost != null;
+      card.cost != null ||
+      card.speed != null ||
+      card.count != null ||
+      card.angle != null ||
+      card.puncture != null ||
+      card.bounce != null ||
+      card.explode != null ||
+      card.holdTime != null ||
+      card.trackSpeed != null ||
+      card.customCd != null;
 
   Widget _buildStat(IconData icon, String label, String value, Color iconColor) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

@@ -31,6 +31,16 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
   late SpellCardTier? _selectedTier;
   PreviewMediaData? _previewData;
 
+  late TextEditingController _speedController;
+  late TextEditingController _countController;
+  late TextEditingController _angleController;
+  late TextEditingController _punctureController;
+  late TextEditingController _bounceController;
+  late TextEditingController _explodeController;
+  late TextEditingController _holdTimeController;
+  late TextEditingController _trackSpeedController;
+  late TextEditingController _customCdController;
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +59,39 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
       text: (widget.existingEdit?.cost ?? widget.card.cost)?.toString() ?? '',
     );
     _selectedTier = widget.existingEdit?.tier ?? widget.card.tier;
+
+    // 高级参数：existingEdit 优先，没有就用原始 card 的值
+    _speedController = TextEditingController(
+      text: _numToText(widget.existingEdit?.speed ?? widget.card.speed),
+    );
+    _countController = TextEditingController(
+      text: _numToText(widget.existingEdit?.count ?? widget.card.count),
+    );
+    _angleController = TextEditingController(
+      text: _numToText(widget.existingEdit?.angle ?? widget.card.angle),
+    );
+    _punctureController = TextEditingController(
+      text: _numToText(widget.existingEdit?.puncture ?? widget.card.puncture),
+    );
+    _bounceController = TextEditingController(
+      text: _numToText(widget.existingEdit?.bounce ?? widget.card.bounce),
+    );
+    _explodeController = TextEditingController(
+      text: _numToText(widget.existingEdit?.explode ?? widget.card.explode),
+    );
+    _holdTimeController = TextEditingController(
+      text: _numToText(widget.existingEdit?.holdTime ?? widget.card.holdTime),
+    );
+    _trackSpeedController = TextEditingController(
+      text: _numToText(
+        widget.existingEdit?.trackSpeed ?? widget.card.trackSpeed,
+      ),
+    );
+    _customCdController = TextEditingController(
+      text: _numToText(
+        widget.existingEdit?.customCd ?? widget.card.customCd,
+      ),
+    );
   }
 
   @override
@@ -57,6 +100,15 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
     _cooldownController.dispose();
     _damageController.dispose();
     _costController.dispose();
+    _speedController.dispose();
+    _countController.dispose();
+    _angleController.dispose();
+    _punctureController.dispose();
+    _bounceController.dispose();
+    _explodeController.dispose();
+    _holdTimeController.dispose();
+    _trackSpeedController.dispose();
+    _customCdController.dispose();
     super.dispose();
   }
 
@@ -158,6 +210,18 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
                             isUltimate: isUltimate,
                           ),
                           const SizedBox(height: 16),
+                          _SpellCardAdvancedFields(
+                            speedController: _speedController,
+                            countController: _countController,
+                            angleController: _angleController,
+                            punctureController: _punctureController,
+                            bounceController: _bounceController,
+                            explodeController: _explodeController,
+                            holdTimeController: _holdTimeController,
+                            trackSpeedController: _trackSpeedController,
+                            customCdController: _customCdController,
+                          ),
+                          const SizedBox(height: 16),
                           PreviewTypeSelector(
                             initialType:
                                 widget.existingEdit?.previewType ??
@@ -200,6 +264,15 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
         previewType: _previewData?.previewType,
         previewFileId: _previewData?.previewFileId,
         previewVideoUrl: _previewData?.previewVideoUrl,
+        speed: _parseDouble(_speedController),
+        count: _parseInt(_countController),
+        angle: _parseDouble(_angleController),
+        customCd: _parseDouble(_customCdController),
+        puncture: _parseInt(_punctureController),
+        bounce: _parseInt(_bounceController),
+        explode: _parseDouble(_explodeController),
+        holdTime: _parseDouble(_holdTimeController),
+        trackSpeed: _parseDouble(_trackSpeedController),
       ),
     );
     Navigator.pop(context);
@@ -227,6 +300,16 @@ class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
   SpellCardTier? _selectedTier;
   PreviewMediaData? _previewData;
 
+  late TextEditingController _speedController;
+  late TextEditingController _countController;
+  late TextEditingController _angleController;
+  late TextEditingController _punctureController;
+  late TextEditingController _bounceController;
+  late TextEditingController _explodeController;
+  late TextEditingController _holdTimeController;
+  late TextEditingController _trackSpeedController;
+  late TextEditingController _customCdController;
+
   @override
   void initState() {
     super.initState();
@@ -235,6 +318,15 @@ class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
     _cooldownController = TextEditingController();
     _damageController = TextEditingController();
     _costController = TextEditingController();
+    _speedController = TextEditingController();
+    _countController = TextEditingController();
+    _angleController = TextEditingController();
+    _punctureController = TextEditingController();
+    _bounceController = TextEditingController();
+    _explodeController = TextEditingController();
+    _holdTimeController = TextEditingController();
+    _trackSpeedController = TextEditingController();
+    _customCdController = TextEditingController();
   }
 
   @override
@@ -244,6 +336,15 @@ class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
     _cooldownController.dispose();
     _damageController.dispose();
     _costController.dispose();
+    _speedController.dispose();
+    _countController.dispose();
+    _angleController.dispose();
+    _punctureController.dispose();
+    _bounceController.dispose();
+    _explodeController.dispose();
+    _holdTimeController.dispose();
+    _trackSpeedController.dispose();
+    _customCdController.dispose();
     super.dispose();
   }
 
@@ -354,6 +455,18 @@ class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
                             isUltimate: isUltimate,
                           ),
                           const SizedBox(height: 16),
+                          _SpellCardAdvancedFields(
+                            speedController: _speedController,
+                            countController: _countController,
+                            angleController: _angleController,
+                            punctureController: _punctureController,
+                            bounceController: _bounceController,
+                            explodeController: _explodeController,
+                            holdTimeController: _holdTimeController,
+                            trackSpeedController: _trackSpeedController,
+                            customCdController: _customCdController,
+                          ),
+                          const SizedBox(height: 16),
                           PreviewTypeSelector(
                             onChanged: (data) => _previewData = data,
                           ),
@@ -399,6 +512,15 @@ class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
         previewType: _previewData?.previewType,
         previewFileId: _previewData?.previewFileId,
         previewVideoUrl: _previewData?.previewVideoUrl,
+        speed: _parseDouble(_speedController),
+        count: _parseInt(_countController),
+        angle: _parseDouble(_angleController),
+        customCd: _parseDouble(_customCdController),
+        puncture: _parseInt(_punctureController),
+        bounce: _parseInt(_bounceController),
+        explode: _parseDouble(_explodeController),
+        holdTime: _parseDouble(_holdTimeController),
+        trackSpeed: _parseDouble(_trackSpeedController),
       ),
     );
     Navigator.pop(context);
@@ -431,6 +553,16 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
   late SpellCardTier? _selectedTier;
   PreviewMediaData? _previewData;
 
+  late TextEditingController _speedController;
+  late TextEditingController _countController;
+  late TextEditingController _angleController;
+  late TextEditingController _punctureController;
+  late TextEditingController _bounceController;
+  late TextEditingController _explodeController;
+  late TextEditingController _holdTimeController;
+  late TextEditingController _trackSpeedController;
+  late TextEditingController _customCdController;
+
   @override
   void initState() {
     super.initState();
@@ -447,6 +579,34 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
     );
     _selectedType = widget.data.type;
     _selectedTier = widget.data.tier;
+
+    _speedController = TextEditingController(
+      text: _numToText(widget.data.speed),
+    );
+    _countController = TextEditingController(
+      text: _numToText(widget.data.count),
+    );
+    _angleController = TextEditingController(
+      text: _numToText(widget.data.angle),
+    );
+    _punctureController = TextEditingController(
+      text: _numToText(widget.data.puncture),
+    );
+    _bounceController = TextEditingController(
+      text: _numToText(widget.data.bounce),
+    );
+    _explodeController = TextEditingController(
+      text: _numToText(widget.data.explode),
+    );
+    _holdTimeController = TextEditingController(
+      text: _numToText(widget.data.holdTime),
+    );
+    _trackSpeedController = TextEditingController(
+      text: _numToText(widget.data.trackSpeed),
+    );
+    _customCdController = TextEditingController(
+      text: _numToText(widget.data.customCd),
+    );
   }
 
   @override
@@ -456,6 +616,15 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
     _cooldownController.dispose();
     _damageController.dispose();
     _costController.dispose();
+    _speedController.dispose();
+    _countController.dispose();
+    _angleController.dispose();
+    _punctureController.dispose();
+    _bounceController.dispose();
+    _explodeController.dispose();
+    _holdTimeController.dispose();
+    _trackSpeedController.dispose();
+    _customCdController.dispose();
     super.dispose();
   }
 
@@ -566,6 +735,18 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
                             isUltimate: isUltimate,
                           ),
                           const SizedBox(height: 16),
+                          _SpellCardAdvancedFields(
+                            speedController: _speedController,
+                            countController: _countController,
+                            angleController: _angleController,
+                            punctureController: _punctureController,
+                            bounceController: _bounceController,
+                            explodeController: _explodeController,
+                            holdTimeController: _holdTimeController,
+                            trackSpeedController: _trackSpeedController,
+                            customCdController: _customCdController,
+                          ),
+                          const SizedBox(height: 16),
                           PreviewTypeSelector(
                             initialType: widget.data.previewType ?? 'none',
                             initialFileId: widget.data.previewFileId,
@@ -613,6 +794,15 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
         previewType: _previewData?.previewType,
         previewFileId: _previewData?.previewFileId,
         previewVideoUrl: _previewData?.previewVideoUrl,
+        speed: _parseDouble(_speedController),
+        count: _parseInt(_countController),
+        angle: _parseDouble(_angleController),
+        customCd: _parseDouble(_customCdController),
+        puncture: _parseInt(_punctureController),
+        bounce: _parseInt(_bounceController),
+        explode: _parseDouble(_explodeController),
+        holdTime: _parseDouble(_holdTimeController),
+        trackSpeed: _parseDouble(_trackSpeedController),
       ),
     );
     Navigator.pop(context);
@@ -628,3 +818,177 @@ String _previewTypeToString(PreviewType type) {
     PreviewType.videoUrl => 'video_url',
   };
 }
+
+/// 高级参数输入区
+///
+/// 把 9 个新增字段集中放在一块可折叠/可滚动的区域里，
+/// 已经被对话框外层 [SingleChildScrollView] 包裹，所以这里只用普通 [Column]。
+class _SpellCardAdvancedFields extends StatelessWidget {
+  final TextEditingController speedController;
+  final TextEditingController countController;
+  final TextEditingController angleController;
+  final TextEditingController punctureController;
+  final TextEditingController bounceController;
+  final TextEditingController explodeController;
+  final TextEditingController holdTimeController;
+  final TextEditingController trackSpeedController;
+  final TextEditingController customCdController;
+
+  const _SpellCardAdvancedFields({
+    required this.speedController,
+    required this.countController,
+    required this.angleController,
+    required this.punctureController,
+    required this.bounceController,
+    required this.explodeController,
+    required this.holdTimeController,
+    required this.trackSpeedController,
+    required this.customCdController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 小标题
+        Row(
+          children: [
+            Container(width: 3, height: 14, color: scrollBrown),
+            const SizedBox(width: 8),
+            Text(
+              '高级参数（可选）',
+              style: TextStyle(
+                color: scrollBrown,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '留空表示不变更/未设置；被动符卡通常无需填写大部分字段。',
+          style: TextStyle(
+            color: inkColor.withValues(alpha: 0.55),
+            fontSize: 11,
+          ),
+        ),
+        const SizedBox(height: 12),
+        // 第一排：弹幕初速 / 弹幕数量 / 散射角度
+        Row(
+          children: [
+            Expanded(
+              child: SpellCardNumberField(
+                label: '弹幕初速',
+                controller: speedController,
+                hint: '800',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: SpellCardNumberField(
+                label: '弹幕数量',
+                controller: countController,
+                hint: '5',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: SpellCardNumberField(
+                label: '散射角度',
+                controller: angleController,
+                hint: '3',
+                suffix: '°',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // 第二排：穿刺次数 / 反弹次数 / 影响范围
+        Row(
+          children: [
+            Expanded(
+              child: SpellCardNumberField(
+                label: '穿刺次数',
+                controller: punctureController,
+                hint: '5',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: SpellCardNumberField(
+                label: '反弹次数',
+                controller: bounceController,
+                hint: '5',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: SpellCardNumberField(
+                label: '影响范围',
+                controller: explodeController,
+                hint: '300',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // 第三排：持续时间 / 追踪转向 / 内置CD
+        Row(
+          children: [
+            Expanded(
+              child: SpellCardNumberField(
+                label: '持续时间',
+                controller: holdTimeController,
+                hint: '5',
+                suffix: '秒',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: SpellCardNumberField(
+                label: '追踪转向',
+                controller: trackSpeedController,
+                hint: '600',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: SpellCardNumberField(
+                label: '内置CD',
+                controller: customCdController,
+                hint: '5',
+                suffix: '秒',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+
+/// 把数值控制器内容转换为 double?（空字符串视为未设置）
+double? _parseDouble(TextEditingController c) {
+  final text = c.text.trim();
+  if (text.isEmpty) return null;
+  return double.tryParse(text);
+}
+
+/// 把数值控制器内容转换为 int?（空字符串视为未设置；带小数则截断为整数）
+int? _parseInt(TextEditingController c) {
+  final text = c.text.trim();
+  if (text.isEmpty) return null;
+  // 优先按整数解析，失败则尝试按 double 截断，避免"5.0"被识别成 null
+  return int.tryParse(text) ?? double.tryParse(text)?.toInt();
+}
+
+/// 把可空数值转回字符串供输入框显示（null/未设置时显示空）
+String _numToText(num? value) => value?.toString() ?? '';
+
+
