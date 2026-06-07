@@ -14,6 +14,7 @@ class CS2ZeServerData {
   final int players;
   final String serverKey;
   final List<String> serverTags;
+  final int? appId;
 
   CS2ZeServerData({
     required this.gameType,
@@ -26,6 +27,7 @@ class CS2ZeServerData {
     required this.players,
     required this.serverKey,
     required this.serverTags,
+    this.appId,
   });
 
   factory CS2ZeServerData.fromJson(Map<String, dynamic> json) {
@@ -40,6 +42,7 @@ class CS2ZeServerData {
       players: json['players'] as int? ?? 0,
       serverKey: json['server_key'] as String? ?? '',
       serverTags: (json['server_tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+      appId: (json['app_id'] as num?)?.toInt(),
     );
   }
 
@@ -51,6 +54,7 @@ class CS2ZeServerData {
       players: players,
       maxPlayers: maxPlayers,
       gameType: gameType,
+      appId: appId,
     );
   }
 }

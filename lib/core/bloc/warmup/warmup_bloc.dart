@@ -227,6 +227,7 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
           maxPlayers: sourceInfo.maxPlayers,
           pingLatency: sourceInfo.ping,
           gameType: sourceInfo.gameType,
+          appId: sourceInfo.appId,
         );
 
         // 获取地图信息
@@ -426,6 +427,7 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
       mapNameCn: state.mapInfo?.mapLabel,
       mapBackground: state.mapInfo?.mapUrl,
       gameType: state.serverInfo?.gameType,
+      appId: state.serverInfo?.appId,
     );
 
     if (success) {

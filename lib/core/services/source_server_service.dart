@@ -14,6 +14,7 @@ class SourceServerInfo {
   final String os;
   final int ping;
   final String gameType;
+  final int? appId;
 
   SourceServerInfo({
     required this.name,
@@ -28,6 +29,7 @@ class SourceServerInfo {
     required this.os,
     required this.ping,
     required this.gameType,
+    this.appId,
   });
 
   Map<String, dynamic> toJson() => {
@@ -43,6 +45,7 @@ class SourceServerInfo {
     'os': os,
     'ping': ping,
     'game_type': gameType,
+    'app_id': appId,
   };
 }
 
@@ -95,8 +98,18 @@ class SourceServerService {
       bool hasPassword = info.visibility.toString().contains('private');
 
       String gameType = 'Unknown';
-      if (info.game.toLowerCase().contains('counter-strike 2')) {
+      // info.id 为服务器上报的 Steam AppID，作为游戏类型判断的权威依据
+      final int appId = info.id;
+      if (appId == 4465480) {
+        // 独立版 CSGO
+        gameType = 'CSGO';
+      } else if (appId == 240) {
+        // Counter-Strike: Source
+        gameType = 'CSS';
+      } else if (info.game.toLowerCase().contains('counter-strike 2')) {
         gameType = 'CS2';
+      } else if (info.game.toLowerCase().contains('source')) {
+        gameType = 'CSS';
       } else if (info.game.toLowerCase().contains('counter-strike')) {
         gameType = 'CSGO';
       }
@@ -114,6 +127,7 @@ class SourceServerService {
         os: osName,
         ping: stopwatch.elapsedMilliseconds,
         gameType: gameType,
+        appId: appId,
       );
     } catch (e) {
       // LogService.d('获取服务器信息失败 ($ip:$port): $e', e);

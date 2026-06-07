@@ -12,7 +12,8 @@ class QueueSettings extends StatelessWidget {
   final bool disabled;
   final bool isGameRunning;
   final int maxPlayers; // 服务器最大人数
-  final String? gameType; // 游戏类型，用于判断是否为 CSGO
+  final String? gameType; // 游戏类型，用于判断游戏客户端
+  final int? appId; // 服务器上报的 Steam AppID，用于判断游戏客户端
   final String? mapName; // 地图名称，用于判断是否显示捐助者选项
   final bool isCustomServer; // 是否为自定义服务器
   final bool multiThreadEnabled; // 是否启用多线程（仅自定义服务器可关闭）
@@ -34,6 +35,7 @@ class QueueSettings extends StatelessWidget {
     this.isGameRunning = false,
     this.maxPlayers = 64,
     this.gameType,
+    this.appId,
     this.mapName,
     this.isCustomServer = false,
     this.multiThreadEnabled = true,
@@ -51,8 +53,12 @@ class QueueSettings extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    // 判断是否为 CSGO 服务器
-    final isCsgoServer = ServerItemUtils.isCsgoServer(gameType);
+    // 解析游戏客户端：自动重试依赖 CS2 的 console.log 监控，仅 CS2 支持
+    final client = ServerItemUtils.resolveGameClient(
+      appId: appId,
+      gameType: gameType,
+    );
+    final supportsAutoRetry = client == GameClient.cs2;
 
     // 判断是否显示捐助者选项（只在 ze_ 和 zm_ 开头的地图显示，且非自定义服务器）
     final shouldShowDonatorOption =
@@ -113,8 +119,8 @@ class QueueSettings extends StatelessWidget {
             _buildDonatorSwitch(context, isDark),
           ],
 
-          // 自动重试开关（CSGO 服务器不显示）
-          if (!isCsgoServer) ...[
+          // 自动重试开关（仅 CS2 支持监控，其余客户端不显示）
+          if (supportsAutoRetry) ...[
             const SizedBox(height: 16),
             _buildAutoRetrySwitch(context, isDark),
           ],

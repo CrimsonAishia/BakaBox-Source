@@ -1833,6 +1833,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     final mapName = widget.server.serverData?.map;
     final mapInfo = widget.server.mapInfo;
     final gameType = widget.server.serverData?.gameType;
+    final appId = widget.server.serverData?.appId;
 
     // 使用已有的 StatusWindowService 实例
     final success = await _statusService.connectToServer(
@@ -1842,6 +1843,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       mapNameCn: mapInfo?.mapLabel,
       mapBackground: mapInfo?.mapUrl,
       gameType: gameType,
+      appId: appId,
     );
 
     // connectToServer 返回后，连接流程已完成，此时显示 Toast
