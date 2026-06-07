@@ -433,25 +433,12 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
               return false;
             },
             listener: (context, state) {
-              // 需要手动启动 CSGO
-              if (state.needManualLaunch) {
-                showDialog(
-                  context: context,
-                  builder: (context) => CsgoManualLaunchDialog(
-                    serverAddress: state.serverAddress ?? '',
-                  ),
-                );
-                return;
-              }
-
-              // 错误提示
-              if (state.error != null) {
-                ToastUtils.showError(context, state.error!);
-                return;
-              }
-
-              // 全局倒计时弹窗处理
-              final isCountdown = state.status == WarmupStatus.countdown || state.status == WarmupStatus.launching;
+              // 先协调全局倒计时弹窗的显隐。
+              // 必须在 error / needManualLaunch 的 early return 之前执行，
+              // 否则启动失败（error 被设置）或需手动启动 CSGO 时，
+              // 会因提前 return 而无法移除倒计时弹窗，导致全屏遮罩卡死。
+              final isCountdown = state.status == WarmupStatus.countdown ||
+                  state.status == WarmupStatus.launching;
               if (isCountdown && _warmupCountdownRoute == null) {
                 final warmupBloc = context.read<WarmupBloc>();
                 _warmupCountdownRoute = DialogRoute(
@@ -475,6 +462,23 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
               } else if (!isCountdown && _warmupCountdownRoute != null) {
                 Navigator.of(context).removeRoute(_warmupCountdownRoute!);
                 _warmupCountdownRoute = null;
+              }
+
+              // 需要手动启动 CSGO
+              if (state.needManualLaunch) {
+                showDialog(
+                  context: context,
+                  builder: (context) => CsgoManualLaunchDialog(
+                    serverAddress: state.serverAddress ?? '',
+                  ),
+                );
+                return;
+              }
+
+              // 错误提示
+              if (state.error != null) {
+                ToastUtils.showError(context, state.error!);
+                return;
               }
             },
           ),

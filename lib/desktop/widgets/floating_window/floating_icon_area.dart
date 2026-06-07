@@ -65,7 +65,8 @@ class _FloatingIconAreaState extends State<FloatingIconArea>
         state.isLaunching ||
         state.isConnecting ||
         state.isLoading ||
-        state.isQueueing;
+        state.isQueueing ||
+        state.isWarming;
   }
 
   @override
@@ -141,6 +142,7 @@ class _FloatingIconAreaState extends State<FloatingIconArea>
 
   IconData _getStateIcon(FloatingWindowState state) {
     if (state.isLaunching) return MdiIcons.rocketLaunch;
+    if (state.isWarming) return MdiIcons.fire;
     if (state.isQueueing) return MdiIcons.accountMultiplePlus;
     if (state.isConnecting) return MdiIcons.connection;
     if (state.isLoading) return MdiIcons.mapMarker;

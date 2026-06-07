@@ -51,8 +51,13 @@ class FloatingInfoArea extends StatelessWidget {
   }
 
   Widget _buildContentArea() {
-    // 挤服模式/暖服模式：显示人数+线程+地图
-    if (state.isQueueing || state.isWarming) {
+    // 暖服模式：专属布局（进度条 + 人数 + 地图）
+    if (state.isWarming) {
+      return _buildWarmupContent();
+    }
+
+    // 挤服模式：显示人数+线程+地图
+    if (state.isQueueing) {
       return _buildQueueContent();
     }
 
@@ -78,6 +83,96 @@ class FloatingInfoArea extends StatelessWidget {
 
     // 默认：显示服务器名
     return _buildDefaultContent();
+  }
+
+  /// 暖服模式内容 - 进度条 + 人数 + 地图
+  Widget _buildWarmupContent() {
+    final current = state.currentPlayers ?? 0;
+    final target = state.targetPlayers ?? 0;
+    final progress = target > 0
+        ? (current / target).clamp(0.0, 1.0)
+        : 0.0;
+    final reached = target > 0 && current >= target;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 人数（current / target）
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              '$current',
+              style: TextStyle(
+                color: reached
+                    ? FloatingWindowColors.success
+                    : FloatingWindowColors.warming,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                height: 1.0,
+              ),
+            ),
+            Text(
+              ' / $target',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 13,
+              ),
+            ),
+            const Spacer(),
+            // 达标提示
+            if (reached)
+              Padding(
+                padding: const EdgeInsets.only(right: 2),
+                child: Text(
+                  '已达标',
+                  style: TextStyle(
+                    color: FloatingWindowColors.success,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        // 进度条
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: progress),
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOut,
+            builder: (context, value, _) {
+              return LinearProgressIndicator(
+                value: value,
+                minHeight: 6,
+                backgroundColor: Colors.white.withValues(alpha: 0.12),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  reached
+                      ? FloatingWindowColors.success
+                      : FloatingWindowColors.warming,
+                ),
+              );
+            },
+          ),
+        ),
+        // 地图名（分两行显示：译名在上，原名在下）
+        if (state.mapName != null && state.mapName!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: _buildTwoLineMapName(
+              titleFontSize: 12,
+              subtitleFontSize: 10,
+              titleColor: Colors.white.withValues(alpha: 0.8),
+              subtitleColor: Colors.white.withValues(alpha: 0.5),
+              titleWeight: FontWeight.normal,
+            ),
+          ),
+      ],
+    );
   }
 
   /// 挤服模式内容
