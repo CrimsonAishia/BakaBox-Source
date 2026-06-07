@@ -212,6 +212,7 @@ class ServerQueueService {
           maxPlayers: sourceInfo.maxPlayers,
           pingLatency: sourceInfo.ping,
           gameType: sourceInfo.gameType,
+          appId: sourceInfo.appId,
         );
 
         MapData? mapInfo = _lastMapInfo;

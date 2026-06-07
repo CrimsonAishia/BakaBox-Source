@@ -540,6 +540,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
           maxPlayers: info.maxPlayers,
           gameType: info.gameType,
           pingLatency: info.ping,
+          appId: info.appId,
         );
 
         // 更新服务器数据
@@ -3249,6 +3250,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       mapName: server.serverData?.map,
       mapNameCn: mapInfo?.mapLabel,
       mapBackground: mapInfo?.mapUrl,
+      gameType: server.serverData?.gameType,
+      appId: server.serverData?.appId,
     );
 
     if (mounted) {

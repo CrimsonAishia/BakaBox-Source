@@ -9,6 +9,7 @@ import '../bloc/warmup_users/warmup_users_bloc.dart';
 import '../bloc/warmup_users/warmup_users_event.dart';
 import '../models/server_models.dart';
 import '../utils/log_service.dart';
+import '../utils/server_item_utils.dart';
 import 'audio_service.dart';
 import 'console_log_service.dart';
 import 'floating_window_service.dart';
@@ -360,6 +361,7 @@ class StatusWindowService {
     String? mapNameCn,
     String? mapBackground,
     String? gameType,
+    int? appId,
   }) async {
     // 检查游戏路径是否已配置
     final hasGamePath = await _gameLauncher.hasGamePath();
@@ -377,14 +379,14 @@ class StatusWindowService {
       return false;
     }
 
-    // 检查是否为 CSGO 服务器
-    final isCsgo =
-        gameType != null &&
-        (gameType.toLowerCase().contains('csgo') ||
-            gameType.toLowerCase().contains('cs:go'));
+    // 解析目标游戏客户端
+    final client = ServerItemUtils.resolveGameClient(
+      appId: appId,
+      gameType: gameType,
+    );
 
-    if (isCsgo) {
-      // CSGO 服务器无法通过 Steam URL 自动启动，需要手动启动
+    // CSGO Legacy 无法通过 Steam URL 自动启动，需要手动启动
+    if (client == GameClient.csgoLegacy) {
       _updateState(
         OperationState(
           type: OperationType.none,
@@ -397,6 +399,41 @@ class StatusWindowService {
         ),
       );
       return false;
+    }
+
+    // 独立版 CSGO / CS:Source：无法走 CS2 的 -condebug 监控流程。
+    // steam://run/<appId>//+connect 会同时拉起游戏并连接，因此直接交给
+    // launchAndConnect 处理（避免与 connectToServer 互相递归）。
+    if (client != GameClient.cs2) {
+      final result = await _gameLauncher.launchAndConnect(
+        serverAddress ?? '',
+        gameType: gameType,
+        appId: appId,
+      );
+      _updateState(
+        OperationState(
+          type: OperationType.none,
+          status: result.success
+              ? OperationStatus.success
+              : OperationStatus.failed,
+          message: result.success
+              ? ((serverAddress != null && serverAddress.isNotEmpty)
+                    ? _Messages.connecting
+                    : _Messages.launchSuccess)
+              : result.error,
+          serverAddress: serverAddress,
+          serverName: serverName,
+          isGameRunning: result.success,
+          needCsgoLegacy: result.needCsgoLegacy,
+          needManualLaunch: result.needManualLaunch,
+        ),
+      );
+      if (result.success &&
+          serverAddress != null &&
+          serverAddress.isNotEmpty) {
+        _audioService.playQueueSuccessSound();
+      }
+      return result.success;
     }
 
     // 检查是否有其他操作正在进行
@@ -524,6 +561,7 @@ class StatusWindowService {
           mapNameCn: mapNameCn,
           mapBackground: mapBackground,
           gameType: gameType,
+          appId: appId,
         );
       }
     } else {
@@ -554,6 +592,7 @@ class StatusWindowService {
     String? mapBackground,
     bool playSuccessSound = true,
     String? gameType,
+    int? appId,
   }) async {
     // 检查游戏路径是否已配置
     final hasGamePath = await _gameLauncher.hasGamePath();
@@ -571,21 +610,22 @@ class StatusWindowService {
       return false;
     }
 
+    // 解析目标游戏客户端
+    final client = ServerItemUtils.resolveGameClient(
+      appId: appId,
+      gameType: gameType,
+    );
+
     // 检查游戏是否运行
     final gameRunning = await _gameLauncher.isCS2Running();
 
     if (!gameRunning) {
-      // 游戏未运行，判断是否为 CSGO 服务器
-      final isCsgo =
-          gameType != null &&
-          (gameType.toLowerCase().contains('csgo') ||
-              gameType.toLowerCase().contains('cs:go'));
-
-      if (isCsgo) {
-        // CSGO 服务器无法自动启动，直接调用 connectToServer 让它返回错误
+      if (client == GameClient.csgoLegacy) {
+        // CSGO Legacy 无法自动启动，直接调用 connectToServer 让它返回错误
         final result = await _gameLauncher.connectToServer(
           serverAddress,
           gameType: gameType,
+          appId: appId,
         );
 
         // 处理 CSGO 相关错误
@@ -606,7 +646,7 @@ class StatusWindowService {
         return result.success;
       }
 
-      // CS2 服务器，先启动游戏
+      // CS2 / 独立版 CSGO / CS:Source，先启动游戏（launchGame 内部会按客户端分流）
       return await launchGame(
         serverAddress: serverAddress,
         serverName: serverName,
@@ -614,11 +654,15 @@ class StatusWindowService {
         mapNameCn: mapNameCn,
         mapBackground: mapBackground,
         gameType: gameType,
+        appId: appId,
       );
     }
 
     // 检查是否可监控
-    final canMonitor = _gameStatusService.isMonitorable;
+    // 注意：连接状态监控依赖 CS2 的 -condebug console.log，
+    // 仅 CS2 支持；独立版 CSGO 与 CS:Source 一律走"不可监控"的直发连接路径
+    final canMonitor =
+        client == GameClient.cs2 && _gameStatusService.isMonitorable;
 
     if (!canMonitor) {
       // 不可监控时，再次确认游戏是否运行
@@ -641,6 +685,7 @@ class StatusWindowService {
       final result = await _gameLauncher.connectToServer(
         serverAddress,
         gameType: gameType,
+        appId: appId,
       );
 
       // 检查是否需要安装 CSGO Legacy 或手动启动
@@ -696,6 +741,7 @@ class StatusWindowService {
     final connectResult = await _gameLauncher.connectToServer(
       serverAddress,
       gameType: gameType,
+      appId: appId,
     );
     if (!connectResult.success) {
       _updateState(
@@ -803,11 +849,13 @@ class StatusWindowService {
       return false;
     }
 
-    // 如果是 CSGO 服务器，额外检查 CSGO 是否安装和运行
+    // 如果是 CSGO Legacy 服务器，额外检查 CSGO Legacy 是否安装
     final gameType = serverInfo?.gameType;
-    if (gameType != null &&
-        (gameType.toLowerCase().contains('csgo') ||
-            gameType.toLowerCase().contains('cs:go'))) {
+    final client = ServerItemUtils.resolveGameClient(
+      appId: serverInfo?.appId,
+      gameType: gameType,
+    );
+    if (client == GameClient.csgoLegacy) {
       final isInstalled = await _gameLauncher.isCsgoLegacyInstalled();
       if (!isInstalled) {
         _updateState(
@@ -1577,6 +1625,7 @@ class StatusWindowService {
           maxPlayers: sourceInfo.maxPlayers,
           pingLatency: sourceInfo.ping,
           gameType: sourceInfo.gameType,
+          appId: sourceInfo.appId,
         );
 
         // 获取地图信息
@@ -1721,6 +1770,7 @@ class StatusWindowService {
       final result = await _gameLauncher.connectToServer(
         serverAddress,
         gameType: gameType,
+        appId: _state.serverInfo?.appId,
       );
 
       if (!result.success) {

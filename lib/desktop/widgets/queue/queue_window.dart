@@ -515,6 +515,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
               isGameRunning: state.isGameRunning,
               maxPlayers: state.serverInfo?.maxPlayers ?? 64,
               gameType: state.serverInfo?.gameType,
+              appId: state.serverInfo?.appId,
               mapName: state.serverInfo?.map,
               isCustomServer: state.isCustomServer,
               multiThreadEnabled: state.config.multiThreadEnabled,

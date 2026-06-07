@@ -197,6 +197,7 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
           maxPlayers: sourceInfo.maxPlayers,
           pingLatency: sourceInfo.ping,
           gameType: sourceInfo.gameType,
+          appId: sourceInfo.appId,
         );
 
         // 获取地图信息
@@ -392,6 +393,7 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
       mapNameCn: state.mapInfo?.mapLabel,
       mapBackground: state.mapInfo?.mapUrl,
       gameType: state.serverInfo?.gameType,
+      appId: state.serverInfo?.appId,
     );
 
     // 只在这里设置一次 needManualLaunch

@@ -1119,8 +1119,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     if (address == null) return;
 
     final gameLauncher = GameLauncherService();
-    // 获取服务器的游戏类型
+    // 获取服务器的游戏类型与 AppID
     final gameType = event.server.serverData?.gameType;
+    final appId = event.server.serverData?.appId;
 
     try {
       final result = event.password?.isNotEmpty == true
@@ -1128,8 +1129,13 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
               address,
               event.password!,
               gameType: gameType,
+              appId: appId,
             )
-          : await gameLauncher.connectToServer(address, gameType: gameType);
+          : await gameLauncher.connectToServer(
+              address,
+              gameType: gameType,
+              appId: appId,
+            );
 
       if (result.success) {
         LogService.i('连接命令已发送: ${result.message}');
@@ -1431,6 +1437,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       maxPlayers: sourceInfo.maxPlayers,
       gameType: sourceInfo.gameType,
       pingLatency: sourceInfo.ping,
+      appId: sourceInfo.appId,
     );
   }
 
