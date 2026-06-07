@@ -176,6 +176,7 @@ class OperationState {
     String? serverName,
     ServerInfo? serverInfo,
     MapData? mapInfo,
+    bool clearMapInfo = false,
     QueueConfig? queueConfig,
     List<ThreadStatus>? threadStatuses,
     bool? isGameRunning,
@@ -191,7 +192,7 @@ class OperationState {
       serverAddress: serverAddress ?? this.serverAddress,
       serverName: serverName ?? this.serverName,
       serverInfo: serverInfo ?? this.serverInfo,
-      mapInfo: mapInfo ?? this.mapInfo,
+      mapInfo: clearMapInfo ? null : (mapInfo ?? this.mapInfo),
       queueConfig: queueConfig ?? this.queueConfig,
       threadStatuses: threadStatuses ?? this.threadStatuses,
       isGameRunning: isGameRunning ?? this.isGameRunning,
@@ -1021,6 +1022,7 @@ class StatusWindowService {
     String? message,
     OperationStatus? status,
     MapData? mapInfo,
+    bool clearMapInfo = false,
     String? mapName,
     int? maxPlayers,
   }) {
@@ -1063,7 +1065,8 @@ class StatusWindowService {
         warmupTargetPlayers: targetPlayers ?? _state.warmupTargetPlayers,
         message: message ?? _state.message,
         status: status ?? _state.status,
-        mapInfo: mapInfo ?? _state.mapInfo,
+        mapInfo: mapInfo,
+        clearMapInfo: clearMapInfo,
       ),
     );
 
@@ -1071,12 +1074,18 @@ class StatusWindowService {
     if (!_warmupFloatingWindowEnabled) return;
 
     // 地图信息或服务器信息发生变化，主动触发一次悬浮窗更新（含人数）
+    // 换图后若新地图信息拉取失败（clearMapInfo），推送空字符串清掉旧译名/背景，
+    // 避免悬浮窗出现"新地图英文名 + 旧地图译名/背景"的错配。
     _updateWindow(
       currentPlayers: currentPlayers ?? updatedServerInfo?.players,
       targetPlayers: targetPlayers ?? _state.warmupTargetPlayers,
       mapName: updatedServerInfo?.map,
-      mapNameCn: mapInfo?.mapLabel ?? _state.mapInfo?.mapLabel,
-      mapBackground: mapInfo?.mapUrl ?? _state.mapInfo?.mapUrl,
+      mapNameCn: clearMapInfo
+          ? ''
+          : (mapInfo?.mapLabel ?? _state.mapInfo?.mapLabel),
+      mapBackground: clearMapInfo
+          ? ''
+          : (mapInfo?.mapUrl ?? _state.mapInfo?.mapUrl),
     );
   }
 

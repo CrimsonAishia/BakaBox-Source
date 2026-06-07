@@ -80,12 +80,7 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
     _stateSubscription?.cancel();
     _stopRegularUpdate();
     _countdownTimer?.cancel();
-    
-    // 如果实例被释放，清除引用 (实际上因为是单例，通常不会被释放)
-    if (_instance == this) {
-      _instance = null;
-    }
-    
+
     _stateSubscription = _statusService.stateStream.listen((serviceState) {
       add(WarmupStateUpdated(serviceState));
     });
@@ -119,7 +114,7 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
     var config = savedConfig;
     final maxPlayers = initialServerInfo?.maxPlayers ?? 0;
     if (maxPlayers > 0) {
-      final maxTarget = (maxPlayers * 0.6).floor().clamp(1, maxPlayers);
+      final maxTarget = _calcMaxTarget(maxPlayers);
       if (config.targetPlayers > maxTarget) {
         config = config.copyWith(targetPlayers: maxTarget);
       }
@@ -147,9 +142,19 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
     _startRegularUpdate(event.serverAddress);
   }
 
+  /// 计算暖服目标人数允许的最大值（与 WarmupBlocState.maxTargetPlayers 规则保持一致）
+  ///
+  /// - 64 人服务器：固定上限 40 人
+  /// - 其它服务器：服务器最大人数 × 0.6
+  static int _calcMaxTarget(int maxPlayers) {
+    if (maxPlayers <= 0) return 1;
+    if (maxPlayers == 64) return 40;
+    final limit = (maxPlayers * 0.6).floor();
+    return limit < 1 ? 1 : limit;
+  }
+
   /// 加载保存的配置
-  Future<WarmupConfig> _loadSavedConfig() async {
-    try {
+  Future<WarmupConfig> _loadSavedConfig() async {    try {
       final targetPlayers = StorageUtils.getInt(_keyWarmupTargetPlayers) ?? 20;
       final showFloatingWindow = StorageUtils.getBool(
         _keyWarmupShowFloatingWindow,
@@ -233,20 +238,28 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
         }
 
         if (!isClosed) {
-          // 如果服务器最大人数已知，确保目标人数不超过 最大人数×0.6
+          // 如果服务器最大人数已知，确保目标人数不超过允许上限
           var config = state.config;
           final maxPlayers = serverInfo.maxPlayers ?? 0;
           if (maxPlayers > 0) {
-            final maxTarget = (maxPlayers * 0.6).floor().clamp(1, maxPlayers);
+            final maxTarget = _calcMaxTarget(maxPlayers);
             if (config.targetPlayers > maxTarget) {
               config = config.copyWith(targetPlayers: maxTarget);
             }
           }
 
+          // 检测是否换图：换图后若新地图信息拉取失败（mapInfo == null），
+          // 必须清除旧地图的译名/背景，避免悬浮窗出现"新地图英文名 + 旧地图译名/背景"的错配。
+          final oldMap = state.serverInfo?.map;
+          final newMap = serverInfo.map;
+          final mapChanged = oldMap != null && oldMap != newMap;
+          final shouldClearStaleMapInfo = mapChanged && mapInfo == null;
+
           emit(
             state.copyWith(
               serverInfo: serverInfo,
               mapInfo: mapInfo,
+              clearMapInfo: shouldClearStaleMapInfo,
               config: config,
             ),
           );
@@ -261,6 +274,7 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
                   state.queueUsersCount,
               targetPlayers: state.effectiveTargetPlayers,
               mapInfo: mapInfo,
+              clearMapInfo: shouldClearStaleMapInfo,
               mapName: serverInfo.map,
               maxPlayers: serverInfo.maxPlayers,
             );
@@ -301,6 +315,8 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
 
     emit(state.copyWith(
       status: WarmupStatus.warming,
+      needManualLaunch: false,
+      error: null,
     ));
 
     // 开始后立即检查一次是否已达标（例如服务器本身人数已够）
@@ -526,10 +542,15 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
     Emitter<WarmupBlocState> emit,
   ) {
     if (state.status != WarmupStatus.warming) return;
-    
+
     emit(state.copyWith(
       status: WarmupStatus.countdown,
       countdownSeconds: 60,
+      // 清除上一轮启动失败遗留的标志，避免 needManualLaunch 粘滞导致
+      // 全局监听器（listenWhen 中 `if (current.needManualLaunch) return false`）
+      // 永久失效，使后续达标无法再弹出倒计时。
+      needManualLaunch: false,
+      error: null,
     ));
     
     _startCountdown();

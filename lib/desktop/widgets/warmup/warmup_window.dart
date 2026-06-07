@@ -615,15 +615,8 @@ class _WarmupWindowContentState extends State<_WarmupWindowContent> {
   }
 
   Widget _buildActionButtons(BuildContext context, WarmupBlocState state) {
-    return Row(
-      children: [
-        // 开始/暂停暖服按钮
-        Expanded(child: _buildWarmupButton(context, state)),
-        const SizedBox(width: 12),
-        // 启动游戏按钮
-        Expanded(child: _buildLaunchGameButton(context, state)),
-      ],
-    );
+    // 暖服面板不再提供"启动游戏"按钮，游戏启动由达标倒计时结束后自动触发。
+    return _buildWarmupButton(context, state);
   }
 
   Widget _buildWarmupButton(BuildContext context, WarmupBlocState state) {
@@ -744,81 +737,6 @@ class _WarmupWindowContentState extends State<_WarmupWindowContent> {
     // 后端不返回当前用户，需要在客户端把自己加入列表
     usersBloc.add(WarmupUsersJoin(nickname: nickname, avatarUrl: avatarUrl));
     queueBloc.add(const WarmupStart());
-  }
-
-  Widget _buildLaunchGameButton(BuildContext context, WarmupBlocState state) {
-    // 正在启动游戏时显示启动中状态（优先级最高）
-    if (state.isLaunchingGame) {
-      return SizedBox(
-        height: 44,
-        child: ElevatedButton.icon(
-          onPressed: null,
-          icon: const SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: Colors.white,
-            ),
-          ),
-          label: const Text('启动中...', style: TextStyle(fontSize: 14)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF3B82F6),
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        ),
-      );
-    }
-
-    // 游戏已运行时显示状态
-    if (state.isGameRunning) {
-      return SizedBox(
-        height: 44,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.green.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(MdiIcons.checkCircle, size: 18, color: Colors.green),
-              const SizedBox(width: 6),
-              const Text(
-                '游戏已启动',
-                style: TextStyle(
-                  color: Colors.green,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // 游戏未运行时显示启动按钮
-    return SizedBox(
-      height: 44,
-      child: ElevatedButton.icon(
-        onPressed: () =>
-            context.read<WarmupBloc>().add(const WarmupLaunchGame()),
-        icon: Icon(MdiIcons.gamepadVariant, size: 18),
-        label: const Text('启动游戏', style: TextStyle(fontSize: 14)),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF3B82F6),
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      ),
-    );
   }
 }
 

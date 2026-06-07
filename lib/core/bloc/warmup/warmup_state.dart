@@ -118,12 +118,16 @@ class WarmupBlocState extends Equatable {
   /// 服务器最大人数
   int get maxPlayers => serverInfo?.maxPlayers ?? 0;
 
-  /// 暖服目标人数允许的最大值 = 服务器最大人数 × 0.6
+  /// 暖服目标人数允许的最大值
+  ///
+  /// - 64 人服务器：固定上限 40 人
+  /// - 其它服务器：服务器最大人数 × 0.6
   ///
   /// 获取不到服务器最大人数（说明服务器有问题）时不做兜底，只允许 1 人。
   int get maxTargetPlayers {
     final max = maxPlayers;
     if (max <= 0) return 1;
+    if (max == 64) return 40;
     final limit = (max * 0.6).floor();
     return limit < 1 ? 1 : limit;
   }
@@ -139,6 +143,7 @@ class WarmupBlocState extends Equatable {
     WarmupStatus? status,
     ServerInfo? serverInfo,
     MapData? mapInfo,
+    bool clearMapInfo = false,
     WarmupConfig? config,
     int? countdownSeconds,
     bool? isGameRunning,
@@ -155,7 +160,7 @@ class WarmupBlocState extends Equatable {
     return WarmupBlocState(
       status: status ?? this.status,
       serverInfo: serverInfo ?? this.serverInfo,
-      mapInfo: mapInfo ?? this.mapInfo,
+      mapInfo: clearMapInfo ? null : (mapInfo ?? this.mapInfo),
       config: config ?? this.config,
       countdownSeconds: countdownSeconds ?? this.countdownSeconds,
       isGameRunning: isGameRunning ?? this.isGameRunning,

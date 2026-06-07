@@ -405,15 +405,15 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
     }
     switch (widget.config.type) {
       case FloatingWindowType.queue:
-        return 'Queue Status';
+        return '挤服中';
       case FloatingWindowType.warmup:
-        return 'Warmup Status';
+        return '暖服中';
       case FloatingWindowType.launch:
-        return 'Launch Game';
+        return '启动游戏';
       case FloatingWindowType.connect:
-        return 'Connecting';
+        return '连接中';
       case FloatingWindowType.status:
-        return 'Status';
+        return '状态';
     }
   }
 
