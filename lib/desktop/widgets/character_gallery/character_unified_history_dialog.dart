@@ -149,6 +149,15 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
       'previewType' => '预览媒体类型',
       'previewFileId' => '预览图片',
       'previewVideoUrl' => '预览视频链接',
+      'speed' => '弹幕初速',
+      'count' => '弹幕数量',
+      'angle' => '散射角度',
+      'customCd' => '内置CD',
+      'puncture' => '穿刺次数',
+      'bounce' => '反弹次数',
+      'explode' => '影响范围',
+      'holdTime' => '持续时间',
+      'trackSpeed' => '追踪转向',
       _ => field,
     };
   }

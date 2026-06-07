@@ -185,6 +185,15 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
           previewType: update.previewType,
           previewFileId: update.previewFileId,
           previewVideoUrl: update.previewVideoUrl,
+          speed: update.speed,
+          count: update.count,
+          angle: update.angle,
+          customCd: update.customCd,
+          puncture: update.puncture,
+          bounce: update.bounce,
+          explode: update.explode,
+          holdTime: update.holdTime,
+          trackSpeed: update.trackSpeed,
         );
       }
     }
@@ -203,6 +212,15 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
             previewType: create.previewType,
             previewFileId: create.previewFileId,
             previewVideoUrl: create.previewVideoUrl,
+            speed: create.speed,
+            count: create.count,
+            angle: create.angle,
+            customCd: create.customCd,
+            puncture: create.puncture,
+            bounce: create.bounce,
+            explode: create.explode,
+            holdTime: create.holdTime,
+            trackSpeed: create.trackSpeed,
           ),
         );
       }
@@ -1438,7 +1456,16 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                   if (isEditing ||
                       ((editData?.cooldown ?? card.cooldown) != null ||
                           (editData?.damage ?? card.damage) != null ||
-                          (editData?.cost ?? card.cost) != null)) ...[
+                          (editData?.cost ?? card.cost) != null ||
+                          (editData?.speed ?? card.speed) != null ||
+                          (editData?.count ?? card.count) != null ||
+                          (editData?.angle ?? card.angle) != null ||
+                          (editData?.puncture ?? card.puncture) != null ||
+                          (editData?.bounce ?? card.bounce) != null ||
+                          (editData?.explode ?? card.explode) != null ||
+                          (editData?.holdTime ?? card.holdTime) != null ||
+                          (editData?.trackSpeed ?? card.trackSpeed) != null ||
+                          (editData?.customCd ?? card.customCd) != null)) ...[
                     const SizedBox(height: 10),
                     if (isEditing)
                       _buildEditableStatsRow(
@@ -1452,6 +1479,15 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                         cooldown: editData?.cooldown ?? card.cooldown,
                         damage: editData?.damage ?? card.damage,
                         cost: editData?.cost ?? card.cost,
+                        speed: editData?.speed ?? card.speed,
+                        count: editData?.count ?? card.count,
+                        angle: editData?.angle ?? card.angle,
+                        puncture: editData?.puncture ?? card.puncture,
+                        bounce: editData?.bounce ?? card.bounce,
+                        explode: editData?.explode ?? card.explode,
+                        holdTime: editData?.holdTime ?? card.holdTime,
+                        trackSpeed: editData?.trackSpeed ?? card.trackSpeed,
+                        customCd: editData?.customCd ?? card.customCd,
                         type: card.type.name,
                         accentColor: borderColor,
                       ),
@@ -1789,12 +1825,30 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                   // 属性行
                   if (data.cooldown != null ||
                       data.damage != null ||
-                      data.cost != null) ...[
+                      data.cost != null ||
+                      data.speed != null ||
+                      data.count != null ||
+                      data.angle != null ||
+                      data.puncture != null ||
+                      data.bounce != null ||
+                      data.explode != null ||
+                      data.holdTime != null ||
+                      data.trackSpeed != null ||
+                      data.customCd != null) ...[
                     const SizedBox(height: 10),
                     _buildSpellCardStatsRow(
                       cooldown: data.cooldown,
                       damage: data.damage,
                       cost: data.cost,
+                      speed: data.speed,
+                      count: data.count,
+                      angle: data.angle,
+                      puncture: data.puncture,
+                      bounce: data.bounce,
+                      explode: data.explode,
+                      holdTime: data.holdTime,
+                      trackSpeed: data.trackSpeed,
+                      customCd: data.customCd,
                       type: data.type,
                       accentColor: borderColor,
                     ),
@@ -2697,6 +2751,15 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
     double? cooldown,
     String? damage,
     double? cost,
+    double? speed,
+    int? count,
+    double? angle,
+    int? puncture,
+    int? bounce,
+    double? explode,
+    double? holdTime,
+    double? trackSpeed,
+    double? customCd,
     required String type,
     required Color accentColor,
   }) {
@@ -2746,26 +2809,83 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
       );
     }
 
+    String fmt(num v) => v % 1 == 0 ? v.toInt().toString() : v.toString();
+    if (speed != null) {
+      statItems.add(_buildStatItemWithShadow(Icons.speed, '弹幕初速', fmt(speed),
+          CharacterGalleryTheme.getSpeedColor(context), overlayColor));
+    }
+    if (count != null) {
+      statItems.add(_buildStatItemWithShadow(
+          Icons.scatter_plot,
+          '弹幕数量',
+          count.toString(),
+          CharacterGalleryTheme.getCountColor(context),
+          overlayColor));
+    }
+    if (angle != null) {
+      statItems.add(_buildStatItemWithShadow(
+          Icons.architecture,
+          '散射角度',
+          '${fmt(angle)}°',
+          CharacterGalleryTheme.getAngleColor(context),
+          overlayColor));
+    }
+    if (puncture != null) {
+      statItems.add(_buildStatItemWithShadow(
+          Icons.swap_horiz,
+          '穿刺次数',
+          puncture.toString(),
+          CharacterGalleryTheme.getPunctureColor(context),
+          overlayColor));
+    }
+    if (bounce != null) {
+      statItems.add(_buildStatItemWithShadow(
+          Icons.replay,
+          '反弹次数',
+          bounce.toString(),
+          CharacterGalleryTheme.getBounceColor(context),
+          overlayColor));
+    }
+    if (explode != null) {
+      statItems.add(_buildStatItemWithShadow(
+          Icons.brightness_5,
+          '影响范围',
+          fmt(explode),
+          CharacterGalleryTheme.getExplodeColor(context),
+          overlayColor));
+    }
+    if (holdTime != null) {
+      statItems.add(_buildStatItemWithShadow(
+          Icons.hourglass_bottom,
+          '持续时间',
+          '${fmt(holdTime)}s',
+          CharacterGalleryTheme.getHoldTimeColor(context),
+          overlayColor));
+    }
+    if (trackSpeed != null) {
+      statItems.add(_buildStatItemWithShadow(
+          Icons.gps_fixed,
+          '追踪转向',
+          fmt(trackSpeed),
+          CharacterGalleryTheme.getTrackSpeedColor(context),
+          overlayColor));
+    }
+    if (customCd != null) {
+      statItems.add(_buildStatItemWithShadow(
+          Icons.settings,
+          '内置CD',
+          '${fmt(customCd)}s',
+          CharacterGalleryTheme.getCustomCdColor(context),
+          overlayColor));
+    }
+
     if (statItems.isEmpty) return const SizedBox.shrink();
 
-    return Row(
-      children: [
-        for (int i = 0; i < statItems.length; i++) ...[
-          statItems[i],
-          if (i < statItems.length - 1) ...[
-            const SizedBox(width: 6),
-            Text(
-              '│',
-              style: TextStyle(
-                color: accentColor.withValues(alpha: 0.3),
-                fontSize: 12,
-                shadows: [Shadow(color: overlayColor, blurRadius: 2)],
-              ),
-            ),
-            const SizedBox(width: 6),
-          ],
-        ],
-      ],
+    // 字段较多时使用 Wrap 自动换行；不再使用竖线分隔符（在多行布局里视觉断裂）
+    return Wrap(
+      spacing: 12,
+      runSpacing: 6,
+      children: statItems,
     );
   }
 
@@ -3319,6 +3439,15 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                   previewType: e.previewType,
                   previewFileId: e.previewFileId,
                   previewVideoUrl: e.previewVideoUrl,
+                  speed: e.speed,
+                  count: e.count,
+                  angle: e.angle,
+                  customCd: e.customCd,
+                  puncture: e.puncture,
+                  bounce: e.bounce,
+                  explode: e.explode,
+                  holdTime: e.holdTime,
+                  trackSpeed: e.trackSpeed,
                 ),
               )
               .toList()
@@ -3336,6 +3465,15 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                   previewType: e.value.previewType,
                   previewFileId: e.value.previewFileId,
                   previewVideoUrl: e.value.previewVideoUrl,
+                  speed: e.value.speed,
+                  count: e.value.count,
+                  angle: e.value.angle,
+                  customCd: e.value.customCd,
+                  puncture: e.value.puncture,
+                  bounce: e.value.bounce,
+                  explode: e.value.explode,
+                  holdTime: e.value.holdTime,
+                  trackSpeed: e.value.trackSpeed,
                 ),
               )
               .toList()

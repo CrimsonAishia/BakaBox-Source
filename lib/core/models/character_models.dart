@@ -189,6 +189,21 @@ class SpellCard extends Equatable {
   final String? damage;
   final List<String>? tips;
 
+  // 核心数值字段
+  final double? speed; // 基础速度（弹幕初速）
+  final int? count; // 弹幕数量
+  final double? angle; // 散射角度
+  final double? customCd; // 自定义/内置 CD 数值（spell_o.cfg 中为数字）
+  final int? puncture; // 穿刺次数
+  final int? bounce; // 反弹次数
+  final double? explode; // 影响范围 / 爆炸半径
+  final double? holdTime; // 持续时间（秒）
+  final double? trackSpeed; // 追踪加速 / 转向
+  // 辅助字段
+  final bool? exclusive; // 是否为该角色专属符卡
+  final bool? chat; // 少数符卡使用的标志位
+  final bool? customSpellSound; // 是否使用自定义音效
+
   const SpellCard({
     required this.id,
     this.subModelId,
@@ -206,6 +221,18 @@ class SpellCard extends Equatable {
     this.cooldown,
     this.damage,
     this.tips,
+    this.speed,
+    this.count,
+    this.angle,
+    this.customCd,
+    this.puncture,
+    this.bounce,
+    this.explode,
+    this.holdTime,
+    this.trackSpeed,
+    this.exclusive,
+    this.chat,
+    this.customSpellSound,
   });
 
   factory SpellCard.fromJson(Map<String, dynamic> json) =>
@@ -230,6 +257,18 @@ class SpellCard extends Equatable {
     cooldown,
     damage,
     tips,
+    speed,
+    count,
+    angle,
+    customCd,
+    puncture,
+    bounce,
+    explode,
+    holdTime,
+    trackSpeed,
+    exclusive,
+    chat,
+    customSpellSound,
   ];
 }
 
@@ -832,6 +871,16 @@ class SpellCardEditItem extends Equatable {
   final int? previewFileId;
   final String? previewVideoUrl;
 
+  final double? speed;
+  final int? count;
+  final double? angle;
+  final double? customCd;
+  final int? puncture;
+  final int? bounce;
+  final double? explode;
+  final double? holdTime;
+  final double? trackSpeed;
+
   const SpellCardEditItem({
     required this.id,
     this.description,
@@ -843,6 +892,15 @@ class SpellCardEditItem extends Equatable {
     this.previewType,
     this.previewFileId,
     this.previewVideoUrl,
+    this.speed,
+    this.count,
+    this.angle,
+    this.customCd,
+    this.puncture,
+    this.bounce,
+    this.explode,
+    this.holdTime,
+    this.trackSpeed,
   });
 
   factory SpellCardEditItem.fromJson(Map<String, dynamic> json) =>
@@ -861,6 +919,15 @@ class SpellCardEditItem extends Equatable {
     previewType,
     previewFileId,
     previewVideoUrl,
+    speed,
+    count,
+    angle,
+    customCd,
+    puncture,
+    bounce,
+    explode,
+    holdTime,
+    trackSpeed,
   ];
 }
 
@@ -880,6 +947,16 @@ class SpellCardCreateItem extends Equatable {
   final int? previewFileId;
   final String? previewVideoUrl;
 
+  final double? speed;
+  final int? count;
+  final double? angle;
+  final double? customCd;
+  final int? puncture;
+  final int? bounce;
+  final double? explode;
+  final double? holdTime;
+  final double? trackSpeed;
+
   const SpellCardCreateItem({
     required this.name,
     required this.type,
@@ -893,6 +970,15 @@ class SpellCardCreateItem extends Equatable {
     this.previewType,
     this.previewFileId,
     this.previewVideoUrl,
+    this.speed,
+    this.count,
+    this.angle,
+    this.customCd,
+    this.puncture,
+    this.bounce,
+    this.explode,
+    this.holdTime,
+    this.trackSpeed,
   });
 
   factory SpellCardCreateItem.fromJson(Map<String, dynamic> json) =>
@@ -913,6 +999,15 @@ class SpellCardCreateItem extends Equatable {
     previewType,
     previewFileId,
     previewVideoUrl,
+    speed,
+    count,
+    angle,
+    customCd,
+    puncture,
+    bounce,
+    explode,
+    holdTime,
+    trackSpeed,
   ];
 }
 
@@ -1454,6 +1549,16 @@ class SpellCardTierItem extends Equatable {
   final double? cooldown;
   final String? damage;
 
+  final double? speed;
+  final int? count;
+  final double? angle;
+  final double? customCd;
+  final int? puncture;
+  final int? bounce;
+  final double? explode;
+  final double? holdTime;
+  final double? trackSpeed;
+
   const SpellCardTierItem({
     required this.id,
     required this.characterId,
@@ -1467,6 +1572,15 @@ class SpellCardTierItem extends Equatable {
     this.cost,
     this.cooldown,
     this.damage,
+    this.speed,
+    this.count,
+    this.angle,
+    this.customCd,
+    this.puncture,
+    this.bounce,
+    this.explode,
+    this.holdTime,
+    this.trackSpeed,
   });
 
   factory SpellCardTierItem.fromJson(Map<String, dynamic> json) =>
@@ -1487,6 +1601,15 @@ class SpellCardTierItem extends Equatable {
     cost,
     cooldown,
     damage,
+    speed,
+    count,
+    angle,
+    customCd,
+    puncture,
+    bounce,
+    explode,
+    holdTime,
+    trackSpeed,
   ];
 }
 

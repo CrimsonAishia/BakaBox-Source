@@ -1541,6 +1541,16 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 ),
               ),
 
+              // 渐变蒙版（顶部透明 → 底部加深，让属性行落在清晰区域）
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration:
+                      CharacterGalleryTheme.getCardBottomGradientDecoration(
+                        context,
+                      ),
+                ),
+              ),
+
               // 内容层
               Padding(
                 padding: const EdgeInsets.all(12),
@@ -1671,10 +1681,19 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                       ),
                     ),
 
-                    // 属性行（如果有）
+                    // 属性行（如果有任意字段）
                     if (card.cooldown != null ||
                         card.damage != null ||
-                        card.cost != null) ...[
+                        card.cost != null ||
+                        card.speed != null ||
+                        card.count != null ||
+                        card.angle != null ||
+                        card.puncture != null ||
+                        card.bounce != null ||
+                        card.explode != null ||
+                        card.holdTime != null ||
+                        card.trackSpeed != null ||
+                        card.customCd != null) ...[
                       const SizedBox(height: 10),
                       _buildSpellCardStats(card, borderColor),
                     ],
@@ -1727,6 +1746,114 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           isUltimate
               ? CharacterGalleryTheme.getBCostColor(context)
               : CharacterGalleryTheme.getPCostColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (card.speed != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.speedometer,
+          '弹幕初速',
+          _formatNumber(card.speed!),
+          CharacterGalleryTheme.getSpeedColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (card.count != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.counter,
+          '弹幕数量',
+          _formatNumber(card.count!),
+          CharacterGalleryTheme.getCountColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (card.angle != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.angleAcute,
+          '散射角度',
+          '${_formatNumber(card.angle!)}°',
+          CharacterGalleryTheme.getAngleColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (card.puncture != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.arrowExpandHorizontal,
+          '穿刺次数',
+          _formatNumber(card.puncture!),
+          CharacterGalleryTheme.getPunctureColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (card.bounce != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.arrowUDownLeft,
+          '反弹次数',
+          _formatNumber(card.bounce!),
+          CharacterGalleryTheme.getBounceColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (card.explode != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.weatherSunny,
+          '影响范围',
+          _formatNumber(card.explode!),
+          CharacterGalleryTheme.getExplodeColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (card.holdTime != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.timerSand,
+          '持续时间',
+          '${_formatNumber(card.holdTime!)}s',
+          CharacterGalleryTheme.getHoldTimeColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (card.trackSpeed != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.crosshairs,
+          '追踪转向',
+          _formatNumber(card.trackSpeed!),
+          CharacterGalleryTheme.getTrackSpeedColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (card.customCd != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.cog,
+          '内置CD',
+          '${_formatNumber(card.customCd!)}s',
+          CharacterGalleryTheme.getCustomCdColor(context),
           isDark,
         ),
       );
@@ -2710,6 +2837,15 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                     ),
                   ),
                 ),
+                // 渐变蒙版（顶部透明 → 底部加深，让属性行落在清晰区域）
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration:
+                        CharacterGalleryTheme.getCardBottomGradientDecoration(
+                          context,
+                        ),
+                  ),
+                ),
                 // 内容层
                 Padding(
                   padding: const EdgeInsets.all(12),
@@ -2862,7 +2998,16 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                       // 属性行
                       if (spellCard.cooldown != null ||
                           spellCard.damage != null ||
-                          spellCard.cost != null) ...[
+                          spellCard.cost != null ||
+                          spellCard.speed != null ||
+                          spellCard.count != null ||
+                          spellCard.angle != null ||
+                          spellCard.puncture != null ||
+                          spellCard.bounce != null ||
+                          spellCard.explode != null ||
+                          spellCard.holdTime != null ||
+                          spellCard.trackSpeed != null ||
+                          spellCard.customCd != null) ...[
                         const SizedBox(height: 8),
                         _buildTierItemStats(spellCard, borderColor),
                       ],
@@ -2916,6 +3061,114 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
           isUltimate
               ? CharacterGalleryTheme.getBCostColor(context)
               : CharacterGalleryTheme.getPCostColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (spellCard.speed != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.speedometer,
+          '弹幕初速',
+          _formatNumber(spellCard.speed!),
+          CharacterGalleryTheme.getSpeedColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (spellCard.count != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.counter,
+          '弹幕数量',
+          _formatNumber(spellCard.count!),
+          CharacterGalleryTheme.getCountColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (spellCard.angle != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.angleAcute,
+          '散射角度',
+          '${_formatNumber(spellCard.angle!)}°',
+          CharacterGalleryTheme.getAngleColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (spellCard.puncture != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.arrowExpandHorizontal,
+          '穿刺次数',
+          _formatNumber(spellCard.puncture!),
+          CharacterGalleryTheme.getPunctureColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (spellCard.bounce != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.arrowUDownLeft,
+          '反弹次数',
+          _formatNumber(spellCard.bounce!),
+          CharacterGalleryTheme.getBounceColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (spellCard.explode != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.weatherSunny,
+          '影响范围',
+          _formatNumber(spellCard.explode!),
+          CharacterGalleryTheme.getExplodeColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (spellCard.holdTime != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.timerSand,
+          '持续时间',
+          '${_formatNumber(spellCard.holdTime!)}s',
+          CharacterGalleryTheme.getHoldTimeColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (spellCard.trackSpeed != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.crosshairs,
+          '追踪转向',
+          _formatNumber(spellCard.trackSpeed!),
+          CharacterGalleryTheme.getTrackSpeedColor(context),
+          isDark,
+        ),
+      );
+    }
+
+    if (spellCard.customCd != null) {
+      statItems.add(
+        _buildStatItem(
+          MdiIcons.cog,
+          '内置CD',
+          '${_formatNumber(spellCard.customCd!)}s',
+          CharacterGalleryTheme.getCustomCdColor(context),
           isDark,
         ),
       );
