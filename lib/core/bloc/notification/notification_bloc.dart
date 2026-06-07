@@ -6,6 +6,7 @@ import '../../api/notification_api.dart';
 import '../../models/notification_models.dart';
 import '../../services/auth_service.dart';
 import '../../services/realtime/realtime_notifications_channel.dart';
+import '../../services/realtime_service.dart';
 import '../../utils/log_service.dart';
 import 'notification_event.dart';
 import 'notification_state.dart';
@@ -23,6 +24,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       RealtimeNotificationsChannel();
 
   StreamSubscription<NotificationItem>? _realtimeSubscription;
+  StreamSubscription<void>? _reconnectedSubscription;
   bool _realtimeStarted = false;
 
   static const int _pageSize = 20;
@@ -60,6 +62,19 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       if (isClosed) return;
       add(NotificationRealtimeReceived(item));
     });
+    // 断线重连后，notifications 频道只推新消息、不回放断线期间的变更。
+    // - 未读数始终刷新一次，保证角标准确（轻量、无打断）
+    // - 整页列表刷新只在用户停留在第 1 页时做：断线期间漏掉的新消息都在顶部，
+    //   若用户已翻到后续页面，重置列表会打断浏览，故跳过
+    _reconnectedSubscription = RealtimeService().reconnectedStream.listen((_) {
+      if (isClosed) return;
+      if (!AuthService.instance.isLoggedIn) return;
+      LogService.d('[NotificationBloc] 重连成功，主动对账');
+      add(const NotificationFetchUnreadCount());
+      if (state.currentPage <= 1) {
+        add(const NotificationRefresh(silent: true));
+      }
+    });
     LogService.d('[NotificationBloc] 实时通道已启动');
   }
 
@@ -68,6 +83,8 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     _realtimeStarted = false;
     _realtimeSubscription?.cancel();
     _realtimeSubscription = null;
+    _reconnectedSubscription?.cancel();
+    _reconnectedSubscription = null;
     _realtimeChannel.unsubscribe();
     LogService.d('[NotificationBloc] 实时通道已停止');
   }

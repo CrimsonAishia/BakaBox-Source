@@ -6,6 +6,7 @@ import '../utils/storage_utils.dart';
 import '../utils/time_utils.dart';
 import 'notification_window_service.dart';
 import 'realtime/realtime_workshop_changelog_channel.dart';
+import 'realtime_service.dart';
 
 /// 更新日志监控服务（单例）
 ///
@@ -35,6 +36,9 @@ class UpdateLogMonitorService {
   /// WebSocket 事件订阅
   StreamSubscription<WorkshopChangelogEvent>? _subscription;
 
+  /// 重连成功订阅
+  StreamSubscription<void>? _reconnectedSubscription;
+
   /// 初始化服务（应用启动时调用）
   Future<void> initialize() async {
     if (_initialized) return;
@@ -52,12 +56,20 @@ class UpdateLogMonitorService {
   void _subscribeRealtime() {
     _channel.subscribe();
     _subscription = _channel.events.listen(_onWorkshopChangelogEvent);
+    // workshop.changelog 频道不回放断线期间的更新，重连后主动对账一次
+    // （checkForUpdates 内部基于上次记录时间判断，不会重复通知）
+    _reconnectedSubscription = RealtimeService().reconnectedStream.listen((_) {
+      LogService.d('[UpdateLogMonitor] 重连成功，主动检查更新');
+      checkForUpdates();
+    });
   }
 
   /// 取消订阅实时推送频道
   void _unsubscribeRealtime() {
     _subscription?.cancel();
     _subscription = null;
+    _reconnectedSubscription?.cancel();
+    _reconnectedSubscription = null;
     _channel.unsubscribe();
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../api/announcement_api.dart';
 import '../../services/announcement_read_service.dart';
 import '../../services/realtime/realtime_announcement_channel.dart';
+import '../../services/realtime_service.dart';
 import '../../utils/announcement_utils.dart';
 import '../../utils/log_service.dart';
 import 'announcement_event.dart';
@@ -20,6 +21,7 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
       RealtimeAnnouncementChannel();
 
   StreamSubscription<AnnouncementChannelEvent>? _realtimeSubscription;
+  StreamSubscription<void>? _reconnectedSubscription;
   bool _realtimeStarted = false;
 
   /// 实时事件去抖：100ms 内的多个事件合并成一次刷新
@@ -59,6 +61,13 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
       if (isClosed) return;
       add(AnnouncementRealtimeReceived(payload));
     });
+    // 断线重连后，announcements 频道不回放断线期间的变更，
+    // 复用去抖刷新主动对账一次（合并 200ms 内的重连抖动）
+    _reconnectedSubscription = RealtimeService().reconnectedStream.listen((_) {
+      if (isClosed) return;
+      LogService.d('[AnnouncementBloc] 重连成功，主动对账');
+      _scheduleDebouncedRefresh();
+    });
     LogService.d('[AnnouncementBloc] 实时通道已启动');
   }
 
@@ -67,6 +76,8 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
     _realtimeStarted = false;
     _realtimeSubscription?.cancel();
     _realtimeSubscription = null;
+    _reconnectedSubscription?.cancel();
+    _reconnectedSubscription = null;
     _realtimeChannel.unsubscribe();
     LogService.d('[AnnouncementBloc] 实时通道已停止');
   }
