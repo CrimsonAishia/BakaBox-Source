@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../../core/core.dart';
 import '../../core/widgets/marquee_text.dart';
@@ -103,12 +104,12 @@ class _LobbyDesktopState extends State<LobbyDesktop>
 
     if (_started) {
       // 页面重新激活时，确保焦点在场景上
-      // 仅在应用处于前台（resumed）时才恢复焦点，避免窗口失焦时抢焦点
+      // 仅在应用处于前台（resumed 且窗口已聚焦）时才恢复焦点，避免窗口失焦时抢焦点
       final appState = WidgetsBinding.instance.lifecycleState;
       if (appState == AppLifecycleState.resumed) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
           if (mounted && bloc.state.pageStatus == LobbyPageStatus.ready) {
-            _sceneFocusNode.requestFocus();
+            await _requestSceneFocusIfWindowActive();
           }
         });
       }
@@ -170,6 +171,22 @@ class _LobbyDesktopState extends State<LobbyDesktop>
       if (_started && mounted) {
         context.read<LobbyBloc>().add(const LobbyAppResumed());
       }
+    }
+  }
+
+  /// 安全请求场景焦点
+  ///
+  /// 仅当主窗口处于前台时才调用 `_sceneFocusNode.requestFocus()`，
+  /// 避免在用户已经把焦点切到其它应用（例如游戏中的 CS2）时把
+  /// Flutter 主窗口强行拉到前台抢占焦点。
+  Future<void> _requestSceneFocusIfWindowActive() async {
+    if (!mounted) return;
+    try {
+      final isFocused = await windowManager.isFocused();
+      if (!mounted || !isFocused) return;
+      _sceneFocusNode.requestFocus();
+    } catch (_) {
+      // windowManager 异常时保守处理：不抢占焦点
     }
   }
 
@@ -443,9 +460,7 @@ class _LobbyDesktopState extends State<LobbyDesktop>
         // 当页面状态变为 ready 时，请求场景焦点（但聊天激活时不抢焦点）
         if (state.pageStatus == LobbyPageStatus.ready && !state.isChatActive) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              _sceneFocusNode.requestFocus();
-            }
+            _requestSceneFocusIfWindowActive();
           });
         }
 
@@ -469,9 +484,7 @@ class _LobbyDesktopState extends State<LobbyDesktop>
           _chatFocusNode.unfocus();
           // 延迟到下一帧再请求 scene 焦点，避免同一 build 周期内焦点不稳定
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              _sceneFocusNode.requestFocus();
-            }
+            _requestSceneFocusIfWindowActive();
           });
         }
         // 每次 transientNotice 变化都重置定时器
