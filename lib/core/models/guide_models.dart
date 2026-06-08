@@ -239,6 +239,14 @@ class GuideListItem extends Equatable {
   @ServerTimeConverter()
   final DateTime updatedAt;
 
+  /// 删除时间（仅回收站项）
+  @NullableServerTimeConverter()
+  final DateTime? deletedAt;
+
+  /// 距永久删除剩余天数（仅回收站项）
+  @JsonKey(defaultValue: 0)
+  final int expireDays;
+
   const GuideListItem({
     required this.id,
     required this.title,
@@ -268,6 +276,8 @@ class GuideListItem extends Equatable {
     required this.createdAt,
     this.publishedAt,
     required this.updatedAt,
+    this.deletedAt,
+    this.expireDays = 0,
   });
 
   factory GuideListItem.fromJson(Map<String, dynamic> json) =>
@@ -304,6 +314,8 @@ class GuideListItem extends Equatable {
         createdAt,
         publishedAt,
         updatedAt,
+        deletedAt,
+        expireDays,
       ];
 }
 
@@ -357,6 +369,8 @@ class Guide extends GuideListItem {
     required super.createdAt,
     super.publishedAt,
     required super.updatedAt,
+    super.deletedAt,
+    super.expireDays,
     this.content,
     this.attachments = const [],
     this.videoEmbeds = const [],
