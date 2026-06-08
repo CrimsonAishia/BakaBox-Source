@@ -10,7 +10,7 @@ import '../guide/community_guide/community_guide_theme.dart';
 ///
 /// 仅放置左侧元素：返回按钮 / 标题 / 保存状态文本。
 /// 右上角不放按钮，避免被 Windows 窗口控制按钮（最小化/最大化/关闭）遮挡。
-/// 保存草稿 / 发布 操作移至 Sidebar 底部。
+/// 保存草稿 / 提交 操作移至 Sidebar 底部。
 class GuideEditorHeader extends StatelessWidget {
   /// 返回按钮回调
   final VoidCallback? onBack;
@@ -36,7 +36,7 @@ class GuideEditorHeader extends StatelessWidget {
               _CircleBackButton(onTap: onBack),
               const SizedBox(width: 14),
               Text(
-                guideId != null ? '编辑攻略' : '发布攻略',
+                guideId != null ? '编辑攻略' : '新建攻略',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -48,6 +48,7 @@ class GuideEditorHeader extends StatelessWidget {
               _StatusText(
                 phase: editorState.phase,
                 lastSavedAt: editorState.lastSavedAt,
+                isEditingExisting: guideId != null,
               ),
             ],
           );
@@ -109,8 +110,13 @@ class _CircleBackButtonState extends State<_CircleBackButton> {
 class _StatusText extends StatelessWidget {
   final EditorPhase phase;
   final DateTime? lastSavedAt;
+  final bool isEditingExisting;
 
-  const _StatusText({required this.phase, this.lastSavedAt});
+  const _StatusText({
+    required this.phase,
+    this.lastSavedAt,
+    this.isEditingExisting = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -139,8 +145,8 @@ class _StatusText extends StatelessWidget {
       EditorPhase.saving => '正在保存...',
       EditorPhase.savingRemote => '同步至云端...',
       EditorPhase.conflict => '版本冲突',
-      EditorPhase.publishing => '发布中...',
-      EditorPhase.submitted => '已发布',
+      EditorPhase.publishing => isEditingExisting ? '提交中...' : '发布中...',
+      EditorPhase.submitted => isEditingExisting ? '已提交' : '已发布',
       EditorPhase.error => '保存失败',
     };
   }

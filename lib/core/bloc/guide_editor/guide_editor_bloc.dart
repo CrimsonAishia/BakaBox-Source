@@ -642,7 +642,9 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
       emit(state.copyWith(
         validateErrors: [...errors, EditorValidateError.categoryRequired],
         canPublish: false,
-        error: '分类加载失败，无法发布',
+        error: (draft.guideId != null && draft.guideId! > 0)
+            ? '分类加载失败，无法提交'
+            : '分类加载失败，无法发布',
       ));
       return;
     }

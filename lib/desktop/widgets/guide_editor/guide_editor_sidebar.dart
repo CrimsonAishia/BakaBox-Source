@@ -109,7 +109,7 @@ class _T {
 /// 攻略编辑器左侧 Sidebar（卡片化 + 可滚动 + 顶/底渐隐指示器）
 ///
 /// 风格参考原型：深蓝卡片 + 圆角 + 微描边 + 字段块比卡片略亮以保证对比度。
-/// 底部固定 保存草稿 / 发布 操作。
+/// 底部固定 保存草稿 / 提交 操作。
 class GuideEditorSidebar extends StatefulWidget {
   const GuideEditorSidebar({super.key});
 
@@ -1562,7 +1562,7 @@ class _ValidationChecklist extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionLabel(label: '发布检查'),
+        const _SectionLabel(label: '提交检查'),
         const SizedBox(height: 6),
         _CheckItem(
           label: '标题（2-60 字）',
@@ -1640,7 +1640,7 @@ class _FooterActions extends StatelessWidget {
     final isSaving =
         phase == EditorPhase.saving || phase == EditorPhase.savingRemote;
     final isPublishing = phase == EditorPhase.publishing;
-    final isPending = state.originalGuideStatus == GuideStatus.pending;
+    final isEditingExisting = state.draft?.guideId != null && state.draft!.guideId! > 0;
     final canPublish =
         state.canPublish && !isPublishing && phase != EditorPhase.submitted;
 
@@ -1690,8 +1690,8 @@ class _FooterActions extends StatelessWidget {
           Tooltip(
             message: !canPublish
                 ? (isCategoriesFailed
-                    ? '分类加载失败，无法发布'
-                    : '请完成左侧"发布检查"中的所有项')
+                    ? (isEditingExisting ? '分类加载失败，无法提交' : '分类加载失败，无法发布')
+                    : '请完成左侧"提交检查"中的所有项')
                 : '',
             child: SizedBox(
               width: double.infinity,
@@ -1714,7 +1714,7 @@ class _FooterActions extends StatelessWidget {
                     : const Icon(Icons.send_rounded,
                         size: 16, color: Colors.white),
                 label: Text(
-                  isPending ? '提交修改' : '发布',
+                  isEditingExisting ? '提交修改' : '发布',
                   style: const TextStyle(
                     fontSize: 14,
                     color: Colors.white,
