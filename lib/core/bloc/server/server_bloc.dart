@@ -665,24 +665,29 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   void _applyUsersCountSnapshotForCurrentServers(Emitter<ServerState> emit) {
     if (state.servers.isEmpty) return;
     final snapshot = _usersCountChannel.latestSnapshot;
-    if (snapshot.isEmpty) return;
 
+    // 注意：server.users.count 的 snapshot 只包含人数 > 0 的服务器，
+    // 所以「不在 snapshot 中」= 该服务器当前排队/暖服人数为 0。
+    // 这里必须把不在 snapshot 中的服务器归零，否则会残留上一次的 +N，
+    // 表现为人数显示不正常。语义需与 _onApplyUsersCountUpdates 的 snapshot 分支一致。
     bool changed = false;
     final updatedServers = state.servers.map((server) {
       final address =
           server.serverItem.address ?? server.serverItem.serverAddress;
       if (address == null) return server;
-      final count = snapshot[address];
-      if (count == null) return server;
 
-      if (server.queueCount == count.queueCount &&
-          server.warmupCount == count.warmupCount) {
+      final count = snapshot[address];
+      final queueCount = count?.queueCount ?? 0;
+      final warmupCount = count?.warmupCount ?? 0;
+
+      if (server.queueCount == queueCount &&
+          server.warmupCount == warmupCount) {
         return server;
       }
       changed = true;
       return server.copyWith(
-        queueCount: count.queueCount,
-        warmupCount: count.warmupCount,
+        queueCount: queueCount,
+        warmupCount: warmupCount,
       );
     }).toList();
 

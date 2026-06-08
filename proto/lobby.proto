@@ -209,7 +209,10 @@ message ProfileSteamBindRequest {
 }
 
 message SnapshotRequest {
-  // 无参数
+  // last_delta_seq：客户端重连时携带上次收到的 presence.delta 序列号（S3 增量恢复）。
+  // 0 或不携带 = 请求全量快照（旧客户端默认行为）。
+  // 服务端若支持且能覆盖该 seq，则只回增量（is_resume=true），否则回全量。
+  int64 last_delta_seq = 1;
 }
 
 message AssetsRequest {
@@ -260,6 +263,14 @@ message SnapshotResponse {
   repeated LobbyUser users = 3;
   repeated LobbyMessage recent_messages = 4;
   PageInfo page_info = 5;
+
+  // ==================== S3 重连增量恢复 ====================
+  // is_resume=true 时本响应是增量快照：users 字段仅含「自上次 last_delta_seq 以来
+  // 新增的用户」，left_user_ids 含「离开的用户」，客户端应在本地列表基础上做增量合并，
+  // 而非整表替换。is_resume=false（默认）时为全量快照，客户端整表替换（旧行为）。
+  bool is_resume = 6;
+  repeated string left_user_ids = 7; // 仅 is_resume=true 时有效：增量期间离开的用户
+  int64 delta_seq = 8;               // 本次快照对应的最新 delta 序列号，客户端据此续接
 }
 
 message PresenceJoinResponse {

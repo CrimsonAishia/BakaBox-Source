@@ -189,6 +189,14 @@ class _LobbyGameStatusChanged extends LobbyEvent {
   List<Object?> get props => [isGameRunning];
 }
 
+/// 内部事件：C2 批量刷新缓冲的 move.broadcast（节流后统一应用到 UI）
+class _LobbyMoveFlush extends LobbyEvent {
+  const _LobbyMoveFlush();
+
+  @override
+  List<Object?> get props => [];
+}
+
 /// 页面活动状态改变（在外部导航切换时触发）
 class LobbyPageActivityChanged extends LobbyEvent {
   final String pageActivityText;

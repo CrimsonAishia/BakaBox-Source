@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:nakama/nakama.dart';
 import 'package:uuid/uuid.dart';
 
@@ -216,6 +218,40 @@ class _NakamaSocketManager {
   StreamSubscription<MatchData>? _matchDataSubscription;
   StreamSubscription<MatchPresenceEvent>? _matchPresenceSubscription;
 
+  // === C4 应用层主动心跳 ===
+  //
+  // Nakama Dart SDK 1.3.0 不发送任何客户端保活帧，完全依赖系统事件循环自动回 pong。
+  // 高并发广播下主 isolate 被 protobuf 解码 + Widget 重建饿死时，pong 控制帧迟到，
+  // 服务端 pong_wait_ms 读超时把客户端踢掉（实测掉线根因）。
+  //
+  // 解决：定时主动发一条最廉价的上行消息（online.stats 只读查询，新旧服务端都支持，
+  // 不产生副作用广播），持续"喂"服务端的读超时计时器。
+  // 间隔 12s « 服务端 pong_wait_ms(60s)，即便连续丢 3 次仍在窗口内。
+  Timer? _appHeartbeatTimer;
+  static const Duration _appHeartbeatInterval = Duration(seconds: 12);
+
+  void _startAppHeartbeat() {
+    _appHeartbeatTimer?.cancel();
+    _appHeartbeatTimer = Timer.periodic(_appHeartbeatInterval, (_) {
+      if (!_isConnected || _currentMatchId == null) return;
+      try {
+        final envelope = pb.LobbyEnvelope()
+          ..v = 1
+          ..type = 'online.stats'
+          // include_users=false：轻量查询，仅维持链路活性，不拉全量用户列表
+          ..onlineStatsRequest = (pb.OnlineStatsRequest()..includeUsers = false);
+        sendEnvelope(envelope);
+      } catch (_) {
+        // 心跳失败不应影响主流程；真正断连由 onDone 处理
+      }
+    });
+  }
+
+  void _stopAppHeartbeat() {
+    _appHeartbeatTimer?.cancel();
+    _appHeartbeatTimer = null;
+  }
+
   /// 建立 WebSocket 连接
   Future<void> connect({
     required String host,
@@ -285,6 +321,7 @@ class _NakamaSocketManager {
   Future<void> disconnect() async {
     LogService.d('[NakamaSocketManager] 断开 WebSocket 连接');
     _isConnected = false;
+    _stopAppHeartbeat(); // C4：停止心跳
     await _matchDataSubscription?.cancel();
     _matchDataSubscription = null;
     await _matchPresenceSubscription?.cancel();
@@ -313,6 +350,8 @@ class _NakamaSocketManager {
     LogService.d('[NakamaSocketManager] 加入 Match: $matchId');
     final match = await socket.joinMatch(matchId);
     _currentMatchId = matchId;
+    // C4：加入 Match 后启动应用层心跳，维持链路活性
+    _startAppHeartbeat();
     LogService.i(
       '[NakamaSocketManager] 已加入 Match: $matchId, presences=${match.presences.length}',
     );
@@ -373,22 +412,24 @@ class _NakamaSocketManager {
 
   /// 处理 onMatchData 消息
   void _handleMatchData(MatchData matchData) {
-    // 原始数据日志：在任何过滤逻辑之前输出，用于排查服务端是否有回包
     final rawBytes = matchData.data;
-    LogService.d(
-      '[NakamaSocketManager][RAW] 收到 MatchData: '
-      'opCode=${matchData.opCode}, '
-      'matchId=${matchData.matchId}, '
-      'presence=${matchData.presence?.userId}, '
-      'dataLength=${rawBytes?.length ?? 0}, '
-      'rawHex=${rawBytes != null && rawBytes.isNotEmpty ? rawBytes.take(32).map((b) => b.toRadixString(16).padLeft(2, "0")).join(" ") : "(empty)"}',
-    );
+
+    // C1：热路径日志优化。
+    // 旧实现无条件构造 rawHex 字符串（.take().map().join()），即便 release 模式
+    // LogService.d 内部丢弃日志，参数仍被 eager 求值——200 人高峰每秒几十条消息，
+    // 这是主 isolate 的隐性开销之一。仅在 debug 模式下构造昂贵日志。
+    if (kDebugMode) {
+      LogService.d(
+        '[NakamaSocketManager][RAW] 收到 MatchData: '
+        'opCode=${matchData.opCode}, '
+        'matchId=${matchData.matchId}, '
+        'presence=${matchData.presence?.userId}, '
+        'dataLength=${rawBytes?.length ?? 0}',
+      );
+    }
 
     // 仅处理 OpCode 1
     if (matchData.opCode != 1) {
-      LogService.d(
-        '[NakamaSocketManager] 忽略非 OpCode 1 消息: opCode=${matchData.opCode}',
-      );
       return;
     }
 
@@ -400,14 +441,17 @@ class _NakamaSocketManager {
 
     final wsEvent = LobbyEnvelopeParser.fromBytes(data);
     if (wsEvent == null) {
-      LogService.w(
-        '[NakamaSocketManager] Protobuf 反序列化失败，跳过 (${data.length} bytes), '
-        'rawHex=${data.take(64).map((b) => b.toRadixString(16).padLeft(2, "0")).join(" ")}',
-      );
+      if (kDebugMode) {
+        LogService.w(
+          '[NakamaSocketManager] Protobuf 反序列化失败，跳过 (${data.length} bytes)',
+        );
+      }
       return;
     }
 
-    LogService.d('[NakamaSocketManager] 收到消息: ${wsEvent.type}');
+    if (kDebugMode) {
+      LogService.d('[NakamaSocketManager] 收到消息: ${wsEvent.type}');
+    }
     _matchEventController.add(wsEvent);
   }
 
@@ -488,6 +532,21 @@ class LobbyNakamaService {
   int _reconnectDelaySeconds = 2;
   static const int _maxReconnectDelaySeconds = 30;
   Timer? _reconnectTimer;
+
+  // === C3 重连风暴熔断 ===
+  // 连续失败次数；达到 _circuitBreakerThreshold 后把退避上限临时拉高到
+  // _circuitBreakerMaxDelaySeconds，避免大批客户端在服务端高负载时同步高频重连
+  // 形成二次雪崩。成功连接后清零。
+  int _consecutiveFailures = 0;
+  static const int _circuitBreakerThreshold = 8;
+  static const int _circuitBreakerMaxDelaySeconds = 120;
+  final Random _reconnectRandom = Random();
+
+  // === S3 重连增量恢复 ===
+  // 记录最近一次收到的 presence.delta / snapshot 的 seq。重连后 requestSnapshot
+  // 携带该值，服务端可只回增量。断连时不清零（保留以便续接）；
+  // 收到全量 snapshot(is_resume=false) 时更新为其 delta_seq。
+  int _lastDeltaSeq = 0;
 
   // === Session 主动刷新 ===
   Timer? _sessionRefreshTimer;
@@ -656,6 +715,10 @@ class LobbyNakamaService {
     _isLoginPending = false;
     _clearCachedEventsStream();
     _reconnectDelaySeconds = 2;
+    _consecutiveFailures = 0; // C3：强制重连重置熔断计数
+    // S3：forceReconnect 通常伴随本地用户列表被清空（如被踢后重连），
+    // 必须重置 seq，确保重连后请求全量快照而非增量（否则会合并到空列表造成缺人）。
+    _lastDeltaSeq = 0;
 
     await _waitForTokenReady();
     await _ensureDeviceIdReady();
@@ -779,6 +842,8 @@ class LobbyNakamaService {
 
         // 7. 只有在 joinMatch 成功后才标记为已连接并发送 connected 事件
         _isConnected = true;
+        _consecutiveFailures = 0; // C3：连接成功，重置熔断计数
+        _reconnectDelaySeconds = 2; // 退避重置
         _emitConnectionEvent(LobbyConnectionEventType.connected);
 
         LogService.i(
@@ -787,6 +852,8 @@ class LobbyNakamaService {
       } else if (joinResponse.ticket.isNotEmpty) {
         // 进入排队，通知 Bloc 显示排队 UI
         _isConnected = true;
+        _consecutiveFailures = 0; // C3：连接成功，重置熔断计数
+        _reconnectDelaySeconds = 2;
         _emitConnectionEvent(LobbyConnectionEventType.connected);
 
         // 发送排队事件给 Bloc
@@ -929,6 +996,24 @@ class LobbyNakamaService {
     if (wsEvent.type == 'snapshot') {
       _latestSnapshot = wsEvent;
       _clearCachedEventsStream();
+      // S3：记录服务端返回的 delta_seq，供下次重连续接增量
+      try {
+        final snap = wsEvent.envelope.snapshotResponse;
+        if (snap.deltaSeq.toInt() > 0) {
+          _lastDeltaSeq = snap.deltaSeq.toInt();
+        }
+      } catch (_) {}
+    }
+
+    // S3：记录 presence.delta 的 seq（增量帧持续推进 lastDeltaSeq）
+    if (wsEvent.type == 'presence.delta') {
+      try {
+        final delta = wsEvent.envelope.presenceDeltaResponse;
+        final seq = delta.seq.toInt();
+        if (seq > _lastDeltaSeq) {
+          _lastDeltaSeq = seq;
+        }
+      } catch (_) {}
     }
 
     // 先将事件分发给 Bloc 层
@@ -963,23 +1048,43 @@ class LobbyNakamaService {
     }
   }
 
-  /// 调度重连（指数退避）
+  /// 调度重连（指数退避 + C3 随机抖动 + 熔断）
   void _scheduleReconnect() {
     if (_isDisposed) return;
     if (_isReconnecting) return;
     _isReconnecting = true;
 
-    LogService.w('[LobbyNakamaService] 将在 $_reconnectDelaySeconds 秒后尝试重连...');
+    // C3：计算带抖动的实际延迟。
+    // 基础退避 = _reconnectDelaySeconds；熔断触发后上限临时抬高，避免羊群同步重连。
+    final int baseDelay = _consecutiveFailures >= _circuitBreakerThreshold
+        ? _reconnectDelaySeconds.clamp(2, _circuitBreakerMaxDelaySeconds)
+        : _reconnectDelaySeconds;
+    // ±30% 抖动，打散大批客户端的同步重连节拍
+    final double jitterFactor = 1.0 + (_reconnectRandom.nextDouble() * 0.6 - 0.3);
+    final int effectiveDelay = (baseDelay * jitterFactor)
+        .round()
+        .clamp(1, _circuitBreakerMaxDelaySeconds);
+
+    if (_consecutiveFailures >= _circuitBreakerThreshold) {
+      LogService.w(
+        '[LobbyNakamaService] 连续失败 $_consecutiveFailures 次，熔断降频重连，'
+        '将在 $effectiveDelay 秒后重试（服务器繁忙）',
+      );
+    } else {
+      LogService.w('[LobbyNakamaService] 将在 $effectiveDelay 秒后尝试重连...');
+    }
 
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(
-      Duration(seconds: _reconnectDelaySeconds),
+      Duration(seconds: effectiveDelay),
       () async {
         _isReconnecting = false;
-        _reconnectDelaySeconds = (_reconnectDelaySeconds * 2).clamp(
-          2,
-          _maxReconnectDelaySeconds,
-        );
+        _consecutiveFailures++; // C3：记一次重连尝试（成功后会清零）
+        // 退避翻倍：熔断态用更高上限，否则用常规上限
+        final int cap = _consecutiveFailures >= _circuitBreakerThreshold
+            ? _circuitBreakerMaxDelaySeconds
+            : _maxReconnectDelaySeconds;
+        _reconnectDelaySeconds = (_reconnectDelaySeconds * 2).clamp(2, cap);
 
         // 重连时检查 Session 是否过期，过期则先刷新
         if (_clientManager.session != null &&
@@ -1089,7 +1194,8 @@ class LobbyNakamaService {
   /// 协议能力声明位掩码
   /// bit0 (0x01) = 支持 presence.delta 帧
   /// bit1 (0x02) = 支持排队协议
-  static const int protocolFeatures = 0x03;
+  /// bit2 (0x04) = 支持重连增量恢复（S3：snapshot.request 携带 lastDeltaSeq）
+  static const int protocolFeatures = 0x07;
 
   /// RPC 调用 lobby_join 获取 Match ID 或排队令牌（带重试）
   ///
@@ -1267,13 +1373,17 @@ class LobbyNakamaService {
 
   /// 请求快照
   ///
-  /// 文档协议：SnapshotRequest 无参数，服务端返回地图配置、用户列表、最近消息。
-  Future<void> requestSnapshot() async {
+  /// [fullSync]=true：强制请求全量快照（lastDeltaSeq=0），用于需要整表对齐的场景
+  ///   （分页加载、delta 异常对齐、身份变更后重拉、传送到达）。
+  /// [fullSync]=false（默认）：携带 _lastDeltaSeq，允许服务端 S3 增量恢复，
+  ///   用于断线重连后只补增量，降低解码压力。
+  Future<void> requestSnapshot({bool fullSync = false}) async {
+    final seq = fullSync ? 0 : _lastDeltaSeq;
     final envelope = pb.LobbyEnvelope()
       ..v = 1
       ..type = 'snapshot.request'
       ..traceId = _generateTraceId()
-      ..snapshotRequest = pb.SnapshotRequest();
+      ..snapshotRequest = (pb.SnapshotRequest()..lastDeltaSeq = Int64(seq));
     _sendEnvelope(envelope);
   }
 
@@ -1592,6 +1702,12 @@ class LobbyNakamaService {
     _latestAssetsPayload = null;
     _latestSnapshot = null;
     _clearCachedEventsStream();
+
+    // S3 关键修复：传送是跨 Match（跨地图）切换，目标地图有独立的 deltaSeq 序列。
+    // 必须重置 _lastDeltaSeq，否则会带着源地图的 seq 请求目标地图的快照，
+    // 触发错误的增量恢复（本地仍是源地图用户列表，叠加目标地图增量 → 幽灵用户/缺人）。
+    // 重置为 0 → requestSnapshot 请求全量，目标地图整表替换（正确行为）。
+    _lastDeltaSeq = 0;
 
     try {
       // 离开当前 Match（WebSocket 连接保持）
