@@ -1,4 +1,3 @@
-import 'package:auto_animated/auto_animated.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -42,9 +41,6 @@ class _CommunityGuideListViewState extends State<CommunityGuideListView> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
 
-  // 卡片入场动画时长 / 间隔
-  static const Duration _itemAnimDuration = Duration(milliseconds: 500);
-  static const Duration _itemAnimInterval = Duration(milliseconds: 60);
   @override
   void initState() {
     super.initState();
@@ -95,29 +91,26 @@ class _CommunityGuideListViewState extends State<CommunityGuideListView> {
 
     return Scaffold(
       backgroundColor: colors.scaffoldBg,
-      body: AnimateIfVisibleWrapper(
-        showItemInterval: _itemAnimInterval,
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            SliverToBoxAdapter(
-              child: CommunityGuideToolbar(
-                searchController: _searchController,
-                onOpenMine: _handleOpenMine,
-              ),
+      body: CustomScrollView(
+        controller: _scrollController,
+        slivers: [
+          SliverToBoxAdapter(
+            child: CommunityGuideToolbar(
+              searchController: _searchController,
+              onOpenMine: _handleOpenMine,
             ),
-            // 列表主体单独订阅 GuideListBloc，仅在列表数据变化时重建
-            // （工具栏内部各自订阅自己关心的 Bloc，互不干扰）
-            BlocBuilder<GuideListBloc, GuideListState>(
-              builder: (context, listState) {
-                return SliverMainAxisGroup(
-                  slivers: _buildBodySlivers(context, listState),
-                );
-              },
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 60)),
-          ],
-        ),
+          ),
+          // 列表主体单独订阅 GuideListBloc，仅在列表数据变化时重建
+          // （工具栏内部各自订阅自己关心的 Bloc，互不干扰）
+          BlocBuilder<GuideListBloc, GuideListState>(
+            builder: (context, listState) {
+              return SliverMainAxisGroup(
+                slivers: _buildBodySlivers(context, listState),
+              );
+            },
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 60)),
+        ],
       ),
     );
   }
@@ -184,24 +177,14 @@ class _CommunityGuideListViewState extends State<CommunityGuideListView> {
             childCount: mergedItems.length,
             itemBuilder: (context, index) {
               final item = mergedItems[index];
-              return AnimateIfVisible(
+              // 不在 SliverMasonryGrid 内部使用 AnimateIfVisible：
+              // 它的 Fade/Slide 过渡会让子项在进入视口时改变可见尺寸，
+              // 触发 SliverMasonryGrid 在 line 624 的
+              // estimatedMaxScrollOffset >= endScrollOffset - leadingScrollOffset 断言。
+              return CommunityGuideCard(
                 key: ValueKey('guide_card_${item.id}'),
-                duration: _itemAnimDuration,
-                builder: (context, animation) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, 0.15),
-                        end: Offset.zero,
-                      ).animate(animation),
-                      child: CommunityGuideCard(
-                        item: item,
-                        onTap: () => widget.onViewDetail(item.id),
-                      ),
-                    ),
-                  );
-                },
+                item: item,
+                onTap: () => widget.onViewDetail(item.id),
               );
             },
           ),

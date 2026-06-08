@@ -9,13 +9,10 @@ import '../../../core/bloc/guide_detail/guide_detail_state.dart';
 import '../../../core/bloc/guide_list/guide_list_bloc.dart';
 import '../../../core/bloc/guide_list/guide_list_event.dart';
 import '../../../core/bloc/auth/auth_bloc.dart';
-import '../../../core/bloc/settings/settings_bloc.dart';
-import '../../../core/bloc/settings/settings_event.dart';
 import '../../../core/models/guide_models.dart';
 import '../../../core/services/analytics_service.dart';
 import '../../../core/services/desktop_navigator.dart';
 import '../../../core/utils/formatters.dart';
-import '../../../core/utils/toast_utils.dart';
 import '../../../core/widgets/embeds/bilibili_embed_builder.dart';
 import '../../../core/widgets/guide/guide_interaction_dock.dart';
 import '../../../core/widgets/guide/guide_reading_progress.dart';
@@ -165,14 +162,6 @@ class _GuideDetailViewState extends State<GuideDetailView> {
     } catch (_) {
       return null;
     }
-  }
-
-  /// 拉黑用户处理
-  void _handleBlockUser(BuildContext context, int userId, String userName) {
-    context.read<SettingsBloc>().add(
-      SettingsBlockUser(userId: userId, userName: userName),
-    );
-    ToastUtils.showSuccess(context, '已拉黑「$userName」，其内容已被隐藏');
   }
 
   @override
@@ -747,11 +736,6 @@ class _GuideDetailViewState extends State<GuideDetailView> {
                 targetId: guide.id,
                 targetType: 'guide',
               ),
-              onBlock: () => _handleBlockUser(
-                context,
-                guide.authorId,
-                guide.authorName,
-              ),
             ),
         ],
       ),
@@ -852,60 +836,25 @@ class _InteractionButton extends StatelessWidget {
   }
 }
 
-/// 举报/拉黑按钮（带 Popover 菜单）
+/// 举报按钮
 class _ReportBlockButton extends StatelessWidget {
   final int guideId;
   final int authorId;
   final String authorName;
   final VoidCallback? onReport;
-  final VoidCallback? onBlock;
 
   const _ReportBlockButton({
     required this.guideId,
     required this.authorId,
     required this.authorName,
     this.onReport,
-    this.onBlock,
   });
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      tooltip: '更多操作',
-      offset: const Offset(0, -80),
-      shape: RoundedRectangleBorder(
-        borderRadius: GuideTokens.borderRadius12,
-      ),
-      itemBuilder: (context) => const [
-        PopupMenuItem(
-          value: 'report',
-          child: Row(
-            children: [
-              Icon(Icons.flag_outlined, size: 16),
-              SizedBox(width: 8),
-              Text('举报内容'),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'block',
-          child: Row(
-            children: [
-              Icon(Icons.block, size: 16),
-              SizedBox(width: 8),
-              Text('拉黑此用户'),
-            ],
-          ),
-        ),
-      ],
-      onSelected: (value) {
-        switch (value) {
-          case 'report':
-            onReport?.call();
-          case 'block':
-            onBlock?.call();
-        }
-      },
+    return InkWell(
+      onTap: onReport,
+      borderRadius: GuideTokens.borderRadius8,
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: GuideTokens.space12,

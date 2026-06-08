@@ -348,6 +348,12 @@ class ContributionVoteResponse extends Equatable {
 @JsonSerializable()
 class MapInfo extends Equatable {
   final String mapName;
+
+  /// 地图译名（中文名）。
+  ///
+  /// 后端在某些上下文（如 Guide 详情内的简化 mapInfo）可能不下发此字段，
+  /// 此时回退为空字符串，UI 通过 `isNotEmpty` 判断后再显示。
+  @JsonKey(defaultValue: '')
   final String mapLabel;
   final String? mapBackground;
   @JsonKey(defaultValue: 0)

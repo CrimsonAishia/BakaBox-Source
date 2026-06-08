@@ -47,8 +47,7 @@ class _GuideMineCardState extends State<GuideMineCard> {
       onExit: (_) => setState(() => _hovering = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        transform: Matrix4.identity()
-          ..translateByDouble(0.0, _hovering ? -3.0 : 0.0, 0.0, 1.0),
+        transform: Matrix4.translationValues(0, _hovering ? -3.0 : 0.0, 0),
         decoration: BoxDecoration(
           color: colors.cardBg,
           borderRadius: BorderRadius.circular(12),
@@ -155,7 +154,7 @@ class _GuideMineCardState extends State<GuideMineCard> {
                       ),
                       const SizedBox(height: 4),
                       SizedBox(
-                        height: 25,
+                        height: 32,
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
