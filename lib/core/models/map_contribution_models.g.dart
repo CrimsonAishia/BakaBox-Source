@@ -124,7 +124,7 @@ Map<String, dynamic> _$ContributionVoteResponseToJson(
 
 MapInfo _$MapInfoFromJson(Map<String, dynamic> json) => MapInfo(
   mapName: json['mapName'] as String,
-  mapLabel: json['mapLabel'] as String,
+  mapLabel: json['mapLabel'] as String? ?? '',
   mapBackground: json['mapBackground'] as String?,
   contribCount: (json['contribCount'] as num?)?.toInt() ?? 0,
   nameCount: (json['nameCount'] as num?)?.toInt() ?? 0,

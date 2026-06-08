@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import 'community_guide_shimmer.dart';
 
 /// 通用瀑布流骨架屏 sliver
 ///
-/// 列表 / 我的中心都用同样的 SliverMasonryGrid + 阶梯渐入动画包装骨架卡片。
-/// 通过 [skeletonBuilder] 注入具体的骨架卡片（社区列表 / 我的卡片各有自己的样式）。
+/// 列表 / 我的中心都用同样的 SliverMasonryGrid 排骨架卡片。通过
+/// [skeletonBuilder] 注入具体的骨架样式（社区列表 / 我的卡片各有自己的）。
 ///
-/// 外层会再套一层 [CommunityGuideShimmer]，让所有骨架卡片同时有呼吸 / 扫光动画，
+/// 外层会再套一层 [CommunityGuideShimmer]，让所有骨架卡片同时有扫光动画，
 /// 直观地表达「正在加载」。
+///
+/// 注意：不要在 itemBuilder 中再用 SlideAnimation / FadeInAnimation /
+/// AnimateIfVisible 等会改变子项尺寸的入场动画——会与 SliverMasonryGrid 的
+/// 滚动估算冲突，触发 estimatedMaxScrollOffset 断言。
 class CommunityGuideSkeletonGrid extends StatelessWidget {
   final int crossCount;
   final EdgeInsets padding;
@@ -35,18 +38,8 @@ class CommunityGuideSkeletonGrid extends StatelessWidget {
         crossAxisSpacing: 16,
         childCount: count,
         itemBuilder: (innerCtx, index) {
-          return AnimationConfiguration.staggeredGrid(
-            position: index,
-            duration: const Duration(milliseconds: 500),
-            columnCount: crossCount,
-            child: SlideAnimation(
-              verticalOffset: 60.0,
-              child: FadeInAnimation(
-                child: CommunityGuideShimmer(
-                  child: skeletonBuilder(innerCtx),
-                ),
-              ),
-            ),
+          return CommunityGuideShimmer(
+            child: skeletonBuilder(innerCtx),
           );
         },
       ),

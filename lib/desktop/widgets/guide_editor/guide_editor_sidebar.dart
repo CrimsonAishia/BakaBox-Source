@@ -1236,34 +1236,15 @@ class _MapAssociationSectionState extends State<_MapAssociationSection> {
   }
 
   void _handleViewMore(BuildContext context) {
-    final editorBloc = context.read<GuideEditorBloc>();
-    if (editorBloc.state.hasUnsavedChanges) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('未保存的内容'),
-          content: const Text('当前编辑器有未保存内容，是否暂存后跳转？'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                editorBloc.add(const SaveDraftRequested(manual: true));
-                final navigator = DesktopNavigatorProvider.of(context);
-                navigator?.openGuides(mapName: widget.mapName);
-              },
-              child: const Text('暂存并跳转'),
-            ),
-          ],
-        ),
-      );
-    } else {
-      final navigator = DesktopNavigatorProvider.of(context);
-      navigator?.openGuides(mapName: widget.mapName);
-    }
+    if (widget.mapName == null || widget.mapName!.isEmpty) return;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => _MapGuidesDialog(
+        mapName: widget.mapName!,
+        mapLabel: _mapInfo?.mapLabel,
+      ),
+    );
   }
 }
 
@@ -1883,4 +1864,283 @@ BoxDecoration _fieldDecoration(BuildContext context, {bool hovering = false}) {
       color: hovering ? colors.borderHover : colors.borderSoft,
     ),
   );
+}
+
+// ─── 该地图全部攻略弹窗 ─────────────────────────────────────────────────────
+
+/// 在编辑器内查看该地图所有攻略的弹窗。
+///
+/// 与「查看更多 →」入口配套：点击不再跳走攻略列表，而是在编辑器之上叠一层
+/// 弹窗，分页加载该地图下的攻略。点击单条卡片走 [DesktopNavigator.openGuideDetail]，
+/// 由上层负责未保存内容的拦截校验。
+class _MapGuidesDialog extends StatefulWidget {
+  final String mapName;
+  final String? mapLabel;
+
+  const _MapGuidesDialog({
+    required this.mapName,
+    this.mapLabel,
+  });
+
+  @override
+  State<_MapGuidesDialog> createState() => _MapGuidesDialogState();
+}
+
+class _MapGuidesDialogState extends State<_MapGuidesDialog> {
+  static const int _pageSize = 20;
+
+  final _scrollController = ScrollController();
+  final List<GuideListItem> _items = [];
+  int _total = 0;
+  int _page = 1;
+  bool _loading = false;
+  bool _loadingMore = false;
+  bool _hasMore = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    _loadFirstPage();
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    if (_loadingMore || !_hasMore) return;
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      _loadMore();
+    }
+  }
+
+  Future<void> _loadFirstPage() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final response = await GuideApi().getGuides(
+        query: GuideListQuery(
+          mapName: widget.mapName,
+          page: 1,
+          pageSize: _pageSize,
+        ),
+      );
+      if (!mounted) return;
+      setState(() {
+        _items
+          ..clear()
+          ..addAll(response.items);
+        _total = response.total;
+        _page = 1;
+        _hasMore = _items.length < _total;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = '加载失败，请稍后重试';
+      });
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore) return;
+    setState(() => _loadingMore = true);
+    try {
+      final nextPage = _page + 1;
+      final response = await GuideApi().getGuides(
+        query: GuideListQuery(
+          mapName: widget.mapName,
+          page: nextPage,
+          pageSize: _pageSize,
+        ),
+      );
+      if (!mounted) return;
+      setState(() {
+        _items.addAll(response.items);
+        _page = nextPage;
+        _total = response.total;
+        _hasMore = _items.length < _total;
+        _loadingMore = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingMore = false);
+    }
+  }
+
+  void _openDetail(int id) {
+    final navigator = DesktopNavigatorProvider.of(context);
+    Navigator.of(context).pop();
+    navigator?.openGuideDetail(id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = _T.of(context);
+    final displayName =
+        (widget.mapLabel != null && widget.mapLabel!.isNotEmpty)
+            ? '${widget.mapLabel}（${widget.mapName}）'
+            : widget.mapName;
+
+    return Dialog(
+      backgroundColor: colors.cardBg,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(_T.radiusCard),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: 560,
+          maxHeight: 640,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildHeader(context, displayName),
+            const Divider(height: 1),
+            Flexible(child: _buildBody(context)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, String displayName) {
+    final colors = _T.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '该地图的攻略',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$displayName · 共 $_total 篇',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: '关闭',
+            icon: Icon(Icons.close, color: colors.textSecondary),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    final colors = _T.of(context);
+    if (_loading && _items.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 48),
+        child: Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.4,
+              color: colors.accent,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_error != null && _items.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, color: colors.danger, size: 32),
+            const SizedBox(height: 8),
+            Text(
+              _error!,
+              style: TextStyle(color: colors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: _loadFirstPage,
+              child: const Text('重试'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_items.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 48),
+        child: Center(
+          child: Text(
+            '暂无攻略',
+            style: TextStyle(color: colors.textMuted),
+          ),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      controller: _scrollController,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      itemCount: _items.length + (_hasMore ? 1 : 0),
+      separatorBuilder: (_, __) => const SizedBox(height: 6),
+      itemBuilder: (context, index) {
+        if (index >= _items.length) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Center(
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: colors.textMuted,
+                ),
+              ),
+            ),
+          );
+        }
+        final guide = _items[index];
+        return GuideCompactCard(
+          title: guide.title,
+          coverUrl: guide.coverUrl,
+          authorName: guide.authorName,
+          viewCount: guide.viewCount,
+          likeCount: guide.likeCount,
+          commentCount: guide.commentCount,
+          onTap: () => _openDetail(guide.id),
+        );
+      },
+    );
+  }
 }

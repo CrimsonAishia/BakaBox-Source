@@ -38,8 +38,7 @@ class _CommunityGuideCardState extends State<CommunityGuideCard> {
       onExit: (_) => setState(() => _hovering = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        transform: Matrix4.identity()
-          ..translateByDouble(0.0, _hovering ? -3.0 : 0.0, 0.0, 1.0),
+        transform: Matrix4.translationValues(0, _hovering ? -3.0 : 0.0, 0),
         decoration: BoxDecoration(
           color: colors.cardBg,
           borderRadius: BorderRadius.circular(12),

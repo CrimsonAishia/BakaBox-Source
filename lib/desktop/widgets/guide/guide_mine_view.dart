@@ -1,4 +1,3 @@
-import 'package:auto_animated/auto_animated.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -69,10 +68,6 @@ class _GuideMineViewState extends State<GuideMineView> {
 
   /// Published Tab 的状态下拉锚点 key
   final GlobalKey _publishedPillKey = GlobalKey();
-
-  /// 卡片入场动画时长 / 间隔
-  static const Duration _itemAnimDuration = Duration(milliseconds: 500);
-  static const Duration _itemAnimInterval = Duration(milliseconds: 60);
 
   @override
   void initState() {
@@ -230,28 +225,25 @@ class _GuideMineViewState extends State<GuideMineView> {
             }
           },
           builder: (context, state) {
-            return AnimateIfVisibleWrapper(
-              showItemInterval: _itemAnimInterval,
-              child: CustomScrollView(
-                controller: _scrollController,
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: GuideMineHeader(
-                      state: state,
-                      onBack: widget.onBack,
-                      onCreateGuide: widget.onCreateGuide,
-                      selectedTabIndex: _selectedTabIndex,
-                      onSelectTab: _selectTab,
-                      publishedPillKey: _publishedPillKey,
-                      onOpenPublishedFilter: () =>
-                          _openPublishedFilterMenu(state),
-                      tabCounts: _tabCounts,
-                    ),
+            return CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                SliverToBoxAdapter(
+                  child: GuideMineHeader(
+                    state: state,
+                    onBack: widget.onBack,
+                    onCreateGuide: widget.onCreateGuide,
+                    selectedTabIndex: _selectedTabIndex,
+                    onSelectTab: _selectTab,
+                    publishedPillKey: _publishedPillKey,
+                    onOpenPublishedFilter: () =>
+                        _openPublishedFilterMenu(state),
+                    tabCounts: _tabCounts,
                   ),
-                  ..._buildBodySlivers(state),
-                  const SliverToBoxAdapter(child: SizedBox(height: 60)),
-                ],
-              ),
+                ),
+                ..._buildBodySlivers(state),
+                const SliverToBoxAdapter(child: SizedBox(height: 60)),
+              ],
             );
           },
         ),
@@ -316,38 +308,31 @@ class _GuideMineViewState extends State<GuideMineView> {
       SliverPadding(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
         sliver: SliverMasonryGrid.count(
+          // 用 tab 名作为 key 的一部分，切 tab 时让 sliver 重置布局缓存，
+          // 避免 estimatedMaxScrollOffset 与新 items 的实际尺寸错配触发断言。
+          key: ValueKey('mine_grid_${state.tab.name}'),
           crossAxisCount: crossCount,
           mainAxisSpacing: 16,
           crossAxisSpacing: 16,
           childCount: state.items.length,
           itemBuilder: (context, index) {
             final item = state.items[index];
-            return AnimateIfVisible(
+            // 注意：不要在 SliverMasonryGrid 内部用 AnimateIfVisible，
+            // 它会在子项进入视口时改变高度，导致 SliverMasonryGrid
+            // 的 estimatedMaxScrollOffset 与已布局子项 endScrollOffset
+            // 失配（line 624 断言）。瀑布流需要稳定的子项尺寸。
+            return GuideMineCard(
               key: ValueKey('mine_card_${state.tab.name}_${item.id}'),
-              duration: _itemAnimDuration,
-              builder: (context, animation) {
-                return FadeTransition(
-                  opacity: animation,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 0.15),
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: GuideMineCard(
-                      item: item,
-                      showExpiryBadge: isTrash,
-                      onTap: () => widget.onViewDetail?.call(item.id),
-                      onEdit: showEdit &&
-                              (item.status == GuideStatus.published ||
-                                  item.status == GuideStatus.rejected ||
-                                  item.status == GuideStatus.pending)
-                          ? () => widget.onEditGuide?.call(item.id)
-                          : null,
-                      onDelete: () => _bloc.add(DeleteGuide(item.id)),
-                    ),
-                  ),
-                );
-              },
+              item: item,
+              showExpiryBadge: isTrash,
+              onTap: () => widget.onViewDetail?.call(item.id),
+              onEdit: showEdit &&
+                      (item.status == GuideStatus.published ||
+                          item.status == GuideStatus.rejected ||
+                          item.status == GuideStatus.pending)
+                  ? () => widget.onEditGuide?.call(item.id)
+                  : null,
+              onDelete: () => _bloc.add(DeleteGuide(item.id)),
             );
           },
         ),
