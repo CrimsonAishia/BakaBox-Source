@@ -11,6 +11,7 @@ import '../../services/realtime/realtime_score_updates_channel.dart';
 import '../../services/realtime/realtime_server_map_runtime_channel.dart';
 import '../../services/realtime/realtime_server_users_count_channel.dart';
 import '../../services/server_category_service.dart';
+import '../../services/network_mode_service.dart';
 import '../../utils/log_service.dart';
 import '../../utils/error_utils.dart';
 import 'server_event.dart';
@@ -73,6 +74,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   StreamSubscription<ServerMapRuntimeEvent>? _mapRuntimeChannelSubscription;
   StreamSubscription<UsersCountUpdateEvent>? _usersCountChannelSubscription;
   bool _realtimeStarted = false;
+
+  // 弱网模式切换监听
+  StreamSubscription<bool>? _networkModeSubscription;
 
   /// 指数退避重试辅助方法
   /// [operation] 要执行的操作
@@ -153,7 +157,31 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     on<ServerApplyUsersCountUpdates>(_onApplyUsersCountUpdates);
     on<ServerApplyMapRuntimeChange>(_onApplyMapRuntimeChange);
 
+    // 始终订阅频道：弱网模式下 RealtimeService 处于 stopped 状态，
+    // 订阅请求会被 RealtimeService 缓存，等到 start() 后自动补发。
     _startRealtime();
+
+    // 监听弱网模式切换：开启时停掉分类静默刷新，关闭时按需恢复
+    _networkModeSubscription = NetworkModeService.instance.changes.listen((
+      weakNetwork,
+    ) {
+      if (isClosed) return;
+      if (weakNetwork) {
+        // 弱网开启：立即停掉 10 分钟分类刷新定时器
+        _categoryRefreshTimer?.cancel();
+        _categoryRefreshTimer = null;
+        LogService.i('[ServerBloc] 弱网模式开启，已停止分类静默刷新');
+      } else {
+        // 弱网关闭：仅当用户当前正在服务器页（倒计时激活中）才恢复定时器
+        // 避免用户不在服务器页时也启动定时器
+        if (state.isCountdownActive && _categoryRefreshTimer == null) {
+          _categoryRefreshTimer = Timer.periodic(_categoryRefreshInterval, (_) {
+            add(const ServerRefreshCategoriesInternal());
+          });
+          LogService.i('[ServerBloc] 弱网模式关闭，已恢复分类静默刷新');
+        }
+      }
+    });
   }
 
   /// 启动 WS 实时频道订阅（构造时一次性启动，close 时释放）
@@ -1032,6 +1060,14 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     ServerStartPeriodicRefresh event,
     Emitter<ServerState> emit,
   ) {
+    // 弱网模式下：不启动倒计时，不启动后台静默刷新
+    if (NetworkModeService.instance.weakNetwork) {
+      emit(state.copyWith(isCountdownActive: false));
+      _categoryRefreshTimer?.cancel();
+      _categoryRefreshTimer = null;
+      return;
+    }
+
     // 只设置状态，刷新时机由 UI 倒计时进度条的 onComplete 控制
     emit(state.copyWith(isCountdownActive: true));
 
@@ -1056,6 +1092,12 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   }
 
   void _onResumeRefresh(ServerResumeRefresh event, Emitter<ServerState> emit) {
+    // 弱网模式下：不自动刷新，仅取消暂停状态
+    if (NetworkModeService.instance.weakNetwork) {
+      emit(state.copyWith(isPaused: false));
+      return;
+    }
+
     // 根据当前页面选择对应的最后刷新时间
     final DateTime? lastRefresh;
     if (state.selectedCategory != null) {
@@ -2378,6 +2420,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     _refreshHistory.clear();
     _categoryRefreshTimer?.cancel();
     _categoryRefreshTimer = null;
+    _networkModeSubscription?.cancel();
+    _networkModeSubscription = null;
     _stopRealtime();
     return super.close();
   }

@@ -69,6 +69,8 @@ class _SettingsDesktopState extends State<SettingsDesktop> {
             const SizedBox(height: 30),
             NotificationSettings(settingsState: settingsState),
             const SizedBox(height: 30),
+            WeakNetworkSettings(settingsState: settingsState),
+            const SizedBox(height: 30),
             PrivacySettings(settingsState: settingsState),
             const SizedBox(height: 30),
             CacheSettings(settingsState: settingsState),

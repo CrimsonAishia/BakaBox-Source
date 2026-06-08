@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../core/models/server_models.dart';
+import '../../../core/services/network_mode_service.dart';
 import '../../../core/services/source_server_service.dart';
 import '../../../core/utils/map_utils.dart';
 import '../../../core/utils/log_service.dart';
@@ -89,6 +90,11 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
 
   /// 启动自动刷新
   void _startAutoRefresh() {
+    // 弱网模式下不启动自动刷新，仅由用户手动触发
+    if (NetworkModeService.instance.weakNetwork) {
+      LogService.d('[ServerDetailDialog] 弱网模式，跳过自动刷新');
+      return;
+    }
     _refreshTimer = Timer.periodic(const Duration(seconds: _refreshInterval), (
       _,
     ) {

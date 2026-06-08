@@ -2,6 +2,7 @@ import '../bloc/guide_categories/guide_categories_bloc.dart';
 import '../bloc/guide_categories/guide_categories_event.dart';
 import '../services/analytics_service.dart';
 import '../services/app_info_service.dart';
+import '../services/network_mode_service.dart';
 import '../services/update_service.dart';
 import '../utils/app_directory_service.dart';
 import '../utils/log_service.dart';
@@ -30,6 +31,8 @@ class AppInitializer {
     // 初始化 Hive 存储（子窗口跳过，避免文件锁冲突）
     if (!skipStorage) {
       await StorageUtils.init();
+      // 加载弱网模式配置（必须在 StorageUtils 初始化后、Realtime/各 Bloc 启动前）
+      NetworkModeService.instance.loadFromStorage();
     }
     // 初始化应用信息服务（版本号等）
     await AppInfoService.instance.init();

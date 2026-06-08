@@ -13,6 +13,7 @@ import '../../../core/bloc/server/server_bloc.dart';
 import '../../../core/bloc/server/server_state.dart';
 import '../../../core/models/server_models.dart';
 import '../../../core/services/realtime/realtime_score_updates_channel.dart';
+import '../../../core/services/network_mode_service.dart';
 import '../../../core/services/source_server_service.dart';
 import '../../../core/services/status_window_service.dart';
 import '../../../core/utils/log_service.dart';
@@ -210,6 +211,11 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   void _startRefreshTimer() {
     _refreshTimer?.cancel();
     _countdown = _kImmersiveRefreshInterval;
+    // 弱网模式下不启动倒计时自动刷新，仅由用户手动触发
+    if (NetworkModeService.instance.weakNetwork) {
+      LogService.d('[ImmersiveMode] 弱网模式，跳过自动刷新');
+      return;
+    }
     _refreshTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
         timer.cancel();
@@ -2227,6 +2233,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   }
 
   Widget _buildRefreshIndicator(bool isDark) {
+    final isWeakNetwork = NetworkModeService.instance.weakNetwork;
     final progress = _isRefreshing
         ? 0.0
         : _countdown / _kImmersiveRefreshInterval;
@@ -2238,7 +2245,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       child: GestureDetector(
         onTap: _isRefreshing ? null : _manualRefresh,
         child: Tooltip(
-          message: _isRefreshing ? '刷新中...' : '点击立即刷新',
+          message: _isRefreshing
+              ? '刷新中...'
+              : (isWeakNetwork ? '弱网模式：点击手动刷新' : '点击立即刷新'),
           child: SizedBox(
             width: 42,
             height: 42,
@@ -2256,6 +2265,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                     ),
                   ),
                 ),
+                // 进度环（弱网下不显示倒计时进度）
                 SizedBox(
                   width: 38,
                   height: 38,
@@ -2264,22 +2274,42 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                           strokeWidth: 3,
                           valueColor: AlwaysStoppedAnimation(Color(0xFFF0A020)),
                         )
-                      : CircularProgressIndicator(
-                          value: progress,
-                          strokeWidth: 3,
-                          valueColor: const AlwaysStoppedAnimation(
-                            Color(0xFF18A058),
-                          ),
+                      : (isWeakNetwork
+                            ? const SizedBox.shrink()
+                            : CircularProgressIndicator(
+                                value: progress,
+                                strokeWidth: 3,
+                                valueColor: const AlwaysStoppedAnimation(
+                                  Color(0xFF18A058),
+                                ),
+                              )),
+                ),
+                // 中心：弱网下显示刷新图标，正常模式显示倒数秒数
+                _isRefreshing
+                    ? const Text(
+                        '...',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFF0A020),
                         ),
-                ),
-                Text(
-                  _isRefreshing ? '...' : '$_countdown',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white70 : const Color(0xFF374151),
-                  ),
-                ),
+                      )
+                    : isWeakNetwork
+                        ? const Icon(
+                            Icons.refresh,
+                            size: 18,
+                            color: Color(0xFFF0A020),
+                          )
+                        : Text(
+                            '$_countdown',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: isDark
+                                  ? Colors.white70
+                                  : const Color(0xFF374151),
+                            ),
+                          ),
               ],
             ),
           ),

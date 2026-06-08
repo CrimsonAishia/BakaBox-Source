@@ -5,6 +5,7 @@ import '../models/gsi_models.dart';
 import '../utils/log_service.dart';
 import 'console_log_service.dart';
 import 'gsi_service.dart';
+import 'network_mode_service.dart';
 import 'server_address_mapping_service.dart';
 
 /// 比分上传服务（桌面端专属）
@@ -23,7 +24,25 @@ class ScoreUploadService {
   // ==================== 单例模式 ====================
   static final ScoreUploadService _instance = ScoreUploadService._internal();
   factory ScoreUploadService() => _instance;
-  ScoreUploadService._internal();
+  ScoreUploadService._internal() {
+    // 监听弱网模式切换：开启时 dispose 释放订阅，关闭时按需重新 initialize
+    _networkModeSubscription = NetworkModeService.instance.changes.listen((
+      weakNetwork,
+    ) {
+      if (weakNetwork) {
+        if (_isInitialized) {
+          dispose();
+          LogService.i('[ScoreUpload] 弱网模式开启，已释放比分上传服务');
+        }
+      } else {
+        // 关闭弱网：仅当 GsiService 在跑时尝试初始化
+        if (!_isInitialized && _gsiService.isRunning) {
+          unawaited(initialize());
+          LogService.i('[ScoreUpload] 弱网模式关闭，已恢复比分上传服务');
+        }
+      }
+    });
+  }
 
   // ==================== 依赖服务 ====================
   final ConsoleLogService _consoleLogService = ConsoleLogService();
@@ -70,6 +89,10 @@ class ScoreUploadService {
   /// 服务是否已初始化
   bool _isInitialized = false;
 
+  // 弱网模式切换监听（单例随应用生命周期）
+  // ignore: unused_field
+  StreamSubscription<bool>? _networkModeSubscription;
+
   // ==================== 公开属性 ====================
   /// 服务是否已初始化
   bool get isInitialized => _isInitialized;
@@ -92,6 +115,12 @@ class ScoreUploadService {
   Future<void> initialize() async {
     if (_isInitialized) {
       LogService.d('[ScoreUpload] 服务已初始化，跳过');
+      return;
+    }
+
+    // 弱网模式下不启动比分上报服务
+    if (NetworkModeService.instance.weakNetwork) {
+      LogService.i('[ScoreUpload] 弱网模式开启，跳过比分上报服务初始化');
       return;
     }
 

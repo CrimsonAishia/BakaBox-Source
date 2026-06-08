@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
+import '../../core/services/network_mode_service.dart';
+
 /// 紧凑版刷新进度指示器
 class CompactRefreshProgress extends StatefulWidget {
   final int refreshInterval;
@@ -65,6 +67,10 @@ class _CompactRefreshProgressState extends State<CompactRefreshProgress> {
 
   void _startTimer() {
     _timer?.cancel();
+    // 弱网模式下不启动倒计时；UI 上仅保留刷新按钮，由用户主动触发
+    if (NetworkModeService.instance.weakNetwork) {
+      return;
+    }
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted || _isRefreshing) return; // 刷新中时跳过
 
@@ -109,6 +115,7 @@ class _CompactRefreshProgressState extends State<CompactRefreshProgress> {
 
   @override
   Widget build(BuildContext context) {
+    final isWeakNetwork = NetworkModeService.instance.weakNetwork;
     final progress = _isRefreshing ? 0.0 : _remaining / widget.refreshInterval;
 
     return MouseRegion(
@@ -118,7 +125,9 @@ class _CompactRefreshProgressState extends State<CompactRefreshProgress> {
       child: GestureDetector(
         onTap: _isRefreshing ? null : _manualRefresh,
         child: Tooltip(
-          message: _isRefreshing ? '刷新中...' : '点击立即刷新',
+          message: _isRefreshing
+              ? '刷新中...'
+              : (isWeakNetwork ? '弱网模式：点击手动刷新' : '点击立即刷新'),
           child: SizedBox(
             width: 42,
             height: 42,
@@ -137,7 +146,7 @@ class _CompactRefreshProgressState extends State<CompactRefreshProgress> {
                     ),
                   ),
                 ),
-                // 进度圆环
+                // 进度圆环（弱网模式下不显示倒计时进度，仅在刷新中时显示动画）
                 SizedBox(
                   width: 38,
                   height: 38,
@@ -146,25 +155,40 @@ class _CompactRefreshProgressState extends State<CompactRefreshProgress> {
                           strokeWidth: 3,
                           valueColor: AlwaysStoppedAnimation(Color(0xFFF0A020)),
                         )
-                      : CircularProgressIndicator(
-                          value: progress,
-                          strokeWidth: 3,
-                          valueColor: const AlwaysStoppedAnimation(
-                            Color(0xFF18A058),
-                          ),
+                      : (isWeakNetwork
+                            ? const SizedBox.shrink()
+                            : CircularProgressIndicator(
+                                value: progress,
+                                strokeWidth: 3,
+                                valueColor: const AlwaysStoppedAnimation(
+                                  Color(0xFF18A058),
+                                ),
+                              )),
+                ),
+                // 文字（弱网模式下显示刷新图标，不再显示倒数秒数）
+                _isRefreshing
+                    ? const Text(
+                        '...',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFF0A020),
                         ),
-                ),
-                // 文字
-                Text(
-                  _isRefreshing ? '...' : '$_remaining',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: _isRefreshing
-                        ? const Color(0xFFF0A020)
-                        : const Color(0xFF18A058),
-                  ),
-                ),
+                      )
+                    : isWeakNetwork
+                        ? const Icon(
+                            Icons.refresh,
+                            size: 18,
+                            color: Color(0xFFF0A020),
+                          )
+                        : Text(
+                            '$_remaining',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF18A058),
+                            ),
+                          ),
               ],
             ),
           ),
