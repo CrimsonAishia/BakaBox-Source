@@ -66,3 +66,11 @@ class DeleteGuide extends GuideMineEvent {
   @override
   List<Object?> get props => [guideId];
 }
+
+/// 还原攻略（从回收站恢复）
+class RestoreGuide extends GuideMineEvent {
+  final int guideId;
+  const RestoreGuide(this.guideId);
+  @override
+  List<Object?> get props => [guideId];
+}

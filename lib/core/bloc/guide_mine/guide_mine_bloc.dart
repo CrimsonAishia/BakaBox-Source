@@ -30,6 +30,7 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
     on<LoadMineStats>(_onLoadMineStats);
     on<DeleteDraft>(_onDeleteDraft);
     on<DeleteGuide>(_onDeleteGuide);
+    on<RestoreGuide>(_onRestoreGuide);
   }
 
   /// 提取错误信息
@@ -143,6 +144,30 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
       ));
     } catch (e) {
       LogService.e('删除攻略失败', e);
+      emit(state.copyWith(
+        error: _getErrorMessage(e),
+      ));
+    }
+  }
+
+  Future<void> _onRestoreGuide(
+    RestoreGuide event,
+    Emitter<GuideMineState> emit,
+  ) async {
+    try {
+      await _guideApi.restoreGuide(event.guideId);
+      // 从回收站列表移除
+      final updatedItems =
+          state.items.where((i) => i.id != event.guideId).toList();
+      final newTotal = state.total - 1;
+      final hasMore = updatedItems.length < newTotal;
+      emit(state.copyWith(
+        items: updatedItems,
+        total: newTotal,
+        hasMore: hasMore,
+      ));
+    } catch (e) {
+      LogService.e('还原攻略失败', e);
       emit(state.copyWith(
         error: _getErrorMessage(e),
       ));
