@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../models/realtime_models.dart';
 import '../../services/auth_service.dart';
+import '../../services/network_mode_service.dart';
 import '../../services/realtime_service.dart';
 import '../../services/scheduler_service.dart';
 import '../../services/token_service.dart';
@@ -17,6 +18,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthService _authService = AuthService.instance;
   final SchedulerService _scheduler = SchedulerService();
   StreamSubscription<RealtimeForceLogoutPayload>? _forceLogoutSubscription;
+  StreamSubscription<bool>? _networkModeSubscription;
 
   static const _taskIdSessionValidation = 'auth_session_validation';
   static const _taskIdStatsRefresh = 'auth_stats_refresh';
@@ -39,6 +41,30 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         'message=${payload.message}',
       );
       add(const AuthSessionExpired());
+    });
+
+    // 监听弱网模式切换：开启时停掉统计刷新定时器，关闭时按需恢复
+    _networkModeSubscription = NetworkModeService.instance.changes.listen((
+      weakNetwork,
+    ) {
+      if (weakNetwork) {
+        // 弱网开启：停掉统计刷新（会话验证保留）
+        _scheduler.cancel(_taskIdStatsRefresh);
+        LogService.i('[AuthBloc] 弱网模式开启，已停止统计信息自动刷新');
+      } else {
+        // 弱网关闭：仅当用户已登录时才恢复统计刷新
+        if (state.status == AuthStatus.authenticated) {
+          _scheduler.register(
+            ScheduledTask(
+              id: _taskIdStatsRefresh,
+              name: '统计信息刷新',
+              interval: Intervals.fiveMinutes,
+              callback: () async => add(const AuthRefreshRequested()),
+            ),
+          );
+          LogService.i('[AuthBloc] 弱网模式关闭，已恢复统计信息自动刷新');
+        }
+      }
     });
   }
 
@@ -255,14 +281,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
 
     // 统计信息刷新定时器（每5分钟）
-    _scheduler.register(
-      ScheduledTask(
-        id: _taskIdStatsRefresh,
-        name: '统计信息刷新',
-        interval: Intervals.fiveMinutes,
-        callback: () async => add(const AuthRefreshRequested()),
-      ),
-    );
+    // 弱网模式下不注册：仅在用户主动进入个人中心时刷新
+    if (!NetworkModeService.instance.weakNetwork) {
+      _scheduler.register(
+        ScheduledTask(
+          id: _taskIdStatsRefresh,
+          name: '统计信息刷新',
+          interval: Intervals.fiveMinutes,
+          callback: () async => add(const AuthRefreshRequested()),
+        ),
+      );
+    } else {
+      LogService.i('[Auth] 弱网模式开启，跳过统计信息自动刷新定时器');
+    }
 
     LogService.d('认证定时器已启动');
   }
@@ -278,6 +309,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> close() {
     _stopTimers();
     _forceLogoutSubscription?.cancel();
+    _networkModeSubscription?.cancel();
     return super.close();
   }
 }

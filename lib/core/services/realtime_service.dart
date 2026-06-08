@@ -143,6 +143,38 @@ class RealtimeService {
     _connect();
   }
 
+  /// 停止服务（弱网模式开启时调用）
+  ///
+  /// 与 [dispose] 不同：保留单例与流控制器，仅断开连接和清理订阅状态，
+  /// 后续可以再次调用 [start] 恢复。
+  Future<void> stop() async {
+    if (_disposed) return;
+    if (!_started) return;
+    _started = false;
+    LogService.i('[Realtime] 服务停止（保留单例）');
+
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+
+    await _channelSubscription?.cancel();
+    _channelSubscription = null;
+    try {
+      await _channel?.sink.close(ws_status.normalClosure);
+    } catch (_) {}
+    _channel = null;
+
+    // 清理本地订阅状态，但保留引用计数（便于 start 后自动重订阅）
+    _subscribedChannels.clear();
+    _pendingSubscribeChannels.clear();
+    _connectedToken = null;
+    _hasConnectedBefore = false;
+    _resetReconnectDelay();
+
+    _setConnectionState(RealtimeConnectionState.idle);
+  }
+
   /// 获取指定频道的事件流（可重复订阅，多个监听者共享同一底层订阅）
   ///
   /// 调用方需要自行管理订阅生命周期，确保用 [subscribe] 注册引用计数：

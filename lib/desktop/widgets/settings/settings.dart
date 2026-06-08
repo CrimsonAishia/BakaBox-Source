@@ -12,3 +12,4 @@ export 'window_settings.dart';
 export 'cache_settings.dart';
 export 'about_settings.dart';
 export 'privacy_settings.dart';
+export 'weak_network_settings.dart';

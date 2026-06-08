@@ -206,3 +206,13 @@ class SettingsUnblockUser extends SettingsEvent {
   @override
   List<Object?> get props => [userId];
 }
+
+// ==================== 弱网模式 ====================
+
+/// 切换弱网模式
+class SettingsSetWeakNetworkMode extends SettingsEvent {
+  final bool enabled;
+  const SettingsSetWeakNetworkMode(this.enabled);
+  @override
+  List<Object?> get props => [enabled];
+}

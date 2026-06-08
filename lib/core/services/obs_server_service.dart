@@ -11,6 +11,7 @@ import '../services/console_log_service.dart';
 import '../services/source_server_service.dart';
 import '../services/server_address_mapping_service.dart';
 import '../services/game_status_service.dart';
+import '../services/network_mode_service.dart';
 import '../services/realtime/realtime_server_map_runtime_channel.dart';
 
 String _getWaitingText() {
@@ -26,7 +27,27 @@ String _getWaitingText() {
 class ObsServerService {
   static final ObsServerService _instance = ObsServerService._internal();
   factory ObsServerService() => _instance;
-  ObsServerService._internal();
+  ObsServerService._internal() {
+    // 监听弱网模式切换，立即启停 OBS 数据刷新定时器
+    _networkModeSubscription = NetworkModeService.instance.changes.listen((
+      weakNetwork,
+    ) {
+      // 仅当 OBS 服务器已启动时才管理定时器
+      if (_server == null) return;
+      if (weakNetwork) {
+        _obsRefreshTimer?.cancel();
+        _obsRefreshTimer = null;
+        _logger.i('[OBS] 弱网模式开启，已停止 OBS 数据刷新');
+      } else {
+        if (_obsRefreshTimer == null) {
+          _obsRefreshTimer = Timer.periodic(_obsRefreshInterval, (_) {
+            _refreshCurrentServerData();
+          });
+          _logger.i('[OBS] 弱网模式关闭，已恢复 OBS 数据刷新');
+        }
+      }
+    });
+  }
 
   HttpServer? _server;
   final List<WebSocket> _clients = [];
@@ -46,6 +67,10 @@ class ObsServerService {
       RealtimeServerMapRuntimeChannel();
   StreamSubscription<ServerMapRuntimeEvent>? _mapRuntimeSubscription;
   bool _mapRuntimeSubscribed = false;
+
+  // 弱网模式切换监听（单例随应用生命周期，不需要 cancel）
+  // ignore: unused_field
+  StreamSubscription<bool>? _networkModeSubscription;
 
   // 当前直接查询的服务器数据
   SourceServerInfo? _queriedServerInfo;
@@ -592,6 +617,12 @@ class ObsServerService {
   /// 只轮询当前连接的服务器数据，不依赖全局刷新机制
   void _startObsRefreshTimer() {
     _obsRefreshTimer?.cancel();
+    // 弱网模式下不启动 OBS 自动刷新（仍然保留矫正定时器作为长周期兜底）
+    if (NetworkModeService.instance.weakNetwork) {
+      _logger.i('[OBS] 弱网模式开启，跳过 OBS 自动数据刷新');
+      _startCorrectionTimer();
+      return;
+    }
     _obsRefreshTimer = Timer.periodic(_obsRefreshInterval, (_) {
       _refreshCurrentServerData();
     });

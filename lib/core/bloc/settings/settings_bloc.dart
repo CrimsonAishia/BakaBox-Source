@@ -11,6 +11,9 @@ import '../../utils/app_directory_service.dart';
 import '../../utils/platform_utils.dart';
 import '../../utils/storage_utils.dart';
 import '../../services/disk_image_cache_service.dart';
+import '../../services/network_mode_service.dart';
+import '../../services/realtime_service.dart';
+import '../../services/realtime/realtime_map_info_invalidator.dart';
 import '../../api/server_api.dart';
 import '../../api/guide_api.dart';
 import '../../services/game_launcher_service.dart';
@@ -94,6 +97,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<SettingsLoadBlocklist>(_onLoadBlocklist);
     on<SettingsBlockUser>(_onBlockUser);
     on<SettingsUnblockUser>(_onUnblockUser);
+    // 弱网模式事件
+    on<SettingsSetWeakNetworkMode>(_onSetWeakNetworkMode);
   }
 
   Future<void> _onInit(SettingsInit event, Emitter<SettingsState> emit) async {
@@ -169,6 +174,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       final broadcastNotificationTypeIndex =
           StorageUtils.getInt(_keyBroadcastNotificationType) ??
           BroadcastNotificationType.software.index;
+      // 弱网模式：直接从 NetworkModeService 读取（启动时已 loadFromStorage）
+      final weakNetworkMode = NetworkModeService.instance.weakNetwork;
       final notificationPosition =
           NotificationPositionType.values[notificationPositionIndex];
       final floatingWindowPosition =
@@ -202,6 +209,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
           appExitBehavior: appExitBehavior,
           serverSortMode: serverSortMode,
           broadcastNotificationType: broadcastNotificationType,
+          weakNetworkMode: weakNetworkMode,
         ),
       );
     } catch (e) {
@@ -1541,5 +1549,33 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       return '${u.userId}|${u.userName}|${u.blockedAt.toIso8601String()}';
     }).toList();
     await StorageUtils.setStringList('blocked_users', serialized);
+  }
+
+  // ==================== 弱网模式 ====================
+
+  Future<void> _onSetWeakNetworkMode(
+    SettingsSetWeakNetworkMode event,
+    Emitter<SettingsState> emit,
+  ) async {
+    if (state.weakNetworkMode == event.enabled) return;
+
+    // 1. 持久化到 NetworkModeService（也会广播 changes 事件）
+    await NetworkModeService.instance.setWeakNetwork(event.enabled);
+
+    // 2. 联动 Realtime 主推送服务
+    if (event.enabled) {
+      // 开启弱网：停掉 Realtime 主推送
+      await RealtimeService().stop();
+      RealtimeMapInfoInvalidator().stop();
+      LogService.i('[Settings] 弱网模式开启，已停止 Realtime 主推送');
+    } else {
+      // 关闭弱网：重新启动 Realtime 主推送
+      await RealtimeService().start();
+      RealtimeMapInfoInvalidator().start();
+      LogService.i('[Settings] 弱网模式关闭，已恢复 Realtime 主推送');
+    }
+
+    // 3. 更新 UI 状态
+    emit(state.copyWith(weakNetworkMode: event.enabled));
   }
 }

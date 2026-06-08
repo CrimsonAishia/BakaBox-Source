@@ -71,6 +71,7 @@ export 'services/app_permission_service.dart';
 export 'services/scheduler_service.dart';
 export 'services/realtime_service.dart';
 export 'services/realtime/realtime.dart';
+export 'services/network_mode_service.dart';
 export 'services/desktop_navigator.dart';
 
 // Desktop-only services（桌面端直接 import，不通过 core.dart 导出）

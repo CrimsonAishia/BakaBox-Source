@@ -188,10 +188,14 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
       // 首帧渲染完成，上报启动统计
       AnalyticsService.instance.reportStartupIfNeeded();
 
-      // 启动实时推送服务（业务侧 Bloc / Service 自行订阅频道）
-      await RealtimeService().start();
-      // 启动地图信息缓存失效器（监听 map.info 频道）
-      RealtimeMapInfoInvalidator().start();
+      // 启动实时推送服务（弱网模式下跳过）
+      if (!NetworkModeService.instance.weakNetwork) {
+        await RealtimeService().start();
+        // 启动地图信息缓存失效器（监听 map.info 频道）
+        RealtimeMapInfoInvalidator().start();
+      } else {
+        LogService.i('[DesktopAppHome] 弱网模式开启，跳过 Realtime 主推送启动');
+      }
 
       // 启动 GSI 服务（独立服务，不依赖其他服务）
       final gsiService = GsiService();

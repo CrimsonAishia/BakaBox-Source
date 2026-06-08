@@ -334,6 +334,9 @@ class SettingsState extends Equatable {
   final List<BlockedUserInfo> blockedUsers;
   final bool isLoadingBlocklist;
 
+  // 弱网模式：开启后所有自动刷新和实时推送暂停，改为用户手动触发
+  final bool weakNetworkMode;
+
   const SettingsState({
     this.appVersion = '',
     this.buildNumber = '',
@@ -368,6 +371,7 @@ class SettingsState extends Equatable {
     this.broadcastNotificationType = BroadcastNotificationType.software,
     this.blockedUsers = const [],
     this.isLoadingBlocklist = false,
+    this.weakNetworkMode = false,
   });
 
   /// 获取总缓存大小（字节）
@@ -449,6 +453,7 @@ class SettingsState extends Equatable {
     BroadcastNotificationType? broadcastNotificationType,
     List<BlockedUserInfo>? blockedUsers,
     bool? isLoadingBlocklist,
+    bool? weakNetworkMode,
   }) {
     return SettingsState(
       appVersion: appVersion ?? this.appVersion,
@@ -490,6 +495,7 @@ class SettingsState extends Equatable {
           broadcastNotificationType ?? this.broadcastNotificationType,
       blockedUsers: blockedUsers ?? this.blockedUsers,
       isLoadingBlocklist: isLoadingBlocklist ?? this.isLoadingBlocklist,
+      weakNetworkMode: weakNetworkMode ?? this.weakNetworkMode,
     );
   }
 
@@ -528,5 +534,6 @@ class SettingsState extends Equatable {
     broadcastNotificationType,
     blockedUsers,
     isLoadingBlocklist,
+    weakNetworkMode,
   ];
 }

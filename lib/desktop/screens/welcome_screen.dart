@@ -43,6 +43,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     return DateTime.now().difference(lastFetched) > ttl;
   }
 
+  /// 弱网模式下：只有数据为空才拉取，不再按 TTL 自动重拉
+  bool _shouldFetch(DateTime? lastFetched, Duration ttl) {
+    if (NetworkModeService.instance.weakNetwork) {
+      return lastFetched == null;
+    }
+    return _isStale(lastFetched, ttl);
+  }
+
   /// 加载首页所需数据（基于时间戳缓存，避免频繁请求）
   void _loadData() {
     final serverBloc = context.read<ServerBloc>();
@@ -57,30 +65,30 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       serverBloc.add(ServerFetchList());
     }
 
-    // 统计数据：每 5 分钟刷新一次
+    // 统计数据：每 5 分钟刷新一次（弱网模式下仅首次拉取）
     if (!serverStatsBloc.state.isLoading &&
-        _isStale(serverStatsBloc.state.lastFetched, _statsTtl)) {
+        _shouldFetch(serverStatsBloc.state.lastFetched, _statsTtl)) {
       serverStatsBloc.add(const ServerStatsFetch());
     }
 
-    // 公告：每 30 分钟刷新一次
+    // 公告：每 30 分钟刷新一次（弱网模式下仅首次拉取）
     if (!announcementBloc.state.isLoading &&
-        _isStale(announcementBloc.state.lastFetched, _announcementsTtl)) {
+        _shouldFetch(announcementBloc.state.lastFetched, _announcementsTtl)) {
       announcementBloc.add(AnnouncementFetch());
     }
 
-    // 更新日志：每 1 小时刷新一次
+    // 更新日志：每 1 小时刷新一次（弱网模式下仅首次拉取）
     if (!updateLogBloc.state.isLoading &&
-        _isStale(updateLogBloc.state.lastFetched, _updateLogsTtl)) {
+        _shouldFetch(updateLogBloc.state.lastFetched, _updateLogsTtl)) {
       updateLogBloc.add(const UpdateLogFetch());
     }
 
-    // B 站内容：每 10 分钟刷新一次
-    if (_isStale(bilibiliBloc.state.liveRoomsLastFetched, _bilibiliTtl) &&
+    // B 站内容：每 10 分钟刷新一次（弱网模式下仅首次拉取）
+    if (_shouldFetch(bilibiliBloc.state.liveRoomsLastFetched, _bilibiliTtl) &&
         bilibiliBloc.state.status != BilibiliContentStatus.loading) {
       bilibiliBloc.add(const BilibiliContentFetchRequested(tabIndex: 0));
     }
-    if (_isStale(bilibiliBloc.state.videosLastFetched, _bilibiliTtl) &&
+    if (_shouldFetch(bilibiliBloc.state.videosLastFetched, _bilibiliTtl) &&
         bilibiliBloc.state.status != BilibiliContentStatus.loading) {
       bilibiliBloc.add(const BilibiliContentFetchRequested(tabIndex: 1));
     }
