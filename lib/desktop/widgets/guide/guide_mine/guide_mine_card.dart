@@ -100,7 +100,7 @@ class _GuideMineCardState extends State<GuideMineCard> {
                             top: 8,
                             right: 8,
                             child: GuideMineExpiryBadge(
-                              updatedAt: item.updatedAt,
+                              expireDays: item.expireDays,
                             ),
                           ),
                       ],
@@ -280,25 +280,22 @@ class GuideMineStatusBadge extends StatelessWidget {
 
 /// 回收站卡片右上角：显示剩余自动删除天数
 class GuideMineExpiryBadge extends StatelessWidget {
-  final DateTime updatedAt;
+  final int expireDays;
 
-  const GuideMineExpiryBadge({super.key, required this.updatedAt});
+  const GuideMineExpiryBadge({super.key, required this.expireDays});
 
   @override
   Widget build(BuildContext context) {
-    final expiresAt = updatedAt.add(const Duration(days: 30));
-    final daysLeft = expiresAt.difference(DateTime.now()).inDays;
-
     final String label;
     final Color bgColor;
-    if (daysLeft <= 0) {
+    if (expireDays <= 0) {
       label = '即将清理';
       bgColor = GuideTokens.statusRejected.withValues(alpha: 0.9);
-    } else if (daysLeft <= 7) {
-      label = '$daysLeft 天后回收';
+    } else if (expireDays <= 7) {
+      label = '$expireDays 天后清理';
       bgColor = GuideTokens.statusRejected.withValues(alpha: 0.9);
     } else {
-      label = '$daysLeft 天后回收';
+      label = '$expireDays 天后清理';
       bgColor = GuideTokens.statusOffShelf.withValues(alpha: 0.9);
     }
 
