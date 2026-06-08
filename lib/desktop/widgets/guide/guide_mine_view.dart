@@ -332,7 +332,8 @@ class _GuideMineViewState extends State<GuideMineView> {
                           item.status == GuideStatus.pending)
                   ? () => widget.onEditGuide?.call(item.id)
                   : null,
-              onDelete: () => _bloc.add(DeleteGuide(item.id)),
+              onDelete: isTrash ? null : () => _bloc.add(DeleteGuide(item.id)),
+              onRestore: isTrash ? () => _bloc.add(RestoreGuide(item.id)) : null,
             );
           },
         ),

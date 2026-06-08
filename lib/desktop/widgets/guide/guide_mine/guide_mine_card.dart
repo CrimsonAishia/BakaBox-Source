@@ -17,6 +17,7 @@ class GuideMineCard extends StatefulWidget {
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final VoidCallback? onRestore;
   /// 回收站 Tab 时显示剩余天数角标
   final bool showExpiryBadge;
 
@@ -26,6 +27,7 @@ class GuideMineCard extends StatefulWidget {
     this.onTap,
     this.onEdit,
     this.onDelete,
+    this.onRestore,
     this.showExpiryBadge = false,
   });
 
@@ -169,6 +171,7 @@ class _GuideMineCardState extends State<GuideMineCard> {
                               status: item.status,
                               onEdit: widget.onEdit,
                               onDelete: widget.onDelete,
+                              onRestore: widget.onRestore,
                             ),
                           ],
                         ),
@@ -423,12 +426,14 @@ class GuideMineMoreMenu extends StatelessWidget {
   final GuideStatus? status;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final VoidCallback? onRestore;
 
   const GuideMineMoreMenu({
     super.key,
     this.status,
     this.onEdit,
     this.onDelete,
+    this.onRestore,
   });
 
   @override
@@ -454,6 +459,23 @@ class GuideMineMoreMenu extends StatelessWidget {
         itemBuilder: (context) {
           final menuTextColor = colors.textPrimary;
           return [
+            if (onRestore != null)
+              PopupMenuItem<String>(
+                value: 'restore',
+                height: 36,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.restore_outlined,
+                        size: 14, color: colors.accentBlue),
+                    const SizedBox(width: 8),
+                    Text(
+                      '还原',
+                      style: TextStyle(color: colors.accentBlue, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
             if (onEdit != null)
               PopupMenuItem<String>(
                 value: 'edit',
@@ -494,7 +516,9 @@ class GuideMineMoreMenu extends StatelessWidget {
           ];
         },
         onSelected: (value) {
-          if (value == 'edit') {
+          if (value == 'restore') {
+            onRestore?.call();
+          } else if (value == 'edit') {
             onEdit?.call();
           } else if (value == 'delete') {
             _confirmDelete(context, colors);
