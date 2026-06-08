@@ -109,6 +109,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     on<LobbyPanelsDismissed>(_onPanelsDismissed);
     on<_LobbyAssetsReceived>(_onAssetsReceived);
     on<_LobbyGameStatusChanged>(_onGameStatusChanged);
+    on<_LobbyMoveFlush>(_onMoveFlush);
     on<LobbyPageActivityChanged>(_onPageActivityChanged);
     on<LobbyTeleportStarted>(_onTeleportStarted);
     on<LobbyTeleportCompleted>(_onTeleportCompleted);
@@ -252,6 +253,15 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   /// presence.delta seq 序列号追踪（用于检测丢帧）
   /// null 表示尚未收到第一个带 seq 的 delta 帧（服务端未启用 seq 或刚进入大厅）
   int? _lastDeltaSeq;
+
+  // === C2 远端移动广播节流 ===
+  // 高并发下 move.broadcast 每秒可达数十条，逐条 emit 会触发整页 rebuild 饿死主
+  // isolate（pong 迟到 → 掉线根因）。改为缓冲 + 固定帧率批量 flush。
+  // _pendingMoves：serverUserId → 最新一条 move（同一用户只保留最后位置，天然去重）。
+  final Map<String, pb.MoveBroadcastResponse> _pendingMoves = {};
+  Timer? _moveFlushTimer;
+  // 50ms = 20fps，对大厅角色移动视觉足够平滑，又把 rebuild 频率上限钉死。
+  static const Duration _moveFlushInterval = Duration(milliseconds: 50);
 
   /// AuthService 登录状态变化监听器回调
   late final LoginStateChangedCallback _authStateListener;
@@ -462,7 +472,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       add(_LobbyAssetsReceived(serverEvent));
 
       if (!_isDisposed && _isLobbyEntered) {
-        await _service.requestSnapshot();
+        // 初始/冷加载路径：本地用户列表可能为空或已重置，请求全量快照保证整表正确。
+        // S3 增量恢复的收益主要在"热重连"（pageStatus=ready，见 ws.connected 处理）。
+        await _service.requestSnapshot(fullSync: true);
         await _service.requestBroadcastCD();
       }
     }
@@ -521,7 +533,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     // 标记正在加载更多
     add(_LobbySetLoadingMore(true));
 
-    await _service.requestSnapshot();
+    // 分页加载需要全量分页数据，不能走增量恢复
+    await _service.requestSnapshot(fullSync: true);
   }
 
   /// 内部事件处理：assets 收到后更新状态并缓存
@@ -1385,6 +1398,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     LogService.i(
       '[LobbyBloc] _onTeleportStarted: target=${target.label} current isTeleporting=${state.isTeleporting}',
     );
+    // C2：清空缓冲的源地图 move，避免传送后把旧地图的移动套用到新地图列表
+    _pendingMoves.clear();
+    _moveFlushTimer?.cancel();
+    _moveFlushTimer = null;
     emit(
       state.copyWith(
         isTeleporting: true,
@@ -1682,7 +1699,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
             ),
           );
           if (_isLobbyEntered) {
-            unawaited(_service.requestSnapshot());
+            // 身份变更（登出）后需要全量重拉，重新建立 self 标识与完整列表
+            unawaited(_service.requestSnapshot(fullSync: true));
           }
         }
         break;
@@ -1748,6 +1766,15 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         }
       case 'snapshot':
         {
+          // ==================== S3 重连增量恢复 ====================
+          // is_resume=true：服务端只下发增量（users=新增，leftUserIds=离开），
+          // 在本地现有列表基础上做增量合并，而非整表替换。避免重连时全量 300 人
+          // 快照的解码 + 重建开销（掉线雪崩的放大器之一）。
+          if (envelope.snapshotResponse.isResume) {
+            _applyResumeSnapshot(envelope.snapshotResponse, emit);
+            break;
+          }
+
           final previousSelf = state.selfUser;
           final snapshotState = _applySnapshot(envelope.snapshotResponse);
           final previousServerUserId = _selfServerUserId;
@@ -2200,41 +2227,13 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         );
         break;
       case 'move.broadcast':
-        var updatedUsers = _applyMoveBroadcast(
-          state.users,
-          envelope.moveBroadcastResponse,
-        );
-
-        // 检查是否到达了 pendingPortal 附近
-        final pendingPortal = state.pendingPortal;
-        if (pendingPortal != null) {
-          final selfUser = updatedUsers.where((u) => u.isSelf).firstOrNull;
-          if (selfUser != null) {
-            // 检查玩家是否到达 pendingPortal 附近
-            final dx = selfUser.position.x - pendingPortal.x;
-            final dy = selfUser.position.y - pendingPortal.y;
-            final distanceSquared = dx * dx + dy * dy;
-
-            const interactionRange = 120.0;
-            const interactionRangeSquared = interactionRange * interactionRange;
-
-            if (distanceSquared <= interactionRangeSquared) {
-              // 到达 pendingPortal 附近，显示对话框
-              emit(
-                state.copyWith(
-                  users: updatedUsers,
-                  nearbyPortal: pendingPortal,
-                  clearPendingPortal: true,
-                ),
-              );
-              _startMovementTimer();
-              return;
-            }
-          }
+        {
+          // C2：缓冲远端移动，按固定帧率批量 flush，避免逐条 emit 触发整页 rebuild。
+          // 同一用户只保留最新一条（天然去重，弱网堆积也不会放大 rebuild 次数）。
+          final move = envelope.moveBroadcastResponse;
+          _pendingMoves[move.userId] = move;
+          _scheduleMoveFlush();
         }
-
-        emit(state.copyWith(users: updatedUsers));
-        _startMovementTimer();
         break;
       case 'move.reject':
         final moveRejectResp = envelope.moveRejectResponse;
@@ -3218,6 +3217,58 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     ];
   }
 
+  /// C2：调度一次批量 move flush（若未在计划中）
+  void _scheduleMoveFlush() {
+    if (_moveFlushTimer != null) return;
+    _moveFlushTimer = Timer(_moveFlushInterval, () {
+      _moveFlushTimer = null;
+      if (_isDisposed) return;
+      if (_pendingMoves.isEmpty) return;
+      add(const _LobbyMoveFlush());
+    });
+  }
+
+  /// C2：批量应用缓冲的 move.broadcast，并保留传送门接近检测逻辑
+  void _onMoveFlush(_LobbyMoveFlush event, Emitter<LobbyState> emit) {
+    if (_pendingMoves.isEmpty) return;
+    final moves = _pendingMoves.values.toList(growable: false);
+    _pendingMoves.clear();
+
+    var updatedUsers = state.users;
+    for (final move in moves) {
+      updatedUsers = _applyMoveBroadcast(updatedUsers, move);
+    }
+
+    // 启动渲染插值定时器（驱动远端角色从当前位置平滑移动到目标位置）
+    _startMovementTimer();
+
+    // 传送门接近检测（原 move.broadcast 内联逻辑，移到 flush 统一处理）
+    final pendingPortal = state.pendingPortal;
+    if (pendingPortal != null) {
+      final selfUser = updatedUsers.where((u) => u.isSelf).firstOrNull;
+      if (selfUser != null) {
+        final dx = selfUser.position.x - pendingPortal.x;
+        final dy = selfUser.position.y - pendingPortal.y;
+        final distanceSquared = dx * dx + dy * dy;
+        const interactionRange = 120.0;
+        const interactionRangeSquared = interactionRange * interactionRange;
+        if (distanceSquared <= interactionRangeSquared) {
+          emit(
+            state.copyWith(
+              users: updatedUsers,
+              nearbyPortal: pendingPortal,
+              clearPendingPortal: true,
+            ),
+          );
+          _startMovementTimer();
+          return;
+        }
+      }
+    }
+
+    emit(state.copyWith(users: updatedUsers));
+  }
+
   List<LobbyUser> _applyMoveReject(
     List<LobbyUser> users,
     pb.MoveRejectResponse pbReject,
@@ -3775,6 +3826,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _assetsTimeoutTimer?.cancel();
     _assetsTimeoutTimer = null;
     _movementTimer?.cancel();
+    _moveFlushTimer?.cancel();
+    _moveFlushTimer = null;
+    _pendingMoves.clear();
     _bubbleExpiryTimer?.cancel();
     _chatCooldownTimer?.cancel();
     _broadcastCooldownTimer?.cancel();
@@ -3923,7 +3977,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     // 触发 snapshot 对齐
     _lastAnomalySnapshotTime = now;
     LogService.w('[LobbyBloc] delta 异常（本地找不到离开的用户），触发 snapshot 对齐');
-    _service.requestSnapshot();
+    // 异常对齐必须全量：本地已检测到不一致（漏收 join 帧），增量无法修复缺失的用户
+    _service.requestSnapshot(fullSync: true);
   }
 
   /// 排队开始
@@ -4139,6 +4194,103 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   // =========================================================================
   // presence.delta 处理
   // =========================================================================
+
+  /// 处理 S3 重连增量恢复快照（is_resume=true）。
+  ///
+  /// 与全量 snapshot 不同：在本地现有用户列表基础上增量合并，
+  /// users=断连期间新增的用户，leftUserIds=断连期间离开的用户。
+  /// self / mapConfig / recentMessages 仍按全量处理（开销小，保证身份与地图最新）。
+  void _applyResumeSnapshot(
+    pb.SnapshotResponse pbSnapshot,
+    Emitter<LobbyState> emit,
+  ) {
+    final selfServerUserId = pbSnapshot.hasSelf()
+        ? pbSnapshot.self.userId
+        : _selfServerUserId;
+    if (pbSnapshot.hasSelf() &&
+        selfServerUserId != null &&
+        selfServerUserId.isNotEmpty) {
+      _selfServerUserId = selfServerUserId;
+    }
+
+    // 在现有列表基础上增量合并
+    var updatedUsers = List<LobbyUser>.from(state.users);
+
+    // 1. 合并新增用户（排除 self）
+    final parsedJoined = <LobbyUser>[];
+    for (final pbUser in pbSnapshot.users) {
+      final rawUserId = pbUser.userId;
+      if (selfServerUserId != null &&
+          selfServerUserId.isNotEmpty &&
+          rawUserId == selfServerUserId) {
+        continue;
+      }
+      final user = _parseLobbyUser(
+        pbUser,
+        isSelf: false,
+        serverUserId: rawUserId,
+      );
+      parsedJoined.add(user);
+      updatedUsers = _upsertUser(updatedUsers, user);
+    }
+
+    // 2. 移除离开的用户（跳过 self）
+    for (final leftUserId in pbSnapshot.leftUserIds) {
+      if (leftUserId.isEmpty) continue;
+      if (_selfServerUserId == leftUserId) continue;
+      updatedUsers = updatedUsers
+          .where(
+            (u) => u.serverUserId != leftUserId && u.userId != leftUserId,
+          )
+          .toList(growable: false);
+    }
+
+    // 3. 同步 allOnlineUsers（若已加载）
+    var updatedAllOnline = List<LobbyUser>.from(state.allOnlineUsers);
+    if (updatedAllOnline.isNotEmpty) {
+      for (final user in parsedJoined) {
+        updatedAllOnline = _upsertUserInList(updatedAllOnline, user);
+      }
+      for (final leftUserId in pbSnapshot.leftUserIds) {
+        if (leftUserId.isEmpty) continue;
+        if (_selfServerUserId == leftUserId) continue;
+        updatedAllOnline = updatedAllOnline
+            .where(
+              (u) => u.serverUserId != leftUserId && u.userId != leftUserId,
+            )
+            .toList(growable: false);
+      }
+    }
+
+    // 4. 刷新最近消息（resume 仍下发，开销小）
+    final messages = <LobbyMessage>[];
+    for (final pbMsg in pbSnapshot.recentMessages) {
+      messages.add(_parseLobbyMessage(pbMsg));
+    }
+
+    LogService.i(
+      '[LobbyBloc] 增量恢复快照: +${parsedJoined.length} / -${pbSnapshot.leftUserIds.length}，'
+      '当前 ${updatedUsers.length} 人',
+    );
+
+    // 同步 delta seq 基线：resume 快照携带 delta_seq，后续 presence.delta 从 seq+1 续接。
+    // 不同步会导致下一帧被 _handlePresenceDelta 误判为不连续而触发多余的全量对齐。
+    if (pbSnapshot.hasDeltaSeq() && pbSnapshot.deltaSeq.toInt() > 0) {
+      _lastDeltaSeq = pbSnapshot.deltaSeq.toInt();
+    }
+
+    emit(
+      state.copyWith(
+        users: _pinSelfSpriteIfPending(updatedUsers),
+        messages: messages.isNotEmpty ? messages : state.messages,
+        allOnlineUsers: updatedAllOnline,
+        // 重连恢复时若仍在 loading，转入 ready
+        pageStatus: state.pageStatus == LobbyPageStatus.loading
+            ? LobbyPageStatus.ready
+            : state.pageStatus,
+      ),
+    );
+  }
 
   /// 处理 presence.delta 帧（批量用户进入/离开）
   void _handlePresenceDelta(
