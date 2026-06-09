@@ -2454,10 +2454,11 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
           final categoryName = category.modelName ?? '';
           final isSelected = state.selectedCategory?.modelName == categoryName;
           final onlineCount = state.getCategoryOnlineCount(categoryName);
+          final hasOnlineCountData = state.hasCategoryOnlineCount(categoryName);
           final isLoadingOnlineCount =
               !state.hasEverLoadedOnlineCounts &&
               state.isLoadingOnlineCounts &&
-              !state.hasCategoryOnlineCount(categoryName);
+              !hasOnlineCountData;
 
           return ReorderableDragStartListener(
             index: index,
@@ -2467,6 +2468,7 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
               isSelected: isSelected,
               onlineCount: onlineCount,
               isLoadingOnlineCount: isLoadingOnlineCount,
+              hasOnlineCountData: hasOnlineCountData,
               onTap: () => widget.onCategoryTap(category),
               onEdit: category.isCustom
                   ? () => widget.onEditCategory(category)
@@ -2491,16 +2493,18 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
         final categoryName = category.modelName ?? '';
         final isSelected = state.selectedCategory?.modelName == categoryName;
         final onlineCount = state.getCategoryOnlineCount(categoryName);
+        final hasOnlineCountData = state.hasCategoryOnlineCount(categoryName);
         final isLoadingOnlineCount =
             !state.hasEverLoadedOnlineCounts &&
             state.isLoadingOnlineCounts &&
-            !state.hasCategoryOnlineCount(categoryName);
+            !hasOnlineCountData;
 
         return CategoryCard(
           category: category,
           isSelected: isSelected,
           onlineCount: onlineCount,
           isLoadingOnlineCount: isLoadingOnlineCount,
+          hasOnlineCountData: hasOnlineCountData,
           onTap: () => widget.onCategoryTap(category),
           onEdit: category.isCustom
               ? () => widget.onEditCategory(category)
