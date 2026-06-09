@@ -210,7 +210,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       buildWhen: (prev, curr) =>
           prev.selectedCategory != curr.selectedCategory ||
           prev.showSpellCardTierView != curr.showSpellCardTierView ||
-          prev.showWeaponModelView != curr.showWeaponModelView,
+          prev.showWeaponModelView != curr.showWeaponModelView ||
+          prev.sortBy != curr.sortBy,
       builder: (context, state) {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -296,11 +297,133 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
                 },
               ),
               const Spacer(),
+              // 排序按钮（仅在人物和符卡视图显示）
+              if (!state.showWeaponModelView) ...[
+                _buildSortButton(state.sortBy),
+                const SizedBox(width: 8),
+              ],
               _buildSearchBox(),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSortButton(String currentSortBy) {
+    final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
+    final inkColor = CharacterGalleryTheme.getInkColor(context);
+    final cardBg = CharacterGalleryTheme.getCardBackground(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isUpdate = currentSortBy == 'update';
+    final label = isUpdate ? '最近更新' : '默认';
+
+    return PopupMenuButton<String>(
+      tooltip: '排序方式',
+      offset: const Offset(0, 36),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(6),
+        side: BorderSide(color: scrollBrown.withValues(alpha: 0.3)),
+      ),
+      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+      onSelected: (value) {
+        context.read<CharacterGalleryBloc>().add(ChangeSortBy(value));
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem<String>(
+          value: '',
+          height: 36,
+          child: Row(
+            children: [
+              Icon(
+                Icons.sort,
+                size: 16,
+                color: !isUpdate
+                    ? CharacterGalleryTheme.getVermillion(context)
+                    : inkColor.withValues(alpha: 0.6),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '默认',
+                style: TextStyle(
+                  color: inkColor,
+                  fontSize: 13,
+                  fontWeight: !isUpdate ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'update',
+          height: 36,
+          child: Row(
+            children: [
+              Icon(
+                Icons.update,
+                size: 16,
+                color: isUpdate
+                    ? CharacterGalleryTheme.getVermillion(context)
+                    : inkColor.withValues(alpha: 0.6),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '最近更新',
+                style: TextStyle(
+                  color: inkColor,
+                  fontSize: 13,
+                  fontWeight: isUpdate ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+      child: Container(
+        height: 32,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: isUpdate
+              ? CharacterGalleryTheme.getVermillion(
+                  context,
+                ).withValues(alpha: isDark ? 0.2 : 0.1)
+              : cardBg.withValues(alpha: 0.8),
+          border: Border.all(
+            color: isUpdate
+                ? CharacterGalleryTheme.getVermillion(context)
+                : scrollBrown.withValues(alpha: 0.4),
+            width: 1,
+          ),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.swap_vert,
+              size: 14,
+              color: isUpdate
+                  ? CharacterGalleryTheme.getVermillion(context)
+                  : inkColor.withValues(alpha: 0.7),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: inkColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 2),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 16,
+              color: inkColor.withValues(alpha: 0.6),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
