@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../models/server_models.dart';
 import '../../models/server_score.dart';
+import '../../api/score_api.dart';
 import '../../api/server_api.dart';
 import '../../services/source_server_service.dart';
 import '../../services/game_launcher_service.dart';
@@ -270,9 +271,15 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           '成功加载 ${customCategories.length} 个自定义分类和 ${apiCategories.length} 个 API 分类',
         );
 
-        // 移动端不自动选择第一个分类，让用户手动选择
-        // 桌面端会在 UI 层处理自动选择逻辑
-        add(ServerUpdateCategoryOnlineCounts());
+        // 弱网模式下不自动拉所有分类的服务器人数（避免对所有服务器发起 A2S 查询），
+        // 由用户进入分类后再手动刷新。
+        if (!NetworkModeService.instance.weakNetwork) {
+          // 移动端不自动选择第一个分类，让用户手动选择
+          // 桌面端会在 UI 层处理自动选择逻辑
+          add(ServerUpdateCategoryOnlineCounts());
+        } else {
+          LogService.i('[ServerBloc] 弱网模式开启，跳过分类在线人数自动加载');
+        }
       } else {
         emit(state.copyWith(isLoading: false, error: '未获取到服务器数据'));
       }
@@ -609,6 +616,14 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       _applyUsersCountSnapshotForCurrentServers(emit);
     }
 
+    // 弱网模式下 WS 关闭，snapshot 已过期。改用 HTTP 批量查询接口主动拉取。
+    // 普通模式不走这里，由 score.updates 频道实时推送。
+    if (!emit.isDone &&
+        requestId == _currentRequestId &&
+        NetworkModeService.instance.weakNetwork) {
+      await _fetchScoresViaHttp(requestId, emit);
+    }
+
     if (!emit.isDone && requestId == _currentRequestId) {
       _updateCurrentCategoryOnlineCount(emit);
       emit(
@@ -620,6 +635,55 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     }
 
     _clearRecentlyUpdatedAfterDelay(requestId);
+  }
+
+  /// 弱网模式下通过 HTTP 批量查询比分（`POST /api/stub`）。
+  ///
+  /// 仅在 [_fetchServersInfo] 中、刷新当前选中分类服务器之后调用。普通模式
+  /// 走 `score.updates` WS 频道，无需走 HTTP。
+  Future<void> _fetchScoresViaHttp(
+    int requestId,
+    Emitter<ServerState> emit,
+  ) async {
+    if (state.servers.isEmpty) return;
+
+    // 只查有 serverData（在线）的服务器，离线服务器查也是 unknown，浪费请求
+    final addresses = <String>[];
+    for (final s in state.servers) {
+      if (s.serverData == null) continue;
+      final addr = s.serverItem.address ?? s.serverItem.serverAddress;
+      if (addr != null && addr.isNotEmpty) addresses.add(addr);
+    }
+    if (addresses.isEmpty) return;
+
+    try {
+      final scores = await ScoreApi().fetchScoresBatch(addresses);
+      if (emit.isDone || requestId != _currentRequestId) return;
+      if (scores.isEmpty) return;
+
+      // 通过现有 _onApplyScoreUpdates 流程（非 snapshot 语义，不重置未匹配项）
+      // 复用 _applyScoreToServer 的地图匹配 / 不变即跳过逻辑
+      bool changed = false;
+      final updatedServers = state.servers.map((server) {
+        final address =
+            server.serverItem.address ?? server.serverItem.serverAddress;
+        if (address == null) return server;
+        final score = scores[address];
+        if (score == null) return server;
+        // dataQuality == unknown 视为无数据，跳过（避免覆盖已有比分）
+        if (score.dataQuality == 'unknown') return server;
+        final updated = _applyScoreToServer(server, score);
+        if (!identical(updated, server)) changed = true;
+        return updated;
+      }).toList();
+
+      if (!changed) return;
+      emit(state.copyWith(servers: updatedServers));
+      _lastScoreFetchTime = DateTime.now();
+      LogService.d('[ServerBloc] 弱网模式 HTTP 比分查询完成: ${scores.length} 条');
+    } catch (e) {
+      LogService.w('[ServerBloc] 弱网模式 HTTP 比分查询失败: $e');
+    }
   }
 
   /// 将单条比分应用到服务器，返回应用后的服务器实例。
