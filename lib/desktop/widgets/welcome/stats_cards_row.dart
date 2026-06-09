@@ -106,6 +106,14 @@ class StatsCardsRow extends StatelessWidget {
     final officialCategories = state.serverCategories.where(
       (cat) => !cat.isCustom,
     );
+
+    // 弱网模式下若没有任何分类拉取过人数，显示占位符 "—" 而不是 "0"
+    final hasAnyData = officialCategories.any(
+      (cat) =>
+          state.categoryOnlineCounts.containsKey(cat.modelName ?? ''),
+    );
+    if (!hasAnyData) return '—';
+
     final total = officialCategories.fold<int>(
       0,
       (sum, cat) =>

@@ -8,6 +8,7 @@ import 'package:image/image.dart' as img;
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:super_clipboard/super_clipboard.dart';
+import '../../../core/api/score_api.dart';
 import '../../../core/api/server_api.dart';
 import '../../../core/bloc/server/server_bloc.dart';
 import '../../../core/bloc/server/server_state.dart';
@@ -96,6 +97,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   final StatusWindowService _statusService = StatusWindowService();
   StreamSubscription<OperationState>? _statusSubscription;
 
+  /// 弱网模式切换监听（运行时切换时启停定时器）
+  StreamSubscription<bool>? _networkModeSubscription;
+
   @override
   void initState() {
     super.initState();
@@ -106,6 +110,22 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         setState(() {});
       }
     });
+
+    // 弱网开关切换：开启 → 立即停定时器；关闭 → 重启定时器
+    _networkModeSubscription = NetworkModeService.instance.changes.listen((
+      weakNetwork,
+    ) {
+      if (!mounted) return;
+      if (weakNetwork) {
+        _refreshTimer?.cancel();
+        _refreshTimer = null;
+        setState(() {});
+      } else {
+        _startRefreshTimer();
+        setState(() {});
+      }
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
       _initializeData();
@@ -235,6 +255,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   @override
   void dispose() {
     _statusSubscription?.cancel();
+    _networkModeSubscription?.cancel();
     _refreshTimer?.cancel();
     _scrollController.removeListener(_updateScrollIndicators);
     _scrollController.dispose();
@@ -316,12 +337,23 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
 
       if (addresses.isEmpty) return;
 
-      // 直接读取 score.updates 频道在 ServerBloc 启动时缓存的最新 snapshot
+      // 比分数据来源：
+      // - 正常模式：读取 score.updates WS 频道在 ServerBloc 启动时缓存的最新 snapshot
+      // - 弱网模式：WS 已停，改为通过 HTTP 批量查询接口获取
       final scores = <String, dynamic>{};
-      final snapshot = RealtimeScoreUpdatesChannel().latestSnapshot;
-      for (final address in addresses) {
-        final score = snapshot[address];
-        if (score != null) scores[address] = score;
+      if (NetworkModeService.instance.weakNetwork) {
+        final httpScores = await ScoreApi().fetchScoresBatch(addresses);
+        if (!mounted) return;
+        httpScores.forEach((address, score) {
+          if (score.dataQuality == 'unknown') return;
+          scores[address] = score;
+        });
+      } else {
+        final snapshot = RealtimeScoreUpdatesChannel().latestSnapshot;
+        for (final address in addresses) {
+          final score = snapshot[address];
+          if (score != null) scores[address] = score;
+        }
       }
 
       if (scores.isEmpty || !mounted) return;
@@ -464,12 +496,23 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
 
       if (addresses.isEmpty) return;
 
-      // 直接读取 score.updates 频道在 ServerBloc 启动时缓存的最新 snapshot
+      // 比分数据来源：
+      // - 正常模式：读取 score.updates WS 频道的 snapshot
+      // - 弱网模式：WS 已停，改为通过 HTTP 批量查询接口获取
       final scores = <String, dynamic>{};
-      final snapshot = RealtimeScoreUpdatesChannel().latestSnapshot;
-      for (final address in addresses) {
-        final score = snapshot[address];
-        if (score != null) scores[address] = score;
+      if (NetworkModeService.instance.weakNetwork) {
+        final httpScores = await ScoreApi().fetchScoresBatch(addresses);
+        if (!mounted) return;
+        httpScores.forEach((address, score) {
+          if (score.dataQuality == 'unknown') return;
+          scores[address] = score;
+        });
+      } else {
+        final snapshot = RealtimeScoreUpdatesChannel().latestSnapshot;
+        for (final address in addresses) {
+          final score = snapshot[address];
+          if (score != null) scores[address] = score;
+        }
       }
 
       if (scores.isEmpty || !mounted) return;
