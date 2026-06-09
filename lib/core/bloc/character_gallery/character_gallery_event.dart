@@ -345,3 +345,13 @@ class LoadWeaponModelDetailInCharacterView extends CharacterGalleryEvent {
   @override
   List<Object?> get props => [id, isKnife];
 }
+
+/// 切换排序方式
+class ChangeSortBy extends CharacterGalleryEvent {
+  final String sortBy; // '' = 默认排序, 'update' = 最近更新
+
+  const ChangeSortBy(this.sortBy);
+
+  @override
+  List<Object?> get props => [sortBy];
+}

@@ -15,6 +15,7 @@ class CharacterGalleryState extends Equatable {
   final CharacterCategory? selectedCategory;
   final String? keyword;
   final String orderBy;
+  final String sortBy; // '' = 默认排序, 'update' = 最近更新
 
   // 是否显示符卡评级视图
   final bool showSpellCardTierView;
@@ -103,6 +104,7 @@ class CharacterGalleryState extends Equatable {
     this.selectedCategory,
     this.keyword,
     this.orderBy = 'id ASC',
+    this.sortBy = '',
     this.showSpellCardTierView = false,
     this.showWeaponModelView = false,
     this.weaponModelTab = 0,
@@ -160,6 +162,7 @@ class CharacterGalleryState extends Equatable {
     String? keyword,
     bool clearKeyword = false,
     String? orderBy,
+    String? sortBy,
     bool? showSpellCardTierView,
     bool? showWeaponModelView,
     int? weaponModelTab,
@@ -227,6 +230,7 @@ class CharacterGalleryState extends Equatable {
           : (selectedCategory ?? this.selectedCategory),
       keyword: clearKeyword ? null : (keyword ?? this.keyword),
       orderBy: orderBy ?? this.orderBy,
+      sortBy: sortBy ?? this.sortBy,
       showSpellCardTierView:
           showSpellCardTierView ?? this.showSpellCardTierView,
       showWeaponModelView: showWeaponModelView ?? this.showWeaponModelView,
@@ -394,6 +398,7 @@ class CharacterGalleryState extends Equatable {
     selectedCategory,
     keyword,
     orderBy,
+    sortBy,
     showSpellCardTierView,
     showWeaponModelView,
     weaponModelTab,

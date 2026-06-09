@@ -43,6 +43,7 @@ class CharacterGalleryBloc
     on<LoadWeaponModelDetailInCharacterView>(
       _onLoadWeaponModelDetailInCharacterView,
     );
+    on<ChangeSortBy>(_onChangeSortBy);
   }
 
   Future<void> _onLoadCharacters(
@@ -73,6 +74,7 @@ class CharacterGalleryBloc
         category: newCategory,
         keyword: newKeyword,
         orderBy: newOrderBy,
+        sortBy: state.sortBy.isNotEmpty ? state.sortBy : null,
       );
 
       if (response != null) {
@@ -120,6 +122,7 @@ class CharacterGalleryBloc
         category: requestCategory,
         keyword: requestKeyword,
         orderBy: requestOrderBy,
+        sortBy: state.sortBy.isNotEmpty ? state.sortBy : null,
       );
 
       if (response != null) {
@@ -751,6 +754,7 @@ class CharacterGalleryBloc
       final response = await _api.getSpellCardTierList(
         type: event.type,
         keyword: event.keyword,
+        sortBy: state.sortBy.isNotEmpty ? state.sortBy : null,
       );
       if (response != null) {
         // 默认展开第一个评级
@@ -1418,6 +1422,33 @@ class CharacterGalleryBloc
         state.copyWith(
           weaponDetailLoadState: LoadState.failure,
           error: '加载失败，请稍后重试',
+        ),
+      );
+    }
+  }
+
+  void _onChangeSortBy(
+    ChangeSortBy event,
+    Emitter<CharacterGalleryState> emit,
+  ) {
+    if (event.sortBy == state.sortBy) return;
+    emit(state.copyWith(sortBy: event.sortBy));
+
+    // 根据当前视图重新加载数据
+    if (state.showSpellCardTierView) {
+      add(
+        LoadSpellCardTierList(
+          type: state.spellCardTierFilter,
+          keyword: state.keyword,
+        ),
+      );
+    } else if (!state.showWeaponModelView) {
+      // 角色列表视图
+      add(
+        LoadCharacters(
+          category: state.selectedCategory,
+          keyword: state.keyword,
+          orderBy: state.orderBy,
         ),
       );
     }
