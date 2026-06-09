@@ -9,11 +9,15 @@ import '../../../core/bloc/guide_detail/guide_detail_state.dart';
 import '../../../core/bloc/guide_list/guide_list_bloc.dart';
 import '../../../core/bloc/guide_list/guide_list_event.dart';
 import '../../../core/bloc/auth/auth_bloc.dart';
+import '../../../core/api/server_api.dart';
 import '../../../core/models/guide_models.dart';
+import '../../../core/models/map_tag_models.dart' show MapTagSimple;
+import '../../../core/models/server_models.dart' show MapData;
 import '../../../core/services/analytics_service.dart';
 import '../../../core/services/desktop_navigator.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/embeds/bilibili_embed_builder.dart';
+import '../../../core/widgets/marquee_text.dart';
 import '../../../core/widgets/guide/guide_interaction_dock.dart';
 import '../../../core/widgets/guide/guide_reading_progress.dart';
 import '../../../core/widgets/guide/guide_report_dialog.dart';
@@ -662,12 +666,16 @@ class _GuideDetailViewState extends State<GuideDetailView> {
   Widget _buildMapBannerHero(BuildContext context, Guide guide) {
     final mapInfo = guide.mapInfo!;
     final effectiveMapName = guide.mapName ?? mapInfo.mapName;
+    final effectiveMapLabel =
+        mapInfo.mapLabel.isNotEmpty ? mapInfo.mapLabel : (guide.mapLabel ?? '');
     final effectiveMapBackground =
         guide.mapBackground ?? mapInfo.mapBackground;
 
     return _MapBannerHero(
       mapName: effectiveMapName,
+      mapLabel: effectiveMapLabel,
       mapBackground: effectiveMapBackground,
+      tags: mapInfo.tags,
       onViewMap: () {
         DesktopNavigatorProvider.of(context)
             ?.openMapDatabase(mapName: effectiveMapName);
@@ -930,75 +938,308 @@ class _AuthorAvatar extends StatelessWidget {
   }
 }
 
-/// 地图横幅 Hero 样式（背景图 + 居中地图名 + 查看地图渐变按钮）
-class _MapBannerHero extends StatelessWidget {
+/// 地图横幅（仿 MapGroupCard 样式：背景图 + 底部渐变 + 地图名/译名 + 标签）
+///
+/// 整张卡片可点击，点击进入地图数据库对应地图详情。
+class _MapBannerHero extends StatefulWidget {
   final String mapName;
+  final String mapLabel;
   final String? mapBackground;
+  final List<MapTagSimple> tags;
   final VoidCallback? onViewMap;
 
   const _MapBannerHero({
     required this.mapName,
+    required this.mapLabel,
     this.mapBackground,
+    this.tags = const [],
     this.onViewMap,
   });
 
   @override
+  State<_MapBannerHero> createState() => _MapBannerHeroState();
+}
+
+class _MapBannerHeroState extends State<_MapBannerHero> {
+  bool _isHovered = false;
+  final ServerApi _serverApi = ServerApi();
+
+  /// 从地图库补全的完整信息（包含标签/译名/背景），首帧后异步填充
+  MapData? _fullMapInfo;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFullMapInfo();
+  }
+
+  @override
+  void didUpdateWidget(_MapBannerHero oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.mapName != widget.mapName) {
+      _fullMapInfo = null;
+      _loadFullMapInfo();
+    }
+  }
+
+  /// 攻略详情下发的 mapInfo 为精简版（通常缺少 tags/mapLabel），
+  /// 这里复用地图库的数据源补全完整信息。
+  Future<void> _loadFullMapInfo() async {
+    if (widget.mapName.isEmpty) return;
+    try {
+      final data = await _serverApi.getMapInfo(widget.mapName);
+      if (mounted && data != null) {
+        setState(() => _fullMapInfo = data);
+      }
+    } catch (_) {
+      // 静默失败：保留攻略自带的精简信息
+    }
+  }
+
+  /// 译名：优先用补全数据，其次用攻略自带
+  String get _effectiveMapLabel {
+    final full = _fullMapInfo?.mapLabel;
+    if (full != null && full.isNotEmpty && full != widget.mapName) {
+      return full;
+    }
+    return widget.mapLabel;
+  }
+
+  /// 标签：优先用补全数据，其次用攻略自带
+  List<MapTagSimple> get _effectiveTags {
+    final full = _fullMapInfo?.tags;
+    if (full != null && full.isNotEmpty) return full;
+    return widget.tags;
+  }
+
+  /// 背景图：优先用攻略自带，其次用补全数据
+  String? get _effectiveBackground {
+    if (widget.mapBackground != null && widget.mapBackground!.isNotEmpty) {
+      return widget.mapBackground;
+    }
+    return _fullMapInfo?.mapUrl;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(GuideTokens.radius12),
-      child: SizedBox(
-        height: 168,
-        width: double.infinity,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // 背景图
-            SignedNetworkImage(
-              url: mapBackground,
-              fallback: _buildFallback(),
-              cacheWidth: 1600,
-              cacheHeight: 600,
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final mapLabel = _effectiveMapLabel;
+    final tags = _effectiveTags;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onViewMap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(GuideTokens.radius12),
+            border: Border.all(
+              color: _isHovered
+                  ? const Color(0xFF0080FF)
+                  : (isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.black.withValues(alpha: 0.08)),
+              width: _isHovered ? 2 : 1,
             ),
-            // 暗色蒙版
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.30),
-                    Colors.black.withValues(alpha: 0.55),
-                  ],
+            boxShadow: [
+              if (_isHovered)
+                BoxShadow(
+                  color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                )
+              else
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
-              ),
-            ),
-            // 居中地图名 + 按钮
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(GuideTokens.radius12),
+            child: SizedBox(
+              height: 150,
+              child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  Text(
-                    mapName,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                      letterSpacing: 0.3,
-                      shadows: [
-                        Shadow(
-                          color: Color(0x66000000),
-                          blurRadius: 8,
-                          offset: Offset(0, 2),
+                  // 背景图
+                  SignedNetworkImage(
+                    url: _effectiveBackground,
+                    fallback: _buildFallback(),
+                    cacheWidth: 1600,
+                    cacheHeight: 480,
+                  ),
+
+                  // 底部渐变遮罩
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      height: 96,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(
+                              alpha: _isHovered ? 0.95 : 0.8,
+                            ),
+                          ],
                         ),
+                      ),
+                    ),
+                  ),
+
+                  // 右上角「查看地图」提示
+                  Positioned(
+                    top: 10,
+                    right: 12,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 150),
+                      opacity: _isHovered ? 1.0 : 0.0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.open_in_new,
+                                size: 13, color: Colors.white),
+                            SizedBox(width: 5),
+                            Text(
+                              '查看地图',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // 地图名 + 译名 + 标签
+                  Positioned(
+                    left: 12,
+                    right: 12,
+                    bottom: 12,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // 地图技术名
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.map_outlined,
+                              size: 18,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(color: Colors.black, blurRadius: 4),
+                              ],
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: MarqueeText(
+                                text: widget.mapName,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  height: 1.2,
+                                  fontFamily: 'monospace',
+                                  letterSpacing: 0.5,
+                                  shadows: [
+                                    Shadow(color: Colors.black, blurRadius: 8),
+                                    Shadow(
+                                      color: Colors.black,
+                                      offset: Offset(1, 1),
+                                      blurRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        // 地图译名
+                        if (mapLabel.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.translate,
+                                size: 15,
+                                color: Colors.white.withValues(alpha: 0.9),
+                                shadows: const [
+                                  Shadow(color: Colors.black, blurRadius: 4),
+                                ],
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: MarqueeText(
+                                  text: mapLabel,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    shadows: const [
+                                      Shadow(
+                                          color: Colors.black, blurRadius: 4),
+                                      Shadow(
+                                        color: Colors.black,
+                                        offset: Offset(1, 1),
+                                        blurRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+
+                        // 标签
+                        if (tags.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.label_outline,
+                                size: 16,
+                                color: Colors.white.withValues(alpha: 0.8),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(child: _MapTagWrap(tags: tags)),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
-                  const SizedBox(height: GuideTokens.space12),
-                  _ViewMapButton(onTap: onViewMap),
                 ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -1027,52 +1268,270 @@ class _MapBannerHero extends StatelessWidget {
   }
 }
 
-/// 查看地图渐变按钮（蓝紫渐变 / 药丸形）
-class _ViewMapButton extends StatelessWidget {
-  final VoidCallback? onTap;
+/// 地图标签横向展示（仿 MapGroupCard 的 _MapTagRow：超出宽度时自动循环水平滚动）
+class _MapTagWrap extends StatefulWidget {
+  final List<MapTagSimple> tags;
 
-  const _ViewMapButton({this.onTap});
+  const _MapTagWrap({required this.tags});
 
-  // 品牌渐变（亮/暗主题保持一致，作为装饰按钮）
-  static const Color _gradientStart = Color(0xFF3B82F6);
-  static const Color _gradientEnd = Color(0xFF8B5CF6);
+  @override
+  State<_MapTagWrap> createState() => _MapTagWrapState();
+}
+
+class _MapTagWrapState extends State<_MapTagWrap> {
+  ScrollController? _scrollController;
+  bool _needsScroll = false;
+  bool _isScrolling = false;
+  double _totalScrollWidth = 0;
+  double _containerWidth = 0;
+
+  static const double _tagSpacing = 6.0;
+
+  TextStyle get _tagTextStyle => TextStyle(
+        color: Colors.white.withValues(alpha: 0.9),
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        shadows: [
+          Shadow(
+            color: Colors.black.withValues(alpha: 0.4),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      );
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void didUpdateWidget(_MapTagWrap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.tags != widget.tags) {
+      _stopScrolling();
+      if (_scrollController?.hasClients ?? false) {
+        _scrollController?.jumpTo(0);
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _containerWidth > 0) {
+          _checkOverflowWithContainerWidth(_containerWidth);
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _stopScrolling();
+    _scrollController?.dispose();
+    super.dispose();
+  }
+
+  void _stopScrolling() {
+    _isScrolling = false;
+  }
+
+  double _measureTagWidth(MapTagSimple tag) {
+    final textPainter = TextPainter(
+      text: TextSpan(text: tag.name, style: _tagTextStyle),
+      maxLines: 1,
+      textDirection: Directionality.of(context),
+    )..layout();
+    // padding(horizontal: 8 * 2) + textWidth
+    return textPainter.width + 16;
+  }
+
+  void _checkOverflowWithContainerWidth(double maxWidth) {
+    if (!mounted) return;
+
+    _containerWidth = maxWidth;
+    if (_containerWidth <= 0) return;
+
+    double totalWidth = 0;
+    for (int i = 0; i < widget.tags.length; i++) {
+      totalWidth += _measureTagWidth(widget.tags[i]);
+      if (i < widget.tags.length - 1) {
+        totalWidth += _tagSpacing;
+      }
+    }
+
+    final needsScroll = totalWidth > _containerWidth;
+
+    if (needsScroll != _needsScroll ||
+        (needsScroll && (totalWidth - _totalScrollWidth).abs() > 1)) {
+      setState(() {
+        _needsScroll = needsScroll;
+        _totalScrollWidth = totalWidth;
+      });
+    }
+
+    if (_needsScroll && !_isScrolling) {
+      _startScrolling();
+    }
+  }
+
+  void _startScrolling() async {
+    if (!mounted || !_needsScroll || _scrollController == null) return;
+    if (!_scrollController!.hasClients) return;
+
+    _isScrolling = true;
+
+    while (mounted && _needsScroll && _isScrolling) {
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted || !_needsScroll || _scrollController == null) break;
+      if (!_scrollController!.hasClients) break;
+
+      final maxScroll = _scrollController!.position.maxScrollExtent;
+      if (maxScroll <= 0) break;
+
+      try {
+        await _scrollController!.animateTo(
+          maxScroll,
+          duration: Duration(
+            milliseconds: (maxScroll * 0.05).toInt().clamp(3000, 10000),
+          ),
+          curve: Curves.linear,
+        );
+      } catch (_) {
+        break;
+      }
+
+      if (!mounted) break;
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) break;
+
+      try {
+        await _scrollController!.animateTo(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      } catch (_) {
+        break;
+      }
+
+      if (!mounted) break;
+      await Future.delayed(const Duration(seconds: 1));
+    }
+
+    _isScrolling = false;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: GuideTokens.space20,
-            vertical: GuideTokens.space8,
-          ),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [_gradientStart, _gradientEnd],
+    // 离屏渲染降级
+    if (View.maybeOf(context) == null) {
+      return Row(
+        children: [
+          ..._buildTagRow().take(5),
+          if (widget.tags.length > 5)
+            Text('...', style: _tagTextStyle.copyWith(color: Colors.white54)),
+        ],
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _checkOverflowWithContainerWidth(constraints.maxWidth);
+        });
+        return ClipRect(
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            scrollDirection: Axis.horizontal,
+            physics: _needsScroll
+                ? const ClampingScrollPhysics()
+                : const NeverScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: Row(children: _buildTagRow()),
             ),
-            borderRadius: BorderRadius.circular(999),
-            boxShadow: [
-              BoxShadow(
-                color: _gradientStart.withValues(alpha: 0.35),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+          ),
+        );
+      },
+    );
+  }
+
+  List<Widget> _buildTagRow() {
+    final List<Widget> widgets = [];
+    for (int i = 0; i < widget.tags.length; i++) {
+      widgets.add(_buildTagChip(widget.tags[i]));
+      if (i < widget.tags.length - 1) {
+        widgets.add(const SizedBox(width: _tagSpacing));
+      }
+    }
+    return widgets;
+  }
+
+  Widget _buildTagChip(MapTagSimple tag) {
+    final tagColorValue = tag.colorValue;
+
+    if (tagColorValue != null) {
+      final darkColor = Color.lerp(tagColorValue, Colors.black, 0.2)!;
+      final lightColor = Color.lerp(tagColorValue, Colors.white, 0.6)!;
+
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              lightColor.withValues(alpha: 0.4),
+              tagColorValue.withValues(alpha: 0.5),
+              darkColor.withValues(alpha: 0.45),
+            ],
+            stops: const [0.0, 0.5, 1.0],
+          ),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: tagColorValue.withValues(alpha: 0.7),
+            width: 1,
+          ),
+        ),
+        child: Text(
+          tag.name,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            shadows: [
+              Shadow(
+                color: Colors.black,
+                blurRadius: 1,
+                offset: Offset(1, 1),
               ),
             ],
           ),
-          child: const Text(
-            '查看地图',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        tag.name,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.9),
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          shadows: const [
+            Shadow(
+              color: Colors.black,
+              blurRadius: 2,
+              offset: Offset(0, 1),
             ),
-          ),
+          ],
         ),
       ),
     );
