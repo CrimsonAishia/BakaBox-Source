@@ -192,6 +192,10 @@ class LobbyState extends Equatable {
   /// 排队过期原因
   final String? queueExpireReason;
 
+  /// 是否为"重连后重新排队"（用户此前已在大厅内，断线重连时再次排队）
+  /// 用于排队界面显示更贴合语境的文案。
+  final bool queueIsRequeue;
+
   const LobbyState({
     required this.connectionStatus,
     required this.pageStatus,
@@ -239,6 +243,7 @@ class LobbyState extends Equatable {
     this.queueEtaSeconds = 0,
     this.queueExpired = false,
     this.queueExpireReason,
+    this.queueIsRequeue = false,
   });
 
   factory LobbyState.initial() {
@@ -285,6 +290,7 @@ class LobbyState extends Equatable {
       queueEtaSeconds: 0,
       queueExpired: false,
       queueExpireReason: null,
+      queueIsRequeue: false,
     );
   }
 
@@ -361,6 +367,7 @@ class LobbyState extends Equatable {
     int? queueEtaSeconds,
     bool? queueExpired,
     Object? queueExpireReason = _stateSentinel,
+    bool? queueIsRequeue,
   }) {
     return LobbyState(
       connectionStatus: connectionStatus ?? this.connectionStatus,
@@ -468,6 +475,9 @@ class LobbyState extends Equatable {
           : identical(queueExpireReason, _stateSentinel)
           ? this.queueExpireReason
           : queueExpireReason as String?,
+      queueIsRequeue: clearQueue
+          ? false
+          : (queueIsRequeue ?? this.queueIsRequeue),
     );
   }
 
@@ -519,6 +529,7 @@ class LobbyState extends Equatable {
     queueEtaSeconds,
     queueExpired,
     queueExpireReason,
+    queueIsRequeue,
   ];
 }
 

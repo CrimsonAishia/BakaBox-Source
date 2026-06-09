@@ -819,74 +819,8 @@ class LobbyNakamaService {
       _setupStreamListeners();
 
       // 5. RPC lobby_join 获取 matchId 或排队令牌（服务端自动分配地图）
-      final joinResponse = await _rpcLobbyJoin();
-      if (joinResponse == null) {
-        LogService.e('[LobbyNakamaService] RPC lobby_join 获取响应失败');
-        _emitConnectionEvent(
-          LobbyConnectionEventType.error,
-          error: '获取 matchId 失败',
-        );
-        _sessionRefreshTimer?.cancel();
-        _sessionRefreshTimer = null;
-        _scheduleReconnect();
-        return;
-      }
-
-      // 判断是立即进入还是排队
-      if (joinResponse.matchId.isNotEmpty) {
-        // 立即通过，走原有流程
-        final matchId = joinResponse.matchId;
-
-        // 6. 加入 Match
-        await _socketManager.joinMatch(matchId);
-
-        // 7. 只有在 joinMatch 成功后才标记为已连接并发送 connected 事件
-        _isConnected = true;
-        _consecutiveFailures = 0; // C3：连接成功，重置熔断计数
-        _reconnectDelaySeconds = 2; // 退避重置
-        _emitConnectionEvent(LobbyConnectionEventType.connected);
-
-        LogService.i(
-          '[LobbyNakamaService] 初始化完成，已加入 Match: $matchId，等待 join.success',
-        );
-      } else if (joinResponse.ticket.isNotEmpty) {
-        // 进入排队，通知 Bloc 显示排队 UI
-        _isConnected = true;
-        _consecutiveFailures = 0; // C3：连接成功，重置熔断计数
-        _reconnectDelaySeconds = 2;
-        _emitConnectionEvent(LobbyConnectionEventType.connected);
-
-        // 发送排队事件给 Bloc
-        _eventController.add(
-          LobbyServerEvent(
-            type: 'queue.started',
-            timestamp: DateTime.now(),
-            traceId: '',
-            envelope: pb.LobbyEnvelope()..type = 'queue.started',
-            queueTicket: joinResponse.ticket,
-            queuePosition: joinResponse.position,
-            queueTotal: joinResponse.queueTotal,
-            queueEtaSeconds: joinResponse.etaSeconds,
-            queuePollIntervalMs: joinResponse.pollIntervalMs,
-          ),
-        );
-
-        LogService.i(
-          '[LobbyNakamaService] 进入排队: ticket=${joinResponse.ticket}, position=${joinResponse.position}/${joinResponse.queueTotal}',
-        );
-      } else {
-        LogService.e(
-          '[LobbyNakamaService] RPC lobby_join 返回无效响应（matchId 和 ticket 均为空）',
-        );
-        _emitConnectionEvent(
-          LobbyConnectionEventType.error,
-          error: '获取 matchId 失败',
-        );
-        _sessionRefreshTimer?.cancel();
-        _sessionRefreshTimer = null;
-        _scheduleReconnect();
-        return;
-      }
+      //    成功（加入 Match 或进入排队）返回 true；失败已在内部安排重连。
+      await _attemptLobbyJoin();
     } catch (e, stackTrace) {
       LogService.e('[LobbyNakamaService] 连接失败', e, stackTrace);
       _emitConnectionEvent(LobbyConnectionEventType.error, error: e.toString());
@@ -896,6 +830,122 @@ class LobbyNakamaService {
       _scheduleReconnect();
     }
   }
+
+  /// 执行 RPC lobby_join 并根据响应加入 Match 或进入排队
+  ///
+  /// 抽离自 [_doConnect]，使排队过期 / 完成后能够在已建立的 WebSocket 连接上
+  /// 重新发起 lobby_join（无需重连），由 [rejoinLobby] 复用。
+  ///
+  /// 返回 true 表示成功（加入 Match 或进入排队）；返回 false 表示失败，
+  /// 失败时已发送 error 事件并安排重连。
+  Future<bool> _attemptLobbyJoin() async {
+    final joinResponse = await _rpcLobbyJoin();
+    if (joinResponse == null) {
+      LogService.e('[LobbyNakamaService] RPC lobby_join 获取响应失败');
+      _emitConnectionEvent(
+        LobbyConnectionEventType.error,
+        error: '获取 matchId 失败',
+      );
+      _sessionRefreshTimer?.cancel();
+      _sessionRefreshTimer = null;
+      _scheduleReconnect();
+      return false;
+    }
+
+    // 判断是立即进入还是排队
+    if (joinResponse.matchId.isNotEmpty) {
+      // 立即通过，走原有流程
+      final matchId = joinResponse.matchId;
+
+      // 加入 Match
+      await _socketManager.joinMatch(matchId);
+
+      // 只有在 joinMatch 成功后才标记为已连接并发送 connected 事件
+      _isConnected = true;
+      _consecutiveFailures = 0; // C3：连接成功，重置熔断计数
+      _reconnectDelaySeconds = 2; // 退避重置
+      _emitConnectionEvent(LobbyConnectionEventType.connected);
+
+      LogService.i(
+        '[LobbyNakamaService] lobby_join 完成，已加入 Match: $matchId，等待 join.success',
+      );
+      return true;
+    } else if (joinResponse.ticket.isNotEmpty) {
+      // 进入排队，通知 Bloc 显示排队 UI
+      _isConnected = true;
+      _consecutiveFailures = 0; // C3：连接成功，重置熔断计数
+      _reconnectDelaySeconds = 2;
+      _emitConnectionEvent(LobbyConnectionEventType.connected);
+
+      // 发送排队事件给 Bloc
+      _eventController.add(
+        LobbyServerEvent(
+          type: 'queue.started',
+          timestamp: DateTime.now(),
+          traceId: '',
+          envelope: pb.LobbyEnvelope()..type = 'queue.started',
+          queueTicket: joinResponse.ticket,
+          queuePosition: joinResponse.position,
+          queueTotal: joinResponse.queueTotal,
+          queueEtaSeconds: joinResponse.etaSeconds,
+          queuePollIntervalMs: joinResponse.pollIntervalMs,
+        ),
+      );
+
+      LogService.i(
+        '[LobbyNakamaService] 进入排队: ticket=${joinResponse.ticket}, position=${joinResponse.position}/${joinResponse.queueTotal}',
+      );
+      return true;
+    } else {
+      LogService.e(
+        '[LobbyNakamaService] RPC lobby_join 返回无效响应（matchId 和 ticket 均为空）',
+      );
+      _emitConnectionEvent(
+        LobbyConnectionEventType.error,
+        error: '获取 matchId 失败',
+      );
+      _sessionRefreshTimer?.cancel();
+      _sessionRefreshTimer = null;
+      _scheduleReconnect();
+      return false;
+    }
+  }
+
+  /// 在已建立的 WebSocket 连接上重新发起 lobby_join
+  ///
+  /// 用于排队过期 / 取消后的重试：此时 WebSocket 仍然连接（_isConnected=true），
+  /// 但尚未加入任何 Match，因此不能走 [initialize]（会被幂等检查拦截），
+  /// 也不能直接发送 assets/snapshot 请求（会因未加入 Match 被丢弃）。
+  ///
+  /// 若 WebSocket 已断开，则回退到完整的 [initialize] 流程。
+  Future<void> rejoinLobby() async {
+    if (_isDisposed) return;
+
+    // WebSocket 未连接：走完整初始化（含认证 + 连接 + lobby_join）
+    if (!_isConnected) {
+      LogService.i('[LobbyNakamaService] rejoinLobby: WebSocket 未连接，走完整初始化');
+      await initialize();
+      return;
+    }
+
+    // 已经在某个 Match 中：无需重新 join，避免重复加入
+    if (_socketManager.currentMatchId != null) {
+      LogService.d('[LobbyNakamaService] rejoinLobby: 已在 Match 中，跳过重新 join');
+      return;
+    }
+
+    LogService.i('[LobbyNakamaService] rejoinLobby: 在已有连接上重新发起 lobby_join');
+    try {
+      await _attemptLobbyJoin();
+    } catch (e, stackTrace) {
+      LogService.e('[LobbyNakamaService] rejoinLobby 失败', e, stackTrace);
+      _emitConnectionEvent(LobbyConnectionEventType.error, error: e.toString());
+      _scheduleReconnect();
+    }
+  }
+
+  /// 是否已加入某个 Match（排队中尚未加入时为 false）
+  bool get isInMatch => _socketManager.currentMatchId != null;
 
   /// 设置流监听器
   void _setupStreamListeners() {
