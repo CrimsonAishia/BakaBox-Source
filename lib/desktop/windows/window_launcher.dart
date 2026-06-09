@@ -23,11 +23,14 @@ class DesktopWindowLauncher {
   static Future<void> launch(List<String> args) async {
     final isSubWindow = args.isNotEmpty;
 
-    // 主窗口需要单实例检查
+    // 主窗口需要单实例检查。
+    // 必须在初始化存储（Hive）之前完成：若已有实例运行，当前进程要在
+    // 打开被独占锁定的 box 文件之前就退出，否则会卡死并残留进程。
     if (!isSubWindow) {
       final canStart = await SingleInstanceService.instance
           .ensureSingleInstance(args);
       if (!canStart) {
+        // 已有实例在运行（且已被唤醒），当前进程干净退出
         exit(0);
       }
     }
