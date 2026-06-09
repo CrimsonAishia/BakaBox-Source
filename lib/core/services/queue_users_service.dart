@@ -188,6 +188,21 @@ class QueueUsersServiceImpl implements QueueUsersService {
         },
       );
 
+      // 连接期间若已请求断开（disconnect 会把 _shouldReconnect 置 false 并清空地址），
+      // 立即关闭刚建立的连接。否则会泄漏一个无人管理的 WebSocket，
+      // 导致即使关闭面板也一直卡在挤服竞技场里。
+      if (!_shouldReconnect || _currentServerAddress == null) {
+        LogService.d('[QueueUsersService] 连接期间已请求断开，立即关闭新建连接');
+        try {
+          await _webSocket!.close();
+        } catch (_) {}
+        _webSocket = null;
+        _isConnecting = false;
+        _isConnected = false;
+        _safeAddEvent(QueueUsersConnectionStateEvent(isConnected: false));
+        return;
+      }
+
       _isConnected = true;
       _isConnecting = false;
       _reconnectAttempts = 0;
