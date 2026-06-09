@@ -1,330 +1,118 @@
-import 'dart:io';
-import 'dart:math';
+import 'package:uuid/uuid.dart';
 
 import 'log_service.dart';
 import 'storage_utils.dart';
 
 /// 设备ID工具类
 ///
-/// 使用 PowerShell 直接获取 Windows BIOS UUID（避免调用 wmic 产生 CMD 窗口）：
-/// - Android: AndroidId
-/// - iOS: IdentifierForVendor
-/// - Windows: BIOS UUID via PowerShell
-/// - macOS: IOPlatformUUID
-/// - Linux: BIOS UUID
-/// - Web: UserAgent
-/// - 卸载重装后ID保持不变
+/// 作用：为 Nakama `authenticateDevice` 提供一个**全局唯一且稳定**的设备标识。
 ///
-/// 虚拟机/沙箱兜底方案：
-/// - 检测 BIOS UUID 占位符（如 VMware/VirtualBox 返回的 0000... / BBBB...）
-/// - 占位符检测失败后，生成并持久化一个确定性随机 ID（基于机器名+OS+核心数种子）
-/// - LobbyNakamaService 另有最终随机 UUIDv4 兜底作为安全网
+/// ## 设计：纯随机 UUID + 本地持久化
+///
+/// 服务端（_nakama/config.yml）开启了 `single_socket` / `single_session`，
+/// 二者都以「设备ID 派生出的 Nakama UUID」为键。这对设备ID提出两个硬性要求：
+///
+/// 1. **稳定**：重连/重启后保持不变，否则 single_socket 无法回收僵尸 socket
+///    （正是当初开启 single_socket 要解决的「5539 sessions / 100 users」雪崩）。
+/// 2. **唯一**：每个真实安装唯一，否则两个用户派生出同一个 UUID，
+///    single_socket 会让他们互相挤掉线（本次修复的 bug）。
+///
+/// 历史方案用硬件 BIOS UUID / MachineGuid 作为设备ID，但它在**克隆虚拟机、
+/// 磁盘镜像批量部署、确定性兜底（默认主机名+OS+核心数）**等场景会发生碰撞，
+/// 违反要求 2，导致互挤。
+///
+/// 纯随机 UUIDv4（122 bit 随机）天然满足唯一性（碰撞概率可忽略），
+/// 配合本地持久化满足稳定性，且符合 Nakama 官方对设备ID的推荐用法
+/// （6~128 字符的稳定唯一串，从不要求真实硬件标识）。
+///
+/// ## 稳定性说明
+///
+/// 唯一风险是本地存储被清空后重新生成导致 ID 漂移。但需区分两类漂移：
+/// - 「每次重连」生成新 ID（旧灾难）→ 已通过持久化彻底杜绝。
+/// - 「存储被清空」（手动删除 storage 目录或带清理的卸载重装）→ 极罕见，
+///   且新连接之间仍受 single_socket/single_session 去重，旧 socket 最多挂到
+///   idle_timeout（180s）即被回收，不会雪崩。
+///
+/// 存储目录位于 我的文档/BakaBox/storage（桌面端），卸载重装通常保留，
+/// 故绝大多数情况下 ID 终生不变。
 class DeviceIdHelper {
   DeviceIdHelper._();
 
   static String? _cachedDeviceId;
 
-  static const String _fallbackStorageKey = 'fallback_device_id';
+  /// 持久化的设备ID存储键
+  static const String _deviceIdStorageKey = 'persistent_device_id';
 
-  /// 虚拟机/沙箱环境常见的 BIOS UUID 占位符模式
-  ///
-  /// 这些模式在 VMware、VirtualBox、Hyper-V 等虚拟机中常见，
-  /// 表示 BIOS 未正确报告真实 UUID，需要降级兜底。
-  /// 只检测全 0、全 B、全 F 这些明显的人造占位符。
-  static final _placeholderPatterns = [
-    RegExp(
-      r'^0{8}-0{4}-0{4}-0{4}-0{12}$',
-      caseSensitive: false,
-    ), // 00000000-0000-0000-0000-000000000000
-    RegExp(
-      r'^[Bb]{8}-[Bb]{4}-[Bb]{4}-[Bb]{4}-[Bb]{12}$',
-    ), // BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB
-    RegExp(
-      r'^[Ff]{8}-[Ff]{4}-[Ff]{4}-[Ff]{4}-[Ff]{12}$',
-    ), // FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF
-  ];
+  /// 旧版本兜底ID存储键（用于平滑迁移老用户）
+  static const String _legacyFallbackKey = 'fallback_device_id';
 
-  static final _random = Random();
+  static const Uuid _uuid = Uuid();
 
-  /// 判断给定 UUID 是否为虚拟机 BIOS 占位符
-  static bool _isInvalidPlaceholder(String id) {
-    final trimmed = id.trim().toUpperCase();
-    for (final pattern in _placeholderPatterns) {
-      if (pattern.hasMatch(trimmed)) {
-        LogService.w('[DeviceIdHelper] 检测到无效占位符 UUID: ${_maskForLog(trimmed)}');
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /// 脱敏日志：只显示 UUID 首尾各 4 字符
-  static String _maskForLog(String id) {
-    if (id.length < 9) return '****';
-    return '${id.substring(0, 4)}****${id.substring(id.length - 4)}';
-  }
-
-  /// 生成确定性随机 ID
-  ///
-  /// 种子来源：机器名 + OS + 版本 + 核心数
-  /// 相同硬件配置 → 相同种子 → 相同 ID（重启后仍稳定）
-  /// 不依赖任何外部包，使用 Dart 内置 Random 伪随机生成器。
-  static String _generateDeterministicId() {
-    final seed = <String>[
-      Platform.localHostname,
-      Platform.operatingSystem,
-      Platform.operatingSystemVersion,
-      Platform.numberOfProcessors.toString(),
-    ].join('|').hashCode;
-
-    // 使用种子初始化 Random，保证相同硬件产生相同 ID
-    final seededRandom = Random(seed);
-    final hexDigits = '0123456789abcdef';
-    final buffer = StringBuffer();
-
-    for (var i = 0; i < 32; i++) {
-      buffer.write(hexDigits[seededRandom.nextInt(16)]);
-    }
-
-    return buffer.toString();
-  }
-
-  /// 生成随机 ID（用于最外层确定性路径都失效的极端兜底）
-  static String _generateRandomId() {
-    final hexDigits = '0123456789abcdef';
-    final parts = <String>[];
-    parts.add(DateTime.now().microsecondsSinceEpoch.toRadixString(16));
-    parts.add(Platform.numberOfProcessors.toString());
-    parts.add(Platform.localHostname.hashCode.toRadixString(16));
-
-    // 再追加 16 位纯随机，确保全局唯一
-    final buffer = StringBuffer(parts.join());
-    for (var i = 0; i < 16; i++) {
-      buffer.write(hexDigits[_random.nextInt(16)]);
-    }
-    return buffer.toString().substring(0, 32);
-  }
-
-  /// 获取 fallback 设备ID
+  /// 异步获取设备ID（全局唯一且稳定）
   ///
   /// 优先级：
-  /// 1. 从本地存储读取已缓存的 fallback ID（保证重启后 ID 稳定）
-  /// 2. 生成新的确定性 ID（基于机器名+OS+核心数种子）
-  /// 3. 若确定性路径也失败，生成随机 ID（LobbyNakamaService 最终安全网）
-  static String _getFallbackDeviceId() {
-    // 尝试从 Hive 缓存读取（同步读取，Box 已打开时可用）
-    try {
-      final stored = StorageUtils.getString(_fallbackStorageKey);
-      if (stored != null && stored.isNotEmpty) {
-        LogService.d(
-          '[DeviceIdHelper] 使用本地缓存的 fallback ID: ${_maskForLog(stored)}',
-        );
-        return stored;
-      }
-    } catch (_) {
-      // StorageUtils 未初始化或读取失败，继续生成新的
-    }
-
-    String fallbackId;
-    try {
-      fallbackId = _generateDeterministicId();
-      LogService.w('[DeviceIdHelper] 生成了确定性 fallback ID（seed: 机器名/OS/核心数）');
-    } catch (e) {
-      // 极不可能：所有确定性路径都失败
-      fallbackId = _generateRandomId();
-      LogService.e('[DeviceIdHelper] 确定性 ID 生成失败，使用随机兜底: $e');
-    }
-
-    // 异步写入缓存（不阻塞）
-    StorageUtils.setString(_fallbackStorageKey, fallbackId)
-        .then((_) {
-          LogService.d(
-            '[DeviceIdHelper] fallback ID 已持久化: ${_maskForLog(fallbackId)}',
-          );
-        })
-        .catchError((e) {
-          LogService.w('[DeviceIdHelper] fallback ID 持久化失败: $e');
-        });
-
-    return fallbackId;
-  }
-
-  /// 通过 PowerShell 获取 Windows BIOS UUID（无 CMD 窗口，无阻塞）
-  ///
-  /// 使用 runInShell: false 避免创建控制台窗口
-  static Future<String?> _getWindowsDeviceIdViaPowerShell() async {
-    if (!Platform.isWindows) return null;
-
-    try {
-      final result = await Process.run('powershell', [
-        '-NoProfile',
-        '-NonInteractive',
-        '-Command',
-        '(Get-CimInstance Win32_ComputerSystemProduct).UUID',
-      ], runInShell: false);
-
-      if (result.exitCode == 0) {
-        final uuid = (result.stdout as String).trim();
-        if (uuid.isNotEmpty && uuid.length == 36) {
-          LogService.d(
-            '[DeviceIdHelper] PowerShell 获取到 UUID: ${_maskForLog(uuid)}',
-          );
-          return uuid;
-        }
-      }
-    } catch (e) {
-      LogService.w('[DeviceIdHelper] PowerShell 获取 UUID 失败: $e');
-    }
-    return null;
-  }
-
-  /// 通过注册表获取 Windows MachineGuid（兜底方案）
-  static Future<String?> _getWindowsDeviceIdViaRegistry() async {
-    if (!Platform.isWindows) return null;
-
-    try {
-      final result = await Process.run('reg', [
-        'query',
-        r'HKLM\SOFTWARE\Microsoft\Cryptography',
-        '/v',
-        'MachineGuid',
-      ], runInShell: false);
-
-      if (result.exitCode == 0) {
-        final output = (result.stdout as String);
-        final match = RegExp(
-          r'MachineGuid\s+REG_SZ\s+([a-fA-F0-9-]{36})',
-        ).firstMatch(output);
-        if (match != null) {
-          final guid = match.group(1)!;
-          LogService.d(
-            '[DeviceIdHelper] 注册表获取到 MachineGuid: ${_maskForLog(guid)}',
-          );
-          return guid;
-        }
-      }
-    } catch (e) {
-      LogService.w('[DeviceIdHelper] 注册表获取 MachineGuid 失败: $e');
-    }
-    return null;
-  }
-
-  /// 通过 system_profiler 获取 macOS 硬件 UUID
-  static Future<String?> _getMacOSDeviceId() async {
-    if (!Platform.isMacOS) return null;
-
-    try {
-      final result = await Process.run('system_profiler', [
-        'SPHardwareDataType',
-      ], runInShell: false);
-
-      if (result.exitCode == 0) {
-        final output = (result.stdout as String);
-        final match = RegExp(
-          r'Hardware UUID:\s+([A-F0-9-]+)',
-          caseSensitive: false,
-        ).firstMatch(output);
-        if (match != null) {
-          final uuid = match.group(1)!;
-          LogService.d(
-            '[DeviceIdHelper] system_profiler 获取到 UUID: ${_maskForLog(uuid)}',
-          );
-          return uuid;
-        }
-      }
-    } catch (e) {
-      LogService.w('[DeviceIdHelper] system_profiler 获取 UUID 失败: $e');
-    }
-    return null;
-  }
-
-  /// 通过 dmidecode 获取 Linux BIOS UUID（需要 root 权限，降级处理）
-  static Future<String?> _getLinuxDeviceId() async {
-    if (!Platform.isLinux) return null;
-
-    try {
-      final result = await Process.run('dmidecode', [
-        '-s',
-        'system-uuid',
-      ], runInShell: false);
-
-      if (result.exitCode == 0) {
-        final uuid = (result.stdout as String).trim();
-        if (uuid.isNotEmpty && uuid.length >= 32) {
-          LogService.d(
-            '[DeviceIdHelper] dmidecode 获取到 UUID: ${_maskForLog(uuid)}',
-          );
-          return uuid;
-        }
-      }
-    } catch (e) {
-      LogService.w('[DeviceIdHelper] dmidecode 获取 UUID 失败: $e');
-    }
-    return null;
-  }
-
-  /// 异步获取设备ID
-  ///
-  /// 兜底层级：
-  /// 1. Windows: PowerShell 获取 BIOS UUID → 注册表 MachineGuid 兜底
-  /// 2. macOS: system_profiler 获取硬件 UUID
-  /// 3. Linux: dmidecode 获取 system-uuid
-  /// 4. 占位符过滤（虚拟机 BIOS UUID 检测）
-  /// 5. 本地持久化 fallback ID（确定性，相同硬件重启后仍一致）
-  /// 6. LobbyNakamaService 另有随机 UUIDv4 最终安全网
+  /// 1. 内存缓存
+  /// 2. 已持久化的设备ID
+  /// 3. 旧版本 fallback ID（平滑迁移，避免老用户 ID 漂移导致重连）
+  /// 4. 生成新的随机 UUIDv4 并持久化
   static Future<String> getDeviceId() async {
     if (_cachedDeviceId != null) return _cachedDeviceId!;
 
-    String? deviceId;
-
-    // 根据平台获取设备 ID
-    if (Platform.isWindows) {
-      deviceId = await _getWindowsDeviceIdViaPowerShell();
-      deviceId ??= await _getWindowsDeviceIdViaRegistry();
-    } else if (Platform.isMacOS) {
-      deviceId = await _getMacOSDeviceId();
-    } else if (Platform.isLinux) {
-      deviceId = await _getLinuxDeviceId();
+    // 1+2. 读取已持久化的设备ID
+    final persisted = _readStored(_deviceIdStorageKey);
+    if (persisted != null) {
+      _cachedDeviceId = persisted;
+      LogService.d('[DeviceIdHelper] 使用持久化设备ID: ${_maskForLog(persisted)}');
+      return persisted;
     }
 
-    // 如果系统级获取失败，启用 fallback 兜底方案
-    if (deviceId == null || deviceId.isEmpty) {
-      LogService.w('[DeviceIdHelper] 系统级设备ID获取失败，启用 fallback 兜底方案');
-      final fallbackId = _getFallbackDeviceId();
-      _cachedDeviceId = fallbackId;
-      LogService.d(
-        '[DeviceIdHelper] 设备ID (fallback): ${_maskForLog(fallbackId)}',
-      );
-      return fallbackId;
+    // 3. 迁移：复用旧版本已持久化的 fallback ID（老用户保持身份稳定）
+    final legacy = _readStored(_legacyFallbackKey);
+    if (legacy != null) {
+      LogService.i('[DeviceIdHelper] 迁移旧版本设备ID: ${_maskForLog(legacy)}');
+      _cachedDeviceId = legacy;
+      await _persist(legacy);
+      return legacy;
     }
 
-    final trimmed = deviceId.trim();
-
-    // 占位符检测：虚拟机等环境返回的无效 UUID
-    if (_isInvalidPlaceholder(trimmed)) {
-      LogService.w('[DeviceIdHelper] 检测到无效占位符 UUID，启用 fallback 兜底方案');
-      final fallbackId = _getFallbackDeviceId();
-      _cachedDeviceId = fallbackId;
-      LogService.d(
-        '[DeviceIdHelper] 设备ID (fallback): ${_maskForLog(fallbackId)}',
-      );
-      return fallbackId;
-    }
-
-    _cachedDeviceId = trimmed;
-    LogService.d('[DeviceIdHelper] 设备ID (系统): ${_maskForLog(trimmed)}');
-    return trimmed;
+    // 4. 生成新的随机 UUIDv4（全局唯一）并持久化
+    final newId = _uuid.v4();
+    _cachedDeviceId = newId;
+    await _persist(newId);
+    LogService.i('[DeviceIdHelper] 生成新设备ID: ${_maskForLog(newId)}');
+    return newId;
   }
 
-  /// 同步获取缓存的设备ID
-  ///
-  /// 可能返回 null（如果尚未调用过 getDeviceId）
-  static String? getCachedDeviceId() => _cachedDeviceId;
+  /// 从存储读取字符串（容错：存储未就绪时返回 null）
+  static String? _readStored(String key) {
+    try {
+      final value = StorageUtils.getString(key);
+      if (value != null && value.isNotEmpty) return value;
+    } catch (_) {
+      // StorageUtils 未初始化或读取失败
+    }
+    return null;
+  }
 
-  /// 清除缓存的设备ID
+  /// 持久化设备ID
   ///
-  /// 通常不需要调用，仅用于测试或重置
-  static void clearCache() {
-    _cachedDeviceId = null;
+  /// 等待写入完成后再返回，确保设备ID在用于认证前已落盘，
+  /// 避免「首次启动后立即退出」导致下次启动重新生成 ID。
+  ///
+  /// 写入失败不影响本次返回（内存缓存已生效）；存储失败本身极罕见，
+  /// 且不会触发 single_socket 雪崩（LobbyNakamaService 另有随机 UUID 安全网）。
+  static Future<void> _persist(String deviceId) async {
+    try {
+      await StorageUtils.setString(_deviceIdStorageKey, deviceId);
+      LogService.d('[DeviceIdHelper] 设备ID已持久化: ${_maskForLog(deviceId)}');
+    } catch (e) {
+      LogService.w('[DeviceIdHelper] 设备ID持久化失败: $e');
+    }
+  }
+
+  /// 脱敏日志：只显示首尾各 4 字符
+  static String _maskForLog(String id) {
+    if (id.length < 9) return '****';
+    return '${id.substring(0, 4)}****${id.substring(id.length - 4)}';
   }
 }
