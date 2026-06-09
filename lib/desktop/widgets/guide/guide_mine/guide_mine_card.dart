@@ -18,6 +18,7 @@ class GuideMineCard extends StatefulWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final VoidCallback? onRestore;
+  final VoidCallback? onPublish;
   /// 回收站 Tab 时显示剩余天数角标
   final bool showExpiryBadge;
 
@@ -28,6 +29,7 @@ class GuideMineCard extends StatefulWidget {
     this.onEdit,
     this.onDelete,
     this.onRestore,
+    this.onPublish,
     this.showExpiryBadge = false,
   });
 
@@ -85,8 +87,14 @@ class _GuideMineCardState extends State<GuideMineCard> {
                           coverUrl: item.coverUrl,
                           fallbackId: item.id,
                         ),
-                        if (item.status == GuideStatus.pending ||
-                            item.status == GuideStatus.rejected)
+                        // 状态角标：草稿 / 审核中 / 未通过 / 已下架。
+                        // 回收站 Tab 不显示原状态角标，只显示到期角标——回收站只关心
+                        // 「还有几天被清理」，原状态对用户是干扰。
+                        if (!widget.showExpiryBadge &&
+                            (item.status == GuideStatus.pending ||
+                                item.status == GuideStatus.rejected ||
+                                item.status == GuideStatus.draft ||
+                                item.status == GuideStatus.offShelf))
                           Positioned(
                             top: 8,
                             right: 8,
@@ -151,6 +159,12 @@ class _GuideMineCardState extends State<GuideMineCard> {
                               iconColor: colors.likeRed,
                               text: formatGuideCount(item.likeCount),
                             ),
+                            const SizedBox(width: 14),
+                            _StatLabel(
+                              icon: Icons.bookmark,
+                              iconColor: colors.accentBlue,
+                              text: formatGuideCount(item.favoriteCount),
+                            ),
                           ],
                         ),
                       ),
@@ -172,6 +186,7 @@ class _GuideMineCardState extends State<GuideMineCard> {
                               onEdit: widget.onEdit,
                               onDelete: widget.onDelete,
                               onRestore: widget.onRestore,
+                              onPublish: widget.onPublish,
                             ),
                           ],
                         ),
@@ -248,6 +263,11 @@ class GuideMineStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (Color bgColor, IconData icon, String label) = switch (status) {
+      GuideStatus.draft => (
+        GuideTokens.statusOffShelf.withValues(alpha: 0.9),
+        Icons.edit_note_outlined,
+        '草稿',
+      ),
       GuideStatus.pending => (
         GuideTokens.statusPending.withValues(alpha: 0.9),
         Icons.schedule,
@@ -257,6 +277,11 @@ class GuideMineStatusBadge extends StatelessWidget {
         GuideTokens.statusRejected.withValues(alpha: 0.9),
         Icons.error_outline,
         '未通过',
+      ),
+      GuideStatus.offShelf => (
+        GuideTokens.statusOffShelf.withValues(alpha: 0.9),
+        Icons.visibility_off_outlined,
+        '已下架',
       ),
       _ => (Colors.transparent, Icons.circle, ''),
     };
@@ -424,6 +449,7 @@ class GuideMineMoreMenu extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final VoidCallback? onRestore;
+  final VoidCallback? onPublish;
 
   const GuideMineMoreMenu({
     super.key,
@@ -431,6 +457,7 @@ class GuideMineMoreMenu extends StatelessWidget {
     this.onEdit,
     this.onDelete,
     this.onRestore,
+    this.onPublish,
   });
 
   @override
@@ -468,6 +495,23 @@ class GuideMineMoreMenu extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       '还原',
+                      style: TextStyle(color: colors.accentBlue, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            if (onPublish != null)
+              PopupMenuItem<String>(
+                value: 'publish',
+                height: 36,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.publish_outlined,
+                        size: 14, color: colors.accentBlue),
+                    const SizedBox(width: 8),
+                    Text(
+                      '上架',
                       style: TextStyle(color: colors.accentBlue, fontSize: 12),
                     ),
                   ],
@@ -515,6 +559,8 @@ class GuideMineMoreMenu extends StatelessWidget {
         onSelected: (value) {
           if (value == 'restore') {
             onRestore?.call();
+          } else if (value == 'publish') {
+            onPublish?.call();
           } else if (value == 'edit') {
             onEdit?.call();
           } else if (value == 'delete') {

@@ -141,11 +141,6 @@ class GuideBottomCommentComposerState
     final effectiveParentId = (target?.parentId != null && target!.parentId != 0)
         ? target.parentId
         : target?.id;
-    debugPrint('[GuideCommentComposer] submit: '
-        'target=${target?.authorName}, '
-        'target.id=${target?.id}, '
-        'target.parentId=${target?.parentId}, '
-        'computed parentId=$effectiveParentId');
     context.read<GuideCommentBloc>().add(PostComment(
           content: content,
           images: _imageUrls,
@@ -307,7 +302,8 @@ class GuideBottomCommentComposerState
           ),
           const SizedBox(height: GuideTokens.space12),
 
-          // 富文本编辑器（与 issue 评论编辑器一致）
+          // 富文本编辑器（评论场景用精简工具栏：粗体/斜体/标题/列表 + 图片，
+          // 去掉下划线/删除线/引用/代码块/链接/撤销重做等重排版功能）
           SizedBox(
             height: 280,
             child: RichTextEditor(
@@ -316,7 +312,7 @@ class GuideBottomCommentComposerState
               hintText: widget.replyTarget != null
                   ? '回复 @${widget.replyTarget!.authorName}...'
                   : '写下你的评论...',
-              compactMode: false,
+              compactMode: true,
               maxLength: 500,
               maxImages: 5,
               imageMode: ImageMode.attachment,

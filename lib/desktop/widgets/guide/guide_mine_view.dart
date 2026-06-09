@@ -343,14 +343,14 @@ class GuideMineViewState extends State<GuideMineView> {
               item: item,
               showExpiryBadge: isTrash,
               onTap: () => widget.onViewDetail?.call(item.id),
-              onEdit: showEdit &&
-                      (item.status == GuideStatus.published ||
-                          item.status == GuideStatus.rejected ||
-                          item.status == GuideStatus.pending)
+              onEdit: showEdit
                   ? () => widget.onEditGuide?.call(item.id)
                   : null,
               onDelete: isTrash ? null : () => _bloc.add(DeleteGuide(item.id)),
               onRestore: isTrash ? () => _bloc.add(RestoreGuide(item.id)) : null,
+              onPublish: showEdit && item.status == GuideStatus.offShelf
+                  ? () => _bloc.add(PublishGuide(item.id))
+                  : null,
             );
           },
         ),

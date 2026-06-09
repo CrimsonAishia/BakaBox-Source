@@ -83,3 +83,11 @@ class RestoreGuide extends GuideMineEvent {
   @override
   List<Object?> get props => [guideId];
 }
+
+/// 上架攻略（重新发布已下架的攻略）
+class PublishGuide extends GuideMineEvent {
+  final int guideId;
+  const PublishGuide(this.guideId);
+  @override
+  List<Object?> get props => [guideId];
+}
