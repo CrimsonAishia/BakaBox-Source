@@ -9,6 +9,8 @@ import '../../models/server_models.dart';
 import '../../services/game_status_service.dart';
 import '../../services/source_server_service.dart';
 import '../../services/status_window_service.dart';
+import '../queue_users/queue_users_bloc.dart';
+import '../queue_users/queue_users_event.dart';
 import 'queue_event.dart';
 import 'queue_state.dart';
 
@@ -245,6 +247,13 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
     emit(state.copyWith(isCheckingGame: false));
 
     if (!success) {
+      // 挤服未能真正开始（游戏未运行 / 正在连接中等守卫拦截），
+      // 但此前 _startQueue 已经连上 WebSocket 并发了 join（人已进竞技场）。
+      // 这里必须主动断开，否则会一直卡在挤服竞技场里，关窗口也退不出来。
+      final usersBloc = QueueUsersBloc.instance;
+      usersBloc.add(const QueueUsersLeave());
+      usersBloc.add(const QueueUsersDisconnect());
+
       emit(state.copyWith(error: '游戏未运行，请先启动游戏'));
     }
   }
