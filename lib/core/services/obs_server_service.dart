@@ -17,7 +17,9 @@ import '../services/realtime/realtime_server_map_runtime_channel.dart';
 String _getWaitingText() {
   try {
     final gameStatus = GameStatusService();
-    if (gameStatus.isGameRunning && !gameStatus.isMonitorable) {
+    // 仅当被监控的游戏（CS2）在运行但未带 -condebug 时才提示"无法监控"。
+    // 独立版 CSGO / CS:Source 不在监控范围内，不应触发该提示。
+    if (gameStatus.isMonitoredGameRunning && !gameStatus.isMonitorable) {
       return '无法监控游戏';
     }
   } catch (_) {}

@@ -188,8 +188,10 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
       }
 
       // 检查当前状态，防止错过初始化时的事件
+      // 仅在被监控的游戏（CS2）运行但不可监控时提示；
+      // 独立版 CSGO / CS:Source 不在监控范围内，不触发提示。
       final gameService = GameStatusService();
-      if (gameService.isGameRunning && !gameService.isMonitorable) {
+      if (gameService.isMonitoredGameRunning && !gameService.isMonitorable) {
         final obsEnabled = StorageUtils.getBool(
           'obs_tool_enabled',
           defaultValue: false,
@@ -204,7 +206,10 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
     _gameStatusSubscription = GameStatusService().statusStream.listen((event) {
       if (!event.isRunning) {
         _shownObsWarningForCurrentGame = false;
-      } else if (event.isRunning && !event.isMonitorable) {
+      } else if (event.isRunning &&
+          event.gameType == 'cs2' &&
+          !event.isMonitorable) {
+        // 仅 CS2 在监控范围内；独立版 CSGO / CS:Source 不提示"无法监控"。
         final obsEnabled = StorageUtils.getBool(
           'obs_tool_enabled',
           defaultValue: false,
