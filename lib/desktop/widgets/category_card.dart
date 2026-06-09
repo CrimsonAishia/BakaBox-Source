@@ -11,6 +11,10 @@ class CategoryCard extends StatelessWidget {
   final bool isSelected;
   final int onlineCount;
   final bool isLoadingOnlineCount;
+
+  /// 是否已经获取过该分类的在线人数。
+  /// 为 false 时（如弱网模式下从未拉取），不显示 "0在线"，而是显示占位符。
+  final bool hasOnlineCountData;
   final VoidCallback? onTap;
   final VoidCallback? onDelete; // 删除回调（仅自定义分类）
   final VoidCallback? onEdit; // 编辑回调（仅自定义分类）
@@ -21,6 +25,7 @@ class CategoryCard extends StatelessWidget {
     this.isSelected = false,
     this.onlineCount = 0,
     this.isLoadingOnlineCount = false,
+    this.hasOnlineCountData = true,
     this.onTap,
     this.onDelete,
     this.onEdit,
@@ -263,6 +268,25 @@ class CategoryCard extends StatelessWidget {
     }
 
     final isZeroOnline = onlineCount == 0;
+
+    // 没有数据时（弱网模式从未刷新过）显示占位符 "—" 而不是 "0在线"
+    if (!hasOnlineCountData) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        decoration: BoxDecoration(
+          color: const Color(0xFF9CA3AF).withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(3),
+        ),
+        child: const Text(
+          '— 在线',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF9CA3AF),
+            fontSize: 13,
+          ),
+        ),
+      );
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
