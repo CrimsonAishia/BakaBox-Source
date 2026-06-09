@@ -1796,6 +1796,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         if (!_isWarmingUp &&
             widget.server.teamScores?.ctScore != null &&
             widget.server.teamScores?.tScore != null &&
+            widget.server.teamScores!.matchesMap(mapName) &&
             (widget.server.teamScores!.ctScore! > 0 ||
                 widget.server.teamScores!.tScore! > 0)) ...[
           const SizedBox(height: 2),

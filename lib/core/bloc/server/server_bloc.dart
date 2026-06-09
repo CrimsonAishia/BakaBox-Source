@@ -622,6 +622,32 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     _clearRecentlyUpdatedAfterDelay(requestId);
   }
 
+  /// 将单条比分应用到服务器，返回应用后的服务器实例。
+  ///
+  /// 满足以下任一条件时，原样返回（不产生新实例，便于调用方用 [identical] 判断是否变化）：
+  /// - 比分为空或缺少 CT/T 分数；
+  /// - 比分所属地图与服务器当前地图不一致（换图后残留的旧比分）；
+  /// - 比分与现有比分完全相同（避免无意义的 emit）。
+  ExtendedServerItem _applyScoreToServer(
+    ExtendedServerItem server,
+    ServerScore? score,
+  ) {
+    if (score == null || score.ctScore == null || score.tScore == null) {
+      return server;
+    }
+    if (!TeamScores.isMapMatched(score.mapName, server.serverData?.map)) {
+      return server;
+    }
+    final next = TeamScores(
+      ctScore: score.ctScore,
+      tScore: score.tScore,
+      dataQuality: score.dataQuality,
+      mapName: score.mapName,
+    );
+    if (server.teamScores == next) return server;
+    return server.copyWith(teamScores: next);
+  }
+
   /// 用 [RealtimeScoreUpdatesChannel] 缓存的最新 snapshot 给当前服务器赋初值。
   ///
   /// 比分通过 WS 推送（订阅时下发 snapshot + 后续 updated 事件），
@@ -636,24 +662,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       final address =
           server.serverItem.address ?? server.serverItem.serverAddress;
       if (address == null) return server;
-      final score = snapshot[address];
-      if (score == null || score.ctScore == null || score.tScore == null) {
-        return server;
-      }
-      final teamScores = TeamScores(
-        ctScore: score.ctScore,
-        tScore: score.tScore,
-        dataQuality: score.dataQuality,
-      );
-      final existing = server.teamScores;
-      if (existing != null &&
-          existing.ctScore == teamScores.ctScore &&
-          existing.tScore == teamScores.tScore &&
-          existing.dataQuality == teamScores.dataQuality) {
-        return server;
-      }
-      changed = true;
-      return server.copyWith(teamScores: teamScores);
+      final updated = _applyScoreToServer(server, snapshot[address]);
+      if (!identical(updated, server)) changed = true;
+      return updated;
     }).toList();
 
     if (!changed) return;
@@ -2453,25 +2464,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       final address =
           server.serverItem.address ?? server.serverItem.serverAddress;
       if (address == null) return server;
-      final score = byAddress[address];
-      if (score == null) return server;
-      if (score.ctScore == null || score.tScore == null) return server;
-
-      final teamScores = TeamScores(
-        ctScore: score.ctScore,
-        tScore: score.tScore,
-        dataQuality: score.dataQuality,
-      );
-      // 跳过无变化的更新，减少 emit 频率
-      final existing = server.teamScores;
-      if (existing != null &&
-          existing.ctScore == teamScores.ctScore &&
-          existing.tScore == teamScores.tScore &&
-          existing.dataQuality == teamScores.dataQuality) {
-        return server;
-      }
-      changed = true;
-      return server.copyWith(teamScores: teamScores);
+      final updated = _applyScoreToServer(server, byAddress[address]);
+      if (!identical(updated, server)) changed = true;
+      return updated;
     }).toList();
 
     if (!changed) return;

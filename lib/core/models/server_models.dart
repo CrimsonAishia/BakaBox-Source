@@ -308,14 +308,36 @@ class TeamScores extends Equatable {
   @JsonKey(name: 'data_quality')
   final String? dataQuality;
 
-  const TeamScores({this.ctScore, this.tScore, this.dataQuality});
+  /// 比分所属的地图名（来自比分推送的 mapName），用于换图后校验比分是否仍然有效
+  @JsonKey(name: 'map_name')
+  final String? mapName;
+
+  const TeamScores({
+    this.ctScore,
+    this.tScore,
+    this.dataQuality,
+    this.mapName,
+  });
 
   factory TeamScores.fromJson(Map<String, dynamic> json) =>
       _$TeamScoresFromJson(json);
   Map<String, dynamic> toJson() => _$TeamScoresToJson(this);
 
+  /// 校验比分所属地图与服务器当前地图是否一致。
+  ///
+  /// - 任一为空时视为"无法判定"，放行（保持兼容，避免误伤）；
+  /// - 同时存在时进行不区分大小写比较，不一致即为过期比分（换图后残留）。
+  static bool isMapMatched(String? scoreMap, String? currentMap) {
+    if (scoreMap == null || scoreMap.isEmpty) return true;
+    if (currentMap == null || currentMap.isEmpty) return true;
+    return scoreMap.toLowerCase() == currentMap.toLowerCase();
+  }
+
+  /// 该比分是否属于 [currentMap]（换图后用于过滤残留比分）。
+  bool matchesMap(String? currentMap) => isMapMatched(mapName, currentMap);
+
   @override
-  List<Object?> get props => [ctScore, tScore, dataQuality];
+  List<Object?> get props => [ctScore, tScore, dataQuality, mapName];
 }
 
 @JsonSerializable()
