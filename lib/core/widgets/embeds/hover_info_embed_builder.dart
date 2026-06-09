@@ -69,6 +69,9 @@ class _HoverInfoBadgeState extends State<_HoverInfoBadge> {
   /// 卡片相对徽章在上方还是下方（根据空间自适应）
   bool _showAbove = true;
 
+  /// 鼠标是否悬停在徽章上（用于即时视觉反馈）
+  bool _isHovering = false;
+
   void _scheduleShow() {
     _hideTimer?.cancel();
     if (_portalController.isShowing) return;
@@ -126,8 +129,14 @@ class _HoverInfoBadgeState extends State<_HoverInfoBadge> {
         },
         child: MouseRegion(
           cursor: SystemMouseCursors.click,
-          onEnter: (_) => _scheduleShow(),
-          onExit: (_) => _scheduleHide(),
+          onEnter: (_) {
+            _scheduleShow();
+            if (mounted) setState(() => _isHovering = true);
+          },
+          onExit: (_) {
+            _scheduleHide();
+            if (mounted) setState(() => _isHovering = false);
+          },
           child: _buildBadge(color, icon),
         ),
       ),
@@ -159,33 +168,53 @@ class _HoverInfoBadgeState extends State<_HoverInfoBadge> {
   }
 
   Widget _buildBadge(Color color, IconData icon) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 2),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+    // hover 时加深背景、加实边框，提供即时反馈
+    final bgAlpha = _isHovering ? 0.22 : 0.12;
+    final borderAlpha = _isHovering ? 0.65 : 0.35;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeOut,
+      margin: const EdgeInsets.symmetric(horizontal: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
+        color: color.withValues(alpha: bgAlpha),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: color.withValues(alpha: borderAlpha),
+          width: 1.2,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, size: 13, color: color),
-          const SizedBox(width: 4),
+          Icon(icon, size: 17, color: color),
+          const SizedBox(width: 5),
+          // label 带虚线下划线，暗示「可悬停查看详情」
           Text(
             widget.data.label,
             strutStyle: const StrutStyle(
-              fontSize: 13,
+              fontSize: 16,
               height: 1.0,
               forceStrutHeight: true,
             ),
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 16,
               height: 1.0,
               fontWeight: FontWeight.w600,
               color: color,
+              decoration: TextDecoration.underline,
+              decorationStyle: TextDecorationStyle.dotted,
+              decorationColor: color.withValues(alpha: 0.6),
             ),
+          ),
+          const SizedBox(width: 4),
+          // 末尾指示图标，明确标识可展开更多信息
+          Icon(
+            Icons.expand_more_rounded,
+            size: 18,
+            color: color.withValues(alpha: 0.8),
           ),
         ],
       ),
