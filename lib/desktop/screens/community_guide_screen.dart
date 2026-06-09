@@ -59,12 +59,13 @@ class CommunityGuideScreenState extends State<CommunityGuideScreen> {
   /// 编辑器 State 的引用键，用于调用 hasUnsavedChanges / saveDraft
   final _editorKey = GlobalKey<GuideEditorViewState>();
 
-  /// 待就地移除的已发布草稿 ID（一次性）。
+  /// 「发布成功」信号计数器。
   ///
-  /// 编辑器发布成功后会跳转「我的中心」，此时后端已删除对应草稿，但若草稿箱
-  /// 列表仍挂载则会残留卡片。通过该字段把 draftId 透传给 [GuideMineView]，由其
-  /// 在 didUpdateWidget 中就地移除。消费后保持原值即可（同一 ID 不会重复触发）。
-  String? _pendingRemovedDraftId;
+  /// 编辑器发布/修改攻略成功后会跳转「我的中心」，此时后端数据已变化（草稿被删、
+  /// 已发布攻略内容或状态更新等）。每次发布成功自增，作为 prop 传给已挂载的
+  /// [GuideMineView]，由其在 didUpdateWidget 中检测到变化后刷新当前列表。
+  /// 用计数器而非布尔，保证连续多次发布都能触发刷新。
+  int _publishSignal = 0;
 
   /// 攻略列表 Bloc，生命周期与本 Screen 绑定
   late final GuideListBloc _guideListBloc;
@@ -145,7 +146,7 @@ class CommunityGuideScreenState extends State<CommunityGuideScreen> {
   /// 注意：mine 视图首次进入后会一直保持挂载（IndexedStack），从编辑器返回时
   /// 不会重新构造，原有的 tab / 滚动位置 / 数据缓存都会被保留。只有显式传入
   /// [initialTab] 才会强制重建以应用新的初始 tab；不传则尊重用户上一次的选择。
-  void showMine({int? initialTab, String? publishedDraftId}) {
+  void showMine({int? initialTab, bool fromPublish = false}) {
     final mineWasMounted = _mineMounted;
     setState(() {
       // 当来源是编辑器（即从「发布成功」自动跳转过来）时，不要把 editor 记为
@@ -154,9 +155,9 @@ class CommunityGuideScreenState extends State<CommunityGuideScreen> {
       _previousView = _view == _GuideView.editor ? null : _view;
       _view = _GuideView.mine;
       _mineMounted = true;
-      // 发布成功跳转时透传被删除的草稿 ID，供已挂载的草稿箱就地移除残留卡片。
-      if (publishedDraftId != null) {
-        _pendingRemovedDraftId = publishedDraftId;
+      // 发布成功跳转时自增信号，通知已挂载的「我的中心」刷新当前列表。
+      if (fromPublish) {
+        _publishSignal++;
       }
       // 仅在显式指定 initialTab，或者 mine 还没挂载过（首次进入）时更新它。
       // 这样从编辑器返回时不会冲掉用户当前所在的 tab。
@@ -354,7 +355,7 @@ class CommunityGuideScreenState extends State<CommunityGuideScreen> {
                 GuideMineView(
                   key: ValueKey('guide_mine_v$_mineKeyVersion'),
                   initialTab: _mineInitialTab,
-                  removedDraftId: _pendingRemovedDraftId,
+                  publishSignal: _publishSignal,
                   onEditDraft: (draftId) => showEditor(draftId: draftId),
                   onEditGuide: (guideId) => showEditor(guideId: guideId),
                   onCreateGuide: () => showEditor(),

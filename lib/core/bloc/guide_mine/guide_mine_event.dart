@@ -59,15 +59,13 @@ class DeleteDraft extends GuideMineEvent {
   List<Object?> get props => [draftId];
 }
 
-/// 本地移除草稿（不调用接口）
+/// 发布成功后刷新当前列表（不调用接口删除，重新拉取第一页 + 统计）
 ///
-/// 用于「编辑器发布成功后已在后端删除对应草稿」的场景：此时草稿箱列表若仍挂载，
-/// 需要把残留的草稿卡片就地移除，避免显示已被删除的草稿。
-class RemoveDraftLocal extends GuideMineEvent {
-  final String draftId;
-  const RemoveDraftLocal(this.draftId);
-  @override
-  List<Object?> get props => [draftId];
+/// 编辑器发布/修改攻略成功后，后端数据已变化（草稿被删、已发布攻略内容或状态
+/// 更新为待审核等）。若「我的中心」仍挂载，需重新拉取当前 Tab 第一页以同步最新
+/// 内容，避免显示旧的标题 / 摘要 / 状态或已删除的草稿。
+class ReloadCurrentList extends GuideMineEvent {
+  const ReloadCurrentList();
 }
 
 /// 删除攻略（移入回收站）

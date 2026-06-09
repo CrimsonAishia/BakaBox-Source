@@ -29,7 +29,7 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
     on<LoadMore>(_onLoadMore);
     on<LoadMineStats>(_onLoadMineStats);
     on<DeleteDraft>(_onDeleteDraft);
-    on<RemoveDraftLocal>(_onRemoveDraftLocal);
+    on<ReloadCurrentList>(_onReloadCurrentList);
     on<DeleteGuide>(_onDeleteGuide);
     on<RestoreGuide>(_onRestoreGuide);
   }
@@ -127,24 +127,39 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
     }
   }
 
-  /// 本地移除草稿（不调用接口）。
+  /// 发布成功后重新加载当前列表（第一页）并刷新统计。
   ///
-  /// 仅当目标草稿确实存在于当前列表时才更新状态，避免不必要的重建。
-  /// total 同步减一并保证不为负；不触发自动补页（发布后通常会重新进入页面）。
-  Future<void> _onRemoveDraftLocal(
-    RemoveDraftLocal event,
+  /// 仅当当前 Tab 会被发布影响时才刷新：草稿箱（草稿被删）与已发布（新攻略出现 /
+  /// 内容或状态更新）。其它 Tab（收藏 / 点赞 / 回收站）与发布无关，跳过以免无谓
+  /// 刷新。统计概览始终刷新，因为攻略数等会随发布变化。
+  ///
+  /// 复用现有的加载逻辑：草稿 Tab 走 _loadDrafts，其它 Tab 走 _loadItems。
+  /// 先清空当前列表并置为 loading，使骨架屏（刷新特效）显示出来——否则列表已有
+  /// 旧数据时不会进入骨架分支，用户感知不到刷新。拉到新数据后再 emit success。
+  /// 正在加载中则跳过，避免与进行中的请求竞争。
+  Future<void> _onReloadCurrentList(
+    ReloadCurrentList event,
     Emitter<GuideMineState> emit,
   ) async {
-    final exists = state.drafts.any((d) => d.draftId == event.draftId);
-    if (!exists) return;
-    final updatedDrafts =
-        state.drafts.where((d) => d.draftId != event.draftId).toList();
-    final newTotal = state.total > 0 ? state.total - 1 : 0;
+    // 统计概览与具体 Tab 无关，始终刷新。
+    add(const LoadMineStats());
+
+    // 仅草稿箱 / 已发布会被发布影响，其它 Tab 不刷新列表。
+    if (state.tab != MineTab.drafts && state.tab != MineTab.published) {
+      return;
+    }
+    if (state.status == GuideMineStatus.loading ||
+        state.status == GuideMineStatus.loadingMore) {
+      return;
+    }
     emit(state.copyWith(
-      drafts: updatedDrafts,
-      total: newTotal,
-      hasMore: updatedDrafts.length < newTotal,
+      status: GuideMineStatus.loading,
+      items: const [],
+      drafts: const [],
+      currentPage: 1,
+      clearError: true,
     ));
+    await _loadPage(emit, page: 1);
   }
 
   Future<void> _onDeleteGuide(
