@@ -99,10 +99,13 @@ class ServerCategoriesPanel extends StatelessWidget {
                         itemCount: officialCategories.length,
                         itemBuilder: (context, index) {
                           final category = officialCategories[index];
+                          final categoryKey = category.modelName ?? '';
+                          final hasOnlineCountData =
+                              state.categoryOnlineCounts.containsKey(
+                            categoryKey,
+                          );
                           final onlineCount =
-                              state.categoryOnlineCounts[category.modelName ??
-                                  ''] ??
-                              0;
+                              state.categoryOnlineCounts[categoryKey] ?? 0;
                           final serverCount = category.serverList.length;
 
                           return Padding(
@@ -115,6 +118,7 @@ class ServerCategoriesPanel extends StatelessWidget {
                               onlineCount: onlineCount,
                               serverCount: serverCount,
                               isDark: isDark,
+                              hasOnlineCountData: hasOnlineCountData,
                             ),
                           );
                         },
@@ -154,18 +158,23 @@ class _CategoryItem extends StatelessWidget {
   final int serverCount;
   final bool isDark;
 
+  /// 是否已经获取到该分类的在线人数。
+  /// false 时（如弱网模式下从未拉取）显示占位符 "—" 而不是 "0"。
+  final bool hasOnlineCountData;
+
   const _CategoryItem({
     required this.categoryName,
     required this.onlineCount,
     required this.serverCount,
     required this.isDark,
+    this.hasOnlineCountData = true,
   });
 
   @override
   Widget build(BuildContext context) {
     // 根据在线人数显示不同的颜色
     Color getStatusColor() {
-      if (onlineCount == 0) {
+      if (!hasOnlineCountData || onlineCount == 0) {
         return isDark
             ? Colors.white.withValues(alpha: 0.3)
             : const Color(0xFF94A3B8);
@@ -240,7 +249,7 @@ class _CategoryItem extends StatelessWidget {
                 Icon(Icons.person, size: 14, color: statusColor),
                 const SizedBox(width: 4),
                 Text(
-                  '$onlineCount',
+                  hasOnlineCountData ? '$onlineCount' : '—',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,

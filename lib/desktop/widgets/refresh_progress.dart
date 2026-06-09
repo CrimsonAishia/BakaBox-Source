@@ -31,6 +31,9 @@ class _CompactRefreshProgressState extends State<CompactRefreshProgress> {
   int _remaining = 0;
   bool _internalRefreshing = false; // 内部刷新动画状态（用于显示短暂的刷新动画）
 
+  /// 监听弱网模式切换，运行时即时启停倒计时
+  StreamSubscription<bool>? _networkModeSubscription;
+
   /// 实际的刷新状态：内部动画状态 或 外部传入的刷新状态
   bool get _isRefreshing => _internalRefreshing || widget.isRefreshing;
 
@@ -39,6 +42,24 @@ class _CompactRefreshProgressState extends State<CompactRefreshProgress> {
     super.initState();
     _remaining = widget.refreshInterval;
     _startTimer();
+
+    // 弱网开关切换时即时响应：开启 → 立即停 timer；关闭 → 重启 timer
+    _networkModeSubscription = NetworkModeService.instance.changes.listen((
+      weakNetwork,
+    ) {
+      if (!mounted) return;
+      if (weakNetwork) {
+        _timer?.cancel();
+        _timer = null;
+        // 触发 UI 重建以切换到「弱网手动刷新」样式
+        setState(() {});
+      } else {
+        // 关闭弱网时：重置倒计时并启动 timer
+        _remaining = widget.refreshInterval;
+        _startTimer();
+        setState(() {});
+      }
+    });
   }
 
   @override
@@ -62,6 +83,7 @@ class _CompactRefreshProgressState extends State<CompactRefreshProgress> {
   @override
   void dispose() {
     _timer?.cancel();
+    _networkModeSubscription?.cancel();
     super.dispose();
   }
 

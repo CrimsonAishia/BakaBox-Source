@@ -82,7 +82,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
     // 启动分类人数刷新定时器
     _startCategoryCountsRefreshTimer();
 
-    // 监听弱网模式切换：开启时停止分类人数定时器，关闭时按需恢复
+    // 监听弱网模式切换：开启时停止分类人数定时器，关闭时按需恢复并立即拉一次
     _networkModeSubscription = NetworkModeService.instance.changes.listen((
       weakNetwork,
     ) {
@@ -90,9 +90,12 @@ class _ServersDesktopState extends State<ServersDesktop> {
       if (weakNetwork) {
         _stopCategoryCountsRefreshTimer();
       } else {
-        // 关闭弱网：仅当不在沉浸模式时恢复定时器
+        // 关闭弱网：仅当不在沉浸模式时恢复定时器并立即拉一次所有分类的在线人数
+        // 沉浸模式有自己的刷新逻辑，避免重复触发
         if (!_isInImmersiveMode) {
           _startCategoryCountsRefreshTimer();
+          // 立即拉一次，不让用户等满 60 秒
+          _serverBloc?.add(ServerUpdateCategoryOnlineCounts());
         }
       }
     });
