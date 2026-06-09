@@ -52,6 +52,10 @@ class _LobbyDesktopState extends State<LobbyDesktop>
   /// 目标地图配置
   LobbyMapConfig? _targetMapConfig;
 
+  /// 是否处于"聚焦"模式（玩家抽屉右键弹出菜单时）
+  /// 用于临时隐藏聊天栏，避免遮挡聚光灯下的目标角色
+  bool _isPlayerFocused = false;
+
   @override
   void initState() {
     super.initState();
@@ -704,15 +708,22 @@ class _LobbyDesktopState extends State<LobbyDesktop>
                 ),
               // 聊天输入（放在遮罩层上面，确保能接收点击事件）
               // 聊天未激活时开启 IgnorePointer 允许鼠标事件穿透到游戏场景
+              // 聚焦某个角色时（玩家抽屉右键菜单打开），临时淡出隐藏聊天栏，
+              // 避免遮挡聚光灯下的目标角色
               Positioned(
                 left: 24,
                 bottom: 24,
                 child: IgnorePointer(
-                  ignoring: !state.isChatActive,
-                  child: LobbyChatOverlay(
-                    state: state,
-                    controller: _chatController,
-                    focusNode: _chatFocusNode,
+                  ignoring: !state.isChatActive || _isPlayerFocused,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOut,
+                    opacity: _isPlayerFocused ? 0.0 : 1.0,
+                    child: LobbyChatOverlay(
+                      state: state,
+                      controller: _chatController,
+                      focusNode: _chatFocusNode,
+                    ),
                   ),
                 ),
               ),
@@ -753,6 +764,11 @@ class _LobbyDesktopState extends State<LobbyDesktop>
                             onClose: () => context.read<LobbyBloc>().add(
                               const LobbyPanelsDismissed(),
                             ),
+                            onFocusChanged: (focused) {
+                              if (!mounted) return;
+                              if (_isPlayerFocused == focused) return;
+                              setState(() => _isPlayerFocused = focused);
+                            },
                           )
                         : const SizedBox.shrink(),
                   ),
@@ -987,7 +1003,15 @@ class _PlayersDrawer extends StatefulWidget {
   final LobbyState state;
   final VoidCallback onClose;
 
-  const _PlayersDrawer({required this.state, required this.onClose});
+  /// 聚焦状态变化回调（右键菜单打开 -> true，关闭 -> false）
+  /// 用于通知父级临时隐藏聊天栏等会遮挡聚光灯的 UI
+  final ValueChanged<bool>? onFocusChanged;
+
+  const _PlayersDrawer({
+    required this.state,
+    required this.onClose,
+    this.onFocusChanged,
+  });
 
   @override
   State<_PlayersDrawer> createState() => _PlayersDrawerState();
@@ -1037,6 +1061,7 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
     setState(() {
       _highlightedUserId = user.userId;
     });
+    widget.onFocusChanged?.call(true);
 
     final overlay = Overlay.of(context);
     late OverlayEntry entry;
@@ -1049,6 +1074,7 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
           entry.remove();
           _activeMenuEntry = null;
           setState(() => _highlightedUserId = null);
+          widget.onFocusChanged?.call(false);
           LobbyGame.activeInstance?.cancelFocus();
           LobbyUserProfilePanel.show(context, user);
         },
@@ -1072,12 +1098,14 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
           LobbyGame.activeInstance?.reloadFollowedUsers();
           LobbyGame.activeInstance?.cancelFocus();
           setState(() => _highlightedUserId = null);
+          widget.onFocusChanged?.call(false);
         },
         onDismiss: () {
           entry.remove();
           _activeMenuEntry = null;
           LobbyGame.activeInstance?.cancelFocus();
           setState(() => _highlightedUserId = null);
+          widget.onFocusChanged?.call(false);
         },
       ),
     );
@@ -1095,6 +1123,7 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
       _activeMenuEntry!.remove();
       _activeMenuEntry = null;
       LobbyGame.activeInstance?.cancelFocus();
+      widget.onFocusChanged?.call(false);
     }
     _searchController.dispose();
     super.dispose();
