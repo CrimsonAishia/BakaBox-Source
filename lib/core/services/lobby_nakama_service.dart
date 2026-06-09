@@ -1275,10 +1275,14 @@ class LobbyNakamaService {
     const retryDelay = Duration(seconds: 2);
 
     // 构造 LobbyJoinRequest，携带 deviceType 和 protocolFeatures
+    // 携带 JWT token（已登录时）：服务端据此按账号恢复地图/坐标/模型，
+    // 避免设备 ID 变更（换机、设备ID升级等）导致大厅偏好丢失。匿名/未登录时为空。
+    final joinToken = TokenService.instance.token ?? '';
     final reqBytes =
         (pb.LobbyJoinRequest()
               ..deviceType = _deviceType
-              ..protocolFeatures = protocolFeatures)
+              ..protocolFeatures = protocolFeatures
+              ..token = joinToken)
             .writeToBuffer();
     // 服务端期望原始 Protobuf 二进制字节转成字符串
     final payload = String.fromCharCodes(reqBytes);
