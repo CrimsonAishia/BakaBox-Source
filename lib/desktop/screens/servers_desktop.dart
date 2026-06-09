@@ -63,6 +63,9 @@ class _ServersDesktopState extends State<ServersDesktop> {
   Timer? _categoryCountsRefreshTimer;
   int _categoryCountsCountdown = _kCategoryCountsRefreshInterval;
 
+  // 弱网模式切换监听（开启 / 关闭分类人数定时器）
+  StreamSubscription<bool>? _networkModeSubscription;
+
   // 沉浸模式标志（用于暂停正常模式的机制）
   bool _isInImmersiveMode = false;
 
@@ -78,6 +81,21 @@ class _ServersDesktopState extends State<ServersDesktop> {
 
     // 启动分类人数刷新定时器
     _startCategoryCountsRefreshTimer();
+
+    // 监听弱网模式切换：开启时停止分类人数定时器，关闭时按需恢复
+    _networkModeSubscription = NetworkModeService.instance.changes.listen((
+      weakNetwork,
+    ) {
+      if (!mounted) return;
+      if (weakNetwork) {
+        _stopCategoryCountsRefreshTimer();
+      } else {
+        // 关闭弱网：仅当不在沉浸模式时恢复定时器
+        if (!_isInImmersiveMode) {
+          _startCategoryCountsRefreshTimer();
+        }
+      }
+    });
 
     // 监听游戏状态变化
     _initGameStatusListener();
@@ -403,6 +421,12 @@ class _ServersDesktopState extends State<ServersDesktop> {
     _categoryCountsRefreshTimer?.cancel();
     _categoryCountsCountdown = _kCategoryCountsRefreshInterval;
 
+    // 弱网模式下不启动自动刷新（不再轮询所有分类的服务器人数）
+    if (NetworkModeService.instance.weakNetwork) {
+      LogService.d('[ServersDesktop] 弱网模式，跳过分类人数定时刷新');
+      return;
+    }
+
     _categoryCountsRefreshTimer = Timer.periodic(const Duration(seconds: 1), (
       timer,
     ) {
@@ -431,6 +455,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
   void dispose() {
     _serverBloc?.add(ServerStopPeriodicRefresh());
     _stopCategoryCountsRefreshTimer();
+    _networkModeSubscription?.cancel();
     _gameStatusSubscription?.cancel();
     _serversScrollController.removeListener(_updateServersScrollIndicators);
     _serversScrollController.dispose();
