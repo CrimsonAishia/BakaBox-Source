@@ -20,9 +20,10 @@ abstract class DesktopNavigator {
 
   /// 打开「我的中心」
   ///
-  /// [publishedDraftId] 非空时，表示刚通过编辑器发布成功并已在后端删除该草稿，
-  /// 草稿箱列表若仍挂载需就地移除对应残留卡片。
-  void openMine({String? publishedDraftId});
+  /// [fromPublish] 为 true 时，表示刚通过编辑器发布/修改攻略成功（后端数据已变化：
+  /// 草稿被删、已发布攻略内容或状态更新等）。「我的中心」若仍挂载需刷新当前列表，
+  /// 避免显示旧标题 / 摘要 / 状态或已删除的草稿。
+  void openMine({bool fromPublish = false});
 }
 
 /// InheritedWidget 用于在子树中访问 DesktopNavigator
