@@ -13,6 +13,7 @@ class StatsCardsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isWeakNetwork = NetworkModeService.instance.weakNetwork;
     return BlocBuilder<ServerBloc, ServerState>(
       builder: (context, serverState) {
         return BlocBuilder<ServerStatsBloc, ServerStatsState>(
@@ -56,18 +57,21 @@ class StatsCardsRow extends StatelessWidget {
                         delay: 200,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _StatCard(
-                        icon: MdiIcons.accountMultiple,
-                        iconColor: const Color(0xFFF59E0B),
-                        label: '服务器总人数',
-                        value: _getTotalOnlinePlayers(serverState),
-                        suffix: '人',
-                        isDark: isDark,
-                        delay: 300,
+                    // 弱网模式下不显示「服务器总人数」（数据不再自动获取，显示 0 会误导）
+                    if (!isWeakNetwork) ...[
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _StatCard(
+                          icon: MdiIcons.accountMultiple,
+                          iconColor: const Color(0xFFF59E0B),
+                          label: '服务器总人数',
+                          value: _getTotalOnlinePlayers(serverState),
+                          suffix: '人',
+                          isDark: isDark,
+                          delay: 300,
+                        ),
                       ),
-                    ),
+                    ],
                     const SizedBox(width: 12),
                     Expanded(
                       child: _StatCard(
@@ -106,14 +110,6 @@ class StatsCardsRow extends StatelessWidget {
     final officialCategories = state.serverCategories.where(
       (cat) => !cat.isCustom,
     );
-
-    // 弱网模式下若没有任何分类拉取过人数，显示占位符 "—" 而不是 "0"
-    final hasAnyData = officialCategories.any(
-      (cat) =>
-          state.categoryOnlineCounts.containsKey(cat.modelName ?? ''),
-    );
-    if (!hasAnyData) return '—';
-
     final total = officialCategories.fold<int>(
       0,
       (sum, cat) =>
