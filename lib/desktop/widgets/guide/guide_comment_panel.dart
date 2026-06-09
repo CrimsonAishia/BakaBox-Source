@@ -91,11 +91,6 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
       return;
     }
 
-    debugPrint('[GuideCommentPanel] handleStartReply: '
-        'target.id=${target.id}, '
-        'target.parentId=${target.parentId}, '
-        'target.authorName=${target.authorName}');
-
     // 优先委托给父组件（让底部 composer 接管）
     if (widget.onReplyRequested != null) {
       widget.onReplyRequested!(target);
@@ -303,7 +298,6 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
 
     final currentUid = _currentUserId(context);
     final isOwnComment = currentUid != null && currentUid == comment.authorId;
-    debugPrint('[GuideCommentPanel] currentUid=$currentUid, comment.authorId=${comment.authorId}, isOwn=$isOwnComment');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,7 +306,7 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
           comment: comment,
           currentUserId: currentUid,
           showReplyToHint: false,
-          onReply: isOwnComment ? null : () => _handleStartReply(comment),
+          onReply: () => _handleStartReply(comment),
           onLike: isOwnComment ? null : () => _handleLike(context, comment),
           onDislike: isOwnComment ? null : () => _handleDislike(context, comment),
           onDelete: () =>
@@ -936,9 +930,7 @@ class _ReplyThread extends StatelessWidget {
               avatarSize: 36,
               showReplyToHint: replies[i].replyToId != null &&
                   replies[i].replyToId != parent.id,
-              onReply: (currentUserId != null && currentUserId == replies[i].authorId)
-                  ? null
-                  : () => onReply?.call(replies[i]),
+              onReply: () => onReply?.call(replies[i]),
               onLike: (currentUserId != null && currentUserId == replies[i].authorId)
                   ? null
                   : () => onLike?.call(replies[i]),

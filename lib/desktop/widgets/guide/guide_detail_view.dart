@@ -15,7 +15,9 @@ import '../../../core/models/map_tag_models.dart' show MapTagSimple;
 import '../../../core/models/server_models.dart' show MapData;
 import '../../../core/services/analytics_service.dart';
 import '../../../core/services/desktop_navigator.dart';
+import '../../../core/services/token_service.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/toast_utils.dart';
 import '../../../core/widgets/embeds/bilibili_embed_builder.dart';
 import '../../../core/widgets/marquee_text.dart';
 import '../../../core/widgets/guide/guide_interaction_dock.dart';
@@ -158,14 +160,13 @@ class _GuideDetailViewState extends State<GuideDetailView> {
   }
 
   /// 获取当前登录用户的数值 ID（与评论 authorId 同体系）
+  /// 获取当前登录用户的数值 ID（与攻略 / 评论 authorId 同体系）
+  ///
+  /// 必须用后端用户 ID（[BackendUserInfo.id]，来自 TokenService），而不是论坛
+  /// UID（AuthBloc.userInfo.uid，是另一套字符串体系）。authorId 是后端数值 ID，
+  /// 用论坛 uid 比较永远不相等，会导致「自己的攻略」判断失效。
   int? _getCurrentUserId(BuildContext context) {
-    try {
-      final authState = context.read<AuthBloc>().state;
-      if (!authState.isAuthenticated || authState.userInfo == null) return null;
-      return int.tryParse(authState.userInfo!.uid);
-    } catch (_) {
-      return null;
-    }
+    return TokenService.instance.userInfo?.id;
   }
 
   @override
@@ -711,7 +712,9 @@ class _GuideDetailViewState extends State<GuideDetailView> {
             color: guide.isLiked
                 ? GuideTokens.likeColor(context)
                 : GuideTokens.textSecondary(context),
-            onTap: () => _detailBloc.add(const ToggleLike()),
+            onTap: isOwnGuide
+                ? () => ToastUtils.showInfo(context, '不能给自己的攻略点赞')
+                : () => _detailBloc.add(const ToggleLike()),
           ),
           _InteractionButton(
             icon: guide.isFavorited
@@ -723,7 +726,9 @@ class _GuideDetailViewState extends State<GuideDetailView> {
             color: guide.isFavorited
                 ? GuideTokens.favoriteColor(context)
                 : GuideTokens.textSecondary(context),
-            onTap: () => _detailBloc.add(const ToggleFavorite()),
+            onTap: isOwnGuide
+                ? () => ToastUtils.showInfo(context, '不能收藏自己的攻略')
+                : () => _detailBloc.add(const ToggleFavorite()),
           ),
           _InteractionButton(
             icon: Icons.chat_bubble_outline,

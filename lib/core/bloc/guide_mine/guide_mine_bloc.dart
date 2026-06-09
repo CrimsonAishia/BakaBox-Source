@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../api/api.dart';
 import '../../api/guide_api.dart';
-import '../../models/guide_models.dart';
 import '../../utils/error_utils.dart';
 import '../../utils/log_service.dart';
 import 'guide_mine_event.dart';
@@ -32,6 +31,7 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
     on<ReloadCurrentList>(_onReloadCurrentList);
     on<DeleteGuide>(_onDeleteGuide);
     on<RestoreGuide>(_onRestoreGuide);
+    on<PublishGuide>(_onPublishGuide);
   }
 
   /// 提取错误信息
@@ -178,6 +178,8 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
         total: newTotal,
         hasMore: hasMore,
       ));
+      // 删除会改变「攻略数 / 回收站」等概览，刷新统计
+      add(const LoadMineStats());
     } catch (e) {
       LogService.e('删除攻略失败', e);
       emit(state.copyWith(
@@ -202,6 +204,8 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
         total: newTotal,
         hasMore: hasMore,
       ));
+      // 还原会改变「攻略数 / 回收站」等概览，刷新统计
+      add(const LoadMineStats());
     } catch (e) {
       LogService.e('还原攻略失败', e);
       emit(state.copyWith(
@@ -211,6 +215,26 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
   }
 
   // ─── 加载逻辑 ─────────────────────────────────────────────────────────────
+
+  /// 上架攻略：重新发布已下架的攻略。
+  ///
+  /// 发布后状态会进入「待审核」(pending)，与编辑器发布行为一致。直接重新拉取
+  /// 当前列表第一页，让卡片状态角标 / 可用操作随新状态刷新，同时同步统计概览。
+  Future<void> _onPublishGuide(
+    PublishGuide event,
+    Emitter<GuideMineState> emit,
+  ) async {
+    try {
+      await _guideApi.publishGuide(event.guideId);
+      add(const LoadMineStats());
+      add(const ReloadCurrentList());
+    } catch (e) {
+      LogService.e('上架攻略失败', e);
+      emit(state.copyWith(
+        error: _getErrorMessage(e),
+      ));
+    }
+  }
 
   /// 根据当前 tab 调用对应 API 加载数据
   Future<void> _loadPage(
@@ -321,12 +345,13 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
         );
 
       case MineTab.trash:
-        // 回收站复用 getMine + status=deleted
+        // 回收站：后端新逻辑用 onlyDeleted 过滤（deletedAt 非空），
+        // 不再用 status=deleted。返回项的 status 是删除前的原始状态。
         return await _guideApi.getMine(
           query: GuideMineQuery(
             page: page,
             pageSize: _pageSize,
-            status: GuideStatus.deleted,
+            onlyDeleted: true,
           ),
         );
 
