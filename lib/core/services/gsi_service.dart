@@ -57,6 +57,21 @@ class GsiService {
   /// 是否正在运行
   bool get isRunning => _isRunning;
 
+  /// GSI 是否处于活跃可用状态（HTTP 服务在运行且近期收到过游戏数据）。
+  ///
+  /// 用于在游戏未带 -condebug（不可监控）时，判断能否依赖 GSI 信号
+  /// 验证"是否真正进入服务器"，从而避免挤服时"命令一发就乐观判成功"
+  /// 导致的假成功（别人看到进去又出来、自己也无从判断）。
+  ///
+  /// 时效窗口取 90s：CS2 在主菜单也会按 heartbeat 周期推送，
+  /// 近期有数据即说明 GSI 配置已就位、端点连通。
+  bool get isLive {
+    if (!_isRunning) return false;
+    final received = _latestState?.receivedAt;
+    if (received == null) return false;
+    return DateTime.now().difference(received) < const Duration(seconds: 90);
+  }
+
   /// 当前端口
   int get port => _port;
 
