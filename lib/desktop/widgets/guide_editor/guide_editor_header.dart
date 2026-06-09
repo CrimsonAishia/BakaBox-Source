@@ -107,7 +107,7 @@ class _CircleBackButtonState extends State<_CircleBackButton> {
 }
 
 /// 编辑器保存状态文本（idle / saving / conflict / published / error）
-class _StatusText extends StatelessWidget {
+class _StatusText extends StatefulWidget {
   final EditorPhase phase;
   final DateTime? lastSavedAt;
   final bool isEditingExisting;
@@ -119,16 +119,31 @@ class _StatusText extends StatelessWidget {
   });
 
   @override
+  State<_StatusText> createState() => _StatusTextState();
+}
+
+class _StatusTextState extends State<_StatusText> {
+  String? _currentText;
+  // 每次文本变化时自增，保证 AnimatedSwitcher 的 key 唯一，
+  // 避免文本回退到之前的值时与正在淡出的旧子节点产生重复 key。
+  int _sequence = 0;
+
+  @override
   Widget build(BuildContext context) {
     final colors = CommunityGuideColors.of(context);
     final text = _getStatusText();
     final color = _getStatusColor(colors);
 
+    if (text != _currentText) {
+      _currentText = text;
+      _sequence++;
+    }
+
     return AnimatedSwitcher(
       duration: GuideTokens.durationFast,
       child: Text(
         text,
-        key: ValueKey(text),
+        key: ValueKey('$_sequence:$text'),
         style: TextStyle(
           fontSize: 12,
           color: color,
@@ -140,20 +155,20 @@ class _StatusText extends StatelessWidget {
 
   /// 根据当前 phase 返回显示文本
   String _getStatusText() {
-    return switch (phase) {
-      EditorPhase.idle => lastSavedAt != null ? '已保存' : '未保存',
+    return switch (widget.phase) {
+      EditorPhase.idle => widget.lastSavedAt != null ? '已保存' : '未保存',
       EditorPhase.saving => '正在保存...',
       EditorPhase.savingRemote => '同步至云端...',
       EditorPhase.conflict => '版本冲突',
-      EditorPhase.publishing => isEditingExisting ? '提交中...' : '发布中...',
-      EditorPhase.submitted => isEditingExisting ? '已提交' : '已发布',
+      EditorPhase.publishing => widget.isEditingExisting ? '提交中...' : '发布中...',
+      EditorPhase.submitted => widget.isEditingExisting ? '已提交' : '已发布',
       EditorPhase.error => '保存失败',
     };
   }
 
   /// 根据当前 phase 返回颜色
   Color _getStatusColor(CommunityGuideColors colors) {
-    return switch (phase) {
+    return switch (widget.phase) {
       EditorPhase.idle => colors.textTertiary,
       EditorPhase.saving ||
       EditorPhase.savingRemote =>

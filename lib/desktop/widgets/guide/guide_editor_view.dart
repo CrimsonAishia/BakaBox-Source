@@ -269,9 +269,11 @@ class GuideEditorViewState extends State<GuideEditorView>
       ToastUtils.showSuccess(context, msg);
     }
 
-    // 发布成功后跳转「我的中心 → 已发布」
+    // 发布成功后跳转「我的中心 → 已发布」。
+    // 同时透传刚发布并已在后端删除的草稿 ID，让草稿箱（若仍挂载）就地移除残留卡片。
+    final publishedDraftId = _editorBloc.state.draft?.draftId;
     final navigator = DesktopNavigatorProvider.of(context);
-    navigator?.openMine();
+    navigator?.openMine(publishedDraftId: publishedDraftId);
   }
 }
 
