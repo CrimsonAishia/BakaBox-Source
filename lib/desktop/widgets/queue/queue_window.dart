@@ -704,6 +704,15 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
   }
 
   Widget _buildActionButtons(BuildContext context, QueueBlocState state) {
+    // CS:Source 只发连接指令、不需要"启动游戏"，仅显示挤服按钮。
+    if (state.isConnectOnlyServer) {
+      return Row(
+        children: [
+          Expanded(child: _buildQueueButton(context, state)),
+        ],
+      );
+    }
+
     return Row(
       children: [
         // 开始/暂停挤服按钮
@@ -726,8 +735,9 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
     final isOtherServerBusy =
         globalState.serverAddress != widget.serverAddress && isGlobalBusy;
 
-    // 游戏未运行或正在启动时，禁用挤服按钮
-    if (!state.isGameRunning || state.isLaunchingGame) {
+    // 游戏未就绪或正在启动时，禁用挤服按钮
+    // CS:Source 无需游戏运行即可挤服（isQueueReady 已包含该判断）。
+    if (!state.isQueueReady || state.isLaunchingGame) {
       return SizedBox(
         height: 44,
         child: ElevatedButton.icon(

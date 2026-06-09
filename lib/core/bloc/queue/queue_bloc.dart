@@ -397,11 +397,13 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
     );
 
     // 只在这里设置一次 needManualLaunch
+    // isGameRunning 以 StatusWindowService 的真实状态为准（基于进程检测），
+    // 不直接用 success（success 可能只代表命令已下发）。
     emit(
       state.copyWith(
         isLaunchingGame: false,
         launchMessage: success ? '启动成功' : null,
-        isGameRunning: success,
+        isGameRunning: _statusService.state.isGameRunning,
         error: success ? null : '游戏启动失败',
         needManualLaunch: _statusService.state.needManualLaunch,
       ),

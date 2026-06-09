@@ -225,6 +225,17 @@ extension GameClientInfo on GameClient {
   /// CSGO Legacy 是 730 的测试分支，无法通过 URL 指定分支，必须手动启动
   bool get canAutoLaunch => this != GameClient.csgoLegacy;
 
+  /// 是否为"只发连接指令"的客户端。
+  ///
+  /// CS:Source 不在本项目的监控范围内：
+  /// - 不监控进程 / console.log，不判断游戏是否启动；
+  /// - 连接服务器时只需发送 `steam://run/240//+connect` 指令；
+  /// - 挤服时也不要求游戏已经运行（直接乐观发指令即可）。
+  ///
+  /// 因此凡是涉及"是否需要监控 / 是否要求游戏在运行"的判断，
+  /// 都应先用本 getter 把 CS:Source 短路掉。
+  bool get isConnectOnly => this == GameClient.css;
+
   /// 简短类型标识，与 GameStatusService.runningGameType 对齐
   String get shortType {
     switch (this) {

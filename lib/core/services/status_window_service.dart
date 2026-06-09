@@ -410,6 +410,10 @@ class StatusWindowService {
         gameType: gameType,
         appId: appId,
       );
+      // 注意：result.success 仅代表"Steam 启动/连接命令已成功下发"，
+      // 并不代表游戏进程已经起来。isGameRunning 必须以真实进程检测为准，
+      // 否则点一下连接就会被误判为"游戏运行中"。
+      final actuallyRunning = await _gameLauncher.isCS2Running();
       _updateState(
         OperationState(
           type: OperationType.none,
@@ -423,7 +427,7 @@ class StatusWindowService {
               : result.error,
           serverAddress: serverAddress,
           serverName: serverName,
-          isGameRunning: result.success,
+          isGameRunning: actuallyRunning,
           needCsgoLegacy: result.needCsgoLegacy,
           needManualLaunch: result.needManualLaunch,
         ),
@@ -615,6 +619,18 @@ class StatusWindowService {
       appId: appId,
       gameType: gameType,
     );
+
+    // CS:Source：只发连接指令，不监控、不判断游戏是否启动。
+    // 直接把 steam://run/240//+connect 指令交给 Steam 处理即可。
+    if (client.isConnectOnly) {
+      return await _connectOnly(
+        serverAddress: serverAddress,
+        serverName: serverName,
+        gameType: gameType,
+        appId: appId,
+        playSuccessSound: playSuccessSound,
+      );
+    }
 
     // 检查游戏是否运行
     final gameRunning = await _gameLauncher.isCS2Running();
@@ -820,6 +836,57 @@ class StatusWindowService {
     }
   }
 
+  /// CS:Source 专用连接：只发连接指令，不监控、不判断游戏是否启动。
+  ///
+  /// CS:Source 不在监控范围内，连接它的服务器只需把
+  /// `steam://run/240//+connect <addr>` 指令交给 Steam，由 Steam 负责
+  /// 拉起游戏并连接。这里既不检测进程，也不设置 isGameRunning，
+  /// 避免"点一下连接就被误判为游戏已启动"。
+  Future<bool> _connectOnly({
+    required String serverAddress,
+    String? serverName,
+    String? gameType,
+    int? appId,
+    bool playSuccessSound = true,
+  }) async {
+    final result = await _gameLauncher.connectToServer(
+      serverAddress,
+      gameType: gameType,
+      appId: appId,
+    );
+
+    if (!result.success) {
+      _updateState(
+        OperationState(
+          type: OperationType.none,
+          status: OperationStatus.failed,
+          message: result.error ?? _Messages.connectFailed,
+          serverAddress: serverAddress,
+          serverName: serverName,
+          isGameRunning: false,
+        ),
+      );
+      return false;
+    }
+
+    _updateState(
+      OperationState(
+        type: OperationType.none,
+        status: OperationStatus.success,
+        message: _Messages.commandSent,
+        serverAddress: serverAddress,
+        serverName: serverName,
+        // CS:Source 不监控运行状态，这里保持 false。
+        isGameRunning: false,
+      ),
+    );
+
+    if (playSuccessSound) {
+      _audioService.playQueueSuccessSound();
+    }
+    return true;
+  }
+
   /// 开始挤服
   Future<bool> startQueue({
     required String serverAddress,
@@ -843,18 +910,21 @@ class StatusWindowService {
       return false;
     }
 
-    // 检查游戏是否运行
-    if (!_gameStatusService.isGameRunning) {
-      _updateState(_state.copyWith(error: _Messages.gameNotRunning));
-      return false;
-    }
-
-    // 如果是 CSGO Legacy 服务器，额外检查 CSGO Legacy 是否安装
+    // 解析目标客户端（先解析，便于对 CS:Source 做特殊处理）
     final gameType = serverInfo?.gameType;
     final client = ServerItemUtils.resolveGameClient(
       appId: serverInfo?.appId,
       gameType: gameType,
     );
+
+    // 检查游戏是否运行
+    // CS:Source 不要求游戏在运行（只发连接指令的乐观挤服），跳过该检查。
+    if (!client.isConnectOnly && !_gameStatusService.isGameRunning) {
+      _updateState(_state.copyWith(error: _Messages.gameNotRunning));
+      return false;
+    }
+
+    // 如果是 CSGO Legacy 服务器，额外检查 CSGO Legacy 是否安装
     if (client == GameClient.csgoLegacy) {
       final isInstalled = await _gameLauncher.isCsgoLegacyInstalled();
       if (!isInstalled) {

@@ -54,6 +54,16 @@ class GameStatusService {
   /// 是否可监控（带 -condebug 启动）
   bool get isMonitorable => _isMonitorable;
 
+  /// 被监控的游戏（CS2）是否正在运行
+  ///
+  /// 本项目只监控 CS2。独立版 CSGO (csgo.exe) 与 CS:Source (hl2.exe)
+  /// 虽然会让 [isGameRunning] 为真（挤服 / 连接 / 启动流程需要这个广义判断），
+  /// 但它们不属于监控范围。需要判断"是否应当监控 / 提示无法监控"时，
+  /// 必须使用本 getter，避免连接 CS:Source 服务器或启动独立版 CSGO 时
+  /// 被误判为"游戏已启动但无法监控"。
+  bool get isMonitoredGameRunning =>
+      _isGameRunning && _runningGameType == 'cs2';
+
   /// 是否正在监控
   bool get isMonitoring => _isMonitoring;
 
@@ -111,6 +121,9 @@ class GameStatusService {
   /// 检查游戏状态
   Future<void> _checkGameStatus() async {
     final wasRunning = _isGameRunning;
+    // isGameRunning 表示"任意受支持的游戏（CS2 / 独立版 CSGO / CS:Source）是否在运行"，
+    // 挤服、连接、启动等流程都依赖这个广义判断。
+    // 是否需要"监控"由 runningGameType == 'cs2' 单独判断（见 isMonitoredGameRunning）。
     final isRunning = await _gameLauncher.isCS2Running();
 
     _isGameRunning = isRunning;

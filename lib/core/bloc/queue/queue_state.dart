@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../models/server_models.dart';
 import '../../services/status_window_service.dart';
+import '../../utils/server_item_utils.dart';
 
 /// 挤服状态枚举
 enum QueueStatus {
@@ -103,6 +104,23 @@ class QueueBlocState extends Equatable {
 
   /// 是否正在挤服
   bool get isQueueActive => status == QueueStatus.running;
+
+  /// 目标服务器对应的游戏客户端
+  GameClient get gameClient => ServerItemUtils.resolveGameClient(
+    appId: serverInfo?.appId,
+    gameType: serverInfo?.gameType,
+  );
+
+  /// 是否为"只发连接指令"的服务器（CS:Source）。
+  ///
+  /// 这类服务器不监控、不要求游戏在运行，挤服按钮无需依赖 isGameRunning。
+  bool get isConnectOnlyServer => gameClient.isConnectOnly;
+
+  /// 挤服按钮是否就绪（可点击"开始挤"）。
+  ///
+  /// - 普通服务器（CS2 / CSGO）：要求游戏已运行；
+  /// - CS:Source：不要求游戏运行，随时可挤。
+  bool get isQueueReady => isConnectOnlyServer || isGameRunning;
 
   /// 是否正在连接
   bool get isConnecting =>

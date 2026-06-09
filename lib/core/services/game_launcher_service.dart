@@ -100,11 +100,14 @@ class GameLauncherService {
   // CS2 App ID（与 CSGO Legacy 共用 730，单一来源见 ServerItemUtils.cs2AppId）
   static final String _cs2AppId = '${ServerItemUtils.cs2AppId}';
 
-  // 进程名称（涵盖 CS2 / CSGO / CS:Source）
+  // 进程名称（仅检测 CS2 与 CSGO）
+  //
+  // 注意：不包含 CS:Source 的 hl2.exe。hl2.exe 是 Source 引擎通用可执行文件，
+  // 许多 Source 游戏都用它，且 CS:Source 不在本项目监控/管理范围内。
+  // 把它纳入检测会导致"连接 CS:Source 服务器时被误判为游戏已启动"。
   static const List<String> _gameProcessNames = [
     'cs2.exe',
     'csgo.exe',
-    'hl2.exe',
   ];
 
   /// 单例模式
@@ -295,19 +298,9 @@ class GameLauncherService {
           return 'csgo';
         }
 
-        // 检测 hl2.exe（CS:Source）
-        final cssResult = await Process.run('tasklist', [
-          '/FI',
-          'IMAGENAME eq hl2.exe',
-          '/FO',
-          'CSV',
-        ], runInShell: true);
-
-        if (cssResult.exitCode == 0 &&
-            cssResult.stdout.toString().toLowerCase().contains('hl2.exe')) {
-          LogService.d('检测到 CS:Source 正在运行');
-          return 'css';
-        }
+        // 注意：不检测 CS:Source (hl2.exe)。
+        // hl2.exe 是 Source 引擎通用可执行文件，CS:Source 不在本项目检测范围内，
+        // 否则连接 CS:Source 服务器时会被误判为游戏已启动。
       }
       return null;
     } catch (e) {
