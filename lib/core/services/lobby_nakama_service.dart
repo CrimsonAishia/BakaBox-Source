@@ -531,6 +531,17 @@ class LobbyNakamaService {
   // === 重连 ===
   int _reconnectDelaySeconds = 2;
   static const int _maxReconnectDelaySeconds = 30;
+
+  /// lobby_join 错误标识：队列已满（服务端 code 14 + "server full"）。
+  /// 由 _rpcLobbyJoin 检测置位，_attemptLobbyJoin 读取后通过 error 事件透传给 Bloc，
+  /// 使排队/加载界面能显示"服务器爆满"专属文案而非通用网络错误。
+  bool _lastJoinServerFull = false;
+
+  /// 队列已满错误事件的标识字符串（通过 LobbyConnectionEvent.error 透传）
+  static const String _serverFullErrorTag = 'queue_server_full';
+
+  /// 队列已满错误标识（供 Bloc 识别并显示专属文案）
+  static const String serverFullErrorTag = _serverFullErrorTag;
   Timer? _reconnectTimer;
 
   // === C3 重连风暴熔断 ===
@@ -839,12 +850,17 @@ class LobbyNakamaService {
   /// 返回 true 表示成功（加入 Match 或进入排队）；返回 false 表示失败，
   /// 失败时已发送 error 事件并安排重连。
   Future<bool> _attemptLobbyJoin() async {
+    _lastJoinServerFull = false;
     final joinResponse = await _rpcLobbyJoin();
     if (joinResponse == null) {
-      LogService.e('[LobbyNakamaService] RPC lobby_join 获取响应失败');
+      final serverFull = _lastJoinServerFull;
+      LogService.e(
+        '[LobbyNakamaService] RPC lobby_join 获取响应失败'
+        '${serverFull ? '（队列已满）' : ''}',
+      );
       _emitConnectionEvent(
         LobbyConnectionEventType.error,
-        error: '获取 matchId 失败',
+        error: serverFull ? _serverFullErrorTag : '获取 matchId 失败',
       );
       _sessionRefreshTimer?.cancel();
       _sessionRefreshTimer = null;
@@ -1302,6 +1318,12 @@ class LobbyNakamaService {
           '[LobbyNakamaService] RPC lobby_join 失败 '
           '(${i + 1}/$maxRetries): $e',
         );
+        // 检测"队列已满"错误（服务端 rpcLobbyJoin 返回 code 14 + "server full"）。
+        // 满员是可恢复的瞬时状态（队列腾出空位即可），仍走重连重试，但标记原因
+        // 以便上层向用户展示"服务器爆满"专属文案而非通用网络错误提示。
+        if (e.toString().toLowerCase().contains('server full')) {
+          _lastJoinServerFull = true;
+        }
         if (i < maxRetries - 1) {
           await Future.delayed(retryDelay);
         }

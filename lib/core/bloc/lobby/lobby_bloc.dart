@@ -1578,7 +1578,19 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
           );
         }
       case LobbyConnectionEventType.error:
-        if (state.connectionStatus != LobbyConnectionStatus.connecting) {
+        // 队列已满（服务端 code 14）：显示专属文案，区别于通用网络异常。
+        // 满员是可恢复的瞬时状态，service 仍会退避重连，无需用户操作。
+        // 即使首次连接（connectionStatus=connecting）也要提示，否则冷启动遇满员会静默。
+        final isServerFull = error == LobbyNakamaService.serverFullErrorTag;
+        if (isServerFull) {
+          emit(
+            state.copyWith(
+              connectionStatus: LobbyConnectionStatus.reconnecting,
+              loadingPhase: LobbyLoadingPhase.connecting,
+              transientNotice: '服务器爆满，正在排队重试...',
+            ),
+          );
+        } else if (state.connectionStatus != LobbyConnectionStatus.connecting) {
           emit(
             state.copyWith(
               connectionStatus: LobbyConnectionStatus.reconnecting,
