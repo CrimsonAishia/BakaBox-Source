@@ -26,6 +26,12 @@ import 'guide_mine/guide_mine.dart';
 class GuideMineView extends StatefulWidget {
   final int? initialTab;
 
+  /// 需就地移除的已发布草稿 ID（发布成功后由宿主透传）。
+  ///
+  /// 当该值变化为非空时，说明刚有一条草稿在编辑器发布成功并已被后端删除，
+  /// 草稿箱列表需移除对应残留卡片。
+  final String? removedDraftId;
+
   /// 点击草稿项时的回调，传入 draftId
   final void Function(String draftId)? onEditDraft;
 
@@ -44,6 +50,7 @@ class GuideMineView extends StatefulWidget {
   const GuideMineView({
     super.key,
     this.initialTab,
+    this.removedDraftId,
     this.onEditDraft,
     this.onEditGuide,
     this.onCreateGuide,
@@ -52,10 +59,10 @@ class GuideMineView extends StatefulWidget {
   });
 
   @override
-  State<GuideMineView> createState() => _GuideMineViewState();
+  State<GuideMineView> createState() => GuideMineViewState();
 }
 
-class _GuideMineViewState extends State<GuideMineView> {
+class GuideMineViewState extends State<GuideMineView> {
   late final GuideMineBloc _bloc;
   final ScrollController _scrollController = ScrollController();
 
@@ -77,6 +84,16 @@ class _GuideMineViewState extends State<GuideMineView> {
     _bloc.add(ChangeTab(_tabs[_selectedTabIndex]));
     _bloc.add(const LoadMineStats());
     _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void didUpdateWidget(covariant GuideMineView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 宿主在「发布成功 → 我的中心」时透传被删除的草稿 ID，就地移除残留卡片。
+    final removedId = widget.removedDraftId;
+    if (removedId != null && removedId != oldWidget.removedDraftId) {
+      _bloc.add(RemoveDraftLocal(removedId));
+    }
   }
 
   @override

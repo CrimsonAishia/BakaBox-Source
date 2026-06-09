@@ -59,6 +59,17 @@ class DeleteDraft extends GuideMineEvent {
   List<Object?> get props => [draftId];
 }
 
+/// 本地移除草稿（不调用接口）
+///
+/// 用于「编辑器发布成功后已在后端删除对应草稿」的场景：此时草稿箱列表若仍挂载，
+/// 需要把残留的草稿卡片就地移除，避免显示已被删除的草稿。
+class RemoveDraftLocal extends GuideMineEvent {
+  final String draftId;
+  const RemoveDraftLocal(this.draftId);
+  @override
+  List<Object?> get props => [draftId];
+}
+
 /// 删除攻略（移入回收站）
 class DeleteGuide extends GuideMineEvent {
   final int guideId;

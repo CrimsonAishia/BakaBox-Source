@@ -19,7 +19,10 @@ abstract class DesktopNavigator {
   void openMapDatabase({String? mapName});
 
   /// 打开「我的中心」
-  void openMine();
+  ///
+  /// [publishedDraftId] 非空时，表示刚通过编辑器发布成功并已在后端删除该草稿，
+  /// 草稿箱列表若仍挂载需就地移除对应残留卡片。
+  void openMine({String? publishedDraftId});
 }
 
 /// InheritedWidget 用于在子树中访问 DesktopNavigator

@@ -169,13 +169,20 @@ class _HoverInfoBadgeState extends State<_HoverInfoBadge> {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Icon(icon, size: 13, color: color),
           const SizedBox(width: 4),
           Text(
             widget.data.label,
+            strutStyle: const StrutStyle(
+              fontSize: 13,
+              height: 1.0,
+              forceStrutHeight: true,
+            ),
             style: TextStyle(
               fontSize: 13,
+              height: 1.0,
               fontWeight: FontWeight.w600,
               color: color,
             ),

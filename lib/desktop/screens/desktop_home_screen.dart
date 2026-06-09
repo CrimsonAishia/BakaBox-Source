@@ -339,9 +339,9 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
   }
 
   @override
-  void openMine() {
+  void openMine({String? publishedDraftId}) {
     _navigateToGuideHostWithLeaveCheck(() {
-      _guideHostKey.currentState?.showMine();
+      _guideHostKey.currentState?.showMine(publishedDraftId: publishedDraftId);
     });
   }
 

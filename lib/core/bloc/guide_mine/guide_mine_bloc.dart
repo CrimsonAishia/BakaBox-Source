@@ -29,6 +29,7 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
     on<LoadMore>(_onLoadMore);
     on<LoadMineStats>(_onLoadMineStats);
     on<DeleteDraft>(_onDeleteDraft);
+    on<RemoveDraftLocal>(_onRemoveDraftLocal);
     on<DeleteGuide>(_onDeleteGuide);
     on<RestoreGuide>(_onRestoreGuide);
   }
@@ -124,6 +125,26 @@ class GuideMineBloc extends Bloc<GuideMineEvent, GuideMineState> {
         error: _getErrorMessage(e),
       ));
     }
+  }
+
+  /// 本地移除草稿（不调用接口）。
+  ///
+  /// 仅当目标草稿确实存在于当前列表时才更新状态，避免不必要的重建。
+  /// total 同步减一并保证不为负；不触发自动补页（发布后通常会重新进入页面）。
+  Future<void> _onRemoveDraftLocal(
+    RemoveDraftLocal event,
+    Emitter<GuideMineState> emit,
+  ) async {
+    final exists = state.drafts.any((d) => d.draftId == event.draftId);
+    if (!exists) return;
+    final updatedDrafts =
+        state.drafts.where((d) => d.draftId != event.draftId).toList();
+    final newTotal = state.total > 0 ? state.total - 1 : 0;
+    emit(state.copyWith(
+      drafts: updatedDrafts,
+      total: newTotal,
+      hasMore: updatedDrafts.length < newTotal,
+    ));
   }
 
   Future<void> _onDeleteGuide(
