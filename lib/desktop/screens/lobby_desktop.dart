@@ -431,7 +431,8 @@ class _LobbyDesktopState extends State<LobbyDesktop>
           previous.queueTicket != current.queueTicket ||
           previous.queuePosition != current.queuePosition ||
           previous.queueTotal != current.queueTotal ||
-          previous.queueEtaSeconds != current.queueEtaSeconds,
+          previous.queueEtaSeconds != current.queueEtaSeconds ||
+          previous.queueIsRequeue != current.queueIsRequeue,
       listenWhen: (previous, current) =>
           previous.isChatActive != current.isChatActive ||
           previous.transientNoticeSeq != current.transientNoticeSeq ||
@@ -2127,7 +2128,7 @@ class _LobbyQueueScreenState extends State<_LobbyQueueScreen>
                   );
                 },
                 child: Text(
-                  '正在排队',
+                  widget.state.queueIsRequeue ? '重新排队' : '正在排队',
                   style: TextStyle(
                     color: textPrimary,
                     fontSize: 18,
@@ -2296,7 +2297,9 @@ class _LobbyQueueScreenState extends State<_LobbyQueueScreen>
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    '连接正常 · 排队中',
+                    widget.state.queueIsRequeue
+                        ? '连接已恢复 · 重新排队中'
+                        : '连接正常 · 排队中',
                     style: TextStyle(
                       color: textSecondary.withValues(alpha: 0.5),
                       fontSize: 11,

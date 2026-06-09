@@ -331,6 +331,27 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   }
 
   Future<void> _onStarted(LobbyStarted event, Emitter<LobbyState> emit) async {
+    // 排队保活：应用启动时（desktop_home_screen 直接调用 service.initialize）
+    // 可能已经进入排队，此时 _queueTicket 非空且轮询定时器在运行。
+    // 用户随后导航进入大厅页面会触发 LobbyStarted——此时不应清空排队重新开始
+    // （会丢失排队位置并重新发起 lobby_join），而应保活当前排队并仅切换到
+    // loading + queueing UI。
+    if (_queueTicket != null && _service.isConnected && !_service.isInMatch) {
+      LogService.i('[LobbyBloc] 检测到进入页面时已有进行中的排队，保活当前排队');
+      _isLobbyEntered = true;
+      _isDisposed = false;
+      emit(
+        state.copyWith(
+          pageStatus: LobbyPageStatus.loading,
+          loadingPhase: LobbyLoadingPhase.queueing,
+          connectionStatus: LobbyConnectionStatus.connected,
+        ),
+      );
+      // 立即轮询一次，确保排队状态最新（页面进入可能晚于上次轮询）
+      unawaited(_pollQueueStatus());
+      return;
+    }
+
     // 重置状态，但保留 WebSocket 订阅（已在应用启动时建立）
     _authAttemptedAfterConnect = false;
     _selfServerUserId = null;
@@ -402,8 +423,17 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _scheduleBubbleCleanup();
 
     // 确保 WebSocket 已连接（移动端不在启动时连接，而是进入大厅时才连接）
+    // 三种情况：
+    // 1. 未连接：完整初始化（认证 + 连接 + lobby_join），内部可能进入排队或直接加入 Match
+    // 2. 已连接但未加入 Match：典型为排队过期/取消后重试，需要在已有连接上重新发起
+    //    lobby_join（不能走 initialize，会被幂等检查拦截；也不能直接发 assets/snapshot，
+    //    会因未加入 Match 被丢弃）
+    // 3. 已连接且已加入 Match：正常重入（热重载等），直接请求 assets/snapshot
     if (!_service.isConnected) {
       await _service.initialize();
+    } else if (!_service.isInMatch) {
+      LogService.i('[LobbyBloc] 已连接但未加入 Match，重新发起 lobby_join');
+      await _service.rejoinLobby();
     }
 
     // 用户已登录时，确保 login 消息会被发送：
@@ -440,7 +470,15 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
     // 进入大厅页面时才请求 assets 和 snapshot
     // 这样可以确保 URL token 在有效期内
-    _requestAssetsAndSnapshot();
+    //
+    // 仅在已加入 Match 时请求：若处于排队中（已连接但未加入 Match），
+    // assets/snapshot 请求会因未加入 Match 被服务端丢弃，且排队完成后
+    // _onQueueReady 会在加入 Match 后主动请求，无需在此重复。
+    if (_service.isInMatch) {
+      _requestAssetsAndSnapshot();
+    } else {
+      LogService.d('[LobbyBloc] 当前未加入 Match（排队中），跳过 assets/snapshot 请求');
+    }
   }
 
   /// 请求 assets 和 snapshot
@@ -3988,6 +4026,17 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     // 注意：不重置 _queueRetryCount，保留跨重试的累计计数
     // 只有排队成功（_onQueueReady）时才重置
 
+    // 区分"首次排队"与"重连后重新排队"：
+    // - 断线重连时，用户此前已在大厅内（pageStatus=ready，closed 处理不会重置它），
+    //   重连 lobby_join 若再次遇到繁忙会重新排队。此时用更贴合语境的文案，
+    //   并把 pageStatus 切回 loading 以显示排队界面。
+    // - 首次排队（启动/进入页面）pageStatus 为 idle/loading，使用默认文案。
+    final isRequeueAfterReconnect =
+        state.pageStatus == LobbyPageStatus.ready;
+    final notice = isRequeueAfterReconnect
+        ? '连接已恢复，正在重新排队...'
+        : '服务器繁忙，正在排队中...';
+
     emit(
       state.copyWith(
         queueTicket: event.ticket,
@@ -3995,8 +4044,13 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         queueTotal: event.queueTotal,
         queueEtaSeconds: event.etaSeconds,
         queueExpired: false,
+        // 重连重排队时从 ready 切回 loading，使排队界面正确显示
+        pageStatus: isRequeueAfterReconnect
+            ? LobbyPageStatus.loading
+            : state.pageStatus,
         loadingPhase: LobbyLoadingPhase.queueing,
-        transientNotice: '服务器繁忙，正在排队中...',
+        transientNotice: notice,
+        queueIsRequeue: isRequeueAfterReconnect,
       ),
     );
 

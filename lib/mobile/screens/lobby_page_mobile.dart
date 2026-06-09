@@ -1156,7 +1156,7 @@ class _LobbyQueueScreenMobileState extends State<_LobbyQueueScreenMobile>
                     );
                   },
                   child: Text(
-                    '正在排队',
+                    widget.state.queueIsRequeue ? '重新排队' : '正在排队',
                     style: TextStyle(
                       color: textPrimary,
                       fontSize: 18,
@@ -1325,7 +1325,9 @@ class _LobbyQueueScreenMobileState extends State<_LobbyQueueScreenMobile>
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      '连接正常 · 排队中',
+                      widget.state.queueIsRequeue
+                          ? '连接已恢复 · 重新排队中'
+                          : '连接正常 · 排队中',
                       style: TextStyle(
                         color: textSecondary.withValues(alpha: 0.5),
                         fontSize: 11,
