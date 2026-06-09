@@ -415,6 +415,8 @@ message SteamBindSuccessResponse {
 message LobbyJoinRequest {
   string device_type = 1;       // "mobile" 或 "pc"，默认 "pc"
   int32 protocol_features = 2;  // 位掩码：bit0=支持 presence.delta，bit1=支持排队
+  string token = 3;             // 已登录用户的 JWT（可选）。服务端据此按账号恢复地图/坐标/模型，
+                                // 解决设备 ID 变更（如换机、设备ID升级）后大厅偏好丢失问题。匿名/未登录留空。
 }
 
 // LobbyJoinResponse 加入大厅响应

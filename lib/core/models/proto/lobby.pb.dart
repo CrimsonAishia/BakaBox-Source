@@ -5027,6 +5027,7 @@ class LobbyJoinRequest extends $pb.GeneratedMessage {
   factory LobbyJoinRequest({
     $core.String? deviceType,
     $core.int? protocolFeatures,
+    $core.String? token,
   }) {
     final $result = create();
     if (deviceType != null) {
@@ -5034,6 +5035,9 @@ class LobbyJoinRequest extends $pb.GeneratedMessage {
     }
     if (protocolFeatures != null) {
       $result.protocolFeatures = protocolFeatures;
+    }
+    if (token != null) {
+      $result.token = token;
     }
     return $result;
   }
@@ -5044,6 +5048,7 @@ class LobbyJoinRequest extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'LobbyJoinRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'deviceType')
     ..a<$core.int>(2, _omitFieldNames ? '' : 'protocolFeatures', $pb.PbFieldType.O3)
+    ..aOS(3, _omitFieldNames ? '' : 'token')
     ..hasRequiredFields = false
   ;
 
@@ -5085,6 +5090,15 @@ class LobbyJoinRequest extends $pb.GeneratedMessage {
   $core.bool hasProtocolFeatures() => $_has(1);
   @$pb.TagNumber(2)
   void clearProtocolFeatures() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get token => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set token($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasToken() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearToken() => clearField(3);
 }
 
 /// LobbyJoinResponse 加入大厅响应

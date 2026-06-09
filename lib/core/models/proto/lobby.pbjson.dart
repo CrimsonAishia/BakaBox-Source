@@ -994,13 +994,15 @@ const LobbyJoinRequest$json = {
   '2': [
     {'1': 'device_type', '3': 1, '4': 1, '5': 9, '10': 'deviceType'},
     {'1': 'protocol_features', '3': 2, '4': 1, '5': 5, '10': 'protocolFeatures'},
+    {'1': 'token', '3': 3, '4': 1, '5': 9, '10': 'token'},
   ],
 };
 
 /// Descriptor for `LobbyJoinRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List lobbyJoinRequestDescriptor = $convert.base64Decode(
     'ChBMb2JieUpvaW5SZXF1ZXN0Eh8KC2RldmljZV90eXBlGAEgASgJUgpkZXZpY2VUeXBlEisKEX'
-    'Byb3RvY29sX2ZlYXR1cmVzGAIgASgFUhBwcm90b2NvbEZlYXR1cmVz');
+    'Byb3RvY29sX2ZlYXR1cmVzGAIgASgFUhBwcm90b2NvbEZlYXR1cmVzEhQKBXRva2VuGAMgASgJ'
+    'UgV0b2tlbg==');
 
 @$core.Deprecated('Use lobbyJoinResponseDescriptor instead')
 const LobbyJoinResponse$json = {
