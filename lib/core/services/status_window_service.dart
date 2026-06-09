@@ -15,6 +15,7 @@ import 'console_log_service.dart';
 import 'floating_window_service.dart';
 import 'game_launcher_service.dart';
 import 'game_status_service.dart';
+import 'gsi_service.dart';
 import 'queue_guard_service.dart';
 import 'server_address_mapping_service.dart';
 import 'source_server_service.dart';
@@ -1452,8 +1453,18 @@ class StatusWindowService {
     _queueGuardSub = null;
 
     // 降级 1：游戏不可监控
+    //
+    // 不挂载全局守护进程。原因：GSI-only（无 -condebug）时守护进程的
+    // location 永远只能给出 inUnknownServer（GSI 无法区分具体服务器），
+    // 而入口快照与 _onGuardEvent 会把 inUnknownServer 当作"已在目标服"
+    // 直接 finalize 成功——在"已在 A 服挤 B 服"等场景会造成假成功。
+    //
+    // GSI-only 的进服确认改由 _connectForQueue → _observeConnection 处理：
+    // 它直接监听 App 级已启动的 QueueGuardService().events（GSI 驱动），
+    // 且 onSignal 受 startLocation / seenLeftOldServer 约束，
+    // 只认"主菜单→进服"的跃迁，判定严谨得多。
     if (!_gameStatusService.isMonitorable) {
-      LogService.i('[StatusWindowService] 游戏不可监控，跳过守护进程（乐观模式）');
+      LogService.i('[StatusWindowService] 游戏不可监控，跳过全局守护进程（GSI-only 由观察期处理）');
       return;
     }
 
@@ -1852,9 +1863,13 @@ class StatusWindowService {
         return;
       }
 
-      // 不可监控：乐观模式，直接 finalize success（设计 3.3.6）
-      if (!_gameStatusService.isMonitorable) {
-        // 不可监控时发送成功消息
+      // 乐观模式：仅当游戏不可监控（无 -condebug console.log）
+      // 且 GSI 也不可用时，没有任何信号能验证是否真正进服，
+      // 只能在命令发出后直接乐观判定成功。
+      final canMonitorViaConsole = _gameStatusService.isMonitorable;
+      final canVerifyViaGsi = GsiService().isLive;
+      if (!canMonitorViaConsole && !canVerifyViaGsi) {
+        // 无任何验证信号时发送成功消息
         final usersBloc = QueueUsersBloc.instance;
         usersBloc.add(const QueueUsersSuccess());
         usersBloc.add(const QueueUsersDisconnect());
@@ -1881,7 +1896,9 @@ class StatusWindowService {
         return;
       }
 
-      // 可监控：进入观察期，等待守护进程或 console 给出结局
+      // 可监控 或 GSI 在线：进入观察期，等待守护进程 / console / GSI 给出结局。
+      // 在确认真正进服前，竞技场里的用户不会被移除（不发 success/leave），
+      // 避免"命令一发就退出竞技场"造成的假成功。
       _updateState(_state.copyWith(message: _Messages.loading));
       await _updateWindow(state: 'loading', message: _Messages.loading);
 
@@ -2011,7 +2028,10 @@ class StatusWindowService {
     onSignal();
     if (completer.isCompleted) return completer.future;
 
-    // 主超时 30 秒
+    // 主超时：可监控（console）和 GSI-only 都走 30s + 30s 延长。
+    // GSI-only 没有 console 的"服务器满/被拒"显式失败信号，失败时玩家停在
+    // 主菜单、无状态跃迁，只能靠超时兜底；而大地图/慢机器的加载到 GSI
+    // 报 playing 可能耗时数十秒，故超时必须足够长，避免把"仍在加载"误判失败。
     primaryTimer = Timer(const Duration(seconds: 30), () {
       if (completer.isCompleted) return;
       LogService.w('[StatusWindowService] 观察主超时（30s），延长 30s');
