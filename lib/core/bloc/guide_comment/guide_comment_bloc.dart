@@ -34,6 +34,7 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
     on<PostComment>(_onPostComment);
     on<DeleteComment>(_onDeleteComment);
     on<ToggleCommentLike>(_onToggleCommentLike);
+    on<ToggleCommentDislike>(_onToggleCommentDislike);
     on<ChangeCommentSort>(_onChangeSort);
     on<UpdateBlockedUsers>(_onUpdateBlockedUsers);
   }
@@ -162,12 +163,41 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
         if (event.parentId != null && event.parentId != 0) {
           // 楼中楼回复：追加到对应 replyMaps
           LogService.d('[GuideCommentBloc] placing in replyMaps[${event.parentId}]');
+
+          // 找到父级一级评论，用于在 replyMaps 尚未加载时回填已有的内嵌 replies 预览
+          GuideComment? parentComment;
+          for (final c in state.comments) {
+            if (c.id == event.parentId) {
+              parentComment = c;
+              break;
+            }
+          }
+
           final newReplyMaps =
               Map<int, List<GuideComment>>.from(state.replyMaps);
-          final existingReplies =
-              List<GuideComment>.from(newReplyMaps[event.parentId] ?? []);
-          existingReplies.add(newComment);
-          newReplyMaps[event.parentId!] = existingReplies;
+
+          // 关键修复：replyMaps[parentId] 未加载时，用父评论自带的 replies 预览作为基础，
+          // 否则会把面板从「展示预览 replies」切换成「只展示这一条新回复」，
+          // 导致刚被回复的那条二级评论看起来「被替换」。
+          final List<GuideComment> baseReplies;
+          if (newReplyMaps.containsKey(event.parentId)) {
+            baseReplies = List<GuideComment>.from(newReplyMaps[event.parentId]!);
+            LogService.d('[GuideCommentBloc] replyMaps[${event.parentId}] '
+                '已加载，基础回复数=${baseReplies.length}');
+          } else {
+            baseReplies =
+                List<GuideComment>.from(parentComment?.replies ?? const []);
+            LogService.d('[GuideCommentBloc] replyMaps[${event.parentId}] '
+                '未加载，用父评论内嵌预览作为基础，基础回复数=${baseReplies.length}');
+          }
+
+          // 避免重复追加（防御：若新回复 id 已存在则跳过）
+          if (!baseReplies.any((r) => r.id == newComment.id)) {
+            baseReplies.add(newComment);
+          }
+          newReplyMaps[event.parentId!] = baseReplies;
+          LogService.d('[GuideCommentBloc] replyMaps[${event.parentId}] '
+              '追加后回复数=${baseReplies.length}');
 
           // 更新对应一级评论的 replyCount
           final updatedComments = state.comments.map((c) {
@@ -414,6 +444,111 @@ class GuideCommentBloc extends Bloc<GuideCommentEvent, GuideCommentState> {
         ));
       }
       LogService.e('评论点赞失败', e);
+    }
+  }
+
+  /// 切换评论点踩（乐观更新 + 失败回滚）
+  ///
+  /// 与点赞互斥：点踩时若已点赞，则同时取消点赞（仅本地状态，点赞数 -1）。
+  Future<void> _onToggleCommentDislike(
+    ToggleCommentDislike event,
+    Emitter<GuideCommentState> emit,
+  ) async {
+    // 查找评论（一级或楼中楼）
+    GuideComment? targetComment;
+    bool isReply = false;
+    int? parentId;
+
+    for (final c in state.comments) {
+      if (c.id == event.id) {
+        targetComment = c;
+        break;
+      }
+    }
+
+    if (targetComment == null) {
+      for (final entry in state.replyMaps.entries) {
+        for (final reply in entry.value) {
+          if (reply.id == event.id) {
+            targetComment = reply;
+            isReply = true;
+            parentId = entry.key;
+            break;
+          }
+        }
+        if (targetComment != null) break;
+      }
+    }
+
+    if (targetComment == null) {
+      LogService.w('[GuideCommentBloc] dislike: 未找到评论 id=${event.id}');
+      return;
+    }
+
+    final nowDisliked = !targetComment.isDisliked;
+    // 点踩与点赞互斥：点踩时取消已有点赞
+    final wasLiked = targetComment.isLiked;
+    final newLikeCount = (nowDisliked && wasLiked)
+        ? (targetComment.likeCount - 1).clamp(0, 1 << 31)
+        : targetComment.likeCount;
+    final newDislikeCount =
+        (targetComment.dislikeCount + (nowDisliked ? 1 : -1)).clamp(0, 1 << 31);
+
+    LogService.d('[GuideCommentBloc] ToggleCommentDislike: '
+        'id=${event.id}, nowDisliked=$nowDisliked, wasLiked=$wasLiked, '
+        'dislikeCount=${targetComment.dislikeCount}->$newDislikeCount');
+
+    final optimistic = targetComment.copyWith(
+      isDisliked: nowDisliked,
+      isLiked: nowDisliked ? false : targetComment.isLiked,
+      likeCount: newLikeCount,
+      dislikeCount: newDislikeCount,
+    );
+
+    // 乐观更新
+    if (isReply && parentId != null) {
+      final newReplyMaps =
+          Map<int, List<GuideComment>>.from(state.replyMaps);
+      newReplyMaps[parentId] = newReplyMaps[parentId]!
+          .map((c) => c.id == event.id ? optimistic : c)
+          .toList();
+      emit(state.copyWith(replyMaps: newReplyMaps, clearError: true));
+    } else {
+      final updatedComments = state.comments
+          .map((c) => c.id == event.id ? optimistic : c)
+          .toList();
+      emit(state.copyWith(comments: updatedComments, clearError: true));
+    }
+
+    // 调接口
+    try {
+      if (nowDisliked) {
+        await _guideApi.dislikeComment(event.id);
+      } else {
+        await _guideApi.undislikeComment(event.id);
+      }
+    } catch (e) {
+      // 失败回滚
+      if (isReply && parentId != null) {
+        final rollbackReplyMaps =
+            Map<int, List<GuideComment>>.from(state.replyMaps);
+        rollbackReplyMaps[parentId] = rollbackReplyMaps[parentId]!
+            .map((c) => c.id == event.id ? targetComment! : c)
+            .toList();
+        emit(state.copyWith(
+          replyMaps: rollbackReplyMaps,
+          error: _getErrorMessage(e),
+        ));
+      } else {
+        final rollbackComments = state.comments
+            .map((c) => c.id == event.id ? targetComment! : c)
+            .toList();
+        emit(state.copyWith(
+          comments: rollbackComments,
+          error: _getErrorMessage(e),
+        ));
+      }
+      LogService.e('评论点踩失败', e);
     }
   }
 

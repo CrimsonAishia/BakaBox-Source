@@ -412,7 +412,11 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
   }
 
   void _handleDislike(BuildContext context, GuideComment comment) {
-    ToastUtils.showError(context, '踩功能暂未开放');
+    if (!_isLoggedIn(context)) {
+      _requireLogin();
+      return;
+    }
+    context.read<GuideCommentBloc>().add(ToggleCommentDislike(comment.id));
   }
 
   Widget _buildLoadMore(BuildContext context, GuideCommentState state) {
@@ -724,9 +728,13 @@ class _CommentActions extends StatelessWidget {
         const SizedBox(width: GuideTokens.space16),
         // 踩
         _IconAction(
-          icon: Icons.thumb_down_outlined,
-          label: null,
-          color: tertiary,
+          icon: comment.isDisliked
+              ? Icons.thumb_down_rounded
+              : Icons.thumb_down_outlined,
+          label: comment.dislikeCount > 0 ? '${comment.dislikeCount}' : null,
+          color: comment.isDisliked
+              ? GuideTokens.likeColor(context)
+              : tertiary,
           onTap: onDislike,
         ),
         // 回复（自己的评论不显示）
