@@ -1903,13 +1903,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     if (mounted) {
       final state = _statusService.state;
       if (success) {
-        // 区分：本次连接进服（进去啦）vs 人本来就已经在该服里
-        final isAlreadyInServer =
-            state.message == kAlreadyInServerMessage;
-        ToastUtils.showSuccess(
-          context,
-          isAlreadyInServer ? kAlreadyInServerMessage : '进去啦！',
-        );
+        ToastUtils.showSuccess(context, '进去啦！');
       } else if (state.needCsgoLegacy) {
         // 需要安装 CSGO Legacy，显示教程对话框
         _showCsgoLegacyInstallDialog();

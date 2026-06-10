@@ -43,15 +43,11 @@ class QueueInitialize extends QueueEvent {
 }
 
 /// 开始挤服
-///
-/// [force] 为 true 时跳过"已在该服务器"的入口预判（用户已在弹窗中确认继续）。
 class QueueStart extends QueueEvent {
-  final bool force;
-
-  const QueueStart({this.force = false});
+  const QueueStart();
 
   @override
-  List<Object?> get props => [force];
+  List<Object?> get props => [];
 }
 
 /// 暂停挤服

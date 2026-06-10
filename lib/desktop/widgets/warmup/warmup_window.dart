@@ -11,10 +11,8 @@ import '../../../core/bloc/warmup_users/warmup_users_bloc.dart';
 import '../../../core/bloc/warmup_users/warmup_users_event.dart';
 import '../../../core/bloc/warmup_users/warmup_users_state.dart';
 import '../../../core/models/server_models.dart';
-import '../../../core/services/queue_guard_service.dart';
 import '../../../core/services/status_window_service.dart';
 import '../../../core/services/steam_user_service.dart';
-import '../../../core/utils/toast_utils.dart';
 import '../queue/arena_activity_session.dart';
 import '../queue/arena_window_widgets.dart';
 import '../queue/queue_activity_log.dart';
@@ -398,12 +396,6 @@ class _WarmupWindowContentState extends State<_WarmupWindowContent>
   ///
   /// 获取用户昵称优先级：Steam 客户端 > GSI > 登录用户名 > null（匿名）
   Future<void> _startWarmup(BuildContext context) async {
-    // 入口预判：人已经在该服务器里就没必要暖服了，直接提示并返回。
-    if (QueueGuardService().isStablyInServer(widget.serverAddress)) {
-      ToastUtils.showSuccess(context, kAlreadyInServerMessage);
-      return;
-    }
-
     // 开始新的暖服会话：重置持久化的活动日志、竞技场位置与自己加入标记，
     // 并开始订阅用户事件流（后台也会持续记录日志）。
     session.resetFor(widget.serverAddress);

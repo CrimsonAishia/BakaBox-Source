@@ -242,7 +242,6 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
       config: state.config,
       serverInfo: state.serverInfo,
       mapInfo: state.mapInfo,
-      force: event.force,
     );
 
     emit(state.copyWith(isCheckingGame: false));
