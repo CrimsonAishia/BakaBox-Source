@@ -12,7 +12,6 @@ import '../../../core/utils/toast_utils.dart';
 import '../../../core/widgets/guide/guide_tokens.dart';
 import '../../../core/widgets/rich_text_editor.dart';
 import '../../../core/widgets/signed_network_image.dart';
-import '../login_dialog.dart';
 import 'community_guide/community_guide_theme.dart';
 
 /// B 站风格的底部固定评论输入条
@@ -97,7 +96,7 @@ class GuideBottomCommentComposerState
 
   void _expand() {
     if (!_isLoggedIn()) {
-      LoginDialog.show(context);
+      ToastUtils.showInfo(context, '登录后才能参与评论');
       return;
     }
     if (_expanded) return;
@@ -125,7 +124,7 @@ class GuideBottomCommentComposerState
 
   void _handleSubmit() {
     if (!_isLoggedIn()) {
-      LoginDialog.show(context);
+      ToastUtils.showInfo(context, '登录后才能参与评论');
       return;
     }
 
