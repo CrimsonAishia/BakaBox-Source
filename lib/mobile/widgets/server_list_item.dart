@@ -396,7 +396,7 @@ class ServerListItem extends StatelessWidget {
                 else if (server.mapRuntime?.weeklyOccurrences != null)
                   _buildInfoChip(
                     child: Text(
-                      '7天内出现${server.mapRuntime!.weeklyOccurrences + 1}次',
+                      '7天内出现${server.mapRuntime!.weeklyOccurrences! + 1}次',
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,

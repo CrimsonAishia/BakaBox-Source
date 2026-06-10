@@ -1089,7 +1089,10 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   /// 构建静态服务器卡片（用于截图，不包含动画，完整复刻 ServerCard 样式）
   Widget _buildStaticServerCard(bool isDark, ExtendedServerItem server) {
     final data = server.serverData;
-    final address = server.serverItem.address ?? '未知地址';
+    final address =
+        server.serverItem.address ??
+        server.serverItem.serverAddress ??
+        '未知地址';
     final hostName = server.serverItem.getDisplayName(data?.hostName);
     final mapName = data?.map ?? '未知地图';
     final mapLabel = server.mapInfo?.mapLabel;
@@ -1114,7 +1117,11 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         (teamScores!.ctScore! > 0 || teamScores.tScore! > 0);
 
     // 是否显示运行时间（与原卡片逻辑一致）
-    final showRuntime = data?.map != null && !isCustomServer;
+    // API 数据源的自定义服务器由第三方接口提供地图运行时间，需要显示。
+    final isApiSourced = server.serverItem.dataSourceMode == 'api';
+    final showRuntime =
+        data?.map != null &&
+        (!isCustomServer || (isApiSourced && mapRuntime != null));
 
     return Container(
       height: 136,
@@ -3139,11 +3146,17 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   /// 获取简约模式运行时间文本（与卡片模式单位一致）
   String _getCompactRuntimeText(ExtendedServerItem server) {
     if (server.isOffline) return '-';
-    if (server.serverItem.isCustom) return '-';
+    // API 数据源的自定义服务器有第三方接口提供的运行时间，照常显示；
+    // 其余自定义服务器（A2S 模式）不显示运行时间。
+    final isApiSourced = server.serverItem.dataSourceMode == 'api';
+    if (server.serverItem.isCustom && !isApiSourced) return '-';
 
     final mapRuntime = server.mapRuntime;
 
     if (mapRuntime == null) {
+      // API 服务器没有运行时间数据（接口未提供 map_changed_at）时直接显示 '-'，
+      // 避免一直停留在加载态。官方服务器仍走异步获取，显示加载/错误态。
+      if (isApiSourced) return '-';
       return server.mapRuntimeError ? '?' : '...';
     }
 
