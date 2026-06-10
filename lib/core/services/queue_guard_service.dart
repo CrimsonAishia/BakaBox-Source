@@ -270,6 +270,35 @@ class QueueGuardService {
     return normalized == target;
   }
 
+  /// 判断用户当前是否已经"稳定地"在指定服务器内。
+  ///
+  /// 与 [location] 不同，本方法不依赖 [setTarget] 设置的目标地址，可供
+  /// 「加入服务器」「暖服」等没有挂载守护进程的流程直接做入口预判。
+  ///
+  /// 采取严格判定，只有在以下全部满足时才返回 true：
+  /// - console（-condebug）处于稳定的 [GameState.inGame]；
+  /// - console 抓到了非空的服务器地址；
+  /// - 地址映射已就绪，且归一化后的地址与 [targetAddress] 完全一致。
+  ///
+  /// 任何不确定情形（切服过渡、GSI-only、地址未抓到、映射未就绪）一律返回
+  /// false，宁可漏判也不误判——避免把"在别的服/主菜单"错当成"已在目标服"。
+  bool isStablyInServer(String targetAddress) {
+    if (targetAddress.isEmpty) return false;
+
+    final consoleState = ConsoleLogService().currentState;
+    if (consoleState.state != GameState.inGame) return false;
+
+    final consoleAddr = consoleState.serverAddress;
+    if (consoleAddr.isEmpty) return false;
+
+    if (!ServerAddressMappingService().isLoaded) return false;
+
+    final normalized = ServerAddressMappingService().getDomainAddress(
+      consoleAddr,
+    );
+    return normalized == targetAddress || consoleAddr == targetAddress;
+  }
+
   /// 信号到达时的统一处理：判定 location，变化时 emit
   void _onSignal(QueueGuardSource source) {
     final current = location;

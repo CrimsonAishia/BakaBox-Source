@@ -78,6 +78,12 @@ class _Messages {
   static String loadingMap(String mapName) => '正在加载地图 $mapName';
 }
 
+/// 检测到用户"已经在目标服内"的提示文案。
+///
+/// 与"成功进入游戏/进去啦"区分：后者表示本次操作把用户送进了服务器；
+/// 而这条表示用户发起操作（挤服/加入/暖服）时人本来就已经在该服里。
+const String kAlreadyInServerMessage = '你已经在该服务器里了';
+
 /// 挤服配置
 class QueueConfig {
   final int targetPlayers;
@@ -730,6 +736,40 @@ class StatusWindowService {
 
     _cancelCloseTimer();
 
+    // 入口预判：用户当前是否已经稳定地在该服务器内（典型场景：人已在服里又点了"加入"）。
+    // 可监控（-condebug）时 console 地址可信，直接以成功态收尾，避免无谓的重连，
+    // 也避免"先建连接中窗口、再 IPC 推 success 被吞"的时序竞态。
+    if (QueueGuardService().isStablyInServer(serverAddress)) {
+      LogService.i('[StatusWindowService] 加入服务器：检测到已在该服内，直接成功');
+      _updateState(
+        OperationState(
+          type: OperationType.none,
+          status: OperationStatus.success,
+          message: kAlreadyInServerMessage,
+          serverAddress: serverAddress,
+          serverName: serverName,
+          isGameRunning: true,
+        ),
+      );
+      await _showWindow(
+        type: FloatingWindowType.connect,
+        serverAddress: serverAddress,
+        title: serverName ?? serverAddress,
+        state: 'success',
+        message: kAlreadyInServerMessage,
+        mapName: mapName,
+        mapNameCn: mapNameCn,
+        mapBackground: mapBackground,
+      );
+      await _updateWindow(
+        state: 'success',
+        message: kAlreadyInServerMessage,
+        autoDismissSeconds: 5,
+      );
+      _scheduleClose(seconds: 5);
+      return true;
+    }
+
     // 更新状态
     _updateState(
       OperationState(
@@ -1003,6 +1043,34 @@ class StatusWindowService {
 
     // 设置守护进程目标地址（同步，DNS 已在应用启动时完成）
     QueueGuardService().setTarget(serverAddress);
+
+    // 入口快照预判：用户当前是否已在目标服（典型场景：刚挤进服又立刻重新点挤服）。
+    //
+    // 必须在创建"挤服中"悬浮窗之前判断。否则会先建出"挤服中"窗口，紧接着
+    // _handleAlreadyInGame 通过 IPC 推送 success——而子窗口此刻仍在初始化、
+    // 尚未注册 IPC handler，success 推送被吞掉，悬浮窗永远卡在"挤服中"。
+    //
+    // 判定已在游戏中时，直接以"成功"态创建悬浮窗（初始态随 config.extra 一同下发，
+    // 不依赖易丢的即时 IPC 推送），再 finalize 收尾。
+    if (await _isAlreadyInGameOnEntry()) {
+      LogService.i('[StatusWindowService] 入口快照预判已在游戏中，直接以成功态收尾');
+      await _showWindow(
+        type: FloatingWindowType.queue,
+        serverAddress: serverAddress,
+        title: serverName ?? serverInfo?.hostName ?? serverAddress,
+        state: 'success',
+        message: kAlreadyInServerMessage,
+        mapName: serverInfo?.map,
+        mapNameCn: mapInfo?.mapLabel,
+        mapBackground: mapInfo?.mapUrl,
+        currentPlayers: serverInfo?.players,
+        targetPlayers: finalConfig.targetPlayers,
+      );
+      _finalizeOnce(
+        () => _handleAlreadyInGame(message: kAlreadyInServerMessage),
+      );
+      return true;
+    }
 
     // 创建窗口
     await _showWindow(
@@ -1442,6 +1510,32 @@ class StatusWindowService {
     _outcomeFinalized = true;
     action();
     return true;
+  }
+
+  /// 入口快照预判：在创建悬浮窗之前判断用户当前是否已在游戏中。
+  ///
+  /// 与 [_attachQueueGuard] 的入口快照逻辑保持一致：仅在游戏可监控、且
+  /// 地址映射就绪（必要时等待加载）时，才信任守护进程的 location 判定。
+  /// 任一前置条件不满足时返回 false（交由正常挤服流程处理），避免在
+  /// GSI-only / 映射未就绪场景下产生假成功。
+  Future<bool> _isAlreadyInGameOnEntry() async {
+    // 不可监控时不做预判（GSI-only 的进服确认交由观察期处理）
+    if (!_gameStatusService.isMonitorable) return false;
+
+    // 地址映射未就绪：尝试加载，失败则不预判
+    if (!ServerAddressMappingService().isLoaded) {
+      try {
+        await ServerAddressMappingService().load().timeout(
+          const Duration(seconds: 3),
+        );
+      } catch (_) {
+        return false;
+      }
+    }
+
+    final initial = QueueGuardService().location;
+    return initial == GuardLocation.inTargetServer ||
+        initial == GuardLocation.inUnknownServer;
   }
 
   /// 挂载守护进程订阅 + 启动心跳
@@ -2281,7 +2375,13 @@ class StatusWindowService {
   /// 处理"游戏已在服务器中"的情况（自动重试发现用户已经进入游戏）
   ///
   /// 应通过 [_finalizeOnce] 调用，幂等且只执行一次。
-  void _handleAlreadyInGame() {
+  ///
+  /// [message] 自定义提示文案（主状态 message + 悬浮窗文案）。默认是
+  /// "成功进入游戏！"，表示本次挤服成功送进服务器；当检测到用户点挤服时
+  /// 本来就已经在服里，应传入 [kAlreadyInServerMessage] 以示区分。
+  void _handleAlreadyInGame({String? message}) {
+    final finalMessage = message ?? _Messages.connectSuccess;
+
     // 卸载守护进程
     _detachQueueGuard();
 
@@ -2298,12 +2398,12 @@ class StatusWindowService {
       _state.copyWith(
         type: OperationType.none,
         status: OperationStatus.success,
-        message: _Messages.connectSuccess,
+        message: finalMessage,
       ),
     );
     _updateWindow(
       state: 'success',
-      message: _Messages.connectSuccess,
+      message: finalMessage,
       autoDismissSeconds: 5,
     );
     _audioService.playQueueSuccessSound();
