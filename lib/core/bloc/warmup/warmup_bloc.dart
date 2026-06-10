@@ -300,12 +300,18 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
     final globalState = _statusService.state;
     if (globalState.type == OperationType.queueing &&
         globalState.status == OperationStatus.running) {
+      // 暖服未能开始，但此前窗口已连上 WebSocket 并发了 join（人已进暖服竞技场）。
+      // 必须主动断开，否则会一直卡在暖服竞技场里，关窗口也退不出来。
+      final usersBloc = WarmupUsersBloc.instance;
+      usersBloc.add(const WarmupUsersLeave());
+      usersBloc.add(const WarmupUsersDisconnect());
+
       emit(state.copyWith(error: '正在挤服中，无法暖服'));
       return;
     }
 
     // 更新全局状态为暖服中
-    _statusService.startWarmup(
+    final success = await _statusService.startWarmup(
       serverAddress: state.serverAddress ?? '',
       serverName: state.serverName,
       serverInfo: state.serverInfo,
@@ -313,6 +319,17 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
       targetPlayers: state.effectiveTargetPlayers,
       showFloatingWindow: state.config.showFloatingWindow,
     );
+
+    if (!success) {
+      // startWarmup 的守卫（有其他操作正在进行）拦截，同样需要退出竞技场，
+      // 避免 WebSocket 泄漏卡在暖服竞技场。
+      final usersBloc = WarmupUsersBloc.instance;
+      usersBloc.add(const WarmupUsersLeave());
+      usersBloc.add(const WarmupUsersDisconnect());
+
+      emit(state.copyWith(error: '有其他操作正在进行，无法暖服'));
+      return;
+    }
 
     emit(state.copyWith(
       status: WarmupStatus.warming,
