@@ -5,8 +5,6 @@ import '../../../core/bloc/auth/auth_bloc.dart';
 import '../../../core/bloc/guide_comment/guide_comment_bloc.dart';
 import '../../../core/bloc/guide_comment/guide_comment_event.dart';
 import '../../../core/bloc/guide_comment/guide_comment_state.dart';
-import '../../../core/bloc/settings/settings_bloc.dart';
-import '../../../core/bloc/settings/settings_event.dart';
 import '../../../core/models/guide_models.dart';
 import '../../../core/services/token_service.dart';
 import '../../../core/utils/formatters.dart';
@@ -130,13 +128,6 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
       _replyTarget = null;
       _replyController.clear();
     });
-  }
-
-  void _handleBlockUser(int userId, String userName) {
-    context.read<SettingsBloc>().add(
-          SettingsBlockUser(userId: userId, userName: userName),
-        );
-    ToastUtils.showSuccess(context, '已拉黑「$userName」，其内容已被隐藏');
   }
 
   // ─── Build ──────────────────────────────────────────────────────────────
@@ -316,7 +307,6 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
             targetId: comment.id,
             targetType: 'comment',
           ),
-          onBlock: () => _handleBlockUser(comment.authorId, comment.authorName),
         ),
         if (visibleReplies.isNotEmpty)
           Padding(
@@ -342,7 +332,6 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
                 targetId: c.id,
                 targetType: 'comment',
               ),
-              onBlock: (c) => _handleBlockUser(c.authorId, c.authorName),
             ),
           ),
         // 行内 fallback 回复输入条（仅在没有外部 onReplyRequested 时使用）
@@ -468,7 +457,6 @@ class _CommentBubble extends StatefulWidget {
   final VoidCallback? onDislike;
   final VoidCallback? onDelete;
   final VoidCallback? onReport;
-  final VoidCallback? onBlock;
 
   const _CommentBubble({
     required this.comment,
@@ -480,7 +468,6 @@ class _CommentBubble extends StatefulWidget {
     this.onDislike,
     this.onDelete,
     this.onReport,
-    this.onBlock,
   });
 
   @override
@@ -577,13 +564,12 @@ class _CommentBubbleState extends State<_CommentBubble> {
                 _CommentActions(
                   comment: comment,
                   isOwn: isOwn,
-                  showMore: _hover,
+                  showActions: _hover,
                   onReply: widget.onReply,
                   onLike: widget.onLike,
                   onDislike: widget.onDislike,
                   onDelete: widget.onDelete,
                   onReport: widget.onReport,
-                  onBlock: widget.onBlock,
                 ),
               ],
             ),
@@ -654,24 +640,22 @@ class _AuthorChip extends StatelessWidget {
 class _CommentActions extends StatelessWidget {
   final GuideComment comment;
   final bool isOwn;
-  final bool showMore;
+  final bool showActions;
   final VoidCallback? onReply;
   final VoidCallback? onLike;
   final VoidCallback? onDislike;
   final VoidCallback? onDelete;
   final VoidCallback? onReport;
-  final VoidCallback? onBlock;
 
   const _CommentActions({
     required this.comment,
     required this.isOwn,
-    required this.showMore,
+    required this.showActions,
     this.onReply,
     this.onLike,
     this.onDislike,
     this.onDelete,
     this.onReport,
-    this.onBlock,
   });
 
   void _confirmDelete(BuildContext context) {
@@ -716,7 +700,7 @@ class _CommentActions extends StatelessWidget {
           ),
         ),
         const SizedBox(width: GuideTokens.space20),
-        // 赞
+        // 赞（常显）
         _IconAction(
           icon: comment.isLiked
               ? Icons.thumb_up_rounded
@@ -726,7 +710,7 @@ class _CommentActions extends StatelessWidget {
           onTap: onLike,
         ),
         const SizedBox(width: GuideTokens.space16),
-        // 踩
+        // 踩（常显）
         _IconAction(
           icon: comment.isDisliked
               ? Icons.thumb_down_rounded
@@ -737,7 +721,7 @@ class _CommentActions extends StatelessWidget {
               : tertiary,
           onTap: onDislike,
         ),
-        // 回复（自己的评论不显示）
+        // 回复（常显，自己的评论不显示）
         if (onReply != null) ...[
           const SizedBox(width: GuideTokens.space20),
           _IconAction(
@@ -747,65 +731,31 @@ class _CommentActions extends StatelessWidget {
             onTap: onReply,
           ),
         ],
-        // 删除（仅自己的评论，二次确认）
-        if (isOwn && onDelete != null) ...[
+        // 删除 / 举报（hover 时显示）
+        if ((isOwn && onDelete != null) || (!isOwn && onReport != null)) ...[
           const SizedBox(width: GuideTokens.space20),
-          _IconAction(
-            icon: Icons.delete_outline,
-            label: null,
-            color: GuideTokens.statusRejected.withValues(alpha: 0.7),
-            onTap: () => _confirmDelete(context),
-          ),
-        ],
-        const Spacer(),
-        // 举报/拉黑（非自己的评论，hover 时显示）
-        if (!isOwn)
           AnimatedOpacity(
             duration: GuideTokens.durationFast,
-            opacity: showMore ? 1.0 : 0.0,
+            opacity: showActions ? 1.0 : 0.0,
             child: IgnorePointer(
-              ignoring: !showMore,
-              child: PopupMenuButton<String>(
-                tooltip: '举报',
-                padding: EdgeInsets.zero,
-                splashRadius: 16,
-                icon: Icon(Icons.flag_outlined, size: 16, color: tertiary),
-                shape: RoundedRectangleBorder(
-                  borderRadius: GuideTokens.borderRadius12,
-                ),
-                itemBuilder: (context) => const [
-                  PopupMenuItem(
-                    value: 'report',
-                    child: Row(
-                      children: [
-                        Icon(Icons.flag_outlined, size: 16),
-                        SizedBox(width: 8),
-                        Text('举报'),
-                      ],
+              ignoring: !showActions,
+              child: isOwn
+                  ? _IconAction(
+                      icon: Icons.delete_outline,
+                      label: '删除',
+                      color:
+                          GuideTokens.statusRejected.withValues(alpha: 0.7),
+                      onTap: () => _confirmDelete(context),
+                    )
+                  : _IconAction(
+                      icon: Icons.flag_outlined,
+                      label: '举报',
+                      color: tertiary,
+                      onTap: onReport,
                     ),
-                  ),
-                  PopupMenuItem(
-                    value: 'block',
-                    child: Row(
-                      children: [
-                        Icon(Icons.block, size: 16),
-                        SizedBox(width: 8),
-                        Text('拉黑此用户'),
-                      ],
-                    ),
-                  ),
-                ],
-                onSelected: (value) {
-                  switch (value) {
-                    case 'report':
-                      onReport?.call();
-                    case 'block':
-                      onBlock?.call();
-                  }
-                },
-              ),
             ),
           ),
+        ],
       ],
     );
   }
@@ -898,7 +848,6 @@ class _ReplyThread extends StatelessWidget {
   final ValueChanged<GuideComment>? onDislike;
   final ValueChanged<GuideComment>? onDelete;
   final ValueChanged<GuideComment>? onReport;
-  final ValueChanged<GuideComment>? onBlock;
 
   const _ReplyThread({
     required this.parent,
@@ -912,7 +861,6 @@ class _ReplyThread extends StatelessWidget {
     this.onDislike,
     this.onDelete,
     this.onReport,
-    this.onBlock,
   });
 
   @override
@@ -947,7 +895,6 @@ class _ReplyThread extends StatelessWidget {
                   : () => onDislike?.call(replies[i]),
               onDelete: () => onDelete?.call(replies[i]),
               onReport: () => onReport?.call(replies[i]),
-              onBlock: () => onBlock?.call(replies[i]),
             ),
             if (i < replies.length - 1)
               const SizedBox(height: GuideTokens.space16),
