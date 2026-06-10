@@ -104,6 +104,16 @@ class ServerAddressMappingService {
     return _ipToDomainCache.containsKey(ipAddress);
   }
 
+  /// 同步判断某个地址的映射是否已就绪（作为 IP key 或 domain value 命中）。
+  ///
+  /// 供调用方在调用 [ensureMapping] 之前判断是否真的需要异步补登，
+  /// 避免对"已就绪"的地址也进入补登中状态而误导地址比对。
+  bool isMappingResolved(String address) {
+    if (address.isEmpty) return false;
+    return _ipToDomainCache.containsKey(address) ||
+        _ipToDomainCache.containsValue(address);
+  }
+
   /// 运行期间补登映射（用于用户新增/编辑自定义服务器后立即使用的场景）
   ///
   /// [address] 域名地址（host:port），异步解析其 IP 后写入缓存

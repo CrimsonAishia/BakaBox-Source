@@ -13,8 +13,6 @@ import '../../../core/utils/map_runtime_utils.dart';
 import '../../../core/utils/toast_utils.dart';
 import '../../../core/services/status_window_service.dart';
 import '../../../core/services/map_change_monitor_service.dart';
-import '../../../core/services/queue_guard_service.dart';
-import '../../../core/services/console_log_service.dart';
 import '../../../core/widgets/map_background.dart';
 import '../../../core/widgets/csgo_legacy_install_dialog.dart';
 import '../../../core/widgets/csgo_manual_launch_dialog.dart';
@@ -70,10 +68,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   StreamSubscription<Set<String>>? _monitorSubscription;
   bool _isMonitoring = false;
 
-  // 监听控制台日志状态：用于判断"用户是否已在本服务器内"，
-  // 据此置灰挤服/暖服按钮（人已在服里无需再挤/暖）。
-  StreamSubscription<ConsoleLogState>? _consoleSubscription;
-
   // 热身时间刷新定时器
   Timer? _warmupRefreshTimer;
 
@@ -98,11 +92,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     _monitorSubscription = _mapMonitorService.monitorStateStream.listen(
       _onMonitorStateChanged,
     );
-
-    // 监听控制台日志状态变化，刷新"已在本服"判断（按钮置灰）
-    _consoleSubscription = ConsoleLogService().stateStream.listen((_) {
-      if (mounted) setState(() {});
-    });
 
     // 如果处于热身状态，启动刷新定时器
     _updateWarmupTimer();
@@ -252,7 +241,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   void dispose() {
     _stateSubscription?.cancel();
     _monitorSubscription?.cancel();
-    _consoleSubscription?.cancel();
     _warmupRefreshTimer?.cancel();
     _tagPopoverShowTimer?.cancel();
     _tagPopoverHideTimer?.cancel();
@@ -1038,11 +1026,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     final isOtherServerWarming =
         isWarming && globalState.serverAddress != address;
 
-    // 用户当前是否已经稳定地在本服务器内。
-    // 人已在服里，挤服/暖服都没有意义，按钮置灰；连接不受影响（允许重连）。
-    final isAlreadyInThisServer =
-        address != null && QueueGuardService().isStablyInServer(address);
-
     // 确定连接按钮的文本和状态
     // 离线状态也允许连接（让用户可以重试）
     String connectText;
@@ -1123,7 +1106,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                       isWarming: isWarming,
                       isCurrentServerQueueing: isCurrentServerQueueing,
                       isOtherServerQueueing: isOtherServerQueueing,
-                      isAlreadyInThisServer: isAlreadyInThisServer,
                     ),
                   ),
                   _buildActionBtn(
@@ -1138,7 +1120,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                       isCurrentServerWarming: isCurrentServerWarming,
                       isOtherServerWarming: isOtherServerWarming,
                       isOtherServerQueueing: isOtherServerQueueing,
-                      isAlreadyInThisServer: isAlreadyInThisServer,
                     ),
                   ),
                 ],
@@ -1226,7 +1207,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   /// 主操作按钮
   /// 计算"挤服"按钮的点击行为；返回 null 表示按钮置灰不可点。
   ///
-  /// 置灰场景：加载中、无地址、有其他服务器在暖服（需求7）、人已在本服内。
+  /// 置灰场景：加载中、无地址、有其他服务器在暖服（需求7）。
+  /// 注意：人已在本服内不再禁用，改由挤服面板内弹窗确认（不强制拦截）。
   VoidCallback? _resolveQueueAction(
     BuildContext context, {
     required String? address,
@@ -1234,22 +1216,21 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     required bool isWarming,
     required bool isCurrentServerQueueing,
     required bool isOtherServerQueueing,
-    required bool isAlreadyInThisServer,
   }) {
     // 离线状态也允许挤服（让用户重试），只在加载中 / 无地址 / 暖服中禁用
     if (isLoading || address == null || isWarming) return null;
     // 正在挤本服：点击打开挤服面板
     if (isCurrentServerQueueing) return () => _openQueueDialog(context, address);
-    // 人已在本服内，无需再挤
-    if (isAlreadyInThisServer) return null;
     // 其他服务器正在挤服：提示忙碌
     if (isOtherServerQueueing) return () => _showQueueBusyTip(context);
+    // 人已在本服内：不禁用按钮，打开挤服面板后由其内部弹窗确认（不强制拦截）
     return () => _showQueueWindow(context);
   }
 
   /// 计算"暖服"按钮的点击行为；返回 null 表示按钮置灰不可点。
   ///
-  /// 置灰场景：加载中、无地址、本服正在挤服、人已在本服内。
+  /// 置灰场景：加载中、无地址、本服正在挤服。
+  /// 注意：人已在本服内不再禁用，改由暖服面板内弹窗确认（不强制拦截）。
   VoidCallback? _resolveWarmupAction(
     BuildContext context, {
     required String? address,
@@ -1258,14 +1239,11 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     required bool isCurrentServerWarming,
     required bool isOtherServerWarming,
     required bool isOtherServerQueueing,
-    required bool isAlreadyInThisServer,
   }) {
     // 离线状态也允许暖服，只在加载中 / 无地址 / 本服挤服中禁用
     if (isLoading || address == null || isCurrentServerQueueing) return null;
     // 正在暖本服：点击打开暖服面板
     if (isCurrentServerWarming) return () => _openWarmupDialog(context, address);
-    // 人已在本服内，无需再暖
-    if (isAlreadyInThisServer) return null;
     // 其他服务器正在暖服 / 挤服：提示忙碌
     if (isOtherServerWarming) return () => _showWarmupBusyTip(context);
     if (isOtherServerQueueing) return () => _showQueueBusyTip(context);

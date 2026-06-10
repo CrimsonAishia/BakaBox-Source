@@ -12,6 +12,7 @@ import '../../../core/bloc/queue_users/queue_users_event.dart';
 import '../../../core/bloc/queue_users/queue_users_state.dart';
 import '../../../core/models/server_models.dart';
 import '../../../core/services/status_window_service.dart';
+import '../../../core/services/queue_guard_service.dart';
 import '../../../core/services/steam_user_service.dart';
 import '../../../core/utils/map_utils.dart';
 import '../../../core/utils/player_count_utils.dart';
@@ -869,18 +870,30 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
   ///
   /// 获取用户昵称优先级：Steam 客户端 > GSI > 登录用户名 > null（匿名）
   Future<void> _startQueue(BuildContext context) async {
+    // 在任何 await 之前先取出依赖，避免 BuildContext 跨异步使用
+    final authState = context.read<AuthBloc>().state;
+    final usersBloc = context.read<QueueUsersBloc>();
+    final queueBloc = context.read<QueueBloc>();
+
+    // 入口检查：若检测到用户当前已稳定地在该服务器内，弹窗提示但不强制拦截，
+    // 用户确认"仍要继续"则带 force 标志照常挤服。
+    bool force = false;
+    if (QueueGuardService().isStablyInServer(widget.serverAddress)) {
+      final confirmed = await _showAlreadyInServerDialog(context);
+      if (confirmed != true) return;
+      force = true;
+    }
+
+    if (!mounted) return;
+
     // 清空活动日志和用户缓存（每次开始挤服都重新开始）
     setState(() {
       _activities.clear();
       _userInfoCache.clear();
     });
 
-    // 获取当前用户信息（在 await 之前获取，避免 BuildContext 跨异步使用）
-    final authState = context.read<AuthBloc>().state;
     final isAuthenticated = authState.isAuthenticated;
     final userInfo = authState.userInfo;
-    final usersBloc = context.read<QueueUsersBloc>();
-    final queueBloc = context.read<QueueBloc>();
 
     // 获取 Steam 用户名（优先级：Steam 配置 > GSI）
     final steamUsername = await _steamUserService.getCurrentUsername();
@@ -900,7 +913,42 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
     // 构建 QueueUsersJoin 事件，包含当前用户信息
     // 后端不返回当前用户，需要在客户端把自己加入列表
     usersBloc.add(QueueUsersJoin(nickname: nickname, avatarUrl: avatarUrl));
-    queueBloc.add(const QueueStart());
+    queueBloc.add(QueueStart(force: force));
+  }
+
+  /// "已在该服务器"确认弹窗：返回 true 表示用户仍要继续挤服。
+  Future<bool?> _showAlreadyInServerDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Row(
+          children: [
+            Icon(MdiIcons.alertCircleOutline,
+                color: const Color(0xFFFF6E6E), size: 22),
+            const SizedBox(width: 8),
+            const Text('你已经在该服务器里了'),
+          ],
+        ),
+        content: const Text('检测到你当前已在该服务器中，继续挤服可能没有必要。是否仍要继续？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF6E6E),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('仍要挤服'),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildLaunchGameButton(BuildContext context, QueueBlocState state) {

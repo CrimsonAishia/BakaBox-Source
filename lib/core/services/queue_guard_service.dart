@@ -128,6 +128,16 @@ class QueueGuardService {
   /// 补登期间 location getter 暂时返回保守的 inUnknownServer。
   void setTarget(String address) {
     _targetAddress = address;
+
+    // 目标地址的映射若已就绪（绝大多数场景：服务器在列表里、应用启动时已 DNS），
+    // 无需异步补登，也不应进入"补登中"状态——否则 location getter 会把当前
+    // 抓到的（已知的）其他服地址保守判定为 inUnknownServer，造成"在 A 服挤 B 服"
+    // 时入口预判误报"你已经在该服务器里了"。
+    if (ServerAddressMappingService().isMappingResolved(address)) {
+      _isEnsuringMapping = false;
+      return;
+    }
+
     _isEnsuringMapping = true;
     // 异步补登映射（最多 2 秒），完成后清除标志
     ServerAddressMappingService()
@@ -193,8 +203,13 @@ class QueueGuardService {
         if (_addressMatches(consoleAddr)) {
           return GuardLocation.inTargetServer;
         }
-        // 补登中地址比对结果不可信 → 保守 unknown
-        if (_isEnsuringMapping) {
+        // 补登中地址比对结果不可信 → 保守 unknown。
+        // 但若 console 抓到的当前地址本身已在映射缓存中（已知服务器），
+        // 则上面的 _addressMatches 比对结果是可信的：既然没匹配上目标，
+        // 说明确实在另一台已知服务器里，应判定为 inOtherServer，
+        // 避免"在 A 服挤 B 服"被误判为已在目标服。
+        if (_isEnsuringMapping &&
+            !ServerAddressMappingService().hasMapping(consoleAddr)) {
           return GuardLocation.inUnknownServer;
         }
         if (!ServerAddressMappingService().isLoaded) {
