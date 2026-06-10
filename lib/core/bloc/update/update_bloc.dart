@@ -103,12 +103,17 @@ class UpdateBloc extends Bloc<UpdateEvent, UpdateState> {
           downloadedFilePath: filePath,
         ),
       );
+    } on UpdateCancelledException {
+      // 用户主动取消：状态已在 _onCancel 中置为 cancelled，
+      // 这里不再 emit，避免覆盖「已取消」状态。
+      LogService.i('下载已取消');
     } catch (e) {
       LogService.e('下载更新失败', e);
       emit(
         state.copyWith(
           errorMessage: ErrorUtils.getErrorMessage(e, defaultMessage: '下载更新失败'),
           status: UpdateStatus.failed,
+          clearProgress: true,
         ),
       );
     }
@@ -194,14 +199,11 @@ class UpdateBloc extends Bloc<UpdateEvent, UpdateState> {
       ) {
         emit(state.copyWith(downloadProgress: progress));
       });
-      // iOS 直接跳转商店，显示完成状态
-      // 其他平台打开安装包后显示完成状态
-      if (PlatformUtils.isIOS) {
-        emit(state.copyWith(status: UpdateStatus.completed));
-      } else {
-        emit(state.copyWith(status: UpdateStatus.installing));
-        emit(state.copyWith(status: UpdateStatus.completed));
-      }
+      // iOS 跳转商店、macOS/Linux 打开安装包后，均视为流程完成
+      emit(state.copyWith(status: UpdateStatus.completed));
+    } on UpdateCancelledException {
+      // 用户主动取消：状态已在 _onCancel 中置为 cancelled，不覆盖
+      LogService.i('下载已取消');
     } catch (e) {
       LogService.e('下载安装更新失败', e);
       emit(
@@ -211,6 +213,7 @@ class UpdateBloc extends Bloc<UpdateEvent, UpdateState> {
             defaultMessage: '下载安装更新失败',
           ),
           status: UpdateStatus.failed,
+          clearProgress: true,
         ),
       );
     }
@@ -248,12 +251,17 @@ class UpdateBloc extends Bloc<UpdateEvent, UpdateState> {
 
   Future<void> _onCancel(UpdateCancel event, Emitter<UpdateState> emit) async {
     if (state.status == UpdateStatus.downloading) {
+      // 真正中断底层下载
+      _updateService.cancelDownload();
       // 上报取消下载
       if (state.updateInfo != null) {
         await _updateService.reportCancelled(state.updateInfo!);
       }
       emit(
-        state.copyWith(status: UpdateStatus.cancelled, downloadProgress: null),
+        state.copyWith(
+          status: UpdateStatus.cancelled,
+          clearProgress: true,
+        ),
       );
     }
   }

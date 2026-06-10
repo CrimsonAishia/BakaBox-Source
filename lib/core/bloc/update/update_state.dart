@@ -28,13 +28,19 @@ class UpdateState extends Equatable {
     String? errorMessage,
     String? downloadedFilePath,
     bool clearError = false,
+    bool clearProgress = false,
+    bool clearDownloadedFilePath = false,
   }) {
     return UpdateState(
       status: status ?? this.status,
       updateInfo: updateInfo ?? this.updateInfo,
-      downloadProgress: downloadProgress ?? this.downloadProgress,
+      downloadProgress: clearProgress
+          ? null
+          : (downloadProgress ?? this.downloadProgress),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      downloadedFilePath: downloadedFilePath ?? this.downloadedFilePath,
+      downloadedFilePath: clearDownloadedFilePath
+          ? null
+          : (downloadedFilePath ?? this.downloadedFilePath),
     );
   }
 
