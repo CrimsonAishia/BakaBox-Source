@@ -130,7 +130,14 @@ class _UpdateDialogState extends State<UpdateDialog>
               // 检查是否是通过"取消"按钮关闭的（通过 result 判断）
               // 如果 result 为 null，说明是系统返回或点击外部，需要上报
               if (result == null) {
-                context.read<UpdateBloc>().add(UpdateSkip());
+                final updateBloc = context.read<UpdateBloc>();
+                // 下载中通过返回键/点击外部关闭：同样需要中断下载，
+                // 否则后台会继续下载完。非下载态则上报 skipped。
+                if (updateBloc.state.status == UpdateStatus.downloading) {
+                  updateBloc.add(UpdateCancel());
+                } else {
+                  updateBloc.add(UpdateSkip());
+                }
               }
             }
           },
@@ -538,8 +545,14 @@ class _UpdateDialogState extends State<UpdateDialog>
             borderRadius: BorderRadius.circular(12),
             onTap: isEnabled
                 ? () {
-                    // 用户点击取消按钮，上报跳过更新
-                    context.read<UpdateBloc>().add(UpdateSkip());
+                    final updateBloc = context.read<UpdateBloc>();
+                    // 下载进行中点关闭：中断下载并上报 cancelled，
+                    // 否则后台下载会继续跑完。非下载态则上报 skipped。
+                    if (updateBloc.state.status == UpdateStatus.downloading) {
+                      updateBloc.add(UpdateCancel());
+                    } else {
+                      updateBloc.add(UpdateSkip());
+                    }
                     // 使用 result 参数标记是通过按钮关闭的
                     Navigator.of(context).pop('button_close');
                   }

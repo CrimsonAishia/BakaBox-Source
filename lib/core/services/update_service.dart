@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:crypto/crypto.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
@@ -19,6 +20,14 @@ class UpdateException implements AppException {
   const UpdateException(this.message);
 }
 
+/// 下载被用户取消异常
+class UpdateCancelledException implements AppException {
+  @override
+  final String message;
+
+  const UpdateCancelledException([this.message = '下载已取消']);
+}
+
 class UpdateService {
   final UpdateApi _updateApi = UpdateApi();
   static const String _keyLastCheckTime = 'last_update_check_time';
@@ -26,6 +35,16 @@ class UpdateService {
   static const String _keyPendingInstallFromVersion =
       'pending_install_from_version';
   static const int _minCheckIntervalHours = 6;
+
+  /// 当前下载的取消令牌，用户取消下载时调用 [cancelDownload]
+  CancelToken? _downloadCancelToken;
+
+  /// 取消当前正在进行的下载
+  void cancelDownload() {
+    if (_downloadCancelToken != null && !_downloadCancelToken!.isCancelled) {
+      _downloadCancelToken!.cancel('用户取消下载');
+    }
+  }
 
   /// 检查并上报安装成功（应用启动时调用）
   ///
@@ -57,8 +76,7 @@ class UpdateService {
         );
 
         // 清除待安装标记
-        await StorageUtils.remove(_keyPendingInstallVersion);
-        await StorageUtils.remove(_keyPendingInstallFromVersion);
+        await _clearPendingInstallMarkers();
       }
     } catch (e) {
       // 失败不影响应用启动，静默处理
@@ -103,6 +121,11 @@ class UpdateService {
     AppUpdateInfo updateInfo,
     void Function(DownloadProgress) onProgress,
   ) async {
+    // iOS 不支持直接下载安装包，应走 downloadAndInstallUpdate 跳转下载页
+    if (PlatformUtils.isIOS) {
+      throw const UpdateException('iOS 请前往下载页面更新');
+    }
+
     if (updateInfo.downloadUrl == null &&
         updateInfo.fallbackDownloadUrl == null) {
       throw const UpdateException('下载地址不可用');
@@ -114,20 +137,44 @@ class UpdateService {
     );
     final savePath = '${directory.path}/$fileName';
 
+    // 为本次下载创建取消令牌
+    final cancelToken = CancelToken();
+    _downloadCancelToken = cancelToken;
+
     String downloadedFilePath;
     try {
       downloadedFilePath = await _downloadWithFallback(
         updateInfo: updateInfo,
         savePath: savePath,
         onProgress: onProgress,
+        cancelToken: cancelToken,
       );
-    } catch (e) {
+    } on DioException catch (e) {
+      if (CancelToken.isCancel(e)) {
+        // 用户主动取消：清理半成品文件，抛出取消异常由上层识别
+        await _deleteFileQuietly(savePath);
+        throw const UpdateCancelledException();
+      }
       await _reportResult(
         updateInfo,
         'download_failed',
         errorMessage: _getErrorMessageForReport(e),
       );
       rethrow;
+    } catch (e) {
+      // 取消可能被包装成 UpdateException 抛出
+      if (cancelToken.isCancelled) {
+        await _deleteFileQuietly(savePath);
+        throw const UpdateCancelledException();
+      }
+      await _reportResult(
+        updateInfo,
+        'download_failed',
+        errorMessage: _getErrorMessageForReport(e),
+      );
+      rethrow;
+    } finally {
+      _downloadCancelToken = null;
     }
 
     // 校验文件MD5（下载成功后单独处理，不归入 download_failed）
@@ -136,13 +183,16 @@ class UpdateService {
         downloadedFilePath,
         updateInfo.fileMd5!,
       );
-      if (isValid == false) {
-        // isValid == null 表示 IO 错误，无法判断，跳过校验继续安装
-        try {
-          await File(downloadedFilePath).delete();
-        } catch (_) {}
+      // isValid == false 校验不通过；isValid == null 表示 IO 读取失败，
+      // 文件状态未知，同样视为不可信，避免安装损坏/不完整的文件。
+      if (isValid != true) {
+        await _deleteFileQuietly(downloadedFilePath);
         await _reportResult(updateInfo, 'verify_failed');
-        throw const UpdateException('文件完整性校验失败\n下载的文件可能已损坏，请重新下载');
+        throw UpdateException(
+          isValid == false
+              ? '文件完整性校验失败\n下载的文件可能已损坏，请重新下载'
+              : '无法校验文件完整性\n请重新下载',
+        );
       }
     }
 
@@ -173,6 +223,8 @@ class UpdateService {
       }
       await _installUpdate(filePath);
     } catch (e) {
+      // 安装启动失败：清除待安装标记，避免下次启动误报安装成功
+      await _clearPendingInstallMarkers();
       // 上报安装启动失败
       if (updateInfo != null) {
         await _reportResult(
@@ -214,6 +266,10 @@ class UpdateService {
     );
     final savePath = '${directory.path}/$fileName';
 
+    // 为本次下载创建取消令牌
+    final cancelToken = CancelToken();
+    _downloadCancelToken = cancelToken;
+
     // 下载文件（主地址失败时自动切换备用地址）
     final String filePath;
     try {
@@ -221,26 +277,46 @@ class UpdateService {
         updateInfo: updateInfo,
         savePath: savePath,
         onProgress: onProgress,
+        cancelToken: cancelToken,
       );
-    } catch (e) {
+    } on DioException catch (e) {
+      if (CancelToken.isCancel(e)) {
+        await _deleteFileQuietly(savePath);
+        throw const UpdateCancelledException();
+      }
       await _reportResult(
         updateInfo,
         'download_failed',
         errorMessage: _getErrorMessageForReport(e),
       );
       rethrow;
+    } catch (e) {
+      if (cancelToken.isCancelled) {
+        await _deleteFileQuietly(savePath);
+        throw const UpdateCancelledException();
+      }
+      await _reportResult(
+        updateInfo,
+        'download_failed',
+        errorMessage: _getErrorMessageForReport(e),
+      );
+      rethrow;
+    } finally {
+      _downloadCancelToken = null;
     }
 
     // 校验文件MD5（下载成功后单独处理，不归入 download_failed）
     if (updateInfo.fileMd5 != null) {
       final isValid = await _verifyFileMd5(filePath, updateInfo.fileMd5!);
-      if (isValid == false) {
-        // isValid == null 表示 IO 错误，无法判断，跳过校验继续安装
-        try {
-          await File(filePath).delete();
-        } catch (_) {}
+      // isValid == null（IO 读取失败）同样视为不可信，不放行安装
+      if (isValid != true) {
+        await _deleteFileQuietly(filePath);
         await _reportResult(updateInfo, 'verify_failed');
-        throw const UpdateException('文件完整性校验失败\n下载的文件可能已损坏，请重新下载');
+        throw UpdateException(
+          isValid == false
+              ? '文件完整性校验失败\n下载的文件可能已损坏，请重新下载'
+              : '无法校验文件完整性\n请重新下载',
+        );
       }
     }
 
@@ -262,6 +338,8 @@ class UpdateService {
       await _reportResult(updateInfo, 'install_started');
       await _installUpdate(filePath);
     } catch (e) {
+      // 安装启动失败：清除待安装标记，避免下次启动误报安装成功
+      await _clearPendingInstallMarkers();
       await _reportResult(
         updateInfo,
         'install_failed',
@@ -339,6 +417,7 @@ class UpdateService {
     required AppUpdateInfo updateInfo,
     required String savePath,
     required void Function(DownloadProgress) onProgress,
+    CancelToken? cancelToken,
   }) async {
     final primaryUrl = updateInfo.downloadUrl;
     final fallbackUrl = updateInfo.fallbackDownloadUrl;
@@ -355,15 +434,22 @@ class UpdateService {
       final initialUrl = (primaryUrl != null && primaryUrl.isNotEmpty)
           ? primaryUrl
           : fallbackUrl!;
-      return await _updateApi.downloadUpdate(initialUrl, savePath, onProgress);
+      return await _updateApi.downloadUpdate(
+        initialUrl,
+        savePath,
+        onProgress,
+        cancelToken: cancelToken,
+      );
     } catch (e) {
+      // 用户主动取消，不再重试，直接向上抛出
+      if (e is DioException && CancelToken.isCancel(e)) rethrow;
+      if (cancelToken != null && cancelToken.isCancelled) rethrow;
+
       firstTryError = e;
       LogService.w('[UpdateService] 首次下载尝试失败', e);
 
       // 删除可能存在的不完整文件
-      try {
-        await File(savePath).delete();
-      } catch (_) {}
+      await _deleteFileQuietly(savePath);
     }
 
     // 第二阶段：重新获取更新信息以刷新链接，进行最后一次尝试
@@ -399,13 +485,40 @@ class UpdateService {
         throw const UpdateException('无法获取有效的备用下载地址');
       }
 
-      return await _updateApi.downloadUpdate(urlToUse, savePath, onProgress);
+      return await _updateApi.downloadUpdate(
+        urlToUse,
+        savePath,
+        onProgress,
+        cancelToken: cancelToken,
+      );
     } catch (e2) {
+      // 用户主动取消，不再包装成下载失败异常
+      if (e2 is DioException && CancelToken.isCancel(e2)) rethrow;
+      if (cancelToken != null && cancelToken.isCancelled) rethrow;
+
       LogService.e('[UpdateService] 刷新地址后下载依然失败', e2);
       throw UpdateException(
         '首次尝试失败: ${_getErrorMessageForReport(firstTryError)}\n重试也失败: ${_getErrorMessageForReport(e2)}',
       );
     }
+  }
+
+  /// 静默删除文件（忽略所有异常）
+  Future<void> _deleteFileQuietly(String filePath) async {
+    try {
+      final file = File(filePath);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (_) {}
+  }
+
+  /// 清除待安装标记
+  Future<void> _clearPendingInstallMarkers() async {
+    try {
+      await StorageUtils.remove(_keyPendingInstallVersion);
+      await StorageUtils.remove(_keyPendingInstallFromVersion);
+    } catch (_) {}
   }
 
   /// 校验文件MD5，返回 null 表示无法读取文件（IO 错误）
