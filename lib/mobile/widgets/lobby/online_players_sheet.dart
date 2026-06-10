@@ -478,7 +478,7 @@ class _PlayerTileMobile extends StatelessWidget {
                       ),
                     ),
                     child: const Text(
-                      '你',
+                      '我',
                       style: TextStyle(
                         color: Color(0xFF1D9BF0),
                         fontSize: 10,
