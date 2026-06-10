@@ -12,7 +12,6 @@ import '../../../core/bloc/queue_users/queue_users_event.dart';
 import '../../../core/bloc/queue_users/queue_users_state.dart';
 import '../../../core/models/server_models.dart';
 import '../../../core/services/status_window_service.dart';
-import '../../../core/services/queue_guard_service.dart';
 import '../../../core/services/steam_user_service.dart';
 import '../../../core/utils/toast_utils.dart';
 import '../../../core/widgets/csgo_manual_launch_dialog.dart';
@@ -225,13 +224,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent>
                 _lastToastConnectionState != QueueConnectionState.connected) {
               _lastToastConnectionState = QueueConnectionState.connected;
               // WebSocket 断开由 StatusWindowService 统一处理
-              // 区分两种成功：本次挤服进服（进去啦）vs 点挤服时人本就在服里
-              final isAlreadyInServer =
-                  state.connectionMessage == kAlreadyInServerMessage;
-              ToastUtils.showSuccess(
-                context,
-                isAlreadyInServer ? kAlreadyInServerMessage : '进去啦！',
-              );
+              ToastUtils.showSuccess(context, '进去啦！');
               // 延迟关闭窗口，让用户看到成功提示
               Future.delayed(const Duration(milliseconds: 500), () {
                 if (context.mounted) {
@@ -566,15 +559,6 @@ class _QueueWindowContentState extends State<_QueueWindowContent>
     final usersBloc = context.read<QueueUsersBloc>();
     final queueBloc = context.read<QueueBloc>();
 
-    // 入口检查：若检测到用户当前已稳定地在该服务器内，弹窗提示但不强制拦截，
-    // 用户确认"仍要继续"则带 force 标志照常挤服。
-    bool force = false;
-    if (QueueGuardService().isStablyInServer(widget.serverAddress)) {
-      final confirmed = await _showAlreadyInServerDialog(context);
-      if (confirmed != true) return;
-      force = true;
-    }
-
     if (!mounted) return;
 
     // 开始新的挤服会话：重置持久化的活动日志、竞技场位置与自己加入标记，
@@ -602,42 +586,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent>
     // 构建 QueueUsersJoin 事件，包含当前用户信息
     // 后端不返回当前用户，需要在客户端把自己加入列表
     usersBloc.add(QueueUsersJoin(nickname: nickname, avatarUrl: avatarUrl));
-    queueBloc.add(QueueStart(force: force));
-  }
-
-  /// "已在该服务器"确认弹窗：返回 true 表示用户仍要继续挤服。
-  Future<bool?> _showAlreadyInServerDialog(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Row(
-          children: [
-            Icon(MdiIcons.alertCircleOutline,
-                color: const Color(0xFFFF6E6E), size: 22),
-            const SizedBox(width: 8),
-            const Text('你已经在该服务器里了'),
-          ],
-        ),
-        content: const Text('检测到你当前已在该服务器中，继续挤服可能没有必要。是否仍要继续？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF6E6E),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('仍要挤服'),
-          ),
-        ],
-      ),
-    );
+    queueBloc.add(const QueueStart());
   }
 
   Widget _buildLaunchGameButton(BuildContext context, QueueBlocState state) {
