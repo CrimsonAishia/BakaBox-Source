@@ -61,11 +61,12 @@ class AnnouncementBloc extends Bloc<AnnouncementEvent, AnnouncementState> {
       if (isClosed) return;
       add(AnnouncementRealtimeReceived(payload));
     });
-    // 断线重连后，announcements 频道不回放断线期间的变更，
-    // 复用去抖刷新主动对账一次（合并 200ms 内的重连抖动）
-    _reconnectedSubscription = RealtimeService().reconnectedStream.listen((_) {
+    // announcements 频道不回放断线期间的变更，监听对账信号主动拉取一次。
+    // reconcileStream 覆盖「断线重连」+「连接保持期间周期性兜底」，
+    // 复用去抖刷新合并 200ms 内的抖动
+    _reconnectedSubscription = RealtimeService().reconcileStream.listen((_) {
       if (isClosed) return;
-      LogService.d('[AnnouncementBloc] 重连成功，主动对账');
+      LogService.d('[AnnouncementBloc] 对账信号，主动拉取');
       _scheduleDebouncedRefresh();
     });
     LogService.d('[AnnouncementBloc] 实时通道已启动');

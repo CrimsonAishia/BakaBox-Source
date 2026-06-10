@@ -39,12 +39,32 @@ class RealtimeService {
   static const Duration _initialReconnectDelay = Duration(seconds: 1);
   static const int _sendChannelBufferLimit = 256;
 
+  /// 连接假死检测：每隔多久检查一次「最近是否收到过数据」
+  static const Duration _livenessCheckInterval = Duration(seconds: 15);
+
+  /// 连接假死阈值：超过该时长未收到任何帧（含 pong）判定连接死亡。
+  /// 服务端 / 客户端均 30s 一次心跳，留 2.5 个周期容差，避免误判。
+  static const Duration _livenessTimeout = Duration(seconds: 75);
+
+  /// 周期性对账间隔：即使连接一直保持，也定期触发一次对账，
+  /// 兜底「连接正常但服务端 send 缓冲溢出丢消息」「跨实例桥接降级期间漏推」等情况。
+  static const Duration _periodicReconcileInterval = Duration(minutes: 3);
+
   // ---- 内部状态 ----
 
   WebSocketChannel? _channel;
   StreamSubscription<dynamic>? _channelSubscription;
   Timer? _heartbeatTimer;
   Timer? _reconnectTimer;
+
+  /// 连接假死检测定时器
+  Timer? _livenessTimer;
+
+  /// 周期性对账定时器
+  Timer? _periodicReconcileTimer;
+
+  /// 最近一次收到任何服务端帧的时间（用于假死检测）
+  DateTime? _lastInboundAt;
 
   /// 当前连接状态
   RealtimeConnectionState _connectionState = RealtimeConnectionState.idle;
@@ -84,6 +104,19 @@ class RealtimeService {
   /// 在重连成功后通过各自的 REST 接口主动对账一次，防止数据不及时。
   /// 带 snapshot 的频道（server.map.runtime / score.updates）靠重订阅自动补齐，无需处理。
   final StreamController<void> _reconnectedController =
+      StreamController<void>.broadcast();
+
+  /// 对账信号流（重连成功 + 周期性触发）
+  ///
+  /// 与 [reconnectedStream] 的区别：
+  /// - [reconnectedStream] 仅在「断线重连」时触发一次，适合做较重的操作
+  ///   （如清空整片缓存）。
+  /// - [reconcileStream] 在重连时触发，并且在连接持续保持期间每隔
+  ///   [_periodicReconcileInterval] 也触发一次，用于兜底「连接正常但服务端
+  ///   丢消息」（send 缓冲溢出 / 跨实例桥接降级）这类无断线的遗漏。
+  ///   change-only 频道（announcements / notifications / workshop.changelog）
+  ///   的轻量 REST 对账应监听此流。
+  final StreamController<void> _reconcileController =
       StreamController<void>.broadcast();
 
   /// 重连延迟（指数退避）
@@ -134,6 +167,12 @@ class RealtimeService {
   /// change-only 频道的业务侧可监听此流，在重连后主动调一次 REST 对账。
   Stream<void> get reconnectedStream => _reconnectedController.stream;
 
+  /// 对账信号流（重连成功 + 连接保持期间周期性触发）
+  ///
+  /// change-only 频道的轻量 REST 对账应监听此流，而非 [reconnectedStream]，
+  /// 以便覆盖「无断线但丢消息」的场景。
+  Stream<void> get reconcileStream => _reconcileController.stream;
+
   /// 启动服务（应用启动时调用一次）
   Future<void> start() async {
     if (_disposed) return;
@@ -157,6 +196,8 @@ class RealtimeService {
     _reconnectTimer = null;
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
+    _stopLivenessWatch();
+    _stopPeriodicReconcile();
 
     await _channelSubscription?.cancel();
     _channelSubscription = null;
@@ -169,7 +210,9 @@ class RealtimeService {
     _subscribedChannels.clear();
     _pendingSubscribeChannels.clear();
     _connectedToken = null;
-    _hasConnectedBefore = false;
+    // 保留 _hasConnectedBefore：stop 期间必然漏掉 change-only 频道的变更，
+    // 下次 start 恢复时应按「重连」语义触发一次对账（reconnected + reconcile），
+    // 而不是被当成首次连接静默跳过
     _resetReconnectDelay();
 
     _setConnectionState(RealtimeConnectionState.idle);
@@ -231,6 +274,8 @@ class RealtimeService {
     AuthService.instance.removeLoginStateListener(_onLoginStateChanged);
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
+    _stopLivenessWatch();
+    _stopPeriodicReconcile();
     await _channelSubscription?.cancel();
     await _channel?.sink.close(ws_status.normalClosure);
     _channel = null;
@@ -242,6 +287,7 @@ class RealtimeService {
     await _connectionStateController.close();
     await _forceLogoutController.close();
     await _reconnectedController.close();
+    await _reconcileController.close();
     _setConnectionState(RealtimeConnectionState.disposed);
   }
 
@@ -282,6 +328,7 @@ class RealtimeService {
               _sendAuth(token);
             }
             _startHeartbeat();
+            _startLivenessWatch();
           })
           .catchError((Object e, StackTrace st) {
             LogService.e('[Realtime] WebSocket ready 失败', e, st);
@@ -337,6 +384,8 @@ class RealtimeService {
   Future<void> _cleanupCurrentConnection() async {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
+    _stopLivenessWatch();
+    _stopPeriodicReconcile();
     await _channelSubscription?.cancel();
     _channelSubscription = null;
     try {
@@ -368,10 +417,64 @@ class RealtimeService {
     });
   }
 
+  // ---- 连接假死检测 ----
+
+  /// 启动假死检测：定期检查最近一次收到帧的时间，超过阈值则主动重连。
+  ///
+  /// 覆盖「TCP 半开」场景：连接看似还在，但实际已不可用，`onDone` / `onError`
+  /// 迟迟不触发。靠应用层 ping + 收帧时间戳主动发现并重连。
+  void _startLivenessWatch() {
+    _lastInboundAt = DateTime.now();
+    _livenessTimer?.cancel();
+    _livenessTimer = Timer.periodic(_livenessCheckInterval, (_) {
+      if (_disposed || !_started) return;
+      final last = _lastInboundAt;
+      if (last == null) return;
+      final silence = DateTime.now().difference(last);
+      if (silence > _livenessTimeout) {
+        LogService.w(
+          '[Realtime] 连接假死检测：${silence.inSeconds}s 未收到数据，主动重连',
+        );
+        // 假死时连接状态仍是 connected，必须先切到 reconnecting，
+        // 否则 _connect() 会因「已连接」而直接 return
+        _cleanupCurrentConnection();
+        _setConnectionState(RealtimeConnectionState.reconnecting);
+        _scheduleImmediateReconnect();
+      }
+    });
+  }
+
+  void _stopLivenessWatch() {
+    _livenessTimer?.cancel();
+    _livenessTimer = null;
+  }
+
+  // ---- 周期性对账 ----
+
+  /// 连接保持期间周期性触发对账信号，兜底「无断线但丢消息」。
+  void _startPeriodicReconcile() {
+    _periodicReconcileTimer?.cancel();
+    _periodicReconcileTimer = Timer.periodic(_periodicReconcileInterval, (_) {
+      if (_disposed || !_started) return;
+      if (!isConnected) return;
+      LogService.d('[Realtime] 周期性对账');
+      if (!_reconcileController.isClosed) {
+        _reconcileController.add(null);
+      }
+    });
+  }
+
+  void _stopPeriodicReconcile() {
+    _periodicReconcileTimer?.cancel();
+    _periodicReconcileTimer = null;
+  }
+
   // ---- 收发消息 ----
 
   void _onMessage(dynamic raw) {
     try {
+      // 收到任何帧都刷新存活时间戳（含 pong / event / 回执），用于假死检测
+      _lastInboundAt = DateTime.now();
       if (raw is! String) {
         // 服务端只发 JSON 文本帧，忽略其他类型
         return;
@@ -440,11 +543,17 @@ class RealtimeService {
     // 重连后补发所有引用计数 > 0 的频道订阅
     _resubscribeAll();
 
+    // 连接确立后启动周期性对账（重连时会重置定时器）
+    _startPeriodicReconcile();
+
     // 区分首次连接与断线重连：仅重连时通知业务侧主动对账一次
     if (_hasConnectedBefore) {
       LogService.i('[Realtime] 重连成功，通知业务侧对账');
       if (!_reconnectedController.isClosed) {
         _reconnectedController.add(null);
+      }
+      if (!_reconcileController.isClosed) {
+        _reconcileController.add(null);
       }
     } else {
       _hasConnectedBefore = true;
