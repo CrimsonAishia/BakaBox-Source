@@ -58,6 +58,14 @@ class ToggleCommentLike extends GuideCommentEvent {
   List<Object?> get props => [id];
 }
 
+/// 切换评论点踩（乐观更新 + 失败回滚）
+class ToggleCommentDislike extends GuideCommentEvent {
+  final int id;
+  const ToggleCommentDislike(this.id);
+  @override
+  List<Object?> get props => [id];
+}
+
 /// 切换排序方式（最新 / 最热）
 class ChangeCommentSort extends GuideCommentEvent {
   final CommentSortType sort;

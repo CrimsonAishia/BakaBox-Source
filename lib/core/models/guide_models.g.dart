@@ -290,6 +290,8 @@ GuideComment _$GuideCommentFromJson(Map<String, dynamic> json) => GuideComment(
   authorAvatar: json['authorAvatar'] as String?,
   likeCount: (json['likeCount'] as num?)?.toInt() ?? 0,
   isLiked: json['isLiked'] as bool? ?? false,
+  dislikeCount: (json['dislikeCount'] as num?)?.toInt() ?? 0,
+  isDisliked: json['isDisliked'] as bool? ?? false,
   replyCount: (json['replyCount'] as num?)?.toInt() ?? 0,
   replies:
       (json['replies'] as List<dynamic>?)
@@ -315,6 +317,8 @@ Map<String, dynamic> _$GuideCommentToJson(GuideComment instance) =>
       'authorAvatar': instance.authorAvatar,
       'likeCount': instance.likeCount,
       'isLiked': instance.isLiked,
+      'dislikeCount': instance.dislikeCount,
+      'isDisliked': instance.isDisliked,
       'replyCount': instance.replyCount,
       'replies': instance.replies,
       'isAuthor': instance.isAuthor,

@@ -501,6 +501,10 @@ class GuideComment extends Equatable {
   @JsonKey(defaultValue: false)
   final bool isLiked;
   @JsonKey(defaultValue: 0)
+  final int dislikeCount;
+  @JsonKey(defaultValue: false)
+  final bool isDisliked;
+  @JsonKey(defaultValue: 0)
   final int replyCount;
   @JsonKey(defaultValue: <GuideComment>[])
   final List<GuideComment> replies;
@@ -524,6 +528,8 @@ class GuideComment extends Equatable {
     this.authorAvatar,
     this.likeCount = 0,
     this.isLiked = false,
+    this.dislikeCount = 0,
+    this.isDisliked = false,
     this.replyCount = 0,
     this.replies = const [],
     this.isAuthor = false,
@@ -534,6 +540,50 @@ class GuideComment extends Equatable {
   factory GuideComment.fromJson(Map<String, dynamic> json) =>
       _$GuideCommentFromJson(json);
   Map<String, dynamic> toJson() => _$GuideCommentToJson(this);
+
+  GuideComment copyWith({
+    int? id,
+    int? guideId,
+    int? parentId,
+    int? replyToId,
+    String? replyToName,
+    String? content,
+    List<String>? images,
+    int? authorId,
+    String? authorName,
+    String? authorAvatar,
+    int? likeCount,
+    bool? isLiked,
+    bool? isDisliked,
+    int? dislikeCount,
+    int? replyCount,
+    List<GuideComment>? replies,
+    bool? isAuthor,
+    bool? isDeleted,
+    DateTime? createdAt,
+  }) {
+    return GuideComment(
+      id: id ?? this.id,
+      guideId: guideId ?? this.guideId,
+      parentId: parentId ?? this.parentId,
+      replyToId: replyToId ?? this.replyToId,
+      replyToName: replyToName ?? this.replyToName,
+      content: content ?? this.content,
+      images: images ?? this.images,
+      authorId: authorId ?? this.authorId,
+      authorName: authorName ?? this.authorName,
+      authorAvatar: authorAvatar ?? this.authorAvatar,
+      likeCount: likeCount ?? this.likeCount,
+      isLiked: isLiked ?? this.isLiked,
+      isDisliked: isDisliked ?? this.isDisliked,
+      dislikeCount: dislikeCount ?? this.dislikeCount,
+      replyCount: replyCount ?? this.replyCount,
+      replies: replies ?? this.replies,
+      isAuthor: isAuthor ?? this.isAuthor,
+      isDeleted: isDeleted ?? this.isDeleted,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -549,6 +599,8 @@ class GuideComment extends Equatable {
         authorAvatar,
         likeCount,
         isLiked,
+        isDisliked,
+        dislikeCount,
         replyCount,
         replies,
         isAuthor,
