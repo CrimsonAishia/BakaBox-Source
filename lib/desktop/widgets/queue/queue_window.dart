@@ -14,22 +14,14 @@ import '../../../core/models/server_models.dart';
 import '../../../core/services/status_window_service.dart';
 import '../../../core/services/queue_guard_service.dart';
 import '../../../core/services/steam_user_service.dart';
-import '../../../core/utils/map_utils.dart';
-import '../../../core/utils/player_count_utils.dart';
 import '../../../core/utils/toast_utils.dart';
-import '../../../core/widgets/map_background.dart';
 import '../../../core/widgets/csgo_manual_launch_dialog.dart';
+import 'arena_activity_session.dart';
+import 'arena_window_widgets.dart';
 import 'queue_activity_log.dart';
 import 'queue_arena.dart';
+import 'queue_arena_session.dart';
 import 'queue_settings.dart';
-
-/// 缓存的用户信息
-class _CachedUserInfo {
-  final String userName;
-  final bool isSelf;
-
-  const _CachedUserInfo({required this.userName, required this.isSelf});
-}
 
 /// 挤服窗口
 class QueueWindow extends StatefulWidget {
@@ -131,7 +123,8 @@ class _QueueWindowContent extends StatefulWidget {
   State<_QueueWindowContent> createState() => _QueueWindowContentState();
 }
 
-class _QueueWindowContentState extends State<_QueueWindowContent> {
+class _QueueWindowContentState extends State<_QueueWindowContent>
+    with ArenaSessionBinding<_QueueWindowContent> {
   // 上一次处理的连接状态，用于防止重复 Toast
   QueueConnectionState? _lastToastConnectionState;
 
@@ -140,20 +133,19 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
   final SteamUserService _steamUserService = SteamUserService();
   StreamSubscription<OperationState>? _stateSubscription;
 
-  // 活动日志列表（限制最大条数防止内存溢出）
-  final List<QueueActivityItem> _activities = [];
-  static const int _maxActivities = 100;
-
-  // 用户信息缓存（用于在用户离开/成功时获取昵称）
-  final Map<String, _CachedUserInfo> _userInfoCache = {};
-  static const int _maxCacheSize = 50;
+  // 活动日志与竞技场状态持久化在 QueueArenaSession 中（窗口重开后保持），
+  // 且日志记录由 session 直接订阅 QueueUsersBloc 完成，
+  // 因此即使窗口关闭、挤服在后台运行，日志也会持续记录、不丢失。
+  @override
+  final QueueArenaSession session = QueueArenaSession.instance;
 
   @override
   void initState() {
     super.initState();
-    // 清除上次的活动日志和缓存
-    _activities.clear();
-    _userInfoCache.clear();
+    // 注意：不在这里清空会话数据。
+    // 会话数据在"开始挤服"时由 _startQueue 重置，在"停止挤服"时清空，
+    // 窗口关闭再重开（最小化到后台后唤醒）需要保持原有日志和竞技场用户。
+    bindSession();
 
     // 监听全局状态变化，触发 UI 更新
     _stateSubscription = _statusService.stateStream.listen((_) {
@@ -167,48 +159,8 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
   @override
   void dispose() {
     _stateSubscription?.cancel();
-    _activities.clear();
-    _userInfoCache.clear();
+    unbindSession();
     super.dispose();
-  }
-
-  /// 添加活动日志（带数量限制）
-  void _addActivity(QueueActivityItem activity) {
-    setState(() {
-      _activities.add(activity);
-      // 超过最大条数时移除最早的记录
-      if (_activities.length > _maxActivities) {
-        _activities.removeRange(0, _activities.length - _maxActivities);
-      }
-    });
-  }
-
-  /// 更新用户信息缓存
-  void _updateUserInfoCache(List<dynamic> users) {
-    for (final user in users) {
-      final uniqueId = user.uniqueId as String;
-      final nickname = user.nickname as String?;
-      final isSelf = user.isSelf as bool;
-      _userInfoCache[uniqueId] = _CachedUserInfo(
-        userName: nickname ?? (user.isAnonymous ? '未登录用户' : '用户'),
-        isSelf: isSelf,
-      );
-    }
-    // 缓存过大时清理最早的条目
-    if (_userInfoCache.length > _maxCacheSize) {
-      final keysToRemove = _userInfoCache.keys
-          .take(_userInfoCache.length - _maxCacheSize)
-          .toList();
-      for (final key in keysToRemove) {
-        _userInfoCache.remove(key);
-      }
-    }
-  }
-
-  /// 获取缓存的用户信息
-  _CachedUserInfo _getCachedUserInfo(String uniqueId) {
-    return _userInfoCache[uniqueId] ??
-        const _CachedUserInfo(userName: '用户', isSelf: false);
   }
 
   /// 处理关闭按钮点击
@@ -320,187 +272,18 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
   /// 构建头部
   Widget _buildHeader(BuildContext context, QueueBlocState state) {
     final serverInfo = state.serverInfo;
-    final mapName = serverInfo?.map ?? '未知地图';
-    final mapUrl = state.mapInfo?.mapUrl;
-
-    final players = serverInfo?.players ?? 0;
-    final maxPlayers = serverInfo?.maxPlayers ?? 0;
-    final playerColor = PlayerCountUtils.getPlayerCountColor(
-      players,
-      maxPlayers,
-    );
-
-    return Container(
-      height: 130,
-      decoration: const BoxDecoration(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        color: Color(0xFF1E293B),
-      ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // 地图背景
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: MapBackground(mapName: mapName, imageUrl: mapUrl),
-          ),
-          // 渐变遮罩
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.3),
-                  Colors.black.withValues(alpha: 0.8),
-                ],
-              ),
-            ),
-          ),
-          // 服务器信息
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 顶部：标题和关闭按钮
-                Row(
-                  children: [
-                    Icon(
-                      MdiIcons.accountMultiplePlus,
-                      size: 20,
-                      color: Colors.white,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      '挤服',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const Spacer(),
-                    // 玩家数量标签
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: playerColor.withValues(alpha: 0.9),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            MdiIcons.accountGroup,
-                            size: 14,
-                            color: Colors.white,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '$players/$maxPlayers',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // 关闭按钮
-                    InkWell(
-                      onTap: () => _handleClose(context, state),
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        child: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                // 服务器名称
-                Text(
-                  state.serverName ?? serverInfo?.hostName ?? '加载中...',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                // 服务器信息标签
-                Row(
-                  children: [
-                    _buildInfoChip(MdiIcons.map, _getFormattedMapName(mapName)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildInfoChip(MdiIcons.ip, widget.serverAddress),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          // 加载遮罩
-          if (!state.isInitialized)
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
-                ),
-              ),
-              child: const Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              ),
-            ),
-        ],
-      ),
+    return ArenaWindowHeader(
+      title: '挤服',
+      serverName: state.serverName ?? serverInfo?.hostName ?? '加载中...',
+      mapName: serverInfo?.map ?? '未知地图',
+      mapUrl: state.mapInfo?.mapUrl,
+      serverAddress: widget.serverAddress,
+      players: serverInfo?.players ?? 0,
+      maxPlayers: serverInfo?.maxPlayers ?? 0,
+      isInitialized: state.isInitialized,
+      onClose: () => _handleClose(context, state),
     );
   }
-
-  /// 获取格式化的地图名称
-  String _getFormattedMapName(String mapName) {
-    return MapUtils.formatMapName(mapName);
-  }
-
-  /// 构建信息标签
-  Widget _buildInfoChip(IconData icon, String text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: Colors.white70),
-        const SizedBox(width: 4),
-        Flexible(
-          child: Text(
-            text,
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-  }
-
   /// 构建内容区域
   Widget _buildContent(BuildContext context, QueueBlocState state) {
     return Padding(
@@ -563,96 +346,11 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return BlocConsumer<QueueUsersBloc, QueueUsersState>(
-      listenWhen: (previous, current) {
-        // 监听用户加入、离开、成功事件（只在 ID 变化时触发，避免重复）
-        return (current.joinedUserId != null &&
-                previous.joinedUserId != current.joinedUserId) ||
-            (current.leftUserId != null &&
-                previous.leftUserId != current.leftUserId) ||
-            (current.successUserId != null &&
-                previous.successUserId != current.successUserId);
-      },
-      listener: (context, usersState) {
-        // 先更新缓存（确保在处理事件前缓存是最新的）
-        _updateUserInfoCache(usersState.users);
-
-        // 用户加入
-        if (usersState.joinedUserId != null) {
-          final joinedId = usersState.joinedUserId!;
-          try {
-            final user = usersState.users.firstWhere(
-              (u) => u.uniqueId == joinedId,
-            );
-            _addActivity(
-              QueueActivityItem.fromUser(user, QueueActivityType.join),
-            );
-          } catch (_) {
-            // 用户不在列表中，使用缓存
-            final cachedInfo = _getCachedUserInfo(joinedId);
-            _addActivity(
-              QueueActivityItem(
-                id: '${joinedId}_join_${DateTime.now().millisecondsSinceEpoch}',
-                type: QueueActivityType.join,
-                userName: cachedInfo.userName,
-                isSelf: cachedInfo.isSelf,
-                timestamp: DateTime.now(),
-              ),
-            );
-          }
-        }
-
-        // 用户离开 - 优先使用 state 中保存的用户信息，其次使用缓存
-        if (usersState.leftUserId != null) {
-          final leftId = usersState.leftUserId!;
-          final leftUser = usersState.leftUser;
-          if (leftUser != null) {
-            _addActivity(
-              QueueActivityItem.fromUser(leftUser, QueueActivityType.leave),
-            );
-          } else {
-            final cachedInfo = _getCachedUserInfo(leftId);
-            _addActivity(
-              QueueActivityItem(
-                id: '${leftId}_leave_${DateTime.now().millisecondsSinceEpoch}',
-                type: QueueActivityType.leave,
-                userName: cachedInfo.userName,
-                isSelf: cachedInfo.isSelf,
-                timestamp: DateTime.now(),
-              ),
-            );
-          }
-        }
-
-        // 用户成功进入服务器 - 优先使用 state 中保存的用户信息，其次使用缓存
-        if (usersState.successUserId != null) {
-          final successId = usersState.successUserId!;
-          final successUser = usersState.successUser;
-          if (successUser != null) {
-            _addActivity(
-              QueueActivityItem.fromUser(
-                successUser,
-                QueueActivityType.success,
-              ),
-            );
-          } else {
-            final cachedInfo = _getCachedUserInfo(successId);
-            _addActivity(
-              QueueActivityItem(
-                id: '${successId}_success_${DateTime.now().millisecondsSinceEpoch}',
-                type: QueueActivityType.success,
-                userName: cachedInfo.userName,
-                isSelf: cachedInfo.isSelf,
-                timestamp: DateTime.now(),
-              ),
-            );
-          }
-        }
-      },
+    return BlocBuilder<QueueUsersBloc, QueueUsersState>(
       builder: (context, usersState) {
-        // 每次用户列表变化时更新缓存（包括 sync 事件）
-        // 确保在用户离开/成功前已缓存其信息
-        _updateUserInfoCache(usersState.users);
+        // 注意：活动日志的记录已移至 QueueArenaSession（直接订阅 QueueUsersBloc），
+        // 这样窗口关闭、后台运行时也能持续记录日志，不会出现空档。
+        // 本面板只负责渲染。
 
         // 判断服务器是否可加入
         final players = state.serverInfo?.players ?? 0;
@@ -665,20 +363,11 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
             // 竞技场面板
             Container(
               height: 250,
-              decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xFF1E293B).withValues(alpha: 0.5)
-                    : const Color(0xFFF1F5F9).withValues(alpha: 0.8),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : Colors.black.withValues(alpha: 0.05),
-                ),
-              ),
+              decoration: arenaPanelDecoration(isDark),
               child: QueueArena(
                 users: usersState.users,
-                centerWidget: _QueueServerIcon(
+                session: session,
+                centerWidget: ArenaServerIcon(
                   canJoin: canJoin,
                   hasUserJoined: hasUserJoined,
                 ),
@@ -703,7 +392,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
             ),
             const SizedBox(height: 12),
             // 活动日志
-            QueueActivityLog(activities: _activities),
+            QueueActivityLog(activities: activities),
           ],
         );
       },
@@ -780,6 +469,8 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
         child: ElevatedButton.icon(
           onPressed: () {
             // pauseQueue 内部会断开 WebSocket 连接
+            // 停止挤服时清空会话（活动日志、竞技场用户、位置），符合"除非停止挤服才清空"。
+            session.clear();
             context.read<QueueBloc>().add(const QueuePause());
           },
           icon: Icon(MdiIcons.pause, size: 18),
@@ -886,11 +577,9 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
 
     if (!mounted) return;
 
-    // 清空活动日志和用户缓存（每次开始挤服都重新开始）
-    setState(() {
-      _activities.clear();
-      _userInfoCache.clear();
-    });
+    // 开始新的挤服会话：重置持久化的活动日志、竞技场位置与自己加入标记，
+    // 并开始订阅用户事件流（后台也会持续记录日志）。
+    session.resetFor(widget.serverAddress);
 
     final isAuthenticated = authState.isAuthenticated;
     final userInfo = authState.userInfo;
@@ -1022,126 +711,6 @@ class _QueueWindowContentState extends State<_QueueWindowContent> {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// 挤服中心服务器图标组件
-///
-/// 根据服务器状态显示不同颜色的光晕：
-/// - 红色：服务器满员，无法加入
-/// - 绿色：服务器有空位，可以加入（或有用户成功加入时）
-class _QueueServerIcon extends StatefulWidget {
-  /// 是否可以加入（服务器有空位）
-  final bool canJoin;
-
-  /// 是否有用户刚成功加入
-  final bool hasUserJoined;
-
-  const _QueueServerIcon({required this.canJoin, this.hasUserJoined = false});
-
-  @override
-  State<_QueueServerIcon> createState() => _QueueServerIconState();
-}
-
-class _QueueServerIconState extends State<_QueueServerIcon>
-    with TickerProviderStateMixin {
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
-
-  // 颜色过渡动画
-  late AnimationController _colorController;
-  late Animation<Color?> _colorAnimation;
-
-  static const _greenColor = Color(0xFF22C55E);
-  static const _redColor = Color(0xFFEF4444);
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
-
-    _pulseAnimation = Tween<double>(begin: 0.6, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
-    // 颜色过渡动画控制器
-    _colorController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-
-    final initialColor = (widget.canJoin || widget.hasUserJoined)
-        ? _greenColor
-        : _redColor;
-    _colorAnimation = ColorTween(begin: initialColor, end: initialColor)
-        .animate(
-          CurvedAnimation(parent: _colorController, curve: Curves.easeInOut),
-        );
-  }
-
-  @override
-  void didUpdateWidget(_QueueServerIcon oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    final oldCanJoin = oldWidget.canJoin || oldWidget.hasUserJoined;
-    final newCanJoin = widget.canJoin || widget.hasUserJoined;
-
-    if (oldCanJoin != newCanJoin) {
-      final fromColor = oldCanJoin ? _greenColor : _redColor;
-      final toColor = newCanJoin ? _greenColor : _redColor;
-
-      _colorAnimation = ColorTween(begin: fromColor, end: toColor).animate(
-        CurvedAnimation(parent: _colorController, curve: Curves.easeInOut),
-      );
-      _colorController.forward(from: 0);
-    }
-  }
-
-  @override
-  void dispose() {
-    _pulseController.dispose();
-    _colorController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: Listenable.merge([_pulseAnimation, _colorAnimation]),
-      builder: (context, child) {
-        final glowColor = _colorAnimation.value ?? _greenColor;
-
-        return Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              // 外层光晕
-              BoxShadow(
-                color: glowColor.withValues(alpha: 0.3 * _pulseAnimation.value),
-                blurRadius: 30 * _pulseAnimation.value,
-                spreadRadius: 10 * _pulseAnimation.value,
-              ),
-              // 内层光晕
-              BoxShadow(
-                color: glowColor.withValues(alpha: 0.5 * _pulseAnimation.value),
-                blurRadius: 15 * _pulseAnimation.value,
-                spreadRadius: 3 * _pulseAnimation.value,
-              ),
-            ],
-          ),
-          child: Image.asset(
-            'assets/images/queue/server.png',
-            width: 80,
-            height: 80,
-          ),
-        );
-      },
     );
   }
 }
