@@ -431,8 +431,11 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
               if (current.needManualLaunch) return false;
               if (previous.error != current.error && current.error != null) return true;
 
-              final wasCountdown = previous.status == WarmupStatus.countdown || previous.status == WarmupStatus.launching;
-              final isCountdown = current.status == WarmupStatus.countdown || current.status == WarmupStatus.launching;
+              // 全屏倒计时弹窗仅在倒计时阶段显示。
+              // 点击"立即加入"(→launching) 或"取消"(→idle) 都应立即关闭全屏弹窗，
+              // 因此 launching 不再视为需要显示全屏弹窗的状态。
+              final wasCountdown = previous.status == WarmupStatus.countdown;
+              final isCountdown = current.status == WarmupStatus.countdown;
               if (wasCountdown != isCountdown) return true;
 
               return false;
@@ -442,8 +445,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
               // 必须在 error / needManualLaunch 的 early return 之前执行，
               // 否则启动失败（error 被设置）或需手动启动 CSGO 时，
               // 会因提前 return 而无法移除倒计时弹窗，导致全屏遮罩卡死。
-              final isCountdown = state.status == WarmupStatus.countdown ||
-                  state.status == WarmupStatus.launching;
+              final isCountdown = state.status == WarmupStatus.countdown;
               if (isCountdown && _warmupCountdownRoute == null) {
                 final warmupBloc = context.read<WarmupBloc>();
                 _warmupCountdownRoute = DialogRoute(
