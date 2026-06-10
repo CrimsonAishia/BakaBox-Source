@@ -193,7 +193,7 @@ Map<String, dynamic> _$MapDataToJson(MapData instance) => <String, dynamic>{
 MapRuntimeData _$MapRuntimeDataFromJson(Map<String, dynamic> json) =>
     MapRuntimeData(
       currentRuntime: (json['currentRuntime'] as num).toInt(),
-      weeklyOccurrences: (json['weeklyOccurrences'] as num).toInt(),
+      weeklyOccurrences: (json['weeklyOccurrences'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$MapRuntimeDataToJson(MapRuntimeData instance) =>

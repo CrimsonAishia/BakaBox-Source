@@ -509,6 +509,21 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
             _failureCountCache[address] = 0; // 重置失败计数
 
+            // 第三方接口提供了地图运行时间（map_changed_at），据此构建 mapRuntime。
+            // 运行时间完全由接口数据驱动：接口无该字段时清空，避免残留旧值。
+            final apiRuntimeSeconds = apiServerData.mapRuntimeSeconds;
+            final MapRuntimeData? apiMapRuntime = apiRuntimeSeconds != null
+                ? MapRuntimeData(currentRuntime: apiRuntimeSeconds)
+                : null;
+            final nowMs = DateTime.now().millisecondsSinceEpoch;
+            if (apiMapRuntime != null) {
+              _mapRuntimeCache[address] = apiMapRuntime;
+              _mapRuntimeLastFetchedCache[address] = nowMs;
+            } else {
+              _mapRuntimeCache.remove(address);
+              _mapRuntimeLastFetchedCache.remove(address);
+            }
+
             final updatedServer = currentServer.copyWith(
               serverData: info,
               updatedAt: DateTime.now(),
@@ -517,6 +532,10 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
               hasError: false,
               consecutiveFailures: 0,
               mapInfo: mapChanged ? null : currentServer.mapInfo,
+              mapRuntime: apiMapRuntime,
+              mapRuntimeLastFetched: apiMapRuntime != null ? nowMs : null,
+              clearMapRuntime: apiMapRuntime == null,
+              mapRuntimeError: false,
             );
 
             _updateServerByAddress(address, updatedServer, emit);

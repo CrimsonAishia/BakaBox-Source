@@ -739,7 +739,10 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
   Widget _buildLeftContent() {
     final data = widget.server.serverData;
-    final address = widget.server.serverItem.address ?? '未知地址';
+    final address =
+        widget.server.serverItem.address ??
+        widget.server.serverItem.serverAddress ??
+        '未知地址';
     // 使用 getDisplayName 方法：优先备注名，其次服务器名，最后地址
     final hostName = widget.server.serverItem.getDisplayName(data?.hostName);
     final mapName = data?.map ?? '未知地图';
@@ -1480,10 +1483,14 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       return _buildStartingStatus();
     }
 
+    // API 数据源的自定义服务器由第三方接口提供地图运行时间（map_changed_at），
+    // 需要显示运行时间；其余自定义服务器（A2S 模式）不显示。
+    final isApiSourced = widget.server.serverItem.dataSourceMode == 'api';
     final showRuntime =
         data?.map != null &&
         !widget.server.isLoading &&
-        !widget.server.serverItem.isCustom;
+        (!widget.server.serverItem.isCustom ||
+            (isApiSourced && widget.server.mapRuntime != null));
 
     Color bgColor;
     if (players >= maxPlayers && maxPlayers > 0) {

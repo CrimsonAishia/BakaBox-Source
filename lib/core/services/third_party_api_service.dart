@@ -16,6 +16,10 @@ class CS2ZeServerData {
   final List<String> serverTags;
   final int? appId;
 
+  /// 地图开始运行的时间（Unix 时间戳，单位秒）。
+  /// 第三方接口字段 `map_changed_at`，用于计算地图当前运行时间。
+  final int? mapChangedAt;
+
   CS2ZeServerData({
     required this.gameType,
     this.imageUrl,
@@ -28,6 +32,7 @@ class CS2ZeServerData {
     required this.serverKey,
     required this.serverTags,
     this.appId,
+    this.mapChangedAt,
   });
 
   factory CS2ZeServerData.fromJson(Map<String, dynamic> json) {
@@ -43,7 +48,17 @@ class CS2ZeServerData {
       serverKey: json['server_key'] as String? ?? '',
       serverTags: (json['server_tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
       appId: (json['app_id'] as num?)?.toInt(),
+      mapChangedAt: (json['map_changed_at'] as num?)?.toInt(),
     );
+  }
+
+  /// 根据 `mapChangedAt` 计算当前地图运行时间（秒）。
+  /// 无 `mapChangedAt` 或异常时返回 null。
+  int? get mapRuntimeSeconds {
+    if (mapChangedAt == null || mapChangedAt! <= 0) return null;
+    final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final runtime = nowSec - mapChangedAt!;
+    return runtime >= 0 ? runtime : null;
   }
 
   /// 转换为通用 ServerInfo 用于更新卡片

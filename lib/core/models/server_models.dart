@@ -387,11 +387,13 @@ class MapData extends Equatable {
 @JsonSerializable()
 class MapRuntimeData extends Equatable {
   final int currentRuntime;
-  final int weeklyOccurrences;
+
+  /// 一周内出现次数。第三方接口（如 CS2ZE）不提供该数据，此时为 null。
+  final int? weeklyOccurrences;
 
   const MapRuntimeData({
     required this.currentRuntime,
-    required this.weeklyOccurrences,
+    this.weeklyOccurrences,
   });
 
   factory MapRuntimeData.fromJson(Map<String, dynamic> json) =>
