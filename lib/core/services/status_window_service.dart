@@ -2460,12 +2460,22 @@ class StatusWindowService {
     int threadId,
     String serverAddress,
   ) async {
-    if (!_isQueueRunning || !_activeThreadIds.contains(threadId)) return;
+    if (!_isQueueRunning || _outcomeFinalized || !_activeThreadIds.contains(threadId)) {
+      return;
+    }
 
     try {
       _updateThreadStatus(threadIndex, ThreadStatus.requesting);
 
       await _fetchServerInfo(serverAddress);
+
+      // 在 await 期间可能已 finalize（成功/失败终态）或被暂停，
+      // 此时不能再回写线程状态，否则会把已显示的"成功"回弹成"挤服中"。
+      if (!_isQueueRunning ||
+          _outcomeFinalized ||
+          !_activeThreadIds.contains(threadId)) {
+        return;
+      }
 
       _updateThreadStatus(threadIndex, ThreadStatus.success);
 
@@ -2476,6 +2486,12 @@ class StatusWindowService {
         }
       });
     } catch (e) {
+      if (!_isQueueRunning ||
+          _outcomeFinalized ||
+          !_activeThreadIds.contains(threadId)) {
+        return;
+      }
+
       _updateThreadStatus(threadIndex, ThreadStatus.failed);
 
       Future.delayed(const Duration(milliseconds: 300), () {
@@ -2499,6 +2515,13 @@ class StatusWindowService {
 
   /// 更新线程状态
   void _updateThreadStatus(int index, ThreadStatus status) {
+    // 终态已敲定或挤服已停止后，禁止再回写线程状态推送浮窗。
+    // _updateWindow 在缺省 state 时会按 _state.type 推断出 'queueing'，
+    // 这会把已显示的终态（成功/失败）回弹成"挤服中/加入中"。
+    if (_outcomeFinalized || _state.type != OperationType.queueing) {
+      return;
+    }
+
     if (index >= 0 && index < _state.threadStatuses.length) {
       final newStatuses = List<ThreadStatus>.from(_state.threadStatuses);
       newStatuses[index] = status;
