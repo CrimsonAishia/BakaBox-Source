@@ -495,10 +495,16 @@ class QueueBloc extends Bloc<QueueEvent, QueueBlocState> {
     }).toList();
 
     // 保留用户设置的目标人数、线程数量、多线程开关、请求间隔
-    // 只同步自动重试状态
-    final updatedConfig = state.config.copyWith(
-      enableAutoRetry: serviceState.queueConfig.enableAutoRetry,
-    );
+    // 自动重试：仅在挤服进行中时以服务状态为准（服务可能因游戏不可监控而自动关闭）。
+    // 空闲时服务端的 enableAutoRetry 仍为 false，若此时同步会覆盖用户刚开启的设置，
+    // 导致开关回弹，因此空闲时保留本地配置。
+    final isQueueActive =
+        status == QueueStatus.running || status == QueueStatus.connecting;
+    final updatedConfig = isQueueActive
+        ? state.config.copyWith(
+            enableAutoRetry: serviceState.queueConfig.enableAutoRetry,
+          )
+        : state.config;
 
     emit(
       state.copyWith(
