@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/server_models.dart';
 import '../utils/log_service.dart';
+import 'app_info_service.dart';
 
 class CS2ZeServerData {
   final String gameType;
@@ -77,11 +78,17 @@ class CS2ZeServerData {
 class ThirdPartyApiService {
   static const String cs2zeApiUrl = 'https://public.cs2ze.org/servers.json';
 
+  static Map<String, String> get _headers => {
+    'User-Agent': 'BakaBox/${AppInfoService.instance.version}',
+  };
+
   /// 获取 CS2ZE 的全部服务器数据
   /// 返回：Map<类别名称, 类别下服务器列表>
   static Future<Map<String, List<CS2ZeServerData>>> fetchCS2ZeServers() async {
     try {
-      final response = await http.get(Uri.parse(cs2zeApiUrl)).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(Uri.parse(cs2zeApiUrl), headers: _headers)
+          .timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
         final Map<String, List<CS2ZeServerData>> result = {};
@@ -106,8 +113,8 @@ class ThirdPartyApiService {
   static Future<Map<String, CS2ZeServerData>> fetchCS2ZeServersMap() async {
     final grouped = await fetchCS2ZeServers();
     final Map<String, CS2ZeServerData> map = {};
-    for (var list in grouped.values) {
-      for (var server in list) {
+    for (final list in grouped.values) {
+      for (final server in list) {
         if (server.serverKey.isNotEmpty) {
           map[server.serverKey] = server;
         }
