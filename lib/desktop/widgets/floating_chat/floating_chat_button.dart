@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/bloc/bloc.dart';
 import '../../../core/models/lobby_models.dart';
+import '../../../core/services/floating_chat_position_service.dart';
 import 'chat_bubble_animation.dart';
 import 'chat_panel.dart';
 import 'unread_badge.dart';
@@ -18,7 +19,7 @@ class FloatingChatButton extends StatefulWidget {
   const FloatingChatButton({
     super.key,
     this.initialBottom = 100,
-    this.initialRight = 50,
+    this.initialRight = 100,
   });
 
   @override
@@ -96,6 +97,17 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
   bool _isDragging = false;
   bool _isDisposed = false;
 
+  /// Persisted position loaded from local storage. Applied once the parent
+  /// size is known so we can clamp it into the current bounds.
+  ({double left, double top})? _restoredPosition;
+  bool _positionRestored = false;
+
+  /// Whether the load-from-storage attempt has completed (regardless of
+  /// whether a saved position was found). The button is not placed until this
+  /// is true, to avoid a flash where it appears at the default corner first
+  /// and then jumps to the restored position.
+  bool _positionLoaded = false;
+
   /// Accumulated drag distance to distinguish drag from tap.
   double _dragDistance = 0.0;
 
@@ -116,6 +128,7 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
   void initState() {
     super.initState();
     _mountedAt = DateTime.now();
+    _loadSavedPosition();
     _hoverController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 150),
@@ -264,6 +277,30 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
     }
     _bubbles.clear();
     super.dispose();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Position persistence
+  // ---------------------------------------------------------------------------
+
+  /// Load the previously saved button position from local storage.
+  /// The actual value is applied in [build] once the parent size is known,
+  /// so it can be clamped into the current bounds.
+  Future<void> _loadSavedPosition() async {
+    final saved = await FloatingChatPositionService.loadPosition();
+    if (_isDisposed) return;
+    _restoredPosition = saved;
+    _positionLoaded = true;
+    // Trigger a rebuild so the button is placed now that the load completed.
+    if (mounted) setState(() {});
+  }
+
+  /// Persist the current button position to local storage.
+  void _savePosition() {
+    final left = _left;
+    final top = _top;
+    if (left == null || top == null) return;
+    FloatingChatPositionService.savePosition(left, top);
   }
 
   // ---------------------------------------------------------------------------
@@ -683,6 +720,37 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
                     constraints.maxHeight,
                   );
 
+                  // Wait until the saved-position load attempt has finished
+                  // before placing the button, to avoid a visible flash where
+                  // it appears at the default corner and then jumps to the
+                  // restored position.
+                  if (!_positionLoaded) {
+                    return const SizedBox.shrink();
+                  }
+
+                  // Apply the persisted position once (clamped to bounds),
+                  // falling back to the default corner placement.
+                  if (!_positionRestored) {
+                    final restored = _restoredPosition;
+                    if (restored != null) {
+                      _left = restored.left.clamp(
+                        0.0,
+                        (parentSize.width - _buttonSize).clamp(
+                          0.0,
+                          double.infinity,
+                        ),
+                      );
+                      _top = restored.top.clamp(
+                        0.0,
+                        (parentSize.height - _buttonSize).clamp(
+                          0.0,
+                          double.infinity,
+                        ),
+                      );
+                      _positionRestored = true;
+                    }
+                  }
+
                   _left ??=
                       parentSize.width - _buttonSize - widget.initialRight;
                   _top ??=
@@ -832,6 +900,10 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
             _activateOpacity();
             setState(() => _isPanelOpen = true);
             context.read<FloatingChatCubit>().panelOpened();
+          } else {
+            // Persist the new position after a real drag.
+            _positionRestored = true;
+            _savePosition();
           }
         },
         onTap: () {
