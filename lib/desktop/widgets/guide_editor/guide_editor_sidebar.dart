@@ -826,7 +826,7 @@ class _MapAssociationSectionState extends State<_MapAssociationSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionLabel(label: '关联地图'),
+        const _SectionLabel(label: '关联地图(可选)'),
         const SizedBox(height: 8),
         _buildMapSelector(context),
         if (widget.mapName != null && widget.mapName!.isNotEmpty) ...[
