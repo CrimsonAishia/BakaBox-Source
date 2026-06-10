@@ -56,11 +56,11 @@ class _Messages {
   // 连接服务器
   static const connecting = '正在连接服务器...';
   static const loading = '正在进入游戏...';
-  static const connectSuccess = '成功进入游戏！';
+  static const connectSuccess = '成功加入服务器';
   static const alreadyInServer = '你已在服务器中';
   static const connectFailed = '连接失败';
   static const serverFull = '服务器已满';
-  static const commandSent = '加入命令已发送';
+  static const commandSent = '成功发送加入指令';
   static const networkError = '连接异常，请检查网络';
 
   // 挤服
@@ -725,6 +725,16 @@ class StatusWindowService {
 
       if (result.success && playSuccessSound) {
         _audioService.playQueueSuccessSound();
+      }
+      if (result.success) {
+        // 不可监控：只发了连接指令，无法验证是否真正进服
+        _updateState(
+          _state.copyWith(
+            type: OperationType.none,
+            status: OperationStatus.success,
+            message: _Messages.commandSent,
+          ),
+        );
       }
       return result.success;
     }

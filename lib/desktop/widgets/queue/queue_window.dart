@@ -228,7 +228,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent>
               // 没有则回退到默认提示。
               ToastUtils.showSuccess(
                 context,
-                state.connectionMessage ?? '进去啦！',
+                state.connectionMessage ?? '成功加入服务器',
               );
               // 延迟关闭窗口，让用户看到成功提示
               Future.delayed(const Duration(milliseconds: 500), () {
