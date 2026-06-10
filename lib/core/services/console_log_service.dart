@@ -1020,21 +1020,48 @@ class ConsoleLogService {
   /// - 是否在主菜单
   Future<void> _analyzeHistoryAndRestoreState(File file) async {
     try {
+      // 边界：只有游戏带 -condebug 启动（可监控）时，console.log 才是"当前这次
+      // 会话"实时写入的。否则文件是上一次运行残留的旧日志，回溯它会把过期的
+      // "在服务器中"状态错误地恢复出来。因此不可监控时直接回落到主菜单，等真正
+      // 可监控后再依靠实时解析更新状态。
+      bool monitorable = false;
+      try {
+        monitorable = GameStatusService().isMonitorable;
+      } catch (_) {}
+      if (!monitorable) {
+        _currentState = _currentState.copyWith(
+          state: GameState.mainMenu,
+          serverAddress: '',
+          mapName: '',
+        );
+        LogService.d('[ConsoleLog] 历史: 游戏不可监控，跳过回溯，按主菜单处理');
+        return;
+      }
+
       final stat = await file.stat();
       final fileSize = stat.size;
 
-      const maxReadSize = 100 * 1024;
+      // 用户可能在打开软件之前就已经进入了服务器：此时"连接服务器"的日志行
+      // （Sending connect to / Opened Steam Net Connection / Connected to 'addr'）
+      // 是在很久以前进服那一刻写入的。如果只回溯末尾一小段日志，就会找不到
+      // 服务器地址，从而被误判为"在主菜单"，导致 OBS / 热身一直显示"等待进入
+      // 服务器"。因此这里回溯尽可能多的历史日志来定位地址。
+      const maxReadSize = 16 * 1024 * 1024; // 最多回溯 16MB，覆盖长时间在服的会话
       final startPos = fileSize > maxReadSize ? fileSize - maxReadSize : 0;
 
       final raf = await file.open(mode: FileMode.read);
       try {
         await raf.setPosition(startPos);
         final content = await raf.read(fileSize - startPos);
-        final lines = String.fromCharCodes(content).split('\n');
+        // 用 utf8 解码（allowMalformed）避免多字节字符被 fromCharCodes 错误解码
+        final lines = utf8.decode(content, allowMalformed: true).split('\n');
 
         String? lastServerAddress;
         String? lastMapName;
         bool isInGame = false;
+
+        bool isUsableAddress(String? addr) =>
+            addr != null && addr.isNotEmpty && !addr.contains('loopback');
 
         for (int i = lines.length - 1; i >= 0; i--) {
           final line = lines[i].trim();
@@ -1044,12 +1071,31 @@ class ConsoleLogService {
           if (event == null) continue;
 
           if (event is EvMainMenu || event is EvDisconnect) {
-            break; // Menu/Disconnected -> Not in game
-          } else if (event is EvSignonState && event.state >= 5) {
-            isInGame = true; // In game!
+            // 回溯到上一次回主菜单 / 断开，即当前在服会话的起始边界。
+            // 连接相关日志行都在该边界之后，到这里已经扫描完毕。
+            break;
+          } else if (event is EvSignonState) {
+            if (event.state >= 5) {
+              isInGame = true; // In game!
+            }
+            // "Connected to 'IP:port'" 会带地址，作为兜底来源
+            if (isInGame &&
+                lastServerAddress == null &&
+                isUsableAddress(event.address)) {
+              lastServerAddress = event.address;
+            }
             // keep looking for the server IP backward
+          } else if (event is EvConnectOpened) {
+            // 开始连接真实远程服务器的最可靠信号，携带解析后的 IP:port
+            if (isInGame &&
+                lastServerAddress == null &&
+                isUsableAddress(event.address)) {
+              lastServerAddress = event.address;
+            }
           } else if (event is EvConnectInitiated) {
-            if (isInGame && lastServerAddress == null) {
+            if (isInGame &&
+                lastServerAddress == null &&
+                isUsableAddress(event.target)) {
               lastServerAddress = event.target;
             }
           } else if (event is EvMapLoaded) {
@@ -1059,9 +1105,7 @@ class ConsoleLogService {
           }
         }
 
-        if (isInGame &&
-            lastServerAddress != null &&
-            !lastServerAddress.contains('loopback')) {
+        if (isInGame && isUsableAddress(lastServerAddress)) {
           _currentState = _currentState.copyWith(
             state: GameState.inGame,
             serverAddress: lastServerAddress,
