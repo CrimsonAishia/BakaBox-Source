@@ -4,6 +4,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 
 import '../../../core/services/status_window_service.dart';
 import '../../../core/utils/player_count_utils.dart';
+import 'warmup_arena_session.dart';
 import 'warmup_window.dart';
 
 /// 暖服悬浮卡片 - 显示在主界面右下角
@@ -118,6 +119,8 @@ class _WarmupFloatingCardState extends State<WarmupFloatingCard>
   }
 
   void _stopWarmup() {
+    // 停止暖服时清空会话（活动日志、竞技场用户、位置）
+    WarmupArenaSession.instance.clear();
     _statusService.pauseWarmup();
   }
 

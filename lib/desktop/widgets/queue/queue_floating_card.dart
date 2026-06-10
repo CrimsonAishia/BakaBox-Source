@@ -4,6 +4,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 
 import '../../../core/services/status_window_service.dart';
 import '../../../core/utils/player_count_utils.dart';
+import 'queue_arena_session.dart';
 import 'queue_window.dart';
 
 /// 挤服悬浮卡片 - 显示在主界面右下角
@@ -117,6 +118,8 @@ class _QueueFloatingCardState extends State<QueueFloatingCard>
   }
 
   void _stopQueue() {
+    // 停止挤服时清空会话（活动日志、竞技场用户、位置）
+    QueueArenaSession.instance.clear();
     _statusService.pauseQueue();
   }
 

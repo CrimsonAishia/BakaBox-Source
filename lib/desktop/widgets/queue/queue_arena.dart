@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../../../core/models/queue_user.dart';
+import 'arena_activity_session.dart';
 import 'queue_user_avatar.dart';
 
 /// 用户动画状态
@@ -93,6 +94,10 @@ class QueueArena extends StatefulWidget {
   /// 是否是暖服
   final bool isWarmup;
 
+  /// 可选的会话存储，用于持久化用户位置（窗口重开后保持）。
+  /// 为 null 时位置仅保存在内存中（窗口关闭即丢失）。
+  final ArenaActivitySession? session;
+
   const QueueArena({
     super.key,
     required this.users,
@@ -104,6 +109,7 @@ class QueueArena extends StatefulWidget {
     this.onUserSuccessAnimationComplete,
     this.avatarSize = 36,
     this.isWarmup = false,
+    this.session,
   });
 
   @override
@@ -184,19 +190,38 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
     final limitedUsers = _limitDisplayUsers(widget.users);
 
     for (final user in limitedUsers) {
-      final position = _findAvailablePosition();
-      final size = _randomSize();
+      final pos = _resolvePosition(user.uniqueId);
 
       _userStates[user.uniqueId] = _UserAnimationState.create(
         user: user,
-        x: position.$1,
-        y: position.$2,
-        size: size,
-        floatPhase: _random.nextDouble() * 2 * pi,
-        floatSpeed: 0.3 + _random.nextDouble() * 0.2, // 更慢的漂浮速度
+        x: pos.x,
+        y: pos.y,
+        size: pos.size,
+        floatPhase: pos.floatPhase,
+        floatSpeed: pos.floatSpeed,
         opacity: 1.0,
       );
     }
+  }
+
+  /// 解析用户位置：
+  /// - 若 session 中已保存该用户位置，复用（保证窗口重开后位置不变）。
+  /// - 否则新生成一个不重叠的位置，并在有 session 时存入。
+  QueueArenaUserPosition _resolvePosition(String userId) {
+    final session = widget.session;
+    final saved = session?.positions[userId];
+    if (saved != null) return saved;
+
+    final position = _findAvailablePosition();
+    final pos = QueueArenaUserPosition(
+      x: position.$1,
+      y: position.$2,
+      size: _randomSize(),
+      floatPhase: _random.nextDouble() * 2 * pi,
+      floatSpeed: 0.3 + _random.nextDouble() * 0.2, // 更慢的漂浮速度
+    );
+    session?.positions[userId] = pos;
+    return pos;
   }
 
   /// 限制显示用户数
@@ -281,6 +306,7 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
     for (final id in toRemove) {
       _userStates[id]?.dispose();
       _userStates.remove(id);
+      widget.session?.positions.remove(id);
     }
 
     // 添加新用户（不在 _userStates 和 _fadingOutUsers 中的用户）
@@ -288,16 +314,15 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
       final userId = user.uniqueId;
       if (!_userStates.containsKey(userId) &&
           !_fadingOutUsers.containsKey(userId)) {
-        final position = _findAvailablePosition();
-        final size = _randomSize();
+        final pos = _resolvePosition(userId);
 
         final state = _UserAnimationState.create(
           user: user,
-          x: position.$1,
-          y: position.$2,
-          size: size,
-          floatPhase: _random.nextDouble() * 2 * pi,
-          floatSpeed: 0.3 + _random.nextDouble() * 0.2,
+          x: pos.x,
+          y: pos.y,
+          size: pos.size,
+          floatPhase: pos.floatPhase,
+          floatSpeed: pos.floatSpeed,
           opacity: 0.0, // 从透明开始，淡入显示
         );
 
@@ -319,16 +344,15 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
     final limitedUsers = _limitDisplayUsers(widget.users);
     if (!limitedUsers.any((u) => u.uniqueId == userId)) return;
 
-    final position = _findAvailablePosition();
-    final size = _randomSize();
+    final pos = _resolvePosition(userId);
 
     final state = _UserAnimationState.create(
       user: user,
-      x: position.$1,
-      y: position.$2,
-      size: size,
-      floatPhase: _random.nextDouble() * 2 * pi,
-      floatSpeed: 0.3 + _random.nextDouble() * 0.2,
+      x: pos.x,
+      y: pos.y,
+      size: pos.size,
+      floatPhase: pos.floatPhase,
+      floatSpeed: pos.floatSpeed,
       opacity: 0.0,
     );
 
@@ -341,6 +365,7 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
     final state = _userStates.remove(userId);
     if (state == null) return;
 
+    widget.session?.positions.remove(userId);
     _fadingOutUsers[userId] = state;
     _animateFadeOut(userId, state);
   }
@@ -350,6 +375,7 @@ class _QueueArenaState extends State<QueueArena> with TickerProviderStateMixin {
     final state = _userStates.remove(userId);
     if (state == null) return;
 
+    widget.session?.positions.remove(userId);
     state.isFlying = true;
     _fadingOutUsers[userId] = state;
     _animateFlyToCenter(userId, state);
