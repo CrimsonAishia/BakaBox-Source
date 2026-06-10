@@ -411,8 +411,8 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   Widget _buildHintBanner(bool isDark) {
     final isNameTab = _currentType == ContributionType.name;
     final hintText = isNameTab
-        ? '票数最高的名称将作为该地图的中文名显示，1小时内生效'
-        : '票数最高的图片将作为该地图的背景显示，1小时内生效';
+        ? '票数最高的名称将作为该地图的中文名显示，1分钟左右生效'
+        : '票数最高的图片将作为该地图的背景显示，1分钟左右生效';
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
