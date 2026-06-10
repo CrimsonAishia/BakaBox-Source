@@ -1176,7 +1176,11 @@ class ConsoleLogService {
         _targetServer = '';
       }
     } else if (event is EvDisconnect) {
-      if (_isInLoopbackMode) return;
+      // 连接失败类断开（超时/被拒/建连失败）即使在 loopback 模式也必须处理：
+      // 切服时旧服先断开会进入 loopback 模式，而新连接的 "Sending connect to"
+      // 行可能因服务器无响应（超时）根本不会出现，导致 _isInLoopbackMode 一直为
+      // true。若此时直接 return，超时断开会被吞掉，状态永远卡在"连接中"。
+      if (_isInLoopbackMode && !event.isConnectFailure) return;
       LogService.d(
         '[ConsoleLog] 解析到断开连接: ${event.reason}, 服满: ${event.isServerFull}',
       );
@@ -1184,6 +1188,11 @@ class ConsoleLogService {
       final state = event.isServerFull
           ? GameState.serverFull
           : GameState.failed;
+
+      // 走到这里若仍处于 loopback 模式，说明是"切服超时"场景：需要复位标志，
+      // 让失败状态能正常向下游传播。
+      _isInLoopbackMode = false;
+      _targetServer = '';
 
       _updateConnectionState(
         state,
