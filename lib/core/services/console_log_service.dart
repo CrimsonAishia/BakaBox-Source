@@ -1123,6 +1123,26 @@ class ConsoleLogService {
           rawLine: line,
         );
       }
+    } else if (event is EvConnectOpened) {
+      // 引擎已为真实远程服务器打开底层连接 → 确定进入"连接中"。
+      // 这是比 "Sending connect to" 更早、更可靠的信号：超时场景下
+      // "Sending connect to" 可能永不出现，仅靠它就能退出 loopback 模式，
+      // 使后续的超时/断开信号能被正常处理，避免卡在"连接中"。
+      _isLoopbackFallback = false;
+      _isInLoopbackMode = false;
+      // 地址用解析后的 IP:port（与 "Sending connect to" 同源，均为解析后 IP，
+      // 域名仅出现在未被解析的 "Remote Connect (domain)" 行）。该事件早于
+      // "Sending connect to" 到达，是"正在连接此地址"的权威信号。
+      // 注意：连接中/加载中的地址不参与 location 匹配（下游仅在 inGame 时
+      // 才信任 serverAddress），因此不会引入地址比对副作用。
+      _targetServer = event.address;
+      LogService.d('[ConsoleLog] 解析到底层连接已打开: ${event.address}');
+      _updateConnectionState(
+        GameState.connecting,
+        serverAddress: event.address,
+        mapName: '', // 新连接清空旧地图
+        rawLine: line,
+      );
     } else if (event is EvSignonState) {
       if (_isInLoopbackMode) return;
 

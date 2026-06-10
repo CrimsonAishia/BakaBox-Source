@@ -5,6 +5,24 @@ class EvConnectInitiated extends CS2EngineEvent {
   EvConnectInitiated(this.target);
 }
 
+/// 引擎已为"连接真实远程服务器"打开了底层 Steam Net 连接。
+///
+/// 对应日志：`[NetSteamConn] Opened Steam Net Connection on socket 'client' to <ip:port>`
+///
+/// 这是"开始连接远程服务器"的最早、最可靠信号：
+/// - 每次连接/切服真实服务器都会出现（携带解析后的 IP:port）；
+/// - loopback（主菜单背景）连接绝不会产生该行；
+/// - 它总是在切服产生的 `INGAME -> MAINMENU` 之后到达。
+///
+/// 用途：一旦出现就表示进入"连接中"，可借此退出 loopback 模式。这样即便
+/// 后续 `Sending connect to` 行因服务器无响应（超时）从未出现，断开/超时
+/// 信号也能被正常处理，不会卡在"连接中"。
+class EvConnectOpened extends CS2EngineEvent {
+  /// 解析后的服务器地址（IP:port）。
+  final String address;
+  EvConnectOpened(this.address);
+}
+
 class EvSignonState extends CS2EngineEvent {
   final int state;
   final String stateName;

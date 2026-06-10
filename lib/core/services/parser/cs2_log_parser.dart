@@ -40,6 +40,14 @@ class CS2LogParser {
     r"\[Client\]\s+CL:\s+Connected to\s+'?([^']+)'?",
   );
 
+  // [NetSteamConn] Opened Steam Net Connection on socket 'client' to <server-ip>:27016, connection #...
+  // 仅匹配 client socket 且目标为真实 IP:port（排除 loopback / server socket）。
+  // 这是"开始连接远程服务器"的最早可靠信号，用于在超时（Sending connect 行
+  // 从未出现）场景下也能让状态机退出 loopback 模式。
+  static final _regSocketOpened = RegExp(
+    r"Opened Steam Net Connection on socket 'client' to\s+([\d.]+:\d+)",
+  );
+
   static CS2EngineEvent? parse(String line) {
     if (line.isEmpty) return null;
     line = line.trim();
@@ -68,6 +76,11 @@ class CS2LogParser {
     final connMatch = _regConnecting.firstMatch(line);
     if (connMatch != null) {
       return EvConnectInitiated(connMatch.group(1)!);
+    }
+
+    final socketOpenedMatch = _regSocketOpened.firstMatch(line);
+    if (socketOpenedMatch != null) {
+      return EvConnectOpened(socketOpenedMatch.group(1)!.trim());
     }
 
     final mapMatch = _regLoadingMap.firstMatch(line);
