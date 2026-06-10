@@ -11,10 +11,12 @@ import '../../../core/bloc/warmup_users/warmup_users_bloc.dart';
 import '../../../core/bloc/warmup_users/warmup_users_event.dart';
 import '../../../core/bloc/warmup_users/warmup_users_state.dart';
 import '../../../core/models/server_models.dart';
+import '../../../core/services/queue_guard_service.dart';
 import '../../../core/services/status_window_service.dart';
 import '../../../core/services/steam_user_service.dart';
 import '../../../core/utils/map_utils.dart';
 import '../../../core/utils/player_count_utils.dart';
+import '../../../core/utils/toast_utils.dart';
 import '../../../core/widgets/map_background.dart';
 import '../queue/queue_activity_log.dart';
 import '../queue/queue_arena.dart';
@@ -705,6 +707,12 @@ class _WarmupWindowContentState extends State<_WarmupWindowContent> {
   ///
   /// 获取用户昵称优先级：Steam 客户端 > GSI > 登录用户名 > null（匿名）
   Future<void> _startWarmup(BuildContext context) async {
+    // 入口预判：人已经在该服务器里就没必要暖服了，直接提示并返回。
+    if (QueueGuardService().isStablyInServer(widget.serverAddress)) {
+      ToastUtils.showSuccess(context, kAlreadyInServerMessage);
+      return;
+    }
+
     // 清空活动日志和用户缓存（每次开始暖服都重新开始）
     setState(() {
       _activities.clear();
