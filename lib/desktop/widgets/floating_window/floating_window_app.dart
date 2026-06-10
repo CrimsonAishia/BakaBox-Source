@@ -6,6 +6,7 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../../core/bloc/settings/settings_state.dart';
 import '../../../core/services/floating_window_service.dart';
+import '../../../core/utils/fullscreen_detector.dart';
 import '../../theme/desktop_theme.dart';
 import 'floating_window_shell.dart';
 import 'floating_window_state.dart';
@@ -233,8 +234,17 @@ class _FloatingWindowInitializerState
         await windowManager.setBackgroundColor(Colors.transparent);
         if (Platform.isWindows) {
           await windowManager.setAsFrameless();
-          // 浮窗不抢焦点
-          await windowManager.showWithoutActivating();
+          // 边界：若创建瞬间已处于 D3D 独占全屏（游戏中），show 会抢前台导致
+          // 游戏掉帧/最小化。此时只设置好窗口属性但不显示，交给启动器的
+          // 全屏轮询定时器在退出全屏后再 show。
+          if (FullscreenDetector.instance.canCreateWindow()) {
+            // 浮窗不抢焦点
+            await windowManager.showWithoutActivating();
+          } else {
+            debugPrint(
+              '[FloatingWindow] D3D fullscreen detected at init, defer show',
+            );
+          }
         } else {
           await windowManager.show();
         }

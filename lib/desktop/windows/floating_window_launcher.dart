@@ -61,7 +61,7 @@ class FloatingWindowLauncher {
             _isHiddenByFullscreen = false;
             // 只有当没有被其他逻辑隐藏时，才恢复显示
             try {
-              await windowManager.show();
+              await windowManager.showWithoutActivating();
               debugPrint('[FloatingWindow] Shown after fullscreen app closed');
             } catch (e) {
               debugPrint('[FloatingWindow] Failed to show: $e');
@@ -103,7 +103,12 @@ class FloatingWindowLauncher {
         case 'window_show':
           _isHiddenByFullscreen = false;
           try {
-            await windowManager.show();
+            // 浮窗复显同样不应抢焦点（用户可能正在游戏/打字）
+            if (Platform.isWindows) {
+              await windowManager.showWithoutActivating();
+            } else {
+              await windowManager.show();
+            }
           } catch (e) {
             debugPrint('[FloatingWindow] Failed to show via IPC: $e');
           }
