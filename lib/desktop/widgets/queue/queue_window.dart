@@ -224,7 +224,12 @@ class _QueueWindowContentState extends State<_QueueWindowContent>
                 _lastToastConnectionState != QueueConnectionState.connected) {
               _lastToastConnectionState = QueueConnectionState.connected;
               // WebSocket 断开由 StatusWindowService 统一处理
-              ToastUtils.showSuccess(context, '进去啦！');
+              // 文案优先用 service 的实际消息（可能是"你已在服务器中"），
+              // 没有则回退到默认提示。
+              ToastUtils.showSuccess(
+                context,
+                state.connectionMessage ?? '进去啦！',
+              );
               // 延迟关闭窗口，让用户看到成功提示
               Future.delayed(const Duration(milliseconds: 500), () {
                 if (context.mounted) {
