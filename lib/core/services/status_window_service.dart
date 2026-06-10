@@ -57,6 +57,7 @@ class _Messages {
   static const connecting = '正在连接服务器...';
   static const loading = '正在进入游戏...';
   static const connectSuccess = '成功进入游戏！';
+  static const alreadyInServer = '你已在服务器中';
   static const connectFailed = '连接失败';
   static const serverFull = '服务器已满';
   static const commandSent = '加入命令已发送';
@@ -1504,17 +1505,22 @@ class StatusWindowService {
     if (_isObservingConnect) return;
     if (_outcomeFinalized) return;
 
+    // 守护回调发现已在游戏中、且本次挤服尚未触发过 connect 命令，
+    // 说明用户点"开始挤"时人就已经在服务器里了，文案用"你已在服务器中"。
+    final alreadyInMessage =
+        !_isTriggeredConnection ? _Messages.alreadyInServer : null;
+
     switch (event.location) {
       case GuardLocation.inTargetServer:
         LogService.i('[StatusWindowService] [QueueGuard] 进入目标服，挤服成功');
-        _finalizeOnce(_handleAlreadyInGame);
+        _finalizeOnce(() => _handleAlreadyInGame(message: alreadyInMessage));
         break;
 
       case GuardLocation.inUnknownServer:
         LogService.i(
           '[StatusWindowService] [QueueGuard] 检测到在游戏中（地址未知），保守 finalize',
         );
-        _finalizeOnce(_handleAlreadyInGame);
+        _finalizeOnce(() => _handleAlreadyInGame(message: alreadyInMessage));
         break;
 
       case GuardLocation.inOtherServer:
@@ -1762,7 +1768,9 @@ class StatusWindowService {
     if (loc == GuardLocation.inTargetServer ||
         loc == GuardLocation.inUnknownServer) {
       LogService.i('[StatusWindowService] 挤服条件检查：守护进程判定已在游戏中 ($loc)，跳过连接');
-      _finalizeOnce(_handleAlreadyInGame);
+      _finalizeOnce(
+        () => _handleAlreadyInGame(message: _Messages.alreadyInServer),
+      );
       return;
     }
 
@@ -1794,7 +1802,9 @@ class StatusWindowService {
         LogService.i(
           '[StatusWindowService] _connectForQueue 入口快照: $entryLocation → finalize',
         );
-        _finalizeOnce(_handleAlreadyInGame);
+        _finalizeOnce(
+          () => _handleAlreadyInGame(message: _Messages.alreadyInServer),
+        );
         return;
       case GuardLocation.inOtherServer:
       case GuardLocation.notInGame:
@@ -1827,7 +1837,9 @@ class StatusWindowService {
         LogService.i(
           '[StatusWindowService] 发送 connect 前最终防御: $preConnectLocation → 取消命令并 finalize',
         );
-        _finalizeOnce(_handleAlreadyInGame);
+        _finalizeOnce(
+          () => _handleAlreadyInGame(message: _Messages.alreadyInServer),
+        );
         return;
       }
 
