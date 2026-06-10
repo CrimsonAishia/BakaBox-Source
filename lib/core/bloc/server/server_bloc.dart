@@ -8,6 +8,7 @@ import '../../services/source_server_service.dart';
 import '../../services/game_launcher_service.dart';
 import '../../services/map_change_monitor_service.dart';
 import '../../services/obs_server_service.dart';
+import '../../services/realtime/realtime_map_info_channel.dart';
 import '../../services/realtime/realtime_score_updates_channel.dart';
 import '../../services/realtime/realtime_server_map_runtime_channel.dart';
 import '../../services/realtime/realtime_server_users_count_channel.dart';
@@ -35,6 +36,12 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   // 分类列表定时刷新定时器（每 10 分钟静默刷新一次）
   Timer? _categoryRefreshTimer;
   static const Duration _categoryRefreshInterval = Duration(minutes: 10);
+
+  // map.info 推送节流：后端可能在频繁变动时高频推送（约 5s/次），
+  // 同一地图在冷却窗口内最多刷新一次，窗口内的后续推送合并为一次尾部刷新。
+  static const Duration _mapInfoRefreshCooldown = Duration(seconds: 15);
+  final Map<String, DateTime> _mapInfoLastRefreshAt = {};
+  final Map<String, Timer> _mapInfoTrailingTimers = {};
 
   // 刷新频率限制：记录每个服务器的刷新时间戳
   final Map<String, List<DateTime>> _refreshHistory = {};
@@ -71,9 +78,11 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       RealtimeServerMapRuntimeChannel();
   final RealtimeServerUsersCountChannel _usersCountChannel =
       RealtimeServerUsersCountChannel();
+  final RealtimeMapInfoChannel _mapInfoChannel = RealtimeMapInfoChannel();
   StreamSubscription<ScoreUpdateEvent>? _scoreChannelSubscription;
   StreamSubscription<ServerMapRuntimeEvent>? _mapRuntimeChannelSubscription;
   StreamSubscription<UsersCountUpdateEvent>? _usersCountChannelSubscription;
+  StreamSubscription<MapInfoChangedEvent>? _mapInfoChannelSubscription;
   bool _realtimeStarted = false;
 
   // 弱网模式切换监听
@@ -157,6 +166,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     on<ServerApplyScoreUpdates>(_onApplyScoreUpdates);
     on<ServerApplyUsersCountUpdates>(_onApplyUsersCountUpdates);
     on<ServerApplyMapRuntimeChange>(_onApplyMapRuntimeChange);
+    on<ServerApplyMapInfoChange>(_onApplyMapInfoChange);
 
     // 始终订阅频道：弱网模式下 RealtimeService 处于 stopped 状态，
     // 订阅请求会被 RealtimeService 缓存，等到 start() 后自动补发。
@@ -227,6 +237,14 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         ),
       );
     });
+
+    // map.info：地图背景/标签等元数据变更（地图本身没换）。
+    // 收到后立即刷新正在显示该地图的卡片，不必等下一个轮询周期。
+    _mapInfoChannel.subscribe();
+    _mapInfoChannelSubscription = _mapInfoChannel.events.listen((event) {
+      if (isClosed) return;
+      add(ServerApplyMapInfoChange(mapName: event.mapName));
+    });
   }
 
   void _stopRealtime() {
@@ -240,6 +258,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     _usersCountChannelSubscription?.cancel();
     _usersCountChannelSubscription = null;
     _usersCountChannel.unsubscribe();
+    _mapInfoChannelSubscription?.cancel();
+    _mapInfoChannelSubscription = null;
+    _mapInfoChannel.unsubscribe();
   }
 
   /// 重置倒计时（递增 countdownResetKey 触发 UI 重置）
@@ -2519,6 +2540,11 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     _refreshHistory.clear();
     _categoryRefreshTimer?.cancel();
     _categoryRefreshTimer = null;
+    for (final timer in _mapInfoTrailingTimers.values) {
+      timer.cancel();
+    }
+    _mapInfoTrailingTimers.clear();
+    _mapInfoLastRefreshAt.clear();
     _networkModeSubscription?.cancel();
     _networkModeSubscription = null;
     _stopRealtime();
@@ -2650,6 +2676,82 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       requestId,
       serverApi,
     );
+  }
+
+  /// 处理 `map.info` 推送：地图本身没换，但其背景图/标签等元数据被后端修改。
+  ///
+  /// 立即刷新所有正在显示该地图的卡片，避免等到下一个轮询周期。
+  /// （[RealtimeMapInfoInvalidator] 负责刷新 [ServerApi] 缓存；这里负责把
+  /// 最新数据推到 UI。这里独立强制刷新一次以拿到权威数据，规避监听器执行
+  /// 顺序导致的缓存竞态。）
+  ///
+  /// 节流策略（后端频繁变动时约 5s/次）：同一地图在 [_mapInfoRefreshCooldown]
+  /// 冷却窗口内最多打一次 API。窗口内到达的推送不会被丢弃，而是安排一次尾部
+  /// 刷新，确保突发结束后卡片仍能拿到最终状态。正常的偶发推送走立即分支，
+  /// 体验不受影响。
+  Future<void> _onApplyMapInfoChange(
+    ServerApplyMapInfoChange event,
+    Emitter<ServerState> emit,
+  ) async {
+    if (state.servers.isEmpty) return;
+    final changedMap = event.mapName.toLowerCase().trim();
+    if (changedMap.isEmpty) return;
+
+    final now = DateTime.now();
+    final lastAt = _mapInfoLastRefreshAt[changedMap];
+    final withinCooldown =
+        lastAt != null && now.difference(lastAt) < _mapInfoRefreshCooldown;
+
+    if (withinCooldown) {
+      // 冷却窗口内：合并为一次尾部刷新（已安排则不重复安排）
+      if (_mapInfoTrailingTimers.containsKey(changedMap)) return;
+      final remaining = _mapInfoRefreshCooldown - now.difference(lastAt);
+      _mapInfoTrailingTimers[changedMap] = Timer(remaining, () {
+        _mapInfoTrailingTimers.remove(changedMap);
+        if (isClosed) return;
+        add(ServerApplyMapInfoChange(mapName: changedMap));
+      });
+      return;
+    }
+
+    _mapInfoLastRefreshAt[changedMap] = now;
+    await _refreshMapInfoForCards(changedMap, emit);
+  }
+
+  /// 拉取权威地图信息并刷新所有正在显示该地图的卡片（单次 emit 批量更新）。
+  Future<void> _refreshMapInfoForCards(
+    String changedMap,
+    Emitter<ServerState> emit,
+  ) async {
+    if (state.servers.isEmpty) return;
+
+    // 找出当前正在显示该地图的服务器（按服务器当前地图名匹配，忽略大小写）
+    bool showsChangedMap(ExtendedServerItem server) {
+      final current = (server.serverData?.map ?? server.mapInfo?.mapName)
+          ?.toLowerCase()
+          .trim();
+      return current != null && current == changedMap;
+    }
+
+    if (!state.servers.any(showsChangedMap)) return;
+
+    // 强制拉取权威的最新地图信息
+    final serverApi = ServerApi();
+    final MapData? mapData = await serverApi.refreshMapInfo(changedMap);
+    if (mapData == null || isClosed) return;
+
+    // 单次 emit 批量更新所有正在显示该地图的卡片，避免 N 个同图服务器触发 N 次重绘。
+    // 仅当 mapInfo 确实变化时才替换（MapData 是 Equatable），完全相同则跳过整次 emit。
+    var changed = false;
+    final servers = state.servers.map((server) {
+      if (!showsChangedMap(server)) return server;
+      if (server.mapInfo == mapData) return server;
+      changed = true;
+      return server.copyWith(mapInfo: mapData);
+    }).toList();
+
+    if (!changed) return;
+    emit(state.copyWith(servers: servers));
   }
 
   /// 内部事件：定时静默检测分类列表是否有变化

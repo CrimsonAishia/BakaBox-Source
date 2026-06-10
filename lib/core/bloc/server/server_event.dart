@@ -294,6 +294,21 @@ class ServerApplyMapRuntimeChange extends ServerEvent {
   List<Object?> get props => [serverAddress, newMapName, oldMapName];
 }
 
+/// 内部事件：来自 `map.info` WS 频道的地图信息变更（背景图/标签等元数据）
+///
+/// 与 [ServerApplyMapRuntimeChange]（换图）不同：地图没变，只是该地图的
+/// 背景/标签等元数据被后端修改。收到后立即刷新所有正在显示该地图的卡片，
+/// 不必等下一个轮询周期。
+class ServerApplyMapInfoChange extends ServerEvent {
+  /// 地图名（已小写）
+  final String mapName;
+
+  const ServerApplyMapInfoChange({required this.mapName});
+
+  @override
+  List<Object?> get props => [mapName];
+}
+
 /// 内部事件：来自 `server.users.count` WS 频道的人数更新
 class ServerApplyUsersCountUpdates extends ServerEvent {
   final List<ServerUsersCount> counts;
