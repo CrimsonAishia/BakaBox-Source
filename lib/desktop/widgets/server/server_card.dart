@@ -1108,20 +1108,22 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                       isOtherServerQueueing: isOtherServerQueueing,
                     ),
                   ),
-                  _buildActionBtn(
-                    text: isCurrentServerWarming ? '暖服中' : '暖服',
-                    icon: MdiIcons.fire,
-                    bgColor: const Color(0xFFF59E0B),
-                    onPressed: _resolveWarmupAction(
-                      context,
-                      address: address,
-                      isLoading: isLoading,
-                      isCurrentServerQueueing: isCurrentServerQueueing,
-                      isCurrentServerWarming: isCurrentServerWarming,
-                      isOtherServerWarming: isOtherServerWarming,
-                      isOtherServerQueueing: isOtherServerQueueing,
+                  // 自定义服务器隐藏暖服按钮
+                  if (!isCustomServer)
+                    _buildActionBtn(
+                      text: isCurrentServerWarming ? '暖服中' : '暖服',
+                      icon: MdiIcons.fire,
+                      bgColor: const Color(0xFFF59E0B),
+                      onPressed: _resolveWarmupAction(
+                        context,
+                        address: address,
+                        isLoading: isLoading,
+                        isCurrentServerQueueing: isCurrentServerQueueing,
+                        isCurrentServerWarming: isCurrentServerWarming,
+                        isOtherServerWarming: isOtherServerWarming,
+                        isOtherServerQueueing: isOtherServerQueueing,
+                      ),
                     ),
-                  ),
                 ],
               ),
               // 分隔线
