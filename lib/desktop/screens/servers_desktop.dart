@@ -348,21 +348,34 @@ class _ServersDesktopState extends State<ServersDesktop> {
     // 防止重复触发：检查是否已选中分类或正在加载
     if (!mounted || state.selectedCategory != null || state.isLoading) return;
     if (state.serverCategories.isNotEmpty) {
-      // 恢复上次选择的分类
+      // 恢复上次选择的分类（按名称 + 是否自定义精确匹配，避免同名分类串台）
       final lastCategoryName = StorageUtils.getString('last_selected_category');
       if (lastCategoryName != null) {
-        try {
-          final lastCategory = state.serverCategories.firstWhere(
-            (c) => c.modelName == lastCategoryName,
-          );
+        // last_selected_category_custom 为 null 时（旧版本数据）按名称匹配兜底
+        final lastIsCustom = StorageUtils.containsKey(
+          'last_selected_category_custom',
+        )
+            ? StorageUtils.getBool('last_selected_category_custom')
+            : null;
+
+        ServerCategory? lastCategory;
+        for (final c in state.serverCategories) {
+          if (c.modelName != lastCategoryName) continue;
+          // 类型匹配优先；无记录类型时取第一个同名分类
+          if (lastIsCustom == null || c.isCustom == lastIsCustom) {
+            lastCategory = c;
+            break;
+          }
+        }
+
+        if (lastCategory != null) {
           if (lastCategory.isCustom) {
             context.read<ServerBloc>().add(const ServerSwitchTab(1));
           }
           context.read<ServerBloc>().add(ServerSelectCategory(lastCategory));
           return;
-        } catch (_) {
-          // 找不到保存的分类时忽略，继续走默认逻辑
         }
+        // 找不到保存的分类时继续走默认逻辑
       }
 
       // 优先选择默认分类（API 分类）的第一个
@@ -389,16 +402,22 @@ class _ServersDesktopState extends State<ServersDesktop> {
     }
   }
 
+  /// 持久化当前选中的分类（名称 + 是否自定义），供下次启动精确恢复
+  void _persistSelectedCategory(ServerCategory? category) {
+    final name = category?.modelName;
+    if (name == null) return;
+    StorageUtils.setString('last_selected_category', name);
+    StorageUtils.setBool('last_selected_category_custom', category!.isCustom);
+  }
+
   /// 处理分类点击，切换分类时清理图片内存缓存
   void _onCategoryTap(ServerCategory category) {
     final currentCategory = context.read<ServerBloc>().state.selectedCategory;
     // 切换到不同分类时，清理图片内存缓存
     if (currentCategory?.modelName != category.modelName) {
       PaintingBinding.instance.imageCache.clear();
-      if (category.modelName != null) {
-        StorageUtils.setString('last_selected_category', category.modelName!);
-      }
     }
+    // 持久化交给统一的 BlocListener 处理，确保所有选择路径一致
     context.read<ServerBloc>().add(ServerSelectCategory(category));
   }
 
@@ -542,6 +561,18 @@ class _ServersDesktopState extends State<ServersDesktop> {
           listener: (context, state) {
             setState(() => _categoriesListAnimKey++);
           },
+        ),
+        // 持久化当前选中的分类（覆盖所有选择路径：点击、切换 tab 自动选中、
+        // 重命名后重新选中等），确保下次启动能精确恢复
+        BlocListener<ServerBloc, ServerState>(
+          listenWhen: (previous, current) =>
+              current.selectedCategory != null &&
+              (current.selectedCategory?.modelName !=
+                      previous.selectedCategory?.modelName ||
+                  current.selectedCategory?.isCustom !=
+                      previous.selectedCategory?.isCustom),
+          listener: (context, state) =>
+              _persistSelectedCategory(state.selectedCategory),
         ),
       ],
       child: Scaffold(
