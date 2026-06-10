@@ -259,7 +259,7 @@ class _ActivityItemWidget extends StatelessWidget {
               TextSpan(
                 children: [
                   TextSpan(
-                    text: activity.isSelf ? '你' : activity.userName,
+                    text: activity.isSelf ? '我' : activity.userName,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
