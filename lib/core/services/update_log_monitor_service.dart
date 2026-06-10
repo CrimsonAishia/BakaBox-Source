@@ -56,10 +56,11 @@ class UpdateLogMonitorService {
   void _subscribeRealtime() {
     _channel.subscribe();
     _subscription = _channel.events.listen(_onWorkshopChangelogEvent);
-    // workshop.changelog 频道不回放断线期间的更新，重连后主动对账一次
-    // （checkForUpdates 内部基于上次记录时间判断，不会重复通知）
-    _reconnectedSubscription = RealtimeService().reconnectedStream.listen((_) {
-      LogService.d('[UpdateLogMonitor] 重连成功，主动检查更新');
+    // workshop.changelog 频道不回放断线期间的更新，监听对账信号主动检查一次
+    // （reconcileStream 覆盖断线重连 + 连接保持期间的周期性兜底，
+    //   checkForUpdates 内部基于上次记录时间判断，不会重复通知）
+    _reconnectedSubscription = RealtimeService().reconcileStream.listen((_) {
+      LogService.d('[UpdateLogMonitor] 对账信号，主动检查更新');
       checkForUpdates();
     });
   }

@@ -62,14 +62,15 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       if (isClosed) return;
       add(NotificationRealtimeReceived(item));
     });
-    // 断线重连后，notifications 频道只推新消息、不回放断线期间的变更。
+    // notifications 频道只推新消息、不回放断线期间的变更。监听对账信号
+    // （断线重连 + 连接保持期间周期性兜底，覆盖「无断线但丢消息」）：
     // - 未读数始终刷新一次，保证角标准确（轻量、无打断）
     // - 整页列表刷新只在用户停留在第 1 页时做：断线期间漏掉的新消息都在顶部，
     //   若用户已翻到后续页面，重置列表会打断浏览，故跳过
-    _reconnectedSubscription = RealtimeService().reconnectedStream.listen((_) {
+    _reconnectedSubscription = RealtimeService().reconcileStream.listen((_) {
       if (isClosed) return;
       if (!AuthService.instance.isLoggedIn) return;
-      LogService.d('[NotificationBloc] 重连成功，主动对账');
+      LogService.d('[NotificationBloc] 对账信号，主动对账');
       add(const NotificationFetchUnreadCount());
       if (state.currentPage <= 1) {
         add(const NotificationRefresh(silent: true));
