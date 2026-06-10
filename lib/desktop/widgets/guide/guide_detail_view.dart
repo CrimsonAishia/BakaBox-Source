@@ -169,6 +169,10 @@ class _GuideDetailViewState extends State<GuideDetailView> {
     return TokenService.instance.userInfo?.id;
   }
 
+  /// 当前是否已登录（用于互动前的登录拦截）
+  bool _isLoggedIn(BuildContext context) =>
+      context.read<AuthBloc>().state.isAuthenticated;
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
@@ -697,6 +701,7 @@ class _GuideDetailViewState extends State<GuideDetailView> {
 
   Widget _buildInlineInteractionBar(BuildContext context, Guide guide) {
     final currentUserId = _getCurrentUserId(context);
+    final isLoggedIn = _isLoggedIn(context);
     final isOwnGuide = currentUserId != null && currentUserId == guide.authorId;
 
     return Padding(
@@ -712,9 +717,11 @@ class _GuideDetailViewState extends State<GuideDetailView> {
             color: guide.isLiked
                 ? GuideTokens.likeColor(context)
                 : GuideTokens.textSecondary(context),
-            onTap: isOwnGuide
-                ? () => ToastUtils.showInfo(context, '不能给自己的攻略点赞')
-                : () => _detailBloc.add(const ToggleLike()),
+            onTap: !isLoggedIn
+                ? () => ToastUtils.showInfo(context, '登录后才能点赞')
+                : isOwnGuide
+                    ? () => ToastUtils.showInfo(context, '不能给自己的攻略点赞')
+                    : () => _detailBloc.add(const ToggleLike()),
           ),
           _InteractionButton(
             icon: guide.isFavorited
@@ -726,9 +733,11 @@ class _GuideDetailViewState extends State<GuideDetailView> {
             color: guide.isFavorited
                 ? GuideTokens.favoriteColor(context)
                 : GuideTokens.textSecondary(context),
-            onTap: isOwnGuide
-                ? () => ToastUtils.showInfo(context, '不能收藏自己的攻略')
-                : () => _detailBloc.add(const ToggleFavorite()),
+            onTap: !isLoggedIn
+                ? () => ToastUtils.showInfo(context, '登录后才能收藏')
+                : isOwnGuide
+                    ? () => ToastUtils.showInfo(context, '不能收藏自己的攻略')
+                    : () => _detailBloc.add(const ToggleFavorite()),
           ),
           _InteractionButton(
             icon: Icons.chat_bubble_outline,
@@ -738,8 +747,8 @@ class _GuideDetailViewState extends State<GuideDetailView> {
             color: GuideTokens.textSecondary(context),
             onTap: _scrollToComments,
           ),
-          // 举报/拉黑（仅非自己的攻略显示）
-          if (!isOwnGuide)
+          // 举报/拉黑（仅登录用户且非自己的攻略显示）
+          if (isLoggedIn && !isOwnGuide)
             _ReportBlockButton(
               guideId: guide.id,
               authorId: guide.authorId,

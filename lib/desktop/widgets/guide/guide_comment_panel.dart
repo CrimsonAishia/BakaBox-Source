@@ -14,7 +14,6 @@ import '../../../core/widgets/guide/guide_report_dialog.dart';
 import '../../../core/widgets/guide/guide_tokens.dart';
 import '../../../core/widgets/rich_text_viewer.dart';
 import '../../../core/widgets/signed_network_image.dart';
-import '../login_dialog.dart';
 
 /// 桌面端攻略评论面板
 ///
@@ -79,7 +78,8 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
     return info?.username ?? '游客';
   }
 
-  void _requireLogin() => LoginDialog.show(context);
+  void _requireLogin() =>
+      ToastUtils.showInfo(context, '登录后才能参与互动');
 
   // ─── Reply ──────────────────────────────────────────────────────────────
 
@@ -302,11 +302,7 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
           onDislike: isOwnComment ? null : () => _handleDislike(context, comment),
           onDelete: () =>
               context.read<GuideCommentBloc>().add(DeleteComment(comment.id)),
-          onReport: () => ReportDialog.show(
-            context,
-            targetId: comment.id,
-            targetType: 'comment',
-          ),
+          onReport: () => _handleReport(context, comment),
         ),
         if (visibleReplies.isNotEmpty)
           Padding(
@@ -327,11 +323,7 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
               onDislike: (c) => _handleDislike(context, c),
               onDelete: (c) =>
                   context.read<GuideCommentBloc>().add(DeleteComment(c.id)),
-              onReport: (c) => ReportDialog.show(
-                context,
-                targetId: c.id,
-                targetType: 'comment',
-              ),
+              onReport: (c) => _handleReport(context, c),
             ),
           ),
         // 行内 fallback 回复输入条（仅在没有外部 onReplyRequested 时使用）
@@ -406,6 +398,18 @@ class GuideCommentPanelState extends State<GuideCommentPanel> {
       return;
     }
     context.read<GuideCommentBloc>().add(ToggleCommentDislike(comment.id));
+  }
+
+  void _handleReport(BuildContext context, GuideComment comment) {
+    if (!_isLoggedIn(context)) {
+      _requireLogin();
+      return;
+    }
+    ReportDialog.show(
+      context,
+      targetId: comment.id,
+      targetType: 'comment',
+    );
   }
 
   Widget _buildLoadMore(BuildContext context, GuideCommentState state) {
