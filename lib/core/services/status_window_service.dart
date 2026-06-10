@@ -929,12 +929,15 @@ class StatusWindowService {
   }
 
   /// 开始挤服
+  ///
+  /// [force] 为 true 时跳过"已在该服务器"的入口预判（用户已在弹窗中确认继续挤服）。
   Future<bool> startQueue({
     required String serverAddress,
     String? serverName,
     QueueConfig? config,
     ServerInfo? serverInfo,
     MapData? mapInfo,
+    bool force = false,
   }) async {
     // 检查游戏路径是否已配置
     final hasGamePath = await _gameLauncher.hasGamePath();
@@ -1052,7 +1055,7 @@ class StatusWindowService {
     //
     // 判定已在游戏中时，直接以"成功"态创建悬浮窗（初始态随 config.extra 一同下发，
     // 不依赖易丢的即时 IPC 推送），再 finalize 收尾。
-    if (await _isAlreadyInGameOnEntry()) {
+    if (!force && await _isAlreadyInGameOnEntry()) {
       LogService.i('[StatusWindowService] 入口快照预判已在游戏中，直接以成功态收尾');
       await _showWindow(
         type: FloatingWindowType.queue,
@@ -1088,7 +1091,7 @@ class StatusWindowService {
     );
 
     // 挂载守护进程（内部检查 isMonitorable / 映射就绪情况）
-    await _attachQueueGuard(serverAddress);
+    await _attachQueueGuard(serverAddress, force: force);
 
     // 入口快照检查：若已被守护判定为终态，跳过后续刷信息
     if (_outcomeFinalized) {
@@ -1542,7 +1545,7 @@ class StatusWindowService {
   ///
   /// - 不可监控（无 -condebug）→ 跳过守护，挤服走"乐观模式"
   /// - 映射服务未就绪 → await load 兜底，失败则跳过守护
-  Future<void> _attachQueueGuard(String serverAddress) async {
+  Future<void> _attachQueueGuard(String serverAddress, {bool force = false}) async {
     _queueGuardSub?.cancel();
     _queueGuardSub = null;
 
@@ -1577,17 +1580,21 @@ class StatusWindowService {
     // 入口快照
     final initial = QueueGuardService().location;
     LogService.d('[StatusWindowService] 挂载守护进程，初始 location=$initial');
-    switch (initial) {
-      case GuardLocation.inTargetServer:
-      case GuardLocation.inUnknownServer:
-        LogService.i('[StatusWindowService] 启动时已在游戏中 ($initial)，立即 finalize');
-        _finalizeOnce(_handleAlreadyInGame);
-        return;
-      case GuardLocation.inOtherServer:
-        // 入口快照：用户已在其他服，挤服正常继续刷信息（文案保持"挤服中..."，无需切换）
-        break;
-      case GuardLocation.notInGame:
-        break;
+    // force=true：用户在弹窗中确认"已在该服仍继续挤服"，跳过入口快照的
+    // 立即 finalize，只订阅后续事件（等真正发生进服/换服跃迁再判定）。
+    if (!force) {
+      switch (initial) {
+        case GuardLocation.inTargetServer:
+        case GuardLocation.inUnknownServer:
+          LogService.i('[StatusWindowService] 启动时已在游戏中 ($initial)，立即 finalize');
+          _finalizeOnce(_handleAlreadyInGame);
+          return;
+        case GuardLocation.inOtherServer:
+          // 入口快照：用户已在其他服，挤服正常继续刷信息（文案保持"挤服中..."，无需切换）
+          break;
+        case GuardLocation.notInGame:
+          break;
+      }
     }
 
     _queueGuardSub = QueueGuardService().events.listen(_onGuardEvent);
