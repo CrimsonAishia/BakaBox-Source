@@ -1942,6 +1942,8 @@ class StatusWindowService {
     StreamSubscription<QueueGuardEvent>? guardSub;
     Timer? primaryTimer;
     Timer? extendedTimer;
+    // serverFull 宽限确认计时器（见下方 serverFull 分支说明）
+    Timer? serverFullGraceTimer;
     bool seenLeftOldServer = false;
     // 切服场景：旧服的引擎 disconnect 不算失败，仅吞一次
     bool consumedSwitchDisconnect =
@@ -1953,6 +1955,7 @@ class StatusWindowService {
       guardSub?.cancel();
       primaryTimer?.cancel();
       extendedTimer?.cancel();
+      serverFullGraceTimer?.cancel();
       completer.complete(outcome);
     }
 
@@ -2007,8 +2010,52 @@ class StatusWindowService {
           return;
 
         case GameState.serverFull:
-          // 服务器满始终是真失败（切服中间态不会触发 serverFull）
-          resolve(ConnectionOutcome.serverFull);
+          // 挤"满服"的本质：第一次连接几乎必然先收到 REJECT_SERVERFULL，
+          // 紧接着才可能因有人离开/预留位而挤进去。因此 serverFull 不是即时
+          // 硬终态，而是"可恢复的中间态"——与切服 disconnect 同理，需要观察随后
+          // 是否真的进服，否则会出现"人已进服，浮窗却报满"。
+          //
+          // 设计要点（保证不引入新 BUG）：
+          // 1. 成功只可能来自既有的 onSignal()（唯一可信的"在游戏中"判定），
+          //    本分支不新增任何成功路径——先立刻问一次，已在服直接 success。
+          // 2. 否则启动 3s 宽限计时器；期间 console/guard 的任何信号仍会经由
+          //    各自监听调用 onSignal()，一旦进服立即 resolve(success)。
+          // 3. 宽限到点：
+          //    - 已进服 → success；
+          //    - 仍在 connecting/loading（还在往里挤，加载大图可能 >3s）→ 不武断
+          //      判满，重新武装下一轮 3s 继续观察（自愈，避免误报满，也不会卡死：
+          //      最终一定被外层 30s+30s 主超时兜底）；
+          //    - 其余（已回主菜单 / 明确不在任何服）→ 这才是真·满服被拒，
+          //      resolve(serverFull)。
+          // 4. 计时器进行中再来 serverFull 行直接忽略（已在观察，无需重置）。
+          onSignal();
+          if (completer.isCompleted) return;
+          if (serverFullGraceTimer != null) return; // 宽限已在进行
+          LogService.d('[StatusWindowService] [Observe] 收到 serverFull，进入宽限确认窗口');
+          void scheduleServerFullCheck() {
+            serverFullGraceTimer = Timer(const Duration(seconds: 3), () {
+              if (completer.isCompleted) return;
+              // 到点先给成功最后一次机会
+              onSignal();
+              if (completer.isCompleted) return;
+              final consoleState = _consoleLogService.currentState.state;
+              final stillProgressing =
+                  consoleState == GameState.connecting ||
+                  consoleState == GameState.loading;
+              if (stillProgressing) {
+                // 仍在往里挤：再观察一轮，不提前判满（外层主超时兜底）
+                LogService.d(
+                  '[StatusWindowService] [Observe] 宽限到点仍在加载/连接，再观察一轮',
+                );
+                scheduleServerFullCheck();
+                return;
+              }
+              LogService.d('[StatusWindowService] [Observe] 宽限结束确认服务器已满');
+              resolve(ConnectionOutcome.serverFull);
+            });
+          }
+
+          scheduleServerFullCheck();
           return;
 
         case GameState.failed:
