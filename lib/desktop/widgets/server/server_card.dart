@@ -2046,7 +2046,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
           serverName: widget.server.serverItem.getDisplayName(
             widget.server.serverData?.hostName,
           ),
-          queueCount: widget.server.queueCount,
           onClose: () => Navigator.of(context).pop(),
         ),
       ),

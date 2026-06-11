@@ -34,7 +34,6 @@ class WarmupWindow extends StatefulWidget {
 
   /// 自定义服务器名称（通常是用户设置的备注名，如果没有则是官方名）
   final String? serverName;
-  final int queueCount;
 
   const WarmupWindow({
     super.key,
@@ -44,7 +43,6 @@ class WarmupWindow extends StatefulWidget {
     this.initialServerInfo,
     this.initialMapInfo,
     this.serverName,
-    this.queueCount = 0,
   });
 
   @override
@@ -69,7 +67,6 @@ class _WarmupWindowState extends State<WarmupWindow> {
           initialServerInfo: widget.initialServerInfo,
           initialMapInfo: widget.initialMapInfo,
           serverName: widget.serverName,
-          queueCount: widget.queueCount,
         ),
       );
 
@@ -180,26 +177,37 @@ class _WarmupWindowContentState extends State<_WarmupWindowContent>
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: BlocBuilder<WarmupBloc, WarmupBlocState>(
-          builder: (context, state) {
-            return Stack(
-              children: [
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 头部（地图背景 + 服务器信息）
-                    _buildHeader(context, state),
-                    // 内容区域
-                    Flexible(
-                      child: SingleChildScrollView(
-                        child: _buildContent(context, state),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            );
+        child: BlocListener<WarmupBloc, WarmupBlocState>(
+          listenWhen: (previous, current) =>
+              previous.status != WarmupStatus.launching &&
+              current.status == WarmupStatus.launching,
+          listener: (context, state) {
+            // 达标后点击"立即加入"或倒计时结束 → 进入 launching：
+            // 连接指令已下发，直接关闭暖服面板，不在此等待游戏启动/进服。
+            // 单例 Bloc/Service 会在后台继续完成启动与连接。
+            widget.onClose?.call();
           },
+          child: BlocBuilder<WarmupBloc, WarmupBlocState>(
+            builder: (context, state) {
+              return Stack(
+                children: [
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 头部（地图背景 + 服务器信息）
+                      _buildHeader(context, state),
+                      // 内容区域
+                      Flexible(
+                        child: SingleChildScrollView(
+                          child: _buildContent(context, state),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

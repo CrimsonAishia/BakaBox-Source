@@ -132,6 +132,24 @@ class FloatingWindowStateNotifier extends ChangeNotifier {
     );
     notifyListeners();
   }
+
+  /// 看门狗强制超时（兜底）
+  ///
+  /// 浮窗是纯粹由宿主进程通过 IPC 驱动的"视图"，本身没有连接/加载的时序权威。
+  /// 正常情况下宿主一定会在有限时间内推送终态（成功/失败/服务器满）或持续推送
+  /// 进度更新。但若宿主进程崩溃、IPC 通道断开、观察流程的 completer 异常未完成，
+  /// 或收到未知 state 字符串，浮窗会永远停在非终态而不关闭。
+  ///
+  /// 该方法由浮窗自身的看门狗在"长时间收不到宿主任何更新"时调用，把状态切到
+  /// `timeout` 终态，从而复用既有的倒计时关闭链路统一收尾——不依赖宿主。
+  ///
+  /// 已是终态时不打扰（终态自有倒计时负责关闭）。
+  void forceTimeout(String message) {
+    if (_state.isTerminal) return;
+    _state = _state.copyWith(state: 'timeout', message: message);
+    debugPrint('[FloatingWindowStateNotifier] Forced timeout (watchdog): $message');
+    notifyListeners();
+  }
 }
 
 /// 通用浮窗应用入口

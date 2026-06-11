@@ -79,9 +79,6 @@ class WarmupBlocState extends Equatable {
   /// 暖服 WS 用户数（实时）
   final int warmupUsersCount;
 
-  /// 挤服用户数（从 ExtendedServerItem 获取，定时更新）
-  final int queueUsersCount;
-
   const WarmupBlocState({
     this.status = WarmupStatus.idle,
     this.serverInfo,
@@ -97,7 +94,6 @@ class WarmupBlocState extends Equatable {
     this.isCustomServer = false,
     this.needManualLaunch = false,
     this.warmupUsersCount = 0,
-    this.queueUsersCount = 0,
   });
 
   /// 是否正在暖服
@@ -109,10 +105,10 @@ class WarmupBlocState extends Equatable {
   /// 是否正在启动中
   bool get isLaunching => status == WarmupStatus.launching;
 
-  /// 有效总人数 = 服务器人数 + 暖服人数 + 挤服人数
+  /// 有效总人数 = 服务器人数 + 暖服人数
   int get effectiveTotalPlayers {
     final serverPlayers = serverInfo?.players ?? 0;
-    return serverPlayers + warmupUsersCount + queueUsersCount;
+    return serverPlayers + warmupUsersCount;
   }
 
   /// 服务器最大人数
@@ -155,7 +151,6 @@ class WarmupBlocState extends Equatable {
     bool? isCustomServer,
     bool? needManualLaunch,
     int? warmupUsersCount,
-    int? queueUsersCount,
   }) {
     return WarmupBlocState(
       status: status ?? this.status,
@@ -172,7 +167,6 @@ class WarmupBlocState extends Equatable {
       isCustomServer: isCustomServer ?? this.isCustomServer,
       needManualLaunch: needManualLaunch ?? this.needManualLaunch,
       warmupUsersCount: warmupUsersCount ?? this.warmupUsersCount,
-      queueUsersCount: queueUsersCount ?? this.queueUsersCount,
     );
   }
 
@@ -192,6 +186,5 @@ class WarmupBlocState extends Equatable {
     isCustomServer,
     needManualLaunch,
     warmupUsersCount,
-    queueUsersCount,
   ];
 }

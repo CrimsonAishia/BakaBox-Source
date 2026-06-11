@@ -131,7 +131,6 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
         config: config,
         serverInfo: initialServerInfo,
         mapInfo: event.initialMapInfo,
-        queueUsersCount: event.queueCount,
       ),
     );
 
@@ -270,9 +269,8 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
           // 同时传 mapName/maxPlayers，确保换图后悬浮窗地图信息动态更新
           if (state.status != WarmupStatus.idle) {
             _statusService.updateWarmupState(
-              currentPlayers: (serverInfo.players ?? 0) +
-                  state.warmupUsersCount +
-                  state.queueUsersCount,
+              currentPlayers:
+                  (serverInfo.players ?? 0) + state.warmupUsersCount,
               targetPlayers: state.effectiveTargetPlayers,
               mapInfo: mapInfo,
               clearMapInfo: shouldClearStaleMapInfo,
@@ -286,10 +284,30 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
             _checkTargetReached();
           }
         }
+      } else {
+        // 服务器查询失败（不可达/超时）：暖服仍在后台活跃（WebSocket 未断），
+        // 但本次拿不到新数据。仍向悬浮窗推送一次保活更新，维持固定的更新节奏，
+        // 避免长时间服务器不可达时悬浮窗看门狗把仍在进行的暖服误判为宿主失联而关闭。
+        _pushWarmupKeepAlive();
       }
     } catch (e) {
       LogService.e('[WarmupBloc] 获取服务器信息失败', e);
+      // 同上：异常路径也保活，确保活跃暖服期间悬浮窗持续收到宿主更新。
+      _pushWarmupKeepAlive();
     }
+  }
+
+  /// 向悬浮窗推送一次保活更新（暖服活跃但本轮无新数据时）
+  ///
+  /// 用当前已知的有效总人数刷新一次，使悬浮窗的"最近更新时间"前移，
+  /// 与成功路径保持同样的更新节奏，保证看门狗只在宿主真正失联时才触发。
+  void _pushWarmupKeepAlive() {
+    if (isClosed) return;
+    if (state.status == WarmupStatus.idle) return;
+    _statusService.updateWarmupState(
+      currentPlayers: (state.serverInfo?.players ?? 0) + state.warmupUsersCount,
+      targetPlayers: state.effectiveTargetPlayers,
+    );
   }
 
   /// 开始暖服
@@ -436,7 +454,14 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
       isLaunchingGame: true,
     ));
 
-    // 连接服务器（会自动判断是否需要先启动游戏）
+    // 关键修复：先结束暖服操作，把 StatusWindowService 的操作类型重置为 none。
+    // 否则在游戏未启动时，connectToServer 会回落到 launchGame，
+    // 而 launchGame 的守卫（type != none && status == running）会因为当前仍是
+    // "暖服中(running)"而直接拦截返回 false，导致游戏永远不会启动、
+    // 原生悬浮窗卡在"倒计时 X 秒"。游戏已在运行时走的是直接连接路径，所以才正常。
+    _statusService.pauseWarmup();
+
+    // 连接服务器（会自动判断是否需要先启动游戏，等价于 server_card 的连接逻辑）
     final success = await _statusService.connectToServer(
       serverAddress: state.serverAddress ?? '',
       serverName: state.serverName,
@@ -489,9 +514,8 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
     // 实时同步有效总人数到悬浮窗
     if (state.status != WarmupStatus.idle) {
       _statusService.updateWarmupState(
-        currentPlayers: (state.serverInfo?.players ?? 0) +
-            event.warmupUsersCount +
-            state.queueUsersCount,
+        currentPlayers:
+            (state.serverInfo?.players ?? 0) + event.warmupUsersCount,
         targetPlayers: state.effectiveTargetPlayers,
       );
     }
