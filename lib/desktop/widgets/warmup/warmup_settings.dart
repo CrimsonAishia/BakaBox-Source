@@ -190,7 +190,7 @@ class _WarmupSettingsState extends State<WarmupSettings> {
         Text(
           isSingleValue
               ? '无法获取服务器最大人数，暖服人数限制为 1 人'
-              : '有效人数 = 服务器人数 + 暖服人数 + 挤服人数',
+              : '有效人数 = 服务器人数 + 暖服人数',
           style: TextStyle(
             fontSize: 12,
             color: isSingleValue

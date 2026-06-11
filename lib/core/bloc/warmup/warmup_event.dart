@@ -23,7 +23,6 @@ class WarmupInitialize extends WarmupEvent {
   final MapData? initialMapInfo;
 
   final String? serverName;
-  final int queueCount;
 
   const WarmupInitialize(
     this.serverAddress, {
@@ -31,7 +30,6 @@ class WarmupInitialize extends WarmupEvent {
     this.isCustomServer = false,
     this.initialServerInfo,
     this.initialMapInfo,
-    this.queueCount = 0,
   });
 
   @override
@@ -41,7 +39,6 @@ class WarmupInitialize extends WarmupEvent {
     isCustomServer,
     initialServerInfo,
     initialMapInfo,
-    queueCount,
   ];
 }
 

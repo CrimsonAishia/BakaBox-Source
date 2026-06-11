@@ -36,6 +36,20 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
   Timer? _scheduleCloseTimer;
   bool _isCountdownActive = false;
 
+  // 看门狗：宿主长时间无任何更新时的兜底
+  //
+  // 浮窗的所有"进行中"状态（idle / launching / queueing / connecting /
+  // loading / warming）本身没有自动关闭，完全依赖宿主进程通过 IPC 继续推送
+  // 进度或推送终态。一旦宿主崩溃 / IPC 通道断开 / 观察流程异常未收尾 / 推来
+  // 未知 state，浮窗会永远停留不关闭。看门狗以"距上次宿主更新的时长"为准
+  // 兜底：超过阈值仍未收到任何更新，就强制切到 timeout 终态并走正常关闭链路。
+  //
+  // 阈值需大于宿主在合法场景下的最长静默：连接/加载阶段宿主的观察超时为
+  // 30s+30s=60s，期间可能无任何 IPC；挤服线程每 1-6s、暖服每 5s、启动每 1s
+  // 都会推送，不会长时间静默。取 150s 给足余量，避免误杀正常流程。
+  Timer? _watchdogTimer;
+  static const Duration _watchdogTimeout = Duration(seconds: 150);
+
   // 窗口关闭状态
   bool _isClosing = false;
 
@@ -64,11 +78,18 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _startCountdown(widget.stateNotifier.state.isSuccess);
       });
+    } else {
+      // 非终态：启动看门狗兜底（防止宿主断联导致浮窗永不关闭）
+      _resetWatchdog();
     }
   }
 
   void _onStateChanged() {
     final state = widget.stateNotifier.state;
+
+    // 收到宿主任意一次更新即视为"宿主存活"，重置看门狗的静默计时。
+    // 终态/暂停由倒计时接管关闭，看门狗在下面对应分支里取消。
+    _resetWatchdog();
 
     // 检查是否有 autoDismissSeconds 更新
     final autoDismiss = widget.stateNotifier.autoDismissSeconds;
@@ -83,16 +104,55 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
       return;
     }
 
-    // 进入终态时启动倒计时
+    // 进入终态时启动倒计时（倒计时接管关闭，停掉看门狗）
     if (state.isTerminal && !_isCountdownActive) {
+      _cancelWatchdog();
       _startCountdown(state.isSuccess, customSeconds: autoDismiss);
       return;
     }
 
-    // 进入暂停状态时启动倒计时
+    // 进入暂停状态时启动倒计时（倒计时接管关闭，停掉看门狗）
     if (state.isPaused && !_isCountdownActive) {
+      _cancelWatchdog();
       _startCountdown(false, isPaused: true, customSeconds: autoDismiss);
     }
+  }
+
+  /// 重置看门狗静默计时（仅在非终态/非暂停时维持）
+  ///
+  /// 终态与暂停由倒计时负责关闭，无需看门狗；其余进行中状态启动/续期计时，
+  /// 超时未再收到宿主更新则强制兜底关闭。
+  void _resetWatchdog() {
+    final state = widget.stateNotifier.state;
+    if (state.isTerminal || state.isPaused) {
+      _cancelWatchdog();
+      return;
+    }
+    _watchdogTimer?.cancel();
+    _watchdogTimer = Timer(_watchdogTimeout, _onWatchdogTimeout);
+  }
+
+  void _cancelWatchdog() {
+    _watchdogTimer?.cancel();
+    _watchdogTimer = null;
+  }
+
+  /// 看门狗触发：宿主长时间无更新，强制收尾
+  void _onWatchdogTimeout() {
+    if (!mounted) return;
+    final state = widget.stateNotifier.state;
+    // 双保险：已是终态/暂停则交给倒计时，不重复处理
+    if (state.isTerminal || state.isPaused) return;
+
+    debugPrint(
+      '[FloatingWindowShell] Watchdog fired after '
+      '${_watchdogTimeout.inSeconds}s without host update (state=${state.state}); '
+      'forcing timeout to close.',
+    );
+
+    // 切到 timeout 终态：notifier 通知 → _onStateChanged 启动失败倒计时关闭，
+    // 复用既有关闭链路，逻辑统一。
+    widget.stateNotifier.forceTimeout('连接超时，已自动关闭');
   }
 
   void _cancelCountdown() {
@@ -168,6 +228,7 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
   Future<void> _closeWindow() async {
     _countdownTimer?.cancel();
     _scheduleCloseTimer?.cancel();
+    _watchdogTimer?.cancel();
     _isCountdownActive = false;
 
     debugPrint('[FloatingWindowShell] Closing window: ${widget.windowId}');
@@ -232,6 +293,7 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
   void dispose() {
     _countdownTimer?.cancel();
     _scheduleCloseTimer?.cancel();
+    _watchdogTimer?.cancel();
     widget.stateNotifier.removeListener(_onStateChanged);
     super.dispose();
   }
