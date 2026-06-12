@@ -677,7 +677,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     _clearRecentlyUpdatedAfterDelay(requestId);
   }
 
-  /// 弱网模式下通过 HTTP 批量查询比分（`POST /api/stub`）。
+  /// 弱网模式下通过 HTTP 批量查询比分。
   ///
   /// 仅在 [_fetchServersInfo] 中、刷新当前选中分类服务器之后调用。普通模式
   /// 走 `score.updates` WS 频道，无需走 HTTP。

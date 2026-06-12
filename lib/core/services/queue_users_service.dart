@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import '../api/env_config.dart';
+import '../constants/api_constants.dart';
 import '../models/queue_user.dart';
 import '../utils/log_service.dart';
 import 'token_service.dart';
@@ -237,7 +238,7 @@ class QueueUsersServiceImpl implements QueueUsersService {
     // 将 http/https 转换为 ws/wss
     final wsBase = baseUrl.replaceFirst('http', 'ws');
     final encodedAddress = Uri.encodeComponent(serverAddress);
-    return '$wsBase/api/stub$encodedAddress?roomType=queue';
+    return '$wsBase${ApiConstants.serverUsersWsPath(encodedAddress, 'queue')}';
   }
 
   void _onMessage(dynamic data) {

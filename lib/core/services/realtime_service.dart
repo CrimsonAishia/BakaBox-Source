@@ -5,6 +5,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as ws_status;
 
 import '../api/env_config.dart';
+import '../constants/api_constants.dart';
 import '../models/realtime_models.dart';
 import '../utils/log_service.dart';
 import 'auth_service.dart';
@@ -33,7 +34,7 @@ class RealtimeService {
 
   // ---- 配置常量 ----
 
-  static const String _wsPath = '/api/stub';
+  static const String _wsPath = ApiConstants.realtimeWsPath;
   static const Duration _heartbeatInterval = Duration(seconds: 30);
   static const Duration _maxReconnectDelay = Duration(seconds: 30);
   static const Duration _initialReconnectDelay = Duration(seconds: 1);

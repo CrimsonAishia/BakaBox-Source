@@ -121,7 +121,7 @@ class MapTagChangeRequest extends Equatable {
   List<Object?> get props => [id, tagId, changeType, auditStatus];
 }
 
-/// 地图标签投票记录（GET /api/stub 接口专用）
+/// 地图标签投票记录（列表接口专用）
 /// 与投票响应中的 MapTagVote 不同，该接口不返回 createdAt、updatedAt、hasVoted
 @JsonSerializable()
 class MapTagVoteSimple extends Equatable {
@@ -200,7 +200,7 @@ class MapTagVoteSimple extends Equatable {
   ];
 }
 
-/// 地图标签投票列表响应（GET /api/stub 接口专用）
+/// 地图标签投票列表响应（列表接口专用）
 @JsonSerializable()
 class MapTagListSimpleResponse extends Equatable {
   final String mapName;
