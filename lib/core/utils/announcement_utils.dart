@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/announcement_models.dart';
+import '../constants/app_colors.dart';
 
 /// 公告类型信息
 class AnnouncementTypeInfo {
@@ -58,7 +59,7 @@ class AnnouncementUtils {
         );
       case 'warning':
         return const AnnouncementTypeInfo(
-          color: Color(0xFFFF9800),
+          color: AppColors.orange,
           icon: Icons.warning_amber_outlined,
           label: '提醒',
         );

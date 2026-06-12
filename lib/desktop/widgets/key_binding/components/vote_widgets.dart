@@ -6,6 +6,7 @@ import '../../../../core/bloc/key_binding/key_binding_bloc.dart';
 import '../../../../core/bloc/key_binding/key_binding_event.dart';
 import '../../../../core/models/key_config_models.dart';
 import '../../login_dialog.dart';
+import '../../../../core/constants/app_colors.dart';
 
 /// 详情页投票按钮组
 class DetailVoteButtons extends StatelessWidget {
@@ -28,7 +29,7 @@ class DetailVoteButtons extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF334155) : Colors.grey[100],
+        color: isDark ? AppColors.slate700 : Colors.grey[100],
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -48,7 +49,7 @@ class DetailVoteButtons extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: voteType == KeyConfigVoteType.up
-                  ? const Color(0xFF10b981)
+                  ? AppColors.emerald500
                   : (isDark ? Colors.white54 : Colors.grey[600]),
             ),
           ),
@@ -71,7 +72,7 @@ class DetailVoteButtons extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: voteType == KeyConfigVoteType.down
-                  ? const Color(0xFFef4444)
+                  ? AppColors.red500
                   : (isOwner
                         ? (isDark ? Colors.white24 : Colors.grey[400])
                         : (isDark ? Colors.white54 : Colors.grey[600])),
@@ -104,7 +105,7 @@ class DetailVoteButtons extends StatelessWidget {
           children: [
             Icon(
               MdiIcons.accountLockOutline,
-              color: const Color(0xFF0080FF),
+              color: AppColors.primary,
               size: 24,
             ),
             const SizedBox(width: 10),
@@ -150,8 +151,8 @@ class VoteButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activeColor = isDownVote
-        ? const Color(0xFFef4444)
-        : const Color(0xFF10b981);
+        ? AppColors.red500
+        : AppColors.emerald500;
     final bgColor = Colors.grey[200]!;
     final normalColor = Colors.grey[500]!;
     final disabledColor = Colors.grey[300]!;

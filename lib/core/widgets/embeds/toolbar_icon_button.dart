@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../constants/app_colors.dart';
 
 /// 工具栏图标按钮通用外壳
 ///
@@ -51,15 +52,15 @@ class _ToolbarIconButtonState extends State<ToolbarIconButton> {
     final disabled = widget.disabled || widget.onTap == null;
 
     final defaultColor = isDark
-        ? const Color(0xFF94A3B8)
-        : const Color(0xFF64748B);
+        ? AppColors.slate400
+        : AppColors.slate500;
     final disabledColor =
-        isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1);
+        isDark ? AppColors.slate600 : AppColors.slate300;
 
     final iconColor = disabled
         ? disabledColor
         : (_hover
-            ? (isDark ? Colors.white : const Color(0xFF0080FF))
+            ? (isDark ? Colors.white : AppColors.primary)
             : (widget.color ?? defaultColor));
 
     final hoverBg = isDark
@@ -97,7 +98,7 @@ class _ToolbarIconButtonState extends State<ToolbarIconButton> {
                         height: 14,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Color(0xFF0080FF),
+                          color: AppColors.primary,
                         ),
                       )
                     : Icon(widget.icon, size: 16, color: iconColor),

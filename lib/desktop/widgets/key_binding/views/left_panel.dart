@@ -9,6 +9,7 @@ import '../../../../core/bloc/key_binding/key_binding_state.dart';
 import '../components/common_widgets.dart' as common;
 import '../components/config_card.dart';
 import '../components/toolbar_widgets.dart';
+import '../../../../core/constants/app_colors.dart';
 
 /// 左侧面板：工具栏 + 配置列表
 class LeftPanel extends StatelessWidget {
@@ -42,11 +43,11 @@ class LeftPanel extends StatelessWidget {
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border(
           bottom: BorderSide(
-            color: isDark ? const Color(0xFF334155) : Colors.grey[200]!,
+            color: isDark ? AppColors.slate700 : Colors.grey[200]!,
             width: 1,
           ),
         ),
@@ -148,7 +149,7 @@ class LeftPanel extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(

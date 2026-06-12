@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'guide_tokens.dart';
+import '../../constants/app_colors.dart';
 
 /// 攻略列表页顶部 Hero Banner
 ///
@@ -43,7 +44,7 @@ class GuideHeroBanner extends StatelessWidget {
     return Container(
       height: 280,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F172A) : theme.colorScheme.primary.withValues(alpha: 0.1),
+        color: isDark ? AppColors.slate900 : theme.colorScheme.primary.withValues(alpha: 0.1),
         border: Border.all(
           color: GuideTokens.divider(context),
         ),

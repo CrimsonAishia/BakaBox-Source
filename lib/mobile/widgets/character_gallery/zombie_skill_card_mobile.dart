@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/models/character_models.dart';
 import '../../../desktop/widgets/character_gallery/character_gallery_theme.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 移动端僵尸技能卡片组件 - 与桌面端完全一致的设计
 ///
@@ -24,8 +25,8 @@ class ZombieSkillCardMobile extends StatelessWidget {
     // 被动用绿色和被动背景，主动用朱红和大符卡背景（与桌面端完全一致）
     return isPassive
         ? (
-            const Color(0xFF4A7C59),
-            const Color(0xFF4A7C59).withValues(alpha: isDark ? 0.15 : 0.08),
+            AppColors.skillGreen,
+            AppColors.skillGreen.withValues(alpha: isDark ? 0.15 : 0.08),
             '✦',
             'assets/images/character_gallery/spell_card_bg_passive.png',
           )

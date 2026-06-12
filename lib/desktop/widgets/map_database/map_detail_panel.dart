@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/models/map_contribution_models.dart';
 import 'contribution_item.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 地图详情面板
 ///
@@ -30,7 +31,7 @@ class MapDetailPanel extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark
@@ -82,21 +83,21 @@ class MapDetailPanel extends StatelessWidget {
                     _buildStatChip(
                       Icons.article_outlined,
                       '${mapInfo.contribCount} 贡献',
-                      const Color(0xFF6366F1),
+                      AppColors.indigo500,
                       isDark,
                     ),
                     const SizedBox(width: 12),
                     _buildStatChip(
                       Icons.label_outline,
                       '${mapInfo.nameCount} 名称',
-                      const Color(0xFF10B981),
+                      AppColors.emerald500,
                       isDark,
                     ),
                     const SizedBox(width: 12),
                     _buildStatChip(
                       Icons.image_outlined,
                       '${mapInfo.backgroundCount} 背景',
-                      const Color(0xFFF59E0B),
+                      AppColors.amber500,
                       isDark,
                     ),
                   ],
@@ -131,7 +132,7 @@ class MapDetailPanel extends StatelessWidget {
   Widget _buildEmptyState(BuildContext context, bool isDark) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark

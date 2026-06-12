@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/app_colors.dart';
 
 /// 玩家数量相关的工具类
 /// 根据玩家数量百分比返回对应的颜色等级
@@ -42,10 +43,10 @@ class PlayerCountUtils {
   }
 
   /// 低负载颜色 (绿色)
-  static const Color lowLoadColor = Color(0xFF10B981);
+  static const Color lowLoadColor = AppColors.emerald500;
 
   /// 中等负载颜色 (橙色)
-  static const Color mediumLoadColor = Color(0xFFFF9800);
+  static const Color mediumLoadColor = AppColors.orange;
 
   /// 高负载颜色 (红色)
   static const Color highLoadColor = Color(0xFFF44336);

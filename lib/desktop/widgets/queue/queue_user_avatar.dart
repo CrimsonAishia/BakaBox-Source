@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/models/queue_user.dart';
 import '../../../core/widgets/disk_cached_image.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 挤服用户头像组件
 ///
@@ -144,7 +145,7 @@ class _QueueUserTooltip extends StatelessWidget {
         ],
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: AppColors.slate800,
         borderRadius: BorderRadius.circular(6),
         boxShadow: [
           BoxShadow(

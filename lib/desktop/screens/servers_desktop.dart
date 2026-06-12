@@ -19,7 +19,6 @@ import '../widgets/map_subscription/map_subscription_dialog.dart';
 import '../widgets/api_provider_list_dialog.dart';
 import '../widgets/api_server_selection_dialog.dart';
 
-// ==================== 常量定义 ====================
 
 /// 自动刷新间隔（秒）
 const int _kRefreshInterval = 15;
@@ -577,8 +576,8 @@ class _ServersDesktopState extends State<ServersDesktop> {
       ],
       child: Scaffold(
         backgroundColor: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF0F172A)
-            : const Color(0xFFF3F4F6),
+            ? AppColors.slate900
+            : AppColors.gray100,
         body: Container(
           width: double.infinity,
           height: double.infinity,
@@ -618,7 +617,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
           current.warmupNotificationEnabled,
       builder: (context, settingsState) {
         final isEnabled = settingsState.warmupNotificationEnabled;
-        final warmupColor = const Color(0xFFFF9800);
+        final warmupColor = AppColors.orange;
 
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -705,10 +704,10 @@ class _ServersDesktopState extends State<ServersDesktop> {
       return Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+          color: AppColors.blue500.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
+            color: AppColors.blue500.withValues(alpha: 0.3),
           ),
         ),
         child: Row(
@@ -719,7 +718,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
               height: 14,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.blue500),
               ),
             ),
             const SizedBox(width: 6),
@@ -728,7 +727,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF3B82F6),
+                color: AppColors.blue500,
               ),
             ),
           ],
@@ -783,7 +782,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
               Icon(
                 MdiIcons.gamepadVariant,
                 size: 18,
-                color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                color: isDark ? Colors.white70 : AppColors.gray500,
               ),
               const SizedBox(width: 6),
               Text(
@@ -791,7 +790,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                  color: isDark ? Colors.white70 : AppColors.gray500,
                 ),
               ),
             ],
@@ -837,7 +836,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
           child: Icon(
             Icons.settings_outlined,
             size: 20,
-            color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+            color: isDark ? Colors.white70 : AppColors.gray500,
           ),
         ),
       ),
@@ -873,10 +872,10 @@ class _ServersDesktopState extends State<ServersDesktop> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF9FAFB),
+        color: isDark ? AppColors.slate800 : AppColors.gray50,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.slate700 : AppColors.gray200,
         ),
       ),
       child: Padding(
@@ -907,7 +906,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
                     width: 4,
                     height: 18,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0080FF),
+                      color: AppColors.primary,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -943,13 +942,13 @@ class _ServersDesktopState extends State<ServersDesktop> {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                        color: AppColors.emerald500.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Icon(
                         Icons.add_rounded,
                         size: 20,
-                        color: Color(0xFF10B981),
+                        color: AppColors.emerald500,
                       ),
                     ),
                   ),
@@ -977,7 +976,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
                       Icons.star_rounded,
                       size: 20,
                       color: isDark
-                          ? const Color(0xFFF59E0B)
+                          ? AppColors.amber500
                           : const Color(0xFFD97706),
                     ),
                   ),
@@ -1017,7 +1016,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
                     child: Icon(
                       Icons.grid_view_rounded,
                       size: 20,
-                      color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                      color: isDark ? Colors.white70 : AppColors.gray500,
                     ),
                   ),
                 ),
@@ -1421,7 +1420,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : const Color(0xFF374151),
+                color: isDark ? Colors.white : AppColors.gray700,
               ),
             ),
             const SizedBox(height: 6),
@@ -1429,7 +1428,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
               subtitle,
               style: TextStyle(
                 fontSize: 14,
-                color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                color: isDark ? Colors.white54 : AppColors.gray500,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1447,10 +1446,10 @@ class _ServersDesktopState extends State<ServersDesktop> {
         width: 300,
         padding: const EdgeInsets.all(30),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          color: isDark ? AppColors.slate800 : Colors.white,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+            color: isDark ? AppColors.slate700 : AppColors.gray200,
           ),
         ),
         child: Column(
@@ -1467,7 +1466,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFFEF4444),
+                color: AppColors.red500,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1482,7 +1481,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0080FF),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
               ),
               child: const Text('重试'),
@@ -1500,10 +1499,10 @@ class _ServersDesktopState extends State<ServersDesktop> {
       children: [
         Container(
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF9FAFB),
+            color: isDark ? AppColors.slate800 : AppColors.gray50,
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
-              color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+              color: isDark ? AppColors.slate700 : AppColors.gray200,
             ),
           ),
           child: Column(
@@ -1547,7 +1546,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
                   padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
                   child: Material(
                     elevation: hasPending ? 8 : 0,
-                    shadowColor: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                    shadowColor: AppColors.primary.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
                       decoration: BoxDecoration(
@@ -1566,7 +1565,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
                         ),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: const Color(0xFF0080FF).withValues(alpha: 0.5),
+                          color: AppColors.primary.withValues(alpha: 0.5),
                           width: 1.5,
                         ),
                       ),
@@ -1589,7 +1588,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
                                 child: const Icon(
                                   Icons.system_update_alt_rounded,
                                   size: 18,
-                                  color: Color(0xFF0080FF),
+                                  color: AppColors.primary,
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -1614,7 +1613,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
                                         fontSize: 11,
                                         color: isDark
                                             ? Colors.white54
-                                            : const Color(0xFF3B82F6),
+                                            : AppColors.blue500,
                                       ),
                                     ),
                                   ],
@@ -1673,7 +1672,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
                                       fontWeight: FontWeight.w500,
                                       color: isDark
                                           ? Colors.white54
-                                          : const Color(0xFF3B82F6),
+                                          : AppColors.blue500,
                                     ),
                                   ),
                                 ),
@@ -1691,7 +1690,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
                                     vertical: 6,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF0080FF),
+                                    color: AppColors.primary,
                                     borderRadius: BorderRadius.circular(6),
                                     boxShadow: [
                                       BoxShadow(
@@ -1750,8 +1749,8 @@ class _ServersDesktopState extends State<ServersDesktop> {
             border: Border(
               bottom: BorderSide(
                 color: isDark
-                    ? const Color(0xFF334155)
-                    : const Color(0xFFE5E7EB),
+                    ? AppColors.slate700
+                    : AppColors.gray200,
                 width: 1,
               ),
             ),
@@ -1814,7 +1813,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
                             child: const Icon(
                               Icons.add_rounded,
                               size: 18,
-                              color: Color(0xFF0080FF),
+                              color: AppColors.primary,
                             ),
                           ),
                         ),
@@ -1844,7 +1843,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: isSelected ? const Color(0xFF0080FF) : Colors.transparent,
+              color: isSelected ? AppColors.primary : Colors.transparent,
               width: 2,
             ),
           ),
@@ -1859,7 +1858,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected
                     ? (isDark ? Colors.white : const Color(0xFF111827))
-                    : (isDark ? Colors.white54 : const Color(0xFF6B7280)),
+                    : (isDark ? Colors.white54 : AppColors.gray500),
               ),
             ),
             const SizedBox(width: 6),
@@ -1867,10 +1866,10 @@ class _ServersDesktopState extends State<ServersDesktop> {
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? const Color(0xFF0080FF).withValues(alpha: 0.15)
+                    ? AppColors.primary.withValues(alpha: 0.15)
                     : (isDark
-                          ? const Color(0xFF334155)
-                          : const Color(0xFFF3F4F6)),
+                          ? AppColors.slate700
+                          : AppColors.gray100),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -1879,8 +1878,8 @@ class _ServersDesktopState extends State<ServersDesktop> {
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: isSelected
-                      ? const Color(0xFF0080FF)
-                      : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                      ? AppColors.primary
+                      : (isDark ? Colors.white38 : AppColors.gray400),
                 ),
               ),
             ),
@@ -1926,7 +1925,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
   /// 构建滚动指示器
   Widget _buildScrollIndicator({required bool isTop}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFF9FAFB);
+    final bgColor = isDark ? AppColors.slate800 : AppColors.gray50;
     return IgnorePointer(
       child: Container(
         height: 48,
@@ -1946,7 +1945,7 @@ class _ServersDesktopState extends State<ServersDesktop> {
         padding: EdgeInsets.only(top: isTop ? 2 : 0, bottom: isTop ? 0 : 2),
         child: Icon(
           isTop ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-          color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+          color: isDark ? Colors.white54 : AppColors.gray500,
           size: 28,
         ),
       ),
@@ -2043,7 +2042,7 @@ class _ServerSettingsDialog extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Dialog(
-      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      backgroundColor: isDark ? AppColors.slate800 : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 400),
@@ -2059,7 +2058,7 @@ class _ServerSettingsDialog extends StatelessWidget {
                   Icon(
                     Icons.settings_outlined,
                     size: 22,
-                    color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                    color: isDark ? Colors.white70 : AppColors.gray500,
                   ),
                   const SizedBox(width: 10),
                   Text(
@@ -2076,7 +2075,7 @@ class _ServerSettingsDialog extends StatelessWidget {
                     icon: Icon(
                       Icons.close_rounded,
                       size: 20,
-                      color: isDark ? Colors.white54 : const Color(0xFF9CA3AF),
+                      color: isDark ? Colors.white54 : AppColors.gray400,
                     ),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -2090,7 +2089,7 @@ class _ServerSettingsDialog extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                  color: isDark ? Colors.white54 : AppColors.gray500,
                 ),
               ),
               const SizedBox(height: 12),
@@ -2150,14 +2149,14 @@ class _ServerSettingsDialog extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF0080FF).withValues(alpha: 0.1)
+              ? AppColors.primary.withValues(alpha: 0.1)
               : (isDark
                     ? Colors.white.withValues(alpha: 0.04)
                     : Colors.black.withValues(alpha: 0.03)),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected
-                ? const Color(0xFF0080FF).withValues(alpha: 0.4)
+                ? AppColors.primary.withValues(alpha: 0.4)
                 : (isDark
                       ? Colors.white.withValues(alpha: 0.08)
                       : Colors.black.withValues(alpha: 0.06)),
@@ -2174,8 +2173,8 @@ class _ServerSettingsDialog extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: isSelected
-                      ? const Color(0xFF0080FF)
-                      : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                      ? AppColors.primary
+                      : (isDark ? Colors.white38 : AppColors.gray400),
                   width: 2,
                 ),
               ),
@@ -2186,7 +2185,7 @@ class _ServerSettingsDialog extends StatelessWidget {
                         height: 10,
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Color(0xFF0080FF),
+                          color: AppColors.primary,
                         ),
                       ),
                     )
@@ -2204,7 +2203,7 @@ class _ServerSettingsDialog extends StatelessWidget {
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: isSelected
-                          ? const Color(0xFF0080FF)
+                          ? AppColors.primary
                           : (isDark ? Colors.white : const Color(0xFF111827)),
                     ),
                   ),
@@ -2213,7 +2212,7 @@ class _ServerSettingsDialog extends StatelessWidget {
                     description,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                      color: isDark ? Colors.white38 : AppColors.gray400,
                     ),
                   ),
                 ],
@@ -2279,12 +2278,12 @@ class _LongPressDraggableWrapperState
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
             border: _isLongPressing
-                ? Border.all(color: const Color(0xFF0080FF), width: 2)
+                ? Border.all(color: AppColors.primary, width: 2)
                 : null,
             boxShadow: _isLongPressing
                 ? [
                     BoxShadow(
-                      color: const Color(0xFF0080FF).withValues(alpha: 0.5),
+                      color: AppColors.primary.withValues(alpha: 0.5),
                       blurRadius: 12,
                       spreadRadius: 2,
                     ),
@@ -2303,7 +2302,6 @@ class _LongPressDraggableWrapperState
   }
 }
 
-// ==================== 分类列表独立组件 ====================
 
 /// 分类列表内容组件（独立 StatefulWidget，持有自己的 ScrollController）
 /// 使用独立组件是为了配合 AnimatedSwitcher：动画过渡期间新旧两个实例同时存在，
@@ -2363,7 +2361,7 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
         if (state.isLoading && state.serverCategories.isEmpty) {
           return const Center(
             child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0080FF)),
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
             ),
           );
         }
@@ -2406,7 +2404,7 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : const Color(0xFF374151),
+                      color: isDark ? Colors.white : AppColors.gray700,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -2414,7 +2412,7 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
                     isCustomTab ? '点击上方 + 按钮添加自定义分类' : '系统默认分类将在此显示',
                     style: TextStyle(
                       fontSize: 14,
-                      color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                      color: isDark ? Colors.white54 : AppColors.gray500,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -2430,8 +2428,8 @@ class _CategoriesListContentState extends State<_CategoriesListContent> {
         });
 
         final bgColor = isDark
-            ? const Color(0xFF1E293B)
-            : const Color(0xFFF9FAFB);
+            ? AppColors.slate800
+            : AppColors.gray50;
 
         return Stack(
           children: [

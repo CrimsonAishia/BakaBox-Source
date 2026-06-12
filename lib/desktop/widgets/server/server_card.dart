@@ -23,6 +23,7 @@ import '../queue/queue_window.dart';
 import '../warmup/warmup_window.dart';
 import '../../../core/widgets/map_contribution_dialog.dart';
 import '../edit_server_dialog.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 服务器卡片
 class ServerCard extends StatefulWidget {
@@ -357,7 +358,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                   builder: (context, child) =>
                       _buildCardContent(_getRgbColor(_rgbController!.value)),
                 )
-              : _buildCardContent(const Color(0xFF0080FF)),
+              : _buildCardContent(AppColors.primary),
         ),
       ),
     );
@@ -557,11 +558,11 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     // 边框颜色优先级：挤服 > 热身 > hover > 无
     Color borderColor;
     if (isQueueing && _isHovered) {
-      borderColor = const Color(0xFF22C55E).withValues(alpha: 0.8);
+      borderColor = AppColors.green500.withValues(alpha: 0.8);
     } else if (_isHovered && _isWarmingUp) {
       borderColor = rgbColor.withValues(alpha: 0.8);
     } else if (_isHovered) {
-      borderColor = const Color(0xFF0080FF).withValues(alpha: 0.6);
+      borderColor = AppColors.primary.withValues(alpha: 0.6);
     } else {
       borderColor = Colors.transparent;
     }
@@ -574,7 +575,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
           if (isQueueing) ...[
             // 挤服时绿色发光
             BoxShadow(
-              color: const Color(0xFF22C55E).withValues(alpha: 0.4),
+              color: AppColors.green500.withValues(alpha: 0.4),
               blurRadius: 12,
             ),
           ] else if (_isWarmingUp) ...[
@@ -1093,7 +1094,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                   _buildActionBtn(
                     text: connectText,
                     icon: Icons.play_arrow_rounded,
-                    bgColor: const Color(0xFF0080FF),
+                    bgColor: AppColors.primary,
                     onPressed: connectDisabled ? null : _handleConnect,
                   ),
                   _buildActionBtn(
@@ -1114,7 +1115,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                     _buildActionBtn(
                       text: isCurrentServerWarming ? '暖服中' : '暖服',
                       icon: MdiIcons.fire,
-                      bgColor: const Color(0xFFF59E0B),
+                      bgColor: AppColors.amber500,
                       onPressed: _resolveWarmupAction(
                         context,
                         address: address,
@@ -1142,7 +1143,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                     _buildSecondaryBtn(
                       icon: Icons.people_outline_rounded,
                       tooltip: '玩家列表',
-                      color: const Color(0xFF10B981),
+                      color: AppColors.emerald500,
                       // 需要服务器数据
                       onPressed: needsServerData || isLoading
                           ? null
@@ -1152,7 +1153,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                       _buildSecondaryBtn(
                         icon: Icons.history_rounded,
                         tooltip: '历史记录',
-                        color: const Color(0xFFF59E0B),
+                        color: AppColors.amber500,
                         // 历史记录不需要服务器数据
                         onPressed: () => _showHistoryDialog(context),
                       ),
@@ -1167,7 +1168,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                       _buildSecondaryBtn(
                         icon: MdiIcons.imageEditOutline,
                         tooltip: '编辑地图',
-                        color: const Color(0xFF8B5CF6),
+                        color: AppColors.violet500,
                         // 需要服务器数据
                         onPressed: needsServerData || isLoading
                             ? null
@@ -1176,7 +1177,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                     _buildSecondaryBtn(
                       icon: MdiIcons.refresh,
                       tooltip: '刷新缓存',
-                      color: const Color(0xFFF59E0B),
+                      color: AppColors.amber500,
                       // 刷新缓存不需要服务器数据，但需要在非加载中状态
                       onPressed: isLoading ? null : _refreshMapCache,
                     ),
@@ -1185,7 +1186,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                           ? MdiIcons.bellRing
                           : MdiIcons.bellOutline,
                       tooltip: '换图监控',
-                      color: const Color(0xFF3B82F6),
+                      color: AppColors.blue500,
                       isActive: _isMonitoring,
                       // 换图监控不需要服务器数据，但需要在非加载中状态
                       onPressed: isLoading ? null : _toggleMapMonitor,
@@ -1194,7 +1195,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                       _buildSecondaryBtn(
                         icon: Icons.delete_outline_rounded,
                         tooltip: '删除',
-                        color: const Color(0xFFEF4444),
+                        color: AppColors.red500,
                         onPressed: () => _showDeleteConfirmDialog(context),
                       ),
                   ],
@@ -1348,7 +1349,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
               widget.onDelete?.call();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
+              backgroundColor: AppColors.red500,
               foregroundColor: Colors.white,
             ),
             child: const Text('删除'),
@@ -1470,17 +1471,17 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     final Color iconColor;
 
     if (isUnknown) {
-      leftColor = const Color(0xFF9CA3AF); // 灰色
-      rightColor = const Color(0xFF9CA3AF); // 灰色
-      iconColor = const Color(0xFF9CA3AF); // 灰色
+      leftColor = AppColors.gray400; // 灰色
+      rightColor = AppColors.gray400; // 灰色
+      iconColor = AppColors.gray400; // 灰色
     } else if (isZombie) {
-      leftColor = const Color(0xFF22C55E); // 人类 - 绿色
-      rightColor = const Color(0xFFEF4444); // 僵尸 - 红色
-      iconColor = const Color(0xFF6B7280); // 深灰色
+      leftColor = AppColors.green500; // 人类 - 绿色
+      rightColor = AppColors.red500; // 僵尸 - 红色
+      iconColor = AppColors.gray500; // 深灰色
     } else {
-      leftColor = const Color(0xFF3B82F6); // CT - 蓝色
+      leftColor = AppColors.blue500; // CT - 蓝色
       rightColor = const Color(0xFFEAB308); // T - 黄色
-      iconColor = const Color(0xFF6B7280); // 深灰色
+      iconColor = AppColors.gray500; // 深灰色
     }
 
     // 标签
@@ -1587,7 +1588,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     return _buildStatusCard(
       icon: Icons.cloud_off_rounded,
       text: '离线',
-      color: const Color(0xFFEF4444),
+      color: AppColors.red500,
     );
   }
 
@@ -1649,9 +1650,9 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     if (players >= maxPlayers && maxPlayers > 0) {
       primaryColor = const Color(0xFFF44336);
     } else if (players >= maxPlayers * 0.8 && maxPlayers > 0) {
-      primaryColor = const Color(0xFFFF9800);
+      primaryColor = AppColors.orange;
     } else {
-      primaryColor = const Color(0xFF0080FF);
+      primaryColor = AppColors.primary;
     }
 
     final int queueCount = widget.server.queueCount;
@@ -1681,7 +1682,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
           child: Text(
             '/',
             style: TextStyle(
-              color: Color(0xFF9CA3AF),
+              color: AppColors.gray400,
               fontSize: 18,
               fontWeight: FontWeight.w300,
               height: 1,
@@ -1692,7 +1693,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         Text(
           '$maxPlayers',
           style: const TextStyle(
-            color: Color(0xFF6B7280),
+            color: AppColors.gray500,
             fontSize: 16,
             fontWeight: FontWeight.w600,
             height: 1,
@@ -1787,14 +1788,14 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       iconColor = const Color(0xFFF0A020);
       textColor = const Color(0xFFF0A020);
     } else if (_isWarmingUp) {
-      iconColor = const Color(0xFFFF9800);
+      iconColor = AppColors.orange;
       textColor = const Color(0xFFE65100);
     } else if (isLoading) {
-      iconColor = const Color(0xFF9CA3AF);
-      textColor = const Color(0xFF6B7280);
+      iconColor = AppColors.gray400;
+      textColor = AppColors.gray500;
     } else {
-      iconColor = const Color(0xFF10B981);
-      textColor = const Color(0xFF1F2937);
+      iconColor = AppColors.emerald500;
+      textColor = AppColors.gray800;
     }
 
     final weeklyOccurrences = widget.server.mapRuntime?.weeklyOccurrences;
@@ -1826,7 +1827,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
               style: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF6B7280),
+                color: AppColors.gray500,
               ),
               children: [
                 const TextSpan(text: '一周内出现'),
@@ -1834,7 +1835,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
                   text: ' $weeklyOccurrences ',
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF3B82F6),
+                    color: AppColors.blue500,
                   ),
                 ),
                 const TextSpan(text: '次'),
@@ -2205,9 +2206,9 @@ class _MarqueeTextState extends State<_MarqueeText> {
   Widget build(BuildContext context) {
     final currentStyle = _isHovered
         ? widget.style.copyWith(
-            color: const Color(0xFF0080FF),
+            color: AppColors.primary,
             decoration: TextDecoration.underline,
-            decorationColor: const Color(0xFF0080FF),
+            decorationColor: AppColors.primary,
           )
         : widget.style;
 
@@ -2689,7 +2690,7 @@ class _MarchingAntsPainter extends CustomPainter {
   _MarchingAntsPainter({required this.progress, required this.borderRadius});
 
   // 挤服主题色：绿色
-  static const _primaryColor = Color(0xFF22C55E);
+  static const _primaryColor = AppColors.green500;
   static const _glowColor = Color(0xFF4ADE80);
 
   @override

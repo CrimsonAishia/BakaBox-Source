@@ -7,6 +7,7 @@ import '../../../core/bloc/settings/settings_event.dart';
 import '../../../core/bloc/settings/settings_state.dart';
 import '../../../core/utils/log_service.dart';
 import '../../../core/widgets/skip_warning_dialog.dart';
+import '../../../core/constants/app_colors.dart';
 
 class PathInvalidDialog extends StatelessWidget {
   const PathInvalidDialog({super.key});
@@ -102,7 +103,7 @@ class PathInvalidDialog extends StatelessWidget {
                         style: TextStyle(
                           color: isDark
                               ? Colors.white54
-                              : const Color(0xFF64748B),
+                              : AppColors.slate500,
                         ),
                       ),
                     ),
@@ -332,15 +333,15 @@ class _PathSelector extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF1E293B)
-                      : const Color(0xFFF8FAFC),
+                      ? AppColors.slate800
+                      : AppColors.slate50,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: hasError
                         ? Colors.red.withValues(alpha: 0.5)
                         : (isDark
-                              ? const Color(0xFF475569)
-                              : const Color(0xFFE2E8F0)),
+                              ? AppColors.slate600
+                              : AppColors.slate200),
                   ),
                 ),
                 child: Text(
@@ -348,8 +349,8 @@ class _PathSelector extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     color: hasPath
-                        ? (isDark ? Colors.white : const Color(0xFF374151))
-                        : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                        ? (isDark ? Colors.white : AppColors.gray700)
+                        : (isDark ? Colors.white38 : AppColors.gray400),
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),

@@ -710,18 +710,17 @@ class _NotificationItemWidget extends StatelessWidget {
   Color _getTypeColor(String type) {
     switch (type) {
       case NotificationType.mapContributionAudit:
-        return const Color(0xFF10B981);
+        return AppColors.emerald500;
       case NotificationType.keyConfigAudit:
-        return const Color(0xFF8B5CF6);
+        return AppColors.violet500;
       case NotificationType.issueComment:
-        return const Color(0xFFF59E0B);
+        return AppColors.amber500;
       default:
-        return const Color(0xFF0080FF);
+        return AppColors.primary;
     }
   }
 }
 
-// ==================== 共享组件 ====================
 
 /// 加载状态
 class _LoadingState extends StatelessWidget {

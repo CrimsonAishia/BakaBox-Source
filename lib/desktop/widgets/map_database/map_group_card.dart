@@ -7,6 +7,7 @@ import '../../../core/widgets/disk_cached_image.dart';
 import '../../../core/widgets/marquee_text.dart';
 import '../cd_badge.dart';
 import 'map_history_dialog.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 地图大卡片组件
 ///
@@ -78,7 +79,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: _isHovered
-                ? const Color(0xFF0080FF)
+                ? AppColors.primary
                 : (isDark
                       ? Colors.white.withValues(alpha: 0.1)
                       : Colors.black.withValues(alpha: 0.08)),
@@ -87,7 +88,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
           boxShadow: [
             if (_isHovered)
               BoxShadow(
-                color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                color: AppColors.primary.withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               )
@@ -419,7 +420,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
   Widget _buildMapBackground(MapInfo mapInfo, bool isDark) {
     if (mapInfo.mapBackground == null || mapInfo.mapBackground!.isEmpty) {
       return Container(
-        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE5E7EB),
+        color: isDark ? AppColors.slate800 : AppColors.gray200,
         child: Center(
           child: Icon(
             Icons.map_outlined,
@@ -441,7 +442,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
           imageUrl: imageUrl,
           fit: BoxFit.cover,
           placeholder: Container(
-            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE5E7EB),
+            color: isDark ? AppColors.slate800 : AppColors.gray200,
             child: const Center(
               child: SizedBox(
                 width: 24,
@@ -451,7 +452,7 @@ class _MapGroupCardState extends State<MapGroupCard> {
             ),
           ),
           errorWidget: Container(
-            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE5E7EB),
+            color: isDark ? AppColors.slate800 : AppColors.gray200,
             child: Center(
               child: Icon(
                 Icons.broken_image_outlined,

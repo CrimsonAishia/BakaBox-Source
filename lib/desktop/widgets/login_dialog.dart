@@ -8,6 +8,7 @@ import '../../core/bloc/auth/auth_state.dart';
 import '../../core/utils/toast_utils.dart';
 import 'captcha_dialog.dart';
 import 'qq_login_dialog.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 关联论坛账户对话框
 class LoginDialog extends StatefulWidget {
@@ -119,15 +120,15 @@ class _LoginDialogState extends State<LoginDialog> {
 
     // Slate 配色
     final bgColor = isDark
-        ? const Color(0xFF1E293B)
+        ? AppColors.slate800
         : Colors.white; // slate-800
     final inputBgColor = isDark
-        ? const Color(0xFF334155)
-        : const Color(0xFFF1F5F9); // slate-700 / slate-100
-    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+        ? AppColors.slate700
+        : AppColors.slate100; // slate-700 / slate-100
+    final textColor = isDark ? Colors.white : AppColors.gray800;
     final secondaryTextColor = isDark
         ? Colors.white54
-        : const Color(0xFF6B7280);
+        : AppColors.gray500;
     final borderColor = isDark
         ? Colors.white.withValues(alpha: 0.1)
         : Colors.black.withValues(alpha: 0.08);
@@ -191,14 +192,14 @@ class _LoginDialogState extends State<LoginDialog> {
                     color: inputBgColor,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                      color: AppColors.primary.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
                     children: [
                       const Icon(
                         Icons.security,
-                        color: Color(0xFF0080FF),
+                        color: AppColors.primary,
                         size: 18,
                       ),
                       const SizedBox(width: 8),
@@ -237,7 +238,7 @@ class _LoginDialogState extends State<LoginDialog> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Color(0xFF0080FF)),
+                      borderSide: const BorderSide(color: AppColors.primary),
                     ),
                   ),
                   onSubmitted: (_) => _handleBind(),
@@ -265,7 +266,7 @@ class _LoginDialogState extends State<LoginDialog> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Color(0xFF0080FF)),
+                      borderSide: const BorderSide(color: AppColors.primary),
                     ),
                   ),
                   onSubmitted: (_) => _handleBind(),
@@ -280,7 +281,7 @@ class _LoginDialogState extends State<LoginDialog> {
                       onPressed: _openRegister,
                       child: const Text(
                         '注册账号',
-                        style: TextStyle(color: Color(0xFF0080FF)),
+                        style: TextStyle(color: AppColors.primary),
                       ),
                     ),
                     Text('|', style: TextStyle(color: borderColor)),
@@ -288,7 +289,7 @@ class _LoginDialogState extends State<LoginDialog> {
                       onPressed: _openForgotPassword,
                       child: const Text(
                         '忘记密码？',
-                        style: TextStyle(color: Color(0xFF0080FF)),
+                        style: TextStyle(color: AppColors.primary),
                       ),
                     ),
                   ],
@@ -340,7 +341,7 @@ class _LoginDialogState extends State<LoginDialog> {
                         ? null
                         : _handleBind,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0080FF),
+                      backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),

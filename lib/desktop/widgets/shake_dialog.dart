@@ -7,6 +7,7 @@ import '../../core/bloc/daily_task/daily_task_event.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/utils/toast_utils.dart';
 import '../../core/utils/log_service.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 摇一摇抽奖对话框
 class ShakeDialog extends StatefulWidget {
@@ -221,7 +222,7 @@ class _ShakeDialogState extends State<ShakeDialog>
       width: 60,
       height: 80,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
@@ -307,11 +308,11 @@ class _ShakeDialogState extends State<ShakeDialog>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+    final bgColor = isDark ? AppColors.slate800 : Colors.white;
+    final textColor = isDark ? Colors.white : AppColors.gray800;
     final secondaryTextColor = isDark
         ? Colors.white54
-        : const Color(0xFF6B7280);
+        : AppColors.gray500;
 
     return Dialog(
       backgroundColor: bgColor,
@@ -346,11 +347,11 @@ class _ShakeDialogState extends State<ShakeDialog>
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF334155)
-                    : const Color(0xFFF1F5F9),
+                    ? AppColors.slate700
+                    : AppColors.slate100,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                  color: AppColors.primary.withValues(alpha: 0.3),
                   width: 2,
                 ),
               ),
@@ -375,8 +376,8 @@ class _ShakeDialogState extends State<ShakeDialog>
                   color: _rewardAmount != null
                       ? Colors.amber.withValues(alpha: 0.1)
                       : (isDark
-                            ? const Color(0xFF334155)
-                            : const Color(0xFFF1F5F9)),
+                            ? AppColors.slate700
+                            : AppColors.slate100),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -410,7 +411,7 @@ class _ShakeDialogState extends State<ShakeDialog>
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Column(
                   children: [
-                    const CircularProgressIndicator(color: Color(0xFF0080FF)),
+                    const CircularProgressIndicator(color: AppColors.primary),
                     const SizedBox(height: 12),
                     Text(
                       '正在加载...',
@@ -450,11 +451,11 @@ class _ShakeDialogState extends State<ShakeDialog>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _alreadyShaked || _hasResult
                       ? Colors.green
-                      : const Color(0xFF0080FF),
+                      : AppColors.primary,
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: _alreadyShaked || _hasResult
                       ? Colors.green.withValues(alpha: 0.7)
-                      : const Color(0xFF0080FF).withValues(alpha: 0.5),
+                      : AppColors.primary.withValues(alpha: 0.5),
                   disabledForegroundColor: Colors.white70,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -474,9 +475,9 @@ class _ShakeDialogState extends State<ShakeDialog>
                 style: OutlinedButton.styleFrom(
                   foregroundColor: isDark
                       ? Colors.white70
-                      : const Color(0xFF6B7280),
+                      : AppColors.gray500,
                   side: BorderSide(
-                    color: (isDark ? Colors.white70 : const Color(0xFF6B7280))
+                    color: (isDark ? Colors.white70 : AppColors.gray500)
                         .withValues(alpha: 0.3),
                   ),
                   shape: RoundedRectangleBorder(

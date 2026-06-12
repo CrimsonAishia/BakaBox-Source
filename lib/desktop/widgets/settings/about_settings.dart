@@ -10,6 +10,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/widgets/disk_cached_image.dart';
 import 'settings_group_title.dart';
 import 'settings_buttons.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 关于设置组件
 class AboutSettings extends StatelessWidget {
@@ -34,7 +35,7 @@ class AboutSettings extends StatelessWidget {
             border: Border(
               left: BorderSide(
                 color: isDark
-                    ? const Color(0xFF38BDF8)
+                    ? AppColors.sky400
                     : const Color(0xFF0EA5E9),
                 width: 4,
               ),
@@ -44,7 +45,7 @@ class AboutSettings extends StatelessWidget {
             '💡 应用启动时会自动检查更新。如果有新版本，将在后台下载并提示您安装。更新过程中请不要关闭应用程序。',
             style: TextStyle(
               fontSize: 13,
-              color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+              color: isDark ? Colors.white70 : AppColors.gray500,
             ),
           ),
         ),
@@ -60,14 +61,14 @@ class AboutSettings extends StatelessWidget {
           children: [
             _UpdateInfoItem(
               icon: MdiIcons.tagOutline,
-              iconColor: const Color(0xFF0080FF),
+              iconColor: AppColors.primary,
               label: '当前版本',
               value: Text(
                 'v${settingsState.appVersion}',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF374151),
+                  color: isDark ? Colors.white : AppColors.gray700,
                 ),
               ),
               action: SettingsPrimaryButton(
@@ -81,7 +82,7 @@ class AboutSettings extends StatelessWidget {
             ),
             _UpdateInfoItem(
               icon: MdiIcons.accountOutline,
-              iconColor: const Color(0xFF10B981),
+              iconColor: AppColors.emerald500,
               label: '开发者',
               value: Row(
                 children: [
@@ -96,8 +97,8 @@ class AboutSettings extends StatelessWidget {
                         width: 42,
                         height: 42,
                         color: isDark
-                            ? const Color(0xFF475569)
-                            : const Color(0xFFE5E7EB),
+                            ? AppColors.slate600
+                            : AppColors.gray200,
                         child: const Icon(
                           Icons.person,
                           size: 20,
@@ -108,8 +109,8 @@ class AboutSettings extends StatelessWidget {
                         width: 42,
                         height: 42,
                         color: isDark
-                            ? const Color(0xFF475569)
-                            : const Color(0xFFE5E7EB),
+                            ? AppColors.slate600
+                            : AppColors.gray200,
                         child: const Icon(
                           Icons.person,
                           size: 20,
@@ -124,7 +125,7 @@ class AboutSettings extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : const Color(0xFF374151),
+                      color: isDark ? Colors.white : AppColors.gray700,
                     ),
                   ),
                 ],
@@ -133,7 +134,7 @@ class AboutSettings extends StatelessWidget {
             ),
             _UpdateInfoItem(
               icon: MdiIcons.github,
-              iconColor: const Color(0xFF6366F1),
+              iconColor: AppColors.indigo500,
               label: '开源地址',
               value: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,7 +147,7 @@ class AboutSettings extends StatelessWidget {
                       fontWeight: FontWeight.w500,
                       color: isDark
                           ? const Color(0xFF93C5FD)
-                          : const Color(0xFF3B82F6),
+                          : AppColors.blue500,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -154,7 +155,7 @@ class AboutSettings extends StatelessWidget {
                     '代码会在稳定后同步更新🐛',
                     style: TextStyle(
                       fontSize: 11.5,
-                      color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                      color: isDark ? Colors.white38 : AppColors.gray400,
                     ),
                   ),
                 ],
@@ -167,14 +168,14 @@ class AboutSettings extends StatelessWidget {
             ),
             _UpdateInfoItem(
               icon: MdiIcons.copyright,
-              iconColor: const Color(0xFF8B5CF6),
+              iconColor: AppColors.violet500,
               label: '版权信息',
               value: Text(
                 AppConstants.appCopyright,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                  color: isDark ? Colors.white70 : AppColors.gray500,
                 ),
               ),
               action: const SizedBox.shrink(),
@@ -223,12 +224,12 @@ class _UpdateInfoItem extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? [const Color(0xFF334155), const Color(0xFF1E293B)]
-              : [const Color(0xFFFAFBFC), const Color(0xFFF8FAFC)],
+              ? [AppColors.slate700, AppColors.slate800]
+              : [const Color(0xFFFAFBFC), AppColors.slate50],
         ),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.slate600 : AppColors.gray200,
         ),
         boxShadow: [
           BoxShadow(
@@ -244,7 +245,7 @@ class _UpdateInfoItem extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: (iconColor ?? const Color(0xFF0080FF)).withValues(
+                color: (iconColor ?? AppColors.primary).withValues(
                   alpha: 0.1,
                 ),
                 borderRadius: BorderRadius.circular(10),
@@ -252,7 +253,7 @@ class _UpdateInfoItem extends StatelessWidget {
               child: Icon(
                 icon,
                 size: 20,
-                color: iconColor ?? const Color(0xFF0080FF),
+                color: iconColor ?? AppColors.primary,
               ),
             ),
             const SizedBox(width: 16),
@@ -264,7 +265,7 @@ class _UpdateInfoItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : const Color(0xFF374151),
+                color: isDark ? Colors.white : AppColors.gray700,
               ),
             ),
           ),

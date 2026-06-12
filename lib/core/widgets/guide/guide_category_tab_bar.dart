@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/guide_models.dart';
 import 'guide_tokens.dart';
+import '../../constants/app_colors.dart';
 
 /// 攻略分类圆药丸 Tab 栏
 ///
@@ -101,7 +102,7 @@ class _CategoryPillState extends State<_CategoryPill> {
           ),
           decoration: BoxDecoration(
             color: widget.isSelected
-                ? const Color(0xFF0080FF) // Bright blue
+                ? AppColors.primary // Bright blue
                 : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05)),
             borderRadius: GuideTokens.borderRadius8,
           ),

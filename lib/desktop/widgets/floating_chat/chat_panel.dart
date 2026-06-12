@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../core/bloc/lobby/lobby_bloc.dart';
 import '../../../core/models/lobby_models.dart';
 import '../lobby/lobby_broadcast_dialog.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 浮动聊天面板，从 56×56 圆形展开为 320×480 矩形
 class ChatPanel extends StatefulWidget {
@@ -188,7 +189,7 @@ class _ChatPanelState extends State<ChatPanel>
                       decoration: BoxDecoration(
                         borderRadius: radius,
                         border: Border.all(
-                          color: const Color(0xFF0080FF).withValues(alpha: 0.5),
+                          color: AppColors.primary.withValues(alpha: 0.5),
                           width: 1.0,
                         ),
                       ),
@@ -215,7 +216,7 @@ class _ChatPanelState extends State<ChatPanel>
       ),
       child: Row(
         children: [
-          const Icon(Icons.chat_bubble, color: Color(0xFF0080FF), size: 16),
+          const Icon(Icons.chat_bubble, color: AppColors.primary, size: 16),
           const SizedBox(width: 8),
           const Text(
             '大厅聊天',
@@ -461,7 +462,7 @@ class _ChatPanelState extends State<ChatPanel>
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
-                      color: Color(0xFF0080FF),
+                      color: AppColors.primary,
                       width: 1.5,
                     ),
                   ),
@@ -525,7 +526,7 @@ class _BroadcastMessageWidget extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.campaign, color: Color(0xFFFBBF24), size: 16),
+          const Icon(Icons.campaign, color: AppColors.amber400, size: 16),
           const SizedBox(width: 6),
           Expanded(
             child: RichText(
@@ -534,7 +535,7 @@ class _BroadcastMessageWidget extends StatelessWidget {
                   TextSpan(
                     text: '${message.displayName}: ',
                     style: const TextStyle(
-                      color: Color(0xFFFBBF24),
+                      color: AppColors.amber400,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -542,7 +543,7 @@ class _BroadcastMessageWidget extends StatelessWidget {
                   TextSpan(
                     text: message.content,
                     style: const TextStyle(
-                      color: Color(0xFFFBBF24),
+                      color: AppColors.amber400,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -557,9 +558,7 @@ class _BroadcastMessageWidget extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
 // _HoverIconButton — icon button with hover highlight
-// ---------------------------------------------------------------------------
 
 class _HoverIconButton extends StatefulWidget {
   const _HoverIconButton({
@@ -610,9 +609,7 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
   }
 }
 
-// ---------------------------------------------------------------------------
 // _SendButton — send button with hover effect
-// ---------------------------------------------------------------------------
 
 class _SendButton extends StatefulWidget {
   const _SendButton({required this.enabled, required this.onTap});
@@ -629,7 +626,7 @@ class _SendButtonState extends State<_SendButton> {
 
   @override
   Widget build(BuildContext context) {
-    const baseColor = Color(0xFF0080FF);
+    const baseColor = AppColors.primary;
     final disabledColor = Colors.white.withValues(alpha: 0.1);
 
     return MouseRegion(
@@ -665,9 +662,7 @@ class _SendButtonState extends State<_SendButton> {
   }
 }
 
-// ---------------------------------------------------------------------------
 // _BroadcastButton — broadcast button styled like _SendButton
-// ---------------------------------------------------------------------------
 
 class _BroadcastButton extends StatefulWidget {
   const _BroadcastButton({
@@ -691,7 +686,7 @@ class _BroadcastButtonState extends State<_BroadcastButton> {
 
   @override
   Widget build(BuildContext context) {
-    const baseColor = Color(0xFFF59E0B);
+    const baseColor = AppColors.amber500;
     final disabledColor = Colors.white.withValues(alpha: 0.1);
 
     final tooltipMsg = widget.isAnonymous
@@ -745,7 +740,7 @@ class _BroadcastButtonState extends State<_BroadcastButton> {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF59E0B),
+                      color: AppColors.amber500,
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
@@ -766,9 +761,7 @@ class _BroadcastButtonState extends State<_BroadcastButton> {
   }
 }
 
-// ---------------------------------------------------------------------------
 // _RevealClip — clips content to reveal from a specific corner
-// ---------------------------------------------------------------------------
 
 class _RevealClip extends StatelessWidget {
   const _RevealClip({

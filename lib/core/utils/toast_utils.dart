@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:io';
+import '../constants/app_colors.dart';
 
 /// 全局通用提示工具类 - Sonner 风格堆叠效果
 class ToastUtils {
@@ -56,7 +57,7 @@ class ToastUtils {
     _showToast(
       context,
       message,
-      const Color(0xFF10B981),
+      AppColors.emerald500,
       Colors.white,
       Icons.check_circle_rounded,
       duration ?? _calculateDuration(message),
@@ -71,7 +72,7 @@ class ToastUtils {
     _showToast(
       context,
       message,
-      const Color(0xFFEF4444),
+      AppColors.red500,
       Colors.white,
       Icons.error_rounded,
       duration ?? _calculateDuration(message),
@@ -86,7 +87,7 @@ class ToastUtils {
     _showToast(
       context,
       message,
-      const Color(0xFFF59E0B),
+      AppColors.amber500,
       Colors.white,
       Icons.warning_rounded,
       duration ?? _calculateDuration(message),
@@ -101,7 +102,7 @@ class ToastUtils {
     _showToast(
       context,
       message,
-      const Color(0xFF3B82F6),
+      AppColors.blue500,
       Colors.white,
       Icons.info_rounded,
       duration ?? _calculateDuration(message),
@@ -118,7 +119,7 @@ class ToastUtils {
     _showToast(
       context,
       message,
-      backgroundColor ?? const Color(0xFF6B7280),
+      backgroundColor ?? AppColors.gray500,
       Colors.white,
       icon ?? Icons.notifications_rounded,
       duration ?? _calculateDuration(message),

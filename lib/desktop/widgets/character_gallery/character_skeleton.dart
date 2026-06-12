@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'character_gallery_theme.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 骨架屏方块组件
 class SkeletonBox extends StatefulWidget {
@@ -119,7 +120,7 @@ class DetailPanelSkeleton extends StatelessWidget {
           _buildSectionDividerSkeleton(scrollBrown, '符卡系统'),
           const SizedBox(height: 12),
           // 符卡分组标题 - 被动技能
-          _buildGroupHeaderSkeleton(scrollBrown, const Color(0xFF4A7C59)),
+          _buildGroupHeaderSkeleton(scrollBrown, AppColors.skillGreen),
           const SizedBox(height: 8),
           _buildSkillCardSkeleton(context, scrollBrown, cardBg),
           const SizedBox(height: 16),

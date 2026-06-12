@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 面板通用外壳
 class LobbyPanelShell extends StatelessWidget {
@@ -22,7 +23,7 @@ class LobbyPanelShell extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: 200, maxHeight: 600),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A).withValues(alpha: 0.88),
+        color: AppColors.slate900.withValues(alpha: 0.88),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         boxShadow: [

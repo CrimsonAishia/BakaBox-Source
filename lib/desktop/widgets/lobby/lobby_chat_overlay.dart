@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/bloc/lobby/lobby_bloc.dart';
 import '../../../core/models/lobby_models.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 大厅聊天输入覆盖层
 class LobbyChatOverlay extends StatefulWidget {
@@ -179,7 +180,7 @@ class _LobbyChatOverlayState extends State<LobbyChatOverlay> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(
-                          color: Color(0xFF38BDF8),
+                          color: AppColors.sky400,
                           width: 1.5,
                         ),
                       ),
@@ -286,7 +287,7 @@ class _BroadcastMessageWidgetState extends State<_BroadcastMessageWidget>
             border: Border.all(
               color: Color.lerp(
                 const Color(0xFF7C3AED),
-                const Color(0xFFFBBF24),
+                AppColors.amber400,
                 offsetValue,
               )!.withValues(alpha: 0.6),
               width: 1,
@@ -299,7 +300,7 @@ class _BroadcastMessageWidgetState extends State<_BroadcastMessageWidget>
                 Icons.campaign,
                 color: Color.lerp(
                   const Color(0xFF7C3AED),
-                  const Color(0xFFFBBF24),
+                  AppColors.amber400,
                   offsetValue,
                 ),
                 size: 16,
@@ -312,7 +313,7 @@ class _BroadcastMessageWidgetState extends State<_BroadcastMessageWidget>
                       TextSpan(
                         text: '${widget.message.displayName}: ',
                         style: const TextStyle(
-                          color: Color(0xFFFBBF24), // 黄色
+                          color: AppColors.amber400, // 黄色
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -320,7 +321,7 @@ class _BroadcastMessageWidgetState extends State<_BroadcastMessageWidget>
                       TextSpan(
                         text: widget.message.content,
                         style: const TextStyle(
-                          color: Color(0xFFFBBF24), // 黄色
+                          color: AppColors.amber400, // 黄色
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),

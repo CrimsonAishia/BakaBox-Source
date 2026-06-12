@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/constants/app_colors.dart';
 
 /// 攻略社区桌面端主题颜色辅助类
 ///
@@ -129,36 +130,36 @@ class CommunityGuideColors {
         menuBg = const Color(0xFF253246),
         tagSecondaryText = const Color(0xC7FFFFFF),
         tagPrimaryText = const Color(0xFF90CAF9),
-        hoverHighlight = const Color(0xFF334155);
+        hoverHighlight = AppColors.slate700;
 
   // ── 亮色 ────────────────────────────────────────────────────────────────────
   const CommunityGuideColors.light()
       : isDark = false,
         accentBlue = const Color(0xFF2196F3),
         likeRed = const Color(0xFFFF4D6D),
-        scaffoldBg = const Color(0xFFF1F5F9),
+        scaffoldBg = AppColors.slate100,
         cardBg = Colors.white,
         toolbarBg = const Color(0xCCFFFFFF), // white 80%
         toolbarBorder = const Color(0x14000000),
         detailOverlayBg = const Color(0xFFF5F7FB),
-        textPrimary = const Color(0xFF1F2937),
+        textPrimary = AppColors.gray800,
         textSecondary = const Color(0xFF4B5563),
-        textTertiary = const Color(0xFF6B7280),
-        iconPrimary = const Color(0xFF374151),
-        hintText = const Color(0xFF9CA3AF),
-        inputFill = const Color(0xFFF8FAFC),
-        inputBorder = const Color(0xFFE2E8F0),
-        chipInactiveBg = const Color(0xFFE2E8F0),
-        chipInactiveText = const Color(0xFF374151),
-        tagSecondaryBg = const Color(0xFFE5E7EB),
+        textTertiary = AppColors.gray500,
+        iconPrimary = AppColors.gray700,
+        hintText = AppColors.gray400,
+        inputFill = AppColors.slate50,
+        inputBorder = AppColors.slate200,
+        chipInactiveBg = AppColors.slate200,
+        chipInactiveText = AppColors.gray700,
+        tagSecondaryBg = AppColors.gray200,
         scrim = const Color(0x66000000),
         shadow = const Color(0x1A000000),
         skeletonBg = const Color(0x0F000000),
         skeletonBar = const Color(0x14000000),
         profileCardBg = Colors.white,
-        profileCardDivider = const Color(0xFFE2E8F0),
+        profileCardDivider = AppColors.slate200,
         menuBg = Colors.white,
-        tagSecondaryText = const Color(0xFF374151),
+        tagSecondaryText = AppColors.gray700,
         tagPrimaryText = const Color(0xFF1976D2),
-        hoverHighlight = const Color(0xFFCBD5E1);
+        hoverHighlight = AppColors.slate300;
 }

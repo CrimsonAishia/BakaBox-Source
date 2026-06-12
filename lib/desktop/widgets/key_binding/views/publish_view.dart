@@ -12,6 +12,7 @@ import '../../../../core/models/key_config_models.dart';
 import '../../../../core/utils/key_placeholder_parser.dart';
 import '../components/form_widgets.dart';
 import '../../login_dialog.dart';
+import '../../../../core/constants/app_colors.dart';
 
 /// 发布视图
 ///
@@ -77,12 +78,12 @@ class _PublishViewState extends State<PublishView> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: isDark ? const Color(0xFF1E293B) : null,
+        backgroundColor: isDark ? AppColors.slate800 : null,
         title: Row(
           children: [
             Icon(
               MdiIcons.starCircleOutline,
-              color: const Color(0xFFf59e0b),
+              color: AppColors.amber500,
               size: 24,
             ),
             const SizedBox(width: 10),
@@ -118,7 +119,7 @@ class _PublishViewState extends State<PublishView> {
                   '$currentCredits',
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFFef4444),
+                    color: AppColors.red500,
                   ),
                 ),
               ],
@@ -165,13 +166,13 @@ class _PublishViewState extends State<PublishView> {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               MdiIcons.accountLockOutline,
               size: 32,
-              color: const Color(0xFF0080FF),
+              color: AppColors.primary,
             ),
           ),
           const SizedBox(height: 16),
@@ -197,7 +198,7 @@ class _PublishViewState extends State<PublishView> {
             icon: const Icon(Icons.login, size: 18),
             label: const Text('去登录'),
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF0080FF),
+              backgroundColor: AppColors.primary,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
           ),
@@ -322,7 +323,7 @@ class _PublishViewState extends State<PublishView> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: const Color(0xFFf59e0b).withValues(alpha: 0.1),
+              color: AppColors.amber500.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(4),
             ),
             child: const Text(
@@ -330,7 +331,7 @@ class _PublishViewState extends State<PublishView> {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFFf59e0b),
+                color: AppColors.amber500,
               ),
             ),
           ),
@@ -355,8 +356,8 @@ class _PublishViewState extends State<PublishView> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF0080FF).withValues(alpha: 0.06),
-            isDark ? const Color(0xFF1E293B) : Colors.white,
+            AppColors.primary.withValues(alpha: 0.06),
+            isDark ? AppColors.slate800 : Colors.white,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -367,13 +368,13 @@ class _PublishViewState extends State<PublishView> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               MdiIcons.rocketLaunchOutline,
               size: 18,
-              color: const Color(0xFF0080FF),
+              color: AppColors.primary,
             ),
           ),
           const SizedBox(width: 12),
@@ -393,7 +394,7 @@ class _PublishViewState extends State<PublishView> {
                 '分享给社区',
                 style: TextStyle(
                   fontSize: 11,
-                  color: isDark ? Colors.white54 : const Color(0xFF6b7280),
+                  color: isDark ? Colors.white54 : AppColors.gray500,
                 ),
               ),
             ],
@@ -430,16 +431,16 @@ class _PublishViewState extends State<PublishView> {
     }
 
     final hintColor = !hasEnoughCredits
-        ? const Color(0xFFef4444)
-        : const Color(0xFFf59e0b);
+        ? AppColors.red500
+        : AppColors.amber500;
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF334155) : Colors.grey[50],
+        color: isDark ? AppColors.slate700 : Colors.grey[50],
         border: Border(
           top: BorderSide(
-            color: isDark ? const Color(0xFF475569) : Colors.grey[200]!,
+            color: isDark ? AppColors.slate600 : Colors.grey[200]!,
           ),
         ),
       ),
@@ -512,7 +513,7 @@ class _PublishViewState extends State<PublishView> {
                 style: const TextStyle(fontSize: 12),
               ),
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF0080FF),
+                backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
               ),
             ),

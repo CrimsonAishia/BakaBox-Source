@@ -97,6 +97,7 @@ export 'utils/screen_wakelock.dart';
 
 // Constants
 export 'constants/api_constants.dart';
+export 'constants/app_colors.dart';
 export 'constants/app_constants.dart';
 export 'constants/fallback_data.dart';
 export 'constants/operation_colors.dart';

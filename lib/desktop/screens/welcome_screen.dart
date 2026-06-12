@@ -108,8 +108,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             end: Alignment.bottomRight,
             colors: isDark
                 ? [
-                    const Color(0xFF0F172A),
-                    const Color(0xFF1E293B),
+                    AppColors.slate900,
+                    AppColors.slate800,
                     const Color(0xFF1A1A2E),
                   ]
                 : [
@@ -219,7 +219,7 @@ class _WelcomeHeader extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                           color: isDark
                               ? Colors.white
-                              : const Color(0xFF1E293B),
+                              : AppColors.slate800,
                         ),
                       )
                       .animate()
@@ -237,7 +237,7 @@ class _WelcomeHeader extends StatelessWidget {
                       fontSize: 13,
                       color: isDark
                           ? Colors.white.withValues(alpha: 0.5)
-                          : const Color(0xFF64748B),
+                          : AppColors.slate500,
                     ),
                   ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
                 ],

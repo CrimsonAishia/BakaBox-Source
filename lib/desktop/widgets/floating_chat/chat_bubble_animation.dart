@@ -2,10 +2,9 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_colors.dart';
 
-// ---------------------------------------------------------------------------
 // Internal data model
-// ---------------------------------------------------------------------------
 
 class BubbleEntry {
   BubbleEntry({
@@ -30,9 +29,7 @@ class BubbleEntry {
   final Timer expireTimer;
 }
 
-// ---------------------------------------------------------------------------
 // Pure functions
-// ---------------------------------------------------------------------------
 
 String truncateBubbleText(String content) {
   if (content.length > 20) return '${content.substring(0, 20)}…';
@@ -52,9 +49,7 @@ double generateBubbleAngle(
   return angleMin + seed * (angleMax - angleMin);
 }
 
-// ---------------------------------------------------------------------------
 // _ChatBubbleWidget — scale + fade animation wrapper
-// ---------------------------------------------------------------------------
 
 class _ChatBubbleWidget extends StatelessWidget {
   const _ChatBubbleWidget({required this.entry});
@@ -82,9 +77,7 @@ class _ChatBubbleWidget extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
 // _BubbleBody — bubble with tail always at bottom-center
-// ---------------------------------------------------------------------------
 
 class _BubbleBody extends StatelessWidget {
   const _BubbleBody({required this.text, required this.senderName});
@@ -99,10 +92,10 @@ class _BubbleBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const bgColor = Color(0xFF1E293B);
-    const borderColor = Color(0xFF334155);
+    const bgColor = AppColors.slate800;
+    const borderColor = AppColors.slate700;
     const nameColor = Color(0xFF60A5FA);
-    const textColor = Color(0xFFE2E8F0);
+    const textColor = AppColors.slate200;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -122,7 +115,7 @@ class _BubbleBody extends StatelessWidget {
                 offset: const Offset(0, 3),
               ),
               BoxShadow(
-                color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 blurRadius: 18,
                 spreadRadius: -2,
               ),
@@ -171,9 +164,7 @@ class _BubbleBody extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
 // _TrianglePainter — downward-pointing triangle tail
-// ---------------------------------------------------------------------------
 
 class _TrianglePainter extends CustomPainter {
   const _TrianglePainter({required this.fillColor, required this.borderColor});
@@ -206,9 +197,7 @@ class _TrianglePainter extends CustomPainter {
       old.fillColor != fillColor || old.borderColor != borderColor;
 }
 
-// ---------------------------------------------------------------------------
 // ChatBubbleAnimation — public widget
-// ---------------------------------------------------------------------------
 
 /// Renders chat bubbles scattered around the floating button.
 ///

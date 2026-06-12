@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../../../core/models/bilibili_content_models.dart';
 import '../../../core/widgets/disk_cached_image.dart';
+import '../../../core/constants/app_colors.dart';
 
 const _bilibiliBlue = Color(0xFF00A1D6);
 
@@ -173,7 +174,7 @@ class LiveRoomCardMobile extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
-                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                        color: isDark ? Colors.white : AppColors.slate800,
                         height: 1.3,
                       ),
                     ),

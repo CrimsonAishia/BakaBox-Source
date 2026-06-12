@@ -13,6 +13,7 @@ import 'welcome_mobile.dart';
 import 'servers_mobile.dart';
 import 'lobby_page_mobile.dart';
 import 'profile_mobile.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 移动端主屏幕
 class MobileHomeScreen extends StatefulWidget {
@@ -36,29 +37,29 @@ class _MobileHomeScreenState extends State<MobileHomeScreen>
       icon: Icons.home_outlined,
       selectedIcon: Icons.home,
       label: '首页',
-      activeColor: const Color(0xFF0080FF),
-      inactiveColor: const Color(0xFF64748B),
+      activeColor: AppColors.primary,
+      inactiveColor: AppColors.slate500,
     ),
     NavigationItemData(
       icon: MdiIcons.server,
       selectedIcon: MdiIcons.serverNetwork,
       label: '服务器',
-      activeColor: const Color(0xFF10B981),
-      inactiveColor: const Color(0xFF64748B),
+      activeColor: AppColors.emerald500,
+      inactiveColor: AppColors.slate500,
     ),
     NavigationItemData(
       icon: Icons.castle,
       selectedIcon: Icons.castle,
       label: '大厅',
-      activeColor: const Color(0xFFEF4444),
-      inactiveColor: const Color(0xFF64748B),
+      activeColor: AppColors.red500,
+      inactiveColor: AppColors.slate500,
     ),
     NavigationItemData(
       icon: MdiIcons.accountOutline,
       selectedIcon: MdiIcons.account,
       label: '我的',
-      activeColor: const Color(0xFF8B5CF6),
-      inactiveColor: const Color(0xFF64748B),
+      activeColor: AppColors.violet500,
+      inactiveColor: AppColors.slate500,
     ),
   ];
 
@@ -141,7 +142,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen>
         bottomNavigationBar:
             Container(
                   color: isDark
-                      ? const Color(0xFF0F172A).withValues(alpha: 0.95)
+                      ? AppColors.slate900.withValues(alpha: 0.95)
                       : const Color(0xFFE9EEF8).withValues(alpha: 0.95),
                   child: SafeArea(
                     top: false,
@@ -166,7 +167,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen>
                         );
                       }).toList(),
                       color: isDark
-                          ? const Color(0xFF1E293B).withValues(alpha: 0.95)
+                          ? AppColors.slate800.withValues(alpha: 0.95)
                           : Colors.white.withValues(alpha: 0.95),
                       buttonBackgroundColor:
                           _navigationItems[_currentIndex].activeColor,

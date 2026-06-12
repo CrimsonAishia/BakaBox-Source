@@ -881,7 +881,7 @@ class _LobbyIdleScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textSecondary = isDark ? Colors.white54 : const Color(0xFF475569);
+    final textSecondary = isDark ? Colors.white54 : AppColors.slate600;
 
     return Container(
       decoration: BoxDecoration(
@@ -935,8 +935,8 @@ class _LobbyErrorScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textSecondary = isDark ? Colors.white54 : const Color(0xFF475569);
-    final errorColor = const Color(0xFFEF4444);
+    final textSecondary = isDark ? Colors.white54 : AppColors.slate600;
+    final errorColor = AppColors.red500;
 
     return Container(
       decoration: BoxDecoration(
@@ -1271,7 +1271,7 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
           decoration: BoxDecoration(
             color: isDark
                 ? const Color(0xFF0B1120).withValues(alpha: 0.96)
-                : const Color(0xFF1E293B).withValues(alpha: 0.96),
+                : AppColors.slate800.withValues(alpha: 0.96),
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(16),
               bottomLeft: Radius.circular(0),
@@ -1531,14 +1531,14 @@ class _HoverFilterChipState extends State<_HoverFilterChip> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: widget.isSelected
-                ? const Color(0xFF1D9BF0).withValues(alpha: 0.25)
+                ? AppColors.lobbyBlue.withValues(alpha: 0.25)
                 : _hovered
                 ? Colors.white.withValues(alpha: 0.10)
                 : Colors.white.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: widget.isSelected
-                  ? const Color(0xFF1D9BF0).withValues(alpha: 0.5)
+                  ? AppColors.lobbyBlue.withValues(alpha: 0.5)
                   : _hovered
                   ? Colors.white.withValues(alpha: 0.18)
                   : Colors.white.withValues(alpha: 0.08),
@@ -1548,7 +1548,7 @@ class _HoverFilterChipState extends State<_HoverFilterChip> {
             displayText,
             style: TextStyle(
               color: widget.isSelected
-                  ? const Color(0xFF1D9BF0)
+                  ? AppColors.lobbyBlue
                   : _hovered
                   ? Colors.white.withValues(alpha: 0.85)
                   : Colors.white.withValues(alpha: 0.5),
@@ -1583,7 +1583,7 @@ class _DrawerHeader extends StatelessWidget {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF1D9BF0), Color(0xFF0B66C2)],
+                colors: [AppColors.lobbyBlue, Color(0xFF0B66C2)],
               ),
               borderRadius: BorderRadius.circular(6),
             ),
@@ -1677,7 +1677,7 @@ class _PlayerListTileState extends State<_PlayerListTile> {
               color: isHighlighted
                   ? const Color(0xFF40C4FF).withValues(alpha: 0.7)
                   : user.isSelf
-                  ? const Color(0xFF1D9BF0).withValues(alpha: 0.4)
+                  ? AppColors.lobbyBlue.withValues(alpha: 0.4)
                   : _isHovered
                   ? Colors.white.withValues(alpha: 0.12)
                   : Colors.white.withValues(alpha: 0.05),
@@ -1795,16 +1795,16 @@ class _PlayerListTileState extends State<_PlayerListTile> {
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1D9BF0).withValues(alpha: 0.2),
+                      color: AppColors.lobbyBlue.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(4),
                       border: Border.all(
-                        color: const Color(0xFF1D9BF0).withValues(alpha: 0.4),
+                        color: AppColors.lobbyBlue.withValues(alpha: 0.4),
                       ),
                     ),
                     child: const Text(
                       '我',
                       style: TextStyle(
-                        color: Color(0xFF1D9BF0),
+                        color: AppColors.lobbyBlue,
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
                       ),
@@ -1991,7 +1991,7 @@ class _PlayerAvatar extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(
           color: user.isSelf
-              ? const Color(0xFF1D9BF0)
+              ? AppColors.lobbyBlue
               : Colors.white.withValues(alpha: 0.1),
           width: user.isSelf ? 2 : 1,
         ),
@@ -2004,7 +2004,7 @@ class _PlayerAvatar extends StatelessWidget {
     return CircleAvatar(
       radius: 20,
       backgroundColor: user.isSelf
-          ? const Color(0xFF1D9BF0).withValues(alpha: 0.3)
+          ? AppColors.lobbyBlue.withValues(alpha: 0.3)
           : Colors.white.withValues(alpha: 0.1),
       child: const Icon(Icons.person, size: 22, color: Colors.white54),
     );
@@ -2088,10 +2088,10 @@ class _LobbyQueueScreenState extends State<_LobbyQueueScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textPrimary = isDark ? Colors.white : const Color(0xFF1E293B);
-    final textSecondary = isDark ? Colors.white70 : const Color(0xFF475569);
-    final accentColor = const Color(0xFF38BDF8);
-    final successColor = const Color(0xFF22C55E);
+    final textPrimary = isDark ? Colors.white : AppColors.slate800;
+    final textSecondary = isDark ? Colors.white70 : AppColors.slate600;
+    final accentColor = AppColors.sky400;
+    final successColor = AppColors.green500;
 
     final position = widget.state.queuePosition;
     final total = widget.state.queueTotal;
@@ -2162,7 +2162,7 @@ class _LobbyQueueScreenState extends State<_LobbyQueueScreen>
                         pulse: _pulseAnimation.value,
                         ringBgColor: isDark
                             ? Colors.white.withValues(alpha: 0.1)
-                            : const Color(0xFFCBD5E1),
+                            : AppColors.slate300,
                         accentColor: accentColor,
                       ),
                       child: Center(
@@ -2364,7 +2364,7 @@ class _QueueRingPainter extends CustomPainter {
           endAngle: 4.71,
           colors: [
             accentColor,
-            const Color(0xFF22C55E),
+            AppColors.green500,
             accentColor.withValues(alpha: 0.1),
           ],
           stops: const [0.0, 0.7, 1.0],

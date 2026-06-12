@@ -5,6 +5,7 @@ import '../../../core/services/image_url_service.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/image_viewer_dialog.dart';
 import 'character_gallery_theme.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 统一编辑历史对话框 - 日式卷轴风格
 class UnifiedHistoryDialog extends StatefulWidget {
@@ -109,7 +110,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
     return switch (type) {
       EditTargetType.subModel => CharacterGalleryTheme.getScrollBrown(context),
       EditTargetType.spellCard => CharacterGalleryTheme.getVermillion(context),
-      EditTargetType.zombieSkill => const Color(0xFF4A7C59),
+      EditTargetType.zombieSkill => AppColors.skillGreen,
     };
   }
 
@@ -664,7 +665,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
               const SizedBox(width: 6),
               _buildActionBadge(
                 isCreate ? '新增' : '删除',
-                isCreate ? const Color(0xFF4A7C59) : Colors.red.shade600,
+                isCreate ? AppColors.skillGreen : Colors.red.shade600,
               ),
             ],
           ],
@@ -709,7 +710,7 @@ class _UnifiedHistoryDialogState extends State<UnifiedHistoryDialog> {
 
     return switch (subType) {
       'ultimate' => ('大符卡', gold),
-      'passive' => ('被动', const Color(0xFF4A7C59)),
+      'passive' => ('被动', AppColors.skillGreen),
       'normal' => ('小符卡', vermillion),
       'active' => ('主动', vermillion),
       _ => (subType, CharacterGalleryTheme.getScrollBrown(context)),

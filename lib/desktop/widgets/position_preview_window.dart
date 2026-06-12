@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:window_manager/window_manager.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 位置预览窗口配置
 class PositionPreviewConfig {
@@ -149,8 +150,8 @@ class _PositionPreviewWindowAppState extends State<PositionPreviewWindowApp> {
 
     final isNotification = widget.config.previewType == 'notification';
     final color = isNotification
-        ? const Color(0xFF0080FF)
-        : const Color(0xFFFF9800);
+        ? AppColors.primary
+        : AppColors.orange;
     final icon = isNotification ? MdiIcons.bellOutline : MdiIcons.gamepad;
 
     return MaterialApp(

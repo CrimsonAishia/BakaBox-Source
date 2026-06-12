@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/constants/app_colors.dart';
 
 /// 详情弹窗右上角的"切角三角形"关闭按钮
 ///
@@ -18,8 +19,8 @@ class CommunityGuideCloseButton extends StatefulWidget {
 class _CommunityGuideCloseButtonState extends State<CommunityGuideCloseButton> {
   bool _isHovered = false;
 
-  static const _fill = Color(0xFFEF4444);
-  static const _fillHover = Color(0xFFDC2626);
+  static const _fill = AppColors.red500;
+  static const _fillHover = AppColors.red600;
   static const _border = Color(0xFFB91C1C);
 
   @override

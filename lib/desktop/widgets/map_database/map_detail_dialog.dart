@@ -4,6 +4,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../../core/models/map_contribution_models.dart';
 import 'contribution_item.dart';
 import 'map_history_tab.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 地图详情对话框
 ///
@@ -64,7 +65,7 @@ class _MapDetailDialogState extends State<MapDetailDialog>
         width: 700,
         height: 600,
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          color: isDark ? AppColors.slate800 : Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -81,8 +82,8 @@ class _MapDetailDialogState extends State<MapDetailDialog>
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF0F172A)
-                    : const Color(0xFFF8FAFC),
+                    ? AppColors.slate900
+                    : AppColors.slate50,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(20),
                 ),
@@ -128,21 +129,21 @@ class _MapDetailDialogState extends State<MapDetailDialog>
                             _buildStatChip(
                               Icons.article_outlined,
                               '${widget.mapInfo.contribCount} 贡献',
-                              const Color(0xFF6366F1),
+                              AppColors.indigo500,
                               isDark,
                             ),
                             const SizedBox(width: 12),
                             _buildStatChip(
                               Icons.label_outline,
                               '${widget.mapInfo.nameCount} 名称',
-                              const Color(0xFF10B981),
+                              AppColors.emerald500,
                               isDark,
                             ),
                             const SizedBox(width: 12),
                             _buildStatChip(
                               Icons.image_outlined,
                               '${widget.mapInfo.backgroundCount} 背景',
-                              const Color(0xFFF59E0B),
+                              AppColors.amber500,
                               isDark,
                             ),
                           ],
@@ -181,7 +182,7 @@ class _MapDetailDialogState extends State<MapDetailDialog>
                 unselectedLabelColor: isDark
                     ? Colors.white.withValues(alpha: 0.5)
                     : Colors.black.withValues(alpha: 0.5),
-                indicatorColor: const Color(0xFF0080FF),
+                indicatorColor: AppColors.primary,
                 indicatorWeight: 3,
                 tabs: [
                   Tab(

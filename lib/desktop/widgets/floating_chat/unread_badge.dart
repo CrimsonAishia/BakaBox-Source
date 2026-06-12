@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_colors.dart';
 
 class UnreadBadge extends StatelessWidget {
   final int count;
@@ -18,7 +19,7 @@ class UnreadBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       decoration: BoxDecoration(
-        color: const Color(0xFFEF4444),
+        color: AppColors.red500,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(

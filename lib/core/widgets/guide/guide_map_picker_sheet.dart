@@ -6,6 +6,7 @@ import '../../api/map_contribution_api.dart';
 import '../../models/map_contribution_models.dart';
 import '../../utils/log_service.dart';
 import '../map_background.dart';
+import '../../constants/app_colors.dart';
 
 /// 关联地图选择器（桌面端 Dialog 形式）
 ///
@@ -84,20 +85,20 @@ class _T {
         borderSoft: Color(0x1FFFFFFF),
         borderHover: Color(0x40FFFFFF),
         accent: Color(0xFF2196F3),
-        textPrimary: Color(0xFFF1F5F9),
-        textSecondary: Color(0xFFCBD5E1),
-        textMuted: Color(0xFF94A3B8),
+        textPrimary: AppColors.slate100,
+        textSecondary: AppColors.slate300,
+        textMuted: AppColors.slate400,
       );
     }
     return const _T._(
       dialogBg: Colors.white,
-      fieldBg: Color(0xFFF8FAFC),
-      borderSoft: Color(0xFFE5E7EB),
-      borderHover: Color(0xFFCBD5E1),
+      fieldBg: AppColors.slate50,
+      borderSoft: AppColors.gray200,
+      borderHover: AppColors.slate300,
       accent: Color(0xFF2196F3),
-      textPrimary: Color(0xFF1F2937),
-      textSecondary: Color(0xFF374151),
-      textMuted: Color(0xFF6B7280),
+      textPrimary: AppColors.gray800,
+      textSecondary: AppColors.gray700,
+      textMuted: AppColors.gray500,
     );
   }
 }

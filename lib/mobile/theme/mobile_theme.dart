@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 移动端主题配置
 class MobileTheme {
-  static const Color primaryColor = Color(0xFF0080FF);
+  static const Color primaryColor = AppColors.primary;
   static const Color secondaryColor = Color(0xFF1976D2);
 
   static ThemeData get lightTheme => ThemeData(
@@ -11,20 +12,20 @@ class MobileTheme {
       brightness: Brightness.light,
       primary: primaryColor,
       secondary: secondaryColor,
-      surface: const Color(0xFFF8FAFC),
-      surfaceContainerHighest: const Color(0xFFF1F5F9),
+      surface: AppColors.slate50,
+      surfaceContainerHighest: AppColors.slate100,
     ),
     useMaterial3: true,
-    scaffoldBackgroundColor: const Color(0xFFF1F5F9),
+    scaffoldBackgroundColor: AppColors.slate100,
     appBarTheme: AppBarTheme(
       elevation: 0,
       centerTitle: true,
       backgroundColor: Colors.white.withValues(alpha: 0.95),
-      foregroundColor: const Color(0xFF1F2937),
+      foregroundColor: AppColors.gray800,
       titleTextStyle: const TextStyle(
         fontSize: 17,
         fontWeight: FontWeight.w600,
-        color: Color(0xFF1F2937),
+        color: AppColors.gray800,
       ),
     ),
     cardTheme: CardThemeData(
@@ -65,31 +66,31 @@ class MobileTheme {
       headlineLarge: TextStyle(
         fontSize: 28,
         fontWeight: FontWeight.bold,
-        color: Color(0xFF1F2937),
+        color: AppColors.gray800,
       ),
       headlineMedium: TextStyle(
         fontSize: 24,
         fontWeight: FontWeight.w600,
-        color: Color(0xFF1F2937),
+        color: AppColors.gray800,
       ),
       titleLarge: TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.w600,
-        color: Color(0xFF1F2937),
+        color: AppColors.gray800,
       ),
       titleMedium: TextStyle(
         fontSize: 15,
         fontWeight: FontWeight.w500,
-        color: Color(0xFF1F2937),
+        color: AppColors.gray800,
       ),
-      bodyLarge: TextStyle(fontSize: 15, color: Color(0xFF374151)),
-      bodyMedium: TextStyle(fontSize: 13, color: Color(0xFF374151)),
-      bodySmall: TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+      bodyLarge: TextStyle(fontSize: 15, color: AppColors.gray700),
+      bodyMedium: TextStyle(fontSize: 13, color: AppColors.gray700),
+      bodySmall: TextStyle(fontSize: 11, color: AppColors.gray500),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
       backgroundColor: Colors.white,
       selectedItemColor: primaryColor,
-      unselectedItemColor: Color(0xFF9CA3AF),
+      unselectedItemColor: AppColors.gray400,
       type: BottomNavigationBarType.fixed,
       elevation: 8,
     ),
@@ -102,17 +103,17 @@ class MobileTheme {
       primary: primaryColor,
       onPrimary: Colors.white,
       secondary: const Color(0xFF42A5F5),
-      surface: const Color(0xFF1E293B),
+      surface: AppColors.slate800,
       onSurface: Colors.white,
-      surfaceContainer: const Color(0xFF334155),
-      surfaceContainerHighest: const Color(0xFF0F172A),
+      surfaceContainer: AppColors.slate700,
+      surfaceContainerHighest: AppColors.slate900,
     ),
     useMaterial3: true,
-    scaffoldBackgroundColor: const Color(0xFF0F172A),
+    scaffoldBackgroundColor: AppColors.slate900,
     appBarTheme: AppBarTheme(
       elevation: 0,
       centerTitle: true,
-      backgroundColor: const Color(0xFF1E293B).withValues(alpha: 0.95),
+      backgroundColor: AppColors.slate800.withValues(alpha: 0.95),
       foregroundColor: Colors.white,
       titleTextStyle: const TextStyle(
         fontSize: 17,
@@ -122,7 +123,7 @@ class MobileTheme {
     ),
     cardTheme: CardThemeData(
       elevation: 0,
-      color: const Color(0xFF1E293B),
+      color: AppColors.slate800,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: Colors.white.withValues(alpha: 0.08), width: 1),
@@ -149,14 +150,14 @@ class MobileTheme {
         fontWeight: FontWeight.w500,
         color: Colors.white,
       ),
-      bodyLarge: TextStyle(fontSize: 15, color: Color(0xFFE2E8F0)),
-      bodyMedium: TextStyle(fontSize: 13, color: Color(0xFFE2E8F0)),
-      bodySmall: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
+      bodyLarge: TextStyle(fontSize: 15, color: AppColors.slate200),
+      bodyMedium: TextStyle(fontSize: 13, color: AppColors.slate200),
+      bodySmall: TextStyle(fontSize: 11, color: AppColors.slate300),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: Color(0xFF1E293B),
+      backgroundColor: AppColors.slate800,
       selectedItemColor: primaryColor,
-      unselectedItemColor: Color(0xFF64748B),
+      unselectedItemColor: AppColors.slate500,
       type: BottomNavigationBarType.fixed,
       elevation: 8,
     ),

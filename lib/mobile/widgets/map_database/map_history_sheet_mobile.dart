@@ -8,6 +8,7 @@ import '../../../core/models/server_models.dart';
 import '../../../core/services/source_server_service.dart';
 import '../../../core/utils/log_service.dart';
 import '../../../desktop/widgets/player_trend/player_trend_chart.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 移动端地图运行历史底部弹出面板
 class MapHistorySheetMobile extends StatelessWidget {
@@ -43,7 +44,7 @@ class MapHistorySheetMobile extends StatelessWidget {
     return Container(
       height: screenHeight * 0.85,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -69,7 +70,7 @@ class MapHistorySheetMobile extends StatelessWidget {
               children: [
                 Icon(
                   MdiIcons.history,
-                  color: const Color(0xFF0080FF),
+                  color: AppColors.primary,
                   size: 22,
                 ),
                 const SizedBox(width: 10),
@@ -389,7 +390,7 @@ class _MapHistoryContentMobileState extends State<MapHistoryContentMobile> {
                 icon: Icon(MdiIcons.chevronDown, size: 18),
                 label: const Text('加载更多'),
                 style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF0080FF),
+                  foregroundColor: AppColors.primary,
                 ),
               ),
             ),
@@ -534,12 +535,12 @@ class _HistoryItemMobileState extends State<_HistoryItemMobile>
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: _isExpanded
-              ? const Color(0xFF0080FF).withValues(alpha: 0.4)
+              ? AppColors.primary.withValues(alpha: 0.4)
               : (widget.isDark
                     ? Colors.white.withValues(alpha: 0.07)
                     : Colors.black.withValues(alpha: 0.07)),
         ),
-        color: widget.isDark ? const Color(0xFF0F172A) : Colors.white,
+        color: widget.isDark ? AppColors.slate900 : Colors.white,
       ),
       child: Column(
         children: [
@@ -557,7 +558,7 @@ class _HistoryItemMobileState extends State<_HistoryItemMobile>
                         widget.isLatest ? MdiIcons.fire : MdiIcons.clockOutline,
                         size: 15,
                         color: widget.isLatest
-                            ? const Color(0xFFF59E0B)
+                            ? AppColors.amber500
                             : (widget.isDark
                                   ? Colors.white.withValues(alpha: 0.5)
                                   : Colors.black.withValues(alpha: 0.5)),
@@ -569,7 +570,7 @@ class _HistoryItemMobileState extends State<_HistoryItemMobile>
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: widget.isLatest
-                              ? const Color(0xFFF59E0B)
+                              ? AppColors.amber500
                               : (widget.isDark
                                     ? Colors.white.withValues(alpha: 0.8)
                                     : Colors.black.withValues(alpha: 0.8)),
@@ -644,7 +645,7 @@ class _HistoryItemMobileState extends State<_HistoryItemMobile>
                     children: [
                       Icon(
                         MdiIcons.chartLine,
-                        color: const Color(0xFFFBBF24),
+                        color: AppColors.amber400,
                         size: 15,
                       ),
                       const SizedBox(width: 6),
@@ -735,8 +736,8 @@ class _HistoryItemMobileState extends State<_HistoryItemMobile>
             '$ctScore',
             style: TextStyle(
               color: isZombieMap
-                  ? const Color(0xFF22C55E)
-                  : const Color(0xFF3B82F6),
+                  ? AppColors.green500
+                  : AppColors.blue500,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -756,8 +757,8 @@ class _HistoryItemMobileState extends State<_HistoryItemMobile>
             '$tScore',
             style: TextStyle(
               color: isZombieMap
-                  ? const Color(0xFFEF4444)
-                  : const Color(0xFFF59E0B),
+                  ? AppColors.red500
+                  : AppColors.amber500,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/app_colors.dart';
 
 /// 服务器分类相关的工具类
 class CategoryUtils {
@@ -40,7 +41,7 @@ class CategoryUtils {
     switch (categoryName?.toLowerCase()) {
       case 'cs2-僵尸逃跑':
       case 'cs-僵尸逃跑':
-        return const Color(0xFF0080FF);
+        return AppColors.primary;
       case 'cs2-娱乐对抗':
       case 'cs-娱乐对抗':
         return const Color(0xFFFF6B35);
@@ -52,19 +53,19 @@ class CategoryUtils {
       case 'cs-你画我猜':
         return const Color(0xFFFF3366);
       case 'cs-匪镇谍影':
-        return const Color(0xFF6B7280);
+        return AppColors.gray500;
       case 'cs-连跳':
         return const Color(0xFFFF9500);
       case 'cs-攀岩':
-        return const Color(0xFF8B5CF6);
+        return AppColors.violet500;
       case 'cs-闯关':
-        return const Color(0xFF10B981);
+        return AppColors.emerald500;
       case 'cs-滑翔':
         return const Color(0xFF06B6D4);
       case 'cs-死亡奔跑':
-        return const Color(0xFFEF4444);
+        return AppColors.red500;
       default:
-        return const Color(0xFF0080FF);
+        return AppColors.primary;
     }
   }
 

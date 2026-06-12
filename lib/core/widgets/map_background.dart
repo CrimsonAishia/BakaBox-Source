@@ -4,6 +4,7 @@ import '../utils/log_service.dart';
 import '../services/image_url_service.dart';
 import '../services/disk_image_cache_service.dart';
 import 'disk_cached_image.dart';
+import '../constants/app_colors.dart';
 
 /// 统一的地图背景组件
 ///
@@ -273,7 +274,7 @@ class _MapBackgroundState extends State<MapBackground>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1E293B), Color(0xFF334155)],
+          colors: [AppColors.slate800, AppColors.slate700],
         ),
       ),
     );

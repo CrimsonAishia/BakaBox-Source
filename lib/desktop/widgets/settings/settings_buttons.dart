@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 统一的轮廓按钮样式
 class SettingsOutlinedButton extends StatelessWidget {
@@ -29,9 +30,9 @@ class SettingsOutlinedButton extends StatelessWidget {
           : Icon(icon, size: 16),
       label: Text(label),
       style: OutlinedButton.styleFrom(
-        foregroundColor: isDark ? Colors.white70 : const Color(0xFF374151),
+        foregroundColor: isDark ? Colors.white70 : AppColors.gray700,
         side: BorderSide(
-          color: isDark ? const Color(0xFF475569) : const Color(0xFFD1D5DB),
+          color: isDark ? AppColors.slate600 : AppColors.gray300,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -71,7 +72,7 @@ class SettingsDangerButton extends StatelessWidget {
           : Icon(icon, size: 16),
       label: Text(label),
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFFEF4444),
+        backgroundColor: AppColors.red500,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -112,7 +113,7 @@ class SettingsPrimaryButton extends StatelessWidget {
           : Icon(icon, size: 16),
       label: Text(label),
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF0080FF),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

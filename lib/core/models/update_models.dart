@@ -86,21 +86,21 @@ class AppUpdateInfo {
     );
   }
 
-  /// 比较版本号
+  /// 比较版本号（包含 build 号）
   /// 返回值：< 0 表示 v1 < v2，0 表示相等，> 0 表示 v1 > v2
   static int _compareVersion(String v1, String v2) {
     final parts1 = _parseVersion(v1);
     final parts2 = _parseVersion(v2);
 
-    // 逐位比较
-    for (int i = 0; i < 3; i++) {
+    // 逐位比较 major, minor, patch, build
+    for (int i = 0; i < 4; i++) {
       if (parts1[i] < parts2[i]) return -1;
       if (parts1[i] > parts2[i]) return 1;
     }
     return 0;
   }
 
-  /// 解析版本号为 [major, minor, patch]
+  /// 解析版本号为 [major, minor, patch, build]
   static List<int> _parseVersion(String version) {
     // 移除 "v" 或 "V" 前缀
     String normalized = version.trim();
@@ -108,12 +108,18 @@ class AppUpdateInfo {
       normalized = normalized.substring(1);
     }
 
-    // 移除预发布标识和构建元数据
+    int buildNumber = 0;
+    if (normalized.contains('+')) {
+      final splitParts = normalized.split('+');
+      normalized = splitParts.first;
+      if (splitParts.length > 1) {
+        buildNumber = int.tryParse(splitParts.last) ?? 0;
+      }
+    }
+
+    // 移除预发布标识
     if (normalized.contains('-')) {
       normalized = normalized.split('-').first;
-    }
-    if (normalized.contains('+')) {
-      normalized = normalized.split('+').first;
     }
 
     final parts = normalized
@@ -123,7 +129,10 @@ class AppUpdateInfo {
     while (parts.length < 3) {
       parts.add(0);
     }
-    return parts.take(3).toList();
+    
+    final result = parts.take(3).toList();
+    result.add(buildNumber);
+    return result;
   }
 
   String get formattedFileSize {

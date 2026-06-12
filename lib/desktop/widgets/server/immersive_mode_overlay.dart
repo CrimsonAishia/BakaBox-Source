@@ -27,6 +27,7 @@ import '../queue/queue_window.dart';
 import 'server_card.dart';
 import 'server_card_skeleton.dart';
 import 'server_detail_dialog.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 自动刷新间隔（秒）
 const int _kImmersiveRefreshInterval = 15;
@@ -918,8 +919,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
               value: serverBloc,
               child: Material(
                 color: isDark
-                    ? const Color(0xFF0F172A)
-                    : const Color(0xFFF3F4F6),
+                    ? AppColors.slate900
+                    : AppColors.gray100,
                 child: _buildFullContentForScreenshot(isDark, categoryServers),
               ),
             ),
@@ -1038,7 +1039,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                 const Icon(
                   Icons.folder_outlined,
                   size: 18,
-                  color: Color(0xFF10B981),
+                  color: AppColors.emerald500,
                 ),
                 const SizedBox(width: 8),
               ],
@@ -1047,7 +1048,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF1F2937),
+                  color: isDark ? Colors.white : AppColors.gray800,
                 ),
               ),
               const SizedBox(width: 8),
@@ -1063,7 +1064,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                   '${item.servers.length} 服务器 · $categoryPlayers 人',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    color: isDark ? Colors.white54 : AppColors.gray500,
                   ),
                 ),
               ),
@@ -1317,10 +1318,10 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       primaryColor = const Color(0xFFF44336);
       bgColor = const Color(0xFFFEEAEA);
     } else if (players >= maxPlayers * 0.8 && maxPlayers > 0) {
-      primaryColor = const Color(0xFFFF9800);
+      primaryColor = AppColors.orange;
       bgColor = const Color(0xFFFFF9E6);
     } else {
-      primaryColor = const Color(0xFF0080FF);
+      primaryColor = AppColors.primary;
       bgColor = Colors.white;
     }
 
@@ -1397,7 +1398,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     if (queueCount > 0 && warmupCount > 0) {
       return ShaderMask(
         shaderCallback: (bounds) => const LinearGradient(
-          colors: [Color(0xFFF44336), Color(0xFFF59E0B)], // 红色到黄色渐变
+          colors: [Color(0xFFF44336), AppColors.amber500], // 红色到黄色渐变
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ).createShader(bounds),
@@ -1425,7 +1426,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       return Text(
         '+$extraCount',
         style: const TextStyle(
-          color: Color(0xFFF59E0B), // 黄色 - 暖服
+          color: AppColors.amber500, // 黄色 - 暖服
           fontSize: 20,
           fontWeight: FontWeight.bold,
           height: 1,
@@ -1452,8 +1453,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
       hasError: hasError,
     );
 
-    Color iconColor = const Color(0xFF6B7280);
-    Color textColor = const Color(0xFF6B7280);
+    Color iconColor = AppColors.gray500;
+    Color textColor = AppColors.gray500;
     Color bgColor = Colors.white.withValues(alpha: 0.95);
     Color borderColor = Colors.white.withValues(alpha: 0.3);
 
@@ -1513,7 +1514,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF6B7280),
+                  color: AppColors.gray500,
                 ),
                 children: [
                   const TextSpan(text: '一周内出现'),
@@ -1521,7 +1522,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                     text: ' $weeklyOccurrences ',
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF3B82F6),
+                      color: AppColors.blue500,
                     ),
                   ),
                   const TextSpan(text: '次'),
@@ -1549,17 +1550,17 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     final Color iconColor;
 
     if (isUnknown) {
-      leftColor = const Color(0xFF9CA3AF);
-      rightColor = const Color(0xFF9CA3AF);
-      iconColor = const Color(0xFF9CA3AF);
+      leftColor = AppColors.gray400;
+      rightColor = AppColors.gray400;
+      iconColor = AppColors.gray400;
     } else if (isZombie) {
-      leftColor = const Color(0xFF22C55E);
-      rightColor = const Color(0xFFEF4444);
-      iconColor = const Color(0xFF6B7280);
+      leftColor = AppColors.green500;
+      rightColor = AppColors.red500;
+      iconColor = AppColors.gray500;
     } else {
-      leftColor = const Color(0xFF3B82F6);
+      leftColor = AppColors.blue500;
       rightColor = const Color(0xFFEAB308);
-      iconColor = const Color(0xFF6B7280);
+      iconColor = AppColors.gray500;
     }
 
     final leftLabel = isZombie ? '人类' : 'CT';
@@ -1641,8 +1642,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         children: [
           Scaffold(
             backgroundColor: isDark
-                ? const Color(0xFF0F172A)
-                : const Color(0xFFF3F4F6),
+                ? AppColors.slate900
+                : AppColors.gray100,
             body: Column(
               children: [
                 _buildHeader(isDark),
@@ -1674,7 +1675,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
           width: 200,
           constraints: BoxConstraints(maxHeight: maxPreviewHeight),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            color: isDark ? AppColors.slate800 : Colors.white,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -1684,7 +1685,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
               ),
             ],
             border: Border.all(
-              color: const Color(0xFF22C55E).withValues(alpha: 0.5),
+              color: AppColors.green500.withValues(alpha: 0.5),
               width: 2,
             ),
           ),
@@ -1698,7 +1699,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF22C55E).withValues(alpha: 0.1),
+                  color: AppColors.green500.withValues(alpha: 0.1),
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(10),
                   ),
@@ -1708,7 +1709,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                     const Icon(
                       Icons.check_circle_rounded,
                       size: 16,
-                      color: Color(0xFF22C55E),
+                      color: AppColors.green500,
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -1716,7 +1717,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : const Color(0xFF374151),
+                        color: isDark ? Colors.white : AppColors.gray700,
                       ),
                     ),
                   ],
@@ -1766,12 +1767,12 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
           height: 60,
           padding: const EdgeInsets.symmetric(horizontal: 20),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            color: isDark ? AppColors.slate800 : Colors.white,
             border: Border(
               bottom: BorderSide(
                 color: isDark
-                    ? const Color(0xFF334155)
-                    : const Color(0xFFE5E7EB),
+                    ? AppColors.slate700
+                    : AppColors.gray200,
               ),
             ),
             boxShadow: [
@@ -1790,8 +1791,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      const Color(0xFF3B82F6).withValues(alpha: 0.15),
-                      const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                      AppColors.blue500.withValues(alpha: 0.15),
+                      AppColors.violet500.withValues(alpha: 0.1),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -1800,7 +1801,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                 ),
                 child: const Icon(
                   Icons.grid_view_rounded,
-                  color: Color(0xFF3B82F6),
+                  color: AppColors.blue500,
                   size: 18,
                 ),
               ),
@@ -1810,7 +1811,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white70 : const Color(0xFF374151),
+                  color: isDark ? Colors.white70 : AppColors.gray700,
                 ),
               ),
               const SizedBox(width: 16),
@@ -1860,7 +1861,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     final totalCount = categories.length;
     final isFiltered = selectedCount < totalCount;
     final accentColor = isFiltered
-        ? const Color(0xFF3B82F6)
+        ? AppColors.blue500
         : (isDark ? Colors.white70 : const Color(0xFF4B5563));
 
     return Tooltip(
@@ -1874,14 +1875,14 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             decoration: BoxDecoration(
               color: isFiltered
-                  ? const Color(0xFF3B82F6).withValues(alpha: 0.12)
+                  ? AppColors.blue500.withValues(alpha: 0.12)
                   : (isDark
                         ? Colors.white.withValues(alpha: 0.06)
                         : Colors.black.withValues(alpha: 0.04)),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: isFiltered
-                    ? const Color(0xFF3B82F6).withValues(alpha: 0.4)
+                    ? AppColors.blue500.withValues(alpha: 0.4)
                     : (isDark
                           ? Colors.white.withValues(alpha: 0.1)
                           : Colors.black.withValues(alpha: 0.1)),
@@ -1917,7 +1918,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                         height: 1.1,
                         color: isDark
                             ? Colors.white38
-                            : const Color(0xFF9CA3AF),
+                            : AppColors.gray400,
                       ),
                     ),
                   ],
@@ -1928,7 +1929,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                     width: 6,
                     height: 6,
                     decoration: const BoxDecoration(
-                      color: Color(0xFF3B82F6),
+                      color: AppColors.blue500,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -1972,12 +1973,12 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                 width: 360,
                 constraints: const BoxConstraints(maxHeight: 480),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  color: isDark ? AppColors.slate800 : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: isDark
-                        ? const Color(0xFF334155)
-                        : const Color(0xFFE5E7EB),
+                        ? AppColors.slate700
+                        : AppColors.gray200,
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -1999,7 +2000,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                           const Icon(
                             Icons.tune_rounded,
                             size: 18,
-                            color: Color(0xFF3B82F6),
+                            color: AppColors.blue500,
                           ),
                           const SizedBox(width: 8),
                           Column(
@@ -2012,7 +2013,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                                   fontWeight: FontWeight.w600,
                                   color: isDark
                                       ? Colors.white
-                                      : const Color(0xFF1F2937),
+                                      : AppColors.gray800,
                                 ),
                               ),
                               Text(
@@ -2021,7 +2022,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                                   fontSize: 11,
                                   color: isDark
                                       ? Colors.white38
-                                      : const Color(0xFF9CA3AF),
+                                      : AppColors.gray400,
                                 ),
                               ),
                             ],
@@ -2034,7 +2035,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                               allSelected ? '取消全选' : '全选',
                               style: const TextStyle(
                                 fontSize: 12,
-                                color: Color(0xFF3B82F6),
+                                color: AppColors.blue500,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -2047,7 +2048,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                               size: 18,
                               color: isDark
                                   ? Colors.white38
-                                  : const Color(0xFF9CA3AF),
+                                  : AppColors.gray400,
                             ),
                           ),
                         ],
@@ -2056,8 +2057,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                     Divider(
                       height: 1,
                       color: isDark
-                          ? const Color(0xFF334155)
-                          : const Color(0xFFE5E7EB),
+                          ? AppColors.slate700
+                          : AppColors.gray200,
                     ),
                     // 分类列表
                     Flexible(
@@ -2072,8 +2073,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                           final isLoading = _loadingCategories.contains(name);
                           final isCustom = cat.isCustom;
                           final activeColor = isCustom
-                              ? const Color(0xFF10B981)
-                              : const Color(0xFF3B82F6);
+                              ? AppColors.emerald500
+                              : AppColors.blue500;
 
                           return InkWell(
                             onTap: () => toggle(name),
@@ -2099,7 +2100,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                                             ? activeColor
                                             : (isDark
                                                   ? Colors.white24
-                                                  : const Color(0xFFD1D5DB)),
+                                                  : AppColors.gray300),
                                         width: 1.5,
                                       ),
                                     ),
@@ -2131,10 +2132,10 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                                         color: isSelected
                                             ? (isDark
                                                   ? Colors.white
-                                                  : const Color(0xFF1F2937))
+                                                  : AppColors.gray800)
                                             : (isDark
                                                   ? Colors.white60
-                                                  : const Color(0xFF6B7280)),
+                                                  : AppColors.gray500),
                                       ),
                                     ),
                                   ),
@@ -2179,14 +2180,14 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: _isCompactMode
-                  ? const Color(0xFF3B82F6).withValues(alpha: 0.12)
+                  ? AppColors.blue500.withValues(alpha: 0.12)
                   : (isDark
                         ? Colors.white.withValues(alpha: 0.06)
                         : Colors.black.withValues(alpha: 0.04)),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: _isCompactMode
-                    ? const Color(0xFF3B82F6).withValues(alpha: 0.4)
+                    ? AppColors.blue500.withValues(alpha: 0.4)
                     : (isDark
                           ? Colors.white.withValues(alpha: 0.1)
                           : Colors.black.withValues(alpha: 0.08)),
@@ -2198,8 +2199,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                   : Icons.view_list_rounded,
               size: 20,
               color: _isCompactMode
-                  ? const Color(0xFF3B82F6)
-                  : (isDark ? Colors.white70 : const Color(0xFF6B7280)),
+                  ? AppColors.blue500
+                  : (isDark ? Colors.white70 : AppColors.gray500),
             ),
           ),
         ),
@@ -2235,14 +2236,14 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       valueColor: AlwaysStoppedAnimation(
-                        isDark ? Colors.white70 : const Color(0xFF6B7280),
+                        isDark ? Colors.white70 : AppColors.gray500,
                       ),
                     ),
                   )
                 : Icon(
                     Icons.photo_camera_rounded,
                     size: 20,
-                    color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                    color: isDark ? Colors.white70 : AppColors.gray500,
                   ),
           ),
         ),
@@ -2274,7 +2275,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             child: Icon(
               Icons.close_rounded,
               size: 20,
-              color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+              color: isDark ? Colors.white70 : AppColors.gray500,
             ),
           ),
         ),
@@ -2357,7 +2358,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                               fontWeight: FontWeight.w600,
                               color: isDark
                                   ? Colors.white70
-                                  : const Color(0xFF374151),
+                                  : AppColors.gray700,
                             ),
                           ),
               ],
@@ -2410,7 +2411,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             right: 0,
             child: CommonScrollIndicator(
               isTop: true,
-              color: isDark ? Colors.white : const Color(0xFF6B7280),
+              color: isDark ? Colors.white : AppColors.gray500,
             ),
           ),
         // 底部滚动指示器
@@ -2421,7 +2422,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             right: 0,
             child: CommonScrollIndicator(
               isTop: false,
-              color: isDark ? Colors.white : const Color(0xFF6B7280),
+              color: isDark ? Colors.white : AppColors.gray500,
             ),
           ),
       ],
@@ -2447,7 +2448,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                 const Icon(
                   Icons.folder_outlined,
                   size: 16,
-                  color: Color(0xFF10B981),
+                  color: AppColors.emerald500,
                 ),
                 const SizedBox(width: 6),
               ],
@@ -2456,7 +2457,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF1F2937),
+                  color: isDark ? Colors.white : AppColors.gray800,
                 ),
               ),
               const SizedBox(width: 8),
@@ -2472,7 +2473,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                   '${item.servers.length} 服务器 · $categoryPlayers 人',
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    color: isDark ? Colors.white54 : AppColors.gray500,
                   ),
                 ),
               ),
@@ -2483,7 +2484,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                   height: 12,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation(Color(0xFF3B82F6)),
+                    valueColor: AlwaysStoppedAnimation(AppColors.blue500),
                   ),
                 ),
               ],
@@ -2587,7 +2588,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white : const Color(0xFF374151),
+              color: isDark ? Colors.white : AppColors.gray700,
             ),
           ),
           const SizedBox(height: 8),
@@ -2595,7 +2596,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             '请选择分类查看服务器',
             style: TextStyle(
               fontSize: 14,
-              color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+              color: isDark ? Colors.white54 : AppColors.gray500,
             ),
           ),
         ],
@@ -2603,7 +2604,6 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     );
   }
 
-  // ==================== 简约模式（表格视图）====================
 
   /// 构建简约模式的分类区块
   Widget _buildCompactCategorySection(bool isDark, _CategoryServers item) {
@@ -2625,7 +2625,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                 const Icon(
                   Icons.folder_outlined,
                   size: 16,
-                  color: Color(0xFF10B981),
+                  color: AppColors.emerald500,
                 ),
                 const SizedBox(width: 6),
               ],
@@ -2634,7 +2634,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF1F2937),
+                  color: isDark ? Colors.white : AppColors.gray800,
                 ),
               ),
               const SizedBox(width: 8),
@@ -2650,7 +2650,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                   '${item.servers.length} 服务器 · $categoryPlayers 人',
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    color: isDark ? Colors.white54 : AppColors.gray500,
                   ),
                 ),
               ),
@@ -2661,7 +2661,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                   height: 12,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation(Color(0xFF3B82F6)),
+                    valueColor: AlwaysStoppedAnimation(AppColors.blue500),
                   ),
                 ),
               ],
@@ -2682,10 +2682,10 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   Widget _buildCompactLoadingRows(bool isDark, bool isCustomCategory) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.slate700 : AppColors.gray200,
         ),
       ),
       child: Column(
@@ -2715,8 +2715,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             : Border(
                 bottom: BorderSide(
                   color: isDark
-                      ? const Color(0xFF334155)
-                      : const Color(0xFFE5E7EB),
+                      ? AppColors.slate700
+                      : AppColors.gray200,
                 ),
               ),
       ),
@@ -2816,10 +2816,10 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
   ) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.slate700 : AppColors.gray200,
         ),
       ),
       child: Column(
@@ -2845,7 +2845,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
 
   /// 构建表头
   Widget _buildCompactTableHeader(bool isDark, bool isCustomCategory) {
-    final headerColor = isDark ? Colors.white38 : const Color(0xFF9CA3AF);
+    final headerColor = isDark ? Colors.white38 : AppColors.gray400;
     const headerStyle = TextStyle(fontSize: 11, fontWeight: FontWeight.w600);
 
     return Container(
@@ -2856,7 +2856,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             : Colors.black.withValues(alpha: 0.02),
         border: Border(
           bottom: BorderSide(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+            color: isDark ? AppColors.slate700 : AppColors.gray200,
           ),
         ),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(7)),
@@ -2956,13 +2956,13 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     // 状态颜色
     Color statusColor;
     if (isOffline) {
-      statusColor = const Color(0xFF9CA3AF);
+      statusColor = AppColors.gray400;
     } else if (loadRatio >= 1.0) {
       statusColor = const Color(0xFFF44336);
     } else if (loadRatio >= 0.8) {
-      statusColor = const Color(0xFFFF9800);
+      statusColor = AppColors.orange;
     } else {
-      statusColor = const Color(0xFF22C55E);
+      statusColor = AppColors.green500;
     }
 
     return Material(
@@ -2977,8 +2977,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                 : Border(
                     bottom: BorderSide(
                       color: isDark
-                          ? const Color(0xFF334155)
-                          : const Color(0xFFE5E7EB),
+                          ? AppColors.slate700
+                          : AppColors.gray200,
                     ),
                   ),
           ),
@@ -3005,7 +3005,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                         child: CircularProgressIndicator(
                           strokeWidth: 1.5,
                           valueColor: AlwaysStoppedAnimation(
-                            isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                            isDark ? Colors.white38 : AppColors.gray400,
                           ),
                         ),
                       )
@@ -3021,8 +3021,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                     color: isOffline
-                        ? (isDark ? Colors.white38 : const Color(0xFF9CA3AF))
-                        : (isDark ? Colors.white : const Color(0xFF1F2937)),
+                        ? (isDark ? Colors.white38 : AppColors.gray400)
+                        : (isDark ? Colors.white : AppColors.gray800),
                   ),
                 ),
               ),
@@ -3035,8 +3035,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                   style: TextStyle(
                     fontSize: 12,
                     color: isOffline
-                        ? (isDark ? Colors.white24 : const Color(0xFFD1D5DB))
-                        : (isDark ? Colors.white60 : const Color(0xFF6B7280)),
+                        ? (isDark ? Colors.white24 : AppColors.gray300)
+                        : (isDark ? Colors.white60 : AppColors.gray500),
                   ),
                 ),
               ),
@@ -3059,8 +3059,8 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                   style: TextStyle(
                     fontSize: 12,
                     color: isOffline
-                        ? (isDark ? Colors.white24 : const Color(0xFFD1D5DB))
-                        : (isDark ? Colors.white54 : const Color(0xFF6B7280)),
+                        ? (isDark ? Colors.white24 : AppColors.gray300)
+                        : (isDark ? Colors.white54 : AppColors.gray500),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -3102,7 +3102,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         '-',
         style: TextStyle(
           fontSize: 13,
-          color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
+          color: isDark ? Colors.white24 : AppColors.gray300,
         ),
         textAlign: TextAlign.center,
       );
@@ -3113,9 +3113,9 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     if (players >= maxPlayers && maxPlayers > 0) {
       primaryColor = const Color(0xFFF44336); // 满人：红色
     } else if (players >= maxPlayers * 0.8 && maxPlayers > 0) {
-      primaryColor = const Color(0xFFFF9800); // 80%以上：橙色
+      primaryColor = AppColors.orange; // 80%以上：橙色
     } else {
-      primaryColor = const Color(0xFF0080FF); // 正常：蓝色
+      primaryColor = AppColors.primary; // 正常：蓝色
     }
 
     return RichText(
@@ -3135,7 +3135,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w400,
-              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+              color: isDark ? Colors.white38 : AppColors.gray400,
             ),
           ),
         ],
@@ -3177,7 +3177,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         '-',
         style: TextStyle(
           fontSize: 11,
-          color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
+          color: isDark ? Colors.white24 : AppColors.gray300,
         ),
         textAlign: TextAlign.center,
       );
@@ -3196,7 +3196,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         '-',
         style: TextStyle(
           fontSize: 12,
-          color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+          color: isDark ? Colors.white38 : AppColors.gray400,
         ),
         textAlign: TextAlign.center,
       );
@@ -3246,7 +3246,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         _buildCompactIconButton(
           icon: Icons.play_arrow_rounded,
           tooltip: isConnecting ? '连接中...' : '加入',
-          color: const Color(0xFF3B82F6),
+          color: AppColors.blue500,
           isDisabled: isConnecting || isOtherServerBusy,
           isLoading: isConnecting,
           onTap: () => _handleCompactConnect(server, address),
@@ -3257,7 +3257,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
           icon: MdiIcons.accountGroup,
           tooltip: isCurrentServerQueueing ? '挤服中' : '挤服',
           color: isCurrentServerQueueing
-              ? const Color(0xFF22C55E)
+              ? AppColors.green500
               : const Color(0xFFFF6E6E),
           isDisabled: isOtherServerQueueing,
           isActive: isCurrentServerQueueing,
@@ -3392,13 +3392,13 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     final Color rightColor;
 
     if (isUnknown) {
-      leftColor = const Color(0xFF9CA3AF);
-      rightColor = const Color(0xFF9CA3AF);
+      leftColor = AppColors.gray400;
+      rightColor = AppColors.gray400;
     } else if (isZombie) {
-      leftColor = const Color(0xFF22C55E);
-      rightColor = const Color(0xFFEF4444);
+      leftColor = AppColors.green500;
+      rightColor = AppColors.red500;
     } else {
-      leftColor = const Color(0xFF3B82F6);
+      leftColor = AppColors.blue500;
       rightColor = const Color(0xFFEAB308);
     }
 
@@ -3420,7 +3420,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
             ':',
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+              color: isDark ? Colors.white38 : AppColors.gray400,
             ),
           ),
         ),
@@ -3445,7 +3445,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
         '-',
         style: TextStyle(
           fontSize: 12,
-          color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+          color: isDark ? Colors.white38 : AppColors.gray400,
         ),
         textAlign: TextAlign.center,
       );
@@ -3453,7 +3453,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
 
     Color pingColor;
     if (ping < 50) {
-      pingColor = const Color(0xFF22C55E);
+      pingColor = AppColors.green500;
     } else if (ping < 100) {
       pingColor = const Color(0xFFEAB308);
     } else {

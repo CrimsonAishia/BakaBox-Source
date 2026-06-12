@@ -10,6 +10,7 @@ import '../components/common_widgets.dart' as common;
 import '../components/vote_widgets.dart';
 import '../key_selector.dart';
 import 'comments_view.dart';
+import '../../../../core/constants/app_colors.dart';
 
 /// 配置详情视图
 class ConfigDetailView extends StatelessWidget {
@@ -128,8 +129,8 @@ class DetailHeader extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                const Color(0xFF0080FF).withValues(alpha: 0.06),
-                isDark ? const Color(0xFF1E293B) : Colors.white,
+                AppColors.primary.withValues(alpha: 0.06),
+                isDark ? AppColors.slate800 : Colors.white,
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -143,14 +144,14 @@ class DetailHeader extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       config.needsKeybind
                           ? MdiIcons.keyboardOutline
                           : MdiIcons.codeJson,
-                      color: const Color(0xFF0080FF),
+                      color: AppColors.primary,
                       size: 18,
                     ),
                   ),
@@ -174,20 +175,20 @@ class DetailHeader extends StatelessWidget {
                           children: [
                             common.Badge(
                               label: config.category,
-                              color: const Color(0xFF0080FF),
+                              color: AppColors.primary,
                             ),
                             const SizedBox(width: 6),
                             common.Badge(
                               label: config.needsKeybind ? '需绑定' : '自动',
                               color: config.needsKeybind
-                                  ? const Color(0xFFf59e0b)
-                                  : const Color(0xFF10b981),
+                                  ? AppColors.amber500
+                                  : AppColors.emerald500,
                             ),
                             if (applied) ...[
                               const SizedBox(width: 6),
                               common.Badge(
                                 label: '已应用',
-                                color: const Color(0xFF10b981),
+                                color: AppColors.emerald500,
                                 filled: true,
                               ),
                             ],
@@ -195,7 +196,7 @@ class DetailHeader extends StatelessWidget {
                               const SizedBox(width: 6),
                               common.Badge(
                                 label: '我的',
-                                color: const Color(0xFF8b5cf6),
+                                color: AppColors.violet500,
                                 filled: true,
                               ),
                             ],
@@ -226,7 +227,7 @@ class DetailHeader extends StatelessWidget {
                       common.ConfigActionButton(
                         icon: MdiIcons.deleteOutline,
                         tooltip: config.isApproved ? '删除配置（需重新审核）' : '删除配置',
-                        color: const Color(0xFFef4444),
+                        color: AppColors.red500,
                         badge: config.isApproved,
                         onTap: () => _confirmDelete(context, config),
                       ),
@@ -238,7 +239,7 @@ class DetailHeader extends StatelessWidget {
                 config.description,
                 style: TextStyle(
                   fontSize: 11,
-                  color: isDark ? Colors.white54 : const Color(0xFF6b7280),
+                  color: isDark ? Colors.white54 : AppColors.gray500,
                 ),
               ),
               // 显示应用次数和评论数
@@ -249,7 +250,7 @@ class DetailHeader extends StatelessWidget {
                     Icon(
                       MdiIcons.downloadOutline,
                       size: 14,
-                      color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                      color: isDark ? Colors.white38 : AppColors.gray400,
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -258,14 +259,14 @@ class DetailHeader extends StatelessWidget {
                         fontSize: 11,
                         color: isDark
                             ? Colors.white38
-                            : const Color(0xFF9CA3AF),
+                            : AppColors.gray400,
                       ),
                     ),
                     const SizedBox(width: 12),
                     Icon(
                       MdiIcons.commentOutline,
                       size: 14,
-                      color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                      color: isDark ? Colors.white38 : AppColors.gray400,
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -274,7 +275,7 @@ class DetailHeader extends StatelessWidget {
                         fontSize: 11,
                         color: isDark
                             ? Colors.white38
-                            : const Color(0xFF9CA3AF),
+                            : AppColors.gray400,
                       ),
                     ),
                   ],
@@ -300,12 +301,12 @@ class DetailHeader extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          backgroundColor: isDark ? const Color(0xFF1E293B) : null,
+          backgroundColor: isDark ? AppColors.slate800 : null,
           title: Row(
             children: [
               Icon(
                 MdiIcons.alertCircleOutline,
-                color: const Color(0xFFef4444),
+                color: AppColors.red500,
                 size: 24,
               ),
               const SizedBox(width: 10),
@@ -335,7 +336,7 @@ class DetailHeader extends StatelessWidget {
                   labelText: '删除理由',
                   hintText: '请说明删除原因...',
                   filled: true,
-                  fillColor: isDark ? const Color(0xFF334155) : Colors.grey[50],
+                  fillColor: isDark ? AppColors.slate700 : Colors.grey[50],
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -343,7 +344,7 @@ class DetailHeader extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
                       color: isDark
-                          ? const Color(0xFF475569)
+                          ? AppColors.slate600
                           : Colors.grey[300]!,
                     ),
                   ),
@@ -368,7 +369,7 @@ class DetailHeader extends StatelessWidget {
                 );
               },
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFef4444),
+                backgroundColor: AppColors.red500,
               ),
               child: const Text('删除'),
             ),
@@ -387,7 +388,7 @@ class DetailHeader extends StatelessWidget {
             children: [
               Icon(
                 MdiIcons.alertCircleOutline,
-                color: const Color(0xFFef4444),
+                color: AppColors.red500,
                 size: 24,
               ),
               const SizedBox(width: 10),
@@ -406,7 +407,7 @@ class DetailHeader extends StatelessWidget {
                 bloc.add(KeyBindingDeleteConfig(config.id));
               },
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFef4444),
+                backgroundColor: AppColors.red500,
               ),
               child: const Text('删除'),
             ),
@@ -436,10 +437,10 @@ class _PendingChangeActions extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+          color: AppColors.amber500.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: const Color(0xFFF59E0B).withValues(alpha: 0.4),
+            color: AppColors.amber500.withValues(alpha: 0.4),
           ),
         ),
         child: Row(
@@ -448,7 +449,7 @@ class _PendingChangeActions extends StatelessWidget {
             Icon(
               MdiIcons.clockOutline,
               size: 13,
-              color: const Color(0xFFF59E0B),
+              color: AppColors.amber500,
             ),
             const SizedBox(width: 6),
             const Text(
@@ -456,14 +457,14 @@ class _PendingChangeActions extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFFF59E0B),
+                color: AppColors.amber500,
               ),
             ),
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 7),
               width: 1,
               height: 11,
-              color: const Color(0xFFEF4444).withValues(alpha: 0.5),
+              color: AppColors.red500.withValues(alpha: 0.5),
             ),
             GestureDetector(
               onTap: isCancelling ? null : () => _confirmCancel(context),
@@ -477,7 +478,7 @@ class _PendingChangeActions extends StatelessWidget {
                         height: 10,
                         child: CircularProgressIndicator(
                           strokeWidth: 1.5,
-                          color: Color(0xFFF59E0B),
+                          color: AppColors.amber500,
                         ),
                       )
                     : const Text(
@@ -485,9 +486,9 @@ class _PendingChangeActions extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFFEF4444),
+                          color: AppColors.red500,
                           decoration: TextDecoration.underline,
-                          decorationColor: Color(0xFFEF4444),
+                          decorationColor: AppColors.red500,
                         ),
                       ),
               ),
@@ -504,7 +505,7 @@ class _PendingChangeActions extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: isDark ? const Color(0xFF1E293B) : null,
+        backgroundColor: isDark ? AppColors.slate800 : null,
         title: Row(
           children: [
             Icon(Icons.undo_rounded, color: Colors.grey[600], size: 22),
@@ -552,8 +553,8 @@ class AuditStatusBanner extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isPending = config.isPending;
     final statusColor = isPending
-        ? const Color(0xFFF59E0B)
-        : const Color(0xFFEF4444);
+        ? AppColors.amber500
+        : AppColors.red500;
     final statusIcon = isPending
         ? MdiIcons.clockOutline
         : MdiIcons.alertCircleOutline;
@@ -590,7 +591,7 @@ class AuditStatusBanner extends StatelessWidget {
                   statusMessage,
                   style: TextStyle(
                     fontSize: 13,
-                    color: isDark ? Colors.white70 : const Color(0xFF374151),
+                    color: isDark ? Colors.white70 : AppColors.gray700,
                   ),
                 ),
               ],
@@ -735,10 +736,10 @@ class DetailFooter extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF334155) : Colors.grey[50],
+        color: isDark ? AppColors.slate700 : Colors.grey[50],
         border: Border(
           top: BorderSide(
-            color: isDark ? const Color(0xFF475569) : Colors.grey[200]!,
+            color: isDark ? AppColors.slate600 : Colors.grey[200]!,
           ),
         ),
       ),
@@ -750,10 +751,10 @@ class DetailFooter extends StatelessWidget {
                 height: fixedHeight,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFf59e0b).withValues(alpha: 0.1),
+                  color: AppColors.amber500.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: const Color(0xFFf59e0b).withValues(alpha: 0.3),
+                    color: AppColors.amber500.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -762,7 +763,7 @@ class DetailFooter extends StatelessWidget {
                     Icon(
                       MdiIcons.alertCircleOutline,
                       size: 18,
-                      color: const Color(0xFFf59e0b),
+                      color: AppColors.amber500,
                     ),
                     const SizedBox(width: 10),
                     const Flexible(
@@ -771,7 +772,7 @@ class DetailFooter extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFFf59e0b),
+                          color: AppColors.amber500,
                         ),
                       ),
                     ),
@@ -785,10 +786,10 @@ class DetailFooter extends StatelessWidget {
                 height: fixedHeight,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10b981).withValues(alpha: 0.1),
+                  color: AppColors.emerald500.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: const Color(0xFF10b981).withValues(alpha: 0.3),
+                    color: AppColors.emerald500.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -797,7 +798,7 @@ class DetailFooter extends StatelessWidget {
                     Icon(
                       MdiIcons.checkCircle,
                       size: 18,
-                      color: const Color(0xFF10b981),
+                      color: AppColors.emerald500,
                     ),
                     const SizedBox(width: 10),
                     const Flexible(
@@ -806,7 +807,7 @@ class DetailFooter extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF10b981),
+                          color: AppColors.emerald500,
                         ),
                       ),
                     ),
@@ -829,19 +830,19 @@ class DetailFooter extends StatelessWidget {
                 icon: Icon(
                   MdiIcons.closeCircleOutline,
                   size: 16,
-                  color: saving ? Colors.grey : const Color(0xFFef4444),
+                  color: saving ? Colors.grey : AppColors.red500,
                 ),
                 label: Text(
                   '取消应用',
                   style: TextStyle(
-                    color: saving ? Colors.grey : const Color(0xFFef4444),
+                    color: saving ? Colors.grey : AppColors.red500,
                   ),
                 ),
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(
                     color: saving
                         ? Colors.grey[300]!
-                        : const Color(0xFFef4444).withValues(alpha: 0.5),
+                        : AppColors.red500.withValues(alpha: 0.5),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   shape: RoundedRectangleBorder(
@@ -875,7 +876,7 @@ class DetailFooter extends StatelessWidget {
                   : Icon(applied ? Icons.refresh : Icons.check, size: 18),
               label: Text(saving ? '应用中' : (applied ? '重新应用' : '应用配置')),
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF0080FF),
+                backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),

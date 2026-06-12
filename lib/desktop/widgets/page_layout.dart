@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 页面布局组件
 ///
@@ -123,7 +124,7 @@ class _PageLayoutState extends State<PageLayout> {
           width: _isHoveringTitle ? _calculateTitleWidth() : 40,
           height: 3,
           decoration: BoxDecoration(
-            color: const Color(0xFF0080FF),
+            color: AppColors.primary,
             borderRadius: BorderRadius.circular(1.5),
           ),
         ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 import '../../../core/bloc/lobby/lobby_bloc.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 移动端大厅浮动操作按钮组
 ///
@@ -39,7 +40,7 @@ class LobbyFloatingActionsMobile extends StatelessWidget {
           badge: state.broadcastCooldownSeconds > 0
               ? '${state.broadcastCooldownSeconds}'
               : null,
-          badgeColor: const Color(0xFFF59E0B),
+          badgeColor: AppColors.amber500,
           isDisabled: !canBroadcast,
           showDisabledStrike: true,
           onTap: canBroadcast ? onBroadcastTap : null,
@@ -133,11 +134,11 @@ class _MobileActionButton extends StatelessWidget {
                     width: 34,
                     height: 2.5,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444),
+                      color: AppColors.red500,
                       borderRadius: BorderRadius.circular(2),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFEF4444).withValues(alpha: 0.6),
+                          color: AppColors.red500.withValues(alpha: 0.6),
                           blurRadius: 4,
                         ),
                       ],
@@ -154,7 +155,7 @@ class _MobileActionButton extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
               decoration: BoxDecoration(
-                color: badgeColor ?? const Color(0xFFEF4444),
+                color: badgeColor ?? AppColors.red500,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(

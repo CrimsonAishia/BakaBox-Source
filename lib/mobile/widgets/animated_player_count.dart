@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
 
 class AnimatedPlayerCount extends StatefulWidget {
   final int currentPlayers;
@@ -121,7 +122,7 @@ class _AnimatedPlayerCountState extends State<AnimatedPlayerCount>
     if (queueCount > 0 && warmupCount > 0) {
       return ShaderMask(
         shaderCallback: (bounds) => const LinearGradient(
-          colors: [Color(0xFFF44336), Color(0xFFF59E0B)],
+          colors: [Color(0xFFF44336), AppColors.amber500],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ).createShader(bounds),
@@ -135,7 +136,7 @@ class _AnimatedPlayerCountState extends State<AnimatedPlayerCount>
     } else {
       return Text(
         '+$extraCount',
-        style: style.copyWith(color: const Color(0xFFF59E0B)),
+        style: style.copyWith(color: AppColors.amber500),
       );
     }
   }

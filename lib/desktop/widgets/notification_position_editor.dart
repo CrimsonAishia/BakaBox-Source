@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 窗口位置枚举
 enum WindowPositionType {
@@ -180,10 +181,10 @@ class _NotificationPositionEditorState
           width: _screenWidth,
           height: _screenHeight,
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFE5E7EB),
+            color: isDark ? AppColors.slate900 : AppColors.gray200,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDark ? const Color(0xFF475569) : const Color(0xFFD1D5DB),
+              color: isDark ? AppColors.slate600 : AppColors.gray300,
               width: 2,
             ),
             boxShadow: [
@@ -214,8 +215,8 @@ class _NotificationPositionEditorState
                 child: Container(
                   decoration: BoxDecoration(
                     color: isDark
-                        ? const Color(0xFF1E293B).withValues(alpha: 0.9)
-                        : const Color(0xFFF3F4F6).withValues(alpha: 0.9),
+                        ? AppColors.slate800.withValues(alpha: 0.9)
+                        : AppColors.gray100.withValues(alpha: 0.9),
                     borderRadius: const BorderRadius.only(
                       bottomLeft: Radius.circular(10),
                       bottomRight: Radius.circular(10),
@@ -339,8 +340,8 @@ class _NotificationPositionEditorState
   ) {
     final isNotification = type == DraggableWindowType.notification;
     final color = isNotification
-        ? const Color(0xFF0080FF)
-        : const Color(0xFFFF9800);
+        ? AppColors.primary
+        : AppColors.orange;
     final icon = isNotification ? MdiIcons.bellOutline : MdiIcons.gamepad;
     final label = isNotification ? '通知' : '浮窗';
 
@@ -349,7 +350,7 @@ class _NotificationPositionEditorState
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color, width: isSelected ? 2.5 : 1.5),
         boxShadow: [
@@ -369,7 +370,7 @@ class _NotificationPositionEditorState
             label,
             style: TextStyle(
               fontSize: 9,
-              color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+              color: isDark ? Colors.white70 : AppColors.gray500,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -429,7 +430,7 @@ class _NotificationPositionEditorState
     return Row(
       children: [
         _buildLegendItem(
-          color: const Color(0xFF0080FF),
+          color: AppColors.primary,
           icon: MdiIcons.bellOutline,
           label: '通知窗口',
           position: _notificationPosition,
@@ -445,7 +446,7 @@ class _NotificationPositionEditorState
         ),
         const SizedBox(width: 20),
         _buildLegendItem(
-          color: const Color(0xFFFF9800),
+          color: AppColors.orange,
           icon: MdiIcons.gamepad,
           label: '状态浮窗',
           position: _floatingPosition,
@@ -485,7 +486,7 @@ class _NotificationPositionEditorState
           border: Border.all(
             color: isSelected
                 ? color
-                : (isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB)),
+                : (isDark ? AppColors.slate600 : AppColors.gray200),
           ),
         ),
         child: Row(
@@ -511,7 +512,7 @@ class _NotificationPositionEditorState
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.white : const Color(0xFF374151),
+                    color: isDark ? Colors.white : AppColors.gray700,
                   ),
                 ),
                 Text(

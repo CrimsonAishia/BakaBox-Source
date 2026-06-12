@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../core/models/server_models.dart';
 import '../../../core/utils/time_utils.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 玩家趋势图表组件
 /// 显示服务器玩家数量随时间变化的折线图
@@ -147,12 +148,12 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
             constraints: const BoxConstraints(maxWidth: 200),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF334155) : Colors.white,
+              color: isDark ? AppColors.slate700 : Colors.white,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: isDark
                     ? Colors.white.withValues(alpha: 0.1)
-                    : const Color(0xFFE2E8F0),
+                    : AppColors.slate200,
               ),
               boxShadow: [
                 BoxShadow(
@@ -172,7 +173,7 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
                     fontSize: 11,
                     color: isDark
                         ? Colors.white.withValues(alpha: 0.7)
-                        : const Color(0xFF64748B),
+                        : AppColors.slate500,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -181,7 +182,7 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : const Color(0xFF1E293B),
+                    color: isDark ? Colors.white : AppColors.slate800,
                   ),
                 ),
               ],
@@ -274,7 +275,7 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
               getDrawingHorizontalLine: (value) => FlLine(
                 color: Theme.of(context).brightness == Brightness.dark
                     ? Colors.white.withValues(alpha: 0.1)
-                    : const Color(0xFFF1F5F9),
+                    : AppColors.slate100,
                 strokeWidth: 1,
               ),
             ),
@@ -341,8 +342,8 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
                   style: TextStyle(
                     fontSize: 9,
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? const Color(0xFF94A3B8)
-                        : const Color(0xFF64748B),
+                        ? AppColors.slate400
+                        : AppColors.slate500,
                   ),
                 ),
               ),
@@ -361,8 +362,8 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
               style: TextStyle(
                 fontSize: 11,
                 color: Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xFF94A3B8)
-                    : const Color(0xFF64748B),
+                    ? AppColors.slate400
+                    : AppColors.slate500,
               ),
             );
           },
@@ -411,7 +412,7 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
       }).toList(),
       isCurved: true,
       curveSmoothness: 0.3,
-      color: const Color(0xFF3B82F6),
+      color: AppColors.blue500,
       barWidth: 2,
       isStrokeCapRound: true,
       dotData: FlDotData(
@@ -420,7 +421,7 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
           final isHighlighted = _touchedIndex == index;
           return FlDotCirclePainter(
             radius: isHighlighted ? 6 : (data.length > 20 ? 2 : 3),
-            color: const Color(0xFF3B82F6),
+            color: AppColors.blue500,
             strokeWidth: isHighlighted ? 3 : 2,
             strokeColor: Colors.white,
           );
@@ -428,7 +429,7 @@ class _PlayerTrendChartState extends State<PlayerTrendChart> {
       ),
       belowBarData: BarAreaData(
         show: true,
-        color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+        color: AppColors.blue500.withValues(alpha: 0.1),
       ),
     );
   }

@@ -10,6 +10,7 @@ import 'floating_progress_bar.dart';
 import 'floating_window_app.dart';
 import 'floating_window_body.dart';
 import 'floating_window_colors.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 浮窗外壳 - 布局 (280x240)
 class FloatingWindowShell extends StatefulWidget {
@@ -315,7 +316,7 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
             child: Container(
               height: _isMinimized ? _minimizedHeight : null,
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
+                color: AppColors.slate800,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: color, width: 2),
                 boxShadow: [
@@ -352,8 +353,8 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              const Color(0xFF1E293B).withValues(alpha: 0.7),
-                              const Color(0xFF1E293B).withValues(alpha: 0.9),
+                              AppColors.slate800.withValues(alpha: 0.7),
+                              AppColors.slate800.withValues(alpha: 0.9),
                             ],
                           ),
                         ),
@@ -401,15 +402,15 @@ class _FloatingWindowShellState extends State<FloatingWindowShell> {
       return DiskCachedImage(
         imageUrl: mapUrl,
         fit: BoxFit.cover,
-        placeholder: Container(color: const Color(0xFF1E293B)),
-        errorWidget: Container(color: const Color(0xFF1E293B)),
+        placeholder: Container(color: AppColors.slate800),
+        errorWidget: Container(color: AppColors.slate800),
       );
     }
     return Image.asset(
       mapUrl,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) =>
-          Container(color: const Color(0xFF1E293B)),
+          Container(color: AppColors.slate800),
     );
   }
 

@@ -115,7 +115,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final navBgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final navBgColor = isDark ? AppColors.slate800 : Colors.white;
     final washiColor = CharacterGalleryTheme.getWashiColor(context);
 
     return BlocListener<CharacterGalleryBloc, CharacterGalleryState>(
@@ -325,7 +325,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         borderRadius: BorderRadius.circular(6),
         side: BorderSide(color: scrollBrown.withValues(alpha: 0.3)),
       ),
-      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+      color: isDark ? AppColors.slate800 : Colors.white,
       onSelected: (value) {
         context.read<CharacterGalleryBloc>().add(ChangeSortBy(value));
       },
@@ -1540,7 +1540,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         else ...[
           // 被动技能
           if (passive.isNotEmpty) ...[
-            _buildSpellCardGroupHeader('被动技能', const Color(0xFF4A7C59)),
+            _buildSpellCardGroupHeader('被动技能', AppColors.skillGreen),
             const SizedBox(height: 8),
             ...passive.map((card) => _buildTouhouSpellCard(card)),
             const SizedBox(height: 16),
@@ -1615,8 +1615,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       String bgAsset,
     ) = switch (type) {
       SpellCardType.passive => (
-        const Color(0xFF4A7C59),
-        const Color(0xFF4A7C59).withValues(alpha: isDark ? 0.15 : 0.08),
+        AppColors.skillGreen,
+        AppColors.skillGreen.withValues(alpha: isDark ? 0.15 : 0.08),
         '✦',
         'assets/images/character_gallery/spell_card_bg_passive.png',
       ),
@@ -2072,7 +2072,7 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
         else ...[
           // 被动技能
           if (passive.isNotEmpty) ...[
-            _buildSpellCardGroupHeader('被动技能', const Color(0xFF4A7C59)),
+            _buildSpellCardGroupHeader('被动技能', AppColors.skillGreen),
             const SizedBox(height: 8),
             ...passive.map((skill) => _buildZombieSkillCard(skill)),
             const SizedBox(height: 16),
@@ -2106,8 +2106,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       String bgAsset,
     ) = isPassive
         ? (
-            const Color(0xFF4A7C59),
-            const Color(0xFF4A7C59).withValues(alpha: isDark ? 0.15 : 0.08),
+            AppColors.skillGreen,
+            AppColors.skillGreen.withValues(alpha: isDark ? 0.15 : 0.08),
             '✦',
             'assets/images/character_gallery/spell_card_bg_passive.png',
           )
@@ -2900,8 +2900,8 @@ class _CharacterGalleryDesktopState extends State<CharacterGalleryDesktop> {
       String bgAsset,
     ) = switch (type) {
       SpellCardType.passive => (
-        const Color(0xFF4A7C59),
-        const Color(0xFF4A7C59).withValues(alpha: isDark ? 0.15 : 0.08),
+        AppColors.skillGreen,
+        AppColors.skillGreen.withValues(alpha: isDark ? 0.15 : 0.08),
         '✦',
         'assets/images/character_gallery/spell_card_bg_passive.png',
       ),
@@ -3430,7 +3430,7 @@ class _AcquisitionSealBadge extends StatelessWidget {
       AcquisitionType.custom => (
         '特',
         acquisition.customSource ?? '活动',
-        const Color(0xFF4A7C59),
+        AppColors.skillGreen,
       ),
       _ => ('？', '未知', scrollBrown),
     };

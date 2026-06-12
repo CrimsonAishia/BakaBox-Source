@@ -3,6 +3,7 @@ import '../services/image_url_service.dart';
 import '../utils/log_service.dart';
 import 'disk_cached_image.dart';
 import 'image_viewer_dialog.dart';
+import '../constants/app_colors.dart';
 
 /// 可点击的图片组件
 ///
@@ -86,10 +87,10 @@ class _ClickableImageState extends State<ClickableImage> {
     }
 
     final borderColor = _isHovering
-        ? const Color(0xFF0080FF)
+        ? AppColors.primary
         : (isDark
               ? Colors.white.withValues(alpha: 0.15)
-              : const Color(0xFFE5E7EB));
+              : AppColors.gray200);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
@@ -107,7 +108,7 @@ class _ClickableImageState extends State<ClickableImage> {
             boxShadow: _isHovering
                 ? [
                     BoxShadow(
-                      color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+                      color: AppColors.primary.withValues(alpha: 0.15),
                       blurRadius: 8,
                     ),
                   ]
@@ -157,12 +158,12 @@ class _ClickableImageState extends State<ClickableImage> {
       width: widget.width,
       height: widget.height,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
+        color: isDark ? AppColors.slate700 : AppColors.gray100,
         borderRadius: BorderRadius.circular(widget.borderRadius),
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.1)
-              : const Color(0xFFE5E7EB),
+              : AppColors.gray200,
         ),
       ),
       child: const Center(
@@ -171,7 +172,7 @@ class _ClickableImageState extends State<ClickableImage> {
           height: 20,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            color: Color(0xFF0080FF),
+            color: AppColors.primary,
           ),
         ),
       ),
@@ -183,7 +184,7 @@ class _ClickableImageState extends State<ClickableImage> {
       width: widget.width,
       height: widget.height,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
+        color: isDark ? AppColors.slate700 : AppColors.gray100,
         borderRadius: BorderRadius.circular(widget.borderRadius),
       ),
       child: Column(
@@ -192,14 +193,14 @@ class _ClickableImageState extends State<ClickableImage> {
           Icon(
             Icons.broken_image_rounded,
             size: 24,
-            color: isDark ? const Color(0xFF64748B) : const Color(0xFF9CA3AF),
+            color: isDark ? AppColors.slate500 : AppColors.gray400,
           ),
           const SizedBox(height: 4),
           Text(
             '加载失败',
             style: TextStyle(
               fontSize: 10,
-              color: isDark ? const Color(0xFF64748B) : const Color(0xFF9CA3AF),
+              color: isDark ? AppColors.slate500 : AppColors.gray400,
             ),
           ),
         ],

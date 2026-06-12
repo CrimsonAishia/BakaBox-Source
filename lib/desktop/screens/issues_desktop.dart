@@ -131,8 +131,8 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: isDark
-          ? const Color(0xFF0F172A)
-          : const Color(0xFFF3F4F6),
+          ? AppColors.slate900
+          : AppColors.gray100,
       body: PageLayout(
         title: _getTitle(),
         subtitle: _getSubtitle(),
@@ -166,7 +166,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
         icon: const Icon(Icons.arrow_back, size: 18),
         label: const Text('返回列表'),
         style: TextButton.styleFrom(
-          foregroundColor: isDark ? Colors.white54 : const Color(0xFF6B7280),
+          foregroundColor: isDark ? Colors.white54 : AppColors.gray500,
         ),
       );
     }
@@ -203,10 +203,10 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
       width: 240,
       height: 36,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.slate700 : AppColors.gray200,
         ),
         boxShadow: [
           BoxShadow(
@@ -222,13 +222,13 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
         decoration: InputDecoration(
           hintText: '搜索问题...',
           hintStyle: TextStyle(
-            color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+            color: isDark ? Colors.white38 : AppColors.gray400,
             fontSize: 14,
           ),
           prefixIcon: Icon(
             Icons.search,
             size: 18,
-            color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+            color: isDark ? Colors.white38 : AppColors.gray400,
           ),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
@@ -236,7 +236,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                   onPressed: _clearSearch,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                  color: isDark ? Colors.white38 : AppColors.gray400,
                 )
               : null,
           border: InputBorder.none,
@@ -257,7 +257,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
       icon: const Icon(Icons.add, size: 18),
       label: const Text('提交反馈'),
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF0080FF),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -270,10 +270,10 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF9FAFB),
+        color: isDark ? AppColors.slate800 : AppColors.gray50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.slate700 : AppColors.gray200,
         ),
       ),
       child: Column(
@@ -281,7 +281,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
           _buildFilters(),
           Divider(
             height: 1,
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+            color: isDark ? AppColors.slate700 : AppColors.gray200,
           ),
           Expanded(child: _buildIssueList()),
         ],
@@ -303,7 +303,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            color: isDark ? AppColors.slate800 : Colors.white,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
           ),
           child: Row(
@@ -315,8 +315,8 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                 width: 1,
                 height: 24,
                 color: isDark
-                    ? const Color(0xFF334155)
-                    : const Color(0xFFE5E7EB),
+                    ? AppColors.slate700
+                    : AppColors.gray200,
               ),
               const SizedBox(width: 12),
               // 类型筛选
@@ -359,14 +359,14 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                 ),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF334155)
-                      : const Color(0xFFF3F4F6),
+                      ? AppColors.slate700
+                      : AppColors.gray100,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   '${state.totalCount}条',
                   style: TextStyle(
-                    color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    color: isDark ? Colors.white54 : AppColors.gray500,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
@@ -400,10 +400,10 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? const Color(0xFF0080FF)
+                      ? AppColors.primary
                       : (isDark
-                            ? const Color(0xFF334155)
-                            : const Color(0xFFF3F4F6)),
+                            ? AppColors.slate700
+                            : AppColors.gray100),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Row(
@@ -417,7 +417,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                             ? Colors.white
                             : (isDark
                                   ? Colors.white54
-                                  : const Color(0xFF6B7280)),
+                                  : AppColors.gray500),
                       ),
                       const SizedBox(width: 4),
                     ],
@@ -428,7 +428,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                             ? Colors.white
                             : (isDark
                                   ? Colors.white70
-                                  : const Color(0xFF374151)),
+                                  : AppColors.gray700),
                         fontSize: 12,
                         fontWeight: isSelected
                             ? FontWeight.w600
@@ -454,7 +454,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
+        color: isDark ? AppColors.slate700 : AppColors.gray100,
         borderRadius: BorderRadius.circular(6),
       ),
       child: DropdownButtonHideUnderline(
@@ -463,7 +463,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
           items: items,
           onChanged: onChanged,
           style: TextStyle(
-            color: isDark ? Colors.white70 : const Color(0xFF374151),
+            color: isDark ? Colors.white70 : AppColors.gray700,
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -471,9 +471,9 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
           icon: Icon(
             Icons.keyboard_arrow_down,
             size: 16,
-            color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+            color: isDark ? Colors.white38 : AppColors.gray400,
           ),
-          dropdownColor: isDark ? const Color(0xFF1E293B) : null,
+          dropdownColor: isDark ? AppColors.slate800 : null,
         ),
       ),
     );
@@ -499,7 +499,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
           'closed',
           '已关闭',
           MdiIcons.closeCircleOutline,
-          const Color(0xFF6B7280),
+          AppColors.gray500,
           currentStatus == 'closed',
           () => onChanged('closed'),
         ),
@@ -508,7 +508,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
           'all',
           '全部',
           MdiIcons.formatListBulleted,
-          const Color(0xFF6B7280),
+          AppColors.gray500,
           currentStatus == 'all',
           () => onChanged('all'),
         ),
@@ -535,7 +535,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
           decoration: BoxDecoration(
             color: isSelected
                 ? color.withValues(alpha: 0.1)
-                : (isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6)),
+                : (isDark ? AppColors.slate700 : AppColors.gray100),
             borderRadius: BorderRadius.circular(6),
             border: Border.all(color: isSelected ? color : Colors.transparent),
           ),
@@ -547,7 +547,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                 size: 12,
                 color: isSelected
                     ? color
-                    : (isDark ? Colors.white54 : const Color(0xFF6B7280)),
+                    : (isDark ? Colors.white54 : AppColors.gray500),
               ),
               const SizedBox(width: 4),
               Text(
@@ -555,7 +555,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                 style: TextStyle(
                   color: isSelected
                       ? color
-                      : (isDark ? Colors.white70 : const Color(0xFF374151)),
+                      : (isDark ? Colors.white70 : AppColors.gray700),
                   fontSize: 12,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 ),
@@ -598,7 +598,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF0080FF) : Colors.transparent,
+            color: isSelected ? AppColors.primary : Colors.transparent,
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
@@ -606,7 +606,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
             style: TextStyle(
               color: isSelected
                   ? Colors.white
-                  : (isDark ? Colors.white54 : const Color(0xFF6B7280)),
+                  : (isDark ? Colors.white54 : AppColors.gray500),
               fontSize: 13,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             ),
@@ -667,10 +667,10 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.slate700 : AppColors.gray200,
         ),
       ),
       child: Column(
@@ -683,7 +683,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                 height: 22,
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF334155)
+                      ? AppColors.slate700
                       : Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(4),
                 ),
@@ -694,7 +694,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                 height: 22,
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF334155)
+                      ? AppColors.slate700
                       : Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(4),
                 ),
@@ -705,7 +705,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                   height: 20,
                   decoration: BoxDecoration(
                     color: isDark
-                        ? const Color(0xFF334155)
+                        ? AppColors.slate700
                         : Colors.grey.shade200,
                     borderRadius: BorderRadius.circular(4),
                   ),
@@ -721,7 +721,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                 height: 14,
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF334155)
+                      ? AppColors.slate700
                       : Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(4),
                 ),
@@ -732,7 +732,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                 height: 14,
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF334155)
+                      ? AppColors.slate700
                       : Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(4),
                 ),
@@ -765,7 +765,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
               child: Icon(
                 MdiIcons.alertCircleOutline,
                 size: 40,
-                color: const Color(0xFFDC2626),
+                color: AppColors.red600,
               ),
             ),
             const SizedBox(height: 24),
@@ -774,7 +774,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : const Color(0xFF1F2937),
+                color: isDark ? Colors.white : AppColors.gray800,
               ),
             ),
             const SizedBox(height: 12),
@@ -787,7 +787,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: isDark
-                      ? const Color(0xFFDC2626).withValues(alpha: 0.3)
+                      ? AppColors.red600.withValues(alpha: 0.3)
                       : const Color(0xFFFECACA),
                 ),
               ),
@@ -797,7 +797,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                   Icon(
                     MdiIcons.informationOutline,
                     size: 16,
-                    color: const Color(0xFFDC2626),
+                    color: AppColors.red600,
                   ),
                   const SizedBox(width: 8),
                   Flexible(
@@ -806,7 +806,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
                       style: TextStyle(
                         color: isDark
                             ? const Color(0xFFFCA5A5)
-                            : const Color(0xFFDC2626),
+                            : AppColors.red600,
                         fontSize: 14,
                       ),
                       textAlign: TextAlign.center,
@@ -822,7 +822,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
               icon: Icon(MdiIcons.refresh, size: 18),
               label: const Text('重新加载'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0080FF),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
@@ -856,7 +856,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
             child: Icon(
               isSearching ? Icons.search_off : MdiIcons.commentQuestionOutline,
               size: 40,
-              color: const Color(0xFF3B82F6),
+              color: AppColors.blue500,
             ),
           ),
           const SizedBox(height: 24),
@@ -865,14 +865,14 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white : const Color(0xFF1F2937),
+              color: isDark ? Colors.white : AppColors.gray800,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             isSearching ? '尝试使用其他关键词搜索' : '成为第一个提出反馈的人吧',
             style: TextStyle(
-              color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+              color: isDark ? Colors.white54 : AppColors.gray500,
               fontSize: 14,
             ),
           ),
@@ -883,7 +883,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
               icon: const Icon(Icons.add, size: 18),
               label: const Text('提交反馈'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0080FF),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
@@ -902,7 +902,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
               style: TextButton.styleFrom(
                 foregroundColor: isDark
                     ? Colors.white54
-                    : const Color(0xFF6B7280),
+                    : AppColors.gray500,
               ),
             ),
         ],
@@ -936,10 +936,10 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         border: Border(
           top: BorderSide(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+            color: isDark ? AppColors.slate700 : AppColors.gray200,
           ),
         ),
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
@@ -995,7 +995,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
         pages.add(
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 4),
-            child: Text('...', style: TextStyle(color: Color(0xFF9CA3AF))),
+            child: Text('...', style: TextStyle(color: AppColors.gray400)),
           ),
         );
       }
@@ -1022,7 +1022,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
             height: 32,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF0080FF) : Colors.transparent,
+              color: isSelected ? AppColors.primary : Colors.transparent,
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
@@ -1030,7 +1030,7 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
               style: TextStyle(
                 color: isSelected
                     ? Colors.white
-                    : (isDark ? Colors.white70 : const Color(0xFF374151)),
+                    : (isDark ? Colors.white70 : AppColors.gray700),
                 fontSize: 13,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               ),
@@ -1054,15 +1054,15 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
           height: 32,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
+            color: isDark ? AppColors.slate700 : AppColors.gray100,
             borderRadius: BorderRadius.circular(6),
           ),
           child: Icon(
             icon,
             size: 18,
             color: isDisabled
-                ? (isDark ? Colors.white24 : const Color(0xFFD1D5DB))
-                : (isDark ? Colors.white70 : const Color(0xFF374151)),
+                ? (isDark ? Colors.white24 : AppColors.gray300)
+                : (isDark ? Colors.white70 : AppColors.gray700),
           ),
         ),
       ),
@@ -1109,20 +1109,20 @@ class _IssueCardState extends State<_IssueCard> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: _isHovered
-                ? (isDark ? const Color(0xFF334155) : const Color(0xFFF8FAFC))
-                : (isDark ? const Color(0xFF1E293B) : Colors.white),
+                ? (isDark ? AppColors.slate700 : AppColors.slate50)
+                : (isDark ? AppColors.slate800 : Colors.white),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: _isHovered
-                  ? const Color(0xFF0080FF).withValues(alpha: 0.3)
+                  ? AppColors.primary.withValues(alpha: 0.3)
                   : (isDark
-                        ? const Color(0xFF334155)
-                        : const Color(0xFFE5E7EB)),
+                        ? AppColors.slate700
+                        : AppColors.gray200),
             ),
             boxShadow: [
               BoxShadow(
                 color: _isHovered
-                    ? const Color(0xFF0080FF).withValues(alpha: 0.08)
+                    ? AppColors.primary.withValues(alpha: 0.08)
                     : Colors.black.withValues(alpha: isDark ? 0.1 : 0.03),
                 blurRadius: _isHovered ? 12 : 6,
                 offset: Offset(0, _isHovered ? 4 : 2),
@@ -1145,8 +1145,8 @@ class _IssueCardState extends State<_IssueCard> {
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: _isHovered
-                            ? const Color(0xFF0080FF)
-                            : (isDark ? Colors.white : const Color(0xFF1F2937)),
+                            ? AppColors.primary
+                            : (isDark ? Colors.white : AppColors.gray800),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1159,8 +1159,8 @@ class _IssueCardState extends State<_IssueCard> {
                     ),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? const Color(0xFF334155)
-                          : const Color(0xFFF3F4F6),
+                          ? AppColors.slate700
+                          : AppColors.gray100,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -1168,7 +1168,7 @@ class _IssueCardState extends State<_IssueCard> {
                       style: TextStyle(
                         color: isDark
                             ? Colors.white54
-                            : const Color(0xFF6B7280),
+                            : AppColors.gray500,
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                       ),
@@ -1214,7 +1214,7 @@ class _IssueCardState extends State<_IssueCard> {
   Widget _buildTypeTag(IssueType type) {
     final (color, bgColor, icon) = switch (type) {
       IssueType.bug => (
-        const Color(0xFFDC2626),
+        AppColors.red600,
         const Color(0xFFFEE2E2),
         MdiIcons.bug,
       ),
@@ -1302,7 +1302,7 @@ class _IssueCardState extends State<_IssueCard> {
         const Color(0xFFCFFAFE),
       ), // 青色 - 已解决
       IssueStatus.wontfix => (
-        const Color(0xFFDC2626),
+        AppColors.red600,
         const Color(0xFFFEE2E2),
       ), // 红色 - 不予修复
       IssueStatus.duplicate => (
@@ -1310,8 +1310,8 @@ class _IssueCardState extends State<_IssueCard> {
         const Color(0xFFEDE9FE),
       ), // 紫色 - 重复问题
       IssueStatus.closed => (
-        const Color(0xFF6B7280),
-        const Color(0xFFF3F4F6),
+        AppColors.gray500,
+        AppColors.gray100,
       ), // 灰色 - 已关闭
     };
   }
@@ -1323,13 +1323,13 @@ class _IssueCardState extends State<_IssueCard> {
         Icon(
           icon,
           size: 13,
-          color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+          color: isDark ? Colors.white38 : AppColors.gray400,
         ),
         const SizedBox(width: 4),
         Text(
           text,
           style: TextStyle(
-            color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+            color: isDark ? Colors.white54 : AppColors.gray500,
             fontSize: 12,
           ),
         ),
@@ -1348,8 +1348,8 @@ class _IssueCardState extends State<_IssueCard> {
         CircleAvatar(
           radius: 10,
           backgroundColor: isDark
-              ? const Color(0xFF334155)
-              : const Color(0xFFE5E7EB),
+              ? AppColors.slate700
+              : AppColors.gray200,
           backgroundImage: authorAvatar != null
               ? NetworkImage(authorAvatar)
               : null,
@@ -1359,7 +1359,7 @@ class _IssueCardState extends State<_IssueCard> {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    color: isDark ? Colors.white54 : AppColors.gray500,
                   ),
                 )
               : null,
@@ -1368,7 +1368,7 @@ class _IssueCardState extends State<_IssueCard> {
         Text(
           authorName,
           style: TextStyle(
-            color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+            color: isDark ? Colors.white54 : AppColors.gray500,
             fontSize: 12,
           ),
         ),
@@ -1383,13 +1383,13 @@ class _IssueCardState extends State<_IssueCard> {
         Icon(
           icon,
           size: 13,
-          color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+          color: isDark ? Colors.white38 : AppColors.gray400,
         ),
         const SizedBox(width: 3),
         Text(
           '$count',
           style: TextStyle(
-            color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+            color: isDark ? Colors.white54 : AppColors.gray500,
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -1601,7 +1601,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
               child: Icon(
                 MdiIcons.alertCircleOutline,
                 size: 40,
-                color: const Color(0xFFDC2626),
+                color: AppColors.red600,
               ),
             ),
             const SizedBox(height: 24),
@@ -1610,7 +1610,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : const Color(0xFF1F2937),
+                color: isDark ? Colors.white : AppColors.gray800,
               ),
             ),
             const SizedBox(height: 12),
@@ -1623,7 +1623,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: isDark
-                      ? const Color(0xFFDC2626).withValues(alpha: 0.3)
+                      ? AppColors.red600.withValues(alpha: 0.3)
                       : const Color(0xFFFECACA),
                 ),
               ),
@@ -1633,7 +1633,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                   Icon(
                     MdiIcons.informationOutline,
                     size: 16,
-                    color: const Color(0xFFDC2626),
+                    color: AppColors.red600,
                   ),
                   const SizedBox(width: 8),
                   Flexible(
@@ -1642,7 +1642,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                       style: TextStyle(
                         color: isDark
                             ? const Color(0xFFFCA5A5)
-                            : const Color(0xFFDC2626),
+                            : AppColors.red600,
                         fontSize: 14,
                       ),
                       textAlign: TextAlign.center,
@@ -1659,7 +1659,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
               icon: Icon(MdiIcons.refresh, size: 18),
               label: const Text('重新加载'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0080FF),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
@@ -1708,10 +1708,10 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.slate700 : AppColors.gray200,
         ),
       ),
       child: Column(
@@ -1726,7 +1726,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
               Text(
                 '#${issue.id}',
                 style: TextStyle(
-                  color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                  color: isDark ? Colors.white38 : AppColors.gray400,
                   fontSize: 14,
                 ),
               ),
@@ -1738,7 +1738,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white : const Color(0xFF1F2937),
+              color: isDark ? Colors.white : AppColors.gray800,
             ),
           ),
           const SizedBox(height: 16),
@@ -1747,8 +1747,8 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
               CircleAvatar(
                 radius: 16,
                 backgroundColor: isDark
-                    ? const Color(0xFF334155)
-                    : const Color(0xFFE5E7EB),
+                    ? AppColors.slate700
+                    : AppColors.gray200,
                 backgroundImage: issue.authorAvatar != null
                     ? NetworkImage(issue.authorAvatar!)
                     : null,
@@ -1764,14 +1764,14 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                 issue.authorName,
                 style: TextStyle(
                   fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white70 : const Color(0xFF374151),
+                  color: isDark ? Colors.white70 : AppColors.gray700,
                 ),
               ),
               const SizedBox(width: 8),
               Text(
                 '创建于 ${Formatters.formatDateTime(issue.createdAt.toIso8601String())}',
                 style: TextStyle(
-                  color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                  color: isDark ? Colors.white38 : AppColors.gray400,
                   fontSize: 13,
                 ),
               ),
@@ -1780,7 +1780,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
           const SizedBox(height: 20),
           Divider(
             height: 1,
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
+            color: isDark ? AppColors.slate700 : AppColors.gray100,
           ),
           const SizedBox(height: 20),
           RichTextViewer(
@@ -1788,7 +1788,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
             textStyle: TextStyle(
               fontSize: 15,
               height: 1.7,
-              color: isDark ? Colors.white70 : const Color(0xFF374151),
+              color: isDark ? Colors.white70 : AppColors.gray700,
             ),
           ),
           if (issue.images.isNotEmpty) ...[
@@ -1806,8 +1806,8 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF0F172A)
-                    : const Color(0xFFF9FAFB),
+                    ? AppColors.slate900
+                    : AppColors.gray50,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -1815,13 +1815,13 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                   Icon(
                     MdiIcons.informationOutline,
                     size: 16,
-                    color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                    color: isDark ? Colors.white38 : AppColors.gray400,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     '${issue.deviceInfo!.appVersion} · ${issue.deviceInfo!.platform} · ${issue.deviceInfo!.osVersion}',
                     style: TextStyle(
-                      color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                      color: isDark ? Colors.white54 : AppColors.gray500,
                       fontSize: 13,
                     ),
                   ),
@@ -1832,7 +1832,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
           const SizedBox(height: 20),
           Divider(
             height: 1,
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
+            color: isDark ? AppColors.slate700 : AppColors.gray100,
           ),
           const SizedBox(height: 16),
           Row(
@@ -1851,7 +1851,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
 
   Widget _buildTypeTag(IssueType type) {
     final (color, bgColor) = switch (type) {
-      IssueType.bug => (const Color(0xFFDC2626), const Color(0xFFFEE2E2)),
+      IssueType.bug => (AppColors.red600, const Color(0xFFFEE2E2)),
       IssueType.feature => (const Color(0xFF2563EB), const Color(0xFFDBEAFE)),
       IssueType.question => (const Color(0xFF059669), const Color(0xFFD1FAE5)),
     };
@@ -1906,12 +1906,12 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
         const Color(0xFF0891B2),
         const Color(0xFFCFFAFE),
       ),
-      IssueStatus.wontfix => (const Color(0xFFDC2626), const Color(0xFFFEE2E2)),
+      IssueStatus.wontfix => (AppColors.red600, const Color(0xFFFEE2E2)),
       IssueStatus.duplicate => (
         const Color(0xFF7C3AED),
         const Color(0xFFEDE9FE),
       ),
-      IssueStatus.closed => (const Color(0xFF6B7280), const Color(0xFFF3F4F6)),
+      IssueStatus.closed => (AppColors.gray500, AppColors.gray100),
     };
   }
 
@@ -1926,12 +1926,12 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
       label: Text('${issue.voteCount}'),
       style: OutlinedButton.styleFrom(
         foregroundColor: issue.isVoted
-            ? const Color(0xFF0080FF)
-            : (isDark ? Colors.white54 : const Color(0xFF6B7280)),
+            ? AppColors.primary
+            : (isDark ? Colors.white54 : AppColors.gray500),
         side: BorderSide(
           color: issue.isVoted
-              ? const Color(0xFF0080FF)
-              : (isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB)),
+              ? AppColors.primary
+              : (isDark ? AppColors.slate700 : AppColors.gray200),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       ),
@@ -1945,13 +1945,13 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
         Icon(
           MdiIcons.commentOutline,
           size: 18,
-          color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+          color: isDark ? Colors.white38 : AppColors.gray400,
         ),
         const SizedBox(width: 6),
         Text(
           '${issue.commentCount} 条评论',
           style: TextStyle(
-            color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+            color: isDark ? Colors.white54 : AppColors.gray500,
             fontSize: 14,
           ),
         ),
@@ -1992,7 +1992,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
             ? const Color(0xFFFEE2E2)
             : const Color(0xFFD1FAE5),
         foregroundColor: isOpen
-            ? const Color(0xFFDC2626)
+            ? AppColors.red600
             : const Color(0xFF059669),
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -2006,10 +2006,10 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.slate700 : AppColors.gray200,
         ),
       ),
       child: Column(
@@ -2020,7 +2020,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white : const Color(0xFF1F2937),
+              color: isDark ? Colors.white : AppColors.gray800,
             ),
           ),
           const SizedBox(height: 16),
@@ -2038,7 +2038,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                 child: Text(
                   '暂无评论',
                   style: TextStyle(
-                    color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                    color: isDark ? Colors.white38 : AppColors.gray400,
                   ),
                 ),
               ),
@@ -2080,12 +2080,12 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                   : const Color(0xFFFEF08A).withValues(alpha: 0.5))
             : isReplyTarget
             ? (isDark
-                  ? const Color(0xFF0080FF).withValues(alpha: 0.08)
+                  ? AppColors.primary.withValues(alpha: 0.08)
                   : const Color(0xFFEFF6FF))
             : Colors.transparent,
         border: Border(
           bottom: BorderSide(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
+            color: isDark ? AppColors.slate700 : AppColors.gray100,
           ),
         ),
         borderRadius: isReplyTarget ? BorderRadius.circular(8) : null,
@@ -2100,8 +2100,8 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
             CircleAvatar(
               radius: 18,
               backgroundColor: isDark
-                  ? const Color(0xFF334155)
-                  : const Color(0xFFE5E7EB),
+                  ? AppColors.slate700
+                  : AppColors.gray200,
               backgroundImage: comment.authorAvatar != null
                   ? NetworkImage(comment.authorAvatar!)
                   : null,
@@ -2125,7 +2125,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                           fontWeight: FontWeight.w500,
                           color: isDark
                               ? Colors.white70
-                              : const Color(0xFF374151),
+                              : AppColors.gray700,
                         ),
                       ),
                       if (comment.isAdmin) ...[
@@ -2136,7 +2136,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                             vertical: 1,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0080FF),
+                            color: AppColors.primary,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: const Text(
@@ -2152,14 +2152,14 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                           size: 14,
                           color: isDark
                               ? Colors.white38
-                              : const Color(0xFF9CA3AF),
+                              : AppColors.gray400,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           replyTarget.authorName,
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
-                            color: const Color(0xFF0080FF),
+                            color: AppColors.primary,
                             fontSize: 12,
                           ),
                         ),
@@ -2170,7 +2170,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                         style: TextStyle(
                           color: isDark
                               ? Colors.white38
-                              : const Color(0xFF9CA3AF),
+                              : AppColors.gray400,
                           fontSize: 12,
                         ),
                       ),
@@ -2188,7 +2188,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                     textStyle: TextStyle(
                       fontSize: 14,
                       height: 1.6,
-                      color: isDark ? Colors.white70 : const Color(0xFF374151),
+                      color: isDark ? Colors.white70 : AppColors.gray700,
                     ),
                     compact: true,
                   ),
@@ -2233,8 +2233,8 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                 MdiIcons.replyOutline,
                 size: 14,
                 color: isActive
-                    ? const Color(0xFF0080FF)
-                    : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                    ? AppColors.primary
+                    : (isDark ? Colors.white38 : AppColors.gray400),
               ),
               const SizedBox(width: 4),
               Text(
@@ -2242,8 +2242,8 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                 style: TextStyle(
                   fontSize: 12,
                   color: isActive
-                      ? const Color(0xFF0080FF)
-                      : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                      ? AppColors.primary
+                      : (isDark ? Colors.white38 : AppColors.gray400),
                 ),
               ),
             ],
@@ -2283,13 +2283,13 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: isDark
-              ? const Color(0xFF334155).withValues(alpha: 0.5)
-              : const Color(0xFFF3F4F6),
+              ? AppColors.slate700.withValues(alpha: 0.5)
+              : AppColors.gray100,
           borderRadius: BorderRadius.circular(6),
           border: Border(
             left: BorderSide(
               width: 3,
-              color: isDark ? const Color(0xFF475569) : const Color(0xFFD1D5DB),
+              color: isDark ? AppColors.slate600 : AppColors.gray300,
             ),
           ),
         ),
@@ -2302,7 +2302,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                 compact: true,
                 textStyle: TextStyle(
                   fontSize: 12,
-                  color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                  color: isDark ? Colors.white38 : AppColors.gray400,
                   height: 1.4,
                 ),
               ),
@@ -2320,22 +2320,22 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF0080FF).withValues(alpha: 0.1)
+            ? AppColors.primary.withValues(alpha: 0.1)
             : const Color(0xFFEFF6FF),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+          color: AppColors.primary.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
         children: [
-          Icon(MdiIcons.replyOutline, size: 16, color: const Color(0xFF0080FF)),
+          Icon(MdiIcons.replyOutline, size: 16, color: AppColors.primary),
           const SizedBox(width: 8),
           Text(
             '回复 ',
             style: TextStyle(
               fontSize: 13,
-              color: isDark ? Colors.white70 : const Color(0xFF374151),
+              color: isDark ? Colors.white70 : AppColors.gray700,
             ),
           ),
           Text(
@@ -2343,7 +2343,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF0080FF),
+              color: AppColors.primary,
             ),
           ),
           const Spacer(),
@@ -2355,7 +2355,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
               child: Icon(
                 Icons.close,
                 size: 16,
-                color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                color: isDark ? Colors.white38 : AppColors.gray400,
               ),
             ),
           ),
@@ -2369,10 +2369,10 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.slate700 : AppColors.gray200,
         ),
       ),
       child: Column(
@@ -2383,7 +2383,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: isDark ? Colors.white70 : const Color(0xFF374151),
+              color: isDark ? Colors.white70 : AppColors.gray700,
             ),
           ),
           const SizedBox(height: 12),
@@ -2421,8 +2421,8 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
                 icon: const Icon(Icons.save_outlined, size: 18),
                 label: const Text('保存草稿'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF0080FF),
-                  side: const BorderSide(color: Color(0xFF0080FF)),
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 12,
@@ -2433,7 +2433,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
               ElevatedButton(
                 onPressed: state.isSubmitting ? null : _submitComment,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0080FF),
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
@@ -2492,11 +2492,11 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF0080FF).withValues(alpha: 0.1)
+            ? AppColors.primary.withValues(alpha: 0.1)
             : const Color(0xFFEFF6FF),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+          color: AppColors.primary.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -2504,13 +2504,13 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+              color: AppColors.primary.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(6),
             ),
             child: const Icon(
               Icons.restore_rounded,
               size: 16,
-              color: Color(0xFF0080FF),
+              color: AppColors.primary,
             ),
           ),
           const SizedBox(width: 10),
@@ -2520,7 +2520,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : const Color(0xFF1F2937),
+                color: isDark ? Colors.white : AppColors.gray800,
               ),
             ),
           ),
@@ -2529,7 +2529,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
             style: TextButton.styleFrom(
               foregroundColor: isDark
                   ? Colors.white54
-                  : const Color(0xFF6B7280),
+                  : AppColors.gray500,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             ),
             child: const Text('忽略', style: TextStyle(fontSize: 13)),
@@ -2538,7 +2538,7 @@ class _IssueDetailViewState extends State<_IssueDetailView> {
           ElevatedButton(
             onPressed: _restoreCommentDraft,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0080FF),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -2824,10 +2824,10 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            color: isDark ? AppColors.slate800 : Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+              color: isDark ? AppColors.slate700 : AppColors.gray200,
             ),
           ),
           child: Form(
@@ -2865,11 +2865,11 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF0080FF).withValues(alpha: 0.1)
+            ? AppColors.primary.withValues(alpha: 0.1)
             : const Color(0xFFEFF6FF),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+          color: AppColors.primary.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -2877,13 +2877,13 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+              color: AppColors.primary.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
               Icons.restore_rounded,
               size: 22,
-              color: Color(0xFF0080FF),
+              color: AppColors.primary,
             ),
           ),
           const SizedBox(width: 14),
@@ -2896,7 +2896,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : const Color(0xFF1F2937),
+                    color: isDark ? Colors.white : AppColors.gray800,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -2904,7 +2904,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
                   '是否恢复之前编辑的内容？',
                   style: TextStyle(
                     fontSize: 13,
-                    color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    color: isDark ? Colors.white54 : AppColors.gray500,
                   ),
                 ),
               ],
@@ -2916,7 +2916,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
             style: TextButton.styleFrom(
               foregroundColor: isDark
                   ? Colors.white54
-                  : const Color(0xFF6B7280),
+                  : AppColors.gray500,
             ),
             child: const Text('忽略'),
           ),
@@ -2924,7 +2924,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
           ElevatedButton(
             onPressed: _restoreDraft,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0080FF),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -2946,7 +2946,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white70 : const Color(0xFF374151),
+            color: isDark ? Colors.white70 : AppColors.gray700,
           ),
         ),
         const SizedBox(height: 12),
@@ -2955,7 +2955,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
             final isSelected = _selectedType == type;
             final (color, bgColor, icon) = switch (type) {
               IssueType.bug => (
-                const Color(0xFFDC2626),
+                AppColors.red600,
                 const Color(0xFFFEE2E2),
                 MdiIcons.bug,
               ),
@@ -2988,14 +2988,14 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? (isDark ? darkBgColor : bgColor)
-                        : (isDark ? const Color(0xFF334155) : Colors.white),
+                        : (isDark ? AppColors.slate700 : Colors.white),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isSelected
                           ? color
                           : (isDark
-                                ? const Color(0xFF475569)
-                                : const Color(0xFFE5E7EB)),
+                                ? AppColors.slate600
+                                : AppColors.gray200),
                       width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -3008,7 +3008,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
                             ? color
                             : (isDark
                                   ? Colors.white38
-                                  : const Color(0xFF9CA3AF)),
+                                  : AppColors.gray400),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -3018,7 +3018,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
                               ? color
                               : (isDark
                                     ? Colors.white54
-                                    : const Color(0xFF6B7280)),
+                                    : AppColors.gray500),
                           fontWeight: isSelected
                               ? FontWeight.w600
                               : FontWeight.normal,
@@ -3054,12 +3054,12 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: hasError
-                    ? const Color(0xFFDC2626)
-                    : (isDark ? Colors.white70 : const Color(0xFF374151)),
+                    ? AppColors.red600
+                    : (isDark ? Colors.white70 : AppColors.gray700),
               ),
             ),
             const SizedBox(width: 4),
-            const Text('*', style: TextStyle(color: Color(0xFFDC2626))),
+            const Text('*', style: TextStyle(color: AppColors.red600)),
             const Spacer(),
             // 字数统计
             Container(
@@ -3071,7 +3071,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
                     ? const Color(0xFFFEF3C7)
                     : (isDark
                           ? Colors.white.withValues(alpha: 0.05)
-                          : const Color(0xFFF3F4F6)),
+                          : AppColors.gray100),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -3080,12 +3080,12 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: isOverLimit
-                      ? const Color(0xFFDC2626)
+                      ? AppColors.red600
                       : isNearLimit
-                      ? const Color(0xFFF59E0B)
+                      ? AppColors.amber500
                       : (isDark
-                            ? const Color(0xFF94A3B8)
-                            : const Color(0xFF6B7280)),
+                            ? AppColors.slate400
+                            : AppColors.gray500),
                 ),
               ),
             ),
@@ -3107,36 +3107,36 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
           decoration: InputDecoration(
             hintText: '简洁描述你的问题或建议',
             hintStyle: TextStyle(
-              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+              color: isDark ? Colors.white38 : AppColors.gray400,
             ),
             filled: isDark,
-            fillColor: isDark ? const Color(0xFF334155) : null,
+            fillColor: isDark ? AppColors.slate700 : null,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
                 color: hasError
-                    ? const Color(0xFFDC2626)
+                    ? AppColors.red600
                     : (isDark
-                          ? const Color(0xFF475569)
-                          : const Color(0xFFE5E7EB)),
+                          ? AppColors.slate600
+                          : AppColors.gray200),
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
                 color: hasError
-                    ? const Color(0xFFDC2626)
+                    ? AppColors.red600
                     : (isDark
-                          ? const Color(0xFF475569)
-                          : const Color(0xFFE5E7EB)),
+                          ? AppColors.slate600
+                          : AppColors.gray200),
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
                 color: hasError
-                    ? const Color(0xFFDC2626)
-                    : const Color(0xFF0080FF),
+                    ? AppColors.red600
+                    : AppColors.primary,
                 width: 2,
               ),
             ),
@@ -3167,14 +3167,14 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
                 const Icon(
                   Icons.error_outline,
                   size: 16,
-                  color: Color(0xFFDC2626),
+                  color: AppColors.red600,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     _titleError!,
                     style: const TextStyle(
-                      color: Color(0xFFDC2626),
+                      color: AppColors.red600,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -3200,11 +3200,11 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: isDark ? Colors.white70 : const Color(0xFF374151),
+                color: isDark ? Colors.white70 : AppColors.gray700,
               ),
             ),
             const SizedBox(width: 4),
-            const Text('*', style: TextStyle(color: Color(0xFFDC2626))),
+            const Text('*', style: TextStyle(color: AppColors.red600)),
           ],
         ),
         const SizedBox(height: 8),
@@ -3237,10 +3237,10 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB),
+        color: isDark ? AppColors.slate900 : AppColors.gray50,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.slate700 : AppColors.gray200,
         ),
       ),
       child: Row(
@@ -3248,7 +3248,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
           Icon(
             MdiIcons.informationOutline,
             size: 20,
-            color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+            color: isDark ? Colors.white54 : AppColors.gray500,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -3260,7 +3260,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.white70 : const Color(0xFF374151),
+                    color: isDark ? Colors.white70 : AppColors.gray700,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -3268,7 +3268,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
                   '${deviceInfo.appVersion} · ${deviceInfo.platform} · ${deviceInfo.osVersion}',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    color: isDark ? Colors.white54 : AppColors.gray500,
                   ),
                 ),
               ],
@@ -3293,8 +3293,8 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
           icon: const Icon(Icons.save_outlined, size: 18),
           label: const Text('保存草稿'),
           style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF0080FF),
-            side: const BorderSide(color: Color(0xFF0080FF)),
+            foregroundColor: AppColors.primary,
+            side: const BorderSide(color: AppColors.primary),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
         ),
@@ -3302,7 +3302,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
         ElevatedButton(
           onPressed: _isSubmitting ? null : _submit,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF0080FF),
+            backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           ),

@@ -5,6 +5,7 @@ import '../../../../core/bloc/map_subscription/map_subscription_bloc.dart';
 import '../../../../core/services/tts_service.dart';
 import '../../common_scroll_indicator.dart';
 import '../../tts_download_dialog.dart';
+import '../../../../core/constants/app_colors.dart';
 
 /// TTS 设置视图
 class TtsSettingsView extends StatefulWidget {
@@ -121,7 +122,7 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
         children: [
           const Icon(
             Icons.record_voice_over_rounded,
-            color: Color(0xFF6366F1),
+            color: AppColors.indigo500,
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -130,7 +131,7 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white : const Color(0xFF1F2937),
+              color: isDark ? Colors.white : AppColors.gray800,
             ),
           ),
           const Spacer(),
@@ -140,10 +141,10 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: state.isTtsEnabled
-                    ? const Color(0xFF10B981).withValues(alpha: 0.12)
+                    ? AppColors.emerald500.withValues(alpha: 0.12)
                     : (isDark
                           ? Colors.white.withValues(alpha: 0.08)
-                          : const Color(0xFFF3F4F6)),
+                          : AppColors.gray100),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -155,8 +156,8 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
                         : Icons.volume_off_rounded,
                     size: 12,
                     color: state.isTtsEnabled
-                        ? const Color(0xFF10B981)
-                        : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                        ? AppColors.emerald500
+                        : (isDark ? Colors.white38 : AppColors.gray400),
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -165,8 +166,8 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                       color: state.isTtsEnabled
-                          ? const Color(0xFF10B981)
-                          : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                          ? AppColors.emerald500
+                          : (isDark ? Colors.white38 : AppColors.gray400),
                     ),
                   ),
                 ],
@@ -184,12 +185,12 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
       decoration: BoxDecoration(
         color: isDark
             ? Colors.white.withValues(alpha: 0.05)
-            : const Color(0xFFF9FAFB),
+            : AppColors.gray50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.08)
-              : const Color(0xFFE5E7EB),
+              : AppColors.gray200,
         ),
       ),
       child: Column(
@@ -201,8 +202,8 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: state.isTtsModelDownloaded
-                      ? const Color(0xFF10B981).withValues(alpha: 0.12)
-                      : const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                      ? AppColors.emerald500.withValues(alpha: 0.12)
+                      : AppColors.amber500.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -211,8 +212,8 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
                       : Icons.download_rounded,
                   size: 24,
                   color: state.isTtsModelDownloaded
-                      ? const Color(0xFF10B981)
-                      : const Color(0xFFF59E0B),
+                      ? AppColors.emerald500
+                      : AppColors.amber500,
                 ),
               ),
               const SizedBox(width: 14),
@@ -225,7 +226,7 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : const Color(0xFF1F2937),
+                        color: isDark ? Colors.white : AppColors.gray800,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -237,7 +238,7 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
                         fontSize: 12,
                         color: isDark
                             ? Colors.white54
-                            : const Color(0xFF6B7280),
+                            : AppColors.gray500,
                       ),
                     ),
                   ],
@@ -316,12 +317,12 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
       decoration: BoxDecoration(
         color: isDark
             ? Colors.white.withValues(alpha: 0.05)
-            : const Color(0xFFF9FAFB),
+            : AppColors.gray50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.08)
-              : const Color(0xFFE5E7EB),
+              : AppColors.gray200,
         ),
       ),
       child: Column(
@@ -332,7 +333,7 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
               Icon(
                 Icons.person_rounded,
                 size: 18,
-                color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                color: isDark ? Colors.white60 : AppColors.gray500,
               ),
               const SizedBox(width: 10),
               Text(
@@ -340,14 +341,14 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white : const Color(0xFF1F2937),
+                  color: isDark ? Colors.white : AppColors.gray800,
                 ),
               ),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                  color: AppColors.indigo500.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -355,7 +356,7 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF6366F1),
+                    color: AppColors.indigo500,
                   ),
                 ),
               ),
@@ -367,12 +368,12 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
               trackHeight: 4,
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
               overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-              activeTrackColor: const Color(0xFF6366F1),
+              activeTrackColor: AppColors.indigo500,
               inactiveTrackColor: isDark
                   ? Colors.white.withValues(alpha: 0.1)
-                  : const Color(0xFFE5E7EB),
-              thumbColor: const Color(0xFF6366F1),
-              overlayColor: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                  : AppColors.gray200,
+              thumbColor: AppColors.indigo500,
+              overlayColor: AppColors.indigo500.withValues(alpha: 0.1),
             ),
             child: Slider(
               value: speakerId.toDouble(),
@@ -389,7 +390,7 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
             '当前模型支持 ${selectedModel.speakerCount} 种音色，拖动滑块选择不同的说话人',
             style: TextStyle(
               fontSize: 11,
-              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+              color: isDark ? Colors.white38 : AppColors.gray400,
             ),
           ),
         ],
@@ -413,12 +414,12 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
       decoration: BoxDecoration(
         color: isDark
             ? Colors.white.withValues(alpha: 0.05)
-            : const Color(0xFFF9FAFB),
+            : AppColors.gray50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.08)
-              : const Color(0xFFE5E7EB),
+              : AppColors.gray200,
         ),
       ),
       child: Column(
@@ -429,7 +430,7 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
               Icon(
                 icon,
                 size: 18,
-                color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                color: isDark ? Colors.white60 : AppColors.gray500,
               ),
               const SizedBox(width: 10),
               Text(
@@ -437,14 +438,14 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white : const Color(0xFF1F2937),
+                  color: isDark ? Colors.white : AppColors.gray800,
                 ),
               ),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                  color: AppColors.indigo500.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -452,7 +453,7 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF6366F1),
+                    color: AppColors.indigo500,
                   ),
                 ),
               ),
@@ -464,12 +465,12 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
               trackHeight: 4,
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
               overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-              activeTrackColor: const Color(0xFF6366F1),
+              activeTrackColor: AppColors.indigo500,
               inactiveTrackColor: isDark
                   ? Colors.white.withValues(alpha: 0.1)
-                  : const Color(0xFFE5E7EB),
-              thumbColor: const Color(0xFF6366F1),
-              overlayColor: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                  : AppColors.gray200,
+              thumbColor: AppColors.indigo500,
+              overlayColor: AppColors.indigo500.withValues(alpha: 0.1),
             ),
             child: Slider(
               value: value,
@@ -532,18 +533,18 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
           decoration: BoxDecoration(
             color: isPrimary
                 ? (isLoading
-                      ? const Color(0xFF6366F1).withValues(alpha: 0.6)
-                      : const Color(0xFF6366F1))
+                      ? AppColors.indigo500.withValues(alpha: 0.6)
+                      : AppColors.indigo500)
                 : (isDark
                       ? Colors.white.withValues(alpha: 0.08)
-                      : const Color(0xFFF3F4F6)),
+                      : AppColors.gray100),
             borderRadius: BorderRadius.circular(10),
             border: isPrimary
                 ? null
                 : Border.all(
                     color: isDark
                         ? Colors.white.withValues(alpha: 0.1)
-                        : const Color(0xFFE5E7EB),
+                        : AppColors.gray200,
                   ),
           ),
           child: Row(
@@ -557,7 +558,7 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      isPrimary ? Colors.white : const Color(0xFF6366F1),
+                      isPrimary ? Colors.white : AppColors.indigo500,
                     ),
                   ),
                 )
@@ -567,7 +568,7 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
                   size: 18,
                   color: isPrimary
                       ? Colors.white
-                      : (isDark ? Colors.white70 : const Color(0xFF374151)),
+                      : (isDark ? Colors.white70 : AppColors.gray700),
                 ),
               const SizedBox(width: 8),
               Text(
@@ -577,7 +578,7 @@ class _TtsSettingsViewState extends State<TtsSettingsView> {
                   fontWeight: FontWeight.w500,
                   color: isPrimary
                       ? Colors.white
-                      : (isDark ? Colors.white70 : const Color(0xFF374151)),
+                      : (isDark ? Colors.white70 : AppColors.gray700),
                 ),
               ),
             ],

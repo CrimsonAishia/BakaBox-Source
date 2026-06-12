@@ -7,6 +7,7 @@ import '../../core/bloc/auth/auth_event.dart';
 import '../../core/bloc/auth/auth_state.dart';
 import '../../core/utils/toast_utils.dart';
 import '../../core/utils/log_service.dart';
+import '../../core/constants/app_colors.dart';
 
 /// QQ WebView 登录对话框
 class QQLoginDialog extends StatefulWidget {
@@ -375,11 +376,11 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+    final bgColor = isDark ? AppColors.slate800 : Colors.white;
+    final textColor = isDark ? Colors.white : AppColors.gray800;
     final secondaryTextColor = isDark
         ? Colors.white54
-        : const Color(0xFF6B7280);
+        : AppColors.gray500;
 
     return Dialog(
       backgroundColor: bgColor,
@@ -452,7 +453,7 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const CircularProgressIndicator(
-                                color: Color(0xFF0080FF),
+                                color: AppColors.primary,
                               ),
                               const SizedBox(height: 16),
                               Text(
@@ -473,7 +474,7 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const CircularProgressIndicator(
-                                color: Color(0xFF0080FF),
+                                color: AppColors.primary,
                               ),
                               const SizedBox(height: 16),
                               Text(
@@ -496,15 +497,15 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF334155)
-                    : const Color(0xFFF1F5F9),
+                    ? AppColors.slate700
+                    : AppColors.slate100,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
                   const Icon(
                     Icons.info_outline,
-                    color: Color(0xFF0080FF),
+                    color: AppColors.primary,
                     size: 18,
                   ),
                   const SizedBox(width: 8),

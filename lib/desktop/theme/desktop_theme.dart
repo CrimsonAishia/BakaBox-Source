@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 桌面端主题配置
 class DesktopTheme {
-  static const Color primaryColor = Color(0xFF0080FF);
+  static const Color primaryColor = AppColors.primary;
   static const Color secondaryColor = Color(0xFF1976D2);
 
   static ThemeData get lightTheme => ThemeData(
@@ -11,7 +12,7 @@ class DesktopTheme {
       brightness: Brightness.light,
       primary: primaryColor,
       secondary: secondaryColor,
-      surface: const Color(0xFFF8FAFC),
+      surface: AppColors.slate50,
       surfaceContainerHighest: const Color(0xFFE9EEF8),
     ),
     useMaterial3: true,
@@ -21,11 +22,11 @@ class DesktopTheme {
       elevation: 0,
       centerTitle: true,
       backgroundColor: Colors.white.withValues(alpha: 0.95),
-      foregroundColor: const Color(0xFF1F2937),
+      foregroundColor: AppColors.gray800,
       titleTextStyle: const TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w600,
-        color: Color(0xFF1F2937),
+        color: AppColors.gray800,
       ),
     ),
     cardTheme: CardThemeData(
@@ -70,26 +71,26 @@ class DesktopTheme {
       headlineLarge: TextStyle(
         fontSize: 32,
         fontWeight: FontWeight.bold,
-        color: Color(0xFF1F2937),
+        color: AppColors.gray800,
       ),
       headlineMedium: TextStyle(
         fontSize: 28,
         fontWeight: FontWeight.w600,
-        color: Color(0xFF1F2937),
+        color: AppColors.gray800,
       ),
       titleLarge: TextStyle(
         fontSize: 22,
         fontWeight: FontWeight.w600,
-        color: Color(0xFF1F2937),
+        color: AppColors.gray800,
       ),
       titleMedium: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w500,
-        color: Color(0xFF1F2937),
+        color: AppColors.gray800,
       ),
-      bodyLarge: TextStyle(fontSize: 16, color: Color(0xFF374151)),
-      bodyMedium: TextStyle(fontSize: 14, color: Color(0xFF374151)),
-      bodySmall: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+      bodyLarge: TextStyle(fontSize: 16, color: AppColors.gray700),
+      bodyMedium: TextStyle(fontSize: 14, color: AppColors.gray700),
+      bodySmall: TextStyle(fontSize: 12, color: AppColors.gray500),
     ),
   );
 
@@ -100,24 +101,24 @@ class DesktopTheme {
       primary: primaryColor,
       onPrimary: Colors.white,
       secondary: const Color(0xFF42A5F5),
-      surface: const Color(0xFF1E293B),
+      surface: AppColors.slate800,
       onSurface: Colors.white,
-      surfaceContainer: const Color(0xFF334155),
-      surfaceContainerHighest: const Color(0xFF0F172A),
-      error: const Color(0xFFEF4444),
+      surfaceContainer: AppColors.slate700,
+      surfaceContainerHighest: AppColors.slate900,
+      error: AppColors.red500,
       onError: Colors.white,
       errorContainer: const Color(0xFF7F1D1D),
       onErrorContainer: Colors.white,
-      outline: const Color(0xFF64748B),
+      outline: AppColors.slate500,
       shadow: Colors.black,
     ),
     useMaterial3: true,
     fontFamily: 'Microsoft YaHei',
-    scaffoldBackgroundColor: const Color(0xFF0F172A),
+    scaffoldBackgroundColor: AppColors.slate900,
     appBarTheme: AppBarTheme(
       elevation: 0,
       centerTitle: true,
-      backgroundColor: const Color(0xFF1E293B).withValues(alpha: 0.95),
+      backgroundColor: AppColors.slate800.withValues(alpha: 0.95),
       foregroundColor: Colors.white,
       titleTextStyle: const TextStyle(
         fontSize: 18,
@@ -127,7 +128,7 @@ class DesktopTheme {
     ),
     cardTheme: CardThemeData(
       elevation: 0,
-      color: const Color(0xFF1E293B).withValues(alpha: 0.95),
+      color: AppColors.slate800.withValues(alpha: 0.95),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
@@ -157,9 +158,9 @@ class DesktopTheme {
         fontWeight: FontWeight.w500,
         color: Colors.white,
       ),
-      bodyLarge: TextStyle(fontSize: 16, color: Color(0xFFE2E8F0)),
-      bodyMedium: TextStyle(fontSize: 14, color: Color(0xFFE2E8F0)),
-      bodySmall: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+      bodyLarge: TextStyle(fontSize: 16, color: AppColors.slate200),
+      bodyMedium: TextStyle(fontSize: 14, color: AppColors.slate200),
+      bodySmall: TextStyle(fontSize: 12, color: AppColors.slate300),
     ),
   );
 }

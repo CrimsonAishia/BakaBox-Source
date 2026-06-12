@@ -4,6 +4,7 @@ import '../../services/image_url_service.dart';
 import '../disk_cached_image.dart';
 import 'guide_map_badge_chip.dart';
 import 'guide_tokens.dart';
+import '../../constants/app_colors.dart';
 
 /// 攻略列表置顶/推荐大卡
 ///
@@ -314,7 +315,7 @@ class _GuidePinnedHeroCardState extends State<GuidePinnedHeroCard> {
                 ),
                 decoration: BoxDecoration(
                   color: isFirst 
-                      ? const Color(0xFF0080FF) 
+                      ? AppColors.primary 
                       : (theme.brightness == Brightness.dark ? Colors.white24 : Colors.white60),
                   borderRadius: GuideTokens.borderRadius8,
                 ),
@@ -331,7 +332,6 @@ class _GuidePinnedHeroCardState extends State<GuidePinnedHeroCard> {
       ],
     );
   }
-
 
 
 }

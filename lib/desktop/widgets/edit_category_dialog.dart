@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 编辑自定义分类对话框
 class EditCategoryDialog extends StatefulWidget {
@@ -29,17 +30,17 @@ class _EditCategoryDialogState extends State<EditCategoryDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+    final bgColor = isDark ? AppColors.slate800 : Colors.white;
+    final textColor = isDark ? Colors.white : AppColors.gray800;
     final secondaryTextColor = isDark
         ? Colors.white54
-        : const Color(0xFF6B7280);
+        : AppColors.gray500;
     final inputBgColor = isDark
-        ? const Color(0xFF334155)
-        : const Color(0xFFF9FAFB);
+        ? AppColors.slate700
+        : AppColors.gray50;
     final borderColor = isDark
-        ? const Color(0xFF475569)
-        : const Color(0xFFE5E7EB);
+        ? AppColors.slate600
+        : AppColors.gray200;
 
     return AlertDialog(
       backgroundColor: bgColor,
@@ -78,7 +79,7 @@ class _EditCategoryDialogState extends State<EditCategoryDialog> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFF0080FF)),
+                  borderSide: const BorderSide(color: AppColors.primary),
                 ),
                 prefixIcon: Icon(
                   Icons.edit_outlined,
@@ -109,7 +110,7 @@ class _EditCategoryDialogState extends State<EditCategoryDialog> {
         ElevatedButton(
           onPressed: _handleSubmit,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF0080FF),
+            backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
           ),
           child: const Text('保存'),

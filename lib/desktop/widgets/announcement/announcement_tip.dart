@@ -111,15 +111,15 @@ class _AnnouncementTipState extends State<AnnouncementTip> {
           Container(
                 constraints: const BoxConstraints(maxWidth: 280),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  color: isDark ? AppColors.slate800 : Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: const Color(0xFFFF9800).withValues(alpha: 0.3),
+                    color: AppColors.orange.withValues(alpha: 0.3),
                     width: 1.5,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFFF9800).withValues(alpha: 0.2),
+                      color: AppColors.orange.withValues(alpha: 0.2),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -149,7 +149,7 @@ class _AnnouncementTipState extends State<AnnouncementTip> {
                               ),
                               child: const Icon(
                                 Icons.campaign,
-                                color: Color(0xFFFF9800),
+                                color: AppColors.orange,
                                 size: 22,
                               ),
                             )
@@ -172,7 +172,7 @@ class _AnnouncementTipState extends State<AnnouncementTip> {
                                   fontWeight: FontWeight.w600,
                                   color: isDark
                                       ? Colors.white
-                                      : const Color(0xFF1F2937),
+                                      : AppColors.gray800,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -182,14 +182,14 @@ class _AnnouncementTipState extends State<AnnouncementTip> {
                                     fontSize: 13,
                                     color: isDark
                                         ? Colors.white70
-                                        : const Color(0xFF6B7280),
+                                        : AppColors.gray500,
                                   ),
                                   children: [
                                     const TextSpan(text: '您有 '),
                                     TextSpan(
                                       text: '$unreadCount',
                                       style: const TextStyle(
-                                        color: Color(0xFFFF9800),
+                                        color: AppColors.orange,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -207,7 +207,7 @@ class _AnnouncementTipState extends State<AnnouncementTip> {
                             size: 18,
                             color: isDark
                                 ? Colors.white38
-                                : const Color(0xFF9CA3AF),
+                                : AppColors.gray400,
                           ),
                           splashRadius: 16,
                           tooltip: '关闭',

@@ -14,6 +14,7 @@ import '../../../core/widgets/guide/guide_report_dialog.dart';
 import '../../../core/widgets/guide/guide_tokens.dart';
 import '../../../core/widgets/rich_text_viewer.dart';
 import '../../../core/widgets/signed_network_image.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 桌面端攻略评论面板
 ///
@@ -1047,7 +1048,7 @@ class _PillInputState extends State<_PillInput> {
 
     final fillColor = isDark
         ? Colors.white.withValues(alpha: _focused ? 0.08 : 0.05)
-        : (_focused ? Colors.white : const Color(0xFFF1F5F9));
+        : (_focused ? Colors.white : AppColors.slate100);
     final borderColor = _focused
         ? theme.colorScheme.primary.withValues(alpha: 0.65)
         : (isDark

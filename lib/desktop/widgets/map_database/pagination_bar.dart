@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 分页器组件
 ///
@@ -277,7 +278,7 @@ class _PageButtonState extends State<_PageButton> {
           height: 36,
           decoration: BoxDecoration(
             color: widget.isActive
-                ? const Color(0xFF0080FF)
+                ? AppColors.primary
                 : _isHovered
                 ? (widget.isDark
                       ? Colors.white.withValues(alpha: 0.08)
@@ -288,7 +289,7 @@ class _PageButtonState extends State<_PageButton> {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: widget.isActive
-                  ? const Color(0xFF0080FF)
+                  ? AppColors.primary
                   : _isHovered
                   ? (widget.isDark
                         ? Colors.white.withValues(alpha: 0.15)

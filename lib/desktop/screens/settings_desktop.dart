@@ -5,6 +5,7 @@ import '../../core/bloc/settings/settings_event.dart';
 import '../../core/bloc/settings/settings_state.dart';
 import '../widgets/page_layout.dart';
 import '../widgets/settings/settings.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 设置页面 - 桌面端
 /// 使用 PageLayout 统一布局
@@ -33,8 +34,8 @@ class _SettingsDesktopState extends State<SettingsDesktop> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: isDark
-          ? const Color(0xFF0F172A)
-          : const Color(0xFFF3F4F6),
+          ? AppColors.slate900
+          : AppColors.gray100,
       body: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {
           return PageLayout(
@@ -51,7 +52,7 @@ class _SettingsDesktopState extends State<SettingsDesktop> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(20),
       ),
       child: SingleChildScrollView(

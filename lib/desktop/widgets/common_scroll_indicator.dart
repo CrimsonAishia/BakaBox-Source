@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 通用滚动指示器
 ///
@@ -19,7 +20,7 @@ class CommonScrollIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final indicatorColor =
-        color ?? (isDark ? Colors.white : const Color(0xFF6B7280));
+        color ?? (isDark ? Colors.white : AppColors.gray500);
     final bg = bgColor ?? (isDark ? const Color(0xFF1E1E2E) : Colors.white);
 
     return IgnorePointer(

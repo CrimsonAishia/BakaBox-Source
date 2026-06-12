@@ -6,6 +6,7 @@ import '../../../core/services/status_window_service.dart';
 import '../../../core/utils/player_count_utils.dart';
 import 'queue_arena_session.dart';
 import 'queue_window.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 挤服悬浮卡片 - 显示在主界面右下角
 class QueueFloatingCard extends StatefulWidget {
@@ -159,7 +160,7 @@ class _QueueFloatingCardState extends State<QueueFloatingCard>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
+          color: AppColors.slate800,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -168,7 +169,7 @@ class _QueueFloatingCardState extends State<QueueFloatingCard>
               offset: const Offset(0, 2),
             ),
           ],
-          border: Border.all(color: const Color(0xFF334155), width: 1),
+          border: Border.all(color: AppColors.slate700, width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -219,7 +220,7 @@ class _QueueFloatingCardState extends State<QueueFloatingCard>
       width: 280,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: AppColors.slate800,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -228,7 +229,7 @@ class _QueueFloatingCardState extends State<QueueFloatingCard>
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: const Color(0xFF334155), width: 1),
+        border: Border.all(color: AppColors.slate700, width: 1),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -337,7 +338,7 @@ class _QueueFloatingCardState extends State<QueueFloatingCard>
   }) {
     return Material(
       color: isPrimary
-          ? const Color(0xFF3B82F6)
+          ? AppColors.blue500
           : Colors.white.withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(6),
       child: InkWell(

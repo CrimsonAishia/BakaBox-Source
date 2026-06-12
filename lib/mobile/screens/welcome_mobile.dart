@@ -66,8 +66,8 @@ class _WelcomeMobileState extends State<WelcomeMobile> {
           context.read<ServerBloc>().add(ServerUpdateCategoryOnlineCounts()),
       child: Scaffold(
         backgroundColor: isDark
-            ? const Color(0xFF0F172A)
-            : const Color(0xFFF1F5F9),
+            ? AppColors.slate900
+            : AppColors.slate100,
         body: RefreshIndicator(
           onRefresh: () async {
             HapticFeedback.mediumImpact();
@@ -104,8 +104,8 @@ class _WelcomeMobileState extends State<WelcomeMobile> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: isDark
-                  ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
-                  : [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)],
+                  ? [AppColors.slate800, AppColors.slate900]
+                  : [AppColors.blue500, const Color(0xFF1D4ED8)],
             ),
           ),
           child: Row(
@@ -145,7 +145,7 @@ class _WelcomeMobileState extends State<WelcomeMobile> {
                           ),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [Color(0xFFEF4444), Color(0xFFF97316)],
+                              colors: [AppColors.red500, Color(0xFFF97316)],
                             ),
                             borderRadius: BorderRadius.circular(4),
                           ),
@@ -188,7 +188,7 @@ class _WelcomeMobileState extends State<WelcomeMobile> {
                 child: _QuickActionCard(
                   icon: MdiIcons.forum,
                   label: '社区论坛',
-                  color: const Color(0xFFF59E0B),
+                  color: AppColors.amber500,
                   onTap: () => _openUrl(_forumUrl),
                   isDark: isDark,
                 ),
@@ -198,7 +198,7 @@ class _WelcomeMobileState extends State<WelcomeMobile> {
                 child: _QuickActionCard(
                   icon: MdiIcons.web,
                   label: '官方网站',
-                  color: const Color(0xFF8B5CF6),
+                  color: AppColors.violet500,
                   onTap: () => _openUrl(_websiteUrl),
                   isDark: isDark,
                 ),
@@ -237,7 +237,7 @@ class _WelcomeMobileState extends State<WelcomeMobile> {
                       icon: MdiIcons.server,
                       value: totalServers.toString(),
                       label: '服务器',
-                      color: const Color(0xFF3B82F6),
+                      color: AppColors.blue500,
                       isDark: isDark,
                     ),
                   ),
@@ -247,7 +247,7 @@ class _WelcomeMobileState extends State<WelcomeMobile> {
                       icon: MdiIcons.accountGroup,
                       value: totalOnlinePlayers.toString(),
                       label: '在线玩家',
-                      color: const Color(0xFF10B981),
+                      color: AppColors.emerald500,
                       isDark: isDark,
                     ),
                   ),
@@ -276,7 +276,7 @@ class _WelcomeMobileState extends State<WelcomeMobile> {
                         size: 18,
                         color: isDark
                             ? Colors.white70
-                            : const Color(0xFF64748B),
+                            : AppColors.slate500,
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -286,7 +286,7 @@ class _WelcomeMobileState extends State<WelcomeMobile> {
                           fontWeight: FontWeight.w600,
                           color: isDark
                               ? Colors.white
-                              : const Color(0xFF1E293B),
+                              : AppColors.slate800,
                         ),
                       ),
                     ],
@@ -358,7 +358,7 @@ class _QuickActionCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  color: isDark ? Colors.white : AppColors.slate800,
                 ),
               ),
             ],
@@ -418,14 +418,14 @@ class _LiveStatCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : const Color(0xFF1E293B),
+                    color: isDark ? Colors.white : AppColors.slate800,
                   ),
                 ),
                 Text(
                   label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
+                    color: isDark ? Colors.white54 : AppColors.slate400,
                   ),
                 ),
               ],
@@ -497,10 +497,10 @@ class _TrendCardState extends State<_TrendCard>
               ),
               child: TabBar(
                 controller: _tabController,
-                labelColor: const Color(0xFF3B82F6),
+                labelColor: AppColors.blue500,
                 unselectedLabelColor: widget.isDark
                     ? Colors.white54
-                    : const Color(0xFF94A3B8),
+                    : AppColors.slate400,
                 labelStyle: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -509,7 +509,7 @@ class _TrendCardState extends State<_TrendCard>
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
-                indicatorColor: const Color(0xFF3B82F6),
+                indicatorColor: AppColors.blue500,
                 indicatorSize: TabBarIndicatorSize.label,
                 dividerColor: Colors.transparent,
                 tabs: _tabs.map((t) => Tab(text: t, height: 40)).toList(),
@@ -555,7 +555,7 @@ class _TrendCardState extends State<_TrendCard>
             height: 24,
             child: CircularProgressIndicator(
               strokeWidth: 2.5,
-              color: widget.isDark ? Colors.white38 : const Color(0xFF94A3B8),
+              color: widget.isDark ? Colors.white38 : AppColors.slate400,
             ),
           ),
           const SizedBox(height: 12),
@@ -563,7 +563,7 @@ class _TrendCardState extends State<_TrendCard>
             '加载中...',
             style: TextStyle(
               fontSize: 13,
-              color: widget.isDark ? Colors.white38 : const Color(0xFF94A3B8),
+              color: widget.isDark ? Colors.white38 : AppColors.slate400,
             ),
           ),
         ],
@@ -595,12 +595,12 @@ class _DailyTrendChart extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _LegendDot(
-                color: const Color(0xFF3B82F6),
+                color: AppColors.blue500,
                 label: '最高 ${stats.weeklyMax}',
               ),
               const SizedBox(width: 20),
               _LegendDot(
-                color: const Color(0xFF10B981),
+                color: AppColors.emerald500,
                 label: '平均 ${stats.weeklyAvg}',
               ),
             ],
@@ -647,7 +647,7 @@ class _DailyTrendChart extends StatelessWidget {
                             fontSize: 9,
                             color: isDark
                                 ? Colors.white38
-                                : const Color(0xFF94A3B8),
+                                : AppColors.slate400,
                           ),
                         );
                       },
@@ -671,7 +671,7 @@ class _DailyTrendChart extends StatelessWidget {
                           ),
                         )
                         .toList(),
-                    const Color(0xFF3B82F6),
+                    AppColors.blue500,
                   ),
                   _buildLine(
                     dailyStats
@@ -684,7 +684,7 @@ class _DailyTrendChart extends StatelessWidget {
                           ),
                         )
                         .toList(),
-                    const Color(0xFF10B981),
+                    AppColors.emerald500,
                   ),
                 ],
                 lineTouchData: LineTouchData(
@@ -693,7 +693,7 @@ class _DailyTrendChart extends StatelessWidget {
                     fitInsideHorizontally: true,
                     fitInsideVertically: true,
                     getTooltipColor: (_) =>
-                        isDark ? const Color(0xFF374151) : Colors.white,
+                        isDark ? AppColors.gray700 : Colors.white,
                     tooltipRoundedRadius: 6,
                     getTooltipItems: (spots) => spots
                         .map(
@@ -701,8 +701,8 @@ class _DailyTrendChart extends StatelessWidget {
                             '${s.barIndex == 0 ? "最高" : "平均"}: ${s.y.toInt()}',
                             TextStyle(
                               color: s.barIndex == 0
-                                  ? const Color(0xFF3B82F6)
-                                  : const Color(0xFF10B981),
+                                  ? AppColors.blue500
+                                  : AppColors.emerald500,
                               fontWeight: FontWeight.w600,
                               fontSize: 11,
                             ),
@@ -778,14 +778,14 @@ class _HourlyChart extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(MdiIcons.fire, size: 14, color: const Color(0xFFEF4444)),
+              Icon(MdiIcons.fire, size: 14, color: AppColors.red500),
               const SizedBox(width: 4),
               Text(
                 '峰值时段 $peakHour:00',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                  color: isDark ? Colors.white70 : AppColors.slate500,
                 ),
               ),
             ],
@@ -801,7 +801,7 @@ class _HourlyChart extends StatelessWidget {
                     fitInsideHorizontally: true,
                     fitInsideVertically: true,
                     getTooltipColor: (_) =>
-                        isDark ? const Color(0xFF374151) : Colors.white,
+                        isDark ? AppColors.gray700 : Colors.white,
                     tooltipRoundedRadius: 6,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) =>
                         BarTooltipItem(
@@ -809,7 +809,7 @@ class _HourlyChart extends StatelessWidget {
                           TextStyle(
                             color: isDark
                                 ? Colors.white
-                                : const Color(0xFF1E293B),
+                                : AppColors.slate800,
                             fontWeight: FontWeight.w600,
                             fontSize: 11,
                           ),
@@ -839,7 +839,7 @@ class _HourlyChart extends StatelessWidget {
                             fontSize: 9,
                             color: isDark
                                 ? Colors.white38
-                                : const Color(0xFF94A3B8),
+                                : AppColors.slate400,
                           ),
                         );
                       },
@@ -856,8 +856,8 @@ class _HourlyChart extends StatelessWidget {
                       BarChartRodData(
                         toY: e.value.avgPlayers.toDouble(),
                         color: isPeak
-                            ? const Color(0xFFEF4444)
-                            : const Color(0xFF8B5CF6).withValues(alpha: 0.7),
+                            ? AppColors.red500
+                            : AppColors.violet500.withValues(alpha: 0.7),
                         width: 5,
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(3),
@@ -988,7 +988,7 @@ class _TopServersListState extends State<_TopServersList> {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: isTop3
-                          ? const Color(0xFFF59E0B).withValues(alpha: 0.15)
+                          ? AppColors.amber500.withValues(alpha: 0.15)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(6),
                     ),
@@ -998,10 +998,10 @@ class _TopServersListState extends State<_TopServersList> {
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: isTop3
-                            ? const Color(0xFFF59E0B)
+                            ? AppColors.amber500
                             : (widget.isDark
                                   ? Colors.white38
-                                  : const Color(0xFF94A3B8)),
+                                  : AppColors.slate400),
                       ),
                     ),
                   ),
@@ -1017,7 +1017,7 @@ class _TopServersListState extends State<_TopServersList> {
                             fontWeight: FontWeight.w500,
                             color: widget.isDark
                                 ? Colors.white
-                                : const Color(0xFF1E293B),
+                                : AppColors.slate800,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1040,8 +1040,8 @@ class _TopServersListState extends State<_TopServersList> {
                                 height: 4,
                                 decoration: BoxDecoration(
                                   color: isTop3
-                                      ? const Color(0xFFF59E0B)
-                                      : const Color(0xFF8B5CF6),
+                                      ? AppColors.amber500
+                                      : AppColors.violet500,
                                   borderRadius: BorderRadius.circular(2),
                                 ),
                               ),
@@ -1059,7 +1059,7 @@ class _TopServersListState extends State<_TopServersList> {
                       fontWeight: FontWeight.w600,
                       color: widget.isDark
                           ? Colors.white54
-                          : const Color(0xFF64748B),
+                          : AppColors.slate500,
                     ),
                   ),
                 ],
@@ -1196,7 +1196,7 @@ class _TopMapsListState extends State<_TopMapsList> {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: isTop3
-                          ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                          ? AppColors.emerald500.withValues(alpha: 0.15)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(6),
                     ),
@@ -1206,10 +1206,10 @@ class _TopMapsListState extends State<_TopMapsList> {
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: isTop3
-                            ? const Color(0xFF10B981)
+                            ? AppColors.emerald500
                             : (widget.isDark
                                   ? Colors.white38
-                                  : const Color(0xFF94A3B8)),
+                                  : AppColors.slate400),
                       ),
                     ),
                   ),
@@ -1354,7 +1354,7 @@ class _ScrollIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final bgColor = isDark ? AppColors.slate800 : Colors.white;
     return IgnorePointer(
       child: Container(
         height: 20,
@@ -1373,7 +1373,7 @@ class _ScrollIndicator extends StatelessWidget {
         alignment: isTop ? Alignment.topCenter : Alignment.bottomCenter,
         child: Icon(
           isTop ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-          color: const Color(0xFF6B7280),
+          color: AppColors.gray500,
           size: 14,
         ),
       ),

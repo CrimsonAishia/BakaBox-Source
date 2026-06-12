@@ -109,7 +109,6 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   /// 自己角色的持续呼吸高亮相位（仅 isSelf 时驱动）
   double _selfGlowPhase = 0.0;
 
-  // ========== 聊天气泡动画系统 ==========
   /// 气泡整体透明度
   double _bubbleOpacity = 0.0;
 
@@ -182,7 +181,6 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   // 移动插值速度必须与 LobbyBloc._moveSpeed (2.8) 保持一致，避免判断时机不同导致抖动
   static const double _moveSpeed = 2.8;
 
-  // ========== 行走节奏动画（方案一）==========
   /// 行走周期时间（累积移动时间）
   double _walkCycleTime = 0;
 
@@ -204,7 +202,6 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
   /// 停止时振幅衰减速度（每秒衰减量）
   static const double _walkAmplitudeDecaySpeed = 8.0;
 
-  // ========== TextPainter 缓存系统 ==========
   // 名字标签缓存
   String? _cachedDisplayName;
   TextPainter? _cachedNamePainter;
@@ -1595,7 +1592,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
           ? const Color(0xFF81D4FA) // 浅电光蓝（聚焦）
           : _isFollowed
           ? const Color(0xFFFFD54F) // 浅金黄色（关注）
-          : const Color(0xFFE2E8F0);
+          : AppColors.slate200;
 
       final textStyle = TextStyle(
         fontFamily: null,
@@ -1660,7 +1657,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
     // 测量当前消息文字高度
     final textStyle = TextStyle(
       fontFamily: null,
-      color: const Color(0xFF0F172A),
+      color: AppColors.slate900,
       fontSize: 12,
       height: 1.3,
     );
@@ -1738,7 +1735,6 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       ..strokeWidth = 1;
     canvas.drawRRect(rrect, borderPaint);
 
-    // ===== 消息文字渲染（带切换动画）=====
     // 裁剪区域，防止文字溢出气泡
     canvas.save();
     canvas.clipRRect(rrect);
@@ -1759,7 +1755,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       if (outOpacity > 0.01) {
         final outStyle = TextStyle(
           fontFamily: null,
-          color: const Color(0xFF0F172A).withValues(alpha: outOpacity),
+          color: AppColors.slate900.withValues(alpha: outOpacity),
           fontSize: 12,
           height: 1.3,
         );
@@ -1779,7 +1775,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       if (inOpacity > 0.01) {
         final inStyle = TextStyle(
           fontFamily: null,
-          color: const Color(0xFF0F172A).withValues(alpha: inOpacity),
+          color: AppColors.slate900.withValues(alpha: inOpacity),
           fontSize: 12,
           height: 1.3,
         );
@@ -1796,7 +1792,7 @@ class LobbyPlayerComponent extends PositionComponent with HasGameReference {
       // 无切换动画，直接绘制当前消息
       final normalStyle = TextStyle(
         fontFamily: null,
-        color: const Color(0xFF0F172A).withValues(alpha: _bubbleOpacity),
+        color: AppColors.slate900.withValues(alpha: _bubbleOpacity),
         fontSize: 12,
         height: 1.3,
       );

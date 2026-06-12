@@ -10,6 +10,7 @@ import '../../core/bloc/settings/settings_state.dart';
 import '../../core/services/app_exit_service.dart';
 import '../../core/services/obs_server_service.dart';
 import '../../core/services/tray_service.dart';
+import '../../core/constants/app_colors.dart';
 
 class ExitDialog extends StatefulWidget {
   const ExitDialog({super.key});
@@ -224,7 +225,7 @@ class _ExitDialogState extends State<ExitDialog> with TickerProviderStateMixin {
                                   child: Icon(
                                     MdiIcons.exitToApp,
                                     size: 28,
-                                    color: const Color(0xFFEF4444),
+                                    color: AppColors.red500,
                                   ),
                                 )
                                 .animate()
@@ -369,7 +370,7 @@ class _ExitDialogState extends State<ExitDialog> with TickerProviderStateMixin {
                       height: 48,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                          colors: [AppColors.red500, AppColors.red600],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),

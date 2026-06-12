@@ -6,6 +6,7 @@ import '../../../core/services/status_window_service.dart';
 import '../../../core/utils/player_count_utils.dart';
 import 'warmup_arena_session.dart';
 import 'warmup_window.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 暖服悬浮卡片 - 显示在主界面右下角
 class WarmupFloatingCard extends StatefulWidget {
@@ -154,14 +155,14 @@ class _WarmupFloatingCardState extends State<WarmupFloatingCard>
     final state = _statusService.state;
     final players = state.serverInfo?.players ?? 0;
     // 使用统一的颜色（暖黄色）
-    const themeColor = Color(0xFFF59E0B);
+    const themeColor = AppColors.amber500;
 
     return GestureDetector(
       onTap: _toggleMinimize,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
+          color: AppColors.slate800,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -170,7 +171,7 @@ class _WarmupFloatingCardState extends State<WarmupFloatingCard>
               offset: const Offset(0, 2),
             ),
           ],
-          border: Border.all(color: const Color(0xFF334155), width: 1),
+          border: Border.all(color: AppColors.slate700, width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -215,13 +216,13 @@ class _WarmupFloatingCardState extends State<WarmupFloatingCard>
       players,
       maxPlayers,
     );
-    const themeColor = Color(0xFFF59E0B); // 暖服的暖黄色主题色
+    const themeColor = AppColors.amber500; // 暖服的暖黄色主题色
 
     return Container(
       width: 280,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: AppColors.slate800,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -230,7 +231,7 @@ class _WarmupFloatingCardState extends State<WarmupFloatingCard>
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: const Color(0xFF334155), width: 1),
+        border: Border.all(color: AppColors.slate700, width: 1),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

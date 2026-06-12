@@ -13,6 +13,7 @@ import '../../../../core/utils/toast_utils.dart';
 import '../../../../core/widgets/clickable_image.dart';
 import '../../../../core/widgets/rich_text_editor.dart';
 import '../../../../core/widgets/rich_text_viewer.dart';
+import '../../../../core/constants/app_colors.dart';
 
 /// 配置评论视图（复用 issue 评论模式）
 class ConfigCommentsView extends StatefulWidget {
@@ -116,12 +117,12 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                color: isDark ? AppColors.slate800 : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isDark
-                      ? const Color(0xFF334155)
-                      : const Color(0xFFE5E7EB),
+                      ? AppColors.slate700
+                      : AppColors.gray200,
                 ),
               ),
               child: Column(
@@ -168,7 +169,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white : const Color(0xFF1F2937),
+            color: isDark ? Colors.white : AppColors.gray800,
           ),
         ),
         const Spacer(),
@@ -197,7 +198,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
         child: Text(
           '暂无评论',
           style: TextStyle(
-            color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+            color: isDark ? Colors.white38 : AppColors.gray400,
           ),
         ),
       ),
@@ -231,12 +232,12 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                   : const Color(0xFFFEF08A).withValues(alpha: 0.5))
             : isReplyTarget
             ? (isDark
-                  ? const Color(0xFF0080FF).withValues(alpha: 0.08)
+                  ? AppColors.primary.withValues(alpha: 0.08)
                   : const Color(0xFFEFF6FF))
             : Colors.transparent,
         border: Border(
           bottom: BorderSide(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
+            color: isDark ? AppColors.slate700 : AppColors.gray100,
           ),
         ),
         borderRadius: isReplyTarget ? BorderRadius.circular(8) : null,
@@ -251,8 +252,8 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
             CircleAvatar(
               radius: 18,
               backgroundColor: isDark
-                  ? const Color(0xFF334155)
-                  : const Color(0xFFE5E7EB),
+                  ? AppColors.slate700
+                  : AppColors.gray200,
               backgroundImage: comment.authorAvatar != null
                   ? NetworkImage(comment.authorAvatar!)
                   : null,
@@ -278,7 +279,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                           fontWeight: FontWeight.w500,
                           color: isDark
                               ? Colors.white70
-                              : const Color(0xFF374151),
+                              : AppColors.gray700,
                         ),
                       ),
                       if (comment.isAdmin) ...[
@@ -289,7 +290,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                             vertical: 1,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0080FF),
+                            color: AppColors.primary,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: const Text(
@@ -305,14 +306,14 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                           size: 14,
                           color: isDark
                               ? Colors.white38
-                              : const Color(0xFF9CA3AF),
+                              : AppColors.gray400,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           replyTarget.authorName,
                           style: const TextStyle(
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF0080FF),
+                            color: AppColors.primary,
                             fontSize: 12,
                           ),
                         ),
@@ -323,7 +324,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                         style: TextStyle(
                           color: isDark
                               ? Colors.white38
-                              : const Color(0xFF9CA3AF),
+                              : AppColors.gray400,
                           fontSize: 12,
                         ),
                       ),
@@ -343,7 +344,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                     textStyle: TextStyle(
                       fontSize: 14,
                       height: 1.6,
-                      color: isDark ? Colors.white70 : const Color(0xFF374151),
+                      color: isDark ? Colors.white70 : AppColors.gray700,
                     ),
                     compact: true,
                   ),
@@ -389,8 +390,8 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                 MdiIcons.replyOutline,
                 size: 14,
                 color: isActive
-                    ? const Color(0xFF0080FF)
-                    : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                    ? AppColors.primary
+                    : (isDark ? Colors.white38 : AppColors.gray400),
               ),
               const SizedBox(width: 4),
               Text(
@@ -398,8 +399,8 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                 style: TextStyle(
                   fontSize: 12,
                   color: isActive
-                      ? const Color(0xFF0080FF)
-                      : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                      ? AppColors.primary
+                      : (isDark ? Colors.white38 : AppColors.gray400),
                 ),
               ),
             ],
@@ -440,13 +441,13 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: isDark
-              ? const Color(0xFF334155).withValues(alpha: 0.5)
-              : const Color(0xFFF3F4F6),
+              ? AppColors.slate700.withValues(alpha: 0.5)
+              : AppColors.gray100,
           borderRadius: BorderRadius.circular(6),
           border: Border(
             left: BorderSide(
               width: 3,
-              color: isDark ? const Color(0xFF475569) : const Color(0xFFD1D5DB),
+              color: isDark ? AppColors.slate600 : AppColors.gray300,
             ),
           ),
         ),
@@ -459,7 +460,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
                 compact: true,
                 textStyle: TextStyle(
                   fontSize: 12,
-                  color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                  color: isDark ? Colors.white38 : AppColors.gray400,
                   height: 1.4,
                 ),
               ),
@@ -478,22 +479,22 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF0080FF).withValues(alpha: 0.1)
+            ? AppColors.primary.withValues(alpha: 0.1)
             : const Color(0xFFEFF6FF),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+          color: AppColors.primary.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
         children: [
-          Icon(MdiIcons.replyOutline, size: 16, color: const Color(0xFF0080FF)),
+          Icon(MdiIcons.replyOutline, size: 16, color: AppColors.primary),
           const SizedBox(width: 8),
           Text(
             '回复 ',
             style: TextStyle(
               fontSize: 13,
-              color: isDark ? Colors.white70 : const Color(0xFF374151),
+              color: isDark ? Colors.white70 : AppColors.gray700,
             ),
           ),
           Text(
@@ -501,7 +502,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF0080FF),
+              color: AppColors.primary,
             ),
           ),
           const Spacer(),
@@ -513,7 +514,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
               child: Icon(
                 Icons.close,
                 size: 16,
-                color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                color: isDark ? Colors.white38 : AppColors.gray400,
               ),
             ),
           ),
@@ -530,10 +531,10 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          color: isDark ? AppColors.slate800 : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+            color: isDark ? AppColors.slate700 : AppColors.gray200,
           ),
         ),
         child: Row(
@@ -560,10 +561,10 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.slate700 : AppColors.gray200,
         ),
       ),
       child: Column(
@@ -574,7 +575,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: isDark ? Colors.white70 : const Color(0xFF374151),
+              color: isDark ? Colors.white70 : AppColors.gray700,
             ),
           ),
           const SizedBox(height: 12),
@@ -605,7 +606,7 @@ class _ConfigCommentsViewState extends State<ConfigCommentsView> {
               ElevatedButton(
                 onPressed: state.isSubmittingComment ? null : _submitComment,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0080FF),
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,

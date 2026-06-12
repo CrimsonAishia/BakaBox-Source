@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/widgets/navigation/app_navigation.dart';
 import 'user_login_box.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 桌面端导航栏组件
 ///
@@ -46,7 +47,7 @@ class DesktopNavigation extends StatelessWidget {
       width: 240,
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF1E293B).withValues(alpha: 0.95)
+            ? AppColors.slate800.withValues(alpha: 0.95)
             : Colors.white.withValues(alpha: 0.95),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(22),
@@ -151,17 +152,17 @@ class DesktopNavigation extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: isFeedbackSelected
-                      ? const Color(0xFF0080FF).withValues(alpha: 0.1)
+                      ? AppColors.primary.withValues(alpha: 0.1)
                       : (isDark
                             ? Colors.white.withValues(alpha: 0.05)
-                            : const Color(0xFFF3F4F6)),
+                            : AppColors.gray100),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: isFeedbackSelected
-                        ? const Color(0xFF0080FF).withValues(alpha: 0.3)
+                        ? AppColors.primary.withValues(alpha: 0.3)
                         : (isDark
                               ? Colors.white.withValues(alpha: 0.1)
-                              : const Color(0xFFE5E7EB)),
+                              : AppColors.gray200),
                   ),
                 ),
                 child: Row(
@@ -172,8 +173,8 @@ class DesktopNavigation extends StatelessWidget {
                           : Icons.feedback_outlined,
                       size: 18,
                       color: isFeedbackSelected
-                          ? const Color(0xFF0080FF)
-                          : (isDark ? Colors.white60 : const Color(0xFF6B7280)),
+                          ? AppColors.primary
+                          : (isDark ? Colors.white60 : AppColors.gray500),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -185,10 +186,10 @@ class DesktopNavigation extends StatelessWidget {
                               ? FontWeight.w600
                               : FontWeight.w500,
                           color: isFeedbackSelected
-                              ? const Color(0xFF0080FF)
+                              ? AppColors.primary
                               : (isDark
                                     ? Colors.white60
-                                    : const Color(0xFF6B7280)),
+                                    : AppColors.gray500),
                         ),
                       ),
                     ),
@@ -196,8 +197,8 @@ class DesktopNavigation extends StatelessWidget {
                       Icons.arrow_forward_ios,
                       size: 12,
                       color: isFeedbackSelected
-                          ? const Color(0xFF0080FF)
-                          : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                          ? AppColors.primary
+                          : (isDark ? Colors.white38 : AppColors.gray400),
                     ),
                   ],
                 ),
@@ -250,12 +251,12 @@ class _NavigationItemWidget extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? const Color(0xFF0080FF)
+                      ? AppColors.primary
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   gradient: isSelected
                       ? const LinearGradient(
-                          colors: [Color(0xFF0080FF), Color(0xFF42A5F5)],
+                          colors: [AppColors.primary, Color(0xFF42A5F5)],
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
                         )
@@ -284,7 +285,7 @@ class _NavigationItemWidget extends StatelessWidget {
                             ? Colors.white
                             : isDark
                             ? Colors.white70
-                            : const Color(0xFF6B7280),
+                            : AppColors.gray500,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -297,7 +298,7 @@ class _NavigationItemWidget extends StatelessWidget {
                                   ? Colors.white
                                   : isDark
                                   ? Colors.white70
-                                  : const Color(0xFF374151),
+                                  : AppColors.gray700,
                               fontWeight: isSelected
                                   ? FontWeight.w600
                                   : FontWeight.w500,
@@ -444,7 +445,7 @@ class _LogoWidgetState extends State<_LogoWidget>
         .shimmer(
           duration: 1200.ms,
           color: _isHovered
-              ? const Color(0xFF0080FF).withValues(alpha: 0.3)
+              ? AppColors.primary.withValues(alpha: 0.3)
               : Colors.transparent,
         );
   }

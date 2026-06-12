@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/guide_models.dart';
+import '../../constants/app_colors.dart';
 
 /// 攻略社区设计 Tokens
 ///
@@ -12,8 +13,8 @@ class GuideTokens {
 
   // ─── 底色 (Backgrounds & Surfaces) ─────────────────────────────────────────
 
-  static const Color backgroundDark = Color(0xFF0F172A);
-  static const Color surfaceDark = Color(0xFF1E293B);
+  static const Color backgroundDark = AppColors.slate900;
+  static const Color surfaceDark = AppColors.slate800;
 
   static Color cardSurface(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
@@ -24,8 +25,8 @@ class GuideTokens {
   // 亮色
   static const Color likeRed = Color(0xFFFF4D6D);
   static const Color favoriteAmber = Color(0xFFF5A623);
-  static const Color commentBlue = Color(0xFF0080FF);
-  static const Color shareGreen = Color(0xFF22C55E);
+  static const Color commentBlue = AppColors.primary;
+  static const Color shareGreen = AppColors.green500;
 
   // 暗色（饱和度 −10）
   static const Color likeRedDark = Color(0xFFFF6B85);
@@ -54,20 +55,20 @@ class GuideTokens {
 
   // ─── 状态色 ─────────────────────────────────────────────────────────────────
 
-  static const Color statusPending = Color(0xFFF59E0B);
-  static const Color statusRejected = Color(0xFFEF4444);
-  static const Color statusOffShelf = Color(0xFF64748B);
+  static const Color statusPending = AppColors.amber500;
+  static const Color statusRejected = AppColors.red500;
+  static const Color statusOffShelf = AppColors.slate500;
 
   // ─── 分类色 fallback 表 ────────────────────────────────────────────────────
   // 仅在分类接口下发的 colorHex 为空时使用，key 与 GuideCategoryDef.code 一致。
   // 未知 code 时回退到主色。
   static const Map<String, Color> categoryColorsFallback = {
-    'ze': Color(0xFF8B5CF6), // 紫
-    'zi': Color(0xFFEF4444), // 红
-    'movement': Color(0xFF10B981), // 绿
-    'lineup': Color(0xFFF59E0B), // 橙
-    'general': Color(0xFF64748B), // 灰蓝
-    'announcement': Color(0xFF0080FF), // 主色
+    'ze': AppColors.violet500, // 紫
+    'zi': AppColors.red500, // 红
+    'movement': AppColors.emerald500, // 绿
+    'lineup': AppColors.amber500, // 橙
+    'general': AppColors.slate500, // 灰蓝
+    'announcement': AppColors.primary, // 主色
   };
 
   /// 解析分类色：接口下发优先（colorHex），fallback 表次之（按 code 精确匹配），主色兜底。
@@ -84,42 +85,42 @@ class GuideTokens {
 
   // ─── 已发布状态色 ──────────────────────────────────────────────────────────
 
-  static const Color statusPublished = Color(0xFF10B981);
+  static const Color statusPublished = AppColors.emerald500;
 
   // ─── 占位 / 降级色（用于封面 fallback、边框、图标占位等）──────────────────────
 
   /// 暗色封面 fallback 背景
-  static const Color fallbackBgDark = Color(0xFF334155);
+  static const Color fallbackBgDark = AppColors.slate700;
 
   /// 亮色封面 fallback 背景
-  static const Color fallbackBgLight = Color(0xFFF1F5F9);
+  static const Color fallbackBgLight = AppColors.slate100;
 
   /// Shimmer 高光色（暗色模式）
-  static const Color shimmerHighlightDark = Color(0xFF475569);
+  static const Color shimmerHighlightDark = AppColors.slate600;
 
   /// Shimmer 高光色（亮色模式）= borderLight
-  static const Color shimmerHighlightLight = Color(0xFFE2E8F0);
+  static const Color shimmerHighlightLight = AppColors.slate200;
 
   /// 占位图标色
-  static const Color fallbackIcon = Color(0xFF94A3B8);
+  static const Color fallbackIcon = AppColors.slate400;
 
   /// 亮色边框/分隔线
-  static const Color borderLight = Color(0xFFE2E8F0);
+  static const Color borderLight = AppColors.slate200;
 
   /// 亮色容器背景（轻微灰）
-  static const Color surfaceLight = Color(0xFFF8FAFC);
+  static const Color surfaceLight = AppColors.slate50;
 
   /// 对话框 / Dropdown 暗色背景
-  static const Color dialogBgDark = Color(0xFF1E293B);
+  static const Color dialogBgDark = AppColors.slate800;
 
   /// 输入框聚焦边框色（同 commentBlue / 主色）
-  static const Color focusBorderColor = Color(0xFF0080FF);
+  static const Color focusBorderColor = AppColors.primary;
 
   /// 暗色渐变起始
-  static const Color gradientDarkStart = Color(0xFF1E293B);
+  static const Color gradientDarkStart = AppColors.slate800;
 
   /// 暗色渐变结束
-  static const Color gradientDarkEnd = Color(0xFF0F172A);
+  static const Color gradientDarkEnd = AppColors.slate900;
 
   /// 错误相关浅底色
   static const Color errorSurfaceLight = Color(0xFFFEF2F2);
@@ -131,7 +132,7 @@ class GuideTokens {
   static const Color infoSurfaceLight = Color(0xFFEFF6FF);
 
   /// 必填星号色（同 statusRejected）
-  static const Color requiredMark = Color(0xFFEF4444);
+  static const Color requiredMark = AppColors.red500;
 
   /// 封面 fallback 背景（根据亮暗自动选择）
   static Color fallbackBg(BuildContext context) =>
@@ -153,13 +154,13 @@ class GuideTokens {
 
   // ─── 文本语义色（补充 textTheme 之外的场景）──────────────────────────────────
 
-  static const Color textPrimaryLight = Color(0xFF1F2937);
-  static const Color textSecondaryLight = Color(0xFF6B7280);
-  static const Color textTertiaryLight = Color(0xFF9CA3AF);
+  static const Color textPrimaryLight = AppColors.gray800;
+  static const Color textSecondaryLight = AppColors.gray500;
+  static const Color textTertiaryLight = AppColors.gray400;
 
-  static const Color textPrimaryDark = Color(0xFFE2E8F0);
-  static const Color textSecondaryDark = Color(0xFFCBD5E1);
-  static const Color textTertiaryDark = Color(0xFF94A3B8);
+  static const Color textPrimaryDark = AppColors.slate200;
+  static const Color textSecondaryDark = AppColors.slate300;
+  static const Color textTertiaryDark = AppColors.slate400;
 
   static Color textPrimary(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
@@ -187,7 +188,7 @@ class GuideTokens {
 
   static Color glassSurface(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF0F172A).withValues(alpha: 0.80)
+          ? AppColors.slate900.withValues(alpha: 0.80)
           : Colors.white.withValues(alpha: 0.65);
 
   /// 玻璃面模糊半径
@@ -285,10 +286,10 @@ class GuideTokens {
   static const Color bilibiliPlaceholderDark = Color(0xFF1A1A1A);
 
   /// B 站视频卡片 fallback 亮色背景
-  static const Color bilibiliFallbackLight = Color(0xFFF9FAFB);
+  static const Color bilibiliFallbackLight = AppColors.gray50;
 
   /// B 站对话框 / 输入框边框亮色
-  static const Color bilibiliInputBorderLight = Color(0xFFE5E7EB);
+  static const Color bilibiliInputBorderLight = AppColors.gray200;
 
   // ─── 工具方法 ───────────────────────────────────────────────────────────────
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 默认地图背景图片路径
 const String _kDefaultMapBackground = 'assets/images/default-map-bg.jpg';
@@ -95,7 +96,7 @@ class _FallbackBackground extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF0F172A), Color(0xFF1D4ED8), Color(0xFF10B981)],
+          colors: [AppColors.slate900, Color(0xFF1D4ED8), AppColors.emerald500],
         ),
       ),
       child: Center(

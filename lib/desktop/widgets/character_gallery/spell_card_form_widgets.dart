@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/models/character_models.dart';
 import 'character_gallery_theme.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 符卡表单样式配置
 class SpellCardFormStyle {
@@ -21,7 +22,7 @@ class SpellCardFormStyle {
   static SpellCardFormStyle fromType(BuildContext context, String type) {
     return switch (type) {
       'passive' => SpellCardFormStyle(
-        accentColor: const Color(0xFF4A7C59),
+        accentColor: AppColors.skillGreen,
         symbol: '✦',
         bgAsset: 'assets/images/character_gallery/spell_card_bg_passive.png',
         typeLabel: '被动',
@@ -48,7 +49,7 @@ class SpellCardFormStyle {
   ) {
     return switch (type) {
       SpellCardType.passive => SpellCardFormStyle(
-        accentColor: const Color(0xFF4A7C59),
+        accentColor: AppColors.skillGreen,
         symbol: '✦',
         bgAsset: 'assets/images/character_gallery/spell_card_bg_passive.png',
         typeLabel: '被动',
@@ -457,7 +458,7 @@ class SpellCardTypeSelector extends StatelessWidget {
               type: 'passive',
               icon: '✦',
               label: '被动',
-              color: const Color(0xFF4A7C59),
+              color: AppColors.skillGreen,
               isSelected: selectedType == 'passive',
               onTap: () => onChanged('passive'),
             ),
@@ -674,7 +675,7 @@ class SpellCardDialogFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
-    final effectiveSaveColor = saveColor ?? const Color(0xFF4A7C59);
+    final effectiveSaveColor = saveColor ?? AppColors.skillGreen;
 
     return Container(
       padding: const EdgeInsets.all(16),

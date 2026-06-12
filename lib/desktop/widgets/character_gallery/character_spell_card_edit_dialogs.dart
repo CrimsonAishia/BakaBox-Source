@@ -5,6 +5,7 @@ import 'character_gallery_theme.dart';
 import 'character_edit_data_models.dart';
 import 'spell_card_form_widgets.dart';
 import 'preview_type_selector.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 符卡编辑子弹窗（东方风格）
 class SpellCardEditSubDialog extends StatefulWidget {
@@ -363,10 +364,10 @@ class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
         decoration: BoxDecoration(
           color: washiColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF4A7C59), width: 2),
+          border: Border.all(color: AppColors.skillGreen, width: 2),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF4A7C59).withValues(alpha: 0.3),
+              color: AppColors.skillGreen.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -392,7 +393,7 @@ class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
                     badge: '新增',
                     onClose: () => Navigator.pop(context),
                   ),
-                  SpellCardGradientDivider(color: const Color(0xFF4A7C59)),
+                  SpellCardGradientDivider(color: AppColors.skillGreen),
                   Flexible(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(20),
@@ -643,10 +644,10 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
         decoration: BoxDecoration(
           color: washiColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF4A7C59), width: 2),
+          border: Border.all(color: AppColors.skillGreen, width: 2),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF4A7C59).withValues(alpha: 0.3),
+              color: AppColors.skillGreen.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -672,7 +673,7 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
                     badge: '新增',
                     onClose: () => Navigator.pop(context),
                   ),
-                  SpellCardGradientDivider(color: const Color(0xFF4A7C59)),
+                  SpellCardGradientDivider(color: AppColors.skillGreen),
                   Flexible(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(20),

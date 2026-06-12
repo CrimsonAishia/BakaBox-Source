@@ -6,6 +6,7 @@ import '../../../core/bloc/settings/settings_event.dart';
 import '../../../core/bloc/settings/settings_state.dart';
 import 'settings_group_title.dart';
 import 'settings_item.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 应用设置组件
 class AppSettings extends StatelessWidget {
@@ -34,14 +35,14 @@ class AppSettings extends StatelessWidget {
                           '测试音效播放，音量: ${(settingsState.audioVolume * 100).toInt()}%',
                         ),
                         duration: const Duration(seconds: 1),
-                        backgroundColor: const Color(0xFF0080FF),
+                        backgroundColor: AppColors.primary,
                       ),
                     );
                   },
             icon: Icon(MdiIcons.play, size: 14),
             label: const Text('试听'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0080FF),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
@@ -96,18 +97,18 @@ class _VolumeSlider extends StatelessWidget {
         Icon(
           isMuted ? MdiIcons.volumeOff : MdiIcons.volumeHigh,
           size: 20,
-          color: isMuted ? Colors.grey : const Color(0xFF0080FF),
+          color: isMuted ? Colors.grey : AppColors.primary,
         ),
         const SizedBox(width: 12),
         Expanded(
           child: SliderTheme(
             data: SliderTheme.of(context).copyWith(
-              activeTrackColor: const Color(0xFF0080FF),
+              activeTrackColor: AppColors.primary,
               inactiveTrackColor: const Color(
                 0xFF0080FF,
               ).withValues(alpha: 0.2),
-              thumbColor: const Color(0xFF0080FF),
-              overlayColor: const Color(0xFF0080FF).withValues(alpha: 0.2),
+              thumbColor: AppColors.primary,
+              overlayColor: AppColors.primary.withValues(alpha: 0.2),
               trackHeight: 4,
             ),
             child: Slider(
@@ -130,7 +131,7 @@ class _VolumeSlider extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: isMuted ? Colors.grey : const Color(0xFF374151),
+              color: isMuted ? Colors.grey : AppColors.gray700,
             ),
             textAlign: TextAlign.center,
           ),
@@ -187,7 +188,7 @@ class _WarmupVolumeSlider extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: isMuted ? Colors.grey : const Color(0xFF374151),
+              color: isMuted ? Colors.grey : AppColors.gray700,
             ),
             textAlign: TextAlign.center,
           ),

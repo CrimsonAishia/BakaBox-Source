@@ -8,6 +8,7 @@ import '../../../core/bloc/settings/settings_state.dart';
 import '../../../core/utils/log_service.dart';
 import 'settings_group_title.dart';
 import 'settings_item.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 游戏设置组件
 class GameSettings extends StatefulWidget {
@@ -131,15 +132,15 @@ class _GameSettingsState extends State<GameSettings> {
                 ),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF1E293B)
-                      : const Color(0xFFF8FAFC),
+                      ? AppColors.slate800
+                      : AppColors.slate50,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: hasError
                         ? Colors.red.withValues(alpha: 0.5)
                         : (isDark
-                              ? const Color(0xFF475569)
-                              : const Color(0xFFE2E8F0)),
+                              ? AppColors.slate600
+                              : AppColors.slate200),
                   ),
                 ),
                 child: Text(
@@ -147,8 +148,8 @@ class _GameSettingsState extends State<GameSettings> {
                   style: TextStyle(
                     fontSize: 13,
                     color: hasPath
-                        ? (isDark ? Colors.white : const Color(0xFF374151))
-                        : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                        ? (isDark ? Colors.white : AppColors.gray700)
+                        : (isDark ? Colors.white38 : AppColors.gray400),
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -165,8 +166,8 @@ class _GameSettingsState extends State<GameSettings> {
                 foregroundColor: isDark ? Colors.white70 : null,
                 side: BorderSide(
                   color: isDark
-                      ? const Color(0xFF475569)
-                      : const Color(0xFFD1D5DB),
+                      ? AppColors.slate600
+                      : AppColors.gray300,
                 ),
               ),
               child: isDetecting
@@ -188,8 +189,8 @@ class _GameSettingsState extends State<GameSettings> {
                 foregroundColor: isDark ? Colors.white70 : null,
                 side: BorderSide(
                   color: isDark
-                      ? const Color(0xFF475569)
-                      : const Color(0xFFD1D5DB),
+                      ? AppColors.slate600
+                      : AppColors.gray300,
                 ),
               ),
               child: const Text('选择路径'),
@@ -321,7 +322,7 @@ class _GameSettingsState extends State<GameSettings> {
                   fontSize: 12,
                   color: isSelected
                       ? Colors.white
-                      : (isDark ? Colors.white70 : const Color(0xFF374151)),
+                      : (isDark ? Colors.white70 : AppColors.gray700),
                 ),
               ),
               selected: isSelected,
@@ -336,13 +337,13 @@ class _GameSettingsState extends State<GameSettings> {
                   );
                 }
               },
-              selectedColor: const Color(0xFF0080FF),
+              selectedColor: AppColors.primary,
               checkmarkColor: Colors.white,
-              backgroundColor: isDark ? const Color(0xFF334155) : null,
+              backgroundColor: isDark ? AppColors.slate700 : null,
               side: BorderSide(
                 color: isDark
-                    ? const Color(0xFF475569)
-                    : const Color(0xFFE5E7EB),
+                    ? AppColors.slate600
+                    : AppColors.gray200,
               ),
             );
           }).toList(),
@@ -357,39 +358,39 @@ class _GameSettingsState extends State<GameSettings> {
                   hintText: '输入自定义启动参数，如 -w 1920 -h 1080',
                   hintStyle: TextStyle(
                     fontSize: 13,
-                    color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                    color: isDark ? Colors.white38 : AppColors.gray400,
                   ),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 10,
                   ),
                   filled: true,
-                  fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  fillColor: isDark ? AppColors.slate800 : Colors.white,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
                       color: isDark
-                          ? const Color(0xFF475569)
-                          : const Color(0xFFE5E7EB),
+                          ? AppColors.slate600
+                          : AppColors.gray200,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
                       color: isDark
-                          ? const Color(0xFF475569)
-                          : const Color(0xFFE5E7EB),
+                          ? AppColors.slate600
+                          : AppColors.gray200,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFF0080FF)),
+                    borderSide: const BorderSide(color: AppColors.primary),
                   ),
                   isDense: true,
                 ),
                 style: TextStyle(
                   fontSize: 13,
-                  color: isDark ? Colors.white : const Color(0xFF374151),
+                  color: isDark ? Colors.white : AppColors.gray700,
                 ),
                 onSubmitted: _addCustomLaunchOption,
               ),
@@ -399,7 +400,7 @@ class _GameSettingsState extends State<GameSettings> {
               onPressed: () =>
                   _addCustomLaunchOption(_customLaunchOptionController.text),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0080FF),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -418,7 +419,7 @@ class _GameSettingsState extends State<GameSettings> {
           '💡 提示：可以从上方选择常用选项，或在输入框中输入自定义参数后点击添加',
           style: TextStyle(
             fontSize: 12,
-            color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+            color: isDark ? Colors.white54 : AppColors.gray500,
           ),
         ),
       ],
@@ -439,7 +440,7 @@ class _GameSettingsState extends State<GameSettings> {
         '暂无选择的启动选项',
         style: TextStyle(
           fontSize: 13,
-          color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+          color: isDark ? Colors.white38 : AppColors.gray400,
         ),
       );
     }
@@ -453,22 +454,22 @@ class _GameSettingsState extends State<GameSettings> {
             option,
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? Colors.white : const Color(0xFF374151),
+              color: isDark ? Colors.white : AppColors.gray700,
             ),
           ),
           deleteIcon: Icon(
             Icons.close,
             size: 14,
-            color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+            color: isDark ? Colors.white54 : AppColors.gray500,
           ),
           onDeleted: () => context.read<SettingsBloc>().add(
             SettingsRemoveLaunchOption(option),
           ),
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           visualDensity: VisualDensity.compact,
-          backgroundColor: isDark ? const Color(0xFF334155) : null,
+          backgroundColor: isDark ? AppColors.slate700 : null,
           side: BorderSide(
-            color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB),
+            color: isDark ? AppColors.slate600 : AppColors.gray200,
           ),
         );
       }).toList(),
@@ -504,25 +505,25 @@ class _PlatformOption extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    const Color(0xFF0080FF).withValues(alpha: 0.15),
+                    AppColors.primary.withValues(alpha: 0.15),
                     const Color(0xFF00D4FF).withValues(alpha: 0.08),
                   ],
                 )
               : null,
           color: isSelected
               ? null
-              : (isDark ? const Color(0xFF334155) : const Color(0xFFF9FAFB)),
+              : (isDark ? AppColors.slate700 : AppColors.gray50),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
-                ? const Color(0xFF0080FF)
-                : (isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB)),
+                ? AppColors.primary
+                : (isDark ? AppColors.slate600 : AppColors.gray200),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+                    color: AppColors.primary.withValues(alpha: 0.15),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -536,10 +537,10 @@ class _PlatformOption extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? const Color(0xFF0080FF).withValues(alpha: 0.15)
+                    ? AppColors.primary.withValues(alpha: 0.15)
                     : (isDark
-                              ? const Color(0xFF475569)
-                              : const Color(0xFFE5E7EB))
+                              ? AppColors.slate600
+                              : AppColors.gray200)
                           .withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -547,8 +548,8 @@ class _PlatformOption extends StatelessWidget {
                 icon,
                 size: 20,
                 color: isSelected
-                    ? const Color(0xFF0080FF)
-                    : (isDark ? Colors.white70 : const Color(0xFF6B7280)),
+                    ? AppColors.primary
+                    : (isDark ? Colors.white70 : AppColors.gray500),
               ),
             ),
             const SizedBox(width: 12),
@@ -558,8 +559,8 @@ class _PlatformOption extends StatelessWidget {
                 fontSize: 14,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected
-                    ? const Color(0xFF0080FF)
-                    : (isDark ? Colors.white : const Color(0xFF374151)),
+                    ? AppColors.primary
+                    : (isDark ? Colors.white : AppColors.gray700),
               ),
             ),
             if (isSelected) ...[
@@ -567,7 +568,7 @@ class _PlatformOption extends StatelessWidget {
               Icon(
                 MdiIcons.checkCircle,
                 size: 18,
-                color: const Color(0xFF0080FF),
+                color: AppColors.primary,
               ),
             ],
           ],

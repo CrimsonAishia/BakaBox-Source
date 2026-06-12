@@ -9,6 +9,7 @@ import '../models/web_server_list_models.dart';
 import '../services/web_server_list_ws_adapter.dart';
 import '../widgets/web_map_background.dart';
 import '../widgets/web_mobile_server_list_item.dart';
+import '../../core/constants/app_colors.dart';
 
 /// Web 端服务器列表页面
 class WebServerListPage extends StatefulWidget {
@@ -133,8 +134,8 @@ class _WebServerListPageState extends State<WebServerListPage> {
 
     return Scaffold(
       backgroundColor: isDark
-          ? const Color(0xFF0F172A)
-          : const Color(0xFFF3F4F6),
+          ? AppColors.slate900
+          : AppColors.gray100,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -163,10 +164,10 @@ class _WebServerListPageState extends State<WebServerListPage> {
       height: 60,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         border: Border(
           bottom: BorderSide(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+            color: isDark ? AppColors.slate700 : AppColors.gray200,
           ),
         ),
         boxShadow: [
@@ -190,7 +191,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white70 : const Color(0xFF374151),
+                      color: isDark ? Colors.white70 : AppColors.gray700,
                     ),
                   ),
                 ),
@@ -229,13 +230,13 @@ class _WebServerListPageState extends State<WebServerListPage> {
         _connectionMessage ??
         (_isConnected ? 'WebSocket 已连接' : '正在连接 WebSocket');
     final accentColor = _isConnected
-        ? const Color(0xFF10B981)
-        : const Color(0xFFF59E0B);
+        ? AppColors.emerald500
+        : AppColors.amber500;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      color: isDark ? const Color(0xFF111827) : const Color(0xFFF8FAFC),
+      color: isDark ? const Color(0xFF111827) : AppColors.slate50,
       child: Row(
         children: [
           Icon(
@@ -252,7 +253,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: isDark ? Colors.white70 : const Color(0xFF334155),
+                color: isDark ? Colors.white70 : AppColors.slate700,
               ),
             ),
           ),
@@ -266,7 +267,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
     final totalCount = _data.categories.length;
     final isFiltered = selectedCount < totalCount;
     final accentColor = isFiltered
-        ? const Color(0xFF3B82F6)
+        ? AppColors.blue500
         : (isDark ? Colors.white70 : const Color(0xFF4B5563));
 
     return Tooltip(
@@ -282,14 +283,14 @@ class _WebServerListPageState extends State<WebServerListPage> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             decoration: BoxDecoration(
               color: isFiltered
-                  ? const Color(0xFF3B82F6).withValues(alpha: 0.12)
+                  ? AppColors.blue500.withValues(alpha: 0.12)
                   : (isDark
                         ? Colors.white.withValues(alpha: 0.06)
                         : Colors.black.withValues(alpha: 0.04)),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: isFiltered
-                    ? const Color(0xFF3B82F6).withValues(alpha: 0.4)
+                    ? AppColors.blue500.withValues(alpha: 0.4)
                     : (isDark
                           ? Colors.white.withValues(alpha: 0.1)
                           : Colors.black.withValues(alpha: 0.1)),
@@ -321,7 +322,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                         height: 1.1,
                         color: isDark
                             ? Colors.white38
-                            : const Color(0xFF9CA3AF),
+                            : AppColors.gray400,
                       ),
                     ),
                   ],
@@ -332,7 +333,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                     width: 6,
                     height: 6,
                     decoration: const BoxDecoration(
-                      color: Color(0xFF3B82F6),
+                      color: AppColors.blue500,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -385,7 +386,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white70 : const Color(0xFF374151),
+              color: isDark ? Colors.white70 : AppColors.gray700,
             ),
           ),
         ],
@@ -405,14 +406,14 @@ class _WebServerListPageState extends State<WebServerListPage> {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: _isCompactMode
-                  ? const Color(0xFF3B82F6).withValues(alpha: 0.12)
+                  ? AppColors.blue500.withValues(alpha: 0.12)
                   : (isDark
                         ? Colors.white.withValues(alpha: 0.06)
                         : Colors.black.withValues(alpha: 0.04)),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: _isCompactMode
-                    ? const Color(0xFF3B82F6).withValues(alpha: 0.4)
+                    ? AppColors.blue500.withValues(alpha: 0.4)
                     : (isDark
                           ? Colors.white.withValues(alpha: 0.1)
                           : Colors.black.withValues(alpha: 0.08)),
@@ -424,8 +425,8 @@ class _WebServerListPageState extends State<WebServerListPage> {
                   : Icons.view_list_rounded,
               size: 20,
               color: _isCompactMode
-                  ? const Color(0xFF3B82F6)
-                  : (isDark ? Colors.white70 : const Color(0xFF6B7280)),
+                  ? AppColors.blue500
+                  : (isDark ? Colors.white70 : AppColors.gray500),
             ),
           ),
         ),
@@ -475,12 +476,12 @@ class _WebServerListPageState extends State<WebServerListPage> {
                 width: 360,
                 constraints: const BoxConstraints(maxHeight: 480),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  color: isDark ? AppColors.slate800 : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: isDark
-                        ? const Color(0xFF334155)
-                        : const Color(0xFFE5E7EB),
+                        ? AppColors.slate700
+                        : AppColors.gray200,
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -501,7 +502,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                           const Icon(
                             Icons.tune_rounded,
                             size: 18,
-                            color: Color(0xFF3B82F6),
+                            color: AppColors.blue500,
                           ),
                           const SizedBox(width: 8),
                           Column(
@@ -514,7 +515,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                                   fontWeight: FontWeight.w600,
                                   color: isDark
                                       ? Colors.white
-                                      : const Color(0xFF1F2937),
+                                      : AppColors.gray800,
                                 ),
                               ),
                               Text(
@@ -523,7 +524,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                                   fontSize: 11,
                                   color: isDark
                                       ? Colors.white38
-                                      : const Color(0xFF9CA3AF),
+                                      : AppColors.gray400,
                                 ),
                               ),
                             ],
@@ -543,7 +544,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                                   allSelected ? '取消全选' : '全选',
                                   style: const TextStyle(
                                     fontSize: 12,
-                                    color: Color(0xFF3B82F6),
+                                    color: AppColors.blue500,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -563,7 +564,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                                   size: 18,
                                   color: isDark
                                       ? Colors.white38
-                                      : const Color(0xFF9CA3AF),
+                                      : AppColors.gray400,
                                 ),
                               ),
                             ),
@@ -574,8 +575,8 @@ class _WebServerListPageState extends State<WebServerListPage> {
                     Divider(
                       height: 1,
                       color: isDark
-                          ? const Color(0xFF334155)
-                          : const Color(0xFFE5E7EB),
+                          ? AppColors.slate700
+                          : AppColors.gray200,
                     ),
                     Flexible(
                       child: ListView.builder(
@@ -587,7 +588,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                           final isSelected = _selectedCategories.contains(
                             category.name,
                           );
-                          final activeColor = const Color(0xFF3B82F6);
+                          final activeColor = AppColors.blue500;
 
                           return InkWell(
                             onTap: () => toggle(category.name),
@@ -612,7 +613,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                                             ? activeColor
                                             : (isDark
                                                   ? Colors.white24
-                                                  : const Color(0xFFD1D5DB)),
+                                                  : AppColors.gray300),
                                         width: 1.5,
                                       ),
                                     ),
@@ -636,10 +637,10 @@ class _WebServerListPageState extends State<WebServerListPage> {
                                         color: isSelected
                                             ? (isDark
                                                   ? Colors.white
-                                                  : const Color(0xFF1F2937))
+                                                  : AppColors.gray800)
                                             : (isDark
                                                   ? Colors.white60
-                                                  : const Color(0xFF6B7280)),
+                                                  : AppColors.gray500),
                                       ),
                                     ),
                                   ),
@@ -649,7 +650,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                                       fontSize: 12,
                                       color: isDark
                                           ? Colors.white38
-                                          : const Color(0xFF9CA3AF),
+                                          : AppColors.gray400,
                                     ),
                                   ),
                                 ],
@@ -762,7 +763,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF1F2937),
+                  color: isDark ? Colors.white : AppColors.gray800,
                 ),
               ),
               const SizedBox(width: 8),
@@ -778,7 +779,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                   '${item.servers.length} 服务器 · ${item.onlinePlayers} 人',
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    color: isDark ? Colors.white54 : AppColors.gray500,
                   ),
                 ),
               ),
@@ -789,7 +790,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                   height: 12,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation(Color(0xFF3B82F6)),
+                    valueColor: AlwaysStoppedAnimation(AppColors.blue500),
                   ),
                 ),
               ],
@@ -881,7 +882,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       valueColor: AlwaysStoppedAnimation(
-                        isDark ? Colors.white54 : const Color(0xFF6B7280),
+                        isDark ? Colors.white54 : AppColors.gray500,
                       ),
                     ),
                   ),
@@ -891,7 +892,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                      color: isDark ? Colors.white54 : AppColors.gray500,
                     ),
                   ),
                 ],
@@ -939,7 +940,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white : const Color(0xFF374151),
+              color: isDark ? Colors.white : AppColors.gray700,
             ),
           ),
           const SizedBox(height: 8),
@@ -947,7 +948,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
             '请选择分类查看服务器',
             style: TextStyle(
               fontSize: 14,
-              color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+              color: isDark ? Colors.white54 : AppColors.gray500,
             ),
           ),
         ],
@@ -968,7 +969,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF1F2937),
+                  color: isDark ? Colors.white : AppColors.gray800,
                 ),
               ),
               const SizedBox(width: 8),
@@ -984,7 +985,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                   '${item.servers.length} 服务器 · ${item.onlinePlayers} 人',
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    color: isDark ? Colors.white54 : AppColors.gray500,
                   ),
                 ),
               ),
@@ -995,7 +996,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                   height: 12,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation(Color(0xFF3B82F6)),
+                    valueColor: AlwaysStoppedAnimation(AppColors.blue500),
                   ),
                 ),
               ],
@@ -1014,10 +1015,10 @@ class _WebServerListPageState extends State<WebServerListPage> {
   Widget _buildCompactLoadingRows(bool isDark) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.slate700 : AppColors.gray200,
         ),
       ),
       child: Column(
@@ -1042,8 +1043,8 @@ class _WebServerListPageState extends State<WebServerListPage> {
             : Border(
                 bottom: BorderSide(
                   color: isDark
-                      ? const Color(0xFF334155)
-                      : const Color(0xFFE5E7EB),
+                      ? AppColors.slate700
+                      : AppColors.gray200,
                 ),
               ),
       ),
@@ -1128,10 +1129,10 @@ class _WebServerListPageState extends State<WebServerListPage> {
   Widget _buildCompactTable(bool isDark, List<WebServerItem> servers) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.slate700 : AppColors.gray200,
         ),
       ),
       child: Column(
@@ -1152,7 +1153,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
   }
 
   Widget _buildCompactTableHeader(bool isDark) {
-    final headerColor = isDark ? Colors.white38 : const Color(0xFF9CA3AF);
+    final headerColor = isDark ? Colors.white38 : AppColors.gray400;
     const headerStyle = TextStyle(fontSize: 11, fontWeight: FontWeight.w600);
 
     return Container(
@@ -1163,7 +1164,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
             : Colors.black.withValues(alpha: 0.02),
         border: Border(
           bottom: BorderSide(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+            color: isDark ? AppColors.slate700 : AppColors.gray200,
           ),
         ),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(7)),
@@ -1233,13 +1234,13 @@ class _WebServerListPageState extends State<WebServerListPage> {
 
     Color statusColor;
     if (isOffline) {
-      statusColor = const Color(0xFF9CA3AF);
+      statusColor = AppColors.gray400;
     } else if (loadRatio >= 1.0) {
       statusColor = const Color(0xFFF44336);
     } else if (loadRatio >= 0.8) {
-      statusColor = const Color(0xFFFF9800);
+      statusColor = AppColors.orange;
     } else {
-      statusColor = const Color(0xFF22C55E);
+      statusColor = AppColors.green500;
     }
 
     return Material(
@@ -1252,8 +1253,8 @@ class _WebServerListPageState extends State<WebServerListPage> {
               : Border(
                   bottom: BorderSide(
                     color: isDark
-                        ? const Color(0xFF334155)
-                        : const Color(0xFFE5E7EB),
+                        ? AppColors.slate700
+                        : AppColors.gray200,
                   ),
                 ),
         ),
@@ -1279,7 +1280,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                       child: CircularProgressIndicator(
                         strokeWidth: 1.5,
                         valueColor: AlwaysStoppedAnimation(
-                          isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                          isDark ? Colors.white38 : AppColors.gray400,
                         ),
                       ),
                     )
@@ -1296,8 +1297,8 @@ class _WebServerListPageState extends State<WebServerListPage> {
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: isOffline
-                      ? (isDark ? Colors.white38 : const Color(0xFF9CA3AF))
-                      : (isDark ? Colors.white : const Color(0xFF1F2937)),
+                      ? (isDark ? Colors.white38 : AppColors.gray400)
+                      : (isDark ? Colors.white : AppColors.gray800),
                 ),
               ),
             ),
@@ -1311,8 +1312,8 @@ class _WebServerListPageState extends State<WebServerListPage> {
                 style: TextStyle(
                   fontSize: 12,
                   color: isOffline
-                      ? (isDark ? Colors.white24 : const Color(0xFFD1D5DB))
-                      : (isDark ? Colors.white60 : const Color(0xFF6B7280)),
+                      ? (isDark ? Colors.white24 : AppColors.gray300)
+                      : (isDark ? Colors.white60 : AppColors.gray500),
                 ),
               ),
             ),
@@ -1333,8 +1334,8 @@ class _WebServerListPageState extends State<WebServerListPage> {
                 style: TextStyle(
                   fontSize: 12,
                   color: isOffline
-                      ? (isDark ? Colors.white24 : const Color(0xFFD1D5DB))
-                      : (isDark ? Colors.white54 : const Color(0xFF6B7280)),
+                      ? (isDark ? Colors.white24 : AppColors.gray300)
+                      : (isDark ? Colors.white54 : AppColors.gray500),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -1361,7 +1362,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
         '-',
         style: TextStyle(
           fontSize: 13,
-          color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
+          color: isDark ? Colors.white24 : AppColors.gray300,
         ),
         textAlign: TextAlign.center,
       );
@@ -1371,9 +1372,9 @@ class _WebServerListPageState extends State<WebServerListPage> {
     if (players >= maxPlayers && maxPlayers > 0) {
       primaryColor = const Color(0xFFF44336);
     } else if (players >= maxPlayers * 0.8 && maxPlayers > 0) {
-      primaryColor = const Color(0xFFFF9800);
+      primaryColor = AppColors.orange;
     } else {
-      primaryColor = const Color(0xFF0080FF);
+      primaryColor = AppColors.primary;
     }
 
     return RichText(
@@ -1393,7 +1394,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w400,
-              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+              color: isDark ? Colors.white38 : AppColors.gray400,
             ),
           ),
         ],
@@ -1425,7 +1426,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
         '-',
         style: TextStyle(
           fontSize: 11,
-          color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
+          color: isDark ? Colors.white24 : AppColors.gray300,
         ),
         textAlign: TextAlign.center,
       );
@@ -1440,7 +1441,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
         '-',
         style: TextStyle(
           fontSize: 12,
-          color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+          color: isDark ? Colors.white38 : AppColors.gray400,
         ),
         textAlign: TextAlign.center,
       );
@@ -1461,13 +1462,13 @@ class _WebServerListPageState extends State<WebServerListPage> {
     final Color rightColor;
 
     if (isUnknown) {
-      leftColor = const Color(0xFF9CA3AF);
-      rightColor = const Color(0xFF9CA3AF);
+      leftColor = AppColors.gray400;
+      rightColor = AppColors.gray400;
     } else if (isZombie) {
-      leftColor = const Color(0xFF22C55E);
-      rightColor = const Color(0xFFEF4444);
+      leftColor = AppColors.green500;
+      rightColor = AppColors.red500;
     } else {
-      leftColor = const Color(0xFF3B82F6);
+      leftColor = AppColors.blue500;
       rightColor = const Color(0xFFEAB308);
     }
 
@@ -1489,7 +1490,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
             ':',
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+              color: isDark ? Colors.white38 : AppColors.gray400,
             ),
           ),
         ),
@@ -1516,13 +1517,13 @@ class _WebServerListPageState extends State<WebServerListPage> {
       children: [
         _buildCompactActionButton(
           icon: Icons.play_arrow_rounded,
-          color: const Color(0xFF0080FF),
+          color: AppColors.primary,
           onTap: () => _connectToServer(server),
         ),
         const SizedBox(width: 6),
         _buildCompactActionButton(
           icon: Icons.content_copy_rounded,
-          color: const Color(0xFF10B981),
+          color: AppColors.emerald500,
           onTap: () => _copyAddress(server),
         ),
       ],
@@ -1590,7 +1591,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF1F2937),
+                  color: AppColors.gray800,
                 ),
               ),
               const SizedBox(width: 8),
@@ -1604,7 +1605,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                   '${item.servers.length} 服务器 · ${item.onlinePlayers} 人',
                   style: const TextStyle(
                     fontSize: 11,
-                    color: Color(0xFF6B7280),
+                    color: AppColors.gray500,
                   ),
                 ),
               ),
@@ -1615,7 +1616,7 @@ class _WebServerListPageState extends State<WebServerListPage> {
                   height: 12,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation(Color(0xFF3B82F6)),
+                    valueColor: AlwaysStoppedAnimation(AppColors.blue500),
                   ),
                 ),
               ],
@@ -1766,7 +1767,7 @@ class _WebImmersiveServerCardState extends State<_WebImmersiveServerCard> {
 
     // 边框颜色：hover 时显示蓝色边框
     final borderColor = _isHovered
-        ? const Color(0xFF0080FF).withValues(alpha: 0.6)
+        ? AppColors.primary.withValues(alpha: 0.6)
         : Colors.transparent;
 
     return MouseRegion(
@@ -2004,13 +2005,13 @@ class _WebImmersiveServerCardState extends State<_WebImmersiveServerCard> {
                   _WebActionBtn(
                     text: '连接',
                     icon: Icons.play_arrow_rounded,
-                    bgColor: const Color(0xFF0080FF),
+                    bgColor: AppColors.primary,
                     onPressed: _connectToServer,
                   ),
                   _WebActionBtn(
                     text: '复制地址',
                     icon: Icons.content_copy_rounded,
-                    bgColor: const Color(0xFF10B981),
+                    bgColor: AppColors.emerald500,
                     onPressed: _copyAddress,
                   ),
                 ],
@@ -2247,10 +2248,10 @@ class _PlayerCountBadge extends StatelessWidget {
       primaryColor = const Color(0xFFF44336);
       bgColor = const Color(0xFFFEEAEA);
     } else if (players >= maxPlayers * 0.8 && maxPlayers > 0) {
-      primaryColor = const Color(0xFFFF9800);
+      primaryColor = AppColors.orange;
       bgColor = const Color(0xFFFFF9E6);
     } else {
-      primaryColor = const Color(0xFF0080FF);
+      primaryColor = AppColors.primary;
       bgColor = Colors.white;
     }
 
@@ -2349,13 +2350,13 @@ class _RuntimeBadge extends StatelessWidget {
               Icon(
                 MdiIcons.clockOutline,
                 size: 12,
-                color: const Color(0xFF6B7280),
+                color: AppColors.gray500,
               ),
               const SizedBox(width: 4),
               Text(
                 _formatRuntimeMinutes(runtimeMinutes),
                 style: const TextStyle(
-                  color: Color(0xFF6B7280),
+                  color: AppColors.gray500,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),
@@ -2378,7 +2379,7 @@ class _RuntimeBadge extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF6B7280),
+                  color: AppColors.gray500,
                 ),
                 children: [
                   const TextSpan(text: '一周内出现'),
@@ -2386,7 +2387,7 @@ class _RuntimeBadge extends StatelessWidget {
                     text: ' $weeklyOccurrences ',
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF3B82F6),
+                      color: AppColors.blue500,
                     ),
                   ),
                   const TextSpan(text: '次'),
@@ -2441,17 +2442,17 @@ class _StaticScoreDisplay extends StatelessWidget {
     final Color iconColor;
 
     if (isUnknown) {
-      leftColor = const Color(0xFF9CA3AF);
-      rightColor = const Color(0xFF9CA3AF);
-      iconColor = const Color(0xFF9CA3AF);
+      leftColor = AppColors.gray400;
+      rightColor = AppColors.gray400;
+      iconColor = AppColors.gray400;
     } else if (isZombie) {
-      leftColor = const Color(0xFF22C55E);
-      rightColor = const Color(0xFFEF4444);
-      iconColor = const Color(0xFF6B7280);
+      leftColor = AppColors.green500;
+      rightColor = AppColors.red500;
+      iconColor = AppColors.gray500;
     } else {
-      leftColor = const Color(0xFF3B82F6);
+      leftColor = AppColors.blue500;
       rightColor = const Color(0xFFEAB308);
-      iconColor = const Color(0xFF6B7280);
+      iconColor = AppColors.gray500;
     }
 
     final leftLabel = isZombie ? '人类' : 'CT';
@@ -2501,9 +2502,9 @@ class _StatusDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = switch ((server.isLoading, server.isOffline)) {
-      (true, _) => const Color(0xFF64748B),
-      (_, true) => const Color(0xFFEF4444),
-      _ => const Color(0xFF22C55E),
+      (true, _) => AppColors.slate500,
+      (_, true) => AppColors.red500,
+      _ => AppColors.green500,
     };
 
     return Container(
@@ -2562,14 +2563,14 @@ class _WebServerCardSkeletonState extends State<_WebServerCardSkeleton>
               end: Alignment(-1.0 + 2.0 * _controller.value + 1.0, 0),
               colors: isDark
                   ? const [
-                      Color(0xFF1E293B),
-                      Color(0xFF334155),
-                      Color(0xFF1E293B),
+                      AppColors.slate800,
+                      AppColors.slate700,
+                      AppColors.slate800,
                     ]
                   : const [
-                      Color(0xFFE5E7EB),
-                      Color(0xFFF3F4F6),
-                      Color(0xFFE5E7EB),
+                      AppColors.gray200,
+                      AppColors.gray100,
+                      AppColors.gray200,
                     ],
             ),
           ),

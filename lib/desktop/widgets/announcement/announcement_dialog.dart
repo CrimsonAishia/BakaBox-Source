@@ -8,6 +8,7 @@ import '../../../core/bloc/announcement/announcement_event.dart';
 import '../../../core/bloc/announcement/announcement_state.dart';
 import '../../../core/models/announcement_models.dart';
 import '../../../core/utils/announcement_utils.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 公告详情对话框
 class AnnouncementDialog extends StatefulWidget {
@@ -74,7 +75,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
             ? null
             : const BoxConstraints(maxHeight: 540),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          color: isDark ? AppColors.slate800 : Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
@@ -113,13 +114,13 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
               Icons.campaign_outlined,
               size: 18,
-              color: Color(0xFF0080FF),
+              color: AppColors.primary,
             ),
           ),
           const SizedBox(width: 12),
@@ -132,7 +133,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : const Color(0xFF1F2937),
+                    color: isDark ? Colors.white : AppColors.gray800,
                   ),
                 ),
                 BlocBuilder<AnnouncementBloc, AnnouncementState>(
@@ -145,7 +146,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                         fontSize: 12,
                         color: isDark
                             ? Colors.white54
-                            : const Color(0xFF9CA3AF),
+                            : AppColors.gray400,
                       ),
                     );
                   },
@@ -166,7 +167,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                       '全部已读',
                       style: TextStyle(
                         fontSize: 12,
-                        color: const Color(0xFF0080FF),
+                        color: AppColors.primary,
                       ),
                     ),
                   ),
@@ -179,7 +180,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
             icon: Icon(
               Icons.close,
               size: 18,
-              color: isDark ? Colors.white54 : const Color(0xFF9CA3AF),
+              color: isDark ? Colors.white54 : AppColors.gray400,
             ),
             tooltip: '关闭',
             padding: EdgeInsets.zero,
@@ -203,7 +204,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
           decoration: BoxDecoration(
             color: isDark
                 ? Colors.white.withValues(alpha: 0.05)
-                : const Color(0xFFF3F4F6),
+                : AppColors.gray100,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
@@ -228,7 +229,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(vertical: 6),
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF0080FF) : Colors.transparent,
+              color: isSelected ? AppColors.primary : Colors.transparent,
               borderRadius: BorderRadius.circular(6),
             ),
             child: Row(
@@ -241,7 +242,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     color: isSelected
                         ? Colors.white
-                        : (isDark ? Colors.white60 : const Color(0xFF6B7280)),
+                        : (isDark ? Colors.white60 : AppColors.gray500),
                   ),
                 ),
                 if (count > 0) ...[
@@ -253,7 +254,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                           ? Colors.white.withValues(alpha: 0.2)
                           : (isDark
                                 ? Colors.white.withValues(alpha: 0.1)
-                                : const Color(0xFFE5E7EB)),
+                                : AppColors.gray200),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -265,7 +266,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                             ? Colors.white
                             : (isDark
                                   ? Colors.white54
-                                  : const Color(0xFF9CA3AF)),
+                                  : AppColors.gray400),
                       ),
                     ),
                   ),
@@ -365,14 +366,14 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                         ),
                         margin: const EdgeInsets.only(right: 6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF9800).withValues(alpha: 0.1),
+                          color: AppColors.orange.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(3),
                         ),
                         child: const Text(
                           '置顶',
                           style: TextStyle(
                             fontSize: 9,
-                            color: Color(0xFFFF9800),
+                            color: AppColors.orange,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -387,7 +388,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                               : FontWeight.w600,
                           color: isDark
                               ? Colors.white
-                              : const Color(0xFF1F2937),
+                              : AppColors.gray800,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -400,7 +401,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                   _getContentPreview(item.content),
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    color: isDark ? Colors.white54 : AppColors.gray500,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -410,7 +411,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                   AnnouncementUtils.formatRelativeTime(item.createdAt),
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                    color: isDark ? Colors.white38 : AppColors.gray400,
                   ),
                 ),
               ],
@@ -419,7 +420,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
           Icon(
             Icons.chevron_right,
             size: 18,
-            color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
+            color: isDark ? Colors.white24 : AppColors.gray300,
           ),
         ],
       ),
@@ -473,7 +474,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                                 ),
                                 margin: const EdgeInsets.only(right: 6),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFFF9800),
+                                  color: AppColors.orange,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: const Text(
@@ -513,7 +514,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                             fontWeight: FontWeight.w600,
                             color: isDark
                                 ? Colors.white
-                                : const Color(0xFF1F2937),
+                                : AppColors.gray800,
                           ),
                         ),
                       ],
@@ -524,7 +525,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                     icon: Icon(
                       Icons.close,
                       size: 18,
-                      color: isDark ? Colors.white54 : const Color(0xFF9CA3AF),
+                      color: isDark ? Colors.white54 : AppColors.gray400,
                     ),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(
@@ -561,7 +562,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                   top: BorderSide(
                     color: isDark
                         ? Colors.white.withValues(alpha: 0.1)
-                        : const Color(0xFFE5E7EB),
+                        : AppColors.gray200,
                   ),
                 ),
               ),
@@ -570,28 +571,28 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                   Icon(
                     Icons.access_time,
                     size: 14,
-                    color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                    color: isDark ? Colors.white38 : AppColors.gray400,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     AnnouncementUtils.formatRelativeTime(detail.createdAt),
                     style: TextStyle(
                       fontSize: 12,
-                      color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                      color: isDark ? Colors.white38 : AppColors.gray400,
                     ),
                   ),
                   const SizedBox(width: 16),
                   Icon(
                     Icons.visibility_outlined,
                     size: 14,
-                    color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                    color: isDark ? Colors.white38 : AppColors.gray400,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     '${detail.readCount} 次阅读',
                     style: TextStyle(
                       fontSize: 12,
-                      color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                      color: isDark ? Colors.white38 : AppColors.gray400,
                     ),
                   ),
                   const Spacer(),
@@ -606,14 +607,14 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
                             Icon(
                               Icons.arrow_back,
                               size: 14,
-                              color: const Color(0xFF0080FF),
+                              color: AppColors.primary,
                             ),
                             const SizedBox(width: 4),
                             const Text(
                               '返回列表',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Color(0xFF0080FF),
+                                color: AppColors.primary,
                               ),
                             ),
                           ],
@@ -640,14 +641,14 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
             Icon(
               isUnread ? Icons.mark_email_read_outlined : Icons.email_outlined,
               size: 48,
-              color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
+              color: isDark ? Colors.white24 : AppColors.gray300,
             ),
             const SizedBox(height: 12),
             Text(
               isUnread ? '暂无未读公告' : '暂无已读公告',
               style: TextStyle(
                 fontSize: 14,
-                color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                color: isDark ? Colors.white38 : AppColors.gray400,
               ),
             ),
           ],
@@ -659,15 +660,15 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
   Color _getTypeColor(String type) {
     switch (type) {
       case 'warning':
-        return const Color(0xFFF59E0B);
+        return AppColors.amber500;
       case 'error':
-        return const Color(0xFFEF4444);
+        return AppColors.red500;
       case 'success':
-        return const Color(0xFF10B981);
+        return AppColors.emerald500;
       case 'maintenance':
-        return const Color(0xFF8B5CF6);
+        return AppColors.violet500;
       default:
-        return const Color(0xFF0080FF);
+        return AppColors.primary;
     }
   }
 
@@ -700,7 +701,7 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
       p: TextStyle(
         fontSize: 14,
         height: 1.7,
-        color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
+        color: isDark ? AppColors.gray300 : AppColors.gray700,
       ),
       h1: TextStyle(
         fontSize: 20,
@@ -710,26 +711,26 @@ class _AnnouncementDialogState extends State<AnnouncementDialog> {
       h2: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.bold,
-        color: isDark ? Colors.white : const Color(0xFF1F2937),
+        color: isDark ? Colors.white : AppColors.gray800,
       ),
       h3: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w600,
-        color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF374151),
+        color: isDark ? AppColors.gray200 : AppColors.gray700,
       ),
       code: TextStyle(
         backgroundColor: isDark
-            ? const Color(0xFF374151)
-            : const Color(0xFFF3F4F6),
-        color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFDC2626),
+            ? AppColors.gray700
+            : AppColors.gray100,
+        color: isDark ? const Color(0xFFFCA5A5) : AppColors.red600,
         fontFamily: 'Consolas, Monaco, monospace',
         fontSize: 13,
       ),
       codeblockDecoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF9FAFB),
+        color: isDark ? AppColors.gray800 : AppColors.gray50,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.gray700 : AppColors.gray200,
         ),
       ),
       blockquoteDecoration: BoxDecoration(
@@ -781,7 +782,7 @@ class _HoverableItemState extends State<_HoverableItem> {
                 ? (_isHovered
                       ? (widget.isDark
                             ? Colors.white.withValues(alpha: 0.05)
-                            : const Color(0xFFF9FAFB))
+                            : AppColors.gray50)
                       : Colors.transparent)
                 : widget.typeColor.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(10),
@@ -789,7 +790,7 @@ class _HoverableItemState extends State<_HoverableItem> {
               color: _isHovered
                   ? (widget.isDark
                         ? Colors.white.withValues(alpha: 0.15)
-                        : const Color(0xFFE5E7EB))
+                        : AppColors.gray200)
                   : (widget.isRead
                         ? Colors.transparent
                         : widget.typeColor.withValues(alpha: 0.2)),

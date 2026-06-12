@@ -9,6 +9,7 @@ import '../../../core/utils/platform_utils.dart';
 import '../selective_cache_dialog.dart';
 import 'settings_group_title.dart';
 import 'settings_buttons.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 缓存管理设置组件
 class CacheSettings extends StatelessWidget {
@@ -42,7 +43,7 @@ class CacheSettings extends StatelessWidget {
               left: BorderSide(
                 color: isDark
                     ? const Color(0xFF60A5FA)
-                    : const Color(0xFF3B82F6),
+                    : AppColors.blue500,
                 width: 4,
               ),
             ),
@@ -51,7 +52,7 @@ class CacheSettings extends StatelessWidget {
             '💡 统计包括缓存数据库、应用数据、临时文件和日志文件。定期清理可以释放磁盘空间。所有数据现在保存在用户目录下，不会因为应用更新而丢失。您可以选择性清理不同类型的内容。',
             style: TextStyle(
               fontSize: 13,
-              color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+              color: isDark ? Colors.white70 : AppColors.gray500,
             ),
           ),
         ),
@@ -66,19 +67,19 @@ class CacheSettings extends StatelessWidget {
 
     return _CacheInfoItem(
       icon: MdiIcons.harddisk,
-      iconColor: const Color(0xFF0080FF),
+      iconColor: AppColors.primary,
       label: '缓存大小',
       value: settingsState.isLoadingCacheDetails
           ? const Text(
               '计算中...',
-              style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+              style: TextStyle(fontSize: 14, color: AppColors.gray500),
             )
           : Text(
               totalSize,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF0080FF),
+                color: AppColors.primary,
               ),
             ),
       action: Row(
@@ -134,7 +135,7 @@ class CacheSettings extends StatelessWidget {
       builder: (dialogContext) => AlertDialog(
         title: Row(
           children: [
-            Icon(MdiIcons.restart, color: const Color(0xFFEF4444)),
+            Icon(MdiIcons.restart, color: AppColors.red500),
             const SizedBox(width: 8),
             const Text('需要重启应用'),
           ],
@@ -150,7 +151,7 @@ class CacheSettings extends StatelessWidget {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
+              backgroundColor: AppColors.red500,
               foregroundColor: Colors.white,
             ),
             child: const Text('确定并退出'),
@@ -187,12 +188,12 @@ class _CacheInfoItem extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? [const Color(0xFF334155), const Color(0xFF1E293B)]
-              : [const Color(0xFFFAFBFC), const Color(0xFFF8FAFC)],
+              ? [AppColors.slate700, AppColors.slate800]
+              : [const Color(0xFFFAFBFC), AppColors.slate50],
         ),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.slate600 : AppColors.gray200,
         ),
         boxShadow: [
           BoxShadow(
@@ -208,7 +209,7 @@ class _CacheInfoItem extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: (iconColor ?? const Color(0xFF0080FF)).withValues(
+                color: (iconColor ?? AppColors.primary).withValues(
                   alpha: 0.1,
                 ),
                 borderRadius: BorderRadius.circular(10),
@@ -216,7 +217,7 @@ class _CacheInfoItem extends StatelessWidget {
               child: Icon(
                 icon,
                 size: 20,
-                color: iconColor ?? const Color(0xFF0080FF),
+                color: iconColor ?? AppColors.primary,
               ),
             ),
             const SizedBox(width: 16),
@@ -228,7 +229,7 @@ class _CacheInfoItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : const Color(0xFF374151),
+                color: isDark ? Colors.white : AppColors.gray700,
               ),
             ),
           ),

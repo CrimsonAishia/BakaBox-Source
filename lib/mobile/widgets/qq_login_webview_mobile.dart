@@ -310,7 +310,7 @@ class _QQLoginWebViewMobileState extends State<QQLoginWebViewMobile> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const CircularProgressIndicator(color: Color(0xFF0080FF)),
+                    const CircularProgressIndicator(color: AppColors.primary),
                     const SizedBox(height: 16),
                     Text('登录成功，正在获取信息...', style: TextStyle(color: textColor)),
                   ],

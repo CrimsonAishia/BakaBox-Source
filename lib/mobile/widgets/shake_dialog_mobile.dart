@@ -6,6 +6,7 @@ import '../../core/bloc/daily_task/daily_task_bloc.dart';
 import '../../core/bloc/daily_task/daily_task_event.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/utils/log_service.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 移动端摇一摇抽奖对话框
 class ShakeDialogMobile extends StatefulWidget {
@@ -209,7 +210,7 @@ class _ShakeDialogMobileState extends State<ShakeDialogMobile>
       width: 50,
       height: 70,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
@@ -293,7 +294,7 @@ class _ShakeDialogMobileState extends State<ShakeDialogMobile>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? Colors.redAccent : const Color(0xFF10B981),
+        backgroundColor: isError ? Colors.redAccent : AppColors.emerald500,
       ),
     );
   }
@@ -369,10 +370,10 @@ class _ShakeDialogMobileState extends State<ShakeDialogMobile>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                    color: AppColors.primary.withValues(alpha: 0.3),
                     width: 2,
                   ),
                 ),
@@ -438,7 +439,7 @@ class _ShakeDialogMobileState extends State<ShakeDialogMobile>
                   padding: EdgeInsets.symmetric(vertical: 20),
                   child: Column(
                     children: [
-                      CircularProgressIndicator(color: Color(0xFF0080FF)),
+                      CircularProgressIndicator(color: AppColors.primary),
                       SizedBox(height: 12),
                       Text('正在加载...'),
                     ],
@@ -481,7 +482,7 @@ class _ShakeDialogMobileState extends State<ShakeDialogMobile>
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _alreadyShaked || _hasResult
                         ? Colors.green
-                        : const Color(0xFF0080FF),
+                        : AppColors.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

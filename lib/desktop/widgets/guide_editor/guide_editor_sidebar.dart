@@ -32,6 +32,7 @@ import '../../../core/widgets/guide/guide_map_picker_sheet.dart';
 import '../../../core/widgets/map_background.dart';
 import '../common_scroll_indicator.dart';
 import '../guide/community_guide/community_guide_theme.dart';
+import '../../../core/constants/app_colors.dart';
 
 // ─── 视觉常量（参考原型）────────────────────────────────────────────────
 ///
@@ -82,26 +83,26 @@ class _T {
         borderHover: Color(0x40FFFFFF),
         accent: Color(0xFF2196F3),
         accentHover: Color(0xFF42A5F5),
-        textPrimary: Color(0xFFF1F5F9),
-        textSecondary: Color(0xFFCBD5E1),
-        textMuted: Color(0xFF94A3B8),
-        danger: Color(0xFFEF4444),
-        success: Color(0xFF22C55E),
+        textPrimary: AppColors.slate100,
+        textSecondary: AppColors.slate300,
+        textMuted: AppColors.slate400,
+        danger: AppColors.red500,
+        success: AppColors.green500,
       );
     }
     return const _T._(
       cardBg: Colors.white,
-      fieldBg: Color(0xFFF8FAFC),
-      fieldBgHover: Color(0xFFE2E8F0),
-      borderSoft: Color(0xFFE5E7EB),
-      borderHover: Color(0xFFCBD5E1),
+      fieldBg: AppColors.slate50,
+      fieldBgHover: AppColors.slate200,
+      borderSoft: AppColors.gray200,
+      borderHover: AppColors.slate300,
       accent: Color(0xFF2196F3),
       accentHover: Color(0xFF1976D2),
-      textPrimary: Color(0xFF1F2937),
-      textSecondary: Color(0xFF374151),
-      textMuted: Color(0xFF6B7280),
-      danger: Color(0xFFEF4444),
-      success: Color(0xFF22C55E),
+      textPrimary: AppColors.gray800,
+      textSecondary: AppColors.gray700,
+      textMuted: AppColors.gray500,
+      danger: AppColors.red500,
+      success: AppColors.green500,
     );
   }
 }

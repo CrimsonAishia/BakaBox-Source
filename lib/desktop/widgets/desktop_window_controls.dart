@@ -98,7 +98,7 @@ class _DesktopWindowControlsState extends State<DesktopWindowControls> {
             : Colors.white.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF0080FF).withValues(alpha: 0.2),
+          color: AppColors.primary.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
@@ -236,7 +236,7 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
             decoration: BoxDecoration(
               color: _isHovered
                   ? (hasUnread
-                        ? const Color(0xFF0080FF).withValues(alpha: 0.15)
+                        ? AppColors.primary.withValues(alpha: 0.15)
                         : (widget.isDark
                               ? Colors.white12
                               : Colors.black.withValues(alpha: 0.05)))
@@ -255,10 +255,10 @@ class _MessageCenterButtonState extends State<_MessageCenterButton>
                       : Icons.notifications_outlined,
                   size: 16,
                   color: hasUnread
-                      ? const Color(0xFF0080FF)
+                      ? AppColors.primary
                       : (widget.isDark
                             ? Colors.white70
-                            : const Color(0xFF6B7280)),
+                            : AppColors.gray500),
                 ),
                 if (hasUnread)
                   Positioned(
@@ -366,14 +366,14 @@ class _WindowControlButtonState extends State<_WindowControlButton> {
       buttonColor = _isHovered ? const Color(0xFFE81123) : Colors.transparent;
       iconColor = _isHovered
           ? Colors.white
-          : (widget.isDark ? Colors.white70 : const Color(0xFF6B7280));
+          : (widget.isDark ? Colors.white70 : AppColors.gray500);
     } else {
       buttonColor = _isHovered
           ? (widget.isDark
                 ? Colors.white12
                 : Colors.black.withValues(alpha: 0.05))
           : Colors.transparent;
-      iconColor = widget.isDark ? Colors.white70 : const Color(0xFF6B7280);
+      iconColor = widget.isDark ? Colors.white70 : AppColors.gray500;
     }
 
     return Tooltip(

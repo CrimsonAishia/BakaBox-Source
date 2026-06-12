@@ -26,7 +26,7 @@ class SettingsPageMobile extends StatelessWidget {
                   _buildSettingsItem(
                     context,
                     icon: MdiIcons.themeLightDark,
-                    iconColor: const Color(0xFF8B5CF6),
+                    iconColor: AppColors.violet500,
                     title: '外观设置',
                     subtitle: settingsState.currentThemeModeText,
                     onTap: () => _showThemeDialog(context),
@@ -35,7 +35,7 @@ class SettingsPageMobile extends StatelessWidget {
                   _buildSettingsItem(
                     context,
                     icon: MdiIcons.folderOutline,
-                    iconColor: const Color(0xFFEF4444),
+                    iconColor: AppColors.red500,
                     title: '存储管理',
                     subtitle: settingsState.cacheSize,
                     onTap: () => _showStorageDialog(context),
@@ -50,7 +50,7 @@ class SettingsPageMobile extends StatelessWidget {
                   _buildSettingsItem(
                     context,
                     icon: MdiIcons.update,
-                    iconColor: const Color(0xFF10B981),
+                    iconColor: AppColors.emerald500,
                     title: '检查更新',
                     subtitle: settingsState.appVersion.isNotEmpty
                         ? 'v${settingsState.appVersion}'
@@ -198,7 +198,7 @@ class SettingsPageMobile extends StatelessWidget {
       builder: (dialogContext) => AlertDialog(
         title: Row(
           children: [
-            Icon(MdiIcons.themeLightDark, color: const Color(0xFF8B5CF6)),
+            Icon(MdiIcons.themeLightDark, color: AppColors.violet500),
             const SizedBox(width: 8),
             const Text('外观设置'),
           ],
@@ -266,12 +266,12 @@ class SettingsPageMobile extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
-                ? const Color(0xFF8B5CF6)
+                ? AppColors.violet500
                 : theme.colorScheme.outline.withValues(alpha: 0.2),
             width: isSelected ? 2 : 1,
           ),
           color: isSelected
-              ? const Color(0xFF8B5CF6).withValues(alpha: 0.1)
+              ? AppColors.violet500.withValues(alpha: 0.1)
               : null,
         ),
         child: Row(
@@ -279,7 +279,7 @@ class SettingsPageMobile extends StatelessWidget {
             Icon(
               icon,
               color: isSelected
-                  ? const Color(0xFF8B5CF6)
+                  ? AppColors.violet500
                   : theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             const SizedBox(width: 12),
@@ -293,7 +293,7 @@ class SettingsPageMobile extends StatelessWidget {
                       fontWeight: isSelected
                           ? FontWeight.w600
                           : FontWeight.w500,
-                      color: isSelected ? const Color(0xFF8B5CF6) : null,
+                      color: isSelected ? AppColors.violet500 : null,
                     ),
                   ),
                   Text(
@@ -308,7 +308,7 @@ class SettingsPageMobile extends StatelessWidget {
             if (isSelected)
               Icon(
                 MdiIcons.checkCircle,
-                color: const Color(0xFF8B5CF6),
+                color: AppColors.violet500,
                 size: 20,
               ),
           ],
@@ -333,7 +333,7 @@ class SettingsPageMobile extends StatelessWidget {
         builder: (context, state) => AlertDialog(
           title: Row(
             children: [
-              Icon(MdiIcons.folderOutline, color: const Color(0xFFEF4444)),
+              Icon(MdiIcons.folderOutline, color: AppColors.red500),
               const SizedBox(width: 8),
               const Text('存储管理'),
               const Spacer(),
@@ -519,7 +519,7 @@ class SettingsPageMobile extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: item.isClearing
                             ? theme.colorScheme.outline.withValues(alpha: 0.1)
-                            : const Color(0xFFEF4444).withValues(alpha: 0.1),
+                            : AppColors.red500.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -529,7 +529,7 @@ class SettingsPageMobile extends StatelessWidget {
                               ? theme.colorScheme.onSurface.withValues(
                                   alpha: 0.3,
                                 )
-                              : const Color(0xFFEF4444),
+                              : AppColors.red500,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -560,13 +560,13 @@ class SettingsPageMobile extends StatelessWidget {
   Color _mobileCacheIconColor(MobileCacheType type) {
     switch (type) {
       case MobileCacheType.serverImages:
-        return const Color(0xFF3B82F6);
+        return AppColors.blue500;
       case MobileCacheType.serverData:
-        return const Color(0xFFF59E0B);
+        return AppColors.amber500;
       case MobileCacheType.logs:
-        return const Color(0xFF6B7280);
+        return AppColors.gray500;
       case MobileCacheType.lobbyImages:
-        return const Color(0xFF10B981);
+        return AppColors.emerald500;
     }
   }
 

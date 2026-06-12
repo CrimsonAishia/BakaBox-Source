@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 设置项布局组件（用于游戏设置等）
 class SettingsItem extends StatelessWidget {
@@ -23,7 +24,7 @@ class SettingsItem extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFF5F5F5),
+            color: isDark ? AppColors.slate700 : const Color(0xFFF5F5F5),
             width: 1,
           ),
         ),
@@ -102,12 +103,12 @@ class AppSettingItem extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: isDark
-                ? [const Color(0xFF334155), const Color(0xFF1E293B)]
-                : [const Color(0xFFFAFBFC), const Color(0xFFF8FAFC)],
+                ? [AppColors.slate700, AppColors.slate800]
+                : [const Color(0xFFFAFBFC), AppColors.slate50],
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB),
+            color: isDark ? AppColors.slate600 : AppColors.gray200,
           ),
           boxShadow: [
             BoxShadow(
@@ -129,7 +130,7 @@ class AppSettingItem extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : const Color(0xFF1F2937),
+                      color: isDark ? Colors.white : AppColors.gray800,
                       letterSpacing: -0.2,
                     ),
                   ),
@@ -138,7 +139,7 @@ class AppSettingItem extends StatelessWidget {
                     description,
                     style: TextStyle(
                       fontSize: 13,
-                      color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                      color: isDark ? Colors.white60 : AppColors.gray500,
                       height: 1.4,
                     ),
                   ),

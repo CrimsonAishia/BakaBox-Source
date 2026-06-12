@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/bloc/map_subscription/map_subscription_bloc.dart';
 import '../../core/services/tts_service.dart';
 import '../../core/utils/toast_utils.dart';
+import '../../core/constants/app_colors.dart';
 
 /// TTS 模型管理弹窗
 ///
@@ -102,12 +103,12 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+            color: AppColors.indigo500.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Icon(
             Icons.record_voice_over_rounded,
-            color: Color(0xFF6366F1),
+            color: AppColors.indigo500,
             size: 20,
           ),
         ),
@@ -120,7 +121,7 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : const Color(0xFF1F2937),
+                color: isDark ? Colors.white : AppColors.gray800,
               ),
             ),
             const SizedBox(height: 2),
@@ -128,7 +129,7 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
               '管理语音合成模型，用于地图订阅提醒',
               style: TextStyle(
                 fontSize: 12,
-                color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                color: isDark ? Colors.white38 : AppColors.gray400,
               ),
             ),
           ],
@@ -204,7 +205,7 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
                         height: 20,
                         margin: const EdgeInsets.only(right: 10),
                         decoration: const BoxDecoration(
-                          color: Color(0xFF6366F1),
+                          color: AppColors.indigo500,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -227,7 +228,7 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
                                   fontWeight: FontWeight.w500,
                                   color: isDark
                                       ? Colors.white
-                                      : const Color(0xFF1F2937),
+                                      : AppColors.gray800,
                                 ),
                               ),
                               // 已下载标记
@@ -236,7 +237,7 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
                                 const Icon(
                                   Icons.check_circle_rounded,
                                   size: 14,
-                                  color: Color(0xFF10B981),
+                                  color: AppColors.emerald500,
                                 ),
                               ],
                             ],
@@ -248,7 +249,7 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
                               fontSize: 12,
                               color: isDark
                                   ? Colors.white38
-                                  : const Color(0xFF9CA3AF),
+                                  : AppColors.gray400,
                             ),
                           ),
                         ],
@@ -433,8 +434,8 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
             value: isExtracting ? null : state.ttsDownloadProgress,
             backgroundColor: isDark
                 ? Colors.white.withValues(alpha: 0.1)
-                : const Color(0xFFE5E7EB),
-            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                : AppColors.gray200,
+            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.indigo500),
             minHeight: 4,
           ),
         ),
@@ -443,7 +444,7 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
           isExtracting ? '解压中...' : '下载中... $percent%',
           style: TextStyle(
             fontSize: 11,
-            color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+            color: isDark ? Colors.white38 : AppColors.gray400,
           ),
         ),
       ],
@@ -459,7 +460,7 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
         title: Text(
           '删除模型',
           style: TextStyle(
-            color: isDark ? Colors.white : const Color(0xFF1F2937),
+            color: isDark ? Colors.white : AppColors.gray800,
           ),
         ),
         content: Text(
@@ -474,7 +475,7 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
             child: Text(
               '取消',
               style: TextStyle(
-                color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                color: isDark ? Colors.white54 : AppColors.gray500,
               ),
             ),
           ),
@@ -520,7 +521,7 @@ class _TtsDownloadDialogState extends State<TtsDownloadDialog> {
                 : '请下载一个模型以启用语音提醒',
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+              color: isDark ? Colors.white38 : AppColors.gray400,
             ),
           ),
         ),
@@ -572,26 +573,26 @@ class _HoverContainerState extends State<_HoverContainer> {
           decoration: BoxDecoration(
             color: widget.isSelected
                 ? (widget.isDark
-                      ? const Color(0xFF6366F1).withValues(alpha: 0.12)
-                      : const Color(0xFF6366F1).withValues(alpha: 0.06))
+                      ? AppColors.indigo500.withValues(alpha: 0.12)
+                      : AppColors.indigo500.withValues(alpha: 0.06))
                 : _isHovered
                 ? (widget.isDark
                       ? Colors.white.withValues(alpha: 0.08)
-                      : const Color(0xFFF3F4F6))
+                      : AppColors.gray100)
                 : (widget.isDark
                       ? Colors.white.withValues(alpha: 0.04)
-                      : const Color(0xFFF9FAFB)),
+                      : AppColors.gray50),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: widget.isSelected
-                  ? const Color(0xFF6366F1).withValues(alpha: 0.4)
+                  ? AppColors.indigo500.withValues(alpha: 0.4)
                   : _isHovered
                   ? (widget.isDark
                         ? Colors.white.withValues(alpha: 0.15)
-                        : const Color(0xFFD1D5DB))
+                        : AppColors.gray300)
                   : (widget.isDark
                         ? Colors.white.withValues(alpha: 0.08)
-                        : const Color(0xFFE5E7EB)),
+                        : AppColors.gray200),
               width: widget.isSelected ? 1.5 : 1,
             ),
           ),
@@ -637,8 +638,8 @@ class _HoverButtonState extends State<_HoverButton> {
     final baseColor = widget.isDestructive
         ? Colors.redAccent
         : widget.isAccent
-        ? const Color(0xFF10B981) // 绿色强调色
-        : const Color(0xFF6366F1);
+        ? AppColors.emerald500 // 绿色强调色
+        : AppColors.indigo500;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -654,7 +655,7 @@ class _HoverButtonState extends State<_HoverButton> {
                 ? (_isHovered && isEnabled
                       ? (widget.isDark
                             ? Colors.white.withValues(alpha: 0.08)
-                            : const Color(0xFFF3F4F6))
+                            : AppColors.gray100)
                       : Colors.transparent)
                 : (_isHovered && isEnabled
                       ? baseColor.withValues(alpha: 0.2)
@@ -664,7 +665,7 @@ class _HoverButtonState extends State<_HoverButton> {
                 ? Border.all(
                     color: widget.isDark
                         ? Colors.white.withValues(alpha: 0.2)
-                        : const Color(0xFFD1D5DB),
+                        : AppColors.gray300,
                   )
                 : null,
           ),
@@ -683,7 +684,7 @@ class _HoverButtonState extends State<_HoverButton> {
                             : baseColor)
                       : (widget.isDark
                             ? Colors.white24
-                            : const Color(0xFFD1D5DB)),
+                            : AppColors.gray300),
                 ),
                 const SizedBox(width: 4),
               ],
@@ -700,7 +701,7 @@ class _HoverButtonState extends State<_HoverButton> {
                             : baseColor)
                       : (widget.isDark
                             ? Colors.white24
-                            : const Color(0xFFD1D5DB)),
+                            : AppColors.gray300),
                 ),
               ),
             ],
@@ -739,7 +740,7 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
     final isEnabled = widget.onPressed != null;
     final baseColor = widget.isDestructive
         ? Colors.redAccent
-        : (widget.isDark ? Colors.white54 : const Color(0xFF9CA3AF));
+        : (widget.isDark ? Colors.white54 : AppColors.gray400);
     final hoverColor = widget.isDestructive
         ? Colors.redAccent
         : (widget.isDark ? Colors.white : const Color(0xFF4B5563));
@@ -759,7 +760,7 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
                       ? Colors.redAccent.withValues(alpha: 0.1)
                       : (widget.isDark
                             ? Colors.white.withValues(alpha: 0.1)
-                            : const Color(0xFFF3F4F6)))
+                            : AppColors.gray100))
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(6),
           ),
@@ -768,7 +769,7 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
             size: 18,
             color: isEnabled
                 ? (_isHovered ? hoverColor : baseColor)
-                : (widget.isDark ? Colors.white24 : const Color(0xFFD1D5DB)),
+                : (widget.isDark ? Colors.white24 : AppColors.gray300),
           ),
         ),
       ),

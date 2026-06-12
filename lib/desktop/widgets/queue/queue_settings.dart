@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 import '../../../core/utils/server_item_utils.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 挤服设置面板
 class QueueSettings extends StatelessWidget {
@@ -292,7 +293,7 @@ class QueueSettings extends StatelessWidget {
                         ],
                       ),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                        color: isDark ? AppColors.slate800 : Colors.white,
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
@@ -386,7 +387,7 @@ class QueueSettings extends StatelessWidget {
                         ],
                       ),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                        color: isDark ? AppColors.slate800 : Colors.white,
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
@@ -696,7 +697,7 @@ class QueueSettings extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: isDark
-                                ? const Color(0xFF1E293B)
+                                ? AppColors.slate800
                                 : Colors.white,
                             borderRadius: BorderRadius.circular(8),
                             boxShadow: [

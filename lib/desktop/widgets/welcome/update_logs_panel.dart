@@ -47,7 +47,7 @@ class UpdateLogsPanel extends StatelessWidget {
                       Icon(
                         MdiIcons.update,
                         size: 16,
-                        color: const Color(0xFF3B82F6),
+                        color: AppColors.blue500,
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -57,7 +57,7 @@ class UpdateLogsPanel extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                           color: isDark
                               ? Colors.white
-                              : const Color(0xFF1E293B),
+                              : AppColors.slate800,
                         ),
                       ),
                       const Spacer(),
@@ -69,7 +69,7 @@ class UpdateLogsPanel extends StatelessWidget {
                             strokeWidth: 2,
                             color: isDark
                                 ? Colors.white.withValues(alpha: 0.5)
-                                : const Color(0xFF94A3B8),
+                                : AppColors.slate400,
                           ),
                         ),
                     ],
@@ -120,7 +120,7 @@ class UpdateLogsPanel extends StatelessWidget {
           fontSize: 13,
           color: isDark
               ? Colors.white.withValues(alpha: 0.4)
-              : const Color(0xFF94A3B8),
+              : AppColors.slate400,
         ),
       ),
     );
@@ -161,7 +161,7 @@ class _UpdateLogItemState extends State<_UpdateLogItem> {
         .replaceAll(RegExp(r'<[^>]*>'), '')
         .replaceAll(RegExp(r'&[a-z]+;'), ' ')
         .trim();
-    final accentColor = const Color(0xFF3B82F6);
+    final accentColor = AppColors.blue500;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -222,7 +222,7 @@ class _UpdateLogItemState extends State<_UpdateLogItem> {
                         fontWeight: FontWeight.w500,
                         color: widget.isDark
                             ? Colors.white.withValues(alpha: 0.85)
-                            : const Color(0xFF334155),
+                            : AppColors.slate700,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -276,7 +276,7 @@ class _UpdateLogDetailDialog extends StatelessWidget {
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      backgroundColor: isDark ? AppColors.slate800 : Colors.white,
       child: Container(
         width: 560,
         constraints: const BoxConstraints(maxHeight: 580),
@@ -287,7 +287,7 @@ class _UpdateLogDetailDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
               decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6).withValues(alpha: 0.06),
+                color: AppColors.blue500.withValues(alpha: 0.06),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(16),
                 ),
@@ -298,13 +298,13 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+                      color: AppColors.blue500.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(
                       Icons.update,
                       size: 18,
-                      color: Color(0xFF3B82F6),
+                      color: AppColors.blue500,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -319,7 +319,7 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                             color: isDark
                                 ? Colors.white
-                                : const Color(0xFF1E293B),
+                                : AppColors.slate800,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -329,7 +329,7 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                             fontSize: 12,
                             color: isDark
                                 ? Colors.white.withValues(alpha: 0.4)
-                                : const Color(0xFF94A3B8),
+                                : AppColors.slate400,
                           ),
                         ),
                       ],
@@ -340,7 +340,7 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                     icon: Icon(
                       Icons.close,
                       size: 18,
-                      color: isDark ? Colors.white54 : const Color(0xFF9CA3AF),
+                      color: isDark ? Colors.white54 : AppColors.gray400,
                     ),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(
@@ -361,7 +361,7 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                         style: TextStyle(
                           color: isDark
                               ? Colors.white54
-                              : const Color(0xFF9CA3AF),
+                              : AppColors.gray400,
                           fontSize: 14,
                         ),
                       ),
@@ -383,8 +383,8 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                             fontSize: FontSize(14),
                             lineHeight: const LineHeight(1.7),
                             color: isDark
-                                ? const Color(0xFFE2E8F0)
-                                : const Color(0xFF374151),
+                                ? AppColors.slate200
+                                : AppColors.gray700,
                           ),
                           'p': Style(margin: Margins.only(bottom: 12)),
                           'h1': Style(
@@ -392,7 +392,7 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                             color: isDark
                                 ? Colors.white
-                                : const Color(0xFF1F2937),
+                                : AppColors.gray800,
                             margin: Margins.only(top: 16, bottom: 12),
                           ),
                           'h2': Style(
@@ -400,7 +400,7 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                             color: isDark
                                 ? Colors.white
-                                : const Color(0xFF1F2937),
+                                : AppColors.gray800,
                             margin: Margins.only(top: 14, bottom: 10),
                           ),
                           'h3': Style(
@@ -408,7 +408,7 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                             color: isDark
                                 ? Colors.white
-                                : const Color(0xFF1F2937),
+                                : AppColors.gray800,
                             margin: Margins.only(top: 12, bottom: 8),
                           ),
                           'ul': Style(
@@ -427,22 +427,22 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                             color: isDark
                                 ? Colors.white
-                                : const Color(0xFF1F2937),
+                                : AppColors.gray800,
                           ),
                           'em': Style(
                             fontStyle: FontStyle.italic,
                             color: isDark
-                                ? const Color(0xFFCBD5E1)
-                                : const Color(0xFF6B7280),
+                                ? AppColors.slate300
+                                : AppColors.gray500,
                           ),
                           'a': Style(
-                            color: const Color(0xFF3B82F6),
+                            color: AppColors.blue500,
                             textDecoration: TextDecoration.none,
                           ),
                           'code': Style(
                             backgroundColor: isDark
-                                ? const Color(0xFF334155)
-                                : const Color(0xFFF3F4F6),
+                                ? AppColors.slate700
+                                : AppColors.gray100,
                             color: isDark
                                 ? const Color(0xFFFCA5A5)
                                 : const Color(0xFFE74C3C),
@@ -454,7 +454,7 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                           ),
                           'pre': Style(
                             backgroundColor: isDark
-                                ? const Color(0xFF334155)
+                                ? AppColors.slate700
                                 : const Color(0xFFF8F9FA),
                             padding: HtmlPaddings.all(16),
                             margin: Margins.symmetric(vertical: 12),
@@ -463,16 +463,16 @@ class _UpdateLogDetailDialog extends StatelessWidget {
                             border: Border(
                               left: BorderSide(
                                 color: isDark
-                                    ? const Color(0xFF64748B)
-                                    : const Color(0xFFD1D5DB),
+                                    ? AppColors.slate500
+                                    : AppColors.gray300,
                                 width: 4,
                               ),
                             ),
                             padding: HtmlPaddings.only(left: 16),
                             margin: Margins.symmetric(vertical: 12),
                             color: isDark
-                                ? const Color(0xFFCBD5E1)
-                                : const Color(0xFF6B7280),
+                                ? AppColors.slate300
+                                : AppColors.gray500,
                             fontStyle: FontStyle.italic,
                           ),
                         },

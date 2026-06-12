@@ -6,6 +6,7 @@ import '../../../../core/bloc/key_binding/key_binding_event.dart';
 import '../../../../core/bloc/key_binding/key_binding_state.dart';
 import '../../../../core/models/key_config_models.dart';
 import '../components/common_widgets.dart' as common;
+import '../../../../core/constants/app_colors.dart';
 
 /// Autoexec 视图
 ///
@@ -45,7 +46,7 @@ class _AutoexecViewState extends State<AutoexecView> {
             icon: MdiIcons.folderAlertOutline,
             title: '游戏路径未配置',
             desc: '请先在设置中配置 CS2 游戏路径',
-            iconColor: const Color(0xFFf59e0b),
+            iconColor: AppColors.amber500,
           );
         }
 
@@ -97,7 +98,7 @@ class _AutoexecViewState extends State<AutoexecView> {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: isDark ? const Color(0xFF475569) : Colors.grey[200]!,
+            color: isDark ? AppColors.slate600 : Colors.grey[200]!,
           ),
         ),
       ),
@@ -106,7 +107,7 @@ class _AutoexecViewState extends State<AutoexecView> {
           Icon(
             MdiIcons.fileCodeOutline,
             size: 20,
-            color: const Color(0xFF0080FF),
+            color: AppColors.primary,
           ),
           const SizedBox(width: 8),
           Text(
@@ -176,10 +177,10 @@ class _AutoexecViewState extends State<AutoexecView> {
     return Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF334155) : Colors.grey[50],
+        color: isDark ? AppColors.slate700 : Colors.grey[50],
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isDark ? const Color(0xFF475569) : Colors.grey[200]!,
+          color: isDark ? AppColors.slate600 : Colors.grey[200]!,
         ),
       ),
       child: TextField(
@@ -189,7 +190,7 @@ class _AutoexecViewState extends State<AutoexecView> {
         style: TextStyle(
           fontSize: 12,
           fontFamily: 'JetBrains Mono, monospace',
-          color: isDark ? const Color(0xFFcdd6f4) : const Color(0xFF374151),
+          color: isDark ? const Color(0xFFcdd6f4) : AppColors.gray700,
           height: 1.6,
         ),
         decoration: const InputDecoration(
@@ -209,10 +210,10 @@ class _AutoexecViewState extends State<AutoexecView> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF334155) : Colors.grey[50],
+        color: isDark ? AppColors.slate700 : Colors.grey[50],
         border: Border(
           top: BorderSide(
-            color: isDark ? const Color(0xFF475569) : Colors.grey[200]!,
+            color: isDark ? AppColors.slate600 : Colors.grey[200]!,
           ),
         ),
       ),
@@ -272,7 +273,7 @@ class _AutoexecViewState extends State<AutoexecView> {
               );
             },
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFef4444),
+              backgroundColor: AppColors.red500,
             ),
             child: const Text('删除'),
           ),
@@ -300,10 +301,10 @@ class _AppliedCardState extends State<_AppliedCard> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF334155) : Colors.grey[50],
+        color: isDark ? AppColors.slate700 : Colors.grey[50],
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isDark ? const Color(0xFF475569) : Colors.grey[200]!,
+          color: isDark ? AppColors.slate600 : Colors.grey[200]!,
         ),
       ),
       child: Column(
@@ -318,7 +319,7 @@ class _AppliedCardState extends State<_AppliedCard> {
                   Icon(
                     MdiIcons.checkCircle,
                     size: 18,
-                    color: const Color(0xFF10b981),
+                    color: AppColors.emerald500,
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -334,7 +335,7 @@ class _AppliedCardState extends State<_AppliedCard> {
                   if (widget.config.keyBindings.isNotEmpty)
                     common.Badge(
                       label: widget.config.keyBindings.values.join(' / '),
-                      color: const Color(0xFF0080FF),
+                      color: AppColors.primary,
                     ),
                   const SizedBox(width: 8),
                   Icon(

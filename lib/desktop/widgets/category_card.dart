@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/models/server_models.dart';
 import '../../core/utils/category_utils.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 服务器分类卡片组件
 /// 显示分类图标、名称、服务器数量和在线人数
@@ -40,14 +41,14 @@ class CategoryCard extends StatelessWidget {
       curve: Curves.easeInOut,
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF334155) : Colors.white,
+        color: isDark ? AppColors.slate700 : Colors.white,
         borderRadius: BorderRadius.circular(8),
         border: isSelected
             ? Border.all(color: categoryColor, width: 2)
             : Border.all(
                 color: isDark
-                    ? const Color(0xFF475569)
-                    : const Color(0xFFE5E7EB),
+                    ? AppColors.slate600
+                    : AppColors.gray200,
                 width: 1,
               ),
         boxShadow: isSelected
@@ -72,8 +73,8 @@ class CategoryCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           onTap: onTap,
           hoverColor: isDark
-              ? const Color(0xFF475569)
-              : const Color(0xFFF3F4F6),
+              ? AppColors.slate600
+              : AppColors.gray100,
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Row(
@@ -116,7 +117,7 @@ class CategoryCard extends StatelessWidget {
           child: Icon(
             Icons.edit_outlined,
             size: 18,
-            color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+            color: isDark ? Colors.white54 : AppColors.gray500,
           ),
         ),
       ),
@@ -135,7 +136,7 @@ class CategoryCard extends StatelessWidget {
           child: const Icon(
             Icons.delete_outline,
             size: 18,
-            color: Color(0xFFEF4444),
+            color: AppColors.red500,
           ),
         ),
       ),
@@ -160,7 +161,7 @@ class CategoryCard extends StatelessWidget {
               onDelete?.call();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
+              backgroundColor: AppColors.red500,
               foregroundColor: Colors.white,
             ),
             child: const Text('删除'),
@@ -179,7 +180,7 @@ class CategoryCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: category.isFromApi
             ? const LinearGradient(
-                colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6)],
+                colors: [AppColors.blue500, AppColors.violet500],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
@@ -220,7 +221,7 @@ class CategoryCard extends StatelessWidget {
           '${category.serverList.length}个服务器',
           style: TextStyle(
             fontSize: 13,
-            color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+            color: isDark ? Colors.white54 : AppColors.gray500,
           ),
         ),
       ],
@@ -234,7 +235,7 @@ class CategoryCard extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
-          color: const Color(0xFF9CA3AF).withValues(alpha: 0.1),
+          color: AppColors.gray400.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(3),
         ),
         child: const SizedBox(
@@ -248,7 +249,7 @@ class CategoryCard extends StatelessWidget {
                 height: 12,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF9CA3AF)),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.gray400),
                 ),
               ),
               SizedBox(width: 4),
@@ -256,7 +257,7 @@ class CategoryCard extends StatelessWidget {
                 '加载中',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF9CA3AF),
+                  color: AppColors.gray400,
                   fontSize: 11,
                 ),
               ),
@@ -273,14 +274,14 @@ class CategoryCard extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
-          color: const Color(0xFF9CA3AF).withValues(alpha: 0.1),
+          color: AppColors.gray400.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(3),
         ),
         child: const Text(
           '— 在线',
           style: TextStyle(
             fontWeight: FontWeight.w600,
-            color: Color(0xFF9CA3AF),
+            color: AppColors.gray400,
             fontSize: 13,
           ),
         ),
@@ -291,8 +292,8 @@ class CategoryCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: isZeroOnline
-            ? const Color(0xFF9CA3AF).withValues(alpha: 0.1)
-            : const Color(0xFF10B981).withValues(alpha: 0.1),
+            ? AppColors.gray400.withValues(alpha: 0.1)
+            : AppColors.emerald500.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(3),
       ),
       child: Text(
@@ -300,8 +301,8 @@ class CategoryCard extends StatelessWidget {
         style: TextStyle(
           fontWeight: FontWeight.w600,
           color: isZeroOnline
-              ? const Color(0xFF9CA3AF)
-              : const Color(0xFF10B981),
+              ? AppColors.gray400
+              : AppColors.emerald500,
           fontSize: 13,
         ),
       ),

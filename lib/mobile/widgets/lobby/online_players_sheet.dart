@@ -91,7 +91,7 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
     return Container(
       height: MediaQuery.of(context).size.height * 0.7,
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A).withValues(alpha: 0.96),
+        color: AppColors.slate900.withValues(alpha: 0.96),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
@@ -223,7 +223,7 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF1D9BF0), Color(0xFF0B66C2)],
+                colors: [AppColors.lobbyBlue, Color(0xFF0B66C2)],
               ),
               borderRadius: BorderRadius.circular(6),
             ),
@@ -260,7 +260,7 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
                         child: CircularProgressIndicator(
                           strokeWidth: 1.5,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Color(0xFF38BDF8),
+                            AppColors.sky400,
                           ),
                         ),
                       ),
@@ -367,12 +367,12 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF1D9BF0).withValues(alpha: 0.25)
+              ? AppColors.lobbyBlue.withValues(alpha: 0.25)
               : Colors.white.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isSelected
-                ? const Color(0xFF1D9BF0).withValues(alpha: 0.5)
+                ? AppColors.lobbyBlue.withValues(alpha: 0.5)
                 : Colors.white.withValues(alpha: 0.08),
           ),
         ),
@@ -380,7 +380,7 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
           displayText,
           style: TextStyle(
             color: isSelected
-                ? const Color(0xFF1D9BF0)
+                ? AppColors.lobbyBlue
                 : Colors.white.withValues(alpha: 0.5),
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -408,7 +408,7 @@ class _PlayerTileMobile extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: user.isSelf
-              ? const Color(0xFF1D9BF0).withValues(alpha: 0.4)
+              ? AppColors.lobbyBlue.withValues(alpha: 0.4)
               : Colors.white.withValues(alpha: 0.05),
           width: 1,
         ),
@@ -479,16 +479,16 @@ class _PlayerTileMobile extends StatelessWidget {
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1D9BF0).withValues(alpha: 0.2),
+                      color: AppColors.lobbyBlue.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(4),
                       border: Border.all(
-                        color: const Color(0xFF1D9BF0).withValues(alpha: 0.4),
+                        color: AppColors.lobbyBlue.withValues(alpha: 0.4),
                       ),
                     ),
                     child: const Text(
                       '我',
                       style: TextStyle(
-                        color: Color(0xFF1D9BF0),
+                        color: AppColors.lobbyBlue,
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
                       ),
@@ -534,7 +534,7 @@ class _PlayerTileMobile extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(
           color: user.isSelf
-              ? const Color(0xFF1D9BF0)
+              ? AppColors.lobbyBlue
               : Colors.white.withValues(alpha: 0.1),
           width: user.isSelf ? 2 : 1,
         ),
@@ -547,7 +547,7 @@ class _PlayerTileMobile extends StatelessWidget {
     return CircleAvatar(
       radius: 20,
       backgroundColor: user.isSelf
-          ? const Color(0xFF1D9BF0).withValues(alpha: 0.3)
+          ? AppColors.lobbyBlue.withValues(alpha: 0.3)
           : Colors.white.withValues(alpha: 0.1),
       child: const Icon(Icons.person, size: 22, color: Colors.white54),
     );

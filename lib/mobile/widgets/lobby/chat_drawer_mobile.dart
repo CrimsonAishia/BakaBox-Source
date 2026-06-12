@@ -89,7 +89,7 @@ class _ChatBottomSheetMobileState extends State<ChatBottomSheetMobile> {
           maxHeight: maxHeight.clamp(200.0, screenHeight * 0.85),
         ),
         decoration: BoxDecoration(
-          color: const Color(0xFF0F172A).withValues(alpha: 0.92),
+          color: AppColors.slate900.withValues(alpha: 0.92),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
           border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
@@ -263,7 +263,7 @@ class _ChatBottomSheetMobileState extends State<ChatBottomSheetMobile> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.campaign, color: Color(0xFFFBBF24), size: 18),
+          const Icon(Icons.campaign, color: AppColors.amber400, size: 18),
           const SizedBox(width: 6),
           Expanded(
             child: RichText(
@@ -272,7 +272,7 @@ class _ChatBottomSheetMobileState extends State<ChatBottomSheetMobile> {
                   TextSpan(
                     text: '${message.displayName}: ',
                     style: const TextStyle(
-                      color: Color(0xFFFBBF24),
+                      color: AppColors.amber400,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
@@ -280,7 +280,7 @@ class _ChatBottomSheetMobileState extends State<ChatBottomSheetMobile> {
                   TextSpan(
                     text: message.content,
                     style: const TextStyle(
-                      color: Color(0xFFFBBF24),
+                      color: AppColors.amber400,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
@@ -353,7 +353,7 @@ class _ChatBottomSheetMobileState extends State<ChatBottomSheetMobile> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(
-                    color: Color(0xFF38BDF8),
+                    color: AppColors.sky400,
                     width: 1.5,
                   ),
                 ),
@@ -394,7 +394,7 @@ Color getMessageNameColor(LobbyMessage message) {
     case LobbyMessageType.system:
       return const Color(0xFFFFB74D); // 橙色
     case LobbyMessageType.broadcast:
-      return const Color(0xFFFBBF24); // 黄色
+      return AppColors.amber400; // 黄色
     case LobbyMessageType.user:
       return message.isAnonymous
           ? const Color(0xFFB0BEC5) // 灰蓝色

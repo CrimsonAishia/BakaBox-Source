@@ -10,6 +10,7 @@ import '../../core/bloc/daily_task/daily_task_state.dart';
 import '../../core/models/user_info.dart';
 import 'login_dialog.dart';
 import 'shake_dialog.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 用户登录框组件
 ///
@@ -79,8 +80,8 @@ class _UserLoginBoxState extends State<UserLoginBox> {
 /// 获取卡片背景色 - 与侧边栏协调
 Color _getCardColor(bool isDark) {
   return isDark
-      ? const Color(0xFF334155).withValues(alpha: 0.6) // slate-700
-      : const Color(0xFFF1F5F9); // slate-100
+      ? AppColors.slate700.withValues(alpha: 0.6) // slate-700
+      : AppColors.slate100; // slate-100
 }
 
 /// 获取卡片边框色
@@ -92,17 +93,17 @@ Color _getBorderColor(bool isDark) {
 
 /// 获取主文字颜色
 Color _getPrimaryTextColor(bool isDark) {
-  return isDark ? Colors.white : const Color(0xFF1F2937);
+  return isDark ? Colors.white : AppColors.gray800;
 }
 
 /// 获取次要文字颜色
 Color _getSecondaryTextColor(bool isDark) {
-  return isDark ? Colors.white60 : const Color(0xFF6B7280);
+  return isDark ? Colors.white60 : AppColors.gray500;
 }
 
 /// 获取头像背景色
 Color _getAvatarBgColor(bool isDark) {
-  return isDark ? const Color(0xFF475569) : const Color(0xFFE2E8F0);
+  return isDark ? AppColors.slate600 : AppColors.slate200;
 }
 
 /// 未登录视图 - 固定高度
@@ -154,7 +155,7 @@ class _LoginPromptView extends StatelessWidget {
                 });
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0080FF),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -481,7 +482,7 @@ class _ExpandedContent extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        backgroundColor: isDark ? AppColors.slate800 : Colors.white,
         title: Text(
           '解除关联',
           style: TextStyle(color: _getPrimaryTextColor(isDark)),
@@ -542,14 +543,14 @@ class _SteamRow extends StatelessWidget {
                 steamId,
                 style: TextStyle(
                   color: steamUrl != null
-                      ? const Color(0xFF0080FF)
+                      ? AppColors.primary
                       : _getSecondaryTextColor(isDark),
                   fontSize: 12,
                 ),
               ),
             ),
             if (steamUrl != null)
-              const Icon(Icons.open_in_new, size: 12, color: Color(0xFF0080FF)),
+              const Icon(Icons.open_in_new, size: 12, color: AppColors.primary),
           ],
         ),
       ),
@@ -616,7 +617,7 @@ class _ActionButton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = isDestructive
         ? Colors.red.shade400
-        : (isDark ? Colors.white70 : const Color(0xFF6B7280));
+        : (isDark ? Colors.white70 : AppColors.gray500);
 
     return SizedBox(
       height: 32,
@@ -644,7 +645,7 @@ class _CheckInButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = isDark ? Colors.white70 : const Color(0xFF6B7280);
+    final color = isDark ? Colors.white70 : AppColors.gray500;
 
     // 已签到 - 显示绿色完成状态和奖励金额
     if (state.hasCheckedIn) {
@@ -727,7 +728,7 @@ class _ShakeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = isDark ? Colors.white70 : const Color(0xFF6B7280);
+    final color = isDark ? Colors.white70 : AppColors.gray500;
 
     // 已摇过 - 显示绿色完成状态和奖励金额，仍可点击查看
     if (state.hasShaked) {

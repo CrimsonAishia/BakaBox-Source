@@ -8,6 +8,7 @@ import 'views/subscription_view.dart';
 import 'views/add_subscription_view.dart';
 import 'views/tts_settings_view.dart';
 import 'components/nav_item.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 导航项枚举
 enum MapSubscriptionNavItem { subscription, add, tts }
@@ -65,7 +66,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
                   thickness: 1,
                   color: isDark
                       ? Colors.white.withValues(alpha: 0.08)
-                      : const Color(0xFFE5E7EB),
+                      : AppColors.gray200,
                 ),
                 // 右侧内容区
                 Expanded(child: _buildContent(isDark, state)),
@@ -84,7 +85,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
       decoration: BoxDecoration(
         color: isDark
             ? Colors.white.withValues(alpha: 0.03)
-            : const Color(0xFFF9FAFB),
+            : AppColors.gray50,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(16),
           bottomLeft: Radius.circular(16),
@@ -100,7 +101,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
               children: [
                 const Icon(
                   Icons.star_rounded,
-                  color: Color(0xFFF59E0B),
+                  color: AppColors.amber500,
                   size: 22,
                 ),
                 const SizedBox(width: 8),
@@ -109,7 +110,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : const Color(0xFF1F2937),
+                    color: isDark ? Colors.white : AppColors.gray800,
                   ),
                 ),
               ],
@@ -155,12 +156,12 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
                           ? Icons.check_circle_rounded
                           : Icons.cancel_rounded),
                 statusColor: !state.isTtsModelDownloaded
-                    ? const Color(0xFFF59E0B)
+                    ? AppColors.amber500
                     : (state.isTtsEnabled
-                          ? const Color(0xFF10B981)
+                          ? AppColors.emerald500
                           : (isDark
                                 ? Colors.white38
-                                : const Color(0xFF9CA3AF))),
+                                : AppColors.gray400)),
                 isSelected: _selectedNav == MapSubscriptionNavItem.tts,
                 onTap: () => setState(() {
                   _selectedNav = MapSubscriptionNavItem.tts;
@@ -182,7 +183,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
                 style: TextButton.styleFrom(
                   foregroundColor: isDark
                       ? Colors.white54
-                      : const Color(0xFF6B7280),
+                      : AppColors.gray500,
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -213,7 +214,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+              color: isDark ? Colors.white38 : AppColors.gray400,
               letterSpacing: 0.5,
             ),
           ),
@@ -234,7 +235,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.08)
-              : const Color(0xFFE5E7EB),
+              : AppColors.gray200,
         ),
       ),
       child: Column(
@@ -246,7 +247,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
             label: '监控',
             tooltip: '开启后才会监控地图变化',
             value: state.isEnabled,
-            activeColor: const Color(0xFF10B981),
+            activeColor: AppColors.emerald500,
             onChanged: (v) => context.read<MapSubscriptionBloc>().add(
               MapSubscriptionToggleGlobal(enabled: v),
             ),
@@ -261,7 +262,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
             label: '通知',
             tooltip: '开启后才会弹出通知窗口',
             value: state.isNotificationEnabled,
-            activeColor: const Color(0xFF6366F1),
+            activeColor: AppColors.indigo500,
             onChanged: (v) => context.read<MapSubscriptionBloc>().add(
               MapSubscriptionToggleNotification(enabled: v),
             ),
@@ -278,7 +279,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
                 ? '开启后地图变更时会语音播报'
                 : '需要先下载 TTS 模型',
             value: state.isTtsEnabled,
-            activeColor: const Color(0xFFF59E0B),
+            activeColor: AppColors.amber500,
             enabled: state.isTtsModelDownloaded,
             onChanged: (v) => context.read<MapSubscriptionBloc>().add(
               MapSubscriptionToggleGlobalTts(enabled: v),
@@ -301,7 +302,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
     bool enabled = true,
   }) {
     final isDisabled = !enabled;
-    final disabledColor = isDark ? Colors.white24 : const Color(0xFFD1D5DB);
+    final disabledColor = isDark ? Colors.white24 : AppColors.gray300;
 
     return Tooltip(
       message: tooltip,
@@ -314,7 +315,7 @@ class _MapSubscriptionDialogState extends State<MapSubscriptionDialog> {
                 ? disabledColor
                 : (value
                       ? activeColor
-                      : (isDark ? Colors.white38 : const Color(0xFF9CA3AF))),
+                      : (isDark ? Colors.white38 : AppColors.gray400)),
           ),
           const SizedBox(width: 8),
           Expanded(

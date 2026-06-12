@@ -6,6 +6,7 @@ import '../../../../core/bloc/key_binding/key_binding_event.dart';
 import '../../../../core/bloc/key_binding/key_binding_state.dart';
 import '../../../../core/models/key_config_models.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/constants/app_colors.dart';
 
 /// 我的变更申请列表视图
 class ChangeRequestsView extends StatefulWidget {
@@ -41,8 +42,8 @@ class _ChangeRequestsViewState extends State<ChangeRequestsView> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFFF59E0B).withValues(alpha: 0.06),
-            isDark ? const Color(0xFF1E293B) : Colors.white,
+            AppColors.amber500.withValues(alpha: 0.06),
+            isDark ? AppColors.slate800 : Colors.white,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -53,13 +54,13 @@ class _ChangeRequestsViewState extends State<ChangeRequestsView> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+              color: AppColors.amber500.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               MdiIcons.clipboardTextClockOutline,
               size: 18,
-              color: const Color(0xFFF59E0B),
+              color: AppColors.amber500,
             ),
           ),
           const SizedBox(width: 12),
@@ -80,7 +81,7 @@ class _ChangeRequestsViewState extends State<ChangeRequestsView> {
                   '已通过配置的编辑/删除申请，等待管理员审核',
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark ? Colors.white54 : const Color(0xFF6b7280),
+                    color: isDark ? Colors.white54 : AppColors.gray500,
                   ),
                 ),
               ],
@@ -180,17 +181,17 @@ class _ChangeRequestCard extends StatelessWidget {
       statusLabel,
     ) = switch (request.auditStatus) {
       KeyConfigAuditStatus.pending => (
-        const Color(0xFFF59E0B),
+        AppColors.amber500,
         MdiIcons.clockOutline,
         '审核中',
       ),
       KeyConfigAuditStatus.approved => (
-        const Color(0xFF10b981),
+        AppColors.emerald500,
         MdiIcons.checkCircleOutline,
         '已通过',
       ),
       KeyConfigAuditStatus.rejected => (
-        const Color(0xFFEF4444),
+        AppColors.red500,
         MdiIcons.closeCircleOutline,
         '已拒绝',
       ),
@@ -199,10 +200,10 @@ class _ChangeRequestCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF334155) : Colors.grey[50],
+        color: isDark ? AppColors.slate700 : Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? const Color(0xFF475569) : Colors.grey[200]!,
+          color: isDark ? AppColors.slate600 : Colors.grey[200]!,
         ),
       ),
       child: Column(
@@ -221,8 +222,8 @@ class _ChangeRequestCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color:
                         (isEdit
-                                ? const Color(0xFF8b5cf6)
-                                : const Color(0xFFEF4444))
+                                ? AppColors.violet500
+                                : AppColors.red500)
                             .withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(5),
                   ),
@@ -235,8 +236,8 @@ class _ChangeRequestCard extends StatelessWidget {
                             : MdiIcons.deleteOutline,
                         size: 12,
                         color: isEdit
-                            ? const Color(0xFF8b5cf6)
-                            : const Color(0xFFEF4444),
+                            ? AppColors.violet500
+                            : AppColors.red500,
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -245,8 +246,8 @@ class _ChangeRequestCard extends StatelessWidget {
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: isEdit
-                              ? const Color(0xFF8b5cf6)
-                              : const Color(0xFFEF4444),
+                              ? AppColors.violet500
+                              : AppColors.red500,
                         ),
                       ),
                     ],
@@ -313,7 +314,7 @@ class _ChangeRequestCard extends StatelessWidget {
                     request.editReason,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isDark ? Colors.white60 : const Color(0xFF6b7280),
+                      color: isDark ? Colors.white60 : AppColors.gray500,
                       height: 1.4,
                     ),
                   ),
@@ -327,10 +328,10 @@ class _ChangeRequestCard extends StatelessWidget {
               margin: const EdgeInsets.fromLTRB(14, 0, 14, 10),
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFFEF4444).withValues(alpha: 0.05),
+                color: AppColors.red500.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+                  color: AppColors.red500.withValues(alpha: 0.2),
                 ),
               ),
               child: Row(
@@ -339,7 +340,7 @@ class _ChangeRequestCard extends StatelessWidget {
                   Icon(
                     MdiIcons.alertCircleOutline,
                     size: 13,
-                    color: const Color(0xFFEF4444),
+                    color: AppColors.red500,
                   ),
                   const SizedBox(width: 6),
                   Expanded(
@@ -347,7 +348,7 @@ class _ChangeRequestCard extends StatelessWidget {
                       '拒绝原因：${request.auditRemark}',
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Color(0xFFEF4444),
+                        color: AppColors.red500,
                         height: 1.4,
                       ),
                     ),
@@ -361,7 +362,7 @@ class _ChangeRequestCard extends StatelessWidget {
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(
-                  color: isDark ? const Color(0xFF475569) : Colors.grey[200]!,
+                  color: isDark ? AppColors.slate600 : Colors.grey[200]!,
                 ),
               ),
             ),

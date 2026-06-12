@@ -32,6 +32,7 @@ import '../../../core/bloc/guide_comment/guide_comment_event.dart';
 import 'community_guide/community_guide_format.dart';
 import 'guide_bottom_comment_composer.dart';
 import 'guide_comment_panel.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 攻略详情页
 ///
@@ -1053,7 +1054,7 @@ class _MapBannerHeroState extends State<_MapBannerHero> {
             borderRadius: BorderRadius.circular(GuideTokens.radius12),
             border: Border.all(
               color: _isHovered
-                  ? const Color(0xFF0080FF)
+                  ? AppColors.primary
                   : (isDark
                         ? Colors.white.withValues(alpha: 0.1)
                         : Colors.black.withValues(alpha: 0.08)),
@@ -1062,7 +1063,7 @@ class _MapBannerHeroState extends State<_MapBannerHero> {
             boxShadow: [
               if (_isHovered)
                 BoxShadow(
-                  color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                  color: AppColors.primary.withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 )

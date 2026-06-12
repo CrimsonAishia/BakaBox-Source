@@ -5,6 +5,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 
 import '../models/web_server_list_models.dart';
 import '../widgets/web_map_background.dart';
+import '../../core/constants/app_colors.dart';
 
 class WebMobileServerListItem extends StatefulWidget {
   final WebServerItem server;
@@ -155,7 +156,7 @@ class _WebMobileServerListItemState extends State<WebMobileServerListItem> {
     if (max <= 0) return const Color(0xFF4CAF50);
     final ratio = current / max;
     if (ratio < 0.5) return const Color(0xFF4CAF50);
-    if (ratio < 0.8) return const Color(0xFFFF9800);
+    if (ratio < 0.8) return AppColors.orange;
     return const Color(0xFFF44336);
   }
 
@@ -318,7 +319,7 @@ class _WebMobileServerListItemState extends State<WebMobileServerListItem> {
                       style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F2937),
+                        color: AppColors.gray800,
                       ),
                     ),
                   ],
@@ -378,17 +379,17 @@ class _WebMobileServerListItemState extends State<WebMobileServerListItem> {
       final Color iconColor;
 
       if (isUnknown) {
-        leftColor = const Color(0xFF9CA3AF);
-        rightColor = const Color(0xFF9CA3AF);
-        iconColor = const Color(0xFF9CA3AF);
+        leftColor = AppColors.gray400;
+        rightColor = AppColors.gray400;
+        iconColor = AppColors.gray400;
       } else if (isZombie) {
-        leftColor = const Color(0xFF22C55E);
-        rightColor = const Color(0xFFEF4444);
-        iconColor = const Color(0xFF6B7280);
+        leftColor = AppColors.green500;
+        rightColor = AppColors.red500;
+        iconColor = AppColors.gray500;
       } else {
-        leftColor = const Color(0xFF3B82F6);
+        leftColor = AppColors.blue500;
         rightColor = const Color(0xFFEAB308);
-        iconColor = const Color(0xFF6B7280);
+        iconColor = AppColors.gray500;
       }
 
       final leftLabel = isZombie ? '人类' : 'CT';
@@ -426,7 +427,7 @@ class _WebMobileServerListItemState extends State<WebMobileServerListItem> {
       style: const TextStyle(
         fontSize: 10,
         fontWeight: FontWeight.w600,
-        color: Color(0xFF1F2937),
+        color: AppColors.gray800,
       ),
     );
   }

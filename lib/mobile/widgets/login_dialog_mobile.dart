@@ -186,17 +186,17 @@ class _LoginDialogMobileState extends State<LoginDialogMobile> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+                        color: AppColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                          color: AppColors.primary.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
                         children: [
                           const Icon(
                             Icons.security,
-                            color: Color(0xFF0080FF),
+                            color: AppColors.primary,
                             size: 18,
                           ),
                           const SizedBox(width: 8),
@@ -307,7 +307,7 @@ class _LoginDialogMobileState extends State<LoginDialogMobile> {
                             ? null
                             : _handleLogin,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0080FF),
+                          backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
                           disabledBackgroundColor: const Color(
                             0xFF0080FF,

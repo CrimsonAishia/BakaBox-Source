@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/models/character_models.dart';
 import 'character_gallery_theme.dart';
 import 'character_common_widgets.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 技能/符卡卡片
 class SkillCard extends StatelessWidget {
@@ -52,7 +53,7 @@ class SkillCard extends StatelessWidget {
     final vermillion = CharacterGalleryTheme.getVermillion(context);
     return switch (type) {
       'ultimate' => CharacterGalleryTheme.getGold(context),
-      'passive' => const Color(0xFF4A7C59),
+      'passive' => AppColors.skillGreen,
       _ => vermillion,
     };
   }

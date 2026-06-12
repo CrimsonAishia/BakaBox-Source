@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 设置组标题组件
 class SettingsGroupTitle extends StatelessWidget {
@@ -26,13 +27,13 @@ class SettingsGroupTitle extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFF0080FF).withValues(alpha: 0.15),
-                    const Color(0xFF0080FF).withValues(alpha: 0.05),
+                    AppColors.primary.withValues(alpha: 0.15),
+                    AppColors.primary.withValues(alpha: 0.05),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, size: 20, color: const Color(0xFF0080FF)),
+              child: Icon(icon, size: 20, color: AppColors.primary),
             ),
             const SizedBox(width: 12),
           ],
@@ -45,7 +46,7 @@ class SettingsGroupTitle extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : const Color(0xFF1F2937),
+                    color: isDark ? Colors.white : AppColors.gray800,
                     letterSpacing: -0.5,
                     shadows: hasGlow
                         ? [
@@ -65,7 +66,7 @@ class SettingsGroupTitle extends StatelessWidget {
                   width: 40,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF0080FF), Color(0xFF00D4FF)],
+                      colors: [AppColors.primary, Color(0xFF00D4FF)],
                     ),
                     borderRadius: BorderRadius.circular(2),
                   ),
