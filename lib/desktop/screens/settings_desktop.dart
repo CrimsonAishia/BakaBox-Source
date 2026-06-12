@@ -71,8 +71,9 @@ class _SettingsDesktopState extends State<SettingsDesktop> {
             const SizedBox(height: 30),
             WeakNetworkSettings(settingsState: settingsState),
             const SizedBox(height: 30),
-            PrivacySettings(settingsState: settingsState),
-            const SizedBox(height: 30),
+            // TODO: 拉黑模块暂时隐藏，系统用不上
+            // PrivacySettings(settingsState: settingsState),
+            // const SizedBox(height: 30),
             CacheSettings(settingsState: settingsState),
             const SizedBox(height: 30),
             AboutSettings(settingsState: settingsState),
