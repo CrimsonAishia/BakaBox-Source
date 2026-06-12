@@ -44,6 +44,10 @@ class MapTagState extends Equatable {
   /// 当前地图名称
   final String? currentMapName;
 
+  /// 无反对票时达到显示门槛所需的最小赞成票数
+  /// 来自标签列表接口，用于面向用户的提示文案
+  final int? displayMinVotes;
+
   const MapTagState({
     this.tagList = const [],
     this.userTags = const [],
@@ -59,6 +63,7 @@ class MapTagState extends Equatable {
     this.cancelSuccess = false,
     this.error,
     this.currentMapName,
+    this.displayMinVotes,
   });
 
   /// 是否正在加载
@@ -105,6 +110,13 @@ class MapTagState extends Equatable {
     return vote?.hasVoted ?? false;
   }
 
+  /// 检查某个标签是否有票数（任何用户投的赞成/反对票）
+  bool hasAnyVotes(int tagId) {
+    final vote = getMapTagVoteByTagId(tagId);
+    if (vote == null) return false;
+    return (vote.upCount + vote.downCount) > 0;
+  }
+
   /// 检查某个标签是否有待审核的变更申请
   bool hasPendingChangeRequest(int tagId) {
     return myChangeRequests.any(
@@ -128,6 +140,7 @@ class MapTagState extends Equatable {
     String? error,
     bool clearError = false,
     String? currentMapName,
+    int? displayMinVotes,
   }) {
     return MapTagState(
       tagList: tagList ?? this.tagList,
@@ -144,6 +157,7 @@ class MapTagState extends Equatable {
       cancelSuccess: cancelSuccess ?? false,
       error: clearError ? null : (error ?? this.error),
       currentMapName: currentMapName ?? this.currentMapName,
+      displayMinVotes: displayMinVotes ?? this.displayMinVotes,
     );
   }
 
@@ -163,5 +177,6 @@ class MapTagState extends Equatable {
     cancelSuccess,
     error,
     currentMapName,
+    displayMinVotes,
   ];
 }

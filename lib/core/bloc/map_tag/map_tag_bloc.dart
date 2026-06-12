@@ -66,6 +66,7 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
           state.copyWith(
             mapTagVotes: response.items,
             isLoadingMapTagVotes: false,
+            displayMinVotes: response.displayMinVotes,
           ),
         );
       } else {

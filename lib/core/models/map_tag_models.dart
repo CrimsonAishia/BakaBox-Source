@@ -137,6 +137,14 @@ class MapTagVoteSimple extends Equatable {
   /// 反对票数
   final int downCount;
 
+  /// Wilson 认可度分数（后端计算，0.0~1.0）
+  /// 旧后端不返回时为 null
+  final double? score;
+
+  /// 是否已达标显示在服务器卡片上
+  /// 旧后端不返回时为 null
+  final bool? isDisplayed;
+
   /// 当前用户是否投了赞成票
   final bool? hasUpvoted;
 
@@ -151,12 +159,17 @@ class MapTagVoteSimple extends Equatable {
     required this.voteCount,
     required this.upCount,
     required this.downCount,
+    this.score,
+    this.isDisplayed,
     this.hasUpvoted,
     this.hasDownvoted,
   });
 
   /// 当前用户是否投过票
   bool get hasVoted => hasUpvoted == true || hasDownvoted == true;
+
+  /// 是否有票数（任何人投的赞成/反对票）
+  bool get hasAnyVotes => (upCount + downCount) > 0;
 
   factory MapTagVoteSimple.fromJson(Map<String, dynamic> json) =>
       _$MapTagVoteSimpleFromJson(json);
@@ -170,6 +183,8 @@ class MapTagVoteSimple extends Equatable {
     int? voteCount,
     int? upCount,
     int? downCount,
+    double? score,
+    bool? isDisplayed,
     bool? hasUpvoted,
     bool? hasDownvoted,
   }) {
@@ -181,6 +196,8 @@ class MapTagVoteSimple extends Equatable {
       voteCount: voteCount ?? this.voteCount,
       upCount: upCount ?? this.upCount,
       downCount: downCount ?? this.downCount,
+      score: score ?? this.score,
+      isDisplayed: isDisplayed ?? this.isDisplayed,
       hasUpvoted: hasUpvoted ?? this.hasUpvoted,
       hasDownvoted: hasDownvoted ?? this.hasDownvoted,
     );
@@ -195,6 +212,8 @@ class MapTagVoteSimple extends Equatable {
     voteCount,
     upCount,
     downCount,
+    score,
+    isDisplayed,
     hasUpvoted,
     hasDownvoted,
   ];
@@ -206,14 +225,33 @@ class MapTagListSimpleResponse extends Equatable {
   final String mapName;
   final List<MapTagVoteSimple> items;
 
-  const MapTagListSimpleResponse({required this.mapName, required this.items});
+  /// Wilson 显示门槛（后端返回，用于展示/调试）
+  /// 旧后端不返回时为 null
+  final double? displayThreshold;
+
+  /// 无反对票时达到显示门槛所需的最小赞成票数
+  /// 用于面向用户的提示文案（如"获得 N 票认可后显示"）
+  /// 旧后端不返回时为 null
+  final int? displayMinVotes;
+
+  const MapTagListSimpleResponse({
+    required this.mapName,
+    required this.items,
+    this.displayThreshold,
+    this.displayMinVotes,
+  });
 
   factory MapTagListSimpleResponse.fromJson(Map<String, dynamic> json) =>
       _$MapTagListSimpleResponseFromJson(json);
   Map<String, dynamic> toJson() => _$MapTagListSimpleResponseToJson(this);
 
   @override
-  List<Object?> get props => [mapName, items];
+  List<Object?> get props => [
+    mapName,
+    items,
+    displayThreshold,
+    displayMinVotes,
+  ];
 }
 
 /// 标签投票响应
