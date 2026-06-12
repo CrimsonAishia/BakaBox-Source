@@ -16,13 +16,13 @@ import '../../constants/app_colors.dart';
 ///
 /// 功能：
 /// - 渲染图片（按 width 比例、gridCol 横向定位）
-/// - 点击选中 → 顶部工具栏（对齐三键、宽度 +/-、替换、删除）
-/// - 双击大图预览
+/// - 编辑态：单击选中 → 顶部工具栏（对齐三键、宽度 +/-、替换、删除），双击大图预览
+/// - 只读态（详情页）：悬停高亮边框 + 阴影，单击大图预览
 ///
 /// 交互方式仅限「点击」：不支持拖拽移动、不支持鼠标拖拽缩放。
 /// 大小调整通过工具栏 +/- 按钮；对齐通过工具栏三键。
 ///
-/// [readOnly] 为 true 时仅渲染（详情页），不显示任何交互元素。
+/// [readOnly] 为 true 时仅渲染（详情页），不显示编辑工具栏。
 class ResizableImageEmbedBuilder extends EmbedBuilder {
   final bool readOnly;
 
@@ -324,6 +324,9 @@ class _ResizableImageWidgetState extends State<_ResizableImageWidget> {
           child: MouseRegion(
             onEnter: (_) => setState(() => _isHovering = true),
             onExit: (_) => setState(() => _isHovering = false),
+            cursor: widget.readOnly
+                ? SystemMouseCursors.click
+                : SystemMouseCursors.basic,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -356,47 +359,87 @@ class _ResizableImageWidgetState extends State<_ResizableImageWidget> {
   }
 
   Widget _buildImageBody(bool isDark, bool selected) {
+    final showHoverHighlight =
+        (selected || _isHovering) && (!widget.readOnly || _isHovering);
+
     final body = AnimatedContainer(
-      duration: const Duration(milliseconds: 120),
+      duration: const Duration(milliseconds: 150),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        border: (selected || _isHovering) && !widget.readOnly
+        border: showHoverHighlight
             ? Border.all(
-                color: selected
-                    ? AppColors.primary
-                    : AppColors.primary.withValues(alpha: 0.4),
-                width: selected ? 2 : 1,
+                color: AppColors.primary,
+                width: selected || _isHovering ? 2 : 1,
               )
             : Border.all(color: Colors.transparent, width: 2),
+        boxShadow: widget.readOnly && _isHovering
+            ? [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  spreadRadius: 1,
+                ),
+              ]
+            : null,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(6),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
+        child: Stack(
           children: [
-            _buildImage(isDark),
-            if (_effectiveData.caption.isNotEmpty) _buildCaption(isDark),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildImage(isDark),
+                if (_effectiveData.caption.isNotEmpty) _buildCaption(isDark),
+              ],
+            ),
+            // 只读模式下 hover 时显示的「点击预览」遮罩提示
+            if (widget.readOnly)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 150),
+                    opacity: _isHovering ? 1.0 : 0.0,
+                    child: _buildPreviewHoverOverlay(),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
 
     if (widget.readOnly) {
-      // 只读：仅双击预览
+      // 只读：单击预览（光标已由外层 MouseRegion 设置为 click）
       return GestureDetector(
-        onDoubleTap: _handleDoubleTap,
+        behavior: HitTestBehavior.opaque,
+        onTap: _handleDoubleTap,
         child: body,
       );
     }
 
-    // 可编辑：仅点击选中、双击预览（不支持任何拖拽）
+    // 可编辑：单击选中、双击预览（不支持任何拖拽）
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: _handleTap,
         onDoubleTap: _handleDoubleTap,
         child: body,
+      ),
+    );
+  }
+
+  /// 只读态下 hover 时显示的「点击预览」遮罩（参考 _FileIdImage 风格）
+  Widget _buildPreviewHoverOverlay() {
+    return Container(
+      color: Colors.black.withValues(alpha: 0.3),
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.zoom_in,
+        size: 32,
+        color: Colors.white.withValues(alpha: 0.9),
       ),
     );
   }
