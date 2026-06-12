@@ -365,7 +365,7 @@ class WarmupUsersService {
     _isConnecting = false;
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
-    _socketSubscription?.cancel();
+    unawaited(_socketSubscription?.cancel());
     _socketSubscription = null;
     _webSocket = null;
   }
@@ -486,8 +486,8 @@ class WarmupUsersService {
     _shouldReconnect = false;
     _reconnectTimer?.cancel();
     _heartbeatTimer?.cancel();
-    _socketSubscription?.cancel();
-    _webSocket?.close();
-    _eventController.close();
+    unawaited(_socketSubscription?.cancel());
+    unawaited(_webSocket?.close());
+    unawaited(_eventController.close());
   }
 }
