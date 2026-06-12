@@ -7,10 +7,10 @@ import 'user_login_box.dart';
 /// 桌面端导航栏组件
 ///
 /// 提供以下功能：
-/// - 显示带图标的导航项 (Requirements 9.1)
-/// - 点击导航项切换页面并高亮当前项 (Requirements 9.2)
-/// - 页面切换时播放平滑过渡动画 (Requirements 9.3)
-/// - 底部显示用户登录区域 (Requirements 9.4)
+/// - 显示带图标的导航项
+/// - 点击导航项切换页面并高亮当前项
+/// - 页面切换时播放平滑过渡动画
+/// - 底部显示用户登录区域
 /// - 底部显示问题反馈入口
 class DesktopNavigation extends StatelessWidget {
   /// 当前选中的导航项索引
@@ -97,7 +97,6 @@ class DesktopNavigation extends StatelessWidget {
 
   /// 构建导航项列表
   ///
-  /// 实现 Requirements 9.1 和 9.2：
   /// - 显示带图标的导航项
   /// - 点击时切换页面并高亮当前项
   Widget _buildNavigationItems(ThemeData theme, bool isDark) {
@@ -124,7 +123,6 @@ class DesktopNavigation extends StatelessWidget {
 
   /// 构建用户登录区域
   ///
-  /// 实现 Requirements 9.4：在底部显示用户登录区域
   Widget _buildLoginArea(ThemeData theme, bool isDark) {
     return Container(
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -215,7 +213,7 @@ class DesktopNavigation extends StatelessWidget {
 
 /// 单个导航项组件
 ///
-/// 实现平滑的过渡动画 (Requirements 9.3)
+/// 实现平滑的过渡动画
 class _NavigationItemWidget extends StatelessWidget {
   final NavigationItem item;
   final bool isSelected;

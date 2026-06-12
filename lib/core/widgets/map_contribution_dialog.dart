@@ -1329,7 +1329,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   }
 
   /// 构建空状态
-  /// Requirements: 5.3
   Widget _buildEmptyState(bool isDark) {
     final secondaryTextColor = isDark
         ? Colors.white54
@@ -1364,7 +1363,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   }
 
   /// 构建贡献列表
-  /// Requirements: 5.1
   Widget _buildContributionList(
     List<MapContribution> contributions,
     bool isDark,
@@ -1422,7 +1420,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   }
 
   /// 构建贡献项
-  /// Requirements: 4.2, 5.2, 6.2, 6.3
   Widget _buildContributionItem(
     MapContribution contribution,
     int index,
@@ -2349,7 +2346,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   }
 
   /// 构建贡献者头像
-  /// Requirements: 4.2, 5.2
   Widget _buildContributorAvatar(
     ContributorInfo contributor, {
     double size = 36,
@@ -2464,7 +2460,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   }
 
   /// 构建投票按钮组（赞成/反对）
-  /// Requirements: 3.1, 4.2, 5.2
   /// 系统数据（isSystem=true）不可投票
   /// 未审核通过的贡献不可投票
   Widget _buildVoteButton(MapContribution contribution, bool isDark) {
@@ -2860,7 +2855,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   // ========== 事件处理 ==========
 
   /// 检查登录状态
-  /// Requirements: 1.1, 2.1, 3.1
   bool _checkLogin() {
     final authState = context.read<AuthBloc>().state;
     if (!authState.isAuthenticated) {
@@ -2935,7 +2929,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   }
 
   /// 处理投票
-  /// Requirements: 3.1, 3.2, 3.3, 3.4
   void _handleVote(MapContribution contribution, VoteType voteType) {
     if (!_checkLogin()) return;
 
@@ -2995,7 +2988,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   }
 
   /// 提交名称贡献
-  /// Requirements: 1.2, 1.3, 1.4
   Future<void> _submitName() async {
     final name = _nameController.text.trim();
 
@@ -3015,7 +3007,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   }
 
   /// 提交图片贡献
-  /// Requirements: 2.2, 2.3, 2.4
   Future<void> _submitImage() async {
     if (_selectedImage == null) {
       ToastUtils.showError(context, '请先选择图片');

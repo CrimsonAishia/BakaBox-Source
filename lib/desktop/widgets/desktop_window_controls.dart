@@ -11,8 +11,8 @@ import 'notification/notification_panel.dart';
 ///
 /// 提供窗口最小化和关闭功能：
 /// - 消息中心按钮：显示公告和通知
-/// - 最小化按钮：将窗口最小化到任务栏 (Requirements 8.1)
-/// - 关闭按钮：显示退出确认对话框 (Requirements 8.2)
+/// - 最小化按钮：将窗口最小化到任务栏
+/// - 关闭按钮：显示退出确认对话框
 class DesktopWindowControls extends StatefulWidget {
   const DesktopWindowControls({super.key});
 

@@ -8,7 +8,6 @@ import '../../../desktop/widgets/character_gallery/character_gallery_theme.dart'
 /// 使用符卡背景图片和符号装饰，显示技能名称和描述。
 /// 被动技能使用绿色系和被动背景，主动技能使用朱红色和大符卡背景。
 ///
-/// **Validates: Requirements 6.2**
 class ZombieSkillCardMobile extends StatelessWidget {
   /// 僵尸技能数据
   final ZombieSkill skill;

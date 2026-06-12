@@ -8,7 +8,6 @@ import '../../../desktop/widgets/character_gallery/character_gallery_theme.dart'
 /// 使用符卡背景图片和符号装饰，显示符卡名称、描述、属性和评级。
 /// 支持不同符卡类型（被动、大符卡、小符卡）的视觉区分。
 ///
-/// **Validates: Requirements 5.2, 5.3**
 class SpellCardMobile extends StatelessWidget {
   /// 符卡数据
   final SpellCard spellCard;

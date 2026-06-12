@@ -85,7 +85,7 @@ class _WarmupSettingsState extends State<WarmupSettings> {
   }
 
   Widget _buildTargetPlayersSlider(BuildContext context) {
-    // 暖服人数范围：1 ~ 服务器最大人数×0.6（需求1）
+    // 暖服人数范围：1 ~ 服务器最大人数×0.6
     // 获取不到服务器最大人数时不兜底，只允许 1 人。
     final maxTarget = widget.state.maxTargetPlayers;
     final effectiveTarget = _targetPlayers.clamp(1, maxTarget);
@@ -204,7 +204,7 @@ class _WarmupSettingsState extends State<WarmupSettings> {
     );
   }
 
-  /// 浮动窗口显示开关（需求2）
+  /// 浮动窗口显示开关
   Widget _buildFloatingWindowSwitch(BuildContext context, bool isDark) {
     final theme = Theme.of(context);
 

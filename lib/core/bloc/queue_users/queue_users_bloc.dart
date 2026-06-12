@@ -89,7 +89,6 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
   // ============================================================================
 
   /// 处理连接事件
-  /// Requirements: 1.1
   Future<void> _onConnect(
     QueueUsersConnect event,
     Emitter<QueueUsersState> emit,
@@ -102,7 +101,6 @@ class QueueUsersBloc extends Bloc<QueueUsersEvent, QueueUsersState> {
   }
 
   /// 处理断开连接事件
-  /// Requirements: 1.4
   Future<void> _onDisconnect(
     QueueUsersDisconnect event,
     Emitter<QueueUsersState> emit,

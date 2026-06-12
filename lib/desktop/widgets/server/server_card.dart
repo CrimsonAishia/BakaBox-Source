@@ -1000,7 +1000,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
         globalState.type != OperationType.none &&
         globalState.status == OperationStatus.running;
 
-    // 暖服是后台操作，允许进入所有服务器，因此暖服时不阻塞"连接"按钮（需求6）
+    // 暖服是后台操作，允许进入所有服务器，因此暖服时不阻塞"连接"按钮
     final isConnectBlockingBusy =
         isGlobalBusy && globalState.type != OperationType.warming;
     final isCurrentServerBusy =
@@ -1209,7 +1209,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   /// 主操作按钮
   /// 计算"挤服"按钮的点击行为；返回 null 表示按钮置灰不可点。
   ///
-  /// 置灰场景：加载中、无地址、有其他服务器在暖服（需求7）。
+  /// 置灰场景：加载中、无地址、有其他服务器在暖服。
   /// 注意：人已在本服内不再禁用，改由挤服面板内弹窗确认（不强制拦截）。
   VoidCallback? _resolveQueueAction(
     BuildContext context, {
@@ -2053,7 +2053,6 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
   }
 
   /// 显示地图贡献对话框
-  /// Requirements: 4.4
   void _showContributionDialog(BuildContext context) {
     if (!mounted) return;
 
