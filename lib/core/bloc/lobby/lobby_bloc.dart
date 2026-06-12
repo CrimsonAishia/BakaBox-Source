@@ -48,15 +48,18 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
       add(_LobbyGameStatusChanged(event.isRunning));
     });
 
-    // 订阅操作状态变化（挤服等），用于更新状态文字
-    // 只在 isQueueing 实际变化时才触发，避免挤服过程中疯狂更新
+    // 订阅操作状态变化（挤服/暖服等），用于更新状态文字
+    // 只在 isQueueing / isWarming 实际变化时才触发，避免操作过程中疯狂更新
     _operationStateSubscription = StatusWindowService().stateStream.listen((
       event,
     ) {
       if (_isDisposed) return;
       final newIsQueueing = event.isQueueing;
-      if (newIsQueueing != _lastIsQueueing) {
+      final newIsWarming = event.isWarming;
+      if (newIsQueueing != _lastIsQueueing ||
+          newIsWarming != _lastIsWarming) {
         _lastIsQueueing = newIsQueueing;
+        _lastIsWarming = newIsWarming;
         add(_LobbyGameStatusChanged(GameStatusService().isGameRunning));
       }
     });
@@ -207,6 +210,9 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
 
   /// 上次 isQueueing 状态（用于避免挤服过程中频繁触发更新）
   bool _lastIsQueueing = false;
+
+  /// 上次 isWarming 状态（用于避免暖服过程中频繁触发更新）
+  bool _lastIsWarming = false;
 
   /// 地图名称中文标签缓存（mapName → label）
   final Map<String, String> _mapLabelCache = {};
@@ -1157,7 +1163,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   /// 根据游戏运行状态更新状态文字，并同步到服务器
   ///
   /// 优先级（从高到低）：
-  /// 1. 挤服中
+  /// 1. 挤服中 / 暖服中
   /// 2. GSI 游戏状态（有意义的状态：主菜单、热身、游戏中）
   /// 3. 所在服务器（ConsoleLogService.isInServer → 服务器地址 + 地图）
   /// 4. 游戏运行中（isGameRunning → "游戏中"）
@@ -1169,10 +1175,13 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   ]) async {
     final activityText = pageActivityTextOverride ?? state.pageActivityText;
     final isQueueing = StatusWindowService().state.isQueueing;
+    final isWarming = StatusWindowService().state.isWarming;
 
     final String newStatusText;
     if (isQueueing) {
       newStatusText = '挤服中';
+    } else if (isWarming) {
+      newStatusText = '暖服中';
     } else {
       final gsiState = GsiService().latestState;
       final consoleState = ConsoleLogService().currentState;
@@ -1816,7 +1825,6 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
         }
       case 'snapshot':
         {
-          // ==================== S3 重连增量恢复 ====================
           // is_resume=true：服务端只下发增量（users=新增，leftUserIds=离开），
           // 在本地现有列表基础上做增量合并，而非整表替换。避免重连时全量 300 人
           // 快照的解码 + 重建开销（掉线雪崩的放大器之一）。
@@ -2955,9 +2963,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     return _upsertUser(users, targetUser);
   }
 
-  // ---------------------------------------------------------------------------
   // 解析方法
-  // ---------------------------------------------------------------------------
 
   /// 从 protobuf 解析 assets（地图配置 + 角色贴图）
   ///
@@ -3237,9 +3243,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     }
   }
 
-  // ---------------------------------------------------------------------------
   // Apply 方法（将解析结果应用到状态）
-  // ---------------------------------------------------------------------------
 
   List<LobbyUser> _applyMoveBroadcast(
     List<LobbyUser> users,
@@ -4007,9 +4011,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     }
   }
 
-  // =========================================================================
   // 排队系统处理
-  // =========================================================================
 
   /// 检测到 delta 异常时按需触发 snapshot 对齐
   ///
@@ -4257,9 +4259,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     add(const LobbyStarted());
   }
 
-  // =========================================================================
   // presence.delta 处理
-  // =========================================================================
 
   /// 处理 S3 重连增量恢复快照（is_resume=true）。
   ///

@@ -265,7 +265,6 @@ class _LobbyDesktopState extends State<LobbyDesktop>
     _teleportStartTime = DateTime.now();
     _teleportDataReady = false;
 
-    // 阶段1：用较长时间推进到 70%
     // animateTo 的实际时间 = duration * (target - current) / range
     // 要让实际时间 = _phase1DurationMs，需要 duration = _phase1DurationMs / 0.7
     _teleportController?.removeStatusListener(_onTeleportAnimationStatus);
@@ -321,7 +320,6 @@ class _LobbyDesktopState extends State<LobbyDesktop>
     _teleportDataReady = false;
     _minDurationTimer?.cancel();
 
-    // 阶段2：快速推进到 100%
     // animateTo 的实际时间 = duration * (target - current) / range
     // 要让实际时间 = _phase2DurationMs，需要 duration = _phase2DurationMs / (1.0 - current)
     final currentValue = _teleportController?.value ?? 0.0;
@@ -1022,7 +1020,7 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  /// 状态筛选：null=全部, 'online'=在线, 'inGame'=游戏中, 'queuing'=挤服中
+  /// 状态筛选：null=全部, 'online'=在线, 'inGame'=游戏中, 'queuing'=挤服中, 'warming'=暖服中
   String? _statusFilter;
 
   /// 关注用户 ID 集合（从本地存储读取）
@@ -1153,6 +1151,7 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
       case 'online':
         return !status.contains('游戏中') &&
             !status.contains('挤服') &&
+            !status.contains('暖服') &&
             !status.contains('热身') &&
             !status.contains('主菜单');
       case 'inGame':
@@ -1161,6 +1160,8 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
             status.contains('主菜单');
       case 'queuing':
         return status.contains('挤服');
+      case 'warming':
+        return status.contains('暖服');
       default:
         return true;
     }
@@ -1236,6 +1237,7 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
     final countOnline = _countForFilter(searchedUsers, 'online');
     final countInGame = _countForFilter(searchedUsers, 'inGame');
     final countQueuing = _countForFilter(searchedUsers, 'queuing');
+    final countWarming = _countForFilter(searchedUsers, 'warming');
 
     final displayUsers =
         searchedUsers.where((u) => _matchesFilter(u, _statusFilter)).toList()
@@ -1293,6 +1295,7 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
                 countOnline: countOnline,
                 countInGame: countInGame,
                 countQueuing: countQueuing,
+                countWarming: countWarming,
               ),
               const Divider(height: 1, color: Colors.white10),
               // 玩家列表
@@ -1402,6 +1405,7 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
     required int countOnline,
     required int countInGame,
     required int countQueuing,
+    required int countWarming,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -1467,6 +1471,8 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
                 _buildFilterChip('inGame', '游戏中', countInGame),
                 const SizedBox(width: 6),
                 _buildFilterChip('queuing', '挤服中', countQueuing),
+                const SizedBox(width: 6),
+                _buildFilterChip('warming', '暖服中', countWarming),
               ],
             ),
           ),
