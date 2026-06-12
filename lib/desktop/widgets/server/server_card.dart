@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../core/models/server_models.dart';
 import '../../../core/models/map_tag_models.dart';
+import '../../../core/constants/operation_colors.dart';
 import '../../../core/bloc/server/server_bloc.dart';
 import '../../../core/bloc/server/server_event.dart';
 import '../../../core/bloc/server/server_state.dart';
@@ -1705,11 +1706,8 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     final Widget badge;
     if (queueCount > 0 && warmupCount > 0) {
       badge = ShaderMask(
-        shaderCallback: (bounds) => const LinearGradient(
-          colors: [Color(0xFFF44336), Color(0xFFF59E0B)], // 红色到黄色渐变
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ).createShader(bounds),
+        shaderCallback: (bounds) =>
+            OperationColors.queueWarmupGradient.createShader(bounds),
         child: Text(
           '+$extraCount',
           style: const TextStyle(
@@ -1724,7 +1722,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       badge = Text(
         '+$extraCount',
         style: const TextStyle(
-          color: Color(0xFFF44336), // 红色 - 挤服
+          color: OperationColors.queue, // 红色 - 挤服
           fontSize: 20,
           fontWeight: FontWeight.bold,
           height: 1,
@@ -1734,7 +1732,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       badge = Text(
         '+$extraCount',
         style: const TextStyle(
-          color: Color(0xFFF59E0B), // 黄色 - 暖服
+          color: OperationColors.warmup, // 黄色 - 暖服
           fontSize: 20,
           fontWeight: FontWeight.bold,
           height: 1,
