@@ -32,7 +32,6 @@ class RealtimeService {
 
   factory RealtimeService() => _instance;
 
-  // ---- 配置常量 ----
 
   static const String _wsPath = ApiConstants.realtimeWsPath;
   static const Duration _heartbeatInterval = Duration(seconds: 30);
@@ -51,7 +50,6 @@ class RealtimeService {
   /// 兜底「连接正常但服务端 send 缓冲溢出丢消息」「跨实例桥接降级期间漏推」等情况。
   static const Duration _periodicReconcileInterval = Duration(minutes: 3);
 
-  // ---- 内部状态 ----
 
   WebSocketChannel? _channel;
   StreamSubscription<dynamic>? _channelSubscription;
@@ -141,7 +139,6 @@ class RealtimeService {
   /// 自增请求 ID
   int _reqIdCounter = 0;
 
-  // ---- 公共 API ----
 
   /// 当前连接状态
   RealtimeConnectionState get connectionState => _connectionState;
@@ -292,7 +289,6 @@ class RealtimeService {
     _setConnectionState(RealtimeConnectionState.disposed);
   }
 
-  // ---- 连接管理 ----
 
   void _connect() {
     if (_disposed) return;
@@ -322,6 +318,9 @@ class RealtimeService {
       channel.ready
           .then((_) {
             if (_disposed) return;
+            // 期间可能已重连/清理，channel 已不是当前连接，丢弃过期回调，
+            // 否则会往已关闭的 sink 发 auth，触发 "Cannot add event after closing"
+            if (_channel != channel) return;
             LogService.d('[Realtime] WebSocket ready');
             // 如果有 token，连接建立后立刻 auth（服务端 welcome 阶段身份取握手帧，
             // 但握手帧的 Authorization 并非每个平台都能带上，统一用 auth 消息保证一致性）
@@ -364,10 +363,12 @@ class RealtimeService {
     _reconnectTimer?.cancel();
     final delay = _nextReconnectDelay;
     LogService.w('[Realtime] ${delay.inMilliseconds}ms 后重连');
-    _reconnectTimer = Timer(delay, () {
+    _reconnectTimer = Timer(delay, () async {
       _reconnectTimer = null;
       _nextReconnectDelay = _doubleDelay(_nextReconnectDelay);
-      _cleanupCurrentConnection();
+      // 必须 await 清理完成再连接，否则清理协程会在新连接建立后恢复执行，
+      // 把刚建好的 channel 关掉并清空引用，导致永远连不上（需重启 App）。
+      await _cleanupCurrentConnection();
       _connect();
     });
   }
@@ -387,14 +388,18 @@ class RealtimeService {
     _heartbeatTimer = null;
     _stopLivenessWatch();
     _stopPeriodicReconcile();
-    await _channelSubscription?.cancel();
+    // 先把旧连接引用捕获到局部变量并同步置空，再做异步关闭。
+    // 否则 await 期间若有 _connect() 创建了新连接，恢复后会误关新连接、清空新引用。
+    final oldSubscription = _channelSubscription;
+    final oldChannel = _channel;
     _channelSubscription = null;
-    try {
-      await _channel?.sink.close(ws_status.goingAway);
-    } catch (_) {}
     _channel = null;
     _subscribedChannels.clear();
     _pendingSubscribeChannels.clear();
+    await oldSubscription?.cancel();
+    try {
+      await oldChannel?.sink.close(ws_status.goingAway);
+    } catch (_) {}
   }
 
   void _onError(Object error, StackTrace stackTrace) {
@@ -409,7 +414,6 @@ class RealtimeService {
     _scheduleReconnect();
   }
 
-  // ---- 心跳 ----
 
   void _startHeartbeat() {
     _heartbeatTimer?.cancel();
@@ -418,7 +422,6 @@ class RealtimeService {
     });
   }
 
-  // ---- 连接假死检测 ----
 
   /// 启动假死检测：定期检查最近一次收到帧的时间，超过阈值则主动重连。
   ///
@@ -450,7 +453,6 @@ class RealtimeService {
     _livenessTimer = null;
   }
 
-  // ---- 周期性对账 ----
 
   /// 连接保持期间周期性触发对账信号，兜底「无断线但丢消息」。
   void _startPeriodicReconcile() {
@@ -470,7 +472,6 @@ class RealtimeService {
     _periodicReconcileTimer = null;
   }
 
-  // ---- 收发消息 ----
 
   void _onMessage(dynamic raw) {
     try {
@@ -654,7 +655,6 @@ class RealtimeService {
     }
   }
 
-  // ---- 订阅 / 鉴权辅助 ----
 
   void _resubscribeAll() {
     final pendingChannels = _channelRefCount.keys.toList();
@@ -739,7 +739,6 @@ class RealtimeService {
     }
   }
 
-  // ---- 登录状态联动 ----
 
   void _onLoginStateChanged(bool isLoggedIn) {
     if (_disposed) return;
