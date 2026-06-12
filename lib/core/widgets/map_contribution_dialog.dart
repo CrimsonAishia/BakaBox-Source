@@ -566,6 +566,8 @@ class _MapContributionDialogState extends State<MapContributionDialog>
           children: [
             // 搜索栏
             _buildTagSearchBar(isDark),
+            // 标签显示规则提示
+            _buildTagDisplayHint(isDark, state),
             // 标签列表
             Expanded(child: _buildTagList(state, isDark)),
             // 提交区域
@@ -638,6 +640,81 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     );
   }
 
+  /// 构建标签显示规则提示
+  /// 卡片上的标签由后端按「认可度」综合票数与赞成比例筛选，
+  /// 这里用通俗文案告诉用户「为什么有的标签没显示在卡片上」。
+  /// [state] 中的 displayMinVotes 来自后端，仅在后端启用该功能后才显示提示。
+  Widget _buildTagDisplayHint(bool isDark, MapTagState state) {
+    // 后端未启用（未返回 displayMinVotes）时不显示提示，避免误导
+    final minVotes = state.displayMinVotes;
+    if (minVotes == null) return const SizedBox.shrink();
+
+    final hintText = '获得约 $minVotes 票以上认可的标签才会显示在服务器卡片上';
+    final detailText =
+        '标签是否显示在卡片上，由它的「认可度」决定：\n'
+        '• 认可度综合了赞成票、反对票和投票人数\n'
+        '• 票数不够（少于约 $minVotes 票认可）的标签不会显示在卡片上\n'
+        '• 只有 1 个人投票不足以显示，需要更多人认可\n'
+        '• 被较多人反对的标签会被自动隐藏\n'
+        '• 票越多、赞成比例越高，认可度越高，排得越靠前\n\n'
+        '所有标签都会保留在这里可继续投票，达到认可度后会自动显示到卡片上；\n'
+        '已经显示的标签不会因为其他标签涨票而被挤掉。';
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: isDark ? 0.12 : 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.25),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            MdiIcons.informationOutline,
+            size: 15,
+            color: AppColors.primary,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              hintText,
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.3,
+                color: isDark ? Colors.white70 : AppColors.gray700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Tooltip(
+            message: detailText,
+            preferBelow: true,
+            margin: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.all(12),
+            textStyle: const TextStyle(
+              fontSize: 12,
+              height: 1.5,
+              color: Colors.white,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xF21A1A1A),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              MdiIcons.helpCircleOutline,
+              size: 15,
+              color: isDark ? Colors.white54 : AppColors.gray500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 构建标签列表
   Widget _buildTagList(MapTagState state, bool isDark) {
     final query = _tagSearchController.text.trim().toLowerCase();
@@ -676,6 +753,26 @@ class _MapContributionDialogState extends State<MapContributionDialog>
           .where((t) => t.name.toLowerCase().contains(query))
           .toList();
     }
+
+    // 按票数（净值）降序排序，有票的排在前面
+    int byVoteCountDesc(MapTag a, MapTag b) {
+      final av = state.getMapTagVoteByTagId(a.id)?.voteCount ?? 0;
+      final bv = state.getMapTagVoteByTagId(b.id)?.voteCount ?? 0;
+      return bv.compareTo(av);
+    }
+
+    // 拆分出「有票数」的标签（任何人投的赞成/反对票），单独置顶显示
+    final votedTags = <MapTag>[];
+    final unvotedTags = <MapTag>[];
+    for (final tag in filteredTagList) {
+      if (state.hasAnyVotes(tag.id)) {
+        votedTags.add(tag);
+      } else {
+        unvotedTags.add(tag);
+      }
+    }
+    votedTags.sort(byVoteCountDesc);
+    unvotedTags.sort(byVoteCountDesc);
 
     final hasNoTags =
         filteredUserTags.isEmpty &&
@@ -721,6 +818,17 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 已有投票的标签区块（任何人投过票的标签，按票数置顶，放最前）
+          if (votedTags.isNotEmpty)
+            _buildTagSection(
+              title: '已有投票',
+              tags: votedTags,
+              isLoading: false,
+              isDark: isDark,
+              state: state,
+              isUserSection: false,
+              mapName: widget.mapName,
+            ),
           // 用户标签区块（审核中 + 已拒绝），无数据且非加载中时隐藏
           if (filteredUserTags.isNotEmpty || state.isLoadingUserTags)
             _buildTagSection(
@@ -732,15 +840,20 @@ class _MapContributionDialogState extends State<MapContributionDialog>
               isUserSection: true,
               mapName: widget.mapName,
             ),
-          _buildTagSection(
-            title: '全局标签',
-            tags: filteredTagList,
-            isLoading: state.isLoadingTagList,
-            isDark: isDark,
-            state: state,
-            isUserSection: false,
-            mapName: widget.mapName,
-          ),
+          // 全局标签区块：当还有未投票标签、正在加载、或没有已投票标签时显示
+          // （避免所有标签都已投票后只剩一个空的「暂无」分区）
+          if (unvotedTags.isNotEmpty ||
+              state.isLoadingTagList ||
+              votedTags.isEmpty)
+            _buildTagSection(
+              title: '全局标签',
+              tags: unvotedTags,
+              isLoading: state.isLoadingTagList,
+              isDark: isDark,
+              state: state,
+              isUserSection: false,
+              mapName: widget.mapName,
+            ),
         ],
       ),
     );
@@ -3259,6 +3372,8 @@ class _TagGrid extends StatelessWidget {
           final mapVote = state.getMapTagVoteByTagId(tag.id);
           final hasVoted = mapVote?.hasVoted ?? false;
           final voteCount = mapVote?.voteCount ?? 0;
+          final upCount = mapVote?.upCount ?? 0;
+          final downCount = mapVote?.downCount ?? 0;
           final isOwner =
               state.userTags.any((t) => t.id == tag.id) ||
               (currentUserId != null &&
@@ -3279,6 +3394,9 @@ class _TagGrid extends StatelessWidget {
               tag: tag,
               hasVoted: hasVoted,
               voteCount: voteCount,
+              upCount: upCount,
+              downCount: downCount,
+              displayMinVotes: state.displayMinVotes,
               isVoting: state.isVoting,
               isDark: isDark,
               isOwner: isOwner,
@@ -3305,6 +3423,11 @@ class _AnimatedTagChip extends StatefulWidget {
   final MapTag tag;
   final bool hasVoted;
   final int voteCount;
+  final int upCount;
+  final int downCount;
+
+  /// 达标票数（无反对时显示到卡片所需的赞成票数），来自后端
+  final int? displayMinVotes;
   final bool isVoting;
   final bool isDark;
   final bool isOwner;
@@ -3322,6 +3445,9 @@ class _AnimatedTagChip extends StatefulWidget {
     required this.tag,
     required this.hasVoted,
     required this.voteCount,
+    required this.upCount,
+    required this.downCount,
+    this.displayMinVotes,
     required this.isVoting,
     required this.isDark,
     required this.isOwner,
@@ -3780,11 +3906,18 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip>
           children: [
             // 投票按钮（审核中的标签不显示）
             if (showVoteButtons) ...[
-              // 赞成按钮
+              // 赞成按钮：显示「当前赞成票 / 达标票数」（达标票数绿色）
               _buildTagVoteButton(
                 icon: hasUpvoted ? MdiIcons.thumbUp : MdiIcons.thumbUpOutline,
                 isActive: hasUpvoted,
                 isUpvote: true,
+                label: '${widget.upCount}',
+                labelSuffix: widget.displayMinVotes != null
+                    ? '/${widget.displayMinVotes}'
+                    : null,
+                tooltip: widget.displayMinVotes != null
+                    ? '赞成 · 当前 ${widget.upCount} 票，达到 ${widget.displayMinVotes} 票认可后显示到卡片'
+                    : '赞成',
                 onTap: widget.isVoting
                     ? null
                     : () {
@@ -3850,11 +3983,16 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip>
   }
 
   /// 标签投票按钮（与编辑/删除按钮一致大小）
+  /// [label] 不为 null 时在图标右侧显示文本，如当前票数
+  /// [labelSuffix] 不为 null 时紧跟 label 显示，用绿色高亮（如"/达标票数"）
   Widget _buildTagVoteButton({
     required IconData icon,
     required bool isActive,
     required bool isUpvote,
     required VoidCallback? onTap,
+    String? label,
+    String? labelSuffix,
+    String? tooltip,
   }) {
     final activeColor = isUpvote
         ? AppColors.emerald500
@@ -3863,7 +4001,7 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip>
     final iconColor = Colors.white;
 
     return Tooltip(
-      message: isUpvote ? '赞成' : '反对',
+      message: tooltip ?? (isUpvote ? '赞成' : '反对'),
       child: Material(
         color: isActive ? activeColor : bgColor,
         borderRadius: BorderRadius.circular(6),
@@ -3871,8 +4009,43 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip>
           onTap: onTap,
           borderRadius: BorderRadius.circular(6),
           child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Icon(icon, size: 18, color: iconColor),
+            padding: label != null
+                ? const EdgeInsets.symmetric(horizontal: 8, vertical: 8)
+                : const EdgeInsets.all(8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 18, color: iconColor),
+                if (label != null) ...[
+                  const SizedBox(width: 5),
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: label,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: iconColor,
+                            height: 1.0,
+                          ),
+                        ),
+                        if (labelSuffix != null)
+                          TextSpan(
+                            text: labelSuffix,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.emerald500,
+                              height: 1.0,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       ),

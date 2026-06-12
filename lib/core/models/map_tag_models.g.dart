@@ -64,6 +64,8 @@ MapTagVoteSimple _$MapTagVoteSimpleFromJson(Map<String, dynamic> json) =>
       voteCount: (json['voteCount'] as num).toInt(),
       upCount: (json['upCount'] as num).toInt(),
       downCount: (json['downCount'] as num).toInt(),
+      score: (json['score'] as num?)?.toDouble(),
+      isDisplayed: json['isDisplayed'] as bool?,
       hasUpvoted: json['hasUpvoted'] as bool?,
       hasDownvoted: json['hasDownvoted'] as bool?,
     );
@@ -77,6 +79,8 @@ Map<String, dynamic> _$MapTagVoteSimpleToJson(MapTagVoteSimple instance) =>
       'voteCount': instance.voteCount,
       'upCount': instance.upCount,
       'downCount': instance.downCount,
+      'score': instance.score,
+      'isDisplayed': instance.isDisplayed,
       'hasUpvoted': instance.hasUpvoted,
       'hasDownvoted': instance.hasDownvoted,
     };
@@ -88,11 +92,18 @@ MapTagListSimpleResponse _$MapTagListSimpleResponseFromJson(
   items: (json['items'] as List<dynamic>)
       .map((e) => MapTagVoteSimple.fromJson(e as Map<String, dynamic>))
       .toList(),
+  displayThreshold: (json['displayThreshold'] as num?)?.toDouble(),
+  displayMinVotes: (json['displayMinVotes'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$MapTagListSimpleResponseToJson(
   MapTagListSimpleResponse instance,
-) => <String, dynamic>{'mapName': instance.mapName, 'items': instance.items};
+) => <String, dynamic>{
+  'mapName': instance.mapName,
+  'items': instance.items,
+  'displayThreshold': instance.displayThreshold,
+  'displayMinVotes': instance.displayMinVotes,
+};
 
 TagVoteResponse _$TagVoteResponseFromJson(Map<String, dynamic> json) =>
     TagVoteResponse(
