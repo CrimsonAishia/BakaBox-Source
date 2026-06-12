@@ -114,7 +114,7 @@ class MapTagState extends Equatable {
   bool hasAnyVotes(int tagId) {
     final vote = getMapTagVoteByTagId(tagId);
     if (vote == null) return false;
-    return (vote.upCount + vote.downCount) > 0;
+    return vote.voteCount != 0 || (vote.upCount + vote.downCount) > 0;
   }
 
   /// 检查某个标签是否有待审核的变更申请

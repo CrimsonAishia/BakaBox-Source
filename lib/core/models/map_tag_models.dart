@@ -169,7 +169,7 @@ class MapTagVoteSimple extends Equatable {
   bool get hasVoted => hasUpvoted == true || hasDownvoted == true;
 
   /// 是否有票数（任何人投的赞成/反对票）
-  bool get hasAnyVotes => (upCount + downCount) > 0;
+  bool get hasAnyVotes => voteCount != 0 || (upCount + downCount) > 0;
 
   factory MapTagVoteSimple.fromJson(Map<String, dynamic> json) =>
       _$MapTagVoteSimpleFromJson(json);
