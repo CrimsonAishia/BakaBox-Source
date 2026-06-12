@@ -1,4 +1,5 @@
 import '../api/api.dart';
+import '../constants/api_constants.dart';
 import '../constants/fallback_data.dart';
 import '../models/server_models.dart';
 import '../utils/cache_service.dart';
@@ -55,7 +56,7 @@ class ServerCategoryService {
       try {
         LogService.d('[ServerCategoryService] 从主 API 获取分类列表（第 $attempt 次）');
         final result = await Api.get<List<ServerCategory>>(
-          '/api/stub',
+          ApiConstants.serverInfoPath,
           fromJson: (json) {
             final data = json as Map<String, dynamic>;
             final servers = data['servers'] as List?;

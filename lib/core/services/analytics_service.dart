@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../api/api.dart';
+import '../constants/api_constants.dart';
 import '../utils/log_service.dart';
 import '../utils/platform_utils.dart';
 
@@ -32,7 +33,7 @@ class AnalyticsService {
         if (params != null) ...params,
       };
 
-      await Api.post('/api/stub', body: data);
+      await Api.post(ApiConstants.analyticsEventPath, body: data);
       LogService.d('埋点上报成功: $event $params');
     } catch (e) {
       // 埋点失败静默处理，不影响业务

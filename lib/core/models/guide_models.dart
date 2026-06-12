@@ -706,7 +706,6 @@ class GuideDraft extends Equatable {
 
 /// 我的中心 — 用户统计概览
 ///
-/// 由后端 `GET /api/stub` 返回。
 /// 字段缺失时按 0 兜底，前端不应阻塞渲染。
 @JsonSerializable()
 class GuideUserStats extends Equatable {

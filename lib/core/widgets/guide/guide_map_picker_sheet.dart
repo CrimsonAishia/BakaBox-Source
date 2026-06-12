@@ -9,7 +9,7 @@ import '../map_background.dart';
 
 /// 关联地图选择器（桌面端 Dialog 形式）
 ///
-/// 使用地图数据库接口 [MapContributionApi.getAllMaps]（`/api/stub`）拉取地图列表，
+/// 使用地图数据库接口 [MapContributionApi.getAllMaps] 拉取地图列表，
 /// 与「地图数据库」页同源；支持服务端搜索（中文/英文均可），300ms 输入防抖。
 ///
 /// 卡片样式参考 `MapSubscriptionCard`：地图背景图 + 渐变遮罩 + 白色文字带阴影。

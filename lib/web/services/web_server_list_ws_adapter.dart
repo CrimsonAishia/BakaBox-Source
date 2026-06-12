@@ -4,6 +4,7 @@ import 'package:web/web.dart';
 import 'dart:js_interop';
 
 import '../../core/api/env_config.dart';
+import '../../core/constants/api_constants.dart';
 import '../../core/utils/log_service.dart';
 import '../models/web_server_list_models.dart';
 
@@ -229,7 +230,7 @@ class WebServerListWsAdapter {
       scheme: scheme,
       host: fallbackBaseUri.host,
       port: fallbackBaseUri.hasPort ? fallbackBaseUri.port : null,
-      path: '/api/stub',
+      path: ApiConstants.webServerListWsPath,
       queryParameters: queryParameters,
     ).toString();
   }
