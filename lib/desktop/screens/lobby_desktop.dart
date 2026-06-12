@@ -1020,7 +1020,7 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  /// 状态筛选：null=全部, 'online'=在线, 'inGame'=游戏中, 'queuing'=挤服中, 'warming'=暖服中
+  /// 状态筛选：null=全部, 'online'=在线, 'inGame'=游戏中, 'queuingOrWarming'=挤服/暖服中
   String? _statusFilter;
 
   /// 关注用户 ID 集合（从本地存储读取）
@@ -1158,10 +1158,8 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
         return status.contains('游戏中') ||
             status.contains('热身') ||
             status.contains('主菜单');
-      case 'queuing':
-        return status.contains('挤服');
-      case 'warming':
-        return status.contains('暖服');
+      case 'queuingOrWarming':
+        return status.contains('挤服') || status.contains('暖服');
       default:
         return true;
     }
@@ -1236,8 +1234,10 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
     final countAll = searchedUsers.length;
     final countOnline = _countForFilter(searchedUsers, 'online');
     final countInGame = _countForFilter(searchedUsers, 'inGame');
-    final countQueuing = _countForFilter(searchedUsers, 'queuing');
-    final countWarming = _countForFilter(searchedUsers, 'warming');
+    final countQueuingOrWarming = _countForFilter(
+      searchedUsers,
+      'queuingOrWarming',
+    );
 
     final displayUsers =
         searchedUsers.where((u) => _matchesFilter(u, _statusFilter)).toList()
@@ -1294,8 +1294,7 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
                 countAll: countAll,
                 countOnline: countOnline,
                 countInGame: countInGame,
-                countQueuing: countQueuing,
-                countWarming: countWarming,
+                countQueuingOrWarming: countQueuingOrWarming,
               ),
               const Divider(height: 1, color: Colors.white10),
               // 玩家列表
@@ -1404,8 +1403,7 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
     required int countAll,
     required int countOnline,
     required int countInGame,
-    required int countQueuing,
-    required int countWarming,
+    required int countQueuingOrWarming,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -1470,9 +1468,11 @@ class _PlayersDrawerState extends State<_PlayersDrawer> {
                 const SizedBox(width: 6),
                 _buildFilterChip('inGame', '游戏中', countInGame),
                 const SizedBox(width: 6),
-                _buildFilterChip('queuing', '挤服中', countQueuing),
-                const SizedBox(width: 6),
-                _buildFilterChip('warming', '暖服中', countWarming),
+                _buildFilterChip(
+                  'queuingOrWarming',
+                  '挤服/暖服',
+                  countQueuingOrWarming,
+                ),
               ],
             ),
           ),
