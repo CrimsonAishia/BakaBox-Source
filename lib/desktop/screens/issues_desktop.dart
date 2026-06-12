@@ -69,7 +69,6 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
         bloc.add(const IssueFetch());
       }
     });
-    _scrollController.addListener(_onScroll);
   }
 
   @override
@@ -79,14 +78,6 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
     _debounceTimer?.cancel();
     _skeletonTimer?.cancel();
     super.dispose();
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      final bloc = context.read<IssueBloc>();
-      if (bloc.state.canLoadMore) bloc.add(const IssueLoadMore());
-    }
   }
 
   void _performSearch(String query) {
@@ -618,8 +609,14 @@ class _IssuesDesktopContentState extends State<_IssuesDesktopContent> {
 
   Widget _buildIssueList() {
     return BlocConsumer<IssueBloc, IssueState>(
-      listenWhen: (prev, curr) => prev.isLoading != curr.isLoading,
+      listenWhen: (prev, curr) =>
+          prev.isLoading != curr.isLoading ||
+          prev.currentPage != curr.currentPage,
       listener: (context, state) {
+        // 切换页码后滚动回顶部
+        if (_scrollController.hasClients) {
+          _scrollController.jumpTo(0);
+        }
         // 延迟显示骨架屏，避免快速加载时闪烁
         if (state.isLoading && state.issues.isEmpty) {
           _skeletonTimer?.cancel();
