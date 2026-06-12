@@ -185,7 +185,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   Widget _buildCommentDraftPrompt() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF0080FF);
+    final primaryColor = AppColors.primary;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -336,7 +336,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                       height: 48,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF0080FF), Color(0xFF0066CC)],
+                          colors: [AppColors.primary, Color(0xFF0066CC)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -417,7 +417,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   Widget _buildLoadingState() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF0080FF);
+    final primaryColor = AppColors.primary;
 
     return Center(
       child: Column(
@@ -493,7 +493,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     final isDark = theme.brightness == Brightness.dark;
     final state = context.read<IssueDetailBloc>().state;
     final errorMessage = state.error ?? 'Issue 不存在或加载失败';
-    final errorColor = const Color(0xFFDC2626);
+    final errorColor = AppColors.red600;
 
     return Center(
       child: Container(
@@ -574,7 +574,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                   icon: Icon(MdiIcons.refresh, size: 18),
                   label: const Text('重新加载'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0080FF),
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
@@ -882,13 +882,13 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               MdiIcons.cellphoneInformation,
               size: 18,
-              color: const Color(0xFF0080FF),
+              color: AppColors.primary,
             ),
           ),
           const SizedBox(width: 12),
@@ -927,9 +927,9 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
 
     final (color, bgColor, icon) = switch (type) {
       IssueType.bug => (
-        const Color(0xFFDC2626),
+        AppColors.red600,
         isDark
-            ? const Color(0xFFDC2626).withValues(alpha: 0.15)
+            ? AppColors.red600.withValues(alpha: 0.15)
             : const Color(0xFFFEE2E2),
         MdiIcons.bug,
       ),
@@ -977,14 +977,14 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final isOpen = status.isOpen;
-    final color = isOpen ? const Color(0xFF16A34A) : const Color(0xFF6B7280);
+    final color = isOpen ? const Color(0xFF16A34A) : AppColors.gray500;
     final bgColor = isOpen
         ? (isDark
               ? const Color(0xFF16A34A).withValues(alpha: 0.15)
               : const Color(0xFFDCFCE7))
         : (isDark
-              ? const Color(0xFF6B7280).withValues(alpha: 0.15)
-              : const Color(0xFFF3F4F6));
+              ? AppColors.gray500.withValues(alpha: 0.15)
+              : AppColors.gray100);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -1018,7 +1018,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   Widget _buildCommentsSection(IssueDetailState state) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF0080FF);
+    final primaryColor = AppColors.primary;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1106,7 +1106,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
               height: 32,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0080FF)),
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
               ),
             ),
             const SizedBox(height: 12),
@@ -1127,7 +1127,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
   Widget _buildCommentsEmpty() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF3B82F6);
+    final primaryColor = AppColors.blue500;
 
     return Center(
       child: Padding(
@@ -1242,7 +1242,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                     width: 14,
                     height: 14,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0080FF),
+                      color: AppColors.primary,
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: theme.colorScheme.surface,
@@ -1293,7 +1293,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
                                   colors: [
-                                    Color(0xFF0080FF),
+                                    AppColors.primary,
                                     Color(0xFF0066CC),
                                   ],
                                 ),
@@ -1322,7 +1322,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                                 replyTarget.authorName,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0080FF),
+                                  color: AppColors.primary,
                                   fontSize: 12,
                                 ),
                                 overflow: TextOverflow.ellipsis,
@@ -1415,7 +1415,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
               Icon(
                 MdiIcons.replyOutline,
                 size: 16,
-                color: const Color(0xFF0080FF),
+                color: AppColors.primary,
               ),
               const SizedBox(width: 6),
               Text(
@@ -1423,7 +1423,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: const Color(0xFF0080FF),
+                  color: AppColors.primary,
                 ),
               ),
             ],
@@ -1467,12 +1467,12 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
         decoration: BoxDecoration(
           color: isDark
               ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
-              : const Color(0xFFF3F4F6),
+              : AppColors.gray100,
           borderRadius: BorderRadius.circular(6),
           border: Border(
             left: BorderSide(
               width: 3,
-              color: isDark ? const Color(0xFF475569) : const Color(0xFFD1D5DB),
+              color: isDark ? AppColors.slate600 : AppColors.gray300,
             ),
           ),
         ),
@@ -1558,12 +1558,12 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: issue.isVoted
-                ? const Color(0xFF0080FF).withValues(alpha: 0.1)
+                ? AppColors.primary.withValues(alpha: 0.1)
                 : Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: issue.isVoted
-                  ? const Color(0xFF0080FF)
+                  ? AppColors.primary
                   : Colors.transparent,
               width: 1.5,
             ),
@@ -1574,7 +1574,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 issue.isVoted ? MdiIcons.thumbUp : MdiIcons.thumbUpOutline,
                 size: 20,
                 color: issue.isVoted
-                    ? const Color(0xFF0080FF)
+                    ? AppColors.primary
                     : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 8),
@@ -1582,7 +1582,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                 '${issue.voteCount}',
                 style: TextStyle(
                   color: issue.isVoted
-                      ? const Color(0xFF0080FF)
+                      ? AppColors.primary
                       : Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                   fontSize: 15,
@@ -1600,10 +1600,10 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final isOpen = issue.issueStatus.isOpen;
-    final color = isOpen ? const Color(0xFFDC2626) : const Color(0xFF059669);
+    final color = isOpen ? AppColors.red600 : const Color(0xFF059669);
     final bgColor = isOpen
         ? (isDark
-              ? const Color(0xFFDC2626).withValues(alpha: 0.15)
+              ? AppColors.red600.withValues(alpha: 0.15)
               : const Color(0xFFFEE2E2))
         : (isDark
               ? const Color(0xFF059669).withValues(alpha: 0.15)
@@ -1793,7 +1793,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                             child: Icon(
                               MdiIcons.commentEditOutline,
                               size: 18,
-                              color: const Color(0xFF0080FF),
+                              color: AppColors.primary,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -1906,8 +1906,8 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                             icon: const Icon(Icons.save_outlined, size: 16),
                             label: const Text('草稿'),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF0080FF),
-                              side: const BorderSide(color: Color(0xFF0080FF)),
+                              foregroundColor: AppColors.primary,
+                              side: const BorderSide(color: AppColors.primary),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 14,
@@ -1928,7 +1928,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
                                       Navigator.of(sheetContext).pop();
                                     },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0080FF),
+                                backgroundColor: AppColors.primary,
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 14,
@@ -1994,16 +1994,16 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF0080FF).withValues(alpha: 0.1)
+            ? AppColors.primary.withValues(alpha: 0.1)
             : const Color(0xFFEFF6FF),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+          color: AppColors.primary.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
         children: [
-          Icon(MdiIcons.replyOutline, size: 16, color: const Color(0xFF0080FF)),
+          Icon(MdiIcons.replyOutline, size: 16, color: AppColors.primary),
           const SizedBox(width: 8),
           Text(
             '回复 ',
@@ -2015,7 +2015,7 @@ class _IssueDetailMobileState extends State<IssueDetailMobile> {
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF0080FF),
+                color: AppColors.primary,
               ),
               overflow: TextOverflow.ellipsis,
             ),

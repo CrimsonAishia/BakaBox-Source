@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 import '../../core/services/app_exit_service.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 移动端退出确认对话框
 /// 提供"取消"和"退出"两个选项，无关闭按钮
@@ -165,7 +166,7 @@ class _ExitDialogMobileState extends State<ExitDialogMobile>
                               child: Icon(
                                 MdiIcons.exitToApp,
                                 size: 28,
-                                color: const Color(0xFFEF4444),
+                                color: AppColors.red500,
                               ),
                             )
                             .animate()
@@ -179,7 +180,7 @@ class _ExitDialogMobileState extends State<ExitDialogMobile>
                               duration: 800.ms,
                               colors: [
                                 Colors.transparent,
-                                const Color(0xFFEF4444).withValues(alpha: 0.1),
+                                AppColors.red500.withValues(alpha: 0.1),
                                 Colors.transparent,
                               ],
                             ),
@@ -303,7 +304,7 @@ class _ExitDialogMobileState extends State<ExitDialogMobile>
                       height: 48,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                          colors: [AppColors.red500, AppColors.red600],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),

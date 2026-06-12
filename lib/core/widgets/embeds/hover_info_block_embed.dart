@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import '../../constants/app_colors.dart';
 
 /// 悬浮引用徽章自定义 Embed 类型标识
 const String hoverInfoEmbedType = 'hoverInfo';
@@ -106,15 +107,15 @@ class HoverInfoColors {
   static Color color(HoverInfoType type) {
     switch (type) {
       case HoverInfoType.map:
-        return const Color(0xFF3B82F6); // 蓝
+        return AppColors.blue500; // 蓝
       case HoverInfoType.character:
-        return const Color(0xFF8B5CF6); // 紫
+        return AppColors.violet500; // 紫
       case HoverInfoType.weapon:
-        return const Color(0xFFF59E0B); // 橙
+        return AppColors.amber500; // 橙
       case HoverInfoType.knife:
         return const Color(0xFFEC4899); // 粉
       case HoverInfoType.spellCard:
-        return const Color(0xFFDC2626); // 朱红
+        return AppColors.red600; // 朱红
     }
   }
 

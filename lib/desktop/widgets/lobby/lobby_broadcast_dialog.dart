@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/bloc/lobby/lobby_bloc.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 全服广播发送弹窗
 class LobbyBroadcastDialog extends StatefulWidget {
@@ -50,23 +51,23 @@ class _LobbyBroadcastDialogState extends State<LobbyBroadcastDialog> {
     final isDark = theme.brightness == Brightness.dark;
 
     // 根据主题设置颜色
-    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final textColor = isDark ? Colors.white : AppColors.slate800;
     final secondaryTextColor = isDark
         ? Colors.white.withValues(alpha: 0.6)
-        : const Color(0xFF64748B);
-    final inputTextColor = isDark ? Colors.white : const Color(0xFF1E293B);
+        : AppColors.slate500;
+    final inputTextColor = isDark ? Colors.white : AppColors.slate800;
     final inputBackgroundColor = isDark
         ? Colors.white.withValues(alpha: 0.05)
-        : const Color(0xFFF1F5F9);
+        : AppColors.slate100;
     final inputBorderColor = isDark
         ? Colors.white.withValues(alpha: 0.15)
-        : const Color(0xFFE2E8F0);
+        : AppColors.slate200;
     final inputHintTextColor = isDark
         ? Colors.white.withValues(alpha: 0.4)
-        : const Color(0xFF94A3B8);
+        : AppColors.slate400;
     final inputCounterTextColor = isDark
         ? Colors.white.withValues(alpha: 0.4)
-        : const Color(0xFF94A3B8);
+        : AppColors.slate400;
 
     return BlocBuilder<LobbyBloc, LobbyState>(
       buildWhen: (previous, current) =>
@@ -89,7 +90,7 @@ class _LobbyBroadcastDialogState extends State<LobbyBroadcastDialog> {
                       : EdgeInsets.zero,
                   padding: EdgeInsets.all(widget.compact ? 16 : 24),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    color: isDark ? AppColors.slate800 : Colors.white,
                     borderRadius: BorderRadius.circular(
                       widget.compact ? 14 : 20,
                     ),
@@ -112,7 +113,7 @@ class _LobbyBroadcastDialogState extends State<LobbyBroadcastDialog> {
                             padding: EdgeInsets.all(widget.compact ? 7 : 10),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                                colors: [AppColors.indigo500, AppColors.violet500],
                               ),
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -141,7 +142,7 @@ class _LobbyBroadcastDialogState extends State<LobbyBroadcastDialog> {
                         style: TextStyle(
                           fontSize: 12,
                           color: isInCooldown
-                              ? const Color(0xFFEF4444)
+                              ? AppColors.red500
                               : secondaryTextColor,
                         ),
                       ),
@@ -199,14 +200,14 @@ class _LobbyBroadcastDialogState extends State<LobbyBroadcastDialog> {
                           ElevatedButton(
                             onPressed: canSubmit ? _onSubmit : null,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF6366F1),
+                              backgroundColor: AppColors.indigo500,
                               foregroundColor: Colors.white,
                               disabledBackgroundColor: isDark
                                   ? Colors.white.withValues(alpha: 0.1)
-                                  : const Color(0xFFE2E8F0),
+                                  : AppColors.slate200,
                               disabledForegroundColor: isDark
                                   ? Colors.white.withValues(alpha: 0.3)
-                                  : const Color(0xFF94A3B8),
+                                  : AppColors.slate400,
                               padding: EdgeInsets.symmetric(
                                 horizontal: widget.compact ? 16 : 24,
                                 vertical: widget.compact ? 8 : 12,

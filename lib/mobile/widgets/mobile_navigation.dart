@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/widgets/navigation/app_navigation.dart';
+import '../../core/constants/app_colors.dart';
 
 class MobileNavigation extends StatelessWidget {
   final int currentIndex;
@@ -41,11 +42,11 @@ class MobileNavigation extends StatelessWidget {
             );
           }).toList(),
           color: isDark
-              ? const Color(0xFF1E293B).withValues(alpha: 0.95)
+              ? AppColors.slate800.withValues(alpha: 0.95)
               : Colors.white.withValues(alpha: 0.95),
           buttonBackgroundColor: items[currentIndex].activeColor,
           backgroundColor: isDark
-              ? const Color(0xFF0F172A).withValues(alpha: 0.95)
+              ? AppColors.slate900.withValues(alpha: 0.95)
               : const Color(0xFFE9EEF8).withValues(alpha: 0.95),
           animationCurve: Curves.easeInOutCubic,
           animationDuration: const Duration(milliseconds: 350),

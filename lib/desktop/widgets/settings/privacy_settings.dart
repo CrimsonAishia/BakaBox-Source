@@ -7,6 +7,7 @@ import '../../../core/bloc/settings/settings_event.dart';
 import '../../../core/bloc/settings/settings_state.dart';
 import '../../../core/utils/formatters.dart';
 import 'settings_group_title.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 隐私设置组件 — 黑名单管理
 ///
@@ -56,12 +57,12 @@ class _PrivacySettingsState extends State<PrivacySettings> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? [const Color(0xFF334155), const Color(0xFF1E293B)]
-              : [const Color(0xFFFAFBFC), const Color(0xFFF8FAFC)],
+              ? [AppColors.slate700, AppColors.slate800]
+              : [const Color(0xFFFAFBFC), AppColors.slate50],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? const Color(0xFF475569) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.slate600 : AppColors.gray200,
         ),
         boxShadow: [
           BoxShadow(
@@ -80,7 +81,7 @@ class _PrivacySettingsState extends State<PrivacySettings> {
               Icon(
                 MdiIcons.accountCancelOutline,
                 size: 20,
-                color: isDark ? Colors.white70 : const Color(0xFF374151),
+                color: isDark ? Colors.white70 : AppColors.gray700,
               ),
               const SizedBox(width: 10),
               Text(
@@ -88,7 +89,7 @@ class _PrivacySettingsState extends State<PrivacySettings> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF1F2937),
+                  color: isDark ? Colors.white : AppColors.gray800,
                   letterSpacing: -0.2,
                 ),
               ),
@@ -97,7 +98,7 @@ class _PrivacySettingsState extends State<PrivacySettings> {
                 '(${blockedUsers.length})',
                 style: TextStyle(
                   fontSize: 13,
-                  color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                  color: isDark ? Colors.white60 : AppColors.gray500,
                 ),
               ),
             ],
@@ -107,7 +108,7 @@ class _PrivacySettingsState extends State<PrivacySettings> {
             '被拉黑的用户无法在攻略社区中出现，其攻略和评论将被隐藏。',
             style: TextStyle(
               fontSize: 13,
-              color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+              color: isDark ? Colors.white60 : AppColors.gray500,
               height: 1.4,
             ),
           ),
@@ -145,14 +146,14 @@ class _PrivacySettingsState extends State<PrivacySettings> {
             size: 40,
             color: isDark
                 ? Colors.white.withValues(alpha: 0.2)
-                : const Color(0xFFD1D5DB),
+                : AppColors.gray300,
           ),
           const SizedBox(height: 12),
           Text(
             '黑名单为空',
             style: TextStyle(
               fontSize: 14,
-              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+              color: isDark ? Colors.white38 : AppColors.gray400,
             ),
           ),
           const SizedBox(height: 4),
@@ -160,7 +161,7 @@ class _PrivacySettingsState extends State<PrivacySettings> {
             '在攻略详情或评论区通过「⋯」菜单拉黑用户',
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
+              color: isDark ? Colors.white24 : AppColors.gray300,
             ),
           ),
         ],
@@ -192,7 +193,7 @@ class _PrivacySettingsState extends State<PrivacySettings> {
         return AlertDialog(
           title: const Text('取消拉黑'),
           content: Text('确定要取消拉黑「${user.userName}」吗？\n取消后该用户的内容将重新可见。'),
-          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          backgroundColor: isDark ? AppColors.slate800 : Colors.white,
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
@@ -241,12 +242,12 @@ class _BlockedUserTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark
             ? Colors.white.withValues(alpha: 0.04)
-            : const Color(0xFFF9FAFB),
+            : AppColors.gray50,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.06)
-              : const Color(0xFFE5E7EB),
+              : AppColors.gray200,
         ),
       ),
       child: Row(
@@ -258,8 +259,8 @@ class _BlockedUserTile extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: isDark
-                  ? const Color(0xFF475569)
-                  : const Color(0xFFE5E7EB),
+                  ? AppColors.slate600
+                  : AppColors.gray200,
             ),
             child: Center(
               child: Text(
@@ -269,7 +270,7 @@ class _BlockedUserTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                  color: isDark ? Colors.white70 : AppColors.gray500,
                 ),
               ),
             ),
@@ -285,7 +286,7 @@ class _BlockedUserTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.white : const Color(0xFF1F2937),
+                    color: isDark ? Colors.white : AppColors.gray800,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -293,7 +294,7 @@ class _BlockedUserTile extends StatelessWidget {
                   '拉黑于 ${Formatters.formatDateTime(user.blockedAt.toIso8601String())}',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                    color: isDark ? Colors.white38 : AppColors.gray400,
                   ),
                 ),
               ],
@@ -305,13 +306,13 @@ class _BlockedUserTile extends StatelessWidget {
             icon: Icon(
               MdiIcons.accountRemoveOutline,
               size: 16,
-              color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+              color: isDark ? Colors.white60 : AppColors.gray500,
             ),
             label: Text(
               '移除',
               style: TextStyle(
                 fontSize: 12,
-                color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                color: isDark ? Colors.white60 : AppColors.gray500,
               ),
             ),
             style: TextButton.styleFrom(

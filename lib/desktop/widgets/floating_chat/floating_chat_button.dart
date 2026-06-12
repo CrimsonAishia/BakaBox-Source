@@ -10,6 +10,7 @@ import '../../../core/services/floating_chat_position_service.dart';
 import 'chat_bubble_animation.dart';
 import 'chat_panel.dart';
 import 'unread_badge.dart';
+import '../../../core/constants/app_colors.dart';
 
 class FloatingChatButton extends StatefulWidget {
   /// Initial offset from bottom-right corner of the parent Stack.
@@ -76,9 +77,9 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
       LobbyConnectionStatus.connecting;
 
   // Color constants for connection states.
-  static const Color _disconnectedColor = Color(0xFF6B7280);
-  static const Color _connectingColor = Color(0xFF38BDF8);
-  static const Color _connectedColor = Color(0xFF0080FF);
+  static const Color _disconnectedColor = AppColors.gray500;
+  static const Color _connectingColor = AppColors.sky400;
+  static const Color _connectedColor = AppColors.primary;
 
   /// Prevent double-firing the notify animation from both _addBubble and
   /// the FloatingChatCubit unreadCount listener in the same frame.
@@ -279,9 +280,7 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
     super.dispose();
   }
 
-  // ---------------------------------------------------------------------------
   // Position persistence
-  // ---------------------------------------------------------------------------
 
   /// Load the previously saved button position from local storage.
   /// The actual value is applied in [build] once the parent size is known,
@@ -303,9 +302,7 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
     FloatingChatPositionService.savePosition(left, top);
   }
 
-  // ---------------------------------------------------------------------------
   // Opacity helpers
-  // ---------------------------------------------------------------------------
 
   /// Immediately snap to full opacity and restart the idle-fade timer.
   void _activateOpacity() {
@@ -1079,7 +1076,7 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
       width: 16,
       height: 16,
       decoration: const BoxDecoration(
-        color: Color(0xFFF59E0B),
+        color: AppColors.amber500,
         shape: BoxShape.circle,
       ),
       child: const Padding(
@@ -1094,7 +1091,7 @@ class _FloatingChatButtonState extends State<FloatingChatButton>
       width: 16,
       height: 16,
       decoration: const BoxDecoration(
-        color: Color(0xFFEF4444),
+        color: AppColors.red500,
         shape: BoxShape.circle,
       ),
       child: const Icon(Icons.close, color: Colors.white, size: 10),

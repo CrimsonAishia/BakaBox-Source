@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
+import '../constants/app_colors.dart';
 
 /// 标签颜色选择器预设颜色列表
 const List<String?> tagPresetColors = [
@@ -161,7 +162,7 @@ class _PresetColorButtonState extends State<_PresetColorButton> {
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
                   color: widget.isSelected
-                      ? const Color(0xFF0080FF)
+                      ? AppColors.primary
                       : _isHovered
                       ? (widget.isDark ? Colors.white54 : Colors.grey[400]!)
                       : (widget.isDark ? Colors.white24 : Colors.grey[300]!),
@@ -170,7 +171,7 @@ class _PresetColorButtonState extends State<_PresetColorButton> {
                 boxShadow: widget.isSelected
                     ? [
                         BoxShadow(
-                          color: const Color(0xFF0080FF).withValues(alpha: 0.4),
+                          color: AppColors.primary.withValues(alpha: 0.4),
                           blurRadius: 6,
                           spreadRadius: 0,
                         ),
@@ -181,7 +182,7 @@ class _PresetColorButtonState extends State<_PresetColorButton> {
                 Icons.close,
                 size: 14,
                 color: widget.isSelected
-                    ? const Color(0xFF0080FF)
+                    ? AppColors.primary
                     : (widget.isDark ? Colors.white38 : Colors.grey[500]),
               ),
             ),
@@ -210,7 +211,7 @@ class _PresetColorButtonState extends State<_PresetColorButton> {
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
                 color: widget.isSelected
-                    ? const Color(0xFF0080FF)
+                    ? AppColors.primary
                     : _isHovered
                     ? (widget.isDark ? Colors.white70 : Colors.grey[500]!)
                     : Colors.transparent,
@@ -219,7 +220,7 @@ class _PresetColorButtonState extends State<_PresetColorButton> {
               boxShadow: widget.isSelected
                   ? [
                       BoxShadow(
-                        color: const Color(0xFF0080FF).withValues(alpha: 0.4),
+                        color: AppColors.primary.withValues(alpha: 0.4),
                         blurRadius: 6,
                         spreadRadius: 0,
                       ),
@@ -315,7 +316,7 @@ class _CustomColorButtonState extends State<_CustomColorButton> {
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
                 color: isSelected
-                    ? const Color(0xFF0080FF)
+                    ? AppColors.primary
                     : _isHovered
                     ? Colors.white
                     : (widget.isDark ? Colors.white54 : Colors.grey[400]!),
@@ -324,7 +325,7 @@ class _CustomColorButtonState extends State<_CustomColorButton> {
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: const Color(0xFF0080FF).withValues(alpha: 0.4),
+                        color: AppColors.primary.withValues(alpha: 0.4),
                         blurRadius: 6,
                         spreadRadius: 0,
                       ),
@@ -355,7 +356,7 @@ class _CustomColorButtonState extends State<_CustomColorButton> {
   }
 
   void _showCustomColorPicker(BuildContext context) async {
-    Color pickerColor = widget.currentColor ?? const Color(0xFF3B82F6);
+    Color pickerColor = widget.currentColor ?? AppColors.blue500;
 
     final Color result = await showColorPickerDialog(
       context,

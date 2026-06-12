@@ -219,9 +219,9 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
 
     // 根据角色类型获取主题色
     final categoryColor = switch (character.category) {
-      CharacterCategory.touhou => const Color(0xFFDC2626),
+      CharacterCategory.touhou => AppColors.red600,
       CharacterCategory.zombie => const Color(0xFF16A34A),
-      _ => const Color(0xFF8B5CF6),
+      _ => AppColors.violet500,
     };
 
     return Container(
@@ -701,7 +701,7 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
         if (normalCards.isNotEmpty)
           _buildSpellCardGroup(
             title: '小符卡',
-            color: const Color(0xFFDC2626),
+            color: AppColors.red600,
             cards: normalCards,
           ),
       ],
@@ -1101,7 +1101,7 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
   Widget _buildErrorState(String? error) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final errorColor = const Color(0xFFDC2626);
+    final errorColor = AppColors.red600;
 
     return Scaffold(
       appBar: AppBar(
@@ -1200,7 +1200,7 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
                     icon: Icon(MdiIcons.refresh, size: 18),
                     label: const Text('重新加载'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0080FF),
+                      backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20,

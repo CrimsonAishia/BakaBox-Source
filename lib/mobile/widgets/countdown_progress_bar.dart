@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
 
 class CountdownProgressBar extends StatefulWidget {
   final int duration;
@@ -145,7 +146,7 @@ class _CountdownProgressBarState extends State<CountdownProgressBar> {
                       valueColor: AlwaysStoppedAnimation<Color>(
                         _remaining <= 5
                             ? Colors.orange
-                            : const Color(0xFF0080FF),
+                            : AppColors.primary,
                       ),
                     ),
             ),
@@ -156,7 +157,7 @@ class _CountdownProgressBarState extends State<CountdownProgressBar> {
                 fontWeight: FontWeight.bold,
                 color: _remaining <= 5 || _isRefreshing
                     ? Colors.orange
-                    : const Color(0xFF0080FF),
+                    : AppColors.primary,
               ),
             ),
           ],

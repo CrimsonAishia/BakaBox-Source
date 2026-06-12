@@ -9,6 +9,7 @@ import '../../../core/services/auth_service.dart';
 import '../../../core/services/lobby_image_cache_service.dart';
 import '../../../desktop/widgets/common_scroll_indicator.dart';
 import 'lobby_panel_shell.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 设置面板
 class LobbySettingsPanel extends StatelessWidget {
@@ -236,7 +237,7 @@ class _LobbySpriteGridState extends State<_LobbySpriteGrid> {
             child: CommonScrollIndicator(
               isTop: true,
               color: Colors.white54,
-              bgColor: const Color(0xFF0F172A),
+              bgColor: AppColors.slate900,
             ),
           ),
         if (_canScrollDown)
@@ -247,7 +248,7 @@ class _LobbySpriteGridState extends State<_LobbySpriteGrid> {
             child: CommonScrollIndicator(
               isTop: false,
               color: Colors.white54,
-              bgColor: const Color(0xFF0F172A),
+              bgColor: AppColors.slate900,
             ),
           ),
         // 切换中遮罩层
@@ -470,12 +471,12 @@ class _LobbySpriteChoiceCardState extends State<LobbySpriteChoiceCard> {
                     width: 24,
                     height: 24,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF22C55E),
+                      color: AppColors.green500,
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 2),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF22C55E).withValues(alpha: 0.4),
+                          color: AppColors.green500.withValues(alpha: 0.4),
                           blurRadius: 8,
                         ),
                       ],
@@ -585,7 +586,7 @@ class _SettingsSwitchTile extends StatelessWidget {
                           : Colors.white,
                       activeTrackColor: isLocked
                           ? Colors.white.withValues(alpha: 0.2)
-                          : const Color(0xFF22C55E),
+                          : AppColors.green500,
                       inactiveThumbColor: Colors.white70,
                       inactiveTrackColor: Colors.white.withValues(alpha: 0.2),
                     ),

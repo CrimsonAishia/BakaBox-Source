@@ -113,7 +113,7 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
                       borderRadius: BorderRadius.circular(24),
                       child: Container(
                         color: isDark
-                            ? const Color(0xFF0F172A)
+                            ? AppColors.slate900
                             : const Color(0xFFE9EEF8),
                         child: child,
                       ),
@@ -125,7 +125,7 @@ class _DesktopAppState extends State<DesktopApp> with WindowListener {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(
-                              color: const Color(0xFF0080FF),
+                              color: AppColors.primary,
                               width: 2,
                             ),
                           ),

@@ -10,6 +10,7 @@ import '../../../core/utils/fullscreen_detector.dart';
 import '../../theme/desktop_theme.dart';
 import 'floating_window_shell.dart';
 import 'floating_window_state.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 状态更新回调类型
 typedef StateUpdateCallback = void Function(Map<dynamic, dynamic> args);
@@ -367,7 +368,7 @@ class _FloatingWindowInitializerState
   Widget build(BuildContext context) {
     if (_error != null) {
       return Scaffold(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.slate800,
         body: Center(
           child: Text(
             'Error: $_error',
@@ -379,9 +380,9 @@ class _FloatingWindowInitializerState
 
     if (!_initialized) {
       return const Scaffold(
-        backgroundColor: Color(0xFF1E293B),
+        backgroundColor: AppColors.slate800,
         body: Center(
-          child: CircularProgressIndicator(color: Color(0xFF0080FF)),
+          child: CircularProgressIndicator(color: AppColors.primary),
         ),
       );
     }

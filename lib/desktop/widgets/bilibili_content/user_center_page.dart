@@ -152,7 +152,7 @@ class _BilibiliUserCenterPageState extends State<BilibiliUserCenterPage> {
         ? const Color(0xFF2A2520)
         : const Color(0xFFF5F0E6);
     final inkColor = isDark ? const Color(0xFFE8E0D8) : const Color(0xFF2C1810);
-    final navBgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final navBgColor = isDark ? AppColors.slate800 : Colors.white;
     final scrollBrown = isDark
         ? const Color(0xFFB8956A)
         : const Color(0xFF8B4513);

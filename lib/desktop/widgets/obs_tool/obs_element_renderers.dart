@@ -5,6 +5,7 @@ import '../../../../core/services/server_address_mapping_service.dart';
 import '../../../../core/services/source_server_service.dart';
 import '../../../../core/widgets/map_background.dart';
 import 'obs_utils.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 构建元素预览组件
 Widget buildElementMock(
@@ -143,13 +144,13 @@ Widget buildServerCardMock(
   final warmupCount = useQueriedData ? 0 : (mockServer?.warmupCount ?? 0);
   final extraCount = queueCount + warmupCount;
 
-  Color playersColor = const Color(0xFF0080FF);
+  Color playersColor = AppColors.primary;
   Color playersBgColor = Colors.white;
   if (players >= maxPlayers && maxPlayers > 0) {
     playersColor = const Color(0xFFF44336);
     playersBgColor = const Color(0xFFFEEAEA);
   } else if (players >= maxPlayers * 0.8 && maxPlayers > 0) {
-    playersColor = const Color(0xFFFF9800);
+    playersColor = AppColors.orange;
     playersBgColor = const Color(0xFFFFF9E6);
   }
 
@@ -341,7 +342,7 @@ Widget buildServerCardMock(
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w300,
-                              color: const Color(0xFF9CA3AF),
+                              color: AppColors.gray400,
                               height: 1,
                             ),
                           ),
@@ -350,7 +351,7 @@ Widget buildServerCardMock(
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF6B7280),
+                              color: AppColors.gray500,
                               height: 1,
                             ),
                           ),
@@ -371,7 +372,7 @@ Widget _buildObsExtraCount(int queueCount, int warmupCount, int extraCount) {
   if (queueCount > 0 && warmupCount > 0) {
     return ShaderMask(
       shaderCallback: (bounds) => const LinearGradient(
-        colors: [Color(0xFFF44336), Color(0xFFF59E0B)],
+        colors: [Color(0xFFF44336), AppColors.amber500],
         begin: Alignment.centerLeft,
         end: Alignment.centerRight,
       ).createShader(bounds),
@@ -399,7 +400,7 @@ Widget _buildObsExtraCount(int queueCount, int warmupCount, int extraCount) {
     return Text(
       '+$extraCount',
       style: const TextStyle(
-        color: Color(0xFFF59E0B),
+        color: AppColors.amber500,
         fontSize: 20,
         fontWeight: FontWeight.bold,
         height: 1,

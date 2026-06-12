@@ -9,6 +9,7 @@ import '../../core/models/map_contribution_models.dart';
 import '../../core/utils/toast_utils.dart';
 import '../widgets/map_database/map_database_all_tab.dart';
 import '../widgets/map_database/map_database_my_tab.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 地图数据库页面（桌面端）
 ///
@@ -185,7 +186,7 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
       ('', '其他'),
     ];
 
-    final activeColor = const Color(0xFF0080FF);
+    final activeColor = AppColors.primary;
 
     return AnimatedSize(
       duration: const Duration(milliseconds: 200),
@@ -354,7 +355,7 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
       },
       child: Container(
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              color: isDark ? AppColors.slate800 : Colors.white,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
@@ -387,14 +388,14 @@ class _MapDatabaseDesktopState extends State<MapDatabaseDesktop>
                           indicator: BoxDecoration(
                             border: Border(
                               bottom: BorderSide(
-                                color: const Color(0xFF0080FF),
+                                color: AppColors.primary,
                                 width: 3,
                               ),
                             ),
                           ),
                           indicatorSize: TabBarIndicatorSize.tab,
                           dividerColor: Colors.transparent,
-                          labelColor: const Color(0xFF0080FF),
+                          labelColor: AppColors.primary,
                           unselectedLabelColor: isDark
                               ? Colors.white.withValues(alpha: 0.6)
                               : Colors.black.withValues(alpha: 0.6),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/constants/app_colors.dart';
 
 /// 导航项数据
 class NavItemData {
@@ -51,8 +52,8 @@ class _NavItemState extends State<NavItem> {
           decoration: BoxDecoration(
             color: isSelected
                 ? (isDark
-                      ? const Color(0xFF6366F1).withValues(alpha: 0.2)
-                      : const Color(0xFF6366F1).withValues(alpha: 0.1))
+                      ? AppColors.indigo500.withValues(alpha: 0.2)
+                      : AppColors.indigo500.withValues(alpha: 0.1))
                 : (_isHovered
                       ? (isDark
                             ? Colors.white.withValues(alpha: 0.05)
@@ -61,7 +62,7 @@ class _NavItemState extends State<NavItem> {
             borderRadius: BorderRadius.circular(8),
             border: isSelected
                 ? Border.all(
-                    color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                    color: AppColors.indigo500.withValues(alpha: 0.3),
                     width: 1,
                   )
                 : null,
@@ -82,8 +83,8 @@ class _NavItemState extends State<NavItem> {
                       data.icon,
                       size: 18,
                       color: isSelected
-                          ? const Color(0xFF6366F1)
-                          : (isDark ? Colors.white60 : const Color(0xFF6B7280)),
+                          ? AppColors.indigo500
+                          : (isDark ? Colors.white60 : AppColors.gray500),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -95,10 +96,10 @@ class _NavItemState extends State<NavItem> {
                               ? FontWeight.w500
                               : FontWeight.normal,
                           color: isSelected
-                              ? const Color(0xFF6366F1)
+                              ? AppColors.indigo500
                               : (isDark
                                     ? Colors.white70
-                                    : const Color(0xFF374151)),
+                                    : AppColors.gray700),
                         ),
                       ),
                     ),
@@ -111,10 +112,10 @@ class _NavItemState extends State<NavItem> {
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? const Color(0xFF6366F1).withValues(alpha: 0.2)
+                              ? AppColors.indigo500.withValues(alpha: 0.2)
                               : (isDark
                                     ? Colors.white.withValues(alpha: 0.1)
-                                    : const Color(0xFFE5E7EB)),
+                                    : AppColors.gray200),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
@@ -123,10 +124,10 @@ class _NavItemState extends State<NavItem> {
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
                             color: isSelected
-                                ? const Color(0xFF6366F1)
+                                ? AppColors.indigo500
                                 : (isDark
                                       ? Colors.white54
-                                      : const Color(0xFF6B7280)),
+                                      : AppColors.gray500),
                           ),
                         ),
                       )
@@ -136,7 +137,7 @@ class _NavItemState extends State<NavItem> {
                         size: 14,
                         color:
                             data.statusColor ??
-                            (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                            (isDark ? Colors.white38 : AppColors.gray400),
                       ),
                   ],
                 ),

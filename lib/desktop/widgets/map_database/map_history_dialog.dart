@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 import 'map_history_tab.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 地图历史记录对话框
 ///
@@ -40,7 +41,7 @@ class MapHistoryDialog extends StatelessWidget {
         width: 700,
         height: 600,
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          color: isDark ? AppColors.slate800 : Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -57,8 +58,8 @@ class MapHistoryDialog extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF0F172A)
-                    : const Color(0xFFF8FAFC),
+                    ? AppColors.slate900
+                    : AppColors.slate50,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(20),
                 ),
@@ -74,7 +75,7 @@ class MapHistoryDialog extends StatelessWidget {
                 children: [
                   Icon(
                     MdiIcons.history,
-                    color: const Color(0xFF0080FF),
+                    color: AppColors.primary,
                     size: 28,
                   ),
                   const SizedBox(width: 12),

@@ -4,6 +4,7 @@ import '../../../core/models/lobby_models.dart';
 import '../../../core/models/proto/lobby.pb.dart' as pb;
 import '../../../core/services/lobby_nakama_service.dart';
 import '../../../core/utils/log_service.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 游戏风格的用户信息面板
 ///
@@ -137,7 +138,7 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
                   spreadRadius: 4,
                 ),
                 BoxShadow(
-                  color: const Color(0xFF1D9BF0).withValues(alpha: 0.08),
+                  color: AppColors.lobbyBlue.withValues(alpha: 0.08),
                   blurRadius: 60,
                   spreadRadius: -10,
                 ),
@@ -172,7 +173,7 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF1D9BF0).withValues(alpha: 0.15),
+            AppColors.lobbyBlue.withValues(alpha: 0.15),
             const Color(0xFF0B66C2).withValues(alpha: 0.08),
           ],
         ),
@@ -277,12 +278,12 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: const Color(0xFF1D9BF0).withValues(alpha: 0.6),
+          color: AppColors.lobbyBlue.withValues(alpha: 0.6),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1D9BF0).withValues(alpha: 0.2),
+            color: AppColors.lobbyBlue.withValues(alpha: 0.2),
             blurRadius: 12,
           ),
         ],
@@ -305,7 +306,7 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
     return Container(
       width: 48,
       height: 48,
-      color: const Color(0xFF1D9BF0).withValues(alpha: 0.2),
+      color: AppColors.lobbyBlue.withValues(alpha: 0.2),
       child: const Icon(Icons.person, color: Colors.white54, size: 28),
     );
   }
@@ -349,7 +350,7 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
             child: CircularProgressIndicator(
               strokeWidth: 2.5,
               valueColor: AlwaysStoppedAnimation<Color>(
-                const Color(0xFF1D9BF0).withValues(alpha: 0.7),
+                AppColors.lobbyBlue.withValues(alpha: 0.7),
               ),
             ),
           ),
@@ -450,7 +451,7 @@ class _LobbyUserInfoPanelState extends State<LobbyUserInfoPanel>
   Widget _buildSectionTitle(String title, IconData icon) {
     return Row(
       children: [
-        Icon(icon, color: const Color(0xFF1D9BF0), size: 16),
+        Icon(icon, color: AppColors.lobbyBlue, size: 16),
         const SizedBox(width: 8),
         Text(
           title,

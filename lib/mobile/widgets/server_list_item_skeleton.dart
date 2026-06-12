@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../core/constants/app_colors.dart';
 
 class ServerListItemSkeleton extends StatelessWidget {
   final int index;
@@ -21,7 +22,7 @@ class ServerListItemSkeleton extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final baseColor = isDark
         ? const Color(0xFF2D3748)
-        : const Color(0xFFE2E8F0);
+        : AppColors.slate200;
     final blockColor = isDark
         ? const Color(0xFF4A5568)
         : const Color(0xFFCBD5E0);

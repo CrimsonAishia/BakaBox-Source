@@ -10,6 +10,7 @@ import 'resizable_image_block_embed.dart';
 import 'resizable_image_controller.dart';
 import 'resizable_image_scope.dart';
 import 'resizable_image_snap.dart';
+import '../../constants/app_colors.dart';
 
 /// 可缩放图片 Quill EmbedBuilder
 ///
@@ -362,8 +363,8 @@ class _ResizableImageWidgetState extends State<_ResizableImageWidget> {
         border: (selected || _isHovering) && !widget.readOnly
             ? Border.all(
                 color: selected
-                    ? const Color(0xFF0080FF)
-                    : const Color(0xFF0080FF).withValues(alpha: 0.4),
+                    ? AppColors.primary
+                    : AppColors.primary.withValues(alpha: 0.4),
                 width: selected ? 2 : 1,
               )
             : Border.all(color: Colors.transparent, width: 2),
@@ -419,7 +420,7 @@ class _ResizableImageWidgetState extends State<_ResizableImageWidget> {
     return AspectRatio(
       aspectRatio: 16 / 9,
       child: Container(
-        color: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
+        color: isDark ? AppColors.slate700 : AppColors.gray100,
         child: const Center(
           child: SizedBox(
             width: 24,
@@ -438,7 +439,7 @@ class _ResizableImageWidgetState extends State<_ResizableImageWidget> {
         _effectiveData.caption,
         style: TextStyle(
           fontSize: 12,
-          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF6B7280),
+          color: isDark ? AppColors.slate400 : AppColors.gray500,
           fontStyle: FontStyle.italic,
         ),
         textAlign: TextAlign.center,
@@ -465,10 +466,10 @@ class _ResizableImageWidgetState extends State<_ResizableImageWidget> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            color: isDark ? AppColors.slate800 : Colors.white,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: const Color(0xFF0080FF).withValues(alpha: 0.5),
+              color: AppColors.primary.withValues(alpha: 0.5),
             ),
             boxShadow: [
               BoxShadow(
@@ -520,8 +521,8 @@ class _ResizableImageWidgetState extends State<_ResizableImageWidget> {
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: isDark
-                        ? const Color(0xFFE2E8F0)
-                        : const Color(0xFF374151),
+                        ? AppColors.slate200
+                        : AppColors.gray700,
                   ),
                 ),
               ),
@@ -570,13 +571,13 @@ class _ResizableImageWidgetState extends State<_ResizableImageWidget> {
   }) {
     final Color iconColor;
     if (!enabled) {
-      iconColor = isDark ? const Color(0xFF475569) : const Color(0xFFD1D5DB);
+      iconColor = isDark ? AppColors.slate600 : AppColors.gray300;
     } else if (danger) {
-      iconColor = const Color(0xFFDC2626);
+      iconColor = AppColors.red600;
     } else if (active) {
       iconColor = Colors.white;
     } else {
-      iconColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+      iconColor = isDark ? AppColors.slate400 : AppColors.slate500;
     }
 
     return Tooltip(
@@ -589,7 +590,7 @@ class _ResizableImageWidgetState extends State<_ResizableImageWidget> {
           height: 26,
           margin: const EdgeInsets.symmetric(horizontal: 1),
           decoration: BoxDecoration(
-            color: active ? const Color(0xFF0080FF) : Colors.transparent,
+            color: active ? AppColors.primary : Colors.transparent,
             borderRadius: BorderRadius.circular(5),
           ),
           child: Icon(icon, size: 15, color: iconColor),
@@ -605,7 +606,7 @@ class _ResizableImageWidgetState extends State<_ResizableImageWidget> {
       margin: const EdgeInsets.symmetric(horizontal: 3),
       color: isDark
           ? Colors.white.withValues(alpha: 0.12)
-          : const Color(0xFFE5E7EB),
+          : AppColors.gray200,
     );
   }
 }
@@ -622,12 +623,12 @@ class _ResizableImageFallback extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
+        color: isDark ? AppColors.slate700 : AppColors.gray100,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.1)
-              : const Color(0xFFE5E7EB),
+              : AppColors.gray200,
         ),
       ),
       child: Row(
@@ -637,7 +638,7 @@ class _ResizableImageFallback extends StatelessWidget {
           Icon(
             Icons.broken_image_outlined,
             size: 20,
-            color: isDark ? const Color(0xFF64748B) : const Color(0xFF9CA3AF),
+            color: isDark ? AppColors.slate500 : AppColors.gray400,
           ),
           const SizedBox(width: 8),
           Text(
@@ -645,7 +646,7 @@ class _ResizableImageFallback extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               color:
-                  isDark ? const Color(0xFF64748B) : const Color(0xFF9CA3AF),
+                  isDark ? AppColors.slate500 : AppColors.gray400,
             ),
           ),
         ],

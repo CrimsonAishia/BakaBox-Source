@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 
 import 'toolbar_icon_button.dart';
+import '../../constants/app_colors.dart';
 
 /// 工具栏颜色按钮：弹出色板，支持文字颜色（A）或背景色（高亮）。
 ///
@@ -30,10 +31,10 @@ class ColorPickerButton extends StatefulWidget {
 class _ColorPickerButtonState extends State<ColorPickerButton> {
   /// 调色板（17 色 + 默认）。覆盖常见标注色：黑/白/灰系 + 红橙黄绿青蓝紫粉。
   static const List<Color> _palette = [
-    Color(0xFFFFFFFF), Color(0xFFE5E7EB), Color(0xFF94A3B8), Color(0xFF1F2937), Color(0xFF000000),
-    Color(0xFFEF4444), Color(0xFFF97316), Color(0xFFF59E0B), Color(0xFFEAB308), Color(0xFF84CC16),
-    Color(0xFF22C55E), Color(0xFF14B8A6), Color(0xFF06B6D4), Color(0xFF3B82F6), Color(0xFF6366F1),
-    Color(0xFF8B5CF6), Color(0xFFD946EF), Color(0xFFEC4899),
+    Color(0xFFFFFFFF), AppColors.gray200, AppColors.slate400, AppColors.gray800, Color(0xFF000000),
+    AppColors.red500, Color(0xFFF97316), AppColors.amber500, Color(0xFFEAB308), Color(0xFF84CC16),
+    AppColors.green500, Color(0xFF14B8A6), Color(0xFF06B6D4), AppColors.blue500, AppColors.indigo500,
+    AppColors.violet500, Color(0xFFD946EF), Color(0xFFEC4899),
   ];
 
   String _hex(Color c) {
@@ -90,7 +91,7 @@ class _ColorPickerButtonState extends State<ColorPickerButton> {
         side: BorderSide(
           color: isDark
               ? Colors.white.withValues(alpha: 0.1)
-              : const Color(0xFFE5E7EB),
+              : AppColors.gray200,
         ),
       ),
       elevation: 8,
@@ -140,8 +141,8 @@ class _PaletteContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final muted = isDark
-        ? const Color(0xFF94A3B8)
-        : const Color(0xFF64748B);
+        ? AppColors.slate400
+        : AppColors.slate500;
 
     return SizedBox(
       width: 210,
@@ -224,10 +225,10 @@ class _SwatchState extends State<_Swatch> {
             borderRadius: BorderRadius.circular(5),
             border: Border.all(
               color: _hover
-                  ? const Color(0xFF0080FF)
+                  ? AppColors.primary
                   : (widget.isDark
                       ? Colors.white.withValues(alpha: 0.2)
-                      : const Color(0xFFD1D5DB)),
+                      : AppColors.gray300),
               width: _hover ? 1.6 : 1,
             ),
             boxShadow: _hover
@@ -261,10 +262,10 @@ class _ClearButtonState extends State<_ClearButton> {
   @override
   Widget build(BuildContext context) {
     final color = _hover
-        ? const Color(0xFF0080FF)
+        ? AppColors.primary
         : (widget.isDark
-            ? const Color(0xFF94A3B8)
-            : const Color(0xFF64748B));
+            ? AppColors.slate400
+            : AppColors.slate500);
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),

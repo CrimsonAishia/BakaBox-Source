@@ -13,6 +13,7 @@ import '../../../core/widgets/guide/guide_tokens.dart';
 import '../../../core/widgets/rich_text_editor.dart';
 import '../../../core/widgets/signed_network_image.dart';
 import 'community_guide/community_guide_theme.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// B 站风格的底部固定评论输入条
 ///
@@ -385,7 +386,7 @@ class _CollapsedPillState extends State<_CollapsedPill> {
     final isDark = theme.brightness == Brightness.dark;
     final fillColor = isDark
         ? Colors.white.withValues(alpha: _hover ? 0.08 : 0.05)
-        : (_hover ? Colors.white : const Color(0xFFF1F5F9));
+        : (_hover ? Colors.white : AppColors.slate100);
     final borderColor = isDark
         ? Colors.white.withValues(alpha: _hover ? 0.14 : 0.08)
         : GuideTokens.borderLight;
@@ -598,7 +599,7 @@ class _GlowPostButtonState extends State<_GlowPostButton> {
               end: Alignment.bottomRight,
               colors: [
                 Color(0xFF7DD3FC),
-                Color(0xFF3B82F6),
+                AppColors.blue500,
                 Color(0xFF1D4ED8),
               ],
               stops: [0.0, 0.55, 1.0],
@@ -608,7 +609,7 @@ class _GlowPostButtonState extends State<_GlowPostButton> {
                 ? null
                 : [
                     BoxShadow(
-                      color: const Color(0xFF3B82F6).withValues(
+                      color: AppColors.blue500.withValues(
                         alpha: _hover ? 0.65 : 0.50,
                       ),
                       blurRadius: _hover ? 28 : 20,

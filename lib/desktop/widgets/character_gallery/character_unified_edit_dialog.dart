@@ -12,6 +12,7 @@ import 'character_edit_data_models.dart';
 import 'character_spell_card_edit_dialogs.dart';
 import 'character_zombie_skill_edit_dialogs.dart';
 import 'preview_images_upload_widget.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 统一编辑弹窗 - 整合所有编辑功能
 class UnifiedEditDialog extends StatefulWidget {
@@ -680,7 +681,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
               _buildAcquisitionTypeChip(
                 '自定义',
                 AcquisitionType.custom,
-                const Color(0xFF4A7C59),
+                AppColors.skillGreen,
               ),
               // 只有未维护时才显示"未知"选项
               if (!isMaintained)
@@ -769,7 +770,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
       '随机母体': Color(0xFFB44D4D), // 红色 - 母体
       '感染变化': Color(0xFF6B8E5A), // 绿色 - 感染
     };
-    const customColor = Color(0xFF4A7C59); // 深绿色 - 自定义
+    const customColor = AppColors.skillGreen; // 深绿色 - 自定义
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -980,7 +981,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
           else ...[
             // 被动技能
             if (passive.isNotEmpty || newPassive.isNotEmpty) ...[
-              _buildSpellCardGroupHeader('被动技能', const Color(0xFF4A7C59)),
+              _buildSpellCardGroupHeader('被动技能', AppColors.skillGreen),
               const SizedBox(height: 8),
               ...passive.map((card) => _buildSpellCardItem(card)),
               ...newPassive.map(
@@ -1102,8 +1103,8 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
       String bgAsset,
     ) = switch (type) {
       SpellCardType.passive => (
-        const Color(0xFF4A7C59),
-        const Color(0xFF4A7C59).withValues(alpha: 0.08),
+        AppColors.skillGreen,
+        AppColors.skillGreen.withValues(alpha: 0.08),
         '✦',
         'assets/images/character_gallery/spell_card_bg_passive.png',
       ),
@@ -1663,8 +1664,8 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
       String bgAsset,
     ) = switch (type) {
       'passive' => (
-        const Color(0xFF4A7C59),
-        const Color(0xFF4A7C59).withValues(alpha: 0.08),
+        AppColors.skillGreen,
+        AppColors.skillGreen.withValues(alpha: 0.08),
         '✦',
         'assets/images/character_gallery/spell_card_bg_passive.png',
       ),
@@ -1687,7 +1688,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
       constraints: const BoxConstraints(minHeight: 80),
       decoration: BoxDecoration(
         color: bgColor,
-        border: Border.all(color: const Color(0xFF4A7C59), width: 2),
+        border: Border.all(color: AppColors.skillGreen, width: 2),
         borderRadius: BorderRadius.circular(6),
       ),
       child: ClipRRect(
@@ -1773,7 +1774,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                         child: const Text(
                           '新增',
                           style: TextStyle(
-                            color: Color(0xFF4A7C59),
+                            color: AppColors.skillGreen,
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
@@ -1884,7 +1885,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
             'assets/images/character_gallery/spell_card_bg_ultimate.png',
           )
         : (
-            const Color(0xFF4A7C59),
+            AppColors.skillGreen,
             '✦',
             'assets/images/character_gallery/spell_card_bg_passive.png',
           );
@@ -2254,7 +2255,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
             'assets/images/character_gallery/spell_card_bg_ultimate.png',
           )
         : (
-            const Color(0xFF4A7C59),
+            AppColors.skillGreen,
             '✦',
             'assets/images/character_gallery/spell_card_bg_passive.png',
           );
@@ -2264,7 +2265,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
       constraints: const BoxConstraints(minHeight: 80),
       decoration: BoxDecoration(
         color: borderColor.withValues(alpha: 0.08),
-        border: Border.all(color: const Color(0xFF4A7C59), width: 2),
+        border: Border.all(color: AppColors.skillGreen, width: 2),
         borderRadius: BorderRadius.circular(6),
       ),
       child: ClipRRect(
@@ -2345,7 +2346,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
                         child: const Text(
                           '新增',
                           style: TextStyle(
-                            color: Color(0xFF4A7C59),
+                            color: AppColors.skillGreen,
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
@@ -2537,7 +2538,6 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
     );
   }
 
-  // ============ 辅助组件 ============
 
   Widget _buildSectionTitle(String title, IconData icon) {
     final scrollBrown = CharacterGalleryTheme.getScrollBrown(context);
@@ -2668,19 +2668,19 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFF4A7C59).withValues(alpha: 0.1),
-            border: Border.all(color: const Color(0xFF4A7C59)),
+            color: AppColors.skillGreen.withValues(alpha: 0.1),
+            border: Border.all(color: AppColors.skillGreen),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.add, size: 16, color: Color(0xFF4A7C59)),
+              const Icon(Icons.add, size: 16, color: AppColors.skillGreen),
               const SizedBox(width: 4),
               Text(
                 label,
                 style: const TextStyle(
-                  color: Color(0xFF4A7C59),
+                  color: AppColors.skillGreen,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -2999,7 +2999,6 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
     return Wrap(spacing: 12, runSpacing: 6, children: statItems);
   }
 
-  // ============ 辅助方法 ============
 
   void _checkAcquisitionChanged() {
     final original =
@@ -3251,7 +3250,6 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
     );
   }
 
-  // ============ 僵尸技能内联编辑方法 ============
 
   /// 开始僵尸技能编辑（弹窗模式）
   void _startZombieSkillInlineEdit(ZombieSkill skill) {

@@ -5,6 +5,7 @@ import '../../../core/utils/toast_utils.dart';
 import 'character_gallery_theme.dart';
 import 'character_edit_data_models.dart';
 import 'preview_type_selector.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 输入字段类型
 enum ZombieFieldType {
@@ -97,7 +98,7 @@ class _ZombieSkillEditSubDialogState extends State<ZombieSkillEditSubDialog> {
             'assets/images/character_gallery/spell_card_bg_ultimate.png',
           )
         : (
-            const Color(0xFF4A7C59),
+            AppColors.skillGreen,
             '✦',
             'assets/images/character_gallery/spell_card_bg_passive.png',
           );
@@ -502,7 +503,7 @@ class _ZombieSkillCreateSubDialogState
             'assets/images/character_gallery/spell_card_bg_ultimate.png',
           )
         : (
-            const Color(0xFF4A7C59),
+            AppColors.skillGreen,
             '✦',
             'assets/images/character_gallery/spell_card_bg_passive.png',
           );
@@ -522,10 +523,10 @@ class _ZombieSkillCreateSubDialogState
         decoration: BoxDecoration(
           color: washiColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF4A7C59), width: 2),
+          border: Border.all(color: AppColors.skillGreen, width: 2),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF4A7C59).withValues(alpha: 0.3),
+              color: AppColors.skillGreen.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -546,7 +547,7 @@ class _ZombieSkillCreateSubDialogState
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildHeader(symbol, accentColor),
-                  _buildGradientDivider(const Color(0xFF4A7C59)),
+                  _buildGradientDivider(AppColors.skillGreen),
                   Flexible(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(20),
@@ -663,14 +664,14 @@ class _ZombieSkillCreateSubDialogState
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4A7C59).withValues(alpha: 0.15),
-                    border: Border.all(color: const Color(0xFF4A7C59)),
+                    color: AppColors.skillGreen.withValues(alpha: 0.15),
+                    border: Border.all(color: AppColors.skillGreen),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: const Text(
                     '新增',
                     style: TextStyle(
-                      color: Color(0xFF4A7C59),
+                      color: AppColors.skillGreen,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -799,7 +800,7 @@ class _ZombieSkillCreateSubDialogState
           children: [
             _buildTypeChip('active', '◈ 主动', vermillion),
             const SizedBox(width: 12),
-            _buildTypeChip('passive', '✦ 被动', const Color(0xFF4A7C59)),
+            _buildTypeChip('passive', '✦ 被动', AppColors.skillGreen),
           ],
         ),
       ],
@@ -862,7 +863,7 @@ class _ZombieSkillCreateSubDialogState
           ElevatedButton(
             onPressed: _onSave,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4A7C59),
+              backgroundColor: AppColors.skillGreen,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
@@ -968,7 +969,7 @@ class _NewZombieSkillEditSubDialogState
             'assets/images/character_gallery/spell_card_bg_ultimate.png',
           )
         : (
-            const Color(0xFF4A7C59),
+            AppColors.skillGreen,
             '✦',
             'assets/images/character_gallery/spell_card_bg_passive.png',
           );
@@ -988,10 +989,10 @@ class _NewZombieSkillEditSubDialogState
         decoration: BoxDecoration(
           color: washiColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF4A7C59), width: 2),
+          border: Border.all(color: AppColors.skillGreen, width: 2),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF4A7C59).withValues(alpha: 0.3),
+              color: AppColors.skillGreen.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -1012,7 +1013,7 @@ class _NewZombieSkillEditSubDialogState
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildHeader(symbol, accentColor),
-                  _buildGradientDivider(const Color(0xFF4A7C59)),
+                  _buildGradientDivider(AppColors.skillGreen),
                   Flexible(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(20),
@@ -1132,14 +1133,14 @@ class _NewZombieSkillEditSubDialogState
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4A7C59).withValues(alpha: 0.15),
-                    border: Border.all(color: const Color(0xFF4A7C59)),
+                    color: AppColors.skillGreen.withValues(alpha: 0.15),
+                    border: Border.all(color: AppColors.skillGreen),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: const Text(
                     '新增',
                     style: TextStyle(
-                      color: Color(0xFF4A7C59),
+                      color: AppColors.skillGreen,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1268,7 +1269,7 @@ class _NewZombieSkillEditSubDialogState
           children: [
             _buildTypeChip('active', '◈ 主动', vermillion),
             const SizedBox(width: 12),
-            _buildTypeChip('passive', '✦ 被动', const Color(0xFF4A7C59)),
+            _buildTypeChip('passive', '✦ 被动', AppColors.skillGreen),
           ],
         ),
       ],
@@ -1331,7 +1332,7 @@ class _NewZombieSkillEditSubDialogState
           ElevatedButton(
             onPressed: _onSave,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4A7C59),
+              backgroundColor: AppColors.skillGreen,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),

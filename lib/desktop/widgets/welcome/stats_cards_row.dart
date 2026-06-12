@@ -25,7 +25,7 @@ class StatsCardsRow extends StatelessWidget {
                     Expanded(
                       child: _StatCard(
                         icon: MdiIcons.server,
-                        iconColor: const Color(0xFF3B82F6),
+                        iconColor: AppColors.blue500,
                         label: '服务器',
                         value: _getServerCount(serverState),
                         suffix: '台',
@@ -37,7 +37,7 @@ class StatsCardsRow extends StatelessWidget {
                     Expanded(
                       child: _StatCard(
                         icon: MdiIcons.accountGroup,
-                        iconColor: const Color(0xFF10B981),
+                        iconColor: AppColors.emerald500,
                         label: '今日峰值',
                         value: statsState.stats?.todayMax.toString(),
                         suffix: '人',
@@ -49,7 +49,7 @@ class StatsCardsRow extends StatelessWidget {
                     Expanded(
                       child: _StatCard(
                         icon: MdiIcons.castle,
-                        iconColor: const Color(0xFF8B5CF6),
+                        iconColor: AppColors.violet500,
                         label: '大厅',
                         value: lobbyState.serverOnlineCount.toString(),
                         suffix: '人',
@@ -63,7 +63,7 @@ class StatsCardsRow extends StatelessWidget {
                       Expanded(
                         child: _StatCard(
                           icon: MdiIcons.accountMultiple,
-                          iconColor: const Color(0xFFF59E0B),
+                          iconColor: AppColors.amber500,
                           label: '服务器总人数',
                           value: _getTotalOnlinePlayers(serverState),
                           suffix: '人',
@@ -195,7 +195,7 @@ class _StatCard extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                               color: isDark
                                   ? Colors.white
-                                  : const Color(0xFF1E293B),
+                                  : AppColors.slate800,
                             ),
                           ),
                           if (suffix.isNotEmpty)
@@ -206,7 +206,7 @@ class _StatCard extends StatelessWidget {
                                 fontWeight: FontWeight.w500,
                                 color: isDark
                                     ? Colors.white.withValues(alpha: 0.6)
-                                    : const Color(0xFF64748B),
+                                    : AppColors.slate500,
                               ),
                             ),
                         ],
@@ -219,7 +219,7 @@ class _StatCard extends StatelessWidget {
                   fontSize: 12,
                   color: isDark
                       ? Colors.white.withValues(alpha: 0.5)
-                      : const Color(0xFF94A3B8),
+                      : AppColors.slate400,
                 ),
               ),
             ],

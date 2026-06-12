@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import '../constants/app_colors.dart';
 
 /// 跳过警告项（用于 [SkipWarningDialog] 列出受影响的功能）
 class SkipWarningItem {
@@ -71,19 +72,19 @@ class SkipWarningDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return AlertDialog(
-      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      backgroundColor: isDark ? AppColors.slate800 : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+              color: AppColors.amber500.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               MdiIcons.alertCircleOutline,
-              color: const Color(0xFFF59E0B),
+              color: AppColors.amber500,
               size: 20,
             ),
           ),
@@ -93,7 +94,7 @@ class SkipWarningDialog extends StatelessWidget {
               title,
               style: TextStyle(
                 fontSize: 18,
-                color: isDark ? Colors.white : const Color(0xFF1E293B),
+                color: isDark ? Colors.white : AppColors.slate800,
               ),
             ),
           ),
@@ -107,7 +108,7 @@ class SkipWarningDialog extends StatelessWidget {
             description,
             style: TextStyle(
               fontSize: 14,
-              color: isDark ? Colors.white70 : const Color(0xFF64748B),
+              color: isDark ? Colors.white70 : AppColors.slate500,
             ),
           ),
           const SizedBox(height: 16),
@@ -128,7 +129,7 @@ class SkipWarningDialog extends StatelessWidget {
               hint!,
               style: TextStyle(
                 fontSize: 13,
-                color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
+                color: isDark ? Colors.white54 : AppColors.slate400,
               ),
             ),
           ],
@@ -140,14 +141,14 @@ class SkipWarningDialog extends StatelessWidget {
           child: Text(
             cancelText,
             style: TextStyle(
-              color: isDark ? Colors.white70 : const Color(0xFF64748B),
+              color: isDark ? Colors.white70 : AppColors.slate500,
             ),
           ),
         ),
         ElevatedButton(
           onPressed: () => Navigator.pop(context, true),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFF59E0B),
+            backgroundColor: AppColors.amber500,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
@@ -175,13 +176,13 @@ class _WarningItemRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: const Color(0xFFEF4444)),
+        Icon(icon, size: 16, color: AppColors.red500),
         const SizedBox(width: 8),
         Text(
           text,
           style: TextStyle(
             fontSize: 13,
-            color: isDark ? Colors.white : const Color(0xFF374151),
+            color: isDark ? Colors.white : AppColors.gray700,
           ),
         ),
       ],

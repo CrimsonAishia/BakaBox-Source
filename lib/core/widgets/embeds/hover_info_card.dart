@@ -8,6 +8,7 @@ import '../../utils/log_service.dart';
 import '../disk_cached_image.dart';
 import '../map_background.dart';
 import 'hover_info_block_embed.dart';
+import '../../constants/app_colors.dart';
 
 /// 悬浮引用详情卡片
 ///
@@ -128,7 +129,7 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
           width: _cardWidth,
           constraints: BoxConstraints(minHeight: 80, maxHeight: _cardMaxHeight),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            color: isDark ? AppColors.slate800 : Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: color.withValues(alpha: 0.4)),
             boxShadow: [
@@ -242,8 +243,8 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
   // ─── 角色卡片：左侧大图 + 右侧名称/介绍 ────────────────────────────────
 
   Widget _buildCharacterBody(bool isDark, Color color) {
-    final textColor = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1F2937);
-    final subColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF6B7280);
+    final textColor = isDark ? AppColors.slate200 : AppColors.gray800;
+    final subColor = isDark ? AppColors.slate400 : AppColors.gray500;
 
     final imageUrl = _character?.thumbnailUrl ?? widget.data.iconUrl;
     final name = _character?.name ?? widget.data.label;
@@ -316,8 +317,8 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
   // ─── 枪模卡片：大预览图 + 名称/介绍 ──────────────────────────────────
 
   Widget _buildGunModelBody(bool isDark, Color color) {
-    final textColor = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1F2937);
-    final subColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF6B7280);
+    final textColor = isDark ? AppColors.slate200 : AppColors.gray800;
+    final subColor = isDark ? AppColors.slate400 : AppColors.gray500;
 
     final imageUrl = _gunModel?.preview?.front ??
         _gunModel?.thumbnailUrl ??
@@ -383,8 +384,8 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
   // ─── 刀模卡片：大预览图 + 名称/介绍 ──────────────────────────────────
 
   Widget _buildKnifeModelBody(bool isDark, Color color) {
-    final textColor = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1F2937);
-    final subColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF6B7280);
+    final textColor = isDark ? AppColors.slate200 : AppColors.gray800;
+    final subColor = isDark ? AppColors.slate400 : AppColors.gray500;
 
     final imageUrl = _knifeModel?.preview?.front ??
         _knifeModel?.thumbnailUrl ??
@@ -449,8 +450,8 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
 
 
   Widget _buildSpellCardBody(bool isDark, Color color) {
-    final textColor = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1F2937);
-    final subColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF6B7280);
+    final textColor = isDark ? AppColors.slate200 : AppColors.gray800;
+    final subColor = isDark ? AppColors.slate400 : AppColors.gray500;
 
     if (_spellCard == null) return _buildBasicBody(isDark, color);
 
@@ -553,8 +554,8 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
                   card.type == SpellCardType.ultimate ? 'B点' : 'P点',
                   _formatNum(card.cost!),
                   card.type == SpellCardType.ultimate
-                      ? const Color(0xFFF59E0B)
-                      : const Color(0xFF8B5CF6),
+                      ? AppColors.amber500
+                      : AppColors.violet500,
                 ),
                 
               if (card.speed != null)
@@ -614,7 +615,7 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
 
   Widget _buildStat(IconData icon, String label, String value, Color iconColor) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? const Color(0xFFCBD5E1) : const Color(0xFF4B5563);
+    final textColor = isDark ? AppColors.slate300 : const Color(0xFF4B5563);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -670,7 +671,7 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
         child: Container(
           width: 360,
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            color: isDark ? AppColors.slate800 : Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: color.withValues(alpha: 0.4)),
             boxShadow: [
@@ -845,8 +846,8 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
   // ─── 基础卡片（兜底） ─────────────────────────────────────────────────
 
   Widget _buildBasicBody(bool isDark, Color color) {
-    final textColor = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1F2937);
-    final subColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF6B7280);
+    final textColor = isDark ? AppColors.slate200 : AppColors.gray800;
+    final subColor = isDark ? AppColors.slate400 : AppColors.gray500;
 
     return Column(
       mainAxisSize: MainAxisSize.min,

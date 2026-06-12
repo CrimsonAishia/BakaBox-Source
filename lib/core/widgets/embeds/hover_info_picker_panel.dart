@@ -9,6 +9,7 @@ import '../../models/map_contribution_models.dart';
 import '../../utils/log_service.dart';
 import '../map_background.dart';
 import 'hover_info_block_embed.dart';
+import '../../constants/app_colors.dart';
 
 /// 插入引用选择面板（5 个 tab：地图/角色/枪模/刀模/符卡）
 ///
@@ -53,7 +54,7 @@ class _HoverInfoPickerPanelState extends State<HoverInfoPickerPanel>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Dialog(
-      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      backgroundColor: isDark ? AppColors.slate800 : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: SizedBox(
         width: 520,
@@ -70,15 +71,15 @@ class _HoverInfoPickerPanelState extends State<HoverInfoPickerPanel>
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : const Color(0xFF1F2937),
+                      color: isDark ? Colors.white : AppColors.gray800,
                     ),
                   ),
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.close_rounded, size: 20),
                     color: isDark
-                        ? const Color(0xFF94A3B8)
-                        : const Color(0xFF6B7280),
+                        ? AppColors.slate400
+                        : AppColors.gray500,
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -89,10 +90,10 @@ class _HoverInfoPickerPanelState extends State<HoverInfoPickerPanel>
               controller: _tabController,
               isScrollable: true,
               tabAlignment: TabAlignment.start,
-              labelColor: const Color(0xFF0080FF),
+              labelColor: AppColors.primary,
               unselectedLabelColor:
-                  isDark ? const Color(0xFF94A3B8) : const Color(0xFF6B7280),
-              indicatorColor: const Color(0xFF0080FF),
+                  isDark ? AppColors.slate400 : AppColors.gray500,
+              indicatorColor: AppColors.primary,
               tabs: const [
                 Tab(text: '地图'),
                 Tab(text: '角色'),
@@ -909,20 +910,20 @@ class _SearchField extends StatelessWidget {
           onSubmitted: onSubmitted,
           style: TextStyle(
             fontSize: 13,
-            color: isDark ? Colors.white : const Color(0xFF1F2937),
+            color: isDark ? Colors.white : AppColors.gray800,
           ),
-          cursorColor: const Color(0xFF0080FF),
+          cursorColor: AppColors.primary,
           textAlignVertical: TextAlignVertical.center,
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(
               fontSize: 13,
-              color: isDark ? const Color(0xFF64748B) : const Color(0xFF9CA3AF),
+              color: isDark ? AppColors.slate500 : AppColors.gray400,
             ),
             prefixIcon: Icon(
               Icons.search_rounded,
               size: 20,
-              color: isDark ? const Color(0xFF64748B) : const Color(0xFF9CA3AF),
+              color: isDark ? AppColors.slate500 : AppColors.gray400,
             ),
             prefixIconConstraints:
                 const BoxConstraints(minWidth: 36, minHeight: 36),
@@ -930,7 +931,7 @@ class _SearchField extends StatelessWidget {
             filled: true,
             fillColor: isDark
                 ? Colors.white.withValues(alpha: 0.05)
-                : const Color(0xFFF3F4F6),
+                : AppColors.gray100,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
@@ -1000,7 +1001,7 @@ class _EmptyHint extends StatelessWidget {
       child: Text(
         text,
         style: TextStyle(
-          color: isDark ? const Color(0xFF64748B) : const Color(0xFF9CA3AF),
+          color: isDark ? AppColors.slate500 : AppColors.gray400,
           fontSize: 13,
         ),
       ),
@@ -1058,7 +1059,7 @@ class _PickerTile extends StatelessWidget {
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color:
-                          isDark ? Colors.white : const Color(0xFF1F2937),
+                          isDark ? Colors.white : AppColors.gray800,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1070,8 +1071,8 @@ class _PickerTile extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark
-                            ? const Color(0xFF94A3B8)
-                            : const Color(0xFF6B7280),
+                            ? AppColors.slate400
+                            : AppColors.gray500,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

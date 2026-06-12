@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import '../../constants/app_colors.dart';
 
 /// 水平分割线 BlockEmbed 类型标识
 ///
@@ -40,7 +41,7 @@ class DividerEmbedBuilder extends EmbedBuilder {
               Colors.transparent,
               isDark
                   ? Colors.white.withValues(alpha: 0.18)
-                  : const Color(0xFF94A3B8).withValues(alpha: 0.45),
+                  : AppColors.slate400.withValues(alpha: 0.45),
               Colors.transparent,
             ],
           ),

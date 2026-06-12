@@ -764,8 +764,8 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
 
   Widget _buildIdleView(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textPrimary = isDark ? Colors.white : const Color(0xFF1E293B);
-    final textSecondary = isDark ? Colors.white70 : const Color(0xFF475569);
+    final textPrimary = isDark ? Colors.white : AppColors.slate800;
+    final textSecondary = isDark ? Colors.white70 : AppColors.slate600;
 
     return Container(
       color: isDark ? const Color(0xFF0B1120) : const Color(0xFFDDE7F7),
@@ -804,7 +804,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
                     icon: const Icon(Icons.login, size: 20),
                     label: const Text('加入大厅'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF38BDF8),
+                      backgroundColor: AppColors.sky400,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -830,7 +830,7 @@ class _LobbyPageMobileState extends State<LobbyPageMobile>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.error_outline, size: 56, color: Color(0xFFEF4444)),
+          const Icon(Icons.error_outline, size: 56, color: AppColors.red500),
           const SizedBox(height: 16),
           const Text('加载失败，请重试', style: TextStyle(fontSize: 16)),
           const SizedBox(height: 16),
@@ -1127,10 +1127,10 @@ class _LobbyQueueScreenMobileState extends State<_LobbyQueueScreenMobile>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textPrimary = isDark ? Colors.white : const Color(0xFF1E293B);
-    final textSecondary = isDark ? Colors.white70 : const Color(0xFF475569);
-    final accentColor = const Color(0xFF38BDF8);
-    final successColor = const Color(0xFF22C55E);
+    final textPrimary = isDark ? Colors.white : AppColors.slate800;
+    final textSecondary = isDark ? Colors.white70 : AppColors.slate600;
+    final accentColor = AppColors.sky400;
+    final successColor = AppColors.green500;
 
     final position = widget.state.queuePosition;
     final total = widget.state.queueTotal;
@@ -1184,7 +1184,7 @@ class _LobbyQueueScreenMobileState extends State<_LobbyQueueScreenMobile>
                           pulse: _pulseAnimation.value,
                           ringBgColor: isDark
                               ? Colors.white.withValues(alpha: 0.1)
-                              : const Color(0xFFCBD5E1),
+                              : AppColors.slate300,
                           accentColor: accentColor,
                         ),
                         child: Center(
@@ -1413,7 +1413,7 @@ class _QueueRingPainterMobile extends CustomPainter {
           endAngle: 4.71,
           colors: [
             accentColor,
-            const Color(0xFF22C55E),
+            AppColors.green500,
             accentColor.withValues(alpha: 0.1),
           ],
           stops: const [0.0, 0.7, 1.0],

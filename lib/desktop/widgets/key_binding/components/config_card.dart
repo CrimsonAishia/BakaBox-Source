@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../../core/models/key_config_models.dart';
+import '../../../../core/constants/app_colors.dart';
 
 /// 配置卡片
 class ConfigCard extends StatefulWidget {
@@ -41,16 +42,16 @@ class _ConfigCardState extends State<ConfigCard> {
     final Color borderColor;
     if (showAuditStatusBar) {
       borderColor = widget.config.isPending
-          ? const Color(0xFFF59E0B).withValues(alpha: 0.4)
+          ? AppColors.amber500.withValues(alpha: 0.4)
           : widget.config.hasPendingChange
-          ? const Color(0xFFF59E0B).withValues(alpha: 0.4)
-          : const Color(0xFFEF4444).withValues(alpha: 0.4);
+          ? AppColors.amber500.withValues(alpha: 0.4)
+          : AppColors.red500.withValues(alpha: 0.4);
     } else if (widget.selected) {
-      borderColor = const Color(0xFF0080FF);
+      borderColor = AppColors.primary;
     } else if (_hovered) {
-      borderColor = isDark ? const Color(0xFF475569) : Colors.grey[300]!;
+      borderColor = isDark ? AppColors.slate600 : Colors.grey[300]!;
     } else {
-      borderColor = isDark ? const Color(0xFF334155) : Colors.grey[200]!;
+      borderColor = isDark ? AppColors.slate700 : Colors.grey[200]!;
     }
 
     return MouseRegion(
@@ -64,10 +65,10 @@ class _ConfigCardState extends State<ConfigCard> {
           margin: const EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(
             color: widget.selected
-                ? const Color(0xFF0080FF).withValues(alpha: 0.06)
+                ? AppColors.primary.withValues(alpha: 0.06)
                 : (_hovered
-                      ? (isDark ? const Color(0xFF334155) : Colors.grey[50])
-                      : (isDark ? const Color(0xFF1E293B) : Colors.white)),
+                      ? (isDark ? AppColors.slate700 : Colors.grey[50])
+                      : (isDark ? AppColors.slate800 : Colors.white)),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: borderColor,
@@ -91,7 +92,7 @@ class _ConfigCardState extends State<ConfigCard> {
                           height: 36,
                           decoration: BoxDecoration(
                             color: widget.config.needsKeybind
-                                ? const Color(0xFFf59e0b).withValues(alpha: 0.1)
+                                ? AppColors.amber500.withValues(alpha: 0.1)
                                 : const Color(
                                     0xFF10b981,
                                   ).withValues(alpha: 0.1),
@@ -103,8 +104,8 @@ class _ConfigCardState extends State<ConfigCard> {
                                 : MdiIcons.autoFix,
                             size: 18,
                             color: widget.config.needsKeybind
-                                ? const Color(0xFFf59e0b)
-                                : const Color(0xFF10b981),
+                                ? AppColors.amber500
+                                : AppColors.emerald500,
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -146,7 +147,7 @@ class _ConfigCardState extends State<ConfigCard> {
                                         style: TextStyle(
                                           fontSize: 9,
                                           fontWeight: FontWeight.w600,
-                                          color: Color(0xFF8b5cf6),
+                                          color: AppColors.violet500,
                                         ),
                                       ),
                                     ),
@@ -168,7 +169,7 @@ class _ConfigCardState extends State<ConfigCard> {
                                         style: TextStyle(
                                           fontSize: 9,
                                           fontWeight: FontWeight.w600,
-                                          color: Color(0xFF10b981),
+                                          color: AppColors.emerald500,
                                         ),
                                       ),
                                     ),
@@ -251,7 +252,7 @@ class _ConfigCardState extends State<ConfigCard> {
                             widget.config.category,
                             style: const TextStyle(
                               fontSize: 9,
-                              color: Color(0xFF0080FF),
+                              color: AppColors.primary,
                             ),
                           ),
                         ),
@@ -271,21 +272,21 @@ class _ConfigCardState extends State<ConfigCard> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(MdiIcons.thumbUpOutline, size: 12, color: const Color(0xFF10b981)),
+        Icon(MdiIcons.thumbUpOutline, size: 12, color: AppColors.emerald500),
         const SizedBox(width: 2),
         Text(
           '$upCount',
           style: const TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF10b981),
+            color: AppColors.emerald500,
           ),
         ),
         const SizedBox(width: 6),
         Icon(
           MdiIcons.thumbDownOutline,
           size: 12,
-          color: const Color(0xFFef4444),
+          color: AppColors.red500,
         ),
         const SizedBox(width: 2),
         Text(
@@ -293,7 +294,7 @@ class _ConfigCardState extends State<ConfigCard> {
           style: const TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w500,
-            color: Color(0xFFef4444),
+            color: AppColors.red500,
           ),
         ),
       ],
@@ -302,7 +303,7 @@ class _ConfigCardState extends State<ConfigCard> {
 
   Widget _buildStatsCount(int useCount, int commentCount) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = isDark ? Colors.white38 : const Color(0xFF9CA3AF);
+    final color = isDark ? Colors.white38 : AppColors.gray400;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -339,7 +340,7 @@ class _ConfigCardState extends State<ConfigCard> {
             Icon(
               MdiIcons.clockOutline,
               size: 12,
-              color: const Color(0xFFF59E0B),
+              color: AppColors.amber500,
             ),
             const SizedBox(width: 6),
             const Text(
@@ -347,7 +348,7 @@ class _ConfigCardState extends State<ConfigCard> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFFF59E0B),
+                color: AppColors.amber500,
               ),
             ),
           ],
@@ -357,8 +358,8 @@ class _ConfigCardState extends State<ConfigCard> {
 
     final isPending = config.isPending;
     final statusColor = isPending
-        ? const Color(0xFFF59E0B)
-        : const Color(0xFFEF4444);
+        ? AppColors.amber500
+        : AppColors.red500;
     final statusIcon = isPending
         ? MdiIcons.clockOutline
         : MdiIcons.alertCircleOutline;
@@ -396,7 +397,7 @@ class _ConfigCardState extends State<ConfigCard> {
                   '- ${config.auditRemark}',
                   style: TextStyle(
                     fontSize: 10,
-                    color: isDark ? Colors.white70 : const Color(0xFF374151),
+                    color: isDark ? Colors.white70 : AppColors.gray700,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

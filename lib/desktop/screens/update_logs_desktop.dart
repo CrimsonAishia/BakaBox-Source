@@ -80,8 +80,8 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: isDark
-          ? const Color(0xFF0F172A)
-          : const Color(0xFFF3F4F6),
+          ? AppColors.slate900
+          : AppColors.gray100,
       body: PageLayout(
         title: '更新日志',
         subtitle: '查看最新更新和改动',
@@ -112,10 +112,10 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
       width: 250,
       height: 36,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.slate700 : AppColors.gray200,
         ),
       ),
       child: TextField(
@@ -123,18 +123,18 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
         focusNode: _searchFocusNode,
         style: TextStyle(
           fontSize: 14,
-          color: isDark ? Colors.white : const Color(0xFF374151),
+          color: isDark ? Colors.white : AppColors.gray700,
         ),
         decoration: InputDecoration(
           hintText: '搜索更新内容...',
           hintStyle: TextStyle(
-            color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+            color: isDark ? Colors.white38 : AppColors.gray400,
             fontSize: 14,
           ),
           prefixIcon: Icon(
             Icons.search,
             size: 18,
-            color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+            color: isDark ? Colors.white38 : AppColors.gray400,
           ),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
@@ -142,7 +142,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
                   onPressed: _clearSearch,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                  color: isDark ? Colors.white38 : AppColors.gray400,
                 )
               : null,
           border: InputBorder.none,
@@ -166,7 +166,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
           current.updateLogNotificationEnabled,
       builder: (context, settingsState) {
         final isEnabled = settingsState.updateLogNotificationEnabled;
-        final updateLogColor = const Color(0xFF3B82F6); // 蓝色主题
+        final updateLogColor = AppColors.blue500; // 蓝色主题
 
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -262,7 +262,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
         return Text(
           text,
           style: TextStyle(
-            color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+            color: isDark ? Colors.white54 : AppColors.gray500,
             fontSize: 14,
           ),
         );
@@ -275,10 +275,10 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF9FAFB),
+        color: isDark ? AppColors.slate800 : AppColors.gray50,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.slate700 : AppColors.gray200,
         ),
       ),
       child: _buildLogsContent(),
@@ -307,11 +307,11 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
   /// 加载骨架屏
   Widget _buildLoadingSkeleton() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final cardColor = isDark ? AppColors.slate800 : Colors.white;
     final shimmerColor = isDark
-        ? const Color(0xFF334155)
+        ? AppColors.slate700
         : Colors.grey.shade200;
-    final borderColor = isDark ? const Color(0xFF334155) : Colors.grey.shade200;
+    final borderColor = isDark ? AppColors.slate700 : Colors.grey.shade200;
 
     return ListView.builder(
       padding: const EdgeInsets.all(20),
@@ -414,14 +414,14 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
           const SizedBox(height: 16),
           Text(
             error,
-            style: const TextStyle(color: Color(0xFFEF4444), fontSize: 16),
+            style: const TextStyle(color: AppColors.red500, fontSize: 16),
           ),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () =>
                 context.read<UpdateLogBloc>().add(const UpdateLogFetch()),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0080FF),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
             child: const Text('刷新数据'),
@@ -505,18 +505,18 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
       decoration: BoxDecoration(
         color: isLatest
             ? (isDark ? const Color(0xFF422006) : const Color(0xFFFFFBEB))
-            : (isDark ? const Color(0xFF1E293B) : Colors.white),
+            : (isDark ? AppColors.slate800 : Colors.white),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isLatest
-              ? const Color(0xFFF59E0B).withValues(alpha: 0.3)
-              : (isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB)),
+              ? AppColors.amber500.withValues(alpha: 0.3)
+              : (isDark ? AppColors.slate700 : AppColors.gray200),
           width: isLatest ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
             color: isLatest
-                ? const Color(0xFFF59E0B).withValues(alpha: 0.1)
+                ? AppColors.amber500.withValues(alpha: 0.1)
                 : Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
@@ -532,7 +532,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
               height: 3,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+                  colors: [AppColors.amber500, AppColors.amber400],
                 ),
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(11),
@@ -552,8 +552,8 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
                 Container(
                   height: 1,
                   color: isDark
-                      ? const Color(0xFF334155)
-                      : const Color(0xFFF3F4F6),
+                      ? AppColors.slate700
+                      : AppColors.gray100,
                 ),
                 const SizedBox(height: 14),
                 // 内容
@@ -574,13 +574,13 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+            color: AppColors.indigo500.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
             '#${index + 1}',
             style: const TextStyle(
-              color: Color(0xFF6366F1),
+              color: AppColors.indigo500,
               fontWeight: FontWeight.w600,
               fontSize: 13,
             ),
@@ -593,10 +593,10 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
           decoration: BoxDecoration(
             gradient: isLatest
                 ? const LinearGradient(
-                    colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+                    colors: [AppColors.amber500, AppColors.amber400],
                   )
                 : const LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                    colors: [AppColors.indigo500, AppColors.violet500],
                   ),
             borderRadius: BorderRadius.circular(14),
           ),
@@ -626,7 +626,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFF10B981),
+              color: AppColors.emerald500,
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Text(
@@ -670,25 +670,25 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
           padding: HtmlPaddings.zero,
           fontSize: FontSize(14),
           lineHeight: const LineHeight(1.7),
-          color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF374151),
+          color: isDark ? AppColors.slate200 : AppColors.gray700,
         ),
         'p': Style(margin: Margins.only(bottom: 12)),
         'h1': Style(
           fontSize: FontSize(18),
           fontWeight: FontWeight.w600,
-          color: isDark ? Colors.white : const Color(0xFF1F2937),
+          color: isDark ? Colors.white : AppColors.gray800,
           margin: Margins.only(top: 16, bottom: 12),
         ),
         'h2': Style(
           fontSize: FontSize(16),
           fontWeight: FontWeight.w600,
-          color: isDark ? Colors.white : const Color(0xFF1F2937),
+          color: isDark ? Colors.white : AppColors.gray800,
           margin: Margins.only(top: 14, bottom: 10),
         ),
         'h3': Style(
           fontSize: FontSize(15),
           fontWeight: FontWeight.w600,
-          color: isDark ? Colors.white : const Color(0xFF1F2937),
+          color: isDark ? Colors.white : AppColors.gray800,
           margin: Margins.only(top: 12, bottom: 8),
         ),
         'ul': Style(
@@ -705,20 +705,20 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
         ),
         'strong': Style(
           fontWeight: FontWeight.w600,
-          color: isDark ? Colors.white : const Color(0xFF1F2937),
+          color: isDark ? Colors.white : AppColors.gray800,
         ),
         'em': Style(
           fontStyle: FontStyle.italic,
-          color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF6B7280),
+          color: isDark ? AppColors.slate300 : AppColors.gray500,
         ),
         'a': Style(
-          color: const Color(0xFF0080FF),
+          color: AppColors.primary,
           textDecoration: TextDecoration.none,
         ),
         'code': Style(
           backgroundColor: isDark
-              ? const Color(0xFF334155)
-              : const Color(0xFFF3F4F6),
+              ? AppColors.slate700
+              : AppColors.gray100,
           color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFE74C3C),
           padding: HtmlPaddings.symmetric(horizontal: 6, vertical: 2),
           fontFamily: 'Consolas, Monaco, monospace',
@@ -726,7 +726,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
         ),
         'pre': Style(
           backgroundColor: isDark
-              ? const Color(0xFF334155)
+              ? AppColors.slate700
               : const Color(0xFFF8F9FA),
           padding: HtmlPaddings.all(16),
           margin: Margins.symmetric(vertical: 12),
@@ -734,13 +734,13 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
         'blockquote': Style(
           border: Border(
             left: BorderSide(
-              color: isDark ? const Color(0xFF64748B) : const Color(0xFFD1D5DB),
+              color: isDark ? AppColors.slate500 : AppColors.gray300,
               width: 4,
             ),
           ),
           padding: HtmlPaddings.only(left: 16),
           margin: Margins.symmetric(vertical: 12),
-          color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF6B7280),
+          color: isDark ? AppColors.slate300 : AppColors.gray500,
           fontStyle: FontStyle.italic,
         ),
         // 搜索高亮样式
@@ -813,7 +813,7 @@ class _UpdateLogsDesktopState extends State<UpdateLogsDesktop> {
                 height: 18,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Color(0xFF0080FF),
+                  color: AppColors.primary,
                 ),
               ),
               const SizedBox(width: 10),

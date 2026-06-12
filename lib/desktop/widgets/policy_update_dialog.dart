@@ -4,6 +4,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 
 import '../../core/constants/policy_constants.dart';
 import '../../core/services/policy_service.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 协议更新对话框
 ///
@@ -48,11 +49,11 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final bgColor = isDark ? AppColors.slate800 : Colors.white;
+    final textColor = isDark ? Colors.white : AppColors.slate800;
     final secondaryTextColor = isDark
         ? Colors.white70
-        : const Color(0xFF64748B);
+        : AppColors.slate500;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -81,7 +82,7 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
                   bottom: BorderSide(
                     color: isDark
                         ? Colors.white.withValues(alpha: 0.1)
-                        : const Color(0xFFE2E8F0),
+                        : AppColors.slate200,
                   ),
                 ),
               ),
@@ -90,12 +91,12 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                      color: AppColors.amber500.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
                       MdiIcons.fileDocumentEditOutline,
-                      color: const Color(0xFFF59E0B),
+                      color: AppColors.amber500,
                       size: 24,
                     ),
                   ),
@@ -139,10 +140,10 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF3B82F6).withValues(alpha: 0.08),
+                        color: AppColors.blue500.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: const Color(0xFF3B82F6).withValues(alpha: 0.2),
+                          color: AppColors.blue500.withValues(alpha: 0.2),
                         ),
                       ),
                       child: Row(
@@ -151,7 +152,7 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
                           Icon(
                             MdiIcons.informationOutline,
                             size: 20,
-                            color: const Color(0xFF3B82F6),
+                            color: AppColors.blue500,
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -213,7 +214,7 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
                   top: BorderSide(
                     color: isDark
                         ? Colors.white.withValues(alpha: 0.1)
-                        : const Color(0xFFE2E8F0),
+                        : AppColors.slate200,
                   ),
                 ),
               ),
@@ -231,7 +232,7 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
                         ? _handleAgree
                         : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3B82F6),
+                      backgroundColor: AppColors.blue500,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 32,
@@ -269,14 +270,14 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFF8FAFC),
+          color: isDark ? AppColors.slate700 : AppColors.slate50,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isChecked
-                ? const Color(0xFF3B82F6).withValues(alpha: 0.5)
+                ? AppColors.blue500.withValues(alpha: 0.5)
                 : (isDark
                       ? Colors.white.withValues(alpha: 0.05)
-                      : const Color(0xFFE2E8F0)),
+                      : AppColors.slate200),
           ),
         ),
         child: Row(
@@ -287,15 +288,15 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
               height: 22,
               decoration: BoxDecoration(
                 color: isChecked
-                    ? const Color(0xFF3B82F6)
-                    : (isDark ? const Color(0xFF1E293B) : Colors.white),
+                    ? AppColors.blue500
+                    : (isDark ? AppColors.slate800 : Colors.white),
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
                   color: isChecked
-                      ? const Color(0xFF3B82F6)
+                      ? AppColors.blue500
                       : (isDark
                             ? Colors.white.withValues(alpha: 0.2)
-                            : const Color(0xFFCBD5E1)),
+                            : AppColors.slate300),
                   width: 1.5,
                 ),
               ),
@@ -310,14 +311,14 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
                 text: TextSpan(
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDark ? Colors.white : const Color(0xFF1E293B),
+                    color: isDark ? Colors.white : AppColors.slate800,
                   ),
                   children: [
                     const TextSpan(text: '我已阅读并同意 '),
                     TextSpan(
                       text: '《$label》',
                       style: const TextStyle(
-                        color: Color(0xFF3B82F6),
+                        color: AppColors.blue500,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -335,7 +336,7 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+                  color: AppColors.blue500.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Row(
@@ -345,7 +346,7 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
                       '查看',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF3B82F6),
+                        color: AppColors.blue500,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -353,7 +354,7 @@ class _PolicyUpdateDialogState extends State<PolicyUpdateDialog> {
                     Icon(
                       MdiIcons.openInNew,
                       size: 12,
-                      color: const Color(0xFF3B82F6),
+                      color: AppColors.blue500,
                     ),
                   ],
                 ),
@@ -412,11 +413,11 @@ class _PolicyDetailDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final bgColor = isDark ? AppColors.slate800 : Colors.white;
+    final textColor = isDark ? Colors.white : AppColors.slate800;
     final secondaryTextColor = isDark
         ? Colors.white70
-        : const Color(0xFF64748B);
+        : AppColors.slate500;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -444,7 +445,7 @@ class _PolicyDetailDialog extends StatelessWidget {
                   bottom: BorderSide(
                     color: isDark
                         ? Colors.white.withValues(alpha: 0.1)
-                        : const Color(0xFFE2E8F0),
+                        : AppColors.slate200,
                   ),
                 ),
               ),
@@ -452,7 +453,7 @@ class _PolicyDetailDialog extends StatelessWidget {
                 children: [
                   Icon(
                     MdiIcons.fileDocumentOutline,
-                    color: const Color(0xFF3B82F6),
+                    color: AppColors.blue500,
                     size: 24,
                   ),
                   const SizedBox(width: 12),
@@ -504,7 +505,7 @@ class _PolicyDetailDialog extends StatelessWidget {
                     color: textColor,
                   ),
                   a: const TextStyle(
-                    color: Color(0xFF3B82F6),
+                    color: AppColors.blue500,
                     decoration: TextDecoration.underline,
                   ),
                 ),
@@ -519,7 +520,7 @@ class _PolicyDetailDialog extends StatelessWidget {
                   top: BorderSide(
                     color: isDark
                         ? Colors.white.withValues(alpha: 0.1)
-                        : const Color(0xFFE2E8F0),
+                        : AppColors.slate200,
                   ),
                 ),
               ),
@@ -529,7 +530,7 @@ class _PolicyDetailDialog extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3B82F6),
+                      backgroundColor: AppColors.blue500,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 32,

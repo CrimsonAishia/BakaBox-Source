@@ -7,6 +7,7 @@ import '../../../core/services/source_server_service.dart';
 import '../../../core/utils/map_utils.dart';
 import '../../../core/utils/log_service.dart';
 import '../../../core/widgets/map_background.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 玩家排序选项
 enum PlayerSortOption { name, score, time }
@@ -317,7 +318,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
     if (ping == null) return Colors.grey;
     if (ping < 50) return const Color(0xFF4CAF50);
     if (ping < 100) return const Color(0xFFFFC107);
-    if (ping < 150) return const Color(0xFFFF9800);
+    if (ping < 150) return AppColors.orange;
     return const Color(0xFFF44336);
   }
 
@@ -352,7 +353,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
       height: 120,
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        color: const Color(0xFF1E293B),
+        color: AppColors.slate800,
       ),
       child: Stack(
         fit: StackFit.expand,
@@ -498,10 +499,10 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0080FF)),
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
             ),
             SizedBox(height: 16),
-            Text('加载服务器详情中...', style: TextStyle(color: Color(0xFF6B7280))),
+            Text('加载服务器详情中...', style: TextStyle(color: AppColors.gray500)),
           ],
         ),
       );
@@ -514,12 +515,12 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
           children: [
             Icon(MdiIcons.alertCircle, size: 48, color: Colors.orange),
             const SizedBox(height: 16),
-            Text(_error!, style: const TextStyle(color: Color(0xFF6B7280))),
+            Text(_error!, style: const TextStyle(color: AppColors.gray500)),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _fetchServerDetail,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0080FF),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
               ),
               child: const Text('重试'),
@@ -554,7 +555,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
             children: [
               Icon(
                 MdiIcons.accountGroup,
-                color: const Color(0xFF0080FF),
+                color: AppColors.primary,
                 size: 20,
               ),
               const SizedBox(width: 8),
@@ -667,7 +668,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
                 _playerError!,
-                style: const TextStyle(color: Color(0xFF6B7280)),
+                style: const TextStyle(color: AppColors.gray500),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -675,7 +676,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
             ElevatedButton(
               onPressed: _fetchPlayerList,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0080FF),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
               ),
               child: const Text('重试'),
@@ -698,7 +699,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
               const SizedBox(height: 16),
               const Text(
                 '没有找到匹配的玩家',
-                style: TextStyle(color: Color(0xFF6B7280)),
+                style: TextStyle(color: AppColors.gray500),
               ),
             ],
           ),
@@ -710,7 +711,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
           children: [
             Icon(MdiIcons.accountOff, size: 48, color: Colors.grey),
             const SizedBox(height: 16),
-            const Text('暂无玩家数据', style: TextStyle(color: Color(0xFF6B7280))),
+            const Text('暂无玩家数据', style: TextStyle(color: AppColors.gray500)),
           ],
         ),
       );
@@ -804,7 +805,7 @@ class _ServerDetailDialogState extends State<ServerDetailDialog> {
         padding: EdgeInsets.only(top: isTop ? 2 : 0, bottom: isTop ? 0 : 2),
         child: Icon(
           isTop ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-          color: const Color(0xFF6B7280),
+          color: AppColors.gray500,
           size: 24,
         ),
       ),

@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/services/crash_inspector/crash_inspector.dart';
 import '../../core/utils/toast_utils.dart';
+import '../../core/constants/app_colors.dart';
 
 /// CS2 崩溃报告弹窗.
 ///
@@ -36,10 +37,10 @@ class _Cs2CrashDialogState extends State<Cs2CrashDialog> {
     final s = widget.summary;
     final palette = _palette(s.severity, isDark);
 
-    final bg = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final bg = isDark ? AppColors.slate800 : Colors.white;
     final divider = isDark
         ? Colors.white.withValues(alpha: 0.08)
-        : const Color(0xFFE2E8F0);
+        : AppColors.slate200;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -88,7 +89,6 @@ class _Cs2CrashDialogState extends State<Cs2CrashDialog> {
   }
 }
 
-// ============================ Header ============================
 
 class _Header extends StatelessWidget {
   final CrashSummary summary;
@@ -102,8 +102,8 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
-    final secondary = isDark ? Colors.white70 : const Color(0xFF64748B);
+    final textColor = isDark ? Colors.white : AppColors.slate800;
+    final secondary = isDark ? Colors.white70 : AppColors.slate500;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 22, 16, 18),
@@ -189,7 +189,6 @@ class _SeverityChip extends StatelessWidget {
   }
 }
 
-// ============================ Summary view ============================
 
 class _SummaryView extends StatelessWidget {
   final CrashSummary summary;
@@ -285,9 +284,9 @@ class _MetaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = isDark ? const Color(0xFF273449) : const Color(0xFFF1F5F9);
-    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
-    final secondary = isDark ? Colors.white70 : const Color(0xFF64748B);
+    final bg = isDark ? const Color(0xFF273449) : AppColors.slate100;
+    final textColor = isDark ? Colors.white : AppColors.slate800;
+    final secondary = isDark ? Colors.white70 : AppColors.slate500;
 
     final pairs = <(String, String)>[
       ('类别', summary.categoryLabel),
@@ -363,7 +362,7 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isDark ? Colors.white : const Color(0xFF1E293B);
+    final color = isDark ? Colors.white : AppColors.slate800;
     return Row(
       children: [
         Icon(icon, size: 16, color: color.withValues(alpha: 0.85)),
@@ -389,9 +388,9 @@ class _ThirdPartyTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = _thirdPartyPalette(entry.severity);
-    final bg = isDark ? const Color(0xFF273449) : const Color(0xFFF8FAFC);
-    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
-    final secondary = isDark ? Colors.white70 : const Color(0xFF64748B);
+    final bg = isDark ? const Color(0xFF273449) : AppColors.slate50;
+    final textColor = isDark ? Colors.white : AppColors.slate800;
+    final secondary = isDark ? Colors.white70 : AppColors.slate500;
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -479,14 +478,14 @@ class _ResourceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8);
-    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final textColor = isDark ? Colors.white : AppColors.slate800;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: isDark
             ? Colors.white.withValues(alpha: 0.04)
-            : const Color(0xFFF8FAFC),
+            : AppColors.slate50,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -533,7 +532,7 @@ class _WorkshopChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = const Color(0xFF0EA5E9);
-    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final textColor = isDark ? Colors.white : AppColors.slate800;
     return InkWell(
       borderRadius: BorderRadius.circular(999),
       onTap: () async {
@@ -586,8 +585,8 @@ class _MonoBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final bg = isDark
         ? Colors.black.withValues(alpha: 0.28)
-        : const Color(0xFFF1F5F9);
-    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+        : AppColors.slate100;
+    final textColor = isDark ? Colors.white : AppColors.slate800;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -611,7 +610,6 @@ class _MonoBlock extends StatelessWidget {
   }
 }
 
-// ============================ Full report view ============================
 
 class _FullReportView extends StatelessWidget {
   final String report;
@@ -622,7 +620,7 @@ class _FullReportView extends StatelessWidget {
   Widget build(BuildContext context) {
     final bg = isDark
         ? Colors.black.withValues(alpha: 0.32)
-        : const Color(0xFF0F172A);
+        : AppColors.slate900;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -636,14 +634,13 @@ class _FullReportView extends StatelessWidget {
           fontSize: 12,
           height: 1.5,
           fontFamily: 'Consolas',
-          color: Color(0xFFE2E8F0),
+          color: AppColors.slate200,
         ),
       ),
     );
   }
 }
 
-// ============================ Footer ============================
 
 class _Footer extends StatelessWidget {
   final CrashSummary summary;
@@ -704,7 +701,6 @@ class _Footer extends StatelessWidget {
   }
 }
 
-// ============================ Palette helpers ============================
 
 class _SeverityPalette {
   final String label;
@@ -722,19 +718,19 @@ _SeverityPalette _palette(CrashSeverity severity, bool isDark) {
     case CrashSeverity.high:
       return _SeverityPalette(
         label: '严重',
-        accent: const Color(0xFFEF4444),
+        accent: AppColors.red500,
         icon: MdiIcons.alertOctagon,
       );
     case CrashSeverity.medium:
       return _SeverityPalette(
         label: '警告',
-        accent: const Color(0xFFF59E0B),
+        accent: AppColors.amber500,
         icon: MdiIcons.alert,
       );
     case CrashSeverity.low:
       return _SeverityPalette(
         label: '一般',
-        accent: const Color(0xFF3B82F6),
+        accent: AppColors.blue500,
         icon: MdiIcons.informationOutline,
       );
   }
@@ -743,11 +739,11 @@ _SeverityPalette _palette(CrashSeverity severity, bool isDark) {
 (Color, String) _thirdPartyPalette(String sev) {
   switch (sev) {
     case 'high':
-      return (const Color(0xFFEF4444), '严重');
+      return (AppColors.red500, '严重');
     case 'benign':
-      return (const Color(0xFF10B981), '正常');
+      return (AppColors.emerald500, '正常');
     case 'medium':
     default:
-      return (const Color(0xFFF59E0B), '可疑');
+      return (AppColors.amber500, '可疑');
   }
 }

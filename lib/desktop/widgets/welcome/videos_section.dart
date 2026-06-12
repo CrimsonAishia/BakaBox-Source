@@ -121,7 +121,7 @@ class _VideosSectionState extends State<VideosSection> {
                           fontWeight: FontWeight.w600,
                           color: isDark
                               ? Colors.white
-                              : const Color(0xFF1E293B),
+                              : AppColors.slate800,
                         ),
                       ),
                       const Spacer(),
@@ -134,7 +134,7 @@ class _VideosSectionState extends State<VideosSection> {
                             strokeWidth: 2,
                             color: isDark
                                 ? Colors.white.withValues(alpha: 0.5)
-                                : const Color(0xFF94A3B8),
+                                : AppColors.slate400,
                           ),
                         ),
                     ],
@@ -260,7 +260,7 @@ class _VideosSectionState extends State<VideosSection> {
             fontSize: 13,
             color: isDark
                 ? Colors.white.withValues(alpha: 0.4)
-                : const Color(0xFF94A3B8),
+                : AppColors.slate400,
           ),
         ),
       ),
@@ -342,19 +342,19 @@ class _ScrollArrowButtonState extends State<_ScrollArrowButton> {
                 decoration: BoxDecoration(
                   color: widget.isDark
                       ? (_hovering
-                            ? const Color(0xFF3B82F6).withValues(alpha: 0.3)
+                            ? AppColors.blue500.withValues(alpha: 0.3)
                             : Colors.white.withValues(alpha: 0.12))
                       : (_hovering
-                            ? const Color(0xFF3B82F6).withValues(alpha: 0.15)
+                            ? AppColors.blue500.withValues(alpha: 0.15)
                             : Colors.black.withValues(alpha: 0.06)),
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: widget.isDark
                         ? (_hovering
-                              ? const Color(0xFF3B82F6).withValues(alpha: 0.7)
+                              ? AppColors.blue500.withValues(alpha: 0.7)
                               : Colors.white.withValues(alpha: 0.3))
                         : (_hovering
-                              ? const Color(0xFF3B82F6).withValues(alpha: 0.5)
+                              ? AppColors.blue500.withValues(alpha: 0.5)
                               : Colors.black.withValues(alpha: 0.15)),
                     width: 1.5,
                   ),
@@ -390,7 +390,7 @@ class _ScrollArrowButtonState extends State<_ScrollArrowButton> {
                             : Colors.white.withValues(alpha: 0.9))
                       : (_hovering
                             ? const Color(0xFF2563EB)
-                            : const Color(0xFF1E293B)),
+                            : AppColors.slate800),
                 ),
               ),
             ),

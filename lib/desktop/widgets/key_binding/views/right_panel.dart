@@ -5,6 +5,7 @@ import 'change_requests_view.dart';
 import 'config_detail_view.dart';
 import 'edit_view.dart';
 import 'publish_view.dart';
+import '../../../../core/constants/app_colors.dart';
 
 /// 右侧面板：根据模式显示不同内容
 class RightPanel extends StatelessWidget {
@@ -26,7 +27,7 @@ class RightPanel extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(

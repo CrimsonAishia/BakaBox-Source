@@ -4,13 +4,14 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../../core/utils/map_utils.dart';
 import '../../../core/utils/player_count_utils.dart';
 import '../../../core/widgets/map_background.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 竞技场面板容器装饰（挤服 / 暖服共用）
 BoxDecoration arenaPanelDecoration(bool isDark) {
   return BoxDecoration(
     color: isDark
-        ? const Color(0xFF1E293B).withValues(alpha: 0.5)
-        : const Color(0xFFF1F5F9).withValues(alpha: 0.8),
+        ? AppColors.slate800.withValues(alpha: 0.5)
+        : AppColors.slate100.withValues(alpha: 0.8),
     borderRadius: BorderRadius.circular(12),
     border: Border.all(
       color: isDark
@@ -75,7 +76,7 @@ class ArenaWindowHeader extends StatelessWidget {
       height: 130,
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        color: Color(0xFF1E293B),
+        color: AppColors.slate800,
       ),
       child: Stack(
         fit: StackFit.expand,
@@ -280,8 +281,8 @@ class _ArenaServerIconState extends State<ArenaServerIcon>
   late AnimationController _colorController;
   late Animation<Color?> _colorAnimation;
 
-  static const _greenColor = Color(0xFF22C55E);
-  static const _redColor = Color(0xFFEF4444);
+  static const _greenColor = AppColors.green500;
+  static const _redColor = AppColors.red500;
 
   @override
   void initState() {

@@ -8,6 +8,7 @@ import '../../core/bloc/map_contribution/map_contribution_state.dart';
 import '../../core/models/map_contribution_models.dart';
 import '../widgets/map_database/map_card_mobile.dart';
 import '../widgets/map_database/map_history_sheet_mobile.dart';
+import '../../core/constants/app_colors.dart';
 
 const _mapTypeOptions = [
   ('ze_', '僵尸逃跑'),
@@ -303,7 +304,7 @@ class _MapDatabaseAllTabMobileState extends State<MapDatabaseAllTabMobile>
           children: _mapTypeOptions.map((option) {
             final (value, label) = option;
             final isSelected = _selectedMapType == value;
-            const activeColor = Color(0xFF0080FF);
+            const activeColor = AppColors.primary;
 
             return Padding(
               padding: const EdgeInsets.only(right: 8),

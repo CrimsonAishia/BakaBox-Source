@@ -31,7 +31,6 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen>
 
   Future<void> _startAnimationAndNavigate() async {
     try {
-      // 阶段1: 初始化 (0-30%)
       if (mounted) {
         setState(() => _loadingText = 'INITIALIZING');
       }
@@ -41,7 +40,6 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen>
       );
       await Future.delayed(const Duration(milliseconds: 400));
 
-      // 阶段2: 检查更新 (30-60%)
       if (mounted) {
         setState(() => _loadingText = 'CHECKING UPDATE');
         final updateBloc = context.read<UpdateBloc>();
@@ -84,7 +82,6 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen>
         }
       }
 
-      // 阶段3: 完成 (60-100%)
       if (mounted) {
         setState(() => _loadingText = 'LOADING');
         _progressController.animateTo(
@@ -138,7 +135,7 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen>
 
     return Scaffold(
       backgroundColor: isDark
-          ? const Color(0xFF0F172A)
+          ? AppColors.slate900
           : const Color(0xFFE9EEF8),
       body: Stack(
         children: [
@@ -259,8 +256,8 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen>
                       colors: [
                         Colors.transparent,
                         (isDark
-                                ? const Color(0xFF64748B)
-                                : const Color(0xFF94A3B8))
+                                ? AppColors.slate500
+                                : AppColors.slate400)
                             .withValues(alpha: 0.5),
                       ],
                     ),
@@ -274,8 +271,8 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen>
                     fontWeight: FontWeight.w600,
                     letterSpacing: 3.0,
                     color: isDark
-                        ? const Color(0xFF94A3B8)
-                        : const Color(0xFF64748B),
+                        ? AppColors.slate400
+                        : AppColors.slate500,
                     shadows: [
                       Shadow(
                         color: Colors.black.withValues(
@@ -295,8 +292,8 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen>
                     gradient: LinearGradient(
                       colors: [
                         (isDark
-                                ? const Color(0xFF64748B)
-                                : const Color(0xFF94A3B8))
+                                ? AppColors.slate500
+                                : AppColors.slate400)
                             .withValues(alpha: 0.5),
                         Colors.transparent,
                       ],
@@ -333,8 +330,8 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen>
                     height: 3,
                     decoration: BoxDecoration(
                       color: isDark
-                          ? const Color(0xFF334155)
-                          : const Color(0xFFE2E8F0),
+                          ? AppColors.slate700
+                          : AppColors.slate200,
                       borderRadius: BorderRadius.circular(1.5),
                     ),
                   ),
@@ -345,7 +342,7 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen>
                       height: 3,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF3B82F6), Color(0xFF0080FF)],
+                          colors: [AppColors.blue500, AppColors.primary],
                         ),
                         borderRadius: BorderRadius.circular(1.5),
                         boxShadow: [
@@ -374,8 +371,8 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen>
                 style: TextStyle(
                   fontSize: 11,
                   color: isDark
-                      ? const Color(0xFF64748B)
-                      : const Color(0xFF94A3B8),
+                      ? AppColors.slate500
+                      : AppColors.slate400,
                   letterSpacing: 2.5,
                   fontWeight: FontWeight.w600,
                 ),
@@ -403,8 +400,8 @@ class _DesktopSplashScreenState extends State<DesktopSplashScreen>
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: isDark
-                          ? const Color(0xFF64748B)
-                          : const Color(0xFF94A3B8),
+                          ? AppColors.slate500
+                          : AppColors.slate400,
                     ),
                   )
                   .animate(onPlay: (c) => c.repeat())

@@ -13,6 +13,7 @@ import '../../core/services/notification_window_service.dart';
 import '../../core/utils/map_utils.dart';
 import '../../core/widgets/disk_cached_image.dart';
 import '../theme/desktop_theme.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 单个通知窗口状态通知器
 class SingleNotificationStateNotifier extends ChangeNotifier {
@@ -502,14 +503,14 @@ class _NotificationCardState extends State<_NotificationCard> {
     final isBroadcast = notification.type == NotificationType.broadcast;
 
     final borderColor = isWarmup
-        ? const Color(0xFFFF9800)
+        ? AppColors.orange
         : isMapChange || isMapSubscription
         ? const Color(0xFF4CAF50)
         : isUpdateLog
-        ? const Color(0xFFF59E0B)
+        ? AppColors.amber500
         : isBroadcast
         ? const Color(0xFF7C3AED)
-        : const Color(0xFF0080FF);
+        : AppColors.primary;
 
     return MouseRegion(
       onEnter: (_) {
@@ -525,7 +526,7 @@ class _NotificationCardState extends State<_NotificationCard> {
         width: _width,
         height: _height,
         decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
+          color: AppColors.slate800,
           border: Border.all(
             color: _isHovered ? borderColor.withValues(alpha: 1) : borderColor,
             width: _borderWidth,
@@ -670,8 +671,8 @@ class _NotificationCardState extends State<_NotificationCard> {
                         width: _deleteAreaWidth,
                         decoration: BoxDecoration(
                           color: _isDeleteHovered
-                              ? const Color(0xFFDC2626)
-                              : const Color(0xFFEF4444),
+                              ? AppColors.red600
+                              : AppColors.red500,
                         ),
                         child: const Center(
                           child: Icon(
@@ -720,14 +721,14 @@ class _NotificationCardState extends State<_NotificationCard> {
         showPlayers && currentPlayers != null && maxPlayers != null;
 
     // 根据人数比例计算颜色（与服务器卡片保持一致）
-    Color primaryColor = const Color(0xFF0080FF); // 默认蓝色
+    Color primaryColor = AppColors.primary; // 默认蓝色
     Color bgColor = Colors.white; // 默认白色背景
     if (hasPlayers && maxPlayers > 0) {
       if (currentPlayers >= maxPlayers) {
         primaryColor = const Color(0xFFF44336); // 满员：红色
         bgColor = const Color(0xFFFEEAEA); // 浅红色背景
       } else if (currentPlayers >= maxPlayers * 0.8) {
-        primaryColor = const Color(0xFFFF9800); // 80%以上：橙色
+        primaryColor = AppColors.orange; // 80%以上：橙色
         bgColor = const Color(0xFFFFF9E6); // 浅黄色背景
       }
     }
@@ -832,7 +833,7 @@ class _NotificationCardState extends State<_NotificationCard> {
                   child: Text(
                     '/',
                     style: TextStyle(
-                      color: Color(0xFF9CA3AF),
+                      color: AppColors.gray400,
                       fontSize: 16,
                       fontWeight: FontWeight.w300,
                       height: 1,
@@ -843,7 +844,7 @@ class _NotificationCardState extends State<_NotificationCard> {
                 Text(
                   '$maxPlayers',
                   style: const TextStyle(
-                    color: Color(0xFF6B7280),
+                    color: AppColors.gray500,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     height: 1,
@@ -881,7 +882,7 @@ class _NotificationCardState extends State<_NotificationCard> {
           MapUtils.defaultMapBackground,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) =>
-              Container(color: const Color(0xFF1E293B)),
+              Container(color: AppColors.slate800),
         ),
         // 下载失败显示默认背景
         fallbackAsset: MapUtils.defaultMapBackground,
@@ -889,7 +890,7 @@ class _NotificationCardState extends State<_NotificationCard> {
           MapUtils.defaultMapBackground,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) =>
-              Container(color: const Color(0xFF1E293B)),
+              Container(color: AppColors.slate800),
         ),
       );
     }
@@ -899,7 +900,7 @@ class _NotificationCardState extends State<_NotificationCard> {
       mapUrl,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) =>
-          Container(color: const Color(0xFF1E293B)),
+          Container(color: AppColors.slate800),
     );
   }
 
@@ -1046,7 +1047,7 @@ class _ServerNameTextState extends State<_ServerNameText>
           Text(
             '[$categoryName] ',
             style: const TextStyle(
-              color: Color(0xFFFBBF24),
+              color: AppColors.amber400,
               fontSize: 13,
               fontWeight: FontWeight.w600,
               shadows: [
@@ -1343,24 +1344,24 @@ class _VerticalMarqueeHtmlState extends State<_VerticalMarqueeHtml>
             ),
             'strong': Style(
               fontWeight: FontWeight.w600,
-              color: const Color(0xFFFBBF24),
+              color: AppColors.amber400,
             ),
             'h1': Style(
               fontSize: FontSize(14),
               fontWeight: FontWeight.w600,
-              color: const Color(0xFFFBBF24),
+              color: AppColors.amber400,
               margin: Margins.only(bottom: 6),
             ),
             'h2': Style(
               fontSize: FontSize(13),
               fontWeight: FontWeight.w600,
-              color: const Color(0xFFFBBF24),
+              color: AppColors.amber400,
               margin: Margins.only(bottom: 4),
             ),
             'h3': Style(
               fontSize: FontSize(12),
               fontWeight: FontWeight.w600,
-              color: const Color(0xFFFBBF24),
+              color: AppColors.amber400,
               margin: Margins.only(bottom: 4),
             ),
             'a': Style(

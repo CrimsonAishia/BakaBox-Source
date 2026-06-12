@@ -7,6 +7,7 @@ import '../../../core/bloc/settings/settings_event.dart';
 import '../../../core/bloc/settings/settings_state.dart';
 import 'settings_group_title.dart';
 import 'settings_item.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 窗口设置组件
 class WindowSettings extends StatelessWidget {
@@ -71,7 +72,7 @@ class _ExitBehaviorSelector extends StatelessWidget {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            const Color(0xFF0080FF).withValues(alpha: 0.15),
+                            AppColors.primary.withValues(alpha: 0.15),
                             const Color(0xFF00D4FF).withValues(alpha: 0.08),
                           ],
                         )
@@ -79,15 +80,15 @@ class _ExitBehaviorSelector extends StatelessWidget {
                   color: isSelected
                       ? null
                       : (isDark
-                            ? const Color(0xFF334155)
-                            : const Color(0xFFF9FAFB)),
+                            ? AppColors.slate700
+                            : AppColors.gray50),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: isSelected
-                        ? const Color(0xFF0080FF)
+                        ? AppColors.primary
                         : (isDark
-                              ? const Color(0xFF475569)
-                              : const Color(0xFFE5E7EB)),
+                              ? AppColors.slate600
+                              : AppColors.gray200),
                     width: isSelected ? 2 : 1,
                   ),
                   boxShadow: isSelected
@@ -109,8 +110,8 @@ class _ExitBehaviorSelector extends StatelessWidget {
                       _iconForBehavior(behavior),
                       size: 18,
                       color: isSelected
-                          ? const Color(0xFF0080FF)
-                          : (isDark ? Colors.white70 : const Color(0xFF6B7280)),
+                          ? AppColors.primary
+                          : (isDark ? Colors.white70 : AppColors.gray500),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -121,8 +122,8 @@ class _ExitBehaviorSelector extends StatelessWidget {
                             ? FontWeight.w600
                             : FontWeight.w500,
                         color: isSelected
-                            ? const Color(0xFF0080FF)
-                            : (isDark ? Colors.white : const Color(0xFF374151)),
+                            ? AppColors.primary
+                            : (isDark ? Colors.white : AppColors.gray700),
                       ),
                     ),
                     if (isSelected) ...[
@@ -130,7 +131,7 @@ class _ExitBehaviorSelector extends StatelessWidget {
                       Icon(
                         MdiIcons.checkCircle,
                         size: 16,
-                        color: const Color(0xFF0080FF),
+                        color: AppColors.primary,
                       ),
                     ],
                   ],
@@ -147,7 +148,7 @@ class _ExitBehaviorSelector extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               height: 1.45,
-              color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+              color: isDark ? Colors.white60 : AppColors.gray500,
             ),
           ),
         ),

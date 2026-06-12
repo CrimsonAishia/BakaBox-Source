@@ -8,6 +8,7 @@ import '../../../../core/models/key_config_models.dart';
 import '../../../../core/utils/key_placeholder_parser.dart';
 import '../components/common_widgets.dart';
 import '../components/form_widgets.dart';
+import '../../../../core/constants/app_colors.dart';
 
 /// 编辑视图
 ///
@@ -193,7 +194,7 @@ class _EditViewState extends State<EditView> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: const Color(0xFFf59e0b).withValues(alpha: 0.1),
+              color: AppColors.amber500.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(4),
             ),
             child: const Text(
@@ -201,7 +202,7 @@ class _EditViewState extends State<EditView> {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFFf59e0b),
+                color: AppColors.amber500,
               ),
             ),
           ),
@@ -226,8 +227,8 @@ class _EditViewState extends State<EditView> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF8b5cf6).withValues(alpha: 0.06),
-            isDark ? const Color(0xFF1E293B) : Colors.white,
+            AppColors.violet500.withValues(alpha: 0.06),
+            isDark ? AppColors.slate800 : Colors.white,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -238,13 +239,13 @@ class _EditViewState extends State<EditView> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF8b5cf6).withValues(alpha: 0.1),
+              color: AppColors.violet500.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               MdiIcons.pencilOutline,
               size: 18,
-              color: const Color(0xFF8b5cf6),
+              color: AppColors.violet500,
             ),
           ),
           const SizedBox(width: 12),
@@ -265,7 +266,7 @@ class _EditViewState extends State<EditView> {
                   '修改 "${widget.config.name}"',
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark ? Colors.white54 : const Color(0xFF6b7280),
+                    color: isDark ? Colors.white54 : AppColors.gray500,
                   ),
                 ),
               ],
@@ -287,10 +288,10 @@ class _EditViewState extends State<EditView> {
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFEF4444).withValues(alpha: 0.05),
+        color: AppColors.red500.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+          color: AppColors.red500.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -298,7 +299,7 @@ class _EditViewState extends State<EditView> {
           Icon(
             MdiIcons.alertCircleOutline,
             size: 16,
-            color: const Color(0xFFEF4444),
+            color: AppColors.red500,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -310,7 +311,7 @@ class _EditViewState extends State<EditView> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFFEF4444),
+                    color: AppColors.red500,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -352,25 +353,25 @@ class _EditViewState extends State<EditView> {
 
     if (!hasChanges) {
       hint = '没有修改内容';
-      hintColor = const Color(0xFF10b981);
+      hintColor = AppColors.emerald500;
       hintIcon = MdiIcons.checkCircleOutline;
     } else if (_needsKey && !hasPlaceholders) {
       hint = '请在脚本中插入按键绑定';
-      hintColor = const Color(0xFFf59e0b);
+      hintColor = AppColors.amber500;
       hintIcon = MdiIcons.informationOutline;
     } else if (needsEditReason) {
       hint = '请填写修改理由';
-      hintColor = const Color(0xFFf59e0b);
+      hintColor = AppColors.amber500;
       hintIcon = MdiIcons.informationOutline;
     }
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF334155) : Colors.grey[50],
+        color: isDark ? AppColors.slate700 : Colors.grey[50],
         border: Border(
           top: BorderSide(
-            color: isDark ? const Color(0xFF475569) : Colors.grey[200]!,
+            color: isDark ? AppColors.slate600 : Colors.grey[200]!,
           ),
         ),
       ),
@@ -439,7 +440,7 @@ class _EditViewState extends State<EditView> {
                 style: const TextStyle(fontSize: 12),
               ),
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF8b5cf6),
+                backgroundColor: AppColors.violet500,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
               ),
             ),
@@ -483,10 +484,10 @@ class _EditViewState extends State<EditView> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFFF59E0B).withValues(alpha: 0.05),
+            color: AppColors.amber500.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
+              color: AppColors.amber500.withValues(alpha: 0.2),
             ),
           ),
           child: Row(
@@ -494,7 +495,7 @@ class _EditViewState extends State<EditView> {
               Icon(
                 MdiIcons.alertCircleOutline,
                 size: 16,
-                color: const Color(0xFFF59E0B),
+                color: AppColors.amber500,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -533,7 +534,7 @@ class _EditViewState extends State<EditView> {
               color: isDark ? Colors.white38 : Colors.grey[400],
             ),
             filled: true,
-            fillColor: isDark ? const Color(0xFF334155) : Colors.grey[50],
+            fillColor: isDark ? AppColors.slate700 : Colors.grey[50],
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
               vertical: 10,
@@ -541,18 +542,18 @@ class _EditViewState extends State<EditView> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: isDark ? const Color(0xFF475569) : Colors.grey[200]!,
+                color: isDark ? AppColors.slate600 : Colors.grey[200]!,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: isDark ? const Color(0xFF475569) : Colors.grey[200]!,
+                color: isDark ? AppColors.slate600 : Colors.grey[200]!,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFF59E0B)),
+              borderSide: const BorderSide(color: AppColors.amber500),
             ),
           ),
           validator: (v) =>

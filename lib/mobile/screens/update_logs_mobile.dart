@@ -129,7 +129,7 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
       floatingActionButton: _showScrollToTop
           ? FloatingActionButton(
                   onPressed: _scrollToTop,
-                  backgroundColor: const Color(0xFFEF4444),
+                  backgroundColor: AppColors.red500,
                   foregroundColor: Colors.white,
                   elevation: 6,
                   child: const Icon(Icons.keyboard_arrow_up_rounded, size: 28),
@@ -218,7 +218,7 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
   }
 
   Widget _buildAppBarIcon(bool isDark) {
-    final primaryColor = const Color(0xFFEF4444);
+    final primaryColor = AppColors.red500;
 
     return Container(
       width: 48,
@@ -226,8 +226,8 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
-              ? [primaryColor.withValues(alpha: 0.9), const Color(0xFFDC2626)]
-              : [primaryColor, const Color(0xFFDC2626)],
+              ? [primaryColor.withValues(alpha: 0.9), AppColors.red600]
+              : [primaryColor, AppColors.red600],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -370,13 +370,13 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                color: AppColors.red500.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(60),
               ),
               child: Icon(
                 Icons.article_outlined,
                 size: 64,
-                color: const Color(0xFFEF4444).withValues(alpha: 0.6),
+                color: AppColors.red500.withValues(alpha: 0.6),
               ),
             ).animate().fadeIn(duration: 300.ms),
             const SizedBox(height: 24),
@@ -403,7 +403,7 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
                 icon: const Icon(Icons.refresh_rounded),
                 label: const Text('清除搜索'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFEF4444),
+                  backgroundColor: AppColors.red500,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
@@ -448,7 +448,7 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          Color(0xFFEF4444),
+                          AppColors.red500,
                         ),
                       ),
                     ),
@@ -480,7 +480,7 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+              color: AppColors.red500.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(40),
             ),
             child: Stack(
@@ -491,7 +491,7 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
                       height: 60,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(30),
-                        color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+                        color: AppColors.red500.withValues(alpha: 0.2),
                       ),
                     )
                     .animate(onPlay: (controller) => controller.repeat())
@@ -503,7 +503,7 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
                   child: CircularProgressIndicator(
                     strokeWidth: 3,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      Color(0xFFEF4444),
+                      AppColors.red500,
                     ),
                   ),
                 ),
@@ -514,7 +514,7 @@ class _UpdateLogsMobileState extends State<UpdateLogsMobile> {
           Text(
                 '正在获取更新日志',
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFFEF4444),
+                  color: AppColors.red500,
                   fontWeight: FontWeight.w500,
                 ),
               )

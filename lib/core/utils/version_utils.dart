@@ -16,6 +16,9 @@ class VersionUtils {
   /// - 1.0.0-beta
   /// - 1.0.0+123
   static int compareVersion(String version1, String version2) {
+    final b1 = _extractBuildNumber(version1);
+    final b2 = _extractBuildNumber(version2);
+
     // 移除预发布标识和构建元数据
     final v1 = _normalizeVersion(version1);
     final v2 = _normalizeVersion(version2);
@@ -40,6 +43,20 @@ class VersionUtils {
       if (parts1[i] < parts2[i]) return -1;
     }
 
+    // 版本号相同时，比较构建号
+    if (b1 > b2) return 1;
+    if (b1 < b2) return -1;
+
+    return 0;
+  }
+
+  /// 提取构建号
+  static int _extractBuildNumber(String version) {
+    if (!version.contains('+')) return 0;
+    final parts = version.split('+');
+    if (parts.length > 1) {
+      return int.tryParse(parts.last) ?? 0;
+    }
     return 0;
   }
 

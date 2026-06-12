@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/bloc/lobby/lobby_bloc.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 状态横幅组件
 class LobbyStatusBanner extends StatefulWidget {
@@ -63,11 +64,11 @@ class _LobbyStatusBannerState extends State<LobbyStatusBanner>
   @override
   Widget build(BuildContext context) {
     final Color accent = switch (widget.connectionStatus) {
-      LobbyConnectionStatus.connected => const Color(0xFF22C55E),
-      LobbyConnectionStatus.connecting => const Color(0xFF38BDF8),
-      LobbyConnectionStatus.reconnecting => const Color(0xFFF59E0B),
-      LobbyConnectionStatus.failed => const Color(0xFFEF4444),
-      LobbyConnectionStatus.disconnected => const Color(0xFF94A3B8),
+      LobbyConnectionStatus.connected => AppColors.green500,
+      LobbyConnectionStatus.connecting => AppColors.sky400,
+      LobbyConnectionStatus.reconnecting => AppColors.amber500,
+      LobbyConnectionStatus.failed => AppColors.red500,
+      LobbyConnectionStatus.disconnected => AppColors.slate400,
     };
 
     // 重连状态显示特殊图标和文字

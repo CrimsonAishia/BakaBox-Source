@@ -21,6 +21,7 @@ import 'queue_activity_log.dart';
 import 'queue_arena.dart';
 import 'queue_arena_session.dart';
 import 'queue_settings.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 挤服窗口
 class QueueWindow extends StatefulWidget {
@@ -611,7 +612,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent>
           ),
           label: const Text('启动中...', style: TextStyle(fontSize: 14)),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF3B82F6),
+            backgroundColor: AppColors.blue500,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -658,7 +659,7 @@ class _QueueWindowContentState extends State<_QueueWindowContent>
         icon: Icon(MdiIcons.gamepadVariant, size: 18),
         label: const Text('启动游戏', style: TextStyle(fontSize: 14)),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF3B82F6),
+          backgroundColor: AppColors.blue500,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),

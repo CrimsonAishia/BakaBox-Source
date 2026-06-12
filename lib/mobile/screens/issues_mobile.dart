@@ -128,7 +128,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
                       ? Icons.radio_button_checked
                       : Icons.radio_button_off,
                   color: currentSort == e.key
-                      ? const Color(0xFF0080FF)
+                      ? AppColors.primary
                       : theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
                 title: Text(
@@ -172,7 +172,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
           FloatingActionButton(
             heroTag: 'create',
             onPressed: _navigateToCreate,
-            backgroundColor: const Color(0xFF0080FF),
+            backgroundColor: AppColors.primary,
             child: const Icon(Icons.add, color: Colors.white),
           ),
           if (_showScrollToTop) const SizedBox(height: 12),
@@ -182,8 +182,8 @@ class _IssuesMobileState extends State<IssuesMobile> {
                   onPressed: _scrollToTop,
                   backgroundColor:
                       Theme.of(context).brightness == Brightness.dark
-                      ? const Color(0xFF374151)
-                      : const Color(0xFF6B7280),
+                      ? AppColors.gray700
+                      : AppColors.gray500,
                   child: const Icon(
                     Icons.keyboard_arrow_up_rounded,
                     color: Colors.white,
@@ -243,7 +243,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
                                     const Color(0xFF004499),
                                   ]
                                 : [
-                                    const Color(0xFF0080FF),
+                                    AppColors.primary,
                                     const Color(0xFF0066CC),
                                   ],
                             begin: Alignment.topLeft,
@@ -373,7 +373,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
   Widget _buildModernLoadingIndicator() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF0080FF);
+    final primaryColor = AppColors.primary;
 
     return Center(
       child: Column(
@@ -548,7 +548,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
                   () => context.read<IssueBloc>().add(
                     const IssueFilterType('bug'),
                   ),
-                  color: const Color(0xFFDC2626),
+                  color: AppColors.red600,
                   icon: MdiIcons.bug,
                 ),
                 _buildFilterChip(
@@ -597,7 +597,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
                   const IssueFilterStatus('closed'),
                 ),
                 icon: MdiIcons.closeCircleOutline,
-                activeColor: const Color(0xFF6B7280),
+                activeColor: AppColors.gray500,
               ),
               const Spacer(),
               // 排序按钮
@@ -662,12 +662,12 @@ class _IssuesMobileState extends State<IssuesMobile> {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
             color: isSelected
-                ? (color ?? const Color(0xFF0080FF))
+                ? (color ?? AppColors.primary)
                 : Theme.of(context).colorScheme.surfaceContainer,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isSelected
-                  ? (color ?? const Color(0xFF0080FF))
+                  ? (color ?? AppColors.primary)
                   : Theme.of(context).dividerColor,
             ),
           ),
@@ -710,7 +710,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
     IconData? icon,
     Color? activeColor,
   }) {
-    final color = activeColor ?? const Color(0xFF0080FF);
+    final color = activeColor ?? AppColors.primary;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -919,9 +919,9 @@ class _IssuesMobileState extends State<IssuesMobile> {
 
     final (color, bgColor, icon) = switch (type) {
       IssueType.bug => (
-        const Color(0xFFDC2626),
+        AppColors.red600,
         isDark
-            ? const Color(0xFFDC2626).withValues(alpha: 0.15)
+            ? AppColors.red600.withValues(alpha: 0.15)
             : const Color(0xFFFEE2E2),
         MdiIcons.bug,
       ),
@@ -977,8 +977,8 @@ class _IssuesMobileState extends State<IssuesMobile> {
                   ? const Color(0xFF16A34A).withValues(alpha: 0.15)
                   : const Color(0xFFDCFCE7))
             : (isDark
-                  ? const Color(0xFF6B7280).withValues(alpha: 0.15)
-                  : const Color(0xFFF3F4F6)),
+                  ? AppColors.gray500.withValues(alpha: 0.15)
+                  : AppColors.gray100),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -988,7 +988,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
             width: 5,
             height: 5,
             decoration: BoxDecoration(
-              color: isOpen ? const Color(0xFF16A34A) : const Color(0xFF6B7280),
+              color: isOpen ? const Color(0xFF16A34A) : AppColors.gray500,
               shape: BoxShape.circle,
             ),
           ),
@@ -996,7 +996,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
           Text(
             status.label,
             style: TextStyle(
-              color: isOpen ? const Color(0xFF16A34A) : const Color(0xFF6B7280),
+              color: isOpen ? const Color(0xFF16A34A) : AppColors.gray500,
               fontSize: 11,
               fontWeight: FontWeight.w500,
             ),
@@ -1010,7 +1010,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final isSearching = _searchController.text.isNotEmpty;
-    final primaryColor = const Color(0xFF0080FF);
+    final primaryColor = AppColors.primary;
 
     return Container(
       height: 300,
@@ -1035,7 +1035,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
                 size: 36,
                 color: isDark
                     ? primaryColor.withValues(alpha: 0.9)
-                    : const Color(0xFF3B82F6),
+                    : AppColors.blue500,
               ),
             ),
             const SizedBox(height: 20),
@@ -1094,7 +1094,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
   Widget _buildErrorState(String error) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final errorColor = const Color(0xFFDC2626);
+    final errorColor = AppColors.red600;
 
     return Center(
       child: Container(
@@ -1174,7 +1174,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
               icon: Icon(MdiIcons.refresh, size: 18),
               label: const Text('重新加载'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0080FF),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
@@ -1193,7 +1193,7 @@ class _IssuesMobileState extends State<IssuesMobile> {
 
   Widget _buildBottomIndicator(IssueState state) {
     final theme = Theme.of(context);
-    final primaryColor = const Color(0xFF0080FF);
+    final primaryColor = AppColors.primary;
 
     if (state.isLoadingMore) {
       return Padding(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/bloc/lobby/lobby_bloc.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 移动端大厅 Loading 界面
 ///
@@ -78,7 +79,6 @@ class _LobbyLoadingScreenMobileState extends State<LobbyLoadingScreenMobile>
         connectionStatus == LobbyConnectionStatus.disconnected ||
         connectionStatus == LobbyConnectionStatus.failed;
 
-    // 步骤1：连接大厅
     steps.add(
       _LoadingStep(
         icon: Icons.cloud_done_outlined,
@@ -104,7 +104,6 @@ class _LobbyLoadingScreenMobileState extends State<LobbyLoadingScreenMobile>
       );
     }
 
-    // 步骤2：加载素材
     final hasAssets = _checkAssetsReady();
     _StepStatus assetsStatus;
     if (isQueueing) {
@@ -129,7 +128,6 @@ class _LobbyLoadingScreenMobileState extends State<LobbyLoadingScreenMobile>
       ),
     );
 
-    // 步骤3：获取大厅状态
     final hasSnapshot = widget.state.selfUser != null;
     _StepStatus snapshotStatus;
     if (isQueueing) {
@@ -186,11 +184,11 @@ class _LobbyLoadingScreenMobileState extends State<LobbyLoadingScreenMobile>
     final steps = _buildSteps();
     final hasSnapshot = steps.last.status == _StepStatus.done;
 
-    final textPrimary = isDark ? Colors.white : const Color(0xFF1E293B);
-    final textSecondary = isDark ? Colors.white70 : const Color(0xFF475569);
+    final textPrimary = isDark ? Colors.white : AppColors.slate800;
+    final textSecondary = isDark ? Colors.white70 : AppColors.slate600;
     final ringBgColor = isDark
         ? Colors.white.withValues(alpha: 0.1)
-        : const Color(0xFFCBD5E1);
+        : AppColors.slate300;
 
     return Container(
       color: isDark ? const Color(0xFF0B1120) : const Color(0xFFDDE7F7),
@@ -282,7 +280,7 @@ class _LobbyLoadingScreenMobileState extends State<LobbyLoadingScreenMobile>
                       icon: const Icon(Icons.refresh, size: 18),
                       label: const Text('重新连接'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF38BDF8),
+                        backgroundColor: AppColors.sky400,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
@@ -346,7 +344,7 @@ class _LoadingStepItem extends StatelessWidget {
               color: step.status == _StepStatus.done
                   ? textPrimary
                   : step.status == _StepStatus.failed
-                  ? const Color(0xFFEF4444)
+                  ? AppColors.red500
                   : textSecondary,
               fontSize: 14,
               fontWeight: step.status == _StepStatus.done
@@ -379,11 +377,11 @@ class _StepIndicator extends StatelessWidget {
   Color get _bgColor {
     switch (status) {
       case _StepStatus.done:
-        return const Color(0xFF22C55E).withValues(alpha: 0.2);
+        return AppColors.green500.withValues(alpha: 0.2);
       case _StepStatus.loading:
-        return const Color(0xFF38BDF8).withValues(alpha: 0.2);
+        return AppColors.sky400.withValues(alpha: 0.2);
       case _StepStatus.failed:
-        return const Color(0xFFEF4444).withValues(alpha: 0.15);
+        return AppColors.red500.withValues(alpha: 0.15);
       case _StepStatus.pending:
         return textSecondary.withValues(alpha: 0.08);
     }
@@ -392,18 +390,18 @@ class _StepIndicator extends StatelessWidget {
   Widget _buildIcon() {
     switch (status) {
       case _StepStatus.done:
-        return const Icon(Icons.check, color: Color(0xFF22C55E), size: 16);
+        return const Icon(Icons.check, color: AppColors.green500, size: 16);
       case _StepStatus.loading:
         return const SizedBox(
           width: 16,
           height: 16,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.sky400),
           ),
         );
       case _StepStatus.failed:
-        return const Icon(Icons.close, color: Color(0xFFEF4444), size: 16);
+        return const Icon(Icons.close, color: AppColors.red500, size: 16);
       case _StepStatus.pending:
         return Icon(
           Icons.circle_outlined,
@@ -437,7 +435,7 @@ class _MobileRingPainter extends CustomPainter {
 
     // 脉冲外环
     final glowPaint = Paint()
-      ..color = const Color(0xFF38BDF8).withValues(alpha: 0.15 * pulse)
+      ..color = AppColors.sky400.withValues(alpha: 0.15 * pulse)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3;
     canvas.drawCircle(center, radius + 6 + pulse * 4, glowPaint);
@@ -456,9 +454,9 @@ class _MobileRingPainter extends CustomPainter {
           startAngle: -1.57,
           endAngle: 4.71,
           colors: [
-            const Color(0xFF38BDF8),
-            hasSnapshot ? const Color(0xFF22C55E) : const Color(0xFF38BDF8),
-            const Color(0xFF38BDF8).withValues(alpha: 0.1),
+            AppColors.sky400,
+            hasSnapshot ? AppColors.green500 : AppColors.sky400,
+            AppColors.sky400.withValues(alpha: 0.1),
           ],
           stops: const [0.0, 0.6, 1.0],
         ).createShader(Rect.fromCircle(center: center, radius: radius))
@@ -477,7 +475,7 @@ class _MobileRingPainter extends CustomPainter {
 
     // 六边形顶点装饰
     final dotPaint = Paint()
-      ..color = const Color(0xFF38BDF8).withValues(alpha: 0.8 * pulse)
+      ..color = AppColors.sky400.withValues(alpha: 0.8 * pulse)
       ..style = PaintingStyle.fill;
     for (int i = 0; i < 6; i++) {
       final angle = rotation + (i * math.pi / 3);

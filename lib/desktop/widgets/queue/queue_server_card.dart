@@ -5,6 +5,7 @@ import '../../../core/models/server_models.dart';
 import '../../../core/utils/map_utils.dart';
 import '../../../core/utils/player_count_utils.dart';
 import '../../../core/widgets/disk_cached_image.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 挤服窗口中的服务器信息卡片
 class QueueServerCard extends StatelessWidget {
@@ -69,7 +70,7 @@ class QueueServerCard extends StatelessWidget {
       return DiskCachedImage(
         imageUrl: mapUrl,
         fit: BoxFit.cover,
-        placeholder: Container(color: const Color(0xFF1E293B)),
+        placeholder: Container(color: AppColors.slate800),
         errorWidget: _buildDefaultBackground(),
       );
     }
@@ -87,7 +88,7 @@ class QueueServerCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1E293B), Color(0xFF334155)],
+          colors: [AppColors.slate800, AppColors.slate700],
         ),
       ),
     );

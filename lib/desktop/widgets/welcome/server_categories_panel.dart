@@ -60,7 +60,7 @@ class ServerCategoriesPanel extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                           color: isDark
                               ? Colors.white
-                              : const Color(0xFF1E293B),
+                              : AppColors.slate800,
                         ),
                       ),
                       const Spacer(),
@@ -72,7 +72,7 @@ class ServerCategoriesPanel extends StatelessWidget {
                             strokeWidth: 2,
                             color: isDark
                                 ? Colors.white.withValues(alpha: 0.5)
-                                : const Color(0xFF94A3B8),
+                                : AppColors.slate400,
                           ),
                         ),
                     ],
@@ -87,7 +87,7 @@ class ServerCategoriesPanel extends StatelessWidget {
                           style: TextStyle(
                             color: isDark
                                 ? Colors.white.withValues(alpha: 0.5)
-                                : const Color(0xFF94A3B8),
+                                : AppColors.slate400,
                           ),
                         ),
                       ),
@@ -131,7 +131,7 @@ class ServerCategoriesPanel extends StatelessWidget {
                       icon: const Icon(Icons.arrow_forward, size: 16),
                       label: const Text('浏览全部服务器'),
                       style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFF3B82F6),
+                        foregroundColor: AppColors.blue500,
                       ),
                     ),
                   ),
@@ -177,15 +177,15 @@ class _CategoryItem extends StatelessWidget {
       if (!hasOnlineCountData || onlineCount == 0) {
         return isDark
             ? Colors.white.withValues(alpha: 0.3)
-            : const Color(0xFF94A3B8);
+            : AppColors.slate400;
       } else if (onlineCount < 20) {
-        return const Color(0xFF10B981); // 绿色：人少
+        return AppColors.emerald500; // 绿色：人少
       } else if (onlineCount < 50) {
-        return const Color(0xFF3B82F6); // 蓝色：中等
+        return AppColors.blue500; // 蓝色：中等
       } else if (onlineCount < 100) {
-        return const Color(0xFFF59E0B); // 橙色：较多
+        return AppColors.amber500; // 橙色：较多
       } else {
-        return const Color(0xFFEF4444); // 红色：很多
+        return AppColors.red500; // 红色：很多
       }
     }
 
@@ -230,7 +230,7 @@ class _CategoryItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: isDark ? Colors.white : const Color(0xFF1E293B),
+                color: isDark ? Colors.white : AppColors.slate800,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -276,7 +276,7 @@ class _CategoryItem extends StatelessWidget {
                 fontWeight: FontWeight.w500,
                 color: isDark
                     ? Colors.white.withValues(alpha: 0.6)
-                    : const Color(0xFF64748B),
+                    : AppColors.slate500,
               ),
             ),
           ),

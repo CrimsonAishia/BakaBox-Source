@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/models/bilibili_content_models.dart';
 import '../../../core/widgets/disk_cached_image.dart';
+import '../../../core/constants/app_colors.dart';
 
 const _bilibiliBlue = Color(0xFF00A1D6);
 
@@ -346,12 +347,12 @@ class _LiveRoomCardState extends State<LiveRoomCard>
                     ? const LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                        colors: [AppColors.slate800, AppColors.slate900],
                       )
                     : const LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Colors.white, Color(0xFFF8FAFC)],
+                        colors: [Colors.white, AppColors.slate50],
                       ),
               ),
               child: Column(
@@ -365,7 +366,7 @@ class _LiveRoomCardState extends State<LiveRoomCard>
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
-                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                      color: isDark ? Colors.white : AppColors.slate800,
                       height: 1.3,
                     ),
                   ),

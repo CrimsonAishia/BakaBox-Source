@@ -12,6 +12,7 @@ import '../../../core/models/notification_models.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/time_utils.dart';
 import '../announcement/announcement_dialog.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 消息中心面板
 class NotificationPanel extends StatefulWidget {
@@ -78,12 +79,12 @@ class _NotificationPanelState extends State<NotificationPanel>
       width: 420,
       constraints: const BoxConstraints(maxHeight: 560),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.08)
-              : const Color(0xFFE5E7EB),
+              : AppColors.gray200,
         ),
         boxShadow: [
           BoxShadow(
@@ -92,7 +93,7 @@ class _NotificationPanelState extends State<NotificationPanel>
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: const Color(0xFF0080FF).withValues(alpha: 0.05),
+            color: AppColors.primary.withValues(alpha: 0.05),
             blurRadius: 40,
             offset: const Offset(0, 4),
           ),
@@ -131,14 +132,14 @@ class _NotificationPanelState extends State<NotificationPanel>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  const Color(0xFF0080FF),
-                  const Color(0xFF0080FF).withValues(alpha: 0.7),
+                  AppColors.primary,
+                  AppColors.primary.withValues(alpha: 0.7),
                 ],
               ),
               borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                  color: AppColors.primary.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -161,7 +162,7 @@ class _NotificationPanelState extends State<NotificationPanel>
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : const Color(0xFF1F2937),
+                    color: isDark ? Colors.white : AppColors.gray800,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -180,13 +181,13 @@ class _NotificationPanelState extends State<NotificationPanel>
                 decoration: BoxDecoration(
                   color: isDark
                       ? Colors.white.withValues(alpha: 0.05)
-                      : const Color(0xFFF3F4F6),
+                      : AppColors.gray100,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.close,
                   size: 16,
-                  color: isDark ? Colors.white54 : const Color(0xFF9CA3AF),
+                  color: isDark ? Colors.white54 : AppColors.gray400,
                 ),
               ),
             ),
@@ -209,7 +210,7 @@ class _NotificationPanelState extends State<NotificationPanel>
                 '暂无未读消息',
                 style: TextStyle(
                   fontSize: 12,
-                  color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                  color: isDark ? Colors.white38 : AppColors.gray400,
                 ),
               );
             }
@@ -219,7 +220,7 @@ class _NotificationPanelState extends State<NotificationPanel>
                   width: 6,
                   height: 6,
                   decoration: const BoxDecoration(
-                    color: Color(0xFFEF4444),
+                    color: AppColors.red500,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -228,7 +229,7 @@ class _NotificationPanelState extends State<NotificationPanel>
                   '$total 条未读消息',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    color: isDark ? Colors.white54 : AppColors.gray500,
                   ),
                 ),
               ],
@@ -246,13 +247,13 @@ class _NotificationPanelState extends State<NotificationPanel>
       decoration: BoxDecoration(
         color: isDark
             ? Colors.white.withValues(alpha: 0.05)
-            : const Color(0xFFF3F4F6),
+            : AppColors.gray100,
         borderRadius: BorderRadius.circular(10),
       ),
       child: TabBar(
         controller: _tabController,
         indicator: BoxDecoration(
-          color: isDark ? const Color(0xFF334155) : Colors.white,
+          color: isDark ? AppColors.slate700 : Colors.white,
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
@@ -264,8 +265,8 @@ class _NotificationPanelState extends State<NotificationPanel>
         ),
         indicatorSize: TabBarIndicatorSize.tab,
         dividerColor: Colors.transparent,
-        labelColor: isDark ? Colors.white : const Color(0xFF1F2937),
-        unselectedLabelColor: isDark ? Colors.white54 : const Color(0xFF6B7280),
+        labelColor: isDark ? Colors.white : AppColors.gray800,
+        unselectedLabelColor: isDark ? Colors.white54 : AppColors.gray500,
         labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         unselectedLabelStyle: const TextStyle(
           fontSize: 13,
@@ -314,7 +315,7 @@ class _NotificationPanelState extends State<NotificationPanel>
       height: 18,
       padding: const EdgeInsets.symmetric(horizontal: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFFEF4444),
+        color: AppColors.red500,
         borderRadius: BorderRadius.circular(9),
       ),
       alignment: Alignment.center,
@@ -445,7 +446,7 @@ class _NotificationPanelState extends State<NotificationPanel>
       decoration: BoxDecoration(
         color: isDark
             ? Colors.white.withValues(alpha: 0.05)
-            : const Color(0xFFF3F4F6),
+            : AppColors.gray100,
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -482,7 +483,7 @@ class _NotificationPanelState extends State<NotificationPanel>
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: isSelected
-                ? (isDark ? const Color(0xFF334155) : Colors.white)
+                ? (isDark ? AppColors.slate700 : Colors.white)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(4),
             boxShadow: isSelected
@@ -500,8 +501,8 @@ class _NotificationPanelState extends State<NotificationPanel>
               fontSize: 11,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               color: isSelected
-                  ? (isDark ? Colors.white : const Color(0xFF1F2937))
-                  : (isDark ? Colors.white54 : const Color(0xFF6B7280)),
+                  ? (isDark ? Colors.white : AppColors.gray800)
+                  : (isDark ? Colors.white54 : AppColors.gray500),
             ),
           ),
         ),
@@ -637,7 +638,7 @@ class _NotificationPanelState extends State<NotificationPanel>
       decoration: BoxDecoration(
         color: isDark
             ? Colors.white.withValues(alpha: 0.05)
-            : const Color(0xFFF3F4F6),
+            : AppColors.gray100,
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -680,14 +681,14 @@ class _NotificationPanelState extends State<NotificationPanel>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
             label,
             style: const TextStyle(
               fontSize: 12,
-              color: Color(0xFF0080FF),
+              color: AppColors.primary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -714,13 +715,13 @@ class _NotificationPanelState extends State<NotificationPanel>
             decoration: BoxDecoration(
               color: isDark
                   ? Colors.white.withValues(alpha: 0.05)
-                  : const Color(0xFFF3F4F6),
+                  : AppColors.gray100,
               borderRadius: BorderRadius.circular(6),
             ),
             child: Icon(
               icon,
               size: 14,
-              color: isDark ? Colors.white54 : const Color(0xFF9CA3AF),
+              color: isDark ? Colors.white54 : AppColors.gray400,
             ),
           ),
         ),
@@ -763,13 +764,13 @@ class _NotificationPanelState extends State<NotificationPanel>
               decoration: BoxDecoration(
                 color: isDark
                     ? Colors.white.withValues(alpha: 0.05)
-                    : const Color(0xFFF3F4F6),
+                    : AppColors.gray100,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
                 size: 28,
-                color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
+                color: isDark ? Colors.white24 : AppColors.gray300,
               ),
             ),
             const SizedBox(height: 16),
@@ -777,7 +778,7 @@ class _NotificationPanelState extends State<NotificationPanel>
               message,
               style: TextStyle(
                 fontSize: 14,
-                color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                color: isDark ? Colors.white38 : AppColors.gray400,
               ),
             ),
           ],
@@ -797,13 +798,13 @@ class _NotificationPanelState extends State<NotificationPanel>
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                color: AppColors.red500.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.error_outline,
                 size: 28,
-                color: Color(0xFFEF4444),
+                color: AppColors.red500,
               ),
             ),
             const SizedBox(height: 16),
@@ -811,7 +812,7 @@ class _NotificationPanelState extends State<NotificationPanel>
               error,
               style: TextStyle(
                 fontSize: 14,
-                color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                color: isDark ? Colors.white54 : AppColors.gray500,
               ),
               textAlign: TextAlign.center,
             ),
@@ -868,19 +869,19 @@ class _AnnouncementItemWidgetState extends State<_AnnouncementItemWidget> {
 
   Color _getTypeColor() {
     if (widget.isRead) {
-      return const Color(0xFF9CA3AF);
+      return AppColors.gray400;
     }
     switch (widget.type) {
       case 'warning':
-        return const Color(0xFFF59E0B);
+        return AppColors.amber500;
       case 'error':
-        return const Color(0xFFEF4444);
+        return AppColors.red500;
       case 'success':
-        return const Color(0xFF10B981);
+        return AppColors.emerald500;
       case 'maintenance':
-        return const Color(0xFF8B5CF6);
+        return AppColors.violet500;
       default:
-        return const Color(0xFF0080FF);
+        return AppColors.primary;
     }
   }
 
@@ -914,7 +915,7 @@ class _AnnouncementItemWidgetState extends State<_AnnouncementItemWidget> {
                     ? (_isHovered
                           ? (widget.isDark
                                 ? Colors.white.withValues(alpha: 0.05)
-                                : const Color(0xFFF9FAFB))
+                                : AppColors.gray50)
                           : Colors.transparent)
                     : (widget.isDark
                           ? typeColor.withValues(alpha: 0.12)
@@ -924,7 +925,7 @@ class _AnnouncementItemWidgetState extends State<_AnnouncementItemWidget> {
                   color: _isHovered
                       ? (widget.isDark
                             ? Colors.white.withValues(alpha: 0.15)
-                            : const Color(0xFFE5E7EB))
+                            : AppColors.gray200)
                       : (widget.isRead
                             ? Colors.transparent
                             : typeColor.withValues(alpha: 0.25)),
@@ -941,7 +942,7 @@ class _AnnouncementItemWidgetState extends State<_AnnouncementItemWidget> {
                       color: widget.isRead
                           ? (widget.isDark
                                 ? Colors.white.withValues(alpha: 0.08)
-                                : const Color(0xFFF3F4F6))
+                                : AppColors.gray100)
                           : typeColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -985,10 +986,10 @@ class _AnnouncementItemWidgetState extends State<_AnnouncementItemWidget> {
                                   color: widget.isRead
                                       ? (widget.isDark
                                             ? Colors.white54
-                                            : const Color(0xFF9CA3AF))
+                                            : AppColors.gray400)
                                       : (widget.isDark
                                             ? Colors.white
-                                            : const Color(0xFF1F2937)),
+                                            : AppColors.gray800),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -1004,10 +1005,10 @@ class _AnnouncementItemWidgetState extends State<_AnnouncementItemWidget> {
                             color: widget.isRead
                                 ? (widget.isDark
                                       ? Colors.white38
-                                      : const Color(0xFFD1D5DB))
+                                      : AppColors.gray300)
                                 : (widget.isDark
                                       ? Colors.white54
-                                      : const Color(0xFF6B7280)),
+                                      : AppColors.gray500),
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -1019,7 +1020,7 @@ class _AnnouncementItemWidgetState extends State<_AnnouncementItemWidget> {
                             fontSize: 11,
                             color: widget.isDark
                                 ? Colors.white38
-                                : const Color(0xFF9CA3AF),
+                                : AppColors.gray400,
                           ),
                         ),
                       ],
@@ -1032,10 +1033,10 @@ class _AnnouncementItemWidgetState extends State<_AnnouncementItemWidget> {
                     color: widget.isRead
                         ? (widget.isDark
                               ? Colors.white24
-                              : const Color(0xFFE5E7EB))
+                              : AppColors.gray200)
                         : (widget.isDark
                               ? Colors.white24
-                              : const Color(0xFFD1D5DB)),
+                              : AppColors.gray300),
                   ),
                 ],
               ),
@@ -1051,7 +1052,7 @@ class _AnnouncementItemWidgetState extends State<_AnnouncementItemWidget> {
                     icon: Icons.check,
                     tooltip: '标记已读',
                     onTap: widget.onMarkRead,
-                    color: const Color(0xFF10B981),
+                    color: AppColors.emerald500,
                   ),
                 ),
               ),
@@ -1126,7 +1127,7 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
     final notification = widget.notification;
     final typeColor = _getTypeColor(notification.type);
     final displayColor = notification.isRead
-        ? const Color(0xFF9CA3AF)
+        ? AppColors.gray400
         : typeColor;
 
     return MouseRegion(
@@ -1146,7 +1147,7 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
                     ? (_isHovered
                           ? (widget.isDark
                                 ? Colors.white.withValues(alpha: 0.05)
-                                : const Color(0xFFF9FAFB))
+                                : AppColors.gray50)
                           : Colors.transparent)
                     : (widget.isDark
                           ? typeColor.withValues(alpha: 0.08)
@@ -1156,7 +1157,7 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
                   color: _isHovered
                       ? (widget.isDark
                             ? Colors.white.withValues(alpha: 0.15)
-                            : const Color(0xFFE5E7EB))
+                            : AppColors.gray200)
                       : (notification.isRead
                             ? Colors.transparent
                             : typeColor.withValues(alpha: 0.2)),
@@ -1208,10 +1209,10 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
                                   color: notification.isRead
                                       ? (widget.isDark
                                             ? Colors.white54
-                                            : const Color(0xFF9CA3AF))
+                                            : AppColors.gray400)
                                       : (widget.isDark
                                             ? Colors.white
-                                            : const Color(0xFF1F2937)),
+                                            : AppColors.gray800),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -1242,10 +1243,10 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
                               color: notification.isRead
                                   ? (widget.isDark
                                         ? Colors.white38
-                                        : const Color(0xFFD1D5DB))
+                                        : AppColors.gray300)
                                   : (widget.isDark
                                         ? Colors.white60
-                                        : const Color(0xFF6B7280)),
+                                        : AppColors.gray500),
                             ),
                             a: TextStyle(
                               fontSize: 12,
@@ -1256,24 +1257,24 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
                               fontSize: 11,
                               backgroundColor: widget.isDark
                                   ? Colors.white.withValues(alpha: 0.1)
-                                  : const Color(0xFFF3F4F6),
+                                  : AppColors.gray100,
                               color: notification.isRead
                                   ? (widget.isDark
                                         ? Colors.white38
-                                        : const Color(0xFFD1D5DB))
+                                        : AppColors.gray300)
                                   : (widget.isDark
                                         ? Colors.white70
-                                        : const Color(0xFF374151)),
+                                        : AppColors.gray700),
                             ),
                             listBullet: TextStyle(
                               fontSize: 12,
                               color: notification.isRead
                                   ? (widget.isDark
                                         ? Colors.white38
-                                        : const Color(0xFFD1D5DB))
+                                        : AppColors.gray300)
                                   : (widget.isDark
                                         ? Colors.white60
-                                        : const Color(0xFF6B7280)),
+                                        : AppColors.gray500),
                             ),
                           ),
                         ),
@@ -1284,7 +1285,7 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
                             fontSize: 11,
                             color: widget.isDark
                                 ? Colors.white38
-                                : const Color(0xFF9CA3AF),
+                                : AppColors.gray400,
                           ),
                         ),
                       ],
@@ -1308,14 +1309,14 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
                           icon: Icons.check,
                           tooltip: '标记已读',
                           onTap: widget.onMarkRead,
-                          color: const Color(0xFF10B981),
+                          color: AppColors.emerald500,
                         ),
                       if (!notification.isRead) const SizedBox(width: 8),
                       _buildRoundActionButton(
                         icon: Icons.delete_outline,
                         tooltip: '删除',
                         onTap: widget.onDelete,
-                        color: const Color(0xFFEF4444),
+                        color: AppColors.red500,
                       ),
                     ],
                   ),
@@ -1330,13 +1331,13 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
   Color _getTypeColor(String type) {
     switch (type) {
       case NotificationType.mapContributionAudit:
-        return const Color(0xFF10B981);
+        return AppColors.emerald500;
       case NotificationType.keyConfigAudit:
-        return const Color(0xFF8B5CF6);
+        return AppColors.violet500;
       case NotificationType.issueComment:
-        return const Color(0xFFF59E0B);
+        return AppColors.amber500;
       default:
-        return const Color(0xFF0080FF);
+        return AppColors.primary;
     }
   }
 

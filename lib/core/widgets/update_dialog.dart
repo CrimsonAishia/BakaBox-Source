@@ -4,6 +4,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/update_models.dart';
 import '../bloc/bloc.dart';
 import '../utils/toast_utils.dart';
+import '../constants/app_colors.dart';
 
 class UpdateDialog extends StatefulWidget {
   final AppUpdateInfo updateInfo;
@@ -733,14 +734,14 @@ class _UpdateDialogState extends State<UpdateDialog>
                 height: 48,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFFFF9800), Color(0xFFF57C00)],
+                    colors: [AppColors.orange, Color(0xFFF57C00)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFFF9800).withValues(alpha: 0.3),
+                      color: AppColors.orange.withValues(alpha: 0.3),
                       offset: const Offset(0, 2),
                       blurRadius: 8,
                     ),
@@ -806,14 +807,14 @@ class _UpdateDialogState extends State<UpdateDialog>
           child: Container(
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                colors: [AppColors.red500, AppColors.red600],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFEF4444).withValues(alpha: 0.3),
+                  color: AppColors.red500.withValues(alpha: 0.3),
                   offset: const Offset(0, 2),
                   blurRadius: 8,
                 ),

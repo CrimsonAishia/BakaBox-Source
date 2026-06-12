@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 import '../../../core/bloc/lobby/lobby_bloc.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 大厅浮动操作按钮组
 class LobbyFloatingActions extends StatelessWidget {
@@ -22,7 +23,7 @@ class LobbyFloatingActions extends StatelessWidget {
           badge: state.broadcastCooldownSeconds > 0
               ? '${state.broadcastCooldownSeconds}'
               : null,
-          badgeColor: const Color(0xFFF59E0B),
+          badgeColor: AppColors.amber500,
           isDisabled: state.isAnonymous || state.broadcastCooldownSeconds > 0,
           showDisabledStrike: true,
           onTap: !state.isAnonymous && state.broadcastCooldownSeconds <= 0
@@ -112,7 +113,7 @@ class _LobbyActionButtonState extends State<LobbyActionButton> {
                 color: widget.isDisabled
                     ? Colors.white.withValues(alpha: 0.04)
                     : (widget.isActive
-                          ? const Color(0xFF38BDF8).withValues(alpha: 0.6)
+                          ? AppColors.sky400.withValues(alpha: 0.6)
                           : (isHovered
                                 ? Colors.white.withValues(alpha: 0.2)
                                 : Colors.white.withValues(alpha: 0.08))),
@@ -132,7 +133,7 @@ class _LobbyActionButtonState extends State<LobbyActionButton> {
               widget.icon,
               color: widget.isDisabled
                   ? Colors.white.withValues(alpha: 0.3)
-                  : (widget.isActive ? const Color(0xFF38BDF8) : Colors.white),
+                  : (widget.isActive ? AppColors.sky400 : Colors.white),
               size: 18,
             ),
           ),
@@ -154,11 +155,11 @@ class _LobbyActionButtonState extends State<LobbyActionButton> {
                     width: 28,
                     height: 2,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444),
+                      color: AppColors.red500,
                       borderRadius: BorderRadius.circular(1),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFEF4444).withValues(alpha: 0.6),
+                          color: AppColors.red500.withValues(alpha: 0.6),
                           blurRadius: 4,
                         ),
                       ],
@@ -175,7 +176,7 @@ class _LobbyActionButtonState extends State<LobbyActionButton> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
               decoration: BoxDecoration(
-                color: widget.badgeColor ?? const Color(0xFFEF4444),
+                color: widget.badgeColor ?? AppColors.red500,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(

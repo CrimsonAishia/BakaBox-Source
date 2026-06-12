@@ -7,6 +7,7 @@ import '../../../core/bloc/map_contribution/map_contribution_event.dart';
 import '../../../core/services/image_url_service.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/disk_cached_image.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 贡献项组件
 ///
@@ -29,7 +30,7 @@ class ContributionItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFFAFAFA),
+        color: isDark ? AppColors.slate900 : const Color(0xFFFAFAFA),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isDark
@@ -132,8 +133,8 @@ class ContributionItem extends StatelessWidget {
 
   Widget _buildTypeTag(bool isDark) {
     final color = contribution.type == ContributionType.name
-        ? const Color(0xFF10B981)
-        : const Color(0xFFF59E0B);
+        ? AppColors.emerald500
+        : AppColors.amber500;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -246,7 +247,7 @@ class ContributionItem extends StatelessWidget {
           contribution.upCount,
           VoteType.up,
           contribution.voteType == VoteType.up,
-          const Color(0xFF10B981),
+          AppColors.emerald500,
         ),
         const SizedBox(width: 12),
 
@@ -259,7 +260,7 @@ class ContributionItem extends StatelessWidget {
           contribution.downCount,
           VoteType.down,
           contribution.voteType == VoteType.down,
-          const Color(0xFFEF4444),
+          AppColors.red500,
         ),
       ],
     );
@@ -334,9 +335,9 @@ class ContributionItem extends StatelessWidget {
 
   Color _getAuditStatusColor(AuditStatus status) {
     return switch (status) {
-      AuditStatus.pending => const Color(0xFFF59E0B),
-      AuditStatus.approved => const Color(0xFF10B981),
-      AuditStatus.rejected => const Color(0xFFEF4444),
+      AuditStatus.pending => AppColors.amber500,
+      AuditStatus.approved => AppColors.emerald500,
+      AuditStatus.rejected => AppColors.red500,
     };
   }
 }

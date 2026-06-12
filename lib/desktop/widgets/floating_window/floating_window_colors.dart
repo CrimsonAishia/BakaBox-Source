@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import 'floating_window_state.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 浮窗颜色配置
 class FloatingWindowColors {
-  static const Color idle = Color(0xFF6B7280);
-  static const Color launching = Color(0xFF3B82F6);
-  static const Color connecting = Color(0xFF0080FF);
-  static const Color loading = Color(0xFFF59E0B);
-  static const Color queueing = Color(0xFF0080FF);
+  static const Color idle = AppColors.gray500;
+  static const Color launching = AppColors.blue500;
+  static const Color connecting = AppColors.primary;
+  static const Color loading = AppColors.amber500;
+  static const Color queueing = AppColors.primary;
   static const Color warming = Color(0xFFFF6B00); // 暖服的专属火热橙色
-  static const Color success = Color(0xFF10B981);
-  static const Color failed = Color(0xFFEF4444);
-  static const Color serverFull = Color(0xFFF59E0B);
-  static const Color paused = Color(0xFF6B7280);
+  static const Color success = AppColors.emerald500;
+  static const Color failed = AppColors.red500;
+  static const Color serverFull = AppColors.amber500;
+  static const Color paused = AppColors.gray500;
 
   // 背景色
   static const Color background = Color(0xF21E293B); // 0.95 opacity
-  static const Color backgroundDark = Color(0xFF0F172A);
+  static const Color backgroundDark = AppColors.slate900;
 
   /// 根据状态获取颜色
   static Color fromState(FloatingWindowState state) {

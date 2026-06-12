@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 import '../../../core/models/queue_user.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 活动日志类型
 enum QueueActivityType {
@@ -136,8 +137,8 @@ class _QueueActivityLogState extends State<QueueActivityLog> {
       height: 160,
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF1E293B).withValues(alpha: 0.5)
-            : const Color(0xFFF1F5F9).withValues(alpha: 0.8),
+            ? AppColors.slate800.withValues(alpha: 0.5)
+            : AppColors.slate100.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isDark
@@ -264,7 +265,7 @@ class _ActivityItemWidget extends StatelessWidget {
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                       color: activity.isSelf
-                          ? const Color(0xFF3B82F6)
+                          ? AppColors.blue500
                           : (isDark ? Colors.white70 : Colors.black87),
                     ),
                   ),
@@ -296,11 +297,11 @@ class _ActivityItemWidget extends StatelessWidget {
     final actionName = isWarmup ? '暖服' : '挤服';
     switch (activity.type) {
       case QueueActivityType.join:
-        return (MdiIcons.accountPlus, const Color(0xFF22C55E), '加入了$actionName');
+        return (MdiIcons.accountPlus, AppColors.green500, '加入了$actionName');
       case QueueActivityType.leave:
-        return (MdiIcons.accountMinus, const Color(0xFFF59E0B), '离开了$actionName');
+        return (MdiIcons.accountMinus, AppColors.amber500, '离开了$actionName');
       case QueueActivityType.success:
-        return (MdiIcons.checkCircle, const Color(0xFF3B82F6), '成功进入服务器！');
+        return (MdiIcons.checkCircle, AppColors.blue500, '成功进入服务器！');
     }
   }
 }

@@ -8,6 +8,7 @@ import '../../../core/utils/log_service.dart';
 import '../../../core/utils/time_utils.dart';
 import '../../../core/widgets/map_background.dart';
 import '../player_trend/player_trend_chart.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 服务器历史记录弹窗
 /// 显示服务器地图变更历史时间线
@@ -344,7 +345,7 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: AppColors.slate800,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Row(
@@ -419,13 +420,13 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
             children: [
               Icon(
                 MdiIcons.calendarClock,
-                color: const Color(0xFF0080FF),
+                color: AppColors.primary,
                 size: 18,
               ),
               const SizedBox(width: 8),
               Text(
                 '已加载 ${_historyData.length} / $_totalRecords 条',
-                style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                style: const TextStyle(fontSize: 13, color: AppColors.gray500),
               ),
             ],
           ),
@@ -471,7 +472,7 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
               ElevatedButton(
                 onPressed: _handleSearch,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0080FF),
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -496,10 +497,10 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0080FF)),
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
             ),
             SizedBox(height: 16),
-            Text('正在加载历史数据...', style: TextStyle(color: Color(0xFF6B7280))),
+            Text('正在加载历史数据...', style: TextStyle(color: AppColors.gray500)),
           ],
         ),
       );
@@ -512,12 +513,12 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
           children: [
             Icon(MdiIcons.alertCircle, size: 48, color: Colors.orange),
             const SizedBox(height: 16),
-            Text(_error!, style: const TextStyle(color: Color(0xFF6B7280))),
+            Text(_error!, style: const TextStyle(color: AppColors.gray500)),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => _fetchServerHistory(resetData: true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0080FF),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
               ),
               child: const Text('重试'),
@@ -536,14 +537,14 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
             const SizedBox(height: 16),
             Text(
               _searchQuery.isNotEmpty ? '未找到匹配的地图记录' : '暂无历史数据',
-              style: const TextStyle(color: Color(0xFF6B7280)),
+              style: const TextStyle(color: AppColors.gray500),
             ),
             if (_searchQuery.isNotEmpty) ...[
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _clearSearch,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0080FF),
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                 ),
                 child: const Text('清空搜索条件'),
@@ -631,7 +632,7 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
         padding: EdgeInsets.only(top: isTop ? 2 : 0, bottom: isTop ? 0 : 2),
         child: Icon(
           isTop ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-          color: const Color(0xFF6B7280),
+          color: AppColors.gray500,
           size: 24,
         ),
       ),
@@ -697,8 +698,8 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
             height: 32,
             decoration: BoxDecoration(
               color: isLatest
-                  ? const Color(0xFFF59E0B)
-                  : const Color(0xFF64748B),
+                  ? AppColors.amber500
+                  : AppColors.slate500,
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -721,8 +722,8 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
                   isLatest ? MdiIcons.fire : MdiIcons.clockOutline,
                   size: 16,
                   color: isLatest
-                      ? const Color(0xFFF59E0B)
-                      : const Color(0xFF64748B),
+                      ? AppColors.amber500
+                      : AppColors.slate500,
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -730,8 +731,8 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
                   style: TextStyle(
                     fontSize: 13,
                     color: isLatest
-                        ? const Color(0xFFF59E0B)
-                        : const Color(0xFF64748B),
+                        ? AppColors.amber500
+                        : AppColors.slate500,
                     fontWeight: isLatest ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
@@ -743,7 +744,7 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: const Color(0xFFF59E0B),
+                color: AppColors.amber500,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: const Text(
@@ -794,12 +795,12 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
           children: [
             CircularProgressIndicator(
               strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0080FF)),
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
             ),
             SizedBox(height: 12),
             Text(
               '正在加载更多数据...',
-              style: TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+              style: TextStyle(color: AppColors.gray500, fontSize: 13),
             ),
           ],
         ),
@@ -817,7 +818,7 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
           icon: Icon(MdiIcons.chevronDown, size: 18),
           label: const Text('加载更多历史记录'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF0080FF),
+            backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           ),
@@ -834,11 +835,11 @@ class _ServerHistoryDialogState extends State<ServerHistoryDialog> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(MdiIcons.library, size: 20, color: const Color(0xFF6B7280)),
+            Icon(MdiIcons.library, size: 20, color: AppColors.gray500),
             const SizedBox(width: 8),
             Text(
               '已加载全部 $_totalRecords 条历史记录',
-              style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+              style: const TextStyle(color: AppColors.gray500, fontSize: 13),
             ),
           ],
         ),
@@ -977,7 +978,7 @@ class _HistoryCardState extends State<_HistoryCard> {
                   return Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      color: isDark ? AppColors.slate800 : Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: isDark
                           ? null
@@ -1002,7 +1003,7 @@ class _HistoryCardState extends State<_HistoryCard> {
                           children: [
                             Icon(
                               MdiIcons.chartLine,
-                              color: const Color(0xFFFBBF24),
+                              color: AppColors.amber400,
                               size: 16,
                             ),
                             const SizedBox(width: 6),
@@ -1011,7 +1012,7 @@ class _HistoryCardState extends State<_HistoryCard> {
                               style: TextStyle(
                                 color: isDark
                                     ? Colors.white
-                                    : const Color(0xFF1E293B),
+                                    : AppColors.slate800,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -1066,9 +1067,9 @@ class _HistoryCardState extends State<_HistoryCard> {
   Widget build(BuildContext context) {
     // 预计算边框颜色
     final borderColor = _isCardHovered
-        ? const Color(0xFF0080FF)
+        ? AppColors.primary
         : widget.isLatest
-        ? const Color(0xFFF59E0B)
+        ? AppColors.amber500
         : Colors.grey.withValues(alpha: 0.3);
 
     return RepaintBoundary(
@@ -1134,7 +1135,7 @@ class _HistoryCardState extends State<_HistoryCard> {
                               widget.buildStatChip(
                                 MdiIcons.chartLine,
                                 '${widget.trendDataCount}个数据点',
-                                color: const Color(0xFFFBBF24),
+                                color: AppColors.amber400,
                               ),
                           ],
                         ),
@@ -1250,10 +1251,10 @@ class _StaticDot extends StatelessWidget {
       height: 10,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: const Color(0xFFFBBF24),
+        color: AppColors.amber400,
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFBBF24).withValues(alpha: 0.5),
+            color: AppColors.amber400.withValues(alpha: 0.5),
             blurRadius: 6,
             spreadRadius: 1,
           ),

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/bloc/lobby/lobby_bloc.dart';
 import '../../core/models/lobby_models.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 全局广播悬浮通知卡片
 /// - 收到广播时卡片从右侧弹入，显示在右下角
@@ -161,7 +162,6 @@ class _GlobalBroadcastBarState extends State<GlobalBroadcastBar>
   }
 }
 
-// ---------------------------------------------------------------------------
 
 class _BroadcastCard extends StatelessWidget {
   final List<LobbyBroadcastMessage> messages;
@@ -183,11 +183,11 @@ class _BroadcastCard extends StatelessWidget {
     return Container(
       width: _cardWidth,
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: AppColors.slate800,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6366F1).withValues(alpha: 0.18),
+            color: AppColors.indigo500.withValues(alpha: 0.18),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -197,7 +197,7 @@ class _BroadcastCard extends StatelessWidget {
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: const Color(0xFF334155), width: 1),
+        border: Border.all(color: AppColors.slate700, width: 1),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -211,7 +211,7 @@ class _BroadcastCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 9, 10, 9),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF1E1B4B), Color(0xFF1E293B)],
+          colors: [Color(0xFF1E1B4B), AppColors.slate800],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
@@ -224,7 +224,7 @@ class _BroadcastCard extends StatelessWidget {
             padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                colors: [AppColors.indigo500, AppColors.violet500],
               ),
               borderRadius: BorderRadius.circular(7),
             ),
@@ -251,7 +251,7 @@ class _BroadcastCard extends StatelessWidget {
               Text(
                 'Server Broadcast',
                 style: TextStyle(
-                  color: Color(0xFF6366F1),
+                  color: AppColors.indigo500,
                   fontSize: 9,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0.5,
@@ -296,7 +296,6 @@ class _BroadcastCard extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
 
 /// 单条广播消息，带独立的滑入/滑出动画
 class _AnimatedMessageItem extends StatefulWidget {
@@ -444,7 +443,6 @@ class _AnimatedMessageItemState extends State<_AnimatedMessageItem>
   }
 }
 
-// ---------------------------------------------------------------------------
 
 class _MessageRow extends StatefulWidget {
   final LobbyBroadcastMessage message;
@@ -588,7 +586,7 @@ class _MessageRowState extends State<_MessageRow> {
                       thumbVisibility: _needsScroll,
                       thickness: 3,
                       radius: const Radius.circular(2),
-                      thumbColor: const Color(0xFF6366F1),
+                      thumbColor: AppColors.indigo500,
                       trackVisibility: _needsScroll,
                       trackColor: Colors.white.withValues(alpha: 0.08),
                       trackBorderColor: Colors.transparent,
@@ -636,7 +634,6 @@ class _MessageRowState extends State<_MessageRow> {
   }
 }
 
-// ---------------------------------------------------------------------------
 
 class _CloseButton extends StatefulWidget {
   final VoidCallback onTap;
@@ -682,7 +679,6 @@ class _CloseButtonState extends State<_CloseButton> {
   }
 }
 
-// ---------------------------------------------------------------------------
 
 class _Avatar extends StatelessWidget {
   final String? avatarUrl;
@@ -712,11 +708,11 @@ class _Avatar extends StatelessWidget {
         ? nickname.characters.first.toUpperCase()
         : '?';
     const colors = [
-      Color(0xFF6366F1),
-      Color(0xFF8B5CF6),
-      Color(0xFF3B82F6),
-      Color(0xFF10B981),
-      Color(0xFFF59E0B),
+      AppColors.indigo500,
+      AppColors.violet500,
+      AppColors.blue500,
+      AppColors.emerald500,
+      AppColors.amber500,
     ];
     final color = colors[nickname.hashCode.abs() % colors.length];
     return Container(

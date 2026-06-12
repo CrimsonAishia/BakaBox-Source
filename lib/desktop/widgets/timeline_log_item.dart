@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../core/models/update_log_models.dart';
 import '../../core/utils/formatters.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 更新日志时间线项组件
 /// 以时间线形式展示日志项，支持选中状态高亮
@@ -53,7 +54,7 @@ class TimelineLogItem extends StatelessWidget {
   /// 构建时间线指示器
   Widget _buildTimelineIndicator(BuildContext context, Color primaryColor) {
     // 最新日志使用绿色，其他使用主题色
-    final indicatorColor = isLatest ? const Color(0xFF10B981) : primaryColor;
+    final indicatorColor = isLatest ? AppColors.emerald500 : primaryColor;
 
     return SizedBox(
       width: 24,

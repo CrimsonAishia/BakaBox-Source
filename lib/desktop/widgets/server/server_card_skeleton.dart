@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 服务器卡片骨架屏
 /// [loadingText] 可选的加载文字（如 "正在获取服务器数据(3秒)"）
@@ -57,7 +58,7 @@ class _ServerCardSkeletonState extends State<ServerCardSkeleton>
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF1E293B), Color(0xFF334155)],
+                    colors: [AppColors.slate800, AppColors.slate700],
                   ),
                 ),
               ),

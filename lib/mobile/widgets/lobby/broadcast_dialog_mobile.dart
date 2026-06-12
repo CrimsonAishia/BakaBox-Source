@@ -44,19 +44,19 @@ class _BroadcastDialogMobileState extends State<BroadcastDialogMobile> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final textColor = isDark ? Colors.white : AppColors.slate800;
     final secondaryTextColor = isDark
         ? Colors.white.withValues(alpha: 0.6)
-        : const Color(0xFF64748B);
+        : AppColors.slate500;
     final inputBg = isDark
         ? Colors.white.withValues(alpha: 0.05)
-        : const Color(0xFFF1F5F9);
+        : AppColors.slate100;
     final inputBorder = isDark
         ? Colors.white.withValues(alpha: 0.15)
-        : const Color(0xFFE2E8F0);
+        : AppColors.slate200;
     final hintColor = isDark
         ? Colors.white.withValues(alpha: 0.4)
-        : const Color(0xFF94A3B8);
+        : AppColors.slate400;
 
     return BlocBuilder<LobbyBloc, LobbyState>(
       buildWhen: (previous, current) =>
@@ -71,7 +71,7 @@ class _BroadcastDialogMobileState extends State<BroadcastDialogMobile> {
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              color: isDark ? AppColors.slate800 : Colors.white,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
@@ -92,7 +92,7 @@ class _BroadcastDialogMobileState extends State<BroadcastDialogMobile> {
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                          colors: [AppColors.indigo500, AppColors.violet500],
                         ),
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -131,7 +131,7 @@ class _BroadcastDialogMobileState extends State<BroadcastDialogMobile> {
                   style: TextStyle(
                     fontSize: 13,
                     color: isInCooldown
-                        ? const Color(0xFFEF4444)
+                        ? AppColors.red500
                         : secondaryTextColor,
                   ),
                 ),
@@ -181,14 +181,14 @@ class _BroadcastDialogMobileState extends State<BroadcastDialogMobile> {
                     ElevatedButton(
                       onPressed: canSubmit ? _handleSubmit : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6366F1),
+                        backgroundColor: AppColors.indigo500,
                         foregroundColor: Colors.white,
                         disabledBackgroundColor: isDark
                             ? Colors.white.withValues(alpha: 0.1)
-                            : const Color(0xFFE2E8F0),
+                            : AppColors.slate200,
                         disabledForegroundColor: isDark
                             ? Colors.white.withValues(alpha: 0.3)
-                            : const Color(0xFF94A3B8),
+                            : AppColors.slate400,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20,
                           vertical: 10,

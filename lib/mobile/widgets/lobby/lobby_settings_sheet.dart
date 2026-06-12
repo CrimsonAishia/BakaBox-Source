@@ -7,6 +7,7 @@ import '../../../core/bloc/lobby/lobby_bloc.dart';
 import '../../../core/models/lobby_models.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/lobby_image_cache_service.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 移动端大厅设置 BottomSheet 组件
 ///
@@ -22,7 +23,7 @@ class LobbySettingsSheet extends StatelessWidget {
     return Container(
       constraints: BoxConstraints(maxHeight: maxHeight),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A).withValues(alpha: 0.92),
+        color: AppColors.slate900.withValues(alpha: 0.92),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
@@ -177,7 +178,7 @@ class LobbySettingsSheet extends StatelessWidget {
           : null,
       value: value,
       onChanged: onChanged,
-      activeThumbColor: const Color(0xFF38BDF8),
+      activeThumbColor: AppColors.sky400,
     );
   }
 }
@@ -250,7 +251,7 @@ class _LobbySpriteRowState extends State<_LobbySpriteRow> {
       );
     }
 
-    const bg = Color(0xFF0F172A);
+    const bg = AppColors.slate900;
 
     return Stack(
       children: [
@@ -543,12 +544,12 @@ class _LobbySpriteChoiceCardState extends State<_LobbySpriteChoiceCard> {
                     width: 24,
                     height: 24,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF22C55E),
+                      color: AppColors.green500,
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 2),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF22C55E).withValues(alpha: 0.4),
+                          color: AppColors.green500.withValues(alpha: 0.4),
                           blurRadius: 8,
                         ),
                       ],

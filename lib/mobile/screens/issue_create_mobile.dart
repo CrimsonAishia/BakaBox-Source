@@ -349,7 +349,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF0080FF);
+    final primaryColor = AppColors.primary;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -479,7 +479,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
               icon: const Icon(Icons.save_outlined, size: 18),
               label: const Text('草稿'),
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF0080FF),
+                foregroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
@@ -503,7 +503,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        Color(0xFF0080FF),
+                        AppColors.primary,
                       ),
                     ),
                   ),
@@ -511,7 +511,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
               : ElevatedButton(
                   onPressed: _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0080FF),
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(
@@ -545,7 +545,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
               width: 4,
               height: 16,
               decoration: BoxDecoration(
-                color: const Color(0xFF0080FF),
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -649,9 +649,9 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
 
     return switch (type) {
       IssueType.bug => (
-        const Color(0xFFDC2626),
+        AppColors.red600,
         isDark
-            ? const Color(0xFFDC2626).withValues(alpha: 0.15)
+            ? AppColors.red600.withValues(alpha: 0.15)
             : const Color(0xFFFEE2E2),
         MdiIcons.bug,
       ),
@@ -689,7 +689,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
               width: 4,
               height: 16,
               decoration: BoxDecoration(
-                color: const Color(0xFF0080FF),
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -712,7 +712,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
               child: const Text(
                 '必填',
                 style: TextStyle(
-                  color: Color(0xFFDC2626),
+                  color: AppColors.red600,
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                 ),
@@ -736,9 +736,9 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: isOverLimit
-                      ? const Color(0xFFDC2626)
+                      ? AppColors.red600
                       : isNearLimit
-                      ? const Color(0xFFF59E0B)
+                      ? AppColors.amber500
                       : colorScheme.onSurfaceVariant,
                 ),
               ),
@@ -752,7 +752,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isOverLimit
-                  ? const Color(0xFFDC2626)
+                  ? AppColors.red600
                   : colorScheme.outline.withValues(alpha: 0.2),
               width: isOverLimit ? 2 : 1,
             ),
@@ -785,12 +785,12 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
               prefixIcon: Container(
                 margin: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   MdiIcons.formatTitle,
-                  color: const Color(0xFF0080FF),
+                  color: AppColors.primary,
                   size: 20,
                 ),
               ),
@@ -831,8 +831,8 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
               height: 16,
               decoration: BoxDecoration(
                 color: hasError
-                    ? const Color(0xFFDC2626)
-                    : const Color(0xFF0080FF),
+                    ? AppColors.red600
+                    : AppColors.primary,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -843,7 +843,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: hasError
-                    ? const Color(0xFFDC2626)
+                    ? AppColors.red600
                     : colorScheme.onSurface,
               ),
             ),
@@ -857,7 +857,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
               child: const Text(
                 '必填',
                 style: TextStyle(
-                  color: Color(0xFFDC2626),
+                  color: AppColors.red600,
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                 ),
@@ -879,9 +879,9 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
                 '$contentLength/2000',
                 style: TextStyle(
                   color: contentLength > 2000
-                      ? const Color(0xFFDC2626)
+                      ? AppColors.red600
                       : contentLength < 20 && contentLength > 0
-                      ? const Color(0xFFF59E0B)
+                      ? AppColors.amber500
                       : colorScheme.onSurfaceVariant,
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
@@ -905,14 +905,14 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
                 const Icon(
                   Icons.error_outline,
                   size: 16,
-                  color: Color(0xFFDC2626),
+                  color: AppColors.red600,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     _contentError!,
                     style: const TextStyle(
-                      color: Color(0xFFDC2626),
+                      color: AppColors.red600,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -929,14 +929,14 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: hasError
-                  ? const Color(0xFFDC2626)
+                  ? AppColors.red600
                   : colorScheme.outline.withValues(alpha: 0.2),
               width: hasError ? 2 : 1,
             ),
             boxShadow: [
               BoxShadow(
                 color: hasError
-                    ? const Color(0xFFDC2626).withValues(alpha: 0.1)
+                    ? AppColors.red600.withValues(alpha: 0.1)
                     : colorScheme.shadow.withValues(alpha: 0.05),
                 offset: const Offset(0, 2),
                 blurRadius: 8,
@@ -975,7 +975,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     final deviceInfo = _collectDeviceInfo();
-    final primaryColor = const Color(0xFF0080FF);
+    final primaryColor = AppColors.primary;
 
     return Container(
       padding: const EdgeInsets.all(16),

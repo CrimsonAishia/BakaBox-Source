@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 按键选择器组件
 ///
@@ -292,7 +293,7 @@ class _KeySelectorState extends State<KeySelector> {
                             color: _isListening
                                 ? theme.colorScheme.primary
                                 : (hasKey
-                                      ? const Color(0xFF0080FF)
+                                      ? AppColors.primary
                                       : theme.colorScheme.onSurface.withValues(
                                           alpha: 0.5,
                                         )),

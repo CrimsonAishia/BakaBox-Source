@@ -8,6 +8,7 @@ import '../../common_scroll_indicator.dart';
 import '../../map_subscription_card.dart';
 import '../../cd_badge.dart';
 import 'subscription_scope_dialog.dart';
+import '../../../../core/constants/app_colors.dart';
 
 /// 订阅管理视图（已订阅列表）
 class SubscriptionView extends StatefulWidget {
@@ -95,7 +96,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
         children: [
           Icon(
             Icons.list_alt_rounded,
-            color: const Color(0xFF6366F1),
+            color: AppColors.indigo500,
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -104,14 +105,14 @@ class _SubscriptionViewState extends State<SubscriptionView> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white : const Color(0xFF1F2937),
+              color: isDark ? Colors.white : AppColors.gray800,
             ),
           ),
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+              color: AppColors.indigo500.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -119,7 +120,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF6366F1),
+                color: AppColors.indigo500,
               ),
             ),
           ),
@@ -149,12 +150,12 @@ class _SubscriptionViewState extends State<SubscriptionView> {
         decoration: BoxDecoration(
           color: isDark
               ? Colors.white.withValues(alpha: 0.05)
-              : const Color(0xFFF3F4F6),
+              : AppColors.gray100,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: isDark
                 ? Colors.white.withValues(alpha: 0.1)
-                : const Color(0xFFE5E7EB),
+                : AppColors.gray200,
           ),
         ),
         child: Row(
@@ -163,21 +164,21 @@ class _SubscriptionViewState extends State<SubscriptionView> {
             Icon(
               Icons.category_outlined,
               size: 14,
-              color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+              color: isDark ? Colors.white54 : AppColors.gray500,
             ),
             const SizedBox(width: 4),
             Text(
               scopeText,
               style: TextStyle(
                 fontSize: 11,
-                color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                color: isDark ? Colors.white54 : AppColors.gray500,
               ),
             ),
             const SizedBox(width: 2),
             Icon(
               Icons.arrow_drop_down_rounded,
               size: 16,
-              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+              color: isDark ? Colors.white38 : AppColors.gray400,
             ),
           ],
         ),
@@ -196,14 +197,14 @@ class _SubscriptionViewState extends State<SubscriptionView> {
         Icon(
           Icons.refresh_rounded,
           size: 14,
-          color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+          color: isDark ? Colors.white38 : AppColors.gray400,
         ),
         const SizedBox(width: 4),
         Text(
           '刷新频率',
           style: TextStyle(
             fontSize: 11,
-            color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+            color: isDark ? Colors.white38 : AppColors.gray400,
           ),
         ),
         const SizedBox(width: 6),
@@ -214,12 +215,12 @@ class _SubscriptionViewState extends State<SubscriptionView> {
               trackHeight: 3,
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
               overlayShape: const RoundSliderOverlayShape(overlayRadius: 10),
-              activeTrackColor: const Color(0xFF6366F1),
+              activeTrackColor: AppColors.indigo500,
               inactiveTrackColor: isDark
                   ? Colors.white.withValues(alpha: 0.1)
-                  : const Color(0xFFE5E7EB),
-              thumbColor: const Color(0xFF6366F1),
-              overlayColor: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                  : AppColors.gray200,
+              thumbColor: AppColors.indigo500,
+              overlayColor: AppColors.indigo500.withValues(alpha: 0.1),
             ),
             child: Slider(
               value: state.cooldownSeconds.toDouble(),
@@ -238,7 +239,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w500,
-            color: const Color(0xFF6366F1),
+            color: AppColors.indigo500,
           ),
         ),
       ],
@@ -252,7 +253,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
   ) {
     if (state.isLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF6366F1)),
+        child: CircularProgressIndicator(color: AppColors.indigo500),
       );
     }
 
@@ -264,14 +265,14 @@ class _SubscriptionViewState extends State<SubscriptionView> {
             Icon(
               Icons.star_border_rounded,
               size: 48,
-              color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
+              color: isDark ? Colors.white24 : AppColors.gray300,
             ),
             const SizedBox(height: 12),
             Text(
               '暂无订阅',
               style: TextStyle(
                 fontSize: 14,
-                color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                color: isDark ? Colors.white38 : AppColors.gray400,
               ),
             ),
             const SizedBox(height: 4),
@@ -279,7 +280,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
               '点击左侧"添加"搜索并订阅地图',
               style: TextStyle(
                 fontSize: 12,
-                color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
+                color: isDark ? Colors.white24 : AppColors.gray300,
               ),
             ),
           ],
@@ -388,12 +389,12 @@ class _SubscriptionViewState extends State<SubscriptionView> {
           decoration: BoxDecoration(
             color: isDark
                 ? Colors.white.withValues(alpha: 0.08)
-                : const Color(0xFFE5E7EB),
+                : AppColors.gray200,
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
               color: isDark
                   ? Colors.white.withValues(alpha: 0.12)
-                  : const Color(0xFFD1D5DB),
+                  : AppColors.gray300,
             ),
           ),
           child: Row(
@@ -402,7 +403,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
               Icon(
                 Icons.tune_rounded,
                 size: 14,
-                color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                color: isDark ? Colors.white70 : AppColors.gray500,
               ),
               const SizedBox(width: 6),
               Text(
@@ -410,7 +411,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                  color: isDark ? Colors.white70 : AppColors.gray500,
                 ),
               ),
             ],
@@ -435,7 +436,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white : const Color(0xFF1F2937),
+            color: isDark ? Colors.white : AppColors.gray800,
           ),
         ),
         content: Text(
@@ -451,7 +452,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
             style: TextButton.styleFrom(
               foregroundColor: isDark
                   ? Colors.white54
-                  : const Color(0xFF6B7280),
+                  : AppColors.gray500,
             ),
             child: const Text('取消'),
           ),
@@ -463,7 +464,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
               Navigator.of(ctx).pop();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
+              backgroundColor: AppColors.red500,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -501,7 +502,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
               children: [
                 Icon(
                   Icons.category_rounded,
-                  color: const Color(0xFF6366F1),
+                  color: AppColors.indigo500,
                   size: 20,
                 ),
                 const SizedBox(width: 8),
@@ -511,7 +512,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : const Color(0xFF1F2937),
+                      color: isDark ? Colors.white : AppColors.gray800,
                     ),
                   ),
                 ),
@@ -527,7 +528,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                     '设置所有订阅地图的监控范围',
                     style: TextStyle(
                       fontSize: 13,
-                      color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                      color: isDark ? Colors.white54 : AppColors.gray500,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -543,7 +544,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                       '全部分类',
                       style: TextStyle(
                         fontSize: 14,
-                        color: isDark ? Colors.white : const Color(0xFF1F2937),
+                        color: isDark ? Colors.white : AppColors.gray800,
                       ),
                     ),
                     subtitle: Text(
@@ -552,10 +553,10 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                         fontSize: 12,
                         color: isDark
                             ? Colors.white38
-                            : const Color(0xFF9CA3AF),
+                            : AppColors.gray400,
                       ),
                     ),
-                    activeColor: const Color(0xFF6366F1),
+                    activeColor: AppColors.indigo500,
                     contentPadding: EdgeInsets.zero,
                     dense: true,
                   ),
@@ -567,7 +568,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                         fontSize: 13,
                         color: isDark
                             ? Colors.white54
-                            : const Color(0xFF6B7280),
+                            : AppColors.gray500,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -584,7 +585,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                                 strokeWidth: 2,
                                 color: isDark
                                     ? Colors.white38
-                                    : const Color(0xFF9CA3AF),
+                                    : AppColors.gray400,
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -594,7 +595,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                                 fontSize: 13,
                                 color: isDark
                                     ? Colors.white38
-                                    : const Color(0xFF9CA3AF),
+                                    : AppColors.gray400,
                               ),
                             ),
                           ],
@@ -609,7 +610,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                             fontSize: 13,
                             color: isDark
                                 ? Colors.white38
-                                : const Color(0xFF9CA3AF),
+                                : AppColors.gray400,
                           ),
                         ),
                       )
@@ -641,14 +642,14 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                                 selectedColor: const Color(
                                   0xFF6366F1,
                                 ).withValues(alpha: 0.2),
-                                checkmarkColor: const Color(0xFF6366F1),
+                                checkmarkColor: AppColors.indigo500,
                                 labelStyle: TextStyle(
                                   fontSize: 13,
                                   color: isSelected
-                                      ? const Color(0xFF6366F1)
+                                      ? AppColors.indigo500
                                       : (isDark
                                             ? Colors.white70
-                                            : const Color(0xFF374151)),
+                                            : AppColors.gray700),
                                 ),
                               );
                             }).toList(),
@@ -665,7 +666,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                 style: TextButton.styleFrom(
                   foregroundColor: isDark
                       ? Colors.white54
-                      : const Color(0xFF6B7280),
+                      : AppColors.gray500,
                 ),
                 child: const Text('取消'),
               ),
@@ -678,7 +679,7 @@ class _SubscriptionViewState extends State<SubscriptionView> {
                   Navigator.of(ctx).pop();
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6366F1),
+                  backgroundColor: AppColors.indigo500,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),

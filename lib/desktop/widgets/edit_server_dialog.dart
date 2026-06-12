@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 编辑服务器对话框返回结果
 class EditServerResult {
@@ -112,16 +113,16 @@ class _EditServerDialogState extends State<EditServerDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
+    final textColor = isDark ? Colors.white : AppColors.gray800;
     final secondaryTextColor = isDark
         ? Colors.white54
-        : const Color(0xFF6B7280);
+        : AppColors.gray500;
     final inputBgColor = isDark
-        ? const Color(0xFF334155)
-        : const Color(0xFFF9FAFB);
+        ? AppColors.slate700
+        : AppColors.gray50;
     final borderColor = isDark
-        ? const Color(0xFF475569)
-        : const Color(0xFFE5E7EB);
+        ? AppColors.slate600
+        : AppColors.gray200;
 
     return AlertDialog(
       title: const Text('编辑服务器'),
@@ -171,7 +172,7 @@ class _EditServerDialogState extends State<EditServerDialog> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFF0080FF)),
+                  borderSide: const BorderSide(color: AppColors.primary),
                 ),
                 prefixIcon: Icon(Icons.dns_outlined, color: secondaryTextColor),
               ),
@@ -208,7 +209,7 @@ class _EditServerDialogState extends State<EditServerDialog> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFF0080FF)),
+                  borderSide: const BorderSide(color: AppColors.primary),
                 ),
                 prefixIcon: Icon(
                   Icons.label_outline,
@@ -229,7 +230,7 @@ class _EditServerDialogState extends State<EditServerDialog> {
         ElevatedButton(
           onPressed: _onConfirm,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF0080FF),
+            backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
           ),
           child: const Text('确认'),

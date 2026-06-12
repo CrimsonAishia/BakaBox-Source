@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/models/lobby_models.dart';
 import 'lobby_inventory_panel.dart';
 import 'lobby_user_info_panel.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 用户资料九宫格面板
 ///
@@ -89,7 +90,7 @@ class _LobbyUserProfilePanelState extends State<LobbyUserProfilePanel>
                   spreadRadius: 4,
                 ),
                 BoxShadow(
-                  color: const Color(0xFF1D9BF0).withValues(alpha: 0.06),
+                  color: AppColors.lobbyBlue.withValues(alpha: 0.06),
                   blurRadius: 40,
                   spreadRadius: -10,
                 ),
@@ -118,7 +119,7 @@ class _LobbyUserProfilePanelState extends State<LobbyUserProfilePanel>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF1D9BF0).withValues(alpha: 0.12),
+            AppColors.lobbyBlue.withValues(alpha: 0.12),
             const Color(0xFF0B66C2).withValues(alpha: 0.06),
           ],
         ),
@@ -201,12 +202,12 @@ class _LobbyUserProfilePanelState extends State<LobbyUserProfilePanel>
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: const Color(0xFF1D9BF0).withValues(alpha: 0.5),
+          color: AppColors.lobbyBlue.withValues(alpha: 0.5),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1D9BF0).withValues(alpha: 0.15),
+            color: AppColors.lobbyBlue.withValues(alpha: 0.15),
             blurRadius: 8,
           ),
         ],
@@ -229,7 +230,7 @@ class _LobbyUserProfilePanelState extends State<LobbyUserProfilePanel>
     return Container(
       width: 40,
       height: 40,
-      color: const Color(0xFF1D9BF0).withValues(alpha: 0.2),
+      color: AppColors.lobbyBlue.withValues(alpha: 0.2),
       child: const Icon(Icons.person, color: Colors.white54, size: 22),
     );
   }
@@ -241,7 +242,7 @@ class _LobbyUserProfilePanelState extends State<LobbyUserProfilePanel>
         id: 'personal_data',
         icon: Icons.bar_chart_rounded,
         label: '个人数据',
-        color: const Color(0xFF1D9BF0),
+        color: AppColors.lobbyBlue,
       ),
       _GridItem(
         id: 'inventory',

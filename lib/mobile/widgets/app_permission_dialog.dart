@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/services/app_permission_service.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 应用权限引导弹窗
 ///
@@ -118,8 +119,8 @@ class _AppPermissionDialogState extends State<AppPermissionDialog> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color(0xFF1E2030) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
-    final subtitleColor = isDark ? Colors.white70 : const Color(0xFF6B7280);
+    final textColor = isDark ? Colors.white : AppColors.gray800;
+    final subtitleColor = isDark ? Colors.white70 : AppColors.gray500;
 
     return Dialog(
       backgroundColor: bgColor,
@@ -133,7 +134,7 @@ class _AppPermissionDialogState extends State<AppPermissionDialog> {
             Icon(
               Icons.shield_outlined,
               size: 48,
-              color: const Color(0xFF6366F1),
+              color: AppColors.indigo500,
             ),
             const SizedBox(height: 12),
             Text(
@@ -183,7 +184,7 @@ class _AppPermissionDialogState extends State<AppPermissionDialog> {
                 child: ElevatedButton(
                   onPressed: _requesting ? null : _finish,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6366F1),
+                    backgroundColor: AppColors.indigo500,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -225,11 +226,11 @@ class _AppPermissionDialogState extends State<AppPermissionDialog> {
                               }
                             },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6366F1),
+                        backgroundColor: AppColors.indigo500,
                         foregroundColor: Colors.white,
                         disabledBackgroundColor: isDark
                             ? Colors.white.withValues(alpha: 0.1)
-                            : const Color(0xFFE2E8F0),
+                            : AppColors.slate200,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -264,11 +265,11 @@ class _AppPermissionDialogState extends State<AppPermissionDialog> {
     required VoidCallback? onRequest,
     required bool isDark,
   }) {
-    const activeColor = Color(0xFF6366F1);
-    const grantedColor = Color(0xFF10B981);
+    const activeColor = AppColors.indigo500;
+    const grantedColor = AppColors.emerald500;
     final inactiveColor = isDark
         ? Colors.white.withValues(alpha: 0.3)
-        : const Color(0xFFD1D5DB);
+        : AppColors.gray300;
 
     final Color borderColor;
     final Color iconColor;
@@ -277,17 +278,17 @@ class _AppPermissionDialogState extends State<AppPermissionDialog> {
     if (granted) {
       borderColor = grantedColor.withValues(alpha: 0.3);
       iconColor = grantedColor;
-      titleColor = isDark ? Colors.white : const Color(0xFF1F2937);
+      titleColor = isDark ? Colors.white : AppColors.gray800;
     } else if (isActive) {
       borderColor = activeColor.withValues(alpha: 0.5);
       iconColor = activeColor;
-      titleColor = isDark ? Colors.white : const Color(0xFF1F2937);
+      titleColor = isDark ? Colors.white : AppColors.gray800;
     } else {
       borderColor = inactiveColor;
       iconColor = inactiveColor;
       titleColor = isDark
           ? Colors.white.withValues(alpha: 0.4)
-          : const Color(0xFF9CA3AF);
+          : AppColors.gray400;
     }
 
     return Container(
@@ -338,7 +339,7 @@ class _AppPermissionDialogState extends State<AppPermissionDialog> {
                     fontSize: 12,
                     color: isDark
                         ? Colors.white.withValues(alpha: 0.5)
-                        : const Color(0xFF9CA3AF),
+                        : AppColors.gray400,
                   ),
                 ),
               ],

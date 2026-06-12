@@ -7,6 +7,7 @@ import '../../../../core/bloc/map_subscription/map_subscription_bloc.dart';
 import '../../../../core/widgets/map_contribution_dialog.dart';
 import '../../common_scroll_indicator.dart';
 import '../../map_subscription_card.dart';
+import '../../../../core/constants/app_colors.dart';
 
 /// 添加订阅视图
 class AddSubscriptionView extends StatefulWidget {
@@ -125,7 +126,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
         children: [
           Icon(
             Icons.add_circle_outline_rounded,
-            color: const Color(0xFF6366F1),
+            color: AppColors.indigo500,
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -134,7 +135,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white : const Color(0xFF1F2937),
+              color: isDark ? Colors.white : AppColors.gray800,
             ),
           ),
         ],
@@ -150,24 +151,24 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
         onChanged: _onSearchChanged,
         style: TextStyle(
           fontSize: 14,
-          color: isDark ? Colors.white : const Color(0xFF1F2937),
+          color: isDark ? Colors.white : AppColors.gray800,
         ),
         decoration: InputDecoration(
           hintText: '搜索地图名称...',
           hintStyle: TextStyle(
-            color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+            color: isDark ? Colors.white38 : AppColors.gray400,
           ),
           prefixIcon: Icon(
             Icons.search_rounded,
             size: 20,
-            color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+            color: isDark ? Colors.white38 : AppColors.gray400,
           ),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
                   icon: Icon(
                     Icons.close_rounded,
                     size: 18,
-                    color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                    color: isDark ? Colors.white38 : AppColors.gray400,
                   ),
                   onPressed: () {
                     setState(() {
@@ -182,7 +183,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
           filled: true,
           fillColor: isDark
               ? Colors.white.withValues(alpha: 0.05)
-              : const Color(0xFFF3F4F6),
+              : AppColors.gray100,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 12,
@@ -197,7 +198,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+            borderSide: const BorderSide(color: AppColors.indigo500, width: 1.5),
           ),
         ),
       ),
@@ -212,14 +213,14 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
           Icon(
             Icons.search_rounded,
             size: 48,
-            color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
+            color: isDark ? Colors.white24 : AppColors.gray300,
           ),
           const SizedBox(height: 12),
           Text(
             '搜索地图',
             style: TextStyle(
               fontSize: 14,
-              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+              color: isDark ? Colors.white38 : AppColors.gray400,
             ),
           ),
           const SizedBox(height: 4),
@@ -227,7 +228,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
             '输入地图名称搜索并添加订阅',
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
+              color: isDark ? Colors.white24 : AppColors.gray300,
             ),
           ),
         ],
@@ -238,7 +239,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
   Widget _buildSearchResults(bool isDark, MapSubscriptionState state) {
     if (state.isSearching && state.searchResults.isEmpty) {
       return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF6366F1)),
+        child: CircularProgressIndicator(color: AppColors.indigo500),
       );
     }
 
@@ -250,14 +251,14 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
             Icon(
               Icons.search_off_rounded,
               size: 48,
-              color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
+              color: isDark ? Colors.white24 : AppColors.gray300,
             ),
             const SizedBox(height: 12),
             Text(
               '未找到匹配的地图',
               style: TextStyle(
                 fontSize: 14,
-                color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                color: isDark ? Colors.white38 : AppColors.gray400,
               ),
             ),
           ],
@@ -275,7 +276,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
                 '找到 ${state.searchTotalCount} 个地图',
                 style: TextStyle(
                   fontSize: 12,
-                  color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                  color: isDark ? Colors.white38 : AppColors.gray400,
                 ),
               ),
               if (state.hasMoreSearchResults) ...[
@@ -284,7 +285,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
                   '(已加载 ${state.searchResults.length} 个)',
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
+                    color: isDark ? Colors.white24 : AppColors.gray300,
                   ),
                 ),
               ],
@@ -314,7 +315,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Color(0xFF6366F1),
+                                  color: AppColors.indigo500,
                                 ),
                               )
                             : TextButton(
@@ -332,7 +333,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
                                     fontSize: 13,
                                     color: isDark
                                         ? Colors.white54
-                                        : const Color(0xFF6B7280),
+                                        : AppColors.gray500,
                                   ),
                                 ),
                               ),
@@ -475,8 +476,8 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: hasBackground
-            ? const Color(0xFF10B981).withValues(alpha: 0.85)
-            : const Color(0xFF10B981).withValues(alpha: 0.15),
+            ? AppColors.emerald500.withValues(alpha: 0.85)
+            : AppColors.emerald500.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -485,7 +486,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
           Icon(
             Icons.check_rounded,
             size: 14,
-            color: hasBackground ? Colors.white : const Color(0xFF10B981),
+            color: hasBackground ? Colors.white : AppColors.emerald500,
           ),
           const SizedBox(width: 4),
           Text(
@@ -493,7 +494,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: hasBackground ? Colors.white : const Color(0xFF10B981),
+              color: hasBackground ? Colors.white : AppColors.emerald500,
             ),
           ),
         ],
@@ -514,8 +515,8 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: hasBackground
-                ? const Color(0xFF6366F1).withValues(alpha: 0.9)
-                : const Color(0xFF6366F1),
+                ? AppColors.indigo500.withValues(alpha: 0.9)
+                : AppColors.indigo500,
             borderRadius: BorderRadius.circular(6),
             boxShadow: hasBackground
                 ? [
@@ -563,7 +564,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
           children: [
             Icon(
               Icons.add_circle_rounded,
-              color: const Color(0xFF6366F1),
+              color: AppColors.indigo500,
               size: 20,
             ),
             const SizedBox(width: 8),
@@ -573,7 +574,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF1F2937),
+                  color: isDark ? Colors.white : AppColors.gray800,
                 ),
               ),
             ),
@@ -588,7 +589,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
               decoration: BoxDecoration(
                 color: isDark
                     ? Colors.white.withValues(alpha: 0.05)
-                    : const Color(0xFFF3F4F6),
+                    : AppColors.gray100,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -596,7 +597,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
                   Icon(
                     Icons.map_rounded,
                     size: 18,
-                    color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    color: isDark ? Colors.white54 : AppColors.gray500,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -605,7 +606,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.white : const Color(0xFF1F2937),
+                        color: isDark ? Colors.white : AppColors.gray800,
                       ),
                     ),
                   ),
@@ -617,7 +618,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
               '监控范围由全局设置控制',
               style: TextStyle(
                 fontSize: 12,
-                color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                color: isDark ? Colors.white38 : AppColors.gray400,
               ),
             ),
           ],
@@ -628,7 +629,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
             style: TextButton.styleFrom(
               foregroundColor: isDark
                   ? Colors.white54
-                  : const Color(0xFF6B7280),
+                  : AppColors.gray500,
             ),
             child: const Text('取消'),
           ),
@@ -649,7 +650,7 @@ class _AddSubscriptionViewState extends State<AddSubscriptionView> {
               Navigator.of(ctx).pop();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6366F1),
+              backgroundColor: AppColors.indigo500,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),

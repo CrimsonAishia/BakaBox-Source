@@ -9,6 +9,7 @@ import '../../../core/models/map_tag_models.dart' show MapTagSimple;
 import '../../../core/services/image_url_service.dart';
 import '../../../core/widgets/disk_cached_image.dart';
 import '../../../core/widgets/marquee_text.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 移动端地图卡片
 class MapCardMobile extends StatefulWidget {
@@ -144,7 +145,7 @@ class _MapCardMobileState extends State<MapCardMobile> {
 
   Widget _buildBackground(MapInfo mapInfo) {
     final fallback = Container(
-      color: const Color(0xFF1E293B),
+      color: AppColors.slate800,
       child: Center(
         child: Icon(
           Icons.map_outlined,
@@ -219,9 +220,7 @@ class _MapCardMobileState extends State<MapCardMobile> {
   }
 }
 
-// ---------------------------------------------------------------------------
 // 自动滚动标签行
-// ---------------------------------------------------------------------------
 
 class _AutoScrollTagRow extends StatefulWidget {
   final List<MapTagSimple> tags;
@@ -433,9 +432,7 @@ class _AutoScrollTagRowState extends State<_AutoScrollTagRow> {
   }
 }
 
-// ---------------------------------------------------------------------------
 // 移动端 CD 徽章（点击获取，点击刷新）
-// ---------------------------------------------------------------------------
 
 class _MapCdBadgeMobile extends StatelessWidget {
   final String mapName;
@@ -471,8 +468,8 @@ class _MapCdBadgeMobile extends StatelessWidget {
 
         // 未加载且无缓存 → 点击获取
         if (!isLoading && cdInfo == null && error == null && !hasCache) {
-          borderColor = const Color(0xFF6366F1).withValues(alpha: 0.5);
-          glowColor = const Color(0xFF6366F1).withValues(alpha: 0.15);
+          borderColor = AppColors.indigo500.withValues(alpha: 0.5);
+          glowColor = AppColors.indigo500.withValues(alpha: 0.15);
           onTap = () => _load(context);
           content = Row(
             mainAxisSize: MainAxisSize.min,
@@ -573,8 +570,8 @@ class _MapCdBadgeMobile extends StatelessWidget {
           final cd = cdInfo.currentNominateCd;
           final isAvailable = cd == 0;
           final accentColor = isAvailable
-              ? const Color(0xFF10B981)
-              : const Color(0xFFEF4444);
+              ? AppColors.emerald500
+              : AppColors.red500;
           borderColor = accentColor.withValues(alpha: 0.8);
           glowColor = accentColor.withValues(alpha: 0.3);
           onTap = () => _refresh(context);

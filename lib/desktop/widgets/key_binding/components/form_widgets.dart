@@ -3,6 +3,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../../../core/models/key_config_models.dart';
 import '../../../../core/utils/key_placeholder_parser.dart';
 import 'common_widgets.dart';
+import '../../../../core/constants/app_colors.dart';
 
 /// 通用表单输入框（配置名称、描述等）
 class ConfigFormInput extends StatelessWidget {
@@ -52,7 +53,7 @@ class ConfigFormInput extends StatelessWidget {
               color: isDark ? Colors.white38 : Colors.grey[400],
             ),
             filled: true,
-            fillColor: isDark ? const Color(0xFF334155) : Colors.grey[50],
+            fillColor: isDark ? AppColors.slate700 : Colors.grey[50],
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
               vertical: 10,
@@ -60,18 +61,18 @@ class ConfigFormInput extends StatelessWidget {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: isDark ? const Color(0xFF475569) : Colors.grey[200]!,
+                color: isDark ? AppColors.slate600 : Colors.grey[200]!,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: isDark ? const Color(0xFF475569) : Colors.grey[200]!,
+                color: isDark ? AppColors.slate600 : Colors.grey[200]!,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF0080FF)),
+              borderSide: const BorderSide(color: AppColors.primary),
             ),
           ),
           onChanged: onChanged,
@@ -168,7 +169,7 @@ class InsertPlaceholderButton extends StatelessWidget {
         style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
       ),
       style: FilledButton.styleFrom(
-        backgroundColor: const Color(0xFF0080FF),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         elevation: 2,
@@ -202,10 +203,10 @@ class ScriptEditor extends StatelessWidget {
         Container(
           height: 140,
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF334155) : Colors.grey[50],
+            color: isDark ? AppColors.slate700 : Colors.grey[50],
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: isDark ? const Color(0xFF475569) : Colors.grey[200]!,
+              color: isDark ? AppColors.slate600 : Colors.grey[200]!,
             ),
           ),
           child: TextFormField(
@@ -216,7 +217,7 @@ class ScriptEditor extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               fontFamily: 'monospace',
-              color: isDark ? const Color(0xFFcdd6f4) : const Color(0xFF374151),
+              color: isDark ? const Color(0xFFcdd6f4) : AppColors.gray700,
               height: 1.5,
             ),
             decoration: InputDecoration(
@@ -245,10 +246,10 @@ class ScriptEditor extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFF0080FF).withValues(alpha: 0.05),
+              color: AppColors.primary.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
-                color: const Color(0xFF0080FF).withValues(alpha: 0.2),
+                color: AppColors.primary.withValues(alpha: 0.2),
               ),
             ),
             child: Row(
@@ -256,7 +257,7 @@ class ScriptEditor extends StatelessWidget {
                 Icon(
                   Icons.lightbulb_outline,
                   size: 14,
-                  color: const Color(0xFF0080FF),
+                  color: AppColors.primary,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -302,7 +303,7 @@ class PlaceholderTagList extends StatelessWidget {
             Icon(
               MdiIcons.keyboardOutline,
               size: 12,
-              color: const Color(0xFFf59e0b),
+              color: AppColors.amber500,
             ),
             const SizedBox(width: 6),
             Text(
@@ -353,19 +354,19 @@ class PlaceholderInsertHelper {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: isDark ? const Color(0xFF1E293B) : null,
+        backgroundColor: isDark ? AppColors.slate800 : null,
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Icon(
                 MdiIcons.keyboardOutline,
                 size: 18,
-                color: const Color(0xFF0080FF),
+                color: AppColors.primary,
               ),
             ),
             const SizedBox(width: 10),
@@ -404,17 +405,17 @@ class PlaceholderInsertHelper {
                   color: isDark ? Colors.white38 : Colors.grey[500],
                 ),
                 filled: true,
-                fillColor: isDark ? const Color(0xFF334155) : Colors.grey[50],
+                fillColor: isDark ? AppColors.slate700 : Colors.grey[50],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
-                    color: isDark ? const Color(0xFF475569) : Colors.grey[300]!,
+                    color: isDark ? AppColors.slate600 : Colors.grey[300]!,
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
-                    color: isDark ? const Color(0xFF475569) : Colors.grey[300]!,
+                    color: isDark ? AppColors.slate600 : Colors.grey[300]!,
                   ),
                 ),
                 prefixIcon: Icon(MdiIcons.tagOutline, size: 18),

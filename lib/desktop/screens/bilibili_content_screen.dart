@@ -196,8 +196,8 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
           colors: isDark
               ? [
                   // 深色模式
-                  const Color(0xFF0F172A),
-                  const Color(0xFF1E293B),
+                  AppColors.slate900,
+                  AppColors.slate800,
                   const Color(0xFF0D1B2A),
                 ]
               : [
@@ -220,11 +220,11 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
     return Container(
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF1E293B).withValues(alpha: 0.85)
+            ? AppColors.slate800.withValues(alpha: 0.85)
             : Colors.white.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.slate700 : AppColors.gray200,
           width: 1,
         ),
         boxShadow: [
@@ -301,7 +301,7 @@ class _BilibiliContentScreenState extends State<BilibiliContentScreen>
   Widget _buildHasMoreOverlay() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     // 背景色与容器一致
-    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final bgColor = isDark ? AppColors.slate800 : Colors.white;
     return Positioned(
       left: 0,
       right: 0,

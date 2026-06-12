@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import '../../../../core/constants/app_colors.dart';
 
 /// 徽章
 class Badge extends StatelessWidget {
@@ -159,7 +160,7 @@ class _IconButtonState extends State<IconButton>
           margin: const EdgeInsets.only(left: 4),
           decoration: BoxDecoration(
             color: _hovered && !widget.loading
-                ? (isDark ? const Color(0xFF334155) : Colors.grey[100])
+                ? (isDark ? AppColors.slate700 : Colors.grey[100])
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
@@ -170,7 +171,7 @@ class _IconButtonState extends State<IconButton>
                     child: Icon(
                       widget.icon,
                       size: 18,
-                      color: const Color(0xFF0080FF),
+                      color: AppColors.primary,
                     ),
                   )
                 : Icon(
@@ -212,7 +213,7 @@ class _SegmentedButtonState extends State<SegmentedButton> {
       height: 30,
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF334155) : Colors.grey[200],
+        color: isDark ? AppColors.slate700 : Colors.grey[200],
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -231,10 +232,10 @@ class _SegmentedButtonState extends State<SegmentedButton> {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: widget.selected == i
-                      ? (isDark ? const Color(0xFF1E293B) : Colors.white)
+                      ? (isDark ? AppColors.slate800 : Colors.white)
                       : (_hoveredIndex == i
                             ? (isDark
-                                  ? const Color(0xFF475569)
+                                  ? AppColors.slate600
                                   : Colors.grey[300])
                             : Colors.transparent),
                   borderRadius: BorderRadius.circular(6),
@@ -253,7 +254,7 @@ class _SegmentedButtonState extends State<SegmentedButton> {
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                     color: widget.selected == i
-                        ? const Color(0xFF0080FF)
+                        ? AppColors.primary
                         : (isDark ? Colors.white54 : Colors.grey[600]),
                   ),
                 ),
@@ -330,7 +331,7 @@ class _ConfigActionButtonState extends State<ConfigActionButton> {
                     width: 7,
                     height: 7,
                     decoration: const BoxDecoration(
-                      color: Color(0xFFF59E0B),
+                      color: AppColors.amber500,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -377,16 +378,16 @@ class _HoverChipState extends State<HoverChip> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: widget.selected
-                ? const Color(0xFF0080FF)
+                ? AppColors.primary
                 : (_hovered
-                      ? (isDark ? const Color(0xFF475569) : Colors.grey[200])
-                      : (isDark ? const Color(0xFF334155) : Colors.grey[100])),
+                      ? (isDark ? AppColors.slate600 : Colors.grey[200])
+                      : (isDark ? AppColors.slate700 : Colors.grey[100])),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: widget.selected
-                  ? const Color(0xFF0080FF)
+                  ? AppColors.primary
                   : (_hovered
-                        ? (isDark ? const Color(0xFF64748B) : Colors.grey[300]!)
+                        ? (isDark ? AppColors.slate500 : Colors.grey[300]!)
                         : Colors.transparent),
             ),
           ),
@@ -444,18 +445,18 @@ class _HoverTypeOptionState extends State<HoverTypeOption> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: widget.selected
-                ? const Color(0xFF0080FF).withValues(alpha: 0.06)
+                ? AppColors.primary.withValues(alpha: 0.06)
                 : (_hovered
-                      ? (isDark ? const Color(0xFF334155) : Colors.grey[100])
-                      : (isDark ? const Color(0xFF1E293B) : Colors.grey[50])),
+                      ? (isDark ? AppColors.slate700 : Colors.grey[100])
+                      : (isDark ? AppColors.slate800 : Colors.grey[50])),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: widget.selected
-                  ? const Color(0xFF0080FF)
+                  ? AppColors.primary
                   : (_hovered
-                        ? (isDark ? const Color(0xFF475569) : Colors.grey[300]!)
+                        ? (isDark ? AppColors.slate600 : Colors.grey[300]!)
                         : (isDark
-                              ? const Color(0xFF334155)
+                              ? AppColors.slate700
                               : Colors.grey[200]!)),
               width: widget.selected ? 1.5 : 1,
             ),
@@ -466,7 +467,7 @@ class _HoverTypeOptionState extends State<HoverTypeOption> {
                 widget.icon,
                 size: 18,
                 color: widget.selected
-                    ? const Color(0xFF0080FF)
+                    ? AppColors.primary
                     : (isDark ? Colors.white54 : Colors.grey[500]),
               ),
               const SizedBox(width: 10),
@@ -481,7 +482,7 @@ class _HoverTypeOptionState extends State<HoverTypeOption> {
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                         color: widget.selected
-                            ? const Color(0xFF0080FF)
+                            ? AppColors.primary
                             : (isDark ? Colors.white70 : Colors.grey[700]),
                       ),
                     ),
@@ -502,7 +503,7 @@ class _HoverTypeOptionState extends State<HoverTypeOption> {
                 const Icon(
                   Icons.check_circle,
                   size: 16,
-                  color: Color(0xFF0080FF),
+                  color: AppColors.primary,
                 ),
             ],
           ),
@@ -541,11 +542,11 @@ class _PlaceholderTagState extends State<PlaceholderTag> {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: _hovered
-              ? const Color(0xFFf59e0b).withValues(alpha: 0.2)
-              : const Color(0xFFf59e0b).withValues(alpha: 0.1),
+              ? AppColors.amber500.withValues(alpha: 0.2)
+              : AppColors.amber500.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(4),
           border: Border.all(
-            color: const Color(0xFFf59e0b).withValues(alpha: 0.3),
+            color: AppColors.amber500.withValues(alpha: 0.3),
           ),
         ),
         child: Row(
@@ -554,7 +555,7 @@ class _PlaceholderTagState extends State<PlaceholderTag> {
             Icon(
               MdiIcons.keyboardOutline,
               size: 10,
-              color: const Color(0xFFf59e0b),
+              color: AppColors.amber500,
             ),
             const SizedBox(width: 4),
             Text(
@@ -577,14 +578,14 @@ class _PlaceholderTagState extends State<PlaceholderTag> {
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     color: _closeHovered
-                        ? const Color(0xFFf59e0b).withValues(alpha: 0.3)
+                        ? AppColors.amber500.withValues(alpha: 0.3)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(2),
                   ),
                   child: const Icon(
                     Icons.close,
                     size: 10,
-                    color: Color(0xFFf59e0b),
+                    color: AppColors.amber500,
                   ),
                 ),
               ),

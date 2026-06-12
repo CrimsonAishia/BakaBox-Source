@@ -6,6 +6,7 @@ import '../../core/bloc/server/server_event.dart';
 import '../../core/models/server_models.dart';
 import '../../core/services/third_party_api_service.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import '../../core/constants/app_colors.dart';
 
 class ApiServerSelectionDialog extends StatefulWidget {
   final String? targetCategoryName;
@@ -238,7 +239,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
             constraints: const BoxConstraints(maxHeight: 700),
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xFF0F172A).withValues(alpha: 0.75)
+                  ? AppColors.slate900.withValues(alpha: 0.75)
                   : Colors.white.withValues(alpha: 0.85),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
@@ -287,7 +288,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF3B82F6).withValues(alpha: 0.1),
+            AppColors.blue500.withValues(alpha: 0.1),
             Colors.transparent,
           ],
           begin: Alignment.topLeft,
@@ -299,7 +300,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFF3B82F6).withValues(alpha: 0.15),
+              color: AppColors.blue500.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(MdiIcons.api, color: const Color(0xFF60A5FA), size: 24),
@@ -312,7 +313,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                 Text(
                   titleText,
                   style: TextStyle(
-                    color: isDark ? Colors.white : const Color(0xFF1E293B),
+                    color: isDark ? Colors.white : AppColors.slate800,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.5,
@@ -322,7 +323,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                 Text(
                   '数据来源: CS2ZE Public API',
                   style: TextStyle(
-                    color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                    color: isDark ? Colors.white54 : AppColors.slate500,
                     fontSize: 13,
                   ),
                 ),
@@ -353,16 +354,16 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
             child: CircularProgressIndicator(
               strokeWidth: 3,
               valueColor: AlwaysStoppedAnimation<Color>(
-                const Color(0xFF3B82F6),
+                AppColors.blue500,
               ),
-              backgroundColor: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+              backgroundColor: AppColors.blue500.withValues(alpha: 0.1),
             ),
           ),
           const SizedBox(height: 24),
           Text(
             '正在拉取服务器数据...',
             style: TextStyle(
-              color: isDark ? Colors.white70 : const Color(0xFF475569),
+              color: isDark ? Colors.white70 : AppColors.slate600,
               fontSize: 15,
             ),
           ),
@@ -381,7 +382,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
           Text(
             '加载失败',
             style: TextStyle(
-              color: isDark ? Colors.white : const Color(0xFF1E293B),
+              color: isDark ? Colors.white : AppColors.slate800,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -400,7 +401,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
             icon: const Icon(Icons.refresh_rounded, size: 18),
             label: const Text('重试'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3B82F6),
+              backgroundColor: AppColors.blue500,
               foregroundColor: Colors.white,
             ),
           ),
@@ -415,7 +416,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
         child: Text(
           '没有找到任何服务器',
           style: TextStyle(
-            color: isDark ? Colors.white54 : const Color(0xFF64748B),
+            color: isDark ? Colors.white54 : AppColors.slate500,
           ),
         ),
       );
@@ -459,10 +460,10 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             decoration: BoxDecoration(
-              color: isDark ? Colors.black.withValues(alpha: 0.15) : const Color(0xFFF1F5F9),
+              color: isDark ? Colors.black.withValues(alpha: 0.15) : AppColors.slate100,
               border: Border(
                 bottom: BorderSide(
-                  color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                  color: isDark ? Colors.white10 : AppColors.slate200,
                 ),
               ),
             ),
@@ -493,13 +494,13 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
                               color: isSelected 
-                                  ? const Color(0xFF3B82F6) 
+                                  ? AppColors.blue500 
                                   : (isDark ? Colors.white10 : Colors.white),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
                                 color: isSelected 
-                                    ? const Color(0xFF3B82F6) 
-                                    : (isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
+                                    ? AppColors.blue500 
+                                    : (isDark ? Colors.white10 : AppColors.slate200),
                               ),
                             ),
                             child: Text(
@@ -507,7 +508,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                               style: TextStyle(
                                 color: isSelected 
                                     ? Colors.white 
-                                    : (isDark ? Colors.white70 : const Color(0xFF475569)),
+                                    : (isDark ? Colors.white70 : AppColors.slate600),
                                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                               ),
                             ),
@@ -536,7 +537,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                                 Text(
                                   _isTabsExpanded ? '收起' : '展开',
                                   style: TextStyle(
-                                    color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                                    color: isDark ? Colors.white70 : AppColors.slate500,
                                     fontSize: 13,
                                   ),
                                 ),
@@ -544,7 +545,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                                 Icon(
                                   _isTabsExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                                   size: 16,
-                                  color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                                  color: isDark ? Colors.white70 : AppColors.slate500,
                                 ),
                               ],
                             ),
@@ -564,13 +565,13 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: (fullySelected || partiallySelected)
-                          ? const Color(0xFF3B82F6).withValues(alpha: 0.15)
+                          ? AppColors.blue500.withValues(alpha: 0.15)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: (fullySelected || partiallySelected)
-                            ? const Color(0xFF3B82F6).withValues(alpha: 0.5)
-                            : (isDark ? Colors.white10 : const Color(0xFFCBD5E1)),
+                            ? AppColors.blue500.withValues(alpha: 0.5)
+                            : (isDark ? Colors.white10 : AppColors.slate300),
                       ),
                     ),
                     child: Row(
@@ -580,7 +581,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                           size: 16,
                           color: (fullySelected || partiallySelected) 
                               ? const Color(0xFF60A5FA) 
-                              : (isDark ? Colors.white54 : const Color(0xFF64748B)),
+                              : (isDark ? Colors.white54 : AppColors.slate500),
                         ),
                         const SizedBox(width: 6),
                         Text(
@@ -589,7 +590,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                             fontSize: 13,
                             color: (fullySelected || partiallySelected) 
                                 ? const Color(0xFF60A5FA) 
-                                : (isDark ? Colors.white54 : const Color(0xFF64748B)),
+                                : (isDark ? Colors.white54 : AppColors.slate500),
                             fontWeight: (fullySelected || partiallySelected) 
                                 ? FontWeight.bold 
                                 : FontWeight.normal,
@@ -651,14 +652,14 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected
-                  ? const Color(0xFF3B82F6)
+                  ? AppColors.blue500
                   : (isDark ? Colors.white10 : Colors.black12),
               width: isSelected ? 2 : 1,
             ),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
+                      color: AppColors.blue500.withValues(alpha: 0.3),
                       blurRadius: 12,
                       spreadRadius: 1,
                     ),
@@ -737,7 +738,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                             Container(
                               padding: const EdgeInsets.all(2),
                               decoration: const BoxDecoration(
-                                color: Color(0xFF3B82F6),
+                                color: AppColors.blue500,
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(Icons.check, size: 14, color: Colors.white),
@@ -831,7 +832,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
 
   Widget _buildFallbackBg(bool isDark) {
     return Container(
-      color: isDark ? const Color(0xFF1E293B) : const Color(0xFF64748B),
+      color: isDark ? AppColors.slate800 : AppColors.slate500,
       child: const Center(
         child: Icon(Icons.dns_rounded, size: 40, color: Colors.white10),
       ),
@@ -844,7 +845,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
       decoration: BoxDecoration(
         color: isDark
             ? Colors.black.withValues(alpha: 0.2)
-            : const Color(0xFFF8FAFC),
+            : AppColors.slate50,
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
@@ -857,7 +858,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
           Text(
             '数据更新模式',
             style: TextStyle(
-              color: isDark ? Colors.white70 : const Color(0xFF475569),
+              color: isDark ? Colors.white70 : AppColors.slate600,
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
@@ -901,7 +902,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                   ),
                   foregroundColor: isDark
                       ? Colors.white70
-                      : const Color(0xFF475569),
+                      : AppColors.slate600,
                 ),
                 child: const Text(
                   '取消',
@@ -926,7 +927,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3B82F6),
+                  backgroundColor: AppColors.blue500,
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: isDark
                       ? Colors.white10
@@ -971,12 +972,12 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF3B82F6).withValues(alpha: 0.15)
+              ? AppColors.blue500.withValues(alpha: 0.15)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected
-                ? const Color(0xFF3B82F6).withValues(alpha: 0.5)
+                ? AppColors.blue500.withValues(alpha: 0.5)
                 : (isDark ? Colors.white10 : Colors.black12),
           ),
         ),
@@ -988,7 +989,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
               size: 24,
               color: isSelected
                   ? const Color(0xFF60A5FA)
-                  : (isDark ? Colors.white54 : const Color(0xFF64748B)),
+                  : (isDark ? Colors.white54 : AppColors.slate500),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -1000,8 +1001,8 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                     title,
                     style: TextStyle(
                       color: isSelected
-                          ? (isDark ? Colors.white : const Color(0xFF1E293B))
-                          : (isDark ? Colors.white54 : const Color(0xFF64748B)),
+                          ? (isDark ? Colors.white : AppColors.slate800)
+                          : (isDark ? Colors.white54 : AppColors.slate500),
                       fontSize: 14,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                     ),
@@ -1012,7 +1013,7 @@ class _ApiServerSelectionDialogState extends State<ApiServerSelectionDialog> {
                     style: TextStyle(
                       color: isSelected
                           ? const Color(0xFF60A5FA)
-                          : (isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                          : (isDark ? Colors.white38 : AppColors.slate400),
                       fontSize: 12,
                     ),
                   ),

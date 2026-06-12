@@ -7,6 +7,7 @@ import '../../../core/bloc/settings/settings_event.dart';
 import '../../../core/bloc/settings/settings_state.dart';
 import 'settings_group_title.dart';
 import 'settings_item.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 弱网模式设置组件
 ///
@@ -55,7 +56,7 @@ class WeakNetworkSettings extends StatelessWidget {
                   duration: const Duration(seconds: 2),
                   backgroundColor: value
                       ? Colors.orange
-                      : const Color(0xFF0080FF),
+                      : AppColors.primary,
                 ),
               );
             },

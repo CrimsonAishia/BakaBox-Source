@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/bloc/map_cd/map_cd_bloc.dart';
 import '../../core/bloc/map_cd/map_cd_event.dart';
 import '../../core/bloc/map_cd/map_cd_state.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 地图CD徽章
 ///
@@ -70,8 +71,8 @@ class MapCdBadge extends StatelessWidget {
             return GestureDetector(
               onTap: () => _load(context),
               child: _CdBadgeShell(
-                borderColor: const Color(0xFF6366F1).withValues(alpha: 0.5),
-                glowColor: const Color(0xFF6366F1).withValues(alpha: 0.15),
+                borderColor: AppColors.indigo500.withValues(alpha: 0.5),
+                glowColor: AppColors.indigo500.withValues(alpha: 0.15),
                 clickable: true,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -169,8 +170,8 @@ class MapCdBadge extends StatelessWidget {
         final cd = cdInfo.currentNominateCd;
         final isAvailable = cd == 0;
         final accentColor = isAvailable
-            ? const Color(0xFF10B981)
-            : const Color(0xFFEF4444);
+            ? AppColors.emerald500
+            : AppColors.red500;
 
         return GestureDetector(
           onTap: () => _refresh(context),

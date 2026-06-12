@@ -9,6 +9,7 @@ import '../../../core/models/lobby_models.dart';
 import '../../../core/services/lobby_map_loader_service.dart';
 import '../../../core/utils/log_service.dart';
 import '../../../desktop/games/lobby_game.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 移动端大厅地图场景组件
 ///
@@ -190,7 +191,7 @@ class _MobileLoadingPlaceholder extends StatelessWidget {
                 valueColor: AlwaysStoppedAnimation<Color>(
                   isDark
                       ? Colors.white.withValues(alpha: 0.6)
-                      : const Color(0xFF64748B),
+                      : AppColors.slate500,
                 ),
               ),
             ),
@@ -198,7 +199,7 @@ class _MobileLoadingPlaceholder extends StatelessWidget {
             Text(
               '正在加载地图...',
               style: TextStyle(
-                color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                color: isDark ? Colors.white54 : AppColors.slate500,
                 fontSize: 14,
               ),
             ),
@@ -210,9 +211,9 @@ class _MobileLoadingPlaceholder extends StatelessWidget {
                   value: mapState!.progress,
                   backgroundColor: isDark
                       ? Colors.white.withValues(alpha: 0.1)
-                      : const Color(0xFFCBD5E1),
+                      : AppColors.slate300,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    isDark ? const Color(0xFF60A5FA) : const Color(0xFF3B82F6),
+                    isDark ? const Color(0xFF60A5FA) : AppColors.blue500,
                   ),
                 ),
               ),

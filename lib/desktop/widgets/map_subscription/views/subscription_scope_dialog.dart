@@ -9,6 +9,7 @@ import '../../../../core/services/custom_server_service.dart';
 import '../../../../core/services/server_category_service.dart';
 import '../../../../core/services/source_server_service.dart';
 import '../../../../core/utils/storage_utils.dart';
+import '../../../../core/constants/app_colors.dart';
 
 /// 监控范围设置弹窗
 ///
@@ -299,7 +300,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                           thickness: 1,
                           color: isDark
                               ? Colors.white.withValues(alpha: 0.08)
-                              : const Color(0xFFE5E7EB),
+                              : AppColors.gray200,
                         ),
                         // 右侧：服务器列表
                         Expanded(flex: 4, child: _buildServerPanel()),
@@ -319,7 +320,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           const CircularProgressIndicator(
-            color: Color(0xFF6366F1),
+            color: AppColors.indigo500,
             strokeWidth: 2,
           ),
           const SizedBox(height: 16),
@@ -327,7 +328,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
             '正在加载数据...',
             style: TextStyle(
               fontSize: 13,
-              color: isDark ? Colors.white54 : const Color(0xFF9CA3AF),
+              color: isDark ? Colors.white54 : AppColors.gray400,
             ),
           ),
         ],
@@ -343,12 +344,12 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+              color: AppColors.indigo500.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
               Icons.tune_rounded,
-              color: Color(0xFF6366F1),
+              color: AppColors.indigo500,
               size: 20,
             ),
           ),
@@ -362,7 +363,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : const Color(0xFF1F2937),
+                    color: isDark ? Colors.white : AppColors.gray800,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -372,7 +373,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                       : widget.subscription.mapName,
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    color: isDark ? Colors.white54 : AppColors.gray500,
                   ),
                 ),
               ],
@@ -383,7 +384,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
             icon: Icon(
               Icons.close_rounded,
               size: 20,
-              color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+              color: isDark ? Colors.white38 : AppColors.gray400,
             ),
             splashRadius: 18,
           ),
@@ -413,7 +414,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                 Icon(
                   Icons.category_rounded,
                   size: 16,
-                  color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                  color: isDark ? Colors.white54 : AppColors.gray500,
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -421,20 +422,20 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.white70 : const Color(0xFF374151),
+                    color: isDark ? Colors.white70 : AppColors.gray700,
                   ),
                 ),
                 const Spacer(),
                 if (_inheritGlobal)
-                  _buildStatusBadge('继承全局', const Color(0xFF6366F1))
+                  _buildStatusBadge('继承全局', AppColors.indigo500)
                 else if (_selectedCategories.isEmpty)
-                  _buildStatusBadge('未选', const Color(0xFF9CA3AF))
+                  _buildStatusBadge('未选', AppColors.gray400)
                 else
                   Text(
                     '${_selectedCategories.length} 个',
                     style: TextStyle(
                       fontSize: 11,
-                      color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                      color: isDark ? Colors.white38 : AppColors.gray400,
                     ),
                   ),
               ],
@@ -453,7 +454,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                         fontSize: 12,
                         color: isDark
                             ? Colors.white38
-                            : const Color(0xFF9CA3AF),
+                            : AppColors.gray400,
                       ),
                     ),
                   )
@@ -494,15 +495,15 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: _inheritGlobal
-                ? const Color(0xFF6366F1).withValues(alpha: 0.1)
+                ? AppColors.indigo500.withValues(alpha: 0.1)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: _inheritGlobal
-                  ? const Color(0xFF6366F1).withValues(alpha: 0.3)
+                  ? AppColors.indigo500.withValues(alpha: 0.3)
                   : (isDark
                         ? Colors.white.withValues(alpha: 0.08)
-                        : const Color(0xFFE5E7EB)),
+                        : AppColors.gray200),
             ),
           ),
           child: Row(
@@ -512,13 +513,13 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                 height: 18,
                 decoration: BoxDecoration(
                   color: _inheritGlobal
-                      ? const Color(0xFF6366F1)
+                      ? AppColors.indigo500
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(
                     color: _inheritGlobal
-                        ? const Color(0xFF6366F1)
-                        : (isDark ? Colors.white38 : const Color(0xFFD1D5DB)),
+                        ? AppColors.indigo500
+                        : (isDark ? Colors.white38 : AppColors.gray300),
                     width: 1.5,
                   ),
                 ),
@@ -541,8 +542,8 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                         color: _inheritGlobal
-                            ? const Color(0xFF6366F1)
-                            : (isDark ? Colors.white : const Color(0xFF1F2937)),
+                            ? AppColors.indigo500
+                            : (isDark ? Colors.white : AppColors.gray800),
                       ),
                     ),
                     Text(
@@ -553,7 +554,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                         fontSize: 10,
                         color: isDark
                             ? Colors.white38
-                            : const Color(0xFF9CA3AF),
+                            : AppColors.gray400,
                       ),
                     ),
                   ],
@@ -601,16 +602,16 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: isActive
-                ? const Color(0xFF6366F1).withValues(alpha: 0.15)
+                ? AppColors.indigo500.withValues(alpha: 0.15)
                 : (isSelected
-                      ? const Color(0xFF6366F1).withValues(alpha: 0.08)
+                      ? AppColors.indigo500.withValues(alpha: 0.08)
                       : Colors.transparent),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: isActive
-                  ? const Color(0xFF6366F1).withValues(alpha: 0.4)
+                  ? AppColors.indigo500.withValues(alpha: 0.4)
                   : (isSelected
-                        ? const Color(0xFF6366F1).withValues(alpha: 0.2)
+                        ? AppColors.indigo500.withValues(alpha: 0.2)
                         : Colors.transparent),
             ),
           ),
@@ -621,13 +622,13 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                 height: 18,
                 decoration: BoxDecoration(
                   color: (isSelected || isPartialSelected)
-                      ? const Color(0xFF6366F1)
+                      ? AppColors.indigo500
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(
                     color: (isSelected || isPartialSelected)
-                        ? const Color(0xFF6366F1)
-                        : (isDark ? Colors.white38 : const Color(0xFFD1D5DB)),
+                        ? AppColors.indigo500
+                        : (isDark ? Colors.white38 : AppColors.gray300),
                     width: 1.5,
                   ),
                 ),
@@ -658,10 +659,10 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                               ? FontWeight.w500
                               : FontWeight.normal,
                           color: isSelected
-                              ? const Color(0xFF6366F1)
+                              ? AppColors.indigo500
                               : (isDark
                                     ? Colors.white
-                                    : const Color(0xFF1F2937)),
+                                    : AppColors.gray800),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -685,7 +686,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFFF59E0B),
+                            color: AppColors.amber500,
                           ),
                         ),
                       ),
@@ -699,7 +700,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                 decoration: BoxDecoration(
                   color: isDark
                       ? Colors.white.withValues(alpha: 0.08)
-                      : const Color(0xFFF3F4F6),
+                      : AppColors.gray100,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -707,7 +708,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                    color: isDark ? Colors.white54 : AppColors.gray500,
                   ),
                 ),
               ),
@@ -766,7 +767,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                 Icon(
                   Icons.dns_rounded,
                   size: 16,
-                  color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                  color: isDark ? Colors.white54 : AppColors.gray500,
                 ),
                 const SizedBox(width: 6),
                 Expanded(
@@ -775,7 +776,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: isDark ? Colors.white70 : const Color(0xFF374151),
+                      color: isDark ? Colors.white70 : AppColors.gray700,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -786,7 +787,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF6366F1),
+                    color: AppColors.indigo500,
                   ),
                 ),
               ],
@@ -800,18 +801,18 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
               onChanged: (v) => setState(() => _searchText = v.toLowerCase()),
               style: TextStyle(
                 fontSize: 12,
-                color: isDark ? Colors.white : const Color(0xFF1F2937),
+                color: isDark ? Colors.white : AppColors.gray800,
               ),
               decoration: InputDecoration(
                 hintText: '搜索服务器...',
                 hintStyle: TextStyle(
                   fontSize: 12,
-                  color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                  color: isDark ? Colors.white38 : AppColors.gray400,
                 ),
                 prefixIcon: Icon(
                   Icons.search_rounded,
                   size: 16,
-                  color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                  color: isDark ? Colors.white38 : AppColors.gray400,
                 ),
                 suffixIcon: _searchText.isNotEmpty
                     ? IconButton(
@@ -820,7 +821,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                           size: 14,
                           color: isDark
                               ? Colors.white38
-                              : const Color(0xFF9CA3AF),
+                              : AppColors.gray400,
                         ),
                         onPressed: () {
                           _searchController.clear();
@@ -846,13 +847,13 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                   borderSide: BorderSide(
                     color: isDark
                         ? Colors.white.withValues(alpha: 0.08)
-                        : const Color(0xFFE5E7EB),
+                        : AppColors.gray200,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: const BorderSide(
-                    color: Color(0xFF6366F1),
+                    color: AppColors.indigo500,
                     width: 1,
                   ),
                 ),
@@ -867,7 +868,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
               children: [
                 _buildTextButton(
                   label: '全选',
-                  color: const Color(0xFF6366F1),
+                  color: AppColors.indigo500,
                   onTap: () {
                     setState(() {
                       for (final server in _getServersToShow()) {
@@ -883,7 +884,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                 const SizedBox(width: 8),
                 _buildTextButton(
                   label: '清空',
-                  color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                  color: isDark ? Colors.white54 : AppColors.gray500,
                   onTap: () {
                     setState(() {
                       for (final server in _getServersToShow()) {
@@ -920,13 +921,13 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                color: AppColors.indigo500.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.link_rounded,
                 size: 32,
-                color: Color(0xFF6366F1),
+                color: AppColors.indigo500,
               ),
             ),
             const SizedBox(height: 16),
@@ -935,7 +936,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : const Color(0xFF1F2937),
+                color: isDark ? Colors.white : AppColors.gray800,
               ),
             ),
             const SizedBox(height: 8),
@@ -943,7 +944,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
               '将使用全局分类和服务器设置进行监控',
               style: TextStyle(
                 fontSize: 12,
-                color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                color: isDark ? Colors.white54 : AppColors.gray500,
               ),
             ),
           ],
@@ -967,14 +968,14 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
             Icon(
               Icons.touch_app_rounded,
               size: 40,
-              color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
+              color: isDark ? Colors.white24 : AppColors.gray300,
             ),
             const SizedBox(height: 12),
             Text(
               '选择左侧分类',
               style: TextStyle(
                 fontSize: 13,
-                color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+                color: isDark ? Colors.white38 : AppColors.gray400,
               ),
             ),
             const SizedBox(height: 4),
@@ -982,7 +983,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
               '点击分类查看其服务器',
               style: TextStyle(
                 fontSize: 11,
-                color: isDark ? Colors.white24 : const Color(0xFFD1D5DB),
+                color: isDark ? Colors.white24 : AppColors.gray300,
               ),
             ),
           ],
@@ -1048,7 +1049,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
           _searchText.isNotEmpty ? '未找到匹配的服务器' : '该分类暂无服务器',
           style: TextStyle(
             fontSize: 12,
-            color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+            color: isDark ? Colors.white38 : AppColors.gray400,
           ),
         ),
       );
@@ -1096,7 +1097,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
           margin: const EdgeInsets.symmetric(vertical: 1),
           decoration: BoxDecoration(
             color: isSelected
-                ? const Color(0xFF6366F1).withValues(alpha: 0.1)
+                ? AppColors.indigo500.withValues(alpha: 0.1)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(6),
           ),
@@ -1107,13 +1108,13 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                 height: 16,
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? const Color(0xFF6366F1)
+                      ? AppColors.indigo500
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(3),
                   border: Border.all(
                     color: isSelected
-                        ? const Color(0xFF6366F1)
-                        : (isDark ? Colors.white38 : const Color(0xFFD1D5DB)),
+                        ? AppColors.indigo500
+                        : (isDark ? Colors.white38 : AppColors.gray300),
                     width: 1.5,
                   ),
                 ),
@@ -1141,12 +1142,12 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                               color: isQuerying
                                   ? (isDark
                                         ? Colors.white38
-                                        : const Color(0xFF9CA3AF))
+                                        : AppColors.gray400)
                                   : (isSelected
-                                        ? const Color(0xFF6366F1)
+                                        ? AppColors.indigo500
                                         : (isDark
                                               ? Colors.white
-                                              : const Color(0xFF1F2937))),
+                                              : AppColors.gray800)),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1161,7 +1162,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                               strokeWidth: 1.5,
                               color: isDark
                                   ? Colors.white38
-                                  : const Color(0xFF9CA3AF),
+                                  : AppColors.gray400,
                             ),
                           ),
                         ],
@@ -1173,7 +1174,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
                         fontSize: 10,
                         color: isDark
                             ? Colors.white38
-                            : const Color(0xFF9CA3AF),
+                            : AppColors.gray400,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1214,7 +1215,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
           top: BorderSide(
             color: isDark
                 ? Colors.white.withValues(alpha: 0.08)
-                : const Color(0xFFE5E7EB),
+                : AppColors.gray200,
           ),
         ),
       ),
@@ -1230,7 +1231,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
             style: TextButton.styleFrom(
               foregroundColor: isDark
                   ? Colors.white54
-                  : const Color(0xFF6B7280),
+                  : AppColors.gray500,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
             child: const Text('取消'),
@@ -1239,7 +1240,7 @@ class _SubscriptionScopeDialogState extends State<SubscriptionScopeDialog> {
           ElevatedButton(
             onPressed: _saveSettings,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6366F1),
+              backgroundColor: AppColors.indigo500,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               shape: RoundedRectangleBorder(

@@ -8,6 +8,7 @@ import '../../../core/models/server_models.dart';
 import '../../../core/services/source_server_service.dart';
 import '../../../core/utils/log_service.dart';
 import '../player_trend/player_trend_chart.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 地图历史记录 Tab
 /// 显示地图在各服务器的运行历史（极简列表式）
@@ -258,7 +259,7 @@ class _MapHistoryTabState extends State<MapHistoryTab> {
           children: [
             CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(
-                isDark ? const Color(0xFF0080FF) : theme.primaryColor,
+                isDark ? AppColors.primary : theme.primaryColor,
               ),
             ),
             const SizedBox(height: 16),
@@ -345,7 +346,7 @@ class _MapHistoryTabState extends State<MapHistoryTab> {
             children: [
               Icon(
                 MdiIcons.formatListBulleted,
-                color: const Color(0xFF0080FF),
+                color: AppColors.primary,
                 size: 18,
               ),
               const SizedBox(width: 8),
@@ -461,7 +462,7 @@ class _MapHistoryTabState extends State<MapHistoryTab> {
               child: CircularProgressIndicator(
                 strokeWidth: 2,
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  isDark ? const Color(0xFF0080FF) : Colors.blue,
+                  isDark ? AppColors.primary : Colors.blue,
                 ),
               ),
             ),
@@ -490,7 +491,7 @@ class _MapHistoryTabState extends State<MapHistoryTab> {
           icon: Icon(MdiIcons.chevronDown, size: 18),
           label: const Text('加载更多历史记录'),
           style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF0080FF),
+            foregroundColor: AppColors.primary,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           ),
         ),
@@ -632,9 +633,9 @@ class _HistoryListItemState extends State<_HistoryListItem>
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: _isExpanded
-                ? const Color(0xFF0080FF).withValues(alpha: 0.5)
+                ? AppColors.primary.withValues(alpha: 0.5)
                 : (_isHovered
-                      ? const Color(0xFF0080FF).withValues(alpha: 0.3)
+                      ? AppColors.primary.withValues(alpha: 0.3)
                       : (widget.isDark
                             ? Colors.white.withValues(alpha: 0.05)
                             : Colors.black.withValues(alpha: 0.05))),
@@ -660,7 +661,7 @@ class _HistoryListItemState extends State<_HistoryListItem>
                               : MdiIcons.clockOutline,
                           size: 16,
                           color: widget.isLatest
-                              ? const Color(0xFFF59E0B)
+                              ? AppColors.amber500
                               : (widget.isDark
                                     ? Colors.white.withValues(alpha: 0.5)
                                     : Colors.black.withValues(alpha: 0.5)),
@@ -672,7 +673,7 @@ class _HistoryListItemState extends State<_HistoryListItem>
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: widget.isLatest
-                                ? const Color(0xFFF59E0B)
+                                ? AppColors.amber500
                                 : (widget.isDark
                                       ? Colors.white.withValues(alpha: 0.7)
                                       : Colors.black.withValues(alpha: 0.7)),
@@ -755,7 +756,7 @@ class _HistoryListItemState extends State<_HistoryListItem>
                       children: [
                         Icon(
                           MdiIcons.chartLine,
-                          color: const Color(0xFFFBBF24),
+                          color: AppColors.amber400,
                           size: 16,
                         ),
                         const SizedBox(width: 6),
@@ -853,8 +854,8 @@ class _HistoryListItemState extends State<_HistoryListItem>
             '$ctScore',
             style: TextStyle(
               color: isZombieMap
-                  ? const Color(0xFF22C55E)
-                  : const Color(0xFF3B82F6), // 人类绿色 / CT蓝色
+                  ? AppColors.green500
+                  : AppColors.blue500, // 人类绿色 / CT蓝色
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -874,8 +875,8 @@ class _HistoryListItemState extends State<_HistoryListItem>
             '$tScore',
             style: TextStyle(
               color: isZombieMap
-                  ? const Color(0xFFEF4444)
-                  : const Color(0xFFF59E0B), // 僵尸红色 / T黄色
+                  ? AppColors.red500
+                  : AppColors.amber500, // 僵尸红色 / T黄色
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),

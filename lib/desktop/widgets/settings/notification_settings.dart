@@ -16,6 +16,7 @@ import '../../../core/utils/log_service.dart';
 import '../notification_position_editor.dart';
 import 'settings_group_title.dart';
 import 'settings_item.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 通知设置组件
 class NotificationSettings extends StatelessWidget {
@@ -516,7 +517,7 @@ class _BroadcastNotificationTypeSelector extends StatelessWidget {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            const Color(0xFF0080FF).withValues(alpha: 0.15),
+                            AppColors.primary.withValues(alpha: 0.15),
                             const Color(0xFF00D4FF).withValues(alpha: 0.08),
                           ],
                         )
@@ -524,15 +525,15 @@ class _BroadcastNotificationTypeSelector extends StatelessWidget {
                   color: isSelected
                       ? null
                       : (isDark
-                            ? const Color(0xFF334155)
-                            : const Color(0xFFF9FAFB)),
+                            ? AppColors.slate700
+                            : AppColors.gray50),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: isSelected
-                        ? const Color(0xFF0080FF)
+                        ? AppColors.primary
                         : (isDark
-                              ? const Color(0xFF475569)
-                              : const Color(0xFFE5E7EB)),
+                              ? AppColors.slate600
+                              : AppColors.gray200),
                     width: isSelected ? 2 : 1,
                   ),
                   boxShadow: isSelected
@@ -554,8 +555,8 @@ class _BroadcastNotificationTypeSelector extends StatelessWidget {
                       _iconForType(type),
                       size: 18,
                       color: isSelected
-                          ? const Color(0xFF0080FF)
-                          : (isDark ? Colors.white70 : const Color(0xFF6B7280)),
+                          ? AppColors.primary
+                          : (isDark ? Colors.white70 : AppColors.gray500),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -566,8 +567,8 @@ class _BroadcastNotificationTypeSelector extends StatelessWidget {
                             ? FontWeight.w600
                             : FontWeight.w500,
                         color: isSelected
-                            ? const Color(0xFF0080FF)
-                            : (isDark ? Colors.white : const Color(0xFF374151)),
+                            ? AppColors.primary
+                            : (isDark ? Colors.white : AppColors.gray700),
                       ),
                     ),
                     if (isSelected) ...[
@@ -575,7 +576,7 @@ class _BroadcastNotificationTypeSelector extends StatelessWidget {
                       Icon(
                         MdiIcons.checkCircle,
                         size: 16,
-                        color: const Color(0xFF0080FF),
+                        color: AppColors.primary,
                       ),
                     ],
                   ],
@@ -592,7 +593,7 @@ class _BroadcastNotificationTypeSelector extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               height: 1.45,
-              color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+              color: isDark ? Colors.white60 : AppColors.gray500,
             ),
           ),
         ),
@@ -681,17 +682,17 @@ class _BroadcastNotificationTestButtonState
                   height: 14,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: isDark ? Colors.white54 : const Color(0xFF6366F1),
+                    color: isDark ? Colors.white54 : AppColors.indigo500,
                   ),
                 )
               : const Icon(Icons.notifications_active_outlined, size: 16),
           label: Text(_isSending ? '已发送' : '发送测试通知'),
           style: OutlinedButton.styleFrom(
-            foregroundColor: isDark ? Colors.white70 : const Color(0xFF6366F1),
+            foregroundColor: isDark ? Colors.white70 : AppColors.indigo500,
             side: BorderSide(
               color: isDark
                   ? Colors.white.withValues(alpha: 0.15)
-                  : const Color(0xFF6366F1).withValues(alpha: 0.4),
+                  : AppColors.indigo500.withValues(alpha: 0.4),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             shape: RoundedRectangleBorder(

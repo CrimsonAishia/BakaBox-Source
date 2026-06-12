@@ -71,7 +71,7 @@ class _OnlineTrendChartState extends State<OnlineTrendChart> {
                             strokeWidth: 2,
                             color: widget.isDark
                                 ? Colors.white.withValues(alpha: 0.5)
-                                : const Color(0xFF94A3B8),
+                                : AppColors.slate400,
                           ),
                         ),
                     ],
@@ -105,7 +105,7 @@ class _OnlineTrendChartState extends State<OnlineTrendChart> {
             fontSize: 13,
             color: widget.isDark
                 ? Colors.white.withValues(alpha: 0.4)
-                : const Color(0xFF94A3B8),
+                : AppColors.slate400,
           ),
         ),
       );
@@ -143,12 +143,12 @@ class _TabChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: selected
-              ? const Color(0xFF8B5CF6).withValues(alpha: 0.15)
+              ? AppColors.violet500.withValues(alpha: 0.15)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: selected
-                ? const Color(0xFF8B5CF6).withValues(alpha: 0.4)
+                ? AppColors.violet500.withValues(alpha: 0.4)
                 : Colors.transparent,
           ),
         ),
@@ -158,10 +158,10 @@ class _TabChip extends StatelessWidget {
             fontSize: 12,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             color: selected
-                ? const Color(0xFF8B5CF6)
+                ? AppColors.violet500
                 : (isDark
                       ? Colors.white.withValues(alpha: 0.5)
-                      : const Color(0xFF94A3B8)),
+                      : AppColors.slate400),
           ),
         ),
       ),
@@ -192,9 +192,9 @@ class _DailyTrendChart extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            _LegendDot(color: const Color(0xFF3B82F6), label: '峰值'),
+            _LegendDot(color: AppColors.blue500, label: '峰值'),
             const SizedBox(width: 12),
-            _LegendDot(color: const Color(0xFF10B981), label: '均值'),
+            _LegendDot(color: AppColors.emerald500, label: '均值'),
           ],
         ),
         const SizedBox(height: 6),
@@ -242,7 +242,7 @@ class _DailyTrendChart extends StatelessWidget {
                             fontSize: 9,
                             color: isDark
                                 ? Colors.white.withValues(alpha: 0.4)
-                                : const Color(0xFF94A3B8),
+                                : AppColors.slate400,
                           ),
                         ),
                       );
@@ -265,12 +265,12 @@ class _DailyTrendChart extends StatelessWidget {
                     );
                   }).toList(),
                   isCurved: true,
-                  color: const Color(0xFF3B82F6),
+                  color: AppColors.blue500,
                   barWidth: 2.5,
                   dotData: const FlDotData(show: false),
                   belowBarData: BarAreaData(
                     show: true,
-                    color: const Color(0xFF3B82F6).withValues(alpha: 0.08),
+                    color: AppColors.blue500.withValues(alpha: 0.08),
                   ),
                 ),
                 // 均值线
@@ -282,7 +282,7 @@ class _DailyTrendChart extends StatelessWidget {
                     );
                   }).toList(),
                   isCurved: true,
-                  color: const Color(0xFF10B981),
+                  color: AppColors.emerald500,
                   barWidth: 2,
                   dotData: const FlDotData(show: false),
                   dashArray: [4, 4],
@@ -293,7 +293,7 @@ class _DailyTrendChart extends StatelessWidget {
                 touchSpotThreshold: 50,
                 touchTooltipData: LineTouchTooltipData(
                   getTooltipColor: (_) =>
-                      isDark ? const Color(0xFF1E293B) : Colors.white,
+                      isDark ? AppColors.slate800 : Colors.white,
                   getTooltipItems: (spots) {
                     return spots.map((spot) {
                       final label = spot.barIndex == 0 ? '峰值' : '均值';
@@ -375,7 +375,7 @@ class _HourlyBarChart extends StatelessWidget {
                       fontSize: 9,
                       color: isDark
                           ? Colors.white.withValues(alpha: 0.4)
-                          : const Color(0xFF94A3B8),
+                          : AppColors.slate400,
                     ),
                   ),
                 );
@@ -392,8 +392,8 @@ class _HourlyBarChart extends StatelessWidget {
               BarChartRodData(
                 toY: h.avgPlayers.toDouble(),
                 color: isPeak
-                    ? const Color(0xFFF59E0B)
-                    : const Color(0xFF8B5CF6).withValues(alpha: 0.7),
+                    ? AppColors.amber500
+                    : AppColors.violet500.withValues(alpha: 0.7),
                 width: 8,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(3),
@@ -405,7 +405,7 @@ class _HourlyBarChart extends StatelessWidget {
         barTouchData: BarTouchData(
           touchTooltipData: BarTouchTooltipData(
             getTooltipColor: (_) =>
-                isDark ? const Color(0xFF1E293B) : Colors.white,
+                isDark ? AppColors.slate800 : Colors.white,
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               return BarTooltipItem(
                 '${group.x.toString().padLeft(2, '0')}:00\n${rod.toY.toInt()}人',
@@ -549,9 +549,9 @@ class _TopMapItemState extends State<_TopMapItem> {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: widget.index == 0
-                          ? const Color(0xFFF59E0B)
+                          ? AppColors.amber500
                           : (widget.index == 1
-                                ? const Color(0xFF94A3B8)
+                                ? AppColors.slate400
                                 : (widget.index == 2
                                       ? const Color(0xFFB45309)
                                       : Colors.black.withValues(alpha: 0.4))),
@@ -600,7 +600,7 @@ class _TopMapItemState extends State<_TopMapItem> {
                             ),
                             valueColor: AlwaysStoppedAnimation<Color>(
                               widget.index == 0
-                                  ? const Color(0xFFF59E0B)
+                                  ? AppColors.amber500
                                   : const Color(
                                       0xFF8B5CF6,
                                     ).withValues(alpha: 0.9),
@@ -668,7 +668,7 @@ class _LegendDot extends StatelessWidget {
             fontSize: 11,
             color: isDark
                 ? Colors.white.withValues(alpha: 0.5)
-                : const Color(0xFF64748B),
+                : AppColors.slate500,
           ),
         ),
       ],
@@ -684,7 +684,7 @@ Widget _emptyHint(bool isDark, String text) {
         fontSize: 13,
         color: isDark
             ? Colors.white.withValues(alpha: 0.4)
-            : const Color(0xFF94A3B8),
+            : AppColors.slate400,
       ),
     ),
   );

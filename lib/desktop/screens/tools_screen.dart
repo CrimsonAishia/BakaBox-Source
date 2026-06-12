@@ -8,6 +8,7 @@ import '../widgets/key_binding/key_binding_tool.dart';
 import '../widgets/obs_tool/obs_tool.dart';
 import '../widgets/page_layout.dart';
 import 'map_database_desktop.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 工具箱页面
 class ToolsScreen extends StatefulWidget {
@@ -118,8 +119,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
 
     return Scaffold(
       backgroundColor: isDark
-          ? const Color(0xFF0F172A)
-          : const Color(0xFFF3F4F6),
+          ? AppColors.slate900
+          : AppColors.gray100,
       body: PageLayout(
         title: tool.name,
         subtitle: tool.description,
@@ -139,8 +140,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
       icon: const Icon(Icons.arrow_back, size: 18),
       label: const Text('返回工具箱'),
       style: OutlinedButton.styleFrom(
-        foregroundColor: const Color(0xFF6B7280),
-        side: const BorderSide(color: Color(0xFFE5E7EB)),
+        foregroundColor: AppColors.gray500,
+        side: const BorderSide(color: AppColors.gray200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       ),
     );
@@ -175,8 +176,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
           end: Alignment.bottomRight,
           colors: isDark
               ? [
-                  const Color(0xFF0F172A),
-                  const Color(0xFF1E293B),
+                  AppColors.slate900,
+                  AppColors.slate800,
                   const Color(0xFF1A1A2E),
                 ]
               : [
@@ -365,8 +366,8 @@ class _FloatingToolIconState extends State<_FloatingToolIcon>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF3B82F6).withValues(alpha: 0.4),
-              const Color(0xFF8B5CF6).withValues(alpha: 0.4),
+              AppColors.blue500.withValues(alpha: 0.4),
+              AppColors.violet500.withValues(alpha: 0.4),
             ],
           ).createShader(bounds),
           child: Icon(
@@ -423,19 +424,19 @@ class _ToolCardState extends State<_ToolCard> {
                 height: 220,
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF1E293B).withValues(alpha: 0.9)
+                      ? AppColors.slate800.withValues(alpha: 0.9)
                       : Colors.white.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: !isEnabled
                         ? (isDark
-                              ? const Color(0xFF475569)
-                              : const Color(0xFFD1D5DB))
+                              ? AppColors.slate600
+                              : AppColors.gray300)
                         : _isHovered
-                        ? const Color(0xFF22C55E).withValues(alpha: 0.4)
+                        ? AppColors.green500.withValues(alpha: 0.4)
                         : (isDark
-                              ? const Color(0xFF334155)
-                              : const Color(0xFF22C55E).withValues(alpha: 0.2)),
+                              ? AppColors.slate700
+                              : AppColors.green500.withValues(alpha: 0.2)),
                   ),
                   boxShadow: _isHovered && isEnabled
                       ? [
@@ -488,7 +489,7 @@ class _ToolCardState extends State<_ToolCard> {
               center: const Alignment(-0.4, -0.6),
               radius: 1.0,
               colors: [
-                const Color(0xFF3B82F6).withValues(alpha: 0.05),
+                AppColors.blue500.withValues(alpha: 0.05),
                 Colors.transparent,
               ],
             ),
@@ -514,10 +515,10 @@ class _ToolCardState extends State<_ToolCard> {
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color(0xFF3B82F6),
-                  Color(0xFF8B5CF6),
+                  AppColors.blue500,
+                  AppColors.violet500,
                   Color(0xFFEC4899),
-                  Color(0xFFF59E0B),
+                  AppColors.amber500,
                 ],
               ),
             ),
@@ -549,7 +550,7 @@ class _ToolCardState extends State<_ToolCard> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: isDark ? Colors.white : const Color(0xFF1F2937),
+              color: isDark ? Colors.white : AppColors.gray800,
             ),
           ),
           const SizedBox(height: 8),
@@ -558,7 +559,7 @@ class _ToolCardState extends State<_ToolCard> {
             widget.tool.description,
             style: TextStyle(
               fontSize: 13,
-              color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+              color: isDark ? Colors.white54 : AppColors.gray500,
               height: 1.5,
             ),
             textAlign: TextAlign.center,
@@ -585,7 +586,7 @@ class _ToolCardState extends State<_ToolCard> {
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  const Color(0xFF3B82F6).withValues(alpha: isDark ? 0.4 : 0.3),
+                  AppColors.blue500.withValues(alpha: isDark ? 0.4 : 0.3),
                   Colors.transparent,
                 ],
               ),
@@ -611,9 +612,9 @@ class _ToolCardState extends State<_ToolCard> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                (isEnabled ? const Color(0xFF3B82F6) : const Color(0xFF6B7280))
+                (isEnabled ? AppColors.blue500 : AppColors.gray500)
                     .withValues(alpha: _isHovered && isEnabled ? 0.25 : 0.15),
-                (isEnabled ? const Color(0xFF9333EA) : const Color(0xFF6B7280))
+                (isEnabled ? const Color(0xFF9333EA) : AppColors.gray500)
                     .withValues(alpha: _isHovered && isEnabled ? 0.25 : 0.15),
               ],
             ),
@@ -628,8 +629,8 @@ class _ToolCardState extends State<_ToolCard> {
                             : const Color(0xFF1D4ED8))
                       : (isDark
                             ? const Color(0xFF60A5FA)
-                            : const Color(0xFF3B82F6)))
-                : (isDark ? Colors.white38 : const Color(0xFF9CA3AF)),
+                            : AppColors.blue500))
+                : (isDark ? Colors.white38 : AppColors.gray400),
           ),
         ),
       ],
@@ -679,10 +680,10 @@ class _PulsingDotState extends State<_PulsingDot>
           height: 12,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: const Color(0xFF22C55E),
+            color: AppColors.green500,
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF22C55E).withValues(alpha: 0.5),
+                color: AppColors.green500.withValues(alpha: 0.5),
                 blurRadius: 10,
               ),
             ],
@@ -716,13 +717,13 @@ class _DisabledIndicator extends StatelessWidget {
       height: 12,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isDark ? const Color(0xFF475569) : const Color(0xFFD1D5DB),
+        color: isDark ? AppColors.slate600 : AppColors.gray300,
       ),
       child: Center(
         child: Icon(
           MdiIcons.lock,
           size: 8,
-          color: isDark ? Colors.white38 : const Color(0xFF9CA3AF),
+          color: isDark ? Colors.white38 : AppColors.gray400,
         ),
       ),
     );

@@ -47,7 +47,7 @@ class AnnouncementsPanel extends StatelessWidget {
                       Icon(
                         MdiIcons.bullhorn,
                         size: 16,
-                        color: const Color(0xFFF59E0B),
+                        color: AppColors.amber500,
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -57,7 +57,7 @@ class AnnouncementsPanel extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                           color: isDark
                               ? Colors.white
-                              : const Color(0xFF1E293B),
+                              : AppColors.slate800,
                         ),
                       ),
                       const Spacer(),
@@ -68,7 +68,7 @@ class AnnouncementsPanel extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEF4444),
+                            color: AppColors.red500,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
@@ -88,7 +88,7 @@ class AnnouncementsPanel extends StatelessWidget {
                             strokeWidth: 2,
                             color: isDark
                                 ? Colors.white.withValues(alpha: 0.5)
-                                : const Color(0xFF94A3B8),
+                                : AppColors.slate400,
                           ),
                         ),
                     ],
@@ -145,7 +145,7 @@ class AnnouncementsPanel extends StatelessWidget {
           fontSize: 13,
           color: isDark
               ? Colors.white.withValues(alpha: 0.4)
-              : const Color(0xFF94A3B8),
+              : AppColors.slate400,
         ),
       ),
     );
@@ -267,8 +267,8 @@ class _AnnouncementItemState extends State<_AnnouncementItem> {
                                       alpha: widget.isRead ? 0.5 : 0.9,
                                     )
                                   : (widget.isRead
-                                        ? const Color(0xFF94A3B8)
-                                        : const Color(0xFF1E293B)),
+                                        ? AppColors.slate400
+                                        : AppColors.slate800),
                             ),
                           ),
                         ),
@@ -307,11 +307,11 @@ class _AnnouncementItemState extends State<_AnnouncementItem> {
 
   Color _typeColor(String type) {
     return switch (type) {
-      'success' => const Color(0xFF10B981),
-      'warning' => const Color(0xFFF59E0B),
-      'error' => const Color(0xFFEF4444),
-      'maintenance' => const Color(0xFF8B5CF6),
-      _ => const Color(0xFF3B82F6), // info
+      'success' => AppColors.emerald500,
+      'warning' => AppColors.amber500,
+      'error' => AppColors.red500,
+      'maintenance' => AppColors.violet500,
+      _ => AppColors.blue500, // info
     };
   }
 
@@ -353,7 +353,7 @@ class _AnnouncementDetailDialog extends StatelessWidget {
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      backgroundColor: isDark ? AppColors.slate800 : Colors.white,
       child: Container(
         width: 560,
         constraints: const BoxConstraints(maxHeight: 560),
@@ -393,7 +393,7 @@ class _AnnouncementDetailDialog extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                             color: isDark
                                 ? Colors.white
-                                : const Color(0xFF1E293B),
+                                : AppColors.slate800,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -403,7 +403,7 @@ class _AnnouncementDetailDialog extends StatelessWidget {
                             fontSize: 12,
                             color: isDark
                                 ? Colors.white.withValues(alpha: 0.4)
-                                : const Color(0xFF94A3B8),
+                                : AppColors.slate400,
                           ),
                         ),
                       ],
@@ -414,7 +414,7 @@ class _AnnouncementDetailDialog extends StatelessWidget {
                     icon: Icon(
                       Icons.close,
                       size: 18,
-                      color: isDark ? Colors.white54 : const Color(0xFF9CA3AF),
+                      color: isDark ? Colors.white54 : AppColors.gray400,
                     ),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(
@@ -447,11 +447,11 @@ class _AnnouncementDetailDialog extends StatelessWidget {
 
   Color _typeColor(String type) {
     return switch (type) {
-      'success' => const Color(0xFF10B981),
-      'warning' => const Color(0xFFF59E0B),
-      'error' => const Color(0xFFEF4444),
-      'maintenance' => const Color(0xFF8B5CF6),
-      _ => const Color(0xFF3B82F6),
+      'success' => AppColors.emerald500,
+      'warning' => AppColors.amber500,
+      'error' => AppColors.red500,
+      'maintenance' => AppColors.violet500,
+      _ => AppColors.blue500,
     };
   }
 
@@ -490,7 +490,7 @@ class _AnnouncementDetailDialog extends StatelessWidget {
       p: TextStyle(
         fontSize: 14,
         height: 1.7,
-        color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
+        color: isDark ? AppColors.gray300 : AppColors.gray700,
       ),
       h1: TextStyle(
         fontSize: 20,
@@ -500,25 +500,25 @@ class _AnnouncementDetailDialog extends StatelessWidget {
       h2: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.bold,
-        color: isDark ? Colors.white : const Color(0xFF1F2937),
+        color: isDark ? Colors.white : AppColors.gray800,
       ),
       h3: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w600,
-        color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF374151),
+        color: isDark ? AppColors.gray200 : AppColors.gray700,
       ),
       code: TextStyle(
         backgroundColor: isDark
-            ? const Color(0xFF374151)
-            : const Color(0xFFF3F4F6),
-        color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFDC2626),
+            ? AppColors.gray700
+            : AppColors.gray100,
+        color: isDark ? const Color(0xFFFCA5A5) : AppColors.red600,
         fontSize: 13,
       ),
       codeblockDecoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF9FAFB),
+        color: isDark ? AppColors.gray800 : AppColors.gray50,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+          color: isDark ? AppColors.gray700 : AppColors.gray200,
         ),
       ),
       blockquoteDecoration: BoxDecoration(
@@ -528,7 +528,7 @@ class _AnnouncementDetailDialog extends StatelessWidget {
       a: TextStyle(color: accentColor, decoration: TextDecoration.underline),
       listBullet: TextStyle(
         fontSize: 14,
-        color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
+        color: isDark ? AppColors.gray300 : AppColors.gray700,
       ),
     );
   }

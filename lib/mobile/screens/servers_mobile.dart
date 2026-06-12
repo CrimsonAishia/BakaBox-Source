@@ -217,17 +217,17 @@ class _ServersMobileState extends State<ServersMobile>
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: const Color(0xFF0080FF).withValues(alpha: 0.2),
+              color: AppColors.primary.withValues(alpha: 0.2),
               width: 1,
             ),
           ),
           child: IconButton(
             icon: const Icon(
               Icons.arrow_back_rounded,
-              color: Color(0xFF0080FF),
+              color: AppColors.primary,
               size: 20,
             ),
             onPressed: () {
@@ -276,7 +276,7 @@ class _ServersMobileState extends State<ServersMobile>
                               state.selectedCategory?.modelName,
                             ).withValues(alpha: 0.8),
                           ]
-                        : [const Color(0xFF0080FF), const Color(0xFF00B4FF)],
+                        : [AppColors.primary, const Color(0xFF00B4FF)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -288,7 +288,7 @@ class _ServersMobileState extends State<ServersMobile>
                                   ? CategoryUtils.getCategoryColor(
                                       state.selectedCategory?.modelName,
                                     )
-                                  : const Color(0xFF0080FF))
+                                  : AppColors.primary)
                               .withValues(alpha: 0.3),
                       offset: const Offset(0, 4),
                       blurRadius: 12,
@@ -568,7 +568,7 @@ class _ServersMobileState extends State<ServersMobile>
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(40),
             ),
             child: Stack(
@@ -579,7 +579,7 @@ class _ServersMobileState extends State<ServersMobile>
                       height: 60,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(30),
-                        color: const Color(0xFF0080FF).withValues(alpha: 0.2),
+                        color: AppColors.primary.withValues(alpha: 0.2),
                       ),
                     )
                     .animate(onPlay: (controller) => controller.repeat())
@@ -591,7 +591,7 @@ class _ServersMobileState extends State<ServersMobile>
                   child: CircularProgressIndicator(
                     strokeWidth: 3,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      Color(0xFF0080FF),
+                      AppColors.primary,
                     ),
                   ),
                 ),
@@ -602,7 +602,7 @@ class _ServersMobileState extends State<ServersMobile>
           Text(
                 '正在获取服务器列表',
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFF0080FF),
+                  color: AppColors.primary,
                   fontWeight: FontWeight.w500,
                 ),
               )

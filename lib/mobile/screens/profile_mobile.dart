@@ -93,8 +93,8 @@ class _ProfileMobileState extends State<ProfileMobile> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: isDark
-                ? [const Color(0xFF1E3A5F), const Color(0xFF0F172A)]
-                : [const Color(0xFF0080FF), const Color(0xFF00B4FF)],
+                ? [const Color(0xFF1E3A5F), AppColors.slate900]
+                : [AppColors.primary, const Color(0xFF00B4FF)],
           ),
         ),
         child: SafeArea(
@@ -154,7 +154,7 @@ class _ProfileMobileState extends State<ProfileMobile> {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEF4444),
+                            color: AppColors.red500,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           constraints: const BoxConstraints(minWidth: 16),
@@ -297,7 +297,7 @@ class _ProfileMobileState extends State<ProfileMobile> {
           onPressed: () => LoginDialogMobile.show(context),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white,
-            foregroundColor: const Color(0xFF0080FF),
+            foregroundColor: AppColors.primary,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
@@ -369,7 +369,7 @@ class _ProfileMobileState extends State<ProfileMobile> {
             child: _buildStatItem(
               context,
               icon: Icons.star,
-              iconColor: const Color(0xFFF59E0B),
+              iconColor: AppColors.amber500,
               value: userInfo.credits ?? '0',
               label: '积分',
             ),
@@ -384,7 +384,7 @@ class _ProfileMobileState extends State<ProfileMobile> {
             child: _buildStatItem(
               context,
               icon: Icons.monetization_on,
-              iconColor: const Color(0xFF10B981),
+              iconColor: AppColors.emerald500,
               value: userInfo.zombieCoins ?? '0',
               label: '僵尸币',
             ),
@@ -451,7 +451,7 @@ class _ProfileMobileState extends State<ProfileMobile> {
                 children: [
                   Icon(
                     MdiIcons.calendarCheck,
-                    color: const Color(0xFF0080FF),
+                    color: AppColors.primary,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
@@ -529,7 +529,7 @@ class _ProfileMobileState extends State<ProfileMobile> {
             Icon(
               icon,
               color: isCompleted
-                  ? const Color(0xFF10B981)
+                  ? AppColors.emerald500
                   : theme.colorScheme.onSurface.withValues(alpha: 0.6),
               size: 22,
             ),
@@ -555,13 +555,13 @@ class _ProfileMobileState extends State<ProfileMobile> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                  color: AppColors.emerald500.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   reward,
                   style: const TextStyle(
-                    color: Color(0xFF10B981),
+                    color: AppColors.emerald500,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -574,15 +574,15 @@ class _ProfileMobileState extends State<ProfileMobile> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0080FF).withValues(alpha: 0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   actionText ?? (isCompleted ? '已完成' : '去完成'),
                   style: TextStyle(
                     color: isCompleted
-                        ? const Color(0xFF10B981)
-                        : const Color(0xFF0080FF),
+                        ? AppColors.emerald500
+                        : AppColors.primary,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
@@ -657,7 +657,7 @@ class _ProfileMobileState extends State<ProfileMobile> {
           _buildListItem(
             context,
             icon: Icons.map_outlined,
-            iconColor: const Color(0xFF0080FF),
+            iconColor: AppColors.primary,
             title: '地图数据库',
             subtitle: '浏览地图信息与运行历史',
             onTap: () => context.push(MobileRoutes.mapDatabase),
@@ -671,7 +671,7 @@ class _ProfileMobileState extends State<ProfileMobile> {
           _buildListItem(
             context,
             icon: MdiIcons.messageTextOutline,
-            iconColor: const Color(0xFF8B5CF6),
+            iconColor: AppColors.violet500,
             title: '问题反馈',
             subtitle: '查看和提交反馈',
             onTap: () => context.push(MobileRoutes.issues),
@@ -685,7 +685,7 @@ class _ProfileMobileState extends State<ProfileMobile> {
           _buildListItem(
             context,
             icon: MdiIcons.fileDocumentOutline,
-            iconColor: const Color(0xFFEF4444),
+            iconColor: AppColors.red500,
             title: '更新日志',
             subtitle: '查看ZE/ZM更新历史',
             onTap: () => context.push(MobileRoutes.updateLogs),
@@ -802,7 +802,7 @@ class _ProfileMobileState extends State<ProfileMobile> {
       builder: (dialogContext) => AlertDialog(
         title: Row(
           children: [
-            Icon(MdiIcons.restart, color: const Color(0xFFEF4444)),
+            Icon(MdiIcons.restart, color: AppColors.red500),
             const SizedBox(width: 8),
             const Text('需要重启应用'),
           ],
@@ -815,7 +815,7 @@ class _ProfileMobileState extends State<ProfileMobile> {
               SystemNavigator.pop();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
+              backgroundColor: AppColors.red500,
               foregroundColor: Colors.white,
             ),
             child: const Text('确定并退出'),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/constants/app_colors.dart';
 
 /// 工具栏按钮
 class ToolbarButton extends StatefulWidget {
@@ -46,7 +47,7 @@ class _ToolbarButtonState extends State<ToolbarButton> {
             border: Border(
               bottom: BorderSide(
                 color: widget.active
-                    ? const Color(0xFF0080FF)
+                    ? AppColors.primary
                     : Colors.transparent,
                 width: 2,
               ),
@@ -59,7 +60,7 @@ class _ToolbarButtonState extends State<ToolbarButton> {
                 widget.icon,
                 size: 16,
                 color: widget.active
-                    ? const Color(0xFF0080FF)
+                    ? AppColors.primary
                     : (_hovered
                           ? (isDark ? Colors.white : Colors.grey[800])
                           : (isDark ? Colors.white60 : Colors.grey[600])),
@@ -71,7 +72,7 @@ class _ToolbarButtonState extends State<ToolbarButton> {
                   fontSize: 13,
                   fontWeight: widget.active ? FontWeight.w600 : FontWeight.w500,
                   color: widget.active
-                      ? const Color(0xFF0080FF)
+                      ? AppColors.primary
                       : (_hovered
                             ? (isDark ? Colors.white : Colors.grey[800])
                             : (isDark ? Colors.white60 : Colors.grey[600])),
@@ -86,7 +87,7 @@ class _ToolbarButtonState extends State<ToolbarButton> {
                           vertical: 1,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFf59e0b),
+                          color: AppColors.amber500,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -102,7 +103,7 @@ class _ToolbarButtonState extends State<ToolbarButton> {
                         width: 6,
                         height: 6,
                         decoration: const BoxDecoration(
-                          color: Color(0xFFf59e0b),
+                          color: AppColors.amber500,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -149,7 +150,7 @@ class SearchField extends StatelessWidget {
             color: isDark ? Colors.white38 : Colors.grey[400],
           ),
           filled: true,
-          fillColor: isDark ? const Color(0xFF334155) : Colors.grey[100],
+          fillColor: isDark ? AppColors.slate700 : Colors.grey[100],
           contentPadding: const EdgeInsets.symmetric(vertical: 0),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(20),
@@ -228,7 +229,7 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
                     child: Icon(
                       Icons.check,
                       size: 16,
-                      color: Color(0xFF0080FF),
+                      color: AppColors.primary,
                     ),
                   ),
                 const Text('全部'),
@@ -252,7 +253,7 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
                       child: Icon(
                         Icons.check,
                         size: 16,
-                        color: Color(0xFF0080FF),
+                        color: AppColors.primary,
                       ),
                     ),
                   const Text('我的'),
@@ -279,7 +280,7 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
                       child: Icon(
                         Icons.check,
                         size: 16,
-                        color: Color(0xFF0080FF),
+                        color: AppColors.primary,
                       ),
                     ),
                   Text(c.name),
@@ -294,14 +295,14 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
             color: widget.showMyConfigs
-                ? const Color(0xFF0080FF).withValues(alpha: 0.1)
+                ? AppColors.primary.withValues(alpha: 0.1)
                 : (_hovered
-                      ? (isDark ? const Color(0xFF475569) : Colors.grey[200])
-                      : (isDark ? const Color(0xFF334155) : Colors.grey[100])),
+                      ? (isDark ? AppColors.slate600 : Colors.grey[200])
+                      : (isDark ? AppColors.slate700 : Colors.grey[100])),
             borderRadius: BorderRadius.circular(20),
             border: widget.showMyConfigs
                 ? Border.all(
-                    color: const Color(0xFF0080FF).withValues(alpha: 0.3),
+                    color: AppColors.primary.withValues(alpha: 0.3),
                   )
                 : null,
           ),
@@ -316,7 +317,7 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
                       ? FontWeight.w600
                       : FontWeight.normal,
                   color: widget.showMyConfigs
-                      ? const Color(0xFF0080FF)
+                      ? AppColors.primary
                       : (isDark ? Colors.white70 : Colors.grey[700]),
                 ),
               ),
@@ -325,7 +326,7 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
                 Icons.arrow_drop_down,
                 size: 18,
                 color: widget.showMyConfigs
-                    ? const Color(0xFF0080FF)
+                    ? AppColors.primary
                     : (isDark ? Colors.white54 : Colors.grey[600]),
               ),
             ],

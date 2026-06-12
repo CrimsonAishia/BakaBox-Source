@@ -4,6 +4,7 @@ import '../../../core/models/lobby_models.dart';
 import '../../../core/models/proto/lobby.pb.dart' as pb;
 import '../../../core/services/lobby_nakama_service.dart';
 import '../../../core/utils/log_service.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// 库存统计面板
 ///
@@ -170,7 +171,7 @@ class _LobbyInventoryPanelState extends State<LobbyInventoryPanel>
           end: Alignment.bottomRight,
           colors: [
             const Color(0xFF4ADE80).withValues(alpha: 0.12),
-            const Color(0xFF22C55E).withValues(alpha: 0.06),
+            AppColors.green500.withValues(alpha: 0.06),
           ],
         ),
         border: Border(
@@ -332,14 +333,14 @@ class _LobbyInventoryPanelState extends State<LobbyInventoryPanel>
           // 金币
           Icon(
             Icons.monetization_on_outlined,
-            color: const Color(0xFFF59E0B),
+            color: AppColors.amber500,
             size: 13,
           ),
           const SizedBox(width: 3),
           Text(
             '${_formatNumber(stats.totalGoldValue.toInt())} 金',
             style: const TextStyle(
-              color: Color(0xFFF59E0B),
+              color: AppColors.amber500,
               fontSize: 12,
               fontWeight: FontWeight.w800,
             ),
@@ -376,13 +377,13 @@ class _LobbyInventoryPanelState extends State<LobbyInventoryPanel>
         '已购买皮肤',
         stats.skinCount,
         Icons.person_outline,
-        const Color(0xFF8B5CF6),
+        AppColors.violet500,
       ),
       _InventoryItem(
         '已解锁符卡',
         stats.spellCount,
         Icons.style_outlined,
-        const Color(0xFFF59E0B),
+        AppColors.amber500,
       ),
       _InventoryItem(
         '已解锁弹幕',
@@ -400,7 +401,7 @@ class _LobbyInventoryPanelState extends State<LobbyInventoryPanel>
         '已购买刀模',
         stats.knifeCount,
         Icons.content_cut,
-        const Color(0xFF94A3B8),
+        AppColors.slate400,
       ),
       _InventoryItem(
         '已购买枪模',

@@ -225,7 +225,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
   }
 
   Widget _buildAppBarIcon(bool isDark) {
-    final primaryColor = const Color(0xFF8B5CF6);
+    final primaryColor = AppColors.violet500;
 
     return Container(
       width: 48,
@@ -341,7 +341,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                     state.selectedCategory == CharacterCategory.touhou &&
                         !state.showSpellCardTierView,
                     () => _onCategoryChanged(CharacterCategory.touhou),
-                    color: const Color(0xFFDC2626),
+                    color: AppColors.red600,
                   ),
                 ),
                 Expanded(
@@ -367,7 +367,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
                     '符卡',
                     state.showSpellCardTierView,
                     _onSpellCardTierTap,
-                    color: const Color(0xFFF59E0B),
+                    color: AppColors.amber500,
                   ),
                 ),
               ],
@@ -389,7 +389,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
   }) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final chipColor = color ?? const Color(0xFF0080FF);
+    final chipColor = color ?? AppColors.primary;
 
     return GestureDetector(
       onTap: onTap,
@@ -419,7 +419,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
   Widget _buildSearchBox() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF8B5CF6);
+    final primaryColor = AppColors.violet500;
 
     return Container(
       decoration: BoxDecoration(
@@ -708,8 +708,8 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
       String bgAsset,
     ) = switch (spellCard.type) {
       SpellCardType.passive => (
-        const Color(0xFF4A7C59),
-        const Color(0xFF4A7C59).withValues(alpha: isDark ? 0.15 : 0.08),
+        AppColors.skillGreen,
+        AppColors.skillGreen.withValues(alpha: isDark ? 0.15 : 0.08),
         '✦',
         'assets/images/character_gallery/spell_card_bg_passive.png',
       ),
@@ -1118,7 +1118,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
   Widget _buildEmptySpellCardState() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = const Color(0xFFF59E0B);
+    final primaryColor = AppColors.amber500;
 
     return Container(
       height: 300,
@@ -1171,7 +1171,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
   Widget _buildEmptyState() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF8B5CF6);
+    final primaryColor = AppColors.violet500;
     final isSearching = _searchController.text.isNotEmpty;
 
     return Container(
@@ -1268,7 +1268,7 @@ class _CharacterGalleryMobileState extends State<CharacterGalleryMobile> {
   Widget _buildLoadingState() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF8B5CF6);
+    final primaryColor = AppColors.violet500;
 
     return Center(
       child: Column(

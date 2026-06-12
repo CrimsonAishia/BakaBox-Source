@@ -166,8 +166,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     return Scaffold(
       backgroundColor: isDark
-          ? const Color(0xFF0F172A)
-          : const Color(0xFFF8FAFC),
+          ? AppColors.slate900
+          : AppColors.slate50,
       body: Stack(
         children: [
           // 背景装饰
@@ -241,7 +241,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: Text(
                   '跳过',
                   style: TextStyle(
-                    color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                    color: isDark ? Colors.white54 : AppColors.slate500,
                   ),
                 ),
               ),
@@ -251,7 +251,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // ==================== 第一步：欢迎页面 ====================
   Widget _buildWelcomePage(bool isDark) {
     return Row(
       children: [
@@ -289,7 +288,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             fontWeight: FontWeight.w700,
                             color: isDark
                                 ? Colors.white
-                                : const Color(0xFF1E293B),
+                                : AppColors.slate800,
                           ),
                         ),
                       ),
@@ -306,7 +305,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     style: TextStyle(
                       fontSize: 16,
                       height: 1.7,
-                      color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                      color: isDark ? Colors.white54 : AppColors.slate500,
                     ),
                   ).animate().fadeIn(duration: 500.ms, delay: 300.ms),
                 ),
@@ -319,21 +318,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     _buildFeatureTag(
                       MdiIcons.rocketLaunchOutline,
                       '一键启动',
-                      const Color(0xFF3B82F6),
+                      AppColors.blue500,
                       isDark,
                       400,
                     ),
                     _buildFeatureTag(
                       MdiIcons.bellRing,
                       '换图通知',
-                      const Color(0xFF10B981),
+                      AppColors.emerald500,
                       isDark,
                       500,
                     ),
                     _buildFeatureTag(
                       MdiIcons.accountGroupOutline,
                       '自动挤服',
-                      const Color(0xFFF59E0B),
+                      AppColors.amber500,
                       isDark,
                       600,
                     ),
@@ -406,7 +405,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 boxShadow: [
                   // 主阴影（右侧）
                   BoxShadow(
-                    color: const Color(0xFF3B82F6).withValues(alpha: 0.12),
+                    color: AppColors.blue500.withValues(alpha: 0.12),
                     blurRadius: 40,
                     offset: const Offset(20, 20),
                     spreadRadius: -5,
@@ -428,15 +427,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   height: 280,
                   decoration: BoxDecoration(
                     color: isDark
-                        ? const Color(0xFF1E293B)
-                        : const Color(0xFFF1F5F9),
+                        ? AppColors.slate800
+                        : AppColors.slate100,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Center(
                     child: Icon(
                       MdiIcons.imageOff,
                       size: 48,
-                      color: isDark ? Colors.white24 : const Color(0xFFCBD5E1),
+                      color: isDark ? Colors.white24 : AppColors.slate300,
                     ),
                   ),
                 ),
@@ -449,7 +448,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         .slideX(begin: 0.15, duration: 500.ms);
   }
 
-  // ==================== 第二步：游戏路径设置 ====================
   Widget _buildGamePathPage(bool isDark) {
     return Center(
       child: Padding(
@@ -461,13 +459,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                    color: AppColors.emerald500.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Icon(
                     MdiIcons.folderCog,
                     size: 48,
-                    color: const Color(0xFF10B981),
+                    color: AppColors.emerald500,
                   ),
                 )
                 .animate()
@@ -480,7 +478,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : const Color(0xFF1E293B),
+                color: isDark ? Colors.white : AppColors.slate800,
               ),
             ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
             const SizedBox(height: 12),
@@ -489,7 +487,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               '配置 CS2 游戏目录以启用一键加入功能',
               style: TextStyle(
                 fontSize: 15,
-                color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                color: isDark ? Colors.white54 : AppColors.slate500,
               ),
             ).animate().fadeIn(duration: 400.ms, delay: 150.ms),
             const SizedBox(height: 40),
@@ -503,7 +501,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   /// 构建路径设置卡片
   Widget _buildPathSettingCard(bool isDark) {
-    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final bgColor = isDark ? AppColors.slate800 : Colors.white;
     final borderColor = isDark
         ? Colors.white.withValues(alpha: 0.1)
         : Colors.black.withValues(alpha: 0.08);
@@ -517,7 +515,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: hasError
-                  ? const Color(0xFFEF4444).withValues(alpha: 0.5)
+                  ? AppColors.red500.withValues(alpha: 0.5)
                   : borderColor,
             ),
             boxShadow: [
@@ -537,13 +535,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF334155)
-                      : const Color(0xFFF8FAFC),
+                      ? AppColors.slate700
+                      : AppColors.slate50,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: isDark
                         ? Colors.white.withValues(alpha: 0.05)
-                        : const Color(0xFFE2E8F0),
+                        : AppColors.slate200,
                   ),
                 ),
                 child: Column(
@@ -554,7 +552,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Icon(
                           MdiIcons.lightbulbOnOutline,
                           size: 14,
-                          color: const Color(0xFFFBBF24),
+                          color: AppColors.amber400,
                         ),
                         const SizedBox(width: 6),
                         Text(
@@ -564,7 +562,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             fontWeight: FontWeight.w500,
                             color: isDark
                                 ? Colors.white70
-                                : const Color(0xFF64748B),
+                                : AppColors.slate500,
                           ),
                         ),
                       ],
@@ -577,7 +575,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         fontFamily: 'monospace',
                         color: isDark
                             ? Colors.white54
-                            : const Color(0xFF64748B),
+                            : AppColors.slate500,
                       ),
                     ),
                   ],
@@ -594,12 +592,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF334155)
-                      : const Color(0xFFF1F5F9),
+                      ? AppColors.slate700
+                      : AppColors.slate100,
                   borderRadius: BorderRadius.circular(12),
                   border: hasError
                       ? Border.all(
-                          color: const Color(0xFFEF4444).withValues(alpha: 0.5),
+                          color: AppColors.red500.withValues(alpha: 0.5),
                         )
                       : null,
                 ),
@@ -611,8 +609,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           ? MdiIcons.checkCircle
                           : MdiIcons.folderQuestion,
                       color: _gamePath != null
-                          ? const Color(0xFF10B981)
-                          : (isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                          ? AppColors.emerald500
+                          : (isDark ? Colors.white38 : AppColors.slate400),
                       size: 20,
                     ),
                     const SizedBox(width: 12),
@@ -627,10 +625,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             color: _gamePath != null
                                 ? (isDark
                                       ? Colors.white
-                                      : const Color(0xFF1E293B))
+                                      : AppColors.slate800)
                                 : (isDark
                                       ? Colors.white38
-                                      : const Color(0xFF94A3B8)),
+                                      : AppColors.slate400),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -648,7 +646,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             size: 16,
                             color: isDark
                                 ? Colors.white38
-                                : const Color(0xFF94A3B8),
+                                : AppColors.slate400,
                           ),
                           onPressed: () => setState(() {
                             _gamePath = null;
@@ -671,7 +669,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     const Icon(
                       Icons.error_outline,
                       size: 14,
-                      color: Color(0xFFEF4444),
+                      color: AppColors.red500,
                     ),
                     const SizedBox(width: 6),
                     Expanded(
@@ -679,7 +677,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         _gamePathError!,
                         style: const TextStyle(
                           fontSize: 12,
-                          color: Color(0xFFEF4444),
+                          color: AppColors.red500,
                         ),
                       ),
                     ),
@@ -715,7 +713,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withValues(alpha: 0.08),
+                  color: AppColors.blue500.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -724,7 +722,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     Icon(
                       MdiIcons.informationOutline,
                       size: 16,
-                      color: const Color(0xFF3B82F6),
+                      color: AppColors.blue500,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -735,7 +733,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           height: 1.4,
                           color: isDark
                               ? Colors.white70
-                              : const Color(0xFF64748B),
+                              : AppColors.slate500,
                         ),
                       ),
                     ),
@@ -797,16 +795,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
-  // ==================== 第三步：论坛账号绑定 ====================
   Widget _buildLoginPage(bool isDark) {
-    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final bgColor = isDark ? AppColors.slate800 : Colors.white;
     final inputBgColor = isDark
-        ? const Color(0xFF334155)
-        : const Color(0xFFF1F5F9);
-    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+        ? AppColors.slate700
+        : AppColors.slate100;
+    final textColor = isDark ? Colors.white : AppColors.slate800;
     final secondaryTextColor = isDark
         ? Colors.white54
-        : const Color(0xFF64748B);
+        : AppColors.slate500;
     final borderColor = isDark
         ? Colors.white.withValues(alpha: 0.1)
         : Colors.black.withValues(alpha: 0.08);
@@ -842,13 +839,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                          color: AppColors.emerald500.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Icon(
                           MdiIcons.accountCheck,
                           size: 48,
-                          color: const Color(0xFF10B981),
+                          color: AppColors.emerald500,
                         ),
                       )
                       .animate()
@@ -870,7 +867,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           child: Icon(
                             MdiIcons.accountCircle,
                             size: 48,
-                            color: const Color(0xFF8B5CF6),
+                            color: AppColors.violet500,
                           ),
                         ),
                       )
@@ -921,10 +918,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           width: 400,
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            color: isDark ? AppColors.slate800 : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: const Color(0xFF10B981).withValues(alpha: 0.3),
+              color: AppColors.emerald500.withValues(alpha: 0.3),
             ),
           ),
           child: Column(
@@ -932,7 +929,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               // 头像
               CircleAvatar(
                 radius: 32,
-                backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.1),
+                backgroundColor: AppColors.emerald500.withValues(alpha: 0.1),
                 child:
                     state.userInfo?.avatar != null &&
                         state.userInfo!.avatar.isNotEmpty
@@ -945,14 +942,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           errorBuilder: (_, __, ___) => Icon(
                             MdiIcons.account,
                             size: 32,
-                            color: const Color(0xFF10B981),
+                            color: AppColors.emerald500,
                           ),
                         ),
                       )
                     : Icon(
                         MdiIcons.account,
                         size: 32,
-                        color: const Color(0xFF10B981),
+                        color: AppColors.emerald500,
                       ),
               ),
               const SizedBox(height: 16),
@@ -962,7 +959,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  color: isDark ? Colors.white : AppColors.slate800,
                 ),
               ),
               // 用户组
@@ -972,7 +969,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   state.userInfo!.userGroup!,
                   style: TextStyle(
                     fontSize: 13,
-                    color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                    color: isDark ? Colors.white54 : AppColors.slate500,
                   ),
                 ),
               ],
@@ -1017,10 +1014,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                    color: AppColors.red500.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: const Color(0xFFEF4444).withValues(alpha: 0.3),
+                      color: AppColors.red500.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -1028,7 +1025,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       const Icon(
                         Icons.error_outline,
                         size: 16,
-                        color: Color(0xFFEF4444),
+                        color: AppColors.red500,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -1036,7 +1033,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           state.errorMessage!,
                           style: const TextStyle(
                             fontSize: 12,
-                            color: Color(0xFFEF4444),
+                            color: AppColors.red500,
                           ),
                         ),
                       ),
@@ -1061,7 +1058,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Color(0xFF8B5CF6)),
+                    borderSide: const BorderSide(color: AppColors.violet500),
                   ),
                   prefixIcon: Icon(
                     MdiIcons.account,
@@ -1088,7 +1085,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Color(0xFF8B5CF6)),
+                    borderSide: const BorderSide(color: AppColors.violet500),
                   ),
                   prefixIcon: Icon(
                     MdiIcons.lock,
@@ -1139,7 +1136,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ? null
                       : _handleLogin,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8B5CF6),
+                    backgroundColor: AppColors.violet500,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -1257,7 +1254,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
-  // ==================== 第四步：完成页面（含隐私政策同意） ====================
   Widget _buildCompletePage(bool isDark) {
     // 检查是否已同意协议
     final canComplete = _agreedToPrivacy && _agreedToTerms;
@@ -1275,13 +1271,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
                       colors: [
-                        const Color(0xFF10B981).withValues(alpha: 0.2),
-                        const Color(0xFF3B82F6).withValues(alpha: 0.2),
+                        AppColors.emerald500.withValues(alpha: 0.2),
+                        AppColors.blue500.withValues(alpha: 0.2),
                       ],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                        color: AppColors.emerald500.withValues(alpha: 0.3),
                         blurRadius: 40,
                         spreadRadius: 10,
                       ),
@@ -1290,7 +1286,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   child: Icon(
                     MdiIcons.checkCircle,
                     size: 64,
-                    color: const Color(0xFF10B981),
+                    color: AppColors.emerald500,
                   ),
                 )
                 .animate()
@@ -1307,7 +1303,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : const Color(0xFF1E293B),
+                    color: isDark ? Colors.white : AppColors.slate800,
                   ),
                 )
                 .animate()
@@ -1319,7 +1315,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   '在开始使用前，请阅读并同意以下协议',
                   style: TextStyle(
                     fontSize: 16,
-                    color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                    color: isDark ? Colors.white54 : AppColors.slate500,
                   ),
                 )
                 .animate()
@@ -1336,7 +1332,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   child: ElevatedButton(
                     onPressed: canComplete ? _completeOnboarding : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3B82F6),
+                      backgroundColor: AppColors.blue500,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -1375,7 +1371,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   /// 构建紧凑的协议同意卡片
   Widget _buildCompactAgreementCard(bool isDark) {
-    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final bgColor = isDark ? AppColors.slate800 : Colors.white;
     final borderColor = isDark
         ? Colors.white.withValues(alpha: 0.1)
         : Colors.black.withValues(alpha: 0.08);
@@ -1437,14 +1433,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFF8FAFC),
+          color: isDark ? AppColors.slate700 : AppColors.slate50,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isChecked
-                ? const Color(0xFF3B82F6).withValues(alpha: 0.5)
+                ? AppColors.blue500.withValues(alpha: 0.5)
                 : (isDark
                       ? Colors.white.withValues(alpha: 0.05)
-                      : const Color(0xFFE2E8F0)),
+                      : AppColors.slate200),
           ),
         ),
         child: Row(
@@ -1455,15 +1451,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               height: 22,
               decoration: BoxDecoration(
                 color: isChecked
-                    ? const Color(0xFF3B82F6)
-                    : (isDark ? const Color(0xFF1E293B) : Colors.white),
+                    ? AppColors.blue500
+                    : (isDark ? AppColors.slate800 : Colors.white),
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
                   color: isChecked
-                      ? const Color(0xFF3B82F6)
+                      ? AppColors.blue500
                       : (isDark
                             ? Colors.white.withValues(alpha: 0.2)
-                            : const Color(0xFFCBD5E1)),
+                            : AppColors.slate300),
                   width: 1.5,
                 ),
               ),
@@ -1478,14 +1474,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 text: TextSpan(
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDark ? Colors.white : const Color(0xFF1E293B),
+                    color: isDark ? Colors.white : AppColors.slate800,
                   ),
                   children: [
                     const TextSpan(text: '我已阅读并同意 '),
                     TextSpan(
                       text: '《$label》',
                       style: const TextStyle(
-                        color: Color(0xFF3B82F6),
+                        color: AppColors.blue500,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -1503,7 +1499,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+                  color: AppColors.blue500.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Row(
@@ -1513,7 +1509,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       '查看',
                       style: TextStyle(
                         fontSize: 12,
-                        color: const Color(0xFF3B82F6),
+                        color: AppColors.blue500,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -1521,7 +1517,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     Icon(
                       MdiIcons.openInNew,
                       size: 12,
-                      color: const Color(0xFF3B82F6),
+                      color: AppColors.blue500,
                     ),
                   ],
                 ),
@@ -1567,7 +1563,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return PolicyConstants.termsOfService;
   }
 
-  // ==================== 底部导航 ====================
   Widget _buildBottomNav(bool isDark) {
     return SafeArea(
       child: Padding(
@@ -1594,7 +1589,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       style: TextButton.styleFrom(
                         foregroundColor: isDark
                             ? Colors.white54
-                            : const Color(0xFF64748B),
+                            : AppColors.slate500,
                       ),
                     )
                   else
@@ -1628,7 +1623,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return ElevatedButton(
       onPressed: _nextPage,
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF3B82F6),
+        backgroundColor: AppColors.blue500,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -1660,10 +1655,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
             color: isActive
-                ? const Color(0xFF3B82F6)
+                ? AppColors.blue500
                 : isCompleted
-                ? const Color(0xFF10B981)
-                : (isDark ? Colors.white24 : const Color(0xFFE2E8F0)),
+                ? AppColors.emerald500
+                : (isDark ? Colors.white24 : AppColors.slate200),
           ),
         );
       }),
@@ -1671,7 +1666,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-// ==================== 辅助组件 ====================
 
 /// 操作按钮组件
 class _ActionButton extends StatelessWidget {
@@ -1706,7 +1700,7 @@ class _ActionButton extends StatelessWidget {
             : Icon(icon, size: 18),
         label: Text(label),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF10B981),
+          backgroundColor: AppColors.emerald500,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
@@ -1744,8 +1738,8 @@ class _BackgroundPainter extends CustomPainter {
       paint.shader =
           RadialGradient(
             colors: [
-              const Color(0xFF3B82F6).withValues(alpha: 0.12),
-              const Color(0xFF3B82F6).withValues(alpha: 0),
+              AppColors.blue500.withValues(alpha: 0.12),
+              AppColors.blue500.withValues(alpha: 0),
             ],
           ).createShader(
             Rect.fromCircle(
@@ -1763,8 +1757,8 @@ class _BackgroundPainter extends CustomPainter {
       paint.shader =
           RadialGradient(
             colors: [
-              const Color(0xFF8B5CF6).withValues(alpha: 0.08),
-              const Color(0xFF8B5CF6).withValues(alpha: 0),
+              AppColors.violet500.withValues(alpha: 0.08),
+              AppColors.violet500.withValues(alpha: 0),
             ],
           ).createShader(
             Rect.fromCircle(
@@ -1782,8 +1776,8 @@ class _BackgroundPainter extends CustomPainter {
       paint.shader =
           RadialGradient(
             colors: [
-              const Color(0xFF3B82F6).withValues(alpha: 0.06),
-              const Color(0xFF3B82F6).withValues(alpha: 0),
+              AppColors.blue500.withValues(alpha: 0.06),
+              AppColors.blue500.withValues(alpha: 0),
             ],
           ).createShader(
             Rect.fromCircle(
@@ -1803,7 +1797,6 @@ class _BackgroundPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// ==================== 协议对话框组件 ====================
 class _PolicyDialog extends StatelessWidget {
   final bool isDark;
   final String title;
@@ -1817,11 +1810,11 @@ class _PolicyDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final bgColor = isDark ? AppColors.slate800 : Colors.white;
+    final textColor = isDark ? Colors.white : AppColors.slate800;
     final secondaryTextColor = isDark
         ? Colors.white70
-        : const Color(0xFF64748B);
+        : AppColors.slate500;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -1849,7 +1842,7 @@ class _PolicyDialog extends StatelessWidget {
                   bottom: BorderSide(
                     color: isDark
                         ? Colors.white.withValues(alpha: 0.1)
-                        : const Color(0xFFE2E8F0),
+                        : AppColors.slate200,
                   ),
                 ),
               ),
@@ -1857,7 +1850,7 @@ class _PolicyDialog extends StatelessWidget {
                 children: [
                   Icon(
                     MdiIcons.fileDocumentOutline,
-                    color: const Color(0xFF3B82F6),
+                    color: AppColors.blue500,
                     size: 24,
                   ),
                   const SizedBox(width: 12),
@@ -1920,7 +1913,7 @@ class _PolicyDialog extends StatelessWidget {
                   ),
                   // 链接样式
                   a: const TextStyle(
-                    color: Color(0xFF3B82F6),
+                    color: AppColors.blue500,
                     decoration: TextDecoration.underline,
                   ),
                   // 代码样式
@@ -1928,14 +1921,14 @@ class _PolicyDialog extends StatelessWidget {
                     fontSize: 13,
                     fontFamily: 'monospace',
                     backgroundColor: isDark
-                        ? const Color(0xFF334155)
-                        : const Color(0xFFF1F5F9),
-                    color: const Color(0xFFEF4444),
+                        ? AppColors.slate700
+                        : AppColors.slate100,
+                    color: AppColors.red500,
                   ),
                   codeblockDecoration: BoxDecoration(
                     color: isDark
-                        ? const Color(0xFF334155)
-                        : const Color(0xFFF1F5F9),
+                        ? AppColors.slate700
+                        : AppColors.slate100,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   // 引用样式
@@ -1946,12 +1939,12 @@ class _PolicyDialog extends StatelessWidget {
                   ),
                   blockquoteDecoration: BoxDecoration(
                     color: isDark
-                        ? const Color(0xFF334155).withValues(alpha: 0.3)
-                        : const Color(0xFFF8FAFC),
+                        ? AppColors.slate700.withValues(alpha: 0.3)
+                        : AppColors.slate50,
                     borderRadius: BorderRadius.circular(4),
                     border: Border(
                       left: BorderSide(
-                        color: const Color(0xFF3B82F6),
+                        color: AppColors.blue500,
                         width: 4,
                       ),
                     ),
@@ -1962,7 +1955,7 @@ class _PolicyDialog extends StatelessWidget {
                       top: BorderSide(
                         color: isDark
                             ? Colors.white.withValues(alpha: 0.1)
-                            : const Color(0xFFE2E8F0),
+                            : AppColors.slate200,
                         width: 1,
                       ),
                     ),
@@ -1979,7 +1972,7 @@ class _PolicyDialog extends StatelessWidget {
                   top: BorderSide(
                     color: isDark
                         ? Colors.white.withValues(alpha: 0.1)
-                        : const Color(0xFFE2E8F0),
+                        : AppColors.slate200,
                   ),
                 ),
               ),
@@ -1989,7 +1982,7 @@ class _PolicyDialog extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3B82F6),
+                      backgroundColor: AppColors.blue500,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 32,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/app_colors.dart';
 
 /// 被踢出大厅时的全屏遮罩提示
 ///
@@ -57,7 +58,7 @@ class LobbyKickedOverlay extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  color: isDark ? Colors.white : AppColors.slate800,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -66,7 +67,7 @@ class LobbyKickedOverlay extends StatelessWidget {
                 _subtitle,
                 style: TextStyle(
                   fontSize: 14,
-                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                  color: isDark ? Colors.white60 : AppColors.slate500,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -118,15 +119,15 @@ class LobbyKickedOverlay extends StatelessWidget {
   Color get _iconColor {
     switch (reason) {
       case 'duplicate_login':
-        return const Color(0xFFF59E0B);
+        return AppColors.amber500;
       case 'device_conflict':
         return const Color(0xFFF97316);
       case 'admin_kick':
-        return const Color(0xFFEF4444);
+        return AppColors.red500;
       case 'pc_session_active':
-        return const Color(0xFF3B82F6);
+        return AppColors.blue500;
       default:
-        return const Color(0xFFEF4444);
+        return AppColors.red500;
     }
   }
 
@@ -175,9 +176,9 @@ class LobbyKickedOverlay extends StatelessWidget {
   Color get _buttonColor {
     switch (reason) {
       case 'duplicate_login':
-        return const Color(0xFF3B82F6);
+        return AppColors.blue500;
       default:
-        return const Color(0xFF64748B);
+        return AppColors.slate500;
     }
   }
 }

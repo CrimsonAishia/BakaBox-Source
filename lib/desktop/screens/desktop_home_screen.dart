@@ -64,64 +64,64 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
       icon: Icons.home_outlined,
       selectedIcon: Icons.home,
       label: '首页',
-      activeColor: const Color(0xFF0080FF),
-      inactiveColor: const Color(0xFF64748B),
+      activeColor: AppColors.primary,
+      inactiveColor: AppColors.slate500,
     ),
     NavigationItem(
       icon: MdiIcons.server,
       selectedIcon: MdiIcons.serverNetwork,
       label: '服务器列表',
-      activeColor: const Color(0xFF0080FF),
-      inactiveColor: const Color(0xFF64748B),
+      activeColor: AppColors.primary,
+      inactiveColor: AppColors.slate500,
     ),
     NavigationItem(
       icon: MdiIcons.castle,
       selectedIcon: MdiIcons.castle,
       label: '大厅',
-      activeColor: const Color(0xFF0080FF),
-      inactiveColor: const Color(0xFF64748B),
+      activeColor: AppColors.primary,
+      inactiveColor: AppColors.slate500,
     ),
     NavigationItem(
       icon: MdiIcons.accountGroup,
       selectedIcon: MdiIcons.accountGroupOutline,
       label: '角色图鉴',
-      activeColor: const Color(0xFF0080FF),
-      inactiveColor: const Color(0xFF64748B),
+      activeColor: AppColors.primary,
+      inactiveColor: AppColors.slate500,
     ),
     NavigationItem(
       icon: MdiIcons.playCircleOutline,
       selectedIcon: MdiIcons.playCircle,
       label: '直播/视频',
-      activeColor: const Color(0xFF0080FF),
-      inactiveColor: const Color(0xFF64748B),
+      activeColor: AppColors.primary,
+      inactiveColor: AppColors.slate500,
     ),
     NavigationItem(
       icon: MdiIcons.bookOpenPageVariantOutline,
       selectedIcon: MdiIcons.bookOpenPageVariant,
       label: '攻略',
-      activeColor: const Color(0xFF0080FF),
-      inactiveColor: const Color(0xFF64748B),
+      activeColor: AppColors.primary,
+      inactiveColor: AppColors.slate500,
     ),
     NavigationItem(
       icon: MdiIcons.fileDocumentOutline,
       selectedIcon: MdiIcons.fileDocument,
       label: '更新日志',
-      activeColor: const Color(0xFF0080FF),
-      inactiveColor: const Color(0xFF64748B),
+      activeColor: AppColors.primary,
+      inactiveColor: AppColors.slate500,
     ),
     NavigationItem(
       icon: MdiIcons.toolboxOutline,
       selectedIcon: MdiIcons.toolbox,
       label: '工具箱',
-      activeColor: const Color(0xFF0080FF),
-      inactiveColor: const Color(0xFF64748B),
+      activeColor: AppColors.primary,
+      inactiveColor: AppColors.slate500,
     ),
     NavigationItem(
       icon: MdiIcons.cogOutline,
       selectedIcon: MdiIcons.cog,
       label: '设置',
-      activeColor: const Color(0xFF0080FF),
-      inactiveColor: const Color(0xFF64748B),
+      activeColor: AppColors.primary,
+      inactiveColor: AppColors.slate500,
     ),
   ];
 
@@ -315,9 +315,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen>
     });
   }
 
-  // ---------------------------------------------------------------------------
   // DesktopNavigator 实现
-  // ---------------------------------------------------------------------------
 
   @override
   void openGuides({String? mapName}) {

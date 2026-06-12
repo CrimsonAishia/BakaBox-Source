@@ -23,6 +23,7 @@ import 'embeds/resizable_image_embed_builder.dart';
 import 'embeds/resizable_image_scope.dart';
 import 'embeds/resizable_image_uploader.dart';
 import 'image_viewer_dialog.dart';
+import '../constants/app_colors.dart';
 
 /// 图片处理模式
 enum ImageMode {
@@ -259,12 +260,12 @@ class RichTextEditorState extends State<RichTextEditor> {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.1)
-              : const Color(0xFFE5E7EB),
+              : AppColors.gray200,
         ),
       ),
       child: Column(
@@ -391,19 +392,19 @@ class RichTextEditorState extends State<RichTextEditor> {
 
     if (isError) {
       bgColor = isDark
-          ? const Color(0xFFDC2626).withValues(alpha: 0.15)
+          ? AppColors.red600.withValues(alpha: 0.15)
           : const Color(0xFFFEE2E2);
-      textColor = const Color(0xFFDC2626);
+      textColor = AppColors.red600;
     } else if (isWarning) {
       bgColor = isDark
-          ? const Color(0xFFF59E0B).withValues(alpha: 0.15)
+          ? AppColors.amber500.withValues(alpha: 0.15)
           : const Color(0xFFFEF3C7);
-      textColor = const Color(0xFFF59E0B);
+      textColor = AppColors.amber500;
     } else {
       bgColor = isDark
           ? Colors.white.withValues(alpha: 0.05)
-          : const Color(0xFFF3F4F6);
-      textColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF6B7280);
+          : AppColors.gray100;
+      textColor = isDark ? AppColors.slate400 : AppColors.gray500;
     }
 
     return Container(
@@ -412,7 +413,7 @@ class RichTextEditorState extends State<RichTextEditor> {
         color: bgColor,
         borderRadius: BorderRadius.circular(6),
         border: isError
-            ? Border.all(color: const Color(0xFFDC2626).withValues(alpha: 0.3))
+            ? Border.all(color: AppColors.red600.withValues(alpha: 0.3))
             : null,
       ),
       child: Row(
@@ -512,8 +513,8 @@ class RichTextEditorState extends State<RichTextEditor> {
             style: TextStyle(
               fontSize: 12,
               color: isDark
-                  ? const Color(0xFFE2E8F0)
-                  : const Color(0xFF334155),
+                  ? AppColors.slate200
+                  : AppColors.slate700,
             ),
             padding: const EdgeInsets.symmetric(horizontal: 6),
             items: const {
@@ -542,8 +543,8 @@ class RichTextEditorState extends State<RichTextEditor> {
             style: TextStyle(
               fontSize: 12,
               color: isDark
-                  ? const Color(0xFFE2E8F0)
-                  : const Color(0xFF334155),
+                  ? AppColors.slate200
+                  : AppColors.slate700,
             ),
             padding: const EdgeInsets.symmetric(horizontal: 6),
             items: const {
@@ -709,12 +710,12 @@ class RichTextEditorState extends State<RichTextEditor> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.1)
-              : const Color(0xFFE5E7EB),
+              : AppColors.gray200,
         ),
       ),
       // compactMode（移动端/评论）保持单行横向滚动以节省纵向空间；
@@ -834,7 +835,7 @@ class RichTextEditorState extends State<RichTextEditor> {
     );
     return QuillIconTheme(
       iconButtonUnselectedData: IconButtonData(
-        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+        color: isDark ? AppColors.slate400 : AppColors.slate500,
         padding: EdgeInsets.zero,
         constraints: constraints,
         visualDensity: VisualDensity.compact,
@@ -849,7 +850,7 @@ class RichTextEditorState extends State<RichTextEditor> {
           padding: WidgetStateProperty.all(EdgeInsets.zero),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           visualDensity: VisualDensity.compact,
-          backgroundColor: WidgetStateProperty.all(const Color(0xFF0080FF)),
+          backgroundColor: WidgetStateProperty.all(AppColors.primary),
           shape: WidgetStateProperty.all(
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           ),
@@ -865,7 +866,7 @@ class RichTextEditorState extends State<RichTextEditor> {
       margin: const EdgeInsets.symmetric(horizontal: 4),
       color: isDark
           ? Colors.white.withValues(alpha: 0.1)
-          : const Color(0xFFE5E7EB),
+          : AppColors.gray200,
     );
   }
 
@@ -888,23 +889,23 @@ class RichTextEditorState extends State<RichTextEditor> {
 
     Widget editor = Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? AppColors.slate800 : Colors.white,
         border: Border(
           left: BorderSide(
             color: isDark
                 ? Colors.white.withValues(alpha: 0.1)
-                : const Color(0xFFE5E7EB),
+                : AppColors.gray200,
           ),
           right: BorderSide(
             color: isDark
                 ? Colors.white.withValues(alpha: 0.1)
-                : const Color(0xFFE5E7EB),
+                : AppColors.gray200,
           ),
         ),
       ),
       child: DefaultTextStyle(
         style: TextStyle(
-          color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF374151),
+          color: isDark ? AppColors.slate200 : AppColors.gray700,
           fontSize: 15,
           height: 1.7,
         ),
@@ -926,8 +927,8 @@ class RichTextEditorState extends State<RichTextEditor> {
                 fontSize: 15,
                 height: 1.7,
                 color: isDark
-                    ? const Color(0xFFE2E8F0)
-                    : const Color(0xFF374151),
+                    ? AppColors.slate200
+                    : AppColors.gray700,
               ),
               HorizontalSpacing.zero,
               const VerticalSpacing(6, 0),
@@ -939,8 +940,8 @@ class RichTextEditorState extends State<RichTextEditor> {
                 fontSize: 15,
                 height: 1.7,
                 color: isDark
-                    ? const Color(0xFF64748B)
-                    : const Color(0xFF9CA3AF),
+                    ? AppColors.slate500
+                    : AppColors.gray400,
               ),
               HorizontalSpacing.zero,
               VerticalSpacing.zero,
@@ -952,7 +953,7 @@ class RichTextEditorState extends State<RichTextEditor> {
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 height: 1.5,
-                color: isDark ? Colors.white : const Color(0xFF1F2937),
+                color: isDark ? Colors.white : AppColors.gray800,
               ),
               HorizontalSpacing.zero,
               const VerticalSpacing(16, 8),
@@ -964,7 +965,7 @@ class RichTextEditorState extends State<RichTextEditor> {
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 height: 1.5,
-                color: isDark ? Colors.white : const Color(0xFF1F2937),
+                color: isDark ? Colors.white : AppColors.gray800,
               ),
               HorizontalSpacing.zero,
               const VerticalSpacing(12, 6),
@@ -976,7 +977,7 @@ class RichTextEditorState extends State<RichTextEditor> {
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 height: 1.5,
-                color: isDark ? Colors.white : const Color(0xFF1F2937),
+                color: isDark ? Colors.white : AppColors.gray800,
               ),
               HorizontalSpacing.zero,
               const VerticalSpacing(10, 4),
@@ -989,8 +990,8 @@ class RichTextEditorState extends State<RichTextEditor> {
                 height: 1.6,
                 fontStyle: FontStyle.italic,
                 color: isDark
-                    ? const Color(0xFF94A3B8)
-                    : const Color(0xFF6B7280),
+                    ? AppColors.slate400
+                    : AppColors.gray500,
               ),
               HorizontalSpacing.zero,
               const VerticalSpacing(8, 8),
@@ -998,7 +999,7 @@ class RichTextEditorState extends State<RichTextEditor> {
               BoxDecoration(
                 border: Border(
                   left: BorderSide(
-                    color: const Color(0xFF0080FF).withValues(alpha: 0.5),
+                    color: AppColors.primary.withValues(alpha: 0.5),
                     width: 3,
                   ),
                 ),
@@ -1010,23 +1011,23 @@ class RichTextEditorState extends State<RichTextEditor> {
                 fontFamily: 'Consolas, Monaco, monospace',
                 color: isDark
                     ? const Color(0xFFE879F9)
-                    : const Color(0xFFDC2626),
+                    : AppColors.red600,
                 backgroundColor: isDark
-                    ? const Color(0xFF334155)
-                    : const Color(0xFFF3F4F6),
+                    ? AppColors.slate700
+                    : AppColors.gray100,
               ),
               HorizontalSpacing.zero,
               const VerticalSpacing(8, 8),
               VerticalSpacing.zero,
               BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF334155)
-                    : const Color(0xFFF9FAFB),
+                    ? AppColors.slate700
+                    : AppColors.gray50,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: isDark
                       ? Colors.white.withValues(alpha: 0.1)
-                      : const Color(0xFFE5E7EB),
+                      : AppColors.gray200,
                 ),
               ),
             ),
@@ -1035,8 +1036,8 @@ class RichTextEditorState extends State<RichTextEditor> {
                 fontSize: 15,
                 height: 1.7,
                 color: isDark
-                    ? const Color(0xFFE2E8F0)
-                    : const Color(0xFF374151),
+                    ? AppColors.slate200
+                    : AppColors.gray700,
               ),
               HorizontalSpacing.zero,
               const VerticalSpacing(4, 4),
@@ -1045,21 +1046,21 @@ class RichTextEditorState extends State<RichTextEditor> {
               null,
             ),
             link: TextStyle(
-              color: const Color(0xFF0080FF),
+              color: AppColors.primary,
               decoration: TextDecoration.underline,
-              decorationColor: const Color(0xFF0080FF).withValues(alpha: 0.5),
+              decorationColor: AppColors.primary.withValues(alpha: 0.5),
             ),
             inlineCode: InlineCodeStyle(
               backgroundColor: isDark
-                  ? const Color(0xFF334155)
-                  : const Color(0xFFF3F4F6),
+                  ? AppColors.slate700
+                  : AppColors.gray100,
               radius: const Radius.circular(4),
               style: TextStyle(
                 fontFamily: 'Consolas, Monaco, monospace',
                 fontSize: 14,
                 color: isDark
                     ? const Color(0xFFE879F9)
-                    : const Color(0xFFDC2626),
+                    : AppColors.red600,
               ),
             ),
           ),
@@ -1459,10 +1460,10 @@ class _ImageAttachmentItemState extends State<_ImageAttachmentItem> {
   @override
   Widget build(BuildContext context) {
     final borderColor = _isHovering
-        ? const Color(0xFF0080FF)
+        ? AppColors.primary
         : (widget.isDark
               ? Colors.white.withValues(alpha: 0.2)
-              : const Color(0xFFD1D5DB));
+              : AppColors.gray300);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
@@ -1484,7 +1485,7 @@ class _ImageAttachmentItemState extends State<_ImageAttachmentItem> {
             boxShadow: _isHovering
                 ? [
                     BoxShadow(
-                      color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+                      color: AppColors.primary.withValues(alpha: 0.15),
                       blurRadius: 8,
                       spreadRadius: 0,
                     ),
@@ -1499,15 +1500,15 @@ class _ImageAttachmentItemState extends State<_ImageAttachmentItem> {
                 child: _isLoading
                     ? Container(
                         color: widget.isDark
-                            ? const Color(0xFF334155)
-                            : const Color(0xFFF3F4F6),
+                            ? AppColors.slate700
+                            : AppColors.gray100,
                         child: const Center(
                           child: SizedBox(
                             width: 14,
                             height: 14,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Color(0xFF0080FF),
+                              color: AppColors.primary,
                             ),
                           ),
                         ),
@@ -1549,7 +1550,7 @@ class _ImageAttachmentItemState extends State<_ImageAttachmentItem> {
                     child: Container(
                       padding: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFDC2626),
+                        color: AppColors.red600,
                         borderRadius: BorderRadius.circular(3),
                         boxShadow: [
                           BoxShadow(
@@ -1575,13 +1576,13 @@ class _ImageAttachmentItemState extends State<_ImageAttachmentItem> {
 
   Widget _buildErrorPlaceholder() {
     return Container(
-      color: widget.isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
+      color: widget.isDark ? AppColors.slate700 : AppColors.gray100,
       child: Icon(
         Icons.broken_image_rounded,
         size: 16,
         color: widget.isDark
-            ? const Color(0xFF64748B)
-            : const Color(0xFF9CA3AF),
+            ? AppColors.slate500
+            : AppColors.gray400,
       ),
     );
   }
@@ -1604,20 +1605,20 @@ class _AddImageButtonState extends State<_AddImageButton> {
   @override
   Widget build(BuildContext context) {
     final borderColor = _isHovering
-        ? const Color(0xFF0080FF)
+        ? AppColors.primary
         : (widget.isDark
               ? Colors.white.withValues(alpha: 0.2)
-              : const Color(0xFFD1D5DB));
+              : AppColors.gray300);
     final bgColor = _isHovering
         ? (widget.isDark
-              ? const Color(0xFF0080FF).withValues(alpha: 0.1)
+              ? AppColors.primary.withValues(alpha: 0.1)
               : const Color(0xFFEFF6FF))
         : (widget.isDark
               ? Colors.white.withValues(alpha: 0.03)
-              : const Color(0xFFF9FAFB));
+              : AppColors.gray50);
     final iconColor = _isHovering
-        ? const Color(0xFF0080FF)
-        : (widget.isDark ? const Color(0xFF94A3B8) : const Color(0xFF9CA3AF));
+        ? AppColors.primary
+        : (widget.isDark ? AppColors.slate400 : AppColors.gray400);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
@@ -1641,7 +1642,7 @@ class _AddImageButtonState extends State<_AddImageButton> {
               boxShadow: _isHovering
                   ? [
                       BoxShadow(
-                        color: const Color(0xFF0080FF).withValues(alpha: 0.15),
+                        color: AppColors.primary.withValues(alpha: 0.15),
                         blurRadius: 8,
                       ),
                     ]
@@ -1676,11 +1677,11 @@ class _UploadingImageItem extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: const Color(0xFF0080FF).withValues(alpha: 0.5),
+            color: AppColors.primary.withValues(alpha: 0.5),
             width: 1,
           ),
           color: isDark
-              ? const Color(0xFF0080FF).withValues(alpha: 0.1)
+              ? AppColors.primary.withValues(alpha: 0.1)
               : const Color(0xFFEFF6FF),
         ),
         child: const Center(
@@ -1689,7 +1690,7 @@ class _UploadingImageItem extends StatelessWidget {
             height: 20,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: Color(0xFF0080FF),
+              color: AppColors.primary,
             ),
           ),
         ),

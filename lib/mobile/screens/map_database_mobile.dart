@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/bloc/map_cd/map_cd_bloc.dart';
 import '../../core/bloc/map_contribution/map_contribution_bloc.dart';
 import 'map_database_all_tab_mobile.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 移动端地图数据库页面
 ///
@@ -33,10 +34,10 @@ class _MapDatabaseView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: isDark
-          ? const Color(0xFF0F172A)
-          : const Color(0xFFF8FAFC),
+          ? AppColors.slate900
+          : AppColors.slate50,
       appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        backgroundColor: isDark ? AppColors.slate800 : Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(

@@ -5,6 +5,7 @@ import '../services/quill_delta_codec.dart';
 import 'embeds/divider_embed_builder.dart';
 import 'embeds/hover_info_embed_builder.dart';
 import 'embeds/resizable_image_embed_builder.dart';
+import '../constants/app_colors.dart';
 
 /// 只读富文本显示组件
 ///
@@ -78,7 +79,7 @@ class _RichTextViewerState extends State<RichTextViewer> {
         TextStyle(
           fontSize: 15,
           height: 1.7,
-          color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF374151),
+          color: isDark ? AppColors.slate200 : AppColors.gray700,
         );
 
     // 合并 embed builders：传入的 + 始终注册 resizableImage / hoverInfo / divider 只读版
@@ -135,7 +136,7 @@ class _RichTextViewerState extends State<RichTextViewer> {
           fontSize: 24,
           fontWeight: FontWeight.bold,
           height: 1.5,
-          color: isDark ? Colors.white : const Color(0xFF1F2937),
+          color: isDark ? Colors.white : AppColors.gray800,
         ),
         HorizontalSpacing.zero,
         widget.compact
@@ -149,7 +150,7 @@ class _RichTextViewerState extends State<RichTextViewer> {
           fontSize: 20,
           fontWeight: FontWeight.w600,
           height: 1.5,
-          color: isDark ? Colors.white : const Color(0xFF1F2937),
+          color: isDark ? Colors.white : AppColors.gray800,
         ),
         HorizontalSpacing.zero,
         widget.compact
@@ -163,7 +164,7 @@ class _RichTextViewerState extends State<RichTextViewer> {
           fontSize: 18,
           fontWeight: FontWeight.w600,
           height: 1.5,
-          color: isDark ? Colors.white : const Color(0xFF1F2937),
+          color: isDark ? Colors.white : AppColors.gray800,
         ),
         HorizontalSpacing.zero,
         widget.compact
@@ -177,7 +178,7 @@ class _RichTextViewerState extends State<RichTextViewer> {
           fontSize: baseTextStyle.fontSize,
           height: 1.6,
           fontStyle: FontStyle.italic,
-          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF6B7280),
+          color: isDark ? AppColors.slate400 : AppColors.gray500,
         ),
         HorizontalSpacing.zero,
         const VerticalSpacing(8, 8),
@@ -185,7 +186,7 @@ class _RichTextViewerState extends State<RichTextViewer> {
         BoxDecoration(
           border: Border(
             left: BorderSide(
-              color: const Color(0xFF0080FF).withValues(alpha: 0.5),
+              color: AppColors.primary.withValues(alpha: 0.5),
               width: 3,
             ),
           ),
@@ -195,21 +196,21 @@ class _RichTextViewerState extends State<RichTextViewer> {
         TextStyle(
           fontSize: 13,
           fontFamily: 'Consolas, Monaco, monospace',
-          color: isDark ? const Color(0xFFE879F9) : const Color(0xFFDC2626),
+          color: isDark ? const Color(0xFFE879F9) : AppColors.red600,
           backgroundColor: isDark
-              ? const Color(0xFF334155)
-              : const Color(0xFFF3F4F6),
+              ? AppColors.slate700
+              : AppColors.gray100,
         ),
         HorizontalSpacing.zero,
         const VerticalSpacing(8, 8),
         VerticalSpacing.zero,
         BoxDecoration(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFF9FAFB),
+          color: isDark ? AppColors.slate700 : AppColors.gray50,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isDark
                 ? Colors.white.withValues(alpha: 0.1)
-                : const Color(0xFFE5E7EB),
+                : AppColors.gray200,
           ),
         ),
       ),
@@ -222,19 +223,19 @@ class _RichTextViewerState extends State<RichTextViewer> {
         null,
       ),
       link: TextStyle(
-        color: const Color(0xFF0080FF),
+        color: AppColors.primary,
         decoration: TextDecoration.underline,
-        decorationColor: const Color(0xFF0080FF).withValues(alpha: 0.5),
+        decorationColor: AppColors.primary.withValues(alpha: 0.5),
       ),
       inlineCode: InlineCodeStyle(
         backgroundColor:
-            isDark ? const Color(0xFF334155) : const Color(0xFFF3F4F6),
+            isDark ? AppColors.slate700 : AppColors.gray100,
         radius: const Radius.circular(4),
         style: TextStyle(
           fontFamily: 'Consolas, Monaco, monospace',
           fontSize: 14,
           color:
-              isDark ? const Color(0xFFE879F9) : const Color(0xFFDC2626),
+              isDark ? const Color(0xFFE879F9) : AppColors.red600,
         ),
       ),
     );

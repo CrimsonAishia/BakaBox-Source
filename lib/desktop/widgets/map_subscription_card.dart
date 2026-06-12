@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/widgets/map_background.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 地图订阅卡片组件
 ///
@@ -86,10 +87,10 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                     color: _isHovered
                         ? (isDark
                               ? Colors.white.withValues(alpha: 0.15)
-                              : const Color(0xFFD1D5DB))
+                              : AppColors.gray300)
                         : (isDark
                               ? Colors.white.withValues(alpha: 0.08)
-                              : const Color(0xFFE5E7EB)),
+                              : AppColors.gray200),
                   ),
             boxShadow: [
               BoxShadow(
@@ -170,7 +171,7 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                                           ? Colors.white
                                           : (isDark
                                                 ? Colors.white
-                                                : const Color(0xFF1F2937)),
+                                                : AppColors.gray800),
                                       shadows: hasBackground
                                           ? [
                                               Shadow(
@@ -196,7 +197,7 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                                             ? Colors.white70
                                             : (isDark
                                                   ? Colors.white54
-                                                  : const Color(0xFF6B7280)),
+                                                  : AppColors.gray500),
                                         shadows: hasBackground
                                             ? [
                                                 Shadow(
@@ -242,7 +243,7 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                                         ? Colors.white70
                                         : (isDark
                                               ? Colors.white38
-                                              : const Color(0xFF9CA3AF)),
+                                              : AppColors.gray400),
                                   ),
                                   iconSize: 16,
                                   splashRadius: 14,
@@ -266,7 +267,7 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                                       ? Colors.white70
                                       : (isDark
                                             ? Colors.white38
-                                            : const Color(0xFF9CA3AF)),
+                                            : AppColors.gray400),
                                 ),
                                 iconSize: 18,
                                 splashRadius: 14,
@@ -294,7 +295,7 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                                         ? Colors.white70
                                         : (isDark
                                               ? Colors.white30
-                                              : const Color(0xFFD1D5DB)),
+                                              : AppColors.gray300),
                                   ),
                                   iconSize: 16,
                                   splashRadius: 14,
@@ -335,14 +336,14 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
                   ? Colors.black.withValues(alpha: 0.4)
                   : (isDark
                         ? Colors.white.withValues(alpha: 0.1)
-                        : const Color(0xFFE5E7EB)),
+                        : AppColors.gray200),
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
                 color: hasBackground
                     ? Colors.white.withValues(alpha: 0.3)
                     : (isDark
                           ? Colors.white.withValues(alpha: 0.15)
-                          : const Color(0xFFD1D5DB)),
+                          : AppColors.gray300),
               ),
             ),
             child: Row(
@@ -378,13 +379,13 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: hasBackground
-            ? const Color(0xFF10B981).withValues(alpha: 0.3)
-            : const Color(0xFF10B981).withValues(alpha: 0.15),
+            ? AppColors.emerald500.withValues(alpha: 0.3)
+            : AppColors.emerald500.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
           color: hasBackground
-              ? const Color(0xFF10B981).withValues(alpha: 0.5)
-              : const Color(0xFF10B981).withValues(alpha: 0.3),
+              ? AppColors.emerald500.withValues(alpha: 0.5)
+              : AppColors.emerald500.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -393,7 +394,7 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
           Icon(
             Icons.check_circle_rounded,
             size: 13,
-            color: hasBackground ? Colors.white : const Color(0xFF10B981),
+            color: hasBackground ? Colors.white : AppColors.emerald500,
           ),
           const SizedBox(width: 4),
           Text(
@@ -401,7 +402,7 @@ class _MapSubscriptionCardState extends State<MapSubscriptionCard> {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: hasBackground ? Colors.white : const Color(0xFF10B981),
+              color: hasBackground ? Colors.white : AppColors.emerald500,
             ),
           ),
         ],
