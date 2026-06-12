@@ -10,7 +10,7 @@ import '../../../desktop/widgets/lobby/lobby_user_profile_panel.dart';
 /// 否则降级使用 [LobbyState.users]。
 /// 打开时自动触发 [LobbyOnlineStatsRequested] 获取全服在线列表。
 ///
-/// 支持搜索和状态筛选（全部/在线/游戏中/挤服中），与桌面端一致。
+/// 支持搜索和状态筛选（全部/在线/游戏中/挤服中/暖服中），与桌面端一致。
 class OnlinePlayersSheet extends StatefulWidget {
   const OnlinePlayersSheet({super.key});
 
@@ -22,7 +22,7 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  /// 状态筛选：null=全部, 'online'=在线, 'inGame'=游戏中, 'queuing'=挤服中
+  /// 状态筛选：null=全部, 'online'=在线, 'inGame'=游戏中, 'queuing'=挤服中, 'warming'=暖服中
   String? _statusFilter;
 
   @override
@@ -50,6 +50,7 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
       case 'online':
         return !status.contains('游戏中') &&
             !status.contains('挤服') &&
+            !status.contains('暖服') &&
             !status.contains('热身') &&
             !status.contains('主菜单');
       case 'inGame':
@@ -58,6 +59,8 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
             status.contains('主菜单');
       case 'queuing':
         return status.contains('挤服');
+      case 'warming':
+        return status.contains('暖服');
       default:
         return true;
     }
@@ -99,6 +102,7 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
           final countOnline = _countForFilter(searchedUsers, 'online');
           final countInGame = _countForFilter(searchedUsers, 'inGame');
           final countQueuing = _countForFilter(searchedUsers, 'queuing');
+          final countWarming = _countForFilter(searchedUsers, 'warming');
 
           final displayUsers =
               searchedUsers
@@ -128,6 +132,7 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
                   countOnline: countOnline,
                   countInGame: countInGame,
                   countQueuing: countQueuing,
+                  countWarming: countWarming,
                 ),
                 const Divider(height: 1, color: Colors.white10),
                 // 玩家列表
@@ -275,6 +280,7 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
     required int countOnline,
     required int countInGame,
     required int countQueuing,
+    required int countWarming,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -340,6 +346,8 @@ class _OnlinePlayersSheetState extends State<OnlinePlayersSheet> {
                 _buildFilterChip('inGame', '游戏中', countInGame),
                 const SizedBox(width: 6),
                 _buildFilterChip('queuing', '挤服中', countQueuing),
+                const SizedBox(width: 6),
+                _buildFilterChip('warming', '暖服中', countWarming),
               ],
             ),
           ),
