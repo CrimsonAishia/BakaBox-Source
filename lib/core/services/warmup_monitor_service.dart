@@ -73,7 +73,6 @@ class WarmupMonitorService {
     LogService.d('[WarmupMonitor] 服务已初始化（WS 驱动）');
   }
 
-  // ---- 实时频道 ----
 
   void _ensureRealtimeSubscribed() {
     if (_realtimeSubscribed) return;
@@ -137,23 +136,37 @@ class WarmupMonitorService {
       return;
     }
 
+    MapData? mapInfo;
     try {
-      _currentMapInfo = await _serverApi.getMapInfo(mapName);
+      mapInfo = await _serverApi.getMapInfo(mapName);
     } catch (_) {}
+    // await 期间又发生了换图，本次结果已过期，直接丢弃，避免覆盖新地图状态
+    if (mapName != _currentMapName) {
+      LogService.d('[WarmupMonitor] getMapInfo 返回时地图已变化，丢弃过期结果: $mapName');
+      return;
+    }
+    _currentMapInfo = mapInfo;
 
+    MapRuntimeData? runtime;
     try {
-      _currentMapRuntime = await _serverApi.getMapRuntime(apiAddress, mapName);
-      _currentMapRuntimeFetchedAt = DateTime.now().millisecondsSinceEpoch;
+      runtime = await _serverApi.getMapRuntime(apiAddress, mapName);
     } catch (e) {
       LogService.e('[WarmupMonitor] 获取地图运行时间失败', e);
-      _currentMapName = null;
+      if (mapName == _currentMapName) _currentMapName = null;
+      return;
+    }
+    // 同样校验：await 期间地图可能已经又变了
+    if (mapName != _currentMapName) {
+      LogService.d('[WarmupMonitor] getMapRuntime 返回时地图已变化，丢弃过期结果: $mapName');
       return;
     }
 
-    if (_currentMapRuntime == null) {
+    if (runtime == null) {
       _currentMapName = null;
       return;
     }
+    _currentMapRuntime = runtime;
+    _currentMapRuntimeFetchedAt = DateTime.now().millisecondsSinceEpoch;
 
     final warmupDuration = MapRuntimeUtils.getWarmupDuration(mapName);
     if (warmupDuration == null) return;
@@ -167,7 +180,6 @@ class WarmupMonitorService {
     LogService.d('[WarmupMonitor] 检测到热身: $mapName, runtime=$apiRuntime');
   }
 
-  // ---- 热身倒计时（轻量定时器，仅热身期间运行） ----
 
   void _startWarmupTimer() {
     _scheduler.cancel(_taskId);
@@ -232,7 +244,6 @@ class WarmupMonitorService {
     );
   }
 
-  // ---- 玩家状态联动 ----
 
   void _restoreStateFromConsoleLog() {
     if (!_gameStatusService.isGameRunning) return;
@@ -337,7 +348,6 @@ class WarmupMonitorService {
     }
   }
 
-  // ---- 公开 API ----
 
   /// 获取当前数据源（向外暴露用于诊断）
   String get dataSource => 'WS';
