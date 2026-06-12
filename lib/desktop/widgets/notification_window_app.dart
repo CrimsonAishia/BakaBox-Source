@@ -8,6 +8,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 
 import '../../core/bloc/settings/settings_state.dart';
+import '../../core/constants/operation_colors.dart';
 import '../../core/services/notification_window_service.dart';
 import '../../core/utils/map_utils.dart';
 import '../../core/widgets/disk_cached_image.dart';
@@ -790,32 +791,41 @@ class _NotificationCardState extends State<_NotificationCard> {
                   ),
                 ),
                 if (queueCount > 0 || warmupCount > 0)
-                  ShaderMask(
-                    shaderCallback: (bounds) {
-                      if (queueCount > 0 && warmupCount > 0) {
-                        return const LinearGradient(
-                          colors: [Colors.red, Colors.yellow],
-                        ).createShader(bounds);
-                      } else if (queueCount > 0) {
-                        return const LinearGradient(
-                          colors: [Colors.red, Colors.red],
-                        ).createShader(bounds);
-                      } else {
-                        return const LinearGradient(
-                          colors: [Colors.yellow, Colors.yellow],
-                        ).createShader(bounds);
-                      }
-                    },
-                    child: Text(
+                  if (queueCount > 0 && warmupCount > 0)
+                    ShaderMask(
+                      shaderCallback: (bounds) => OperationColors
+                          .queueWarmupGradient
+                          .createShader(bounds),
+                      child: Text(
+                        '+${queueCount + warmupCount}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          height: 1,
+                        ),
+                      ),
+                    )
+                  else if (queueCount > 0)
+                    Text(
                       '+${queueCount + warmupCount}',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: OperationColors.queue, // 红色 - 挤服
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        height: 1,
+                      ),
+                    )
+                  else
+                    Text(
+                      '+${queueCount + warmupCount}',
+                      style: const TextStyle(
+                        color: OperationColors.warmup, // 黄色 - 暖服
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         height: 1,
                       ),
                     ),
-                  ),
                 // 斜杠（灰色）
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 2),
