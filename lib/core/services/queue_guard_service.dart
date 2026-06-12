@@ -64,7 +64,6 @@ class QueueGuardEvent {
 /// - 失败原因未严格分类
 /// - 多线程冗余触发
 ///
-/// 详见 `.kiro/specs/queue-guard/design.md`。
 class QueueGuardService {
   static final QueueGuardService _instance = QueueGuardService._internal();
   factory QueueGuardService() => _instance;

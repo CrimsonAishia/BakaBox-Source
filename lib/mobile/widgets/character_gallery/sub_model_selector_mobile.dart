@@ -9,7 +9,6 @@ import '../../../desktop/widgets/character_gallery/character_gallery_theme.dart'
 ///
 /// 显示水平滚动的子模型卡片列表，支持选中状态和切换。
 ///
-/// **Validates: Requirements 4.5, 4.6**
 class SubModelSelectorMobile extends StatelessWidget {
   /// 子模型列表
   final List<CharacterSubModel> subModels;

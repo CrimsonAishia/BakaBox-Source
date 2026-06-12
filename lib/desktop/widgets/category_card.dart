@@ -5,7 +5,6 @@ import '../../core/utils/category_utils.dart';
 /// 服务器分类卡片组件
 /// 显示分类图标、名称、服务器数量和在线人数
 ///
-/// Requirements: 2.1, 2.2, 2.3
 class CategoryCard extends StatelessWidget {
   final ServerCategory category;
   final bool isSelected;

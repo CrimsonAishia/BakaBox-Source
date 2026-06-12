@@ -6,7 +6,6 @@ import '../../core/utils/formatters.dart';
 /// 更新日志时间线项组件
 /// 以时间线形式展示日志项，支持选中状态高亮
 ///
-/// Requirements: 4.1
 class TimelineLogItem extends StatelessWidget {
   final SteamWorkChangeLog log;
   final int index;

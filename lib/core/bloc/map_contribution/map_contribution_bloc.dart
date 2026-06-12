@@ -11,7 +11,7 @@ import 'map_contribution_state.dart';
 ///
 /// 分别管理名称贡献和背景贡献两个独立列表
 /// 支持加载、提交、投票操作
-/// 贡献一旦提交无法删除（Requirements 6.1, 6.2）
+/// 贡献一旦提交无法删除
 class MapContributionBloc
     extends Bloc<MapContributionEvent, MapContributionState> {
   final MapContributionApi _api = MapContributionApi();
@@ -44,7 +44,6 @@ class MapContributionBloc
   }
 
   /// 对贡献列表排序：按票数降序，相同票数按时间升序
-  /// Requirements 4.1, 4.3
   List<MapContribution> _sortContributions(
     List<MapContribution> contributions,
   ) {
@@ -58,7 +57,6 @@ class MapContributionBloc
   }
 
   /// 加载名称贡献列表
-  /// Requirements 1.1, 5.1
   Future<void> _onLoadNameContributions(
     LoadNameContributions event,
     Emitter<MapContributionState> emit,
@@ -86,7 +84,6 @@ class MapContributionBloc
   }
 
   /// 加载背景贡献列表
-  /// Requirements 2.1, 5.1
   Future<void> _onLoadBackgroundContributions(
     LoadBackgroundContributions event,
     Emitter<MapContributionState> emit,
@@ -158,7 +155,6 @@ class MapContributionBloc
   }
 
   /// 提交名称贡献
-  /// Requirements 1.1, 1.2, 1.3, 1.4
   Future<void> _onSubmitNameContribution(
     SubmitNameContribution event,
     Emitter<MapContributionState> emit,
@@ -189,7 +185,6 @@ class MapContributionBloc
   }
 
   /// 提交背景贡献
-  /// Requirements 2.1, 2.2, 2.3, 2.4
   Future<void> _onSubmitBackgroundContribution(
     SubmitBackgroundContribution event,
     Emitter<MapContributionState> emit,
@@ -348,7 +343,6 @@ class MapContributionBloc
   }
 
   /// 投票/取消投票
-  /// Requirements 3.1, 3.2, 3.3, 3.4
   Future<void> _onToggleVote(
     ToggleVote event,
     Emitter<MapContributionState> emit,

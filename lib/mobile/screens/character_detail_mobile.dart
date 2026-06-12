@@ -484,7 +484,6 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
   }
 
   /// 构建符卡区域（東方角色）
-  /// **Validates: Requirements 4.8, 5.1, 5.4**
   Widget _buildSpellCardsSection(CharacterGalleryState state) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -579,7 +578,6 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
   }
 
   /// 构建符卡加载骨架屏
-  /// **Validates: Requirements 5.4**
   Widget _buildSpellCardsSkeleton() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -666,7 +664,6 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
   }
 
   /// 构建分组显示的符卡列表
-  /// **Validates: Requirements 5.1**
   Widget _buildSpellCardsGrouped(List<SpellCard> spellCards) {
     // 按类型分组
     final passiveCards = spellCards
@@ -776,7 +773,6 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
   }
 
   /// 构建技能区域（僵尸角色）
-  /// **Validates: Requirements 4.9, 6.1**
   Widget _buildZombieSkillsSection(CharacterGalleryState state) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -896,7 +892,6 @@ class _CharacterDetailMobileState extends State<CharacterDetailMobile> {
   }
 
   /// 构建分组显示的僵尸技能列表
-  /// **Validates: Requirements 6.1**
   Widget _buildZombieSkillsGrouped(List<ZombieSkill> skills) {
     // 按类型分组
     final passiveSkills = skills
