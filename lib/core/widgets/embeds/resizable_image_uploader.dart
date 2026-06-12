@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../../api/api_client.dart';
 import '../../services/file_upload_service.dart';
 import '../../services/image_url_service.dart';
 import '../../utils/file_validation_utils.dart';
@@ -123,6 +125,134 @@ class ResizableImageUploader {
         } catch (_) {}
       }
     }
+  }
+
+  /// 从网络 URL 下载图片并插入
+  ///
+  /// 下载图片字节后，按文件头自动识别真实格式（保留动图 gif/webp 的动画），
+  /// 再走与本地图片一致的「上传到图床 → 插入 resizableImage」流程，
+  /// 确保正文图片统一为 fileId 引用，便于签名与缓存。
+  ///
+  /// 返回 fileId 引用（成功）或 null（失败/取消）。
+  static Future<String?> downloadAndInsert(
+    String url,
+    QuillController controller, {
+    int maxImages = 100,
+    void Function(String message)? onError,
+    void Function(String message)? onSuccess,
+    void Function(String message)? onLimitReached,
+  }) async {
+    final trimmed = url.trim();
+    if (trimmed.isEmpty) {
+      onError?.call('请输入图片链接');
+      return null;
+    }
+
+    final uri = Uri.tryParse(trimmed);
+    if (uri == null || !(uri.scheme == 'http' || uri.scheme == 'https')) {
+      onError?.call('请输入有效的图片链接（http/https）');
+      return null;
+    }
+
+    // 数量限制（下载前先判断，避免无谓的网络请求）
+    if (countImages(controller.document) >= maxImages) {
+      onLimitReached?.call('图片数量已达上限（$maxImages 张）');
+      return null;
+    }
+
+    File? tempFile;
+    try {
+      final response = await ApiClient.instance.dio.get<List<int>>(
+        trimmed,
+        options: Options(
+          responseType: ResponseType.bytes,
+          receiveTimeout: const Duration(seconds: 20),
+        ),
+      );
+
+      if (response.statusCode != 200 || response.data == null) {
+        onError?.call('图片下载失败（${response.statusCode}）');
+        return null;
+      }
+
+      final bytes = Uint8List.fromList(response.data!);
+      final extension = _detectImageExtension(bytes);
+      if (extension == null) {
+        onError?.call('链接内容不是有效的图片');
+        return null;
+      }
+
+      final tempDir = await getTemporaryDirectory();
+      tempFile = File(
+        '${tempDir.path}/rte_net_${DateTime.now().millisecondsSinceEpoch}.$extension',
+      );
+      await tempFile.writeAsBytes(bytes);
+
+      return await uploadAndInsert(
+        tempFile,
+        controller,
+        maxImages: maxImages,
+        onError: onError,
+        onSuccess: onSuccess,
+        onLimitReached: onLimitReached,
+      );
+    } on DioException catch (e) {
+      LogService.e('下载网络图片失败', e);
+      onError?.call('图片下载失败: ${getErrorMessage(e)}');
+      return null;
+    } catch (e) {
+      LogService.e('插入网络图片失败', e);
+      onError?.call('插入网络图片失败: ${getErrorMessage(e)}');
+      return null;
+    } finally {
+      if (tempFile != null) {
+        try {
+          await tempFile.delete();
+        } catch (_) {}
+      }
+    }
+  }
+
+  /// 按文件头（魔数）识别图片格式，返回扩展名；非图片返回 null。
+  ///
+  /// 支持 png / jpg / gif / webp / bmp，动图（gif / 动态 webp）格式被原样保留。
+  static String? _detectImageExtension(Uint8List bytes) {
+    if (bytes.length < 12) return null;
+
+    // PNG: 89 50 4E 47
+    if (bytes[0] == 0x89 &&
+        bytes[1] == 0x50 &&
+        bytes[2] == 0x4E &&
+        bytes[3] == 0x47) {
+      return 'png';
+    }
+    // JPEG: FF D8 FF
+    if (bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) {
+      return 'jpg';
+    }
+    // GIF: 47 49 46 38 (GIF8)
+    if (bytes[0] == 0x47 &&
+        bytes[1] == 0x49 &&
+        bytes[2] == 0x46 &&
+        bytes[3] == 0x38) {
+      return 'gif';
+    }
+    // WebP: RIFF....WEBP
+    if (bytes[0] == 0x52 &&
+        bytes[1] == 0x49 &&
+        bytes[2] == 0x46 &&
+        bytes[3] == 0x46 &&
+        bytes[8] == 0x57 &&
+        bytes[9] == 0x45 &&
+        bytes[10] == 0x42 &&
+        bytes[11] == 0x50) {
+      return 'webp';
+    }
+    // BMP: 42 4D (BM)
+    if (bytes[0] == 0x42 && bytes[1] == 0x4D) {
+      return 'bmp';
+    }
+    return null;
   }
 
   /// 仅上传文件，返回 fileId 引用，不插入文档（用于替换图片场景）
