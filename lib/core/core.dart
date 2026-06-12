@@ -99,6 +99,7 @@ export 'utils/screen_wakelock.dart';
 export 'constants/api_constants.dart';
 export 'constants/app_constants.dart';
 export 'constants/fallback_data.dart';
+export 'constants/operation_colors.dart';
 
 // Widgets
 export 'services/app_exit_service.dart';
