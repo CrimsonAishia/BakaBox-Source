@@ -563,6 +563,18 @@ class WarmupBloc extends Bloc<WarmupEvent, WarmupBlocState> {
       }
     }
 
+    // 暖服状态从 warming 掉回 idle 时，必须同步断开暖服 WebSocket。
+    // 否则会出现"达标/掉出暖服状态、status 已是 idle，但 socket 仍连着"的悬空态
+    // （达标检查有 `status == warming` 前置，idle 后不会再触发断开），
+    // 表现为服务器人数已超目标、该用户本不应再暖服，连接却一直挂着。
+    // 断开事件是幂等的：若来源本身已走 pauseWarmup（如悬浮卡片"停止"）则为无害的重复请求。
+    if (state.status == WarmupStatus.warming &&
+        status == WarmupStatus.idle) {
+      final usersBloc = WarmupUsersBloc.instance;
+      usersBloc.add(const WarmupUsersLeave());
+      usersBloc.add(const WarmupUsersDisconnect());
+    }
+
     emit(state.copyWith(
       isGameRunning: serviceState.isGameRunning,
       status: status,
