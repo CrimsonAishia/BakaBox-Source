@@ -129,3 +129,8 @@ export 'guide_mine/guide_mine_state.dart';
 export 'guide_tag_suggest/guide_tag_suggest_bloc.dart';
 export 'guide_tag_suggest/guide_tag_suggest_event.dart';
 export 'guide_tag_suggest/guide_tag_suggest_state.dart';
+
+// Crash Report
+export 'crash_report/crash_report_bloc.dart';
+export 'crash_report/crash_report_event.dart';
+export 'crash_report/crash_report_state.dart';

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../core/bloc/key_binding/key_binding_bloc.dart';
 import '../../core/bloc/map_contribution/map_contribution_bloc.dart';
+import '../widgets/crash_report/crash_report_tool.dart';
 import '../widgets/key_binding/key_binding_tool.dart';
 import '../widgets/obs_tool/obs_tool.dart';
 import '../widgets/page_layout.dart';
@@ -85,6 +86,13 @@ class _ToolsScreenState extends State<ToolsScreen> {
       icon: MdiIcons.televisionGuide,
       isFullScreen: true,
     ),
+    _ToolItem(
+      id: 'crash_reports',
+      name: '崩溃报告',
+      description: '查看 CS2 崩溃分析',
+      icon: MdiIcons.alertOctagonOutline,
+      isFullScreen: true,
+    ),
   ];
 
   @override
@@ -162,6 +170,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
         );
       case 'obs_overlay':
         return const ObsTool();
+      case 'crash_reports':
+        return const CrashReportTool();
       default:
         return const Center(child: Text('工具未找到'));
     }

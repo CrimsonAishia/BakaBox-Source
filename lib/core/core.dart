@@ -23,6 +23,7 @@ export 'api/update_log_api.dart';
 export 'api/issue_api.dart';
 export 'api/guide_api.dart';
 export 'api/character_api.dart';
+export 'api/crash_report_api.dart';
 
 // Exceptions
 export 'exceptions/app_exception.dart';
@@ -37,6 +38,7 @@ export 'models/update_log_models.dart';
 export 'models/user_info.dart';
 export 'models/issue_models.dart';
 export 'models/character_models.dart';
+export 'models/crash_report_models.dart';
 export 'models/map_subscription_models.dart';
 export 'models/bilibili_content_models.dart';
 export 'models/guide_models.dart';

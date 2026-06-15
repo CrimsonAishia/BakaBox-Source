@@ -18,6 +18,7 @@ import '../core/services/server_address_mapping_service.dart';
 import 'router/desktop_router.dart';
 import '../core/services/console_log_service.dart';
 import '../core/services/cs2_crash_monitor_service.dart';
+import '../core/services/crash_report_uploader.dart';
 import '../core/services/map_change_monitor_service.dart';
 import '../core/services/update_log_monitor_service.dart';
 import '../core/services/warmup_monitor_service.dart';
@@ -222,6 +223,7 @@ class _DesktopAppHomeState extends State<DesktopAppHome> {
 
       // 启动 CS2 崩溃 (mdmp) 监控（依赖 GameStatusService 状态流）
       Cs2CrashMonitorService().initialize();
+      CrashReportUploader().initialize();
 
       // 初始化大厅素材 URL 缓存（需要在 LobbyNakamaService 之前初始化）
       await LobbyAssetCacheService.instance.init();
