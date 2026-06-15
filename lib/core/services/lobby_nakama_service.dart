@@ -1022,10 +1022,7 @@ class LobbyNakamaService {
         // 匿名用户或未登录：直接发 enter，然后请求 snapshot
         LogService.d('[LobbyNakamaService] 匿名用户，发送 enter 进入大厅');
         unawaited(sendEnter());
-        // 弱网模式不渲染场景，跳过 snapshot（省流量）；enter 已携带 low_bandwidth
-        if (!NetworkModeService.instance.weakNetwork) {
-          unawaited(requestSnapshot());
-        }
+        unawaited(requestSnapshot());
       }
     }
 
@@ -1037,10 +1034,7 @@ class LobbyNakamaService {
           '[LobbyNakamaService] 收到 login.success（前厅内），发送 enter 进入大厅',
         );
         unawaited(sendEnter());
-        // 弱网模式不渲染场景，跳过 snapshot（省流量）
-        if (!NetworkModeService.instance.weakNetwork) {
-          unawaited(requestSnapshot());
-        }
+        unawaited(requestSnapshot());
       }
     }
 
@@ -1052,10 +1046,7 @@ class LobbyNakamaService {
           '[LobbyNakamaService] 收到 login.failed（前厅内），以匿名身份发送 enter 进入大厅',
         );
         unawaited(sendEnter());
-        // 弱网模式不渲染场景，跳过 snapshot（省流量）
-        if (!NetworkModeService.instance.weakNetwork) {
-          unawaited(requestSnapshot());
-        }
+        unawaited(requestSnapshot());
       }
     }
 
