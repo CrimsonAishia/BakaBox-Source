@@ -152,7 +152,9 @@ class AppSettingItem extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: value!,
                 ),
-              ),
+              )
+            else
+              const Spacer(),
             action,
           ],
         ),
