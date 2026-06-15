@@ -71,8 +71,13 @@ class GuideListBloc extends Bloc<GuideListEvent, GuideListState> {
     Emitter<GuideListState> emit,
   ) async {
     if (event.reset) {
+      // 重置加载（首屏 / 切换分类 / 搜索 / 排序 / 重试）时清空旧列表，
+      // 立即切到骨架屏，避免在加载新分类期间仍停留显示上一分类的卡片，
+      // 造成「先显示旧内容、再跳到新内容」的突兀闪烁。
       emit(state.copyWith(
         status: GuideListStatus.loading,
+        items: const [],
+        pinned: const [],
         clearError: true,
         currentPage: 1,
       ));
