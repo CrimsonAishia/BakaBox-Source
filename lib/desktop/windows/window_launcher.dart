@@ -42,11 +42,6 @@ class DesktopWindowLauncher {
       onPlatformInit: () => windowManager.ensureInitialized(),
     );
 
-    // 初始化 WebView2 环境（必须在 AppDirectoryService.init 之后、
-    // 创建任何 InAppWebView 之前），将缓存指向可写的项目缓存目录，
-    // 避免安装在 Program Files 等只读目录时无法写入。
-    await WebViewEnvironmentService.init();
-
     // 获取当前窗口控制器
     final controller = await WindowController.fromCurrentEngine();
 
@@ -54,6 +49,14 @@ class DesktopWindowLauncher {
     final isMainWindow = controller.arguments.isEmpty;
 
     if (isMainWindow) {
+      // 仅主窗口使用 WebView（QQ 登录、验证码、视频内嵌等），
+      // 子窗口（悬浮窗、通知、预览）不创建 WebView，无需初始化环境，
+      // 避免多开 WebView2 进程浪费内存。
+      //
+      // 初始化必须在 AppDirectoryService.init 之后、创建任何 InAppWebView
+      // 之前，将缓存指向可写的项目缓存目录，避免安装在 Program Files 等
+      // 只读目录时无法写入。仅主窗口执行也避免了多窗口并发迁移的竞态。
+      await WebViewEnvironmentService.init();
       await MainWindowLauncher.launch(controller);
     } else if (PositionPreviewConfig.isPositionPreviewWindow(
       controller.arguments,
