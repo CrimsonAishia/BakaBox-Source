@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/webview_environment_service.dart';
 
 /// 顶象验证码对话框
 /// 加载论坛登录页面，通过 JS 注入隐藏其他元素只显示验证码，
@@ -285,6 +286,7 @@ class _CaptchaDialogState extends State<CaptchaDialog> {
       child: Stack(
         children: [
           InAppWebView(
+            webViewEnvironment: WebViewEnvironmentService.environment,
             initialSettings: InAppWebViewSettings(
               transparentBackground: true,
               disableContextMenu: true,

@@ -8,6 +8,7 @@ import '../../core/bloc/auth/auth_state.dart';
 import '../../core/utils/toast_utils.dart';
 import '../../core/utils/log_service.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/webview_environment_service.dart';
 
 /// QQ WebView 登录对话框
 class QQLoginDialog extends StatefulWidget {
@@ -420,6 +421,8 @@ class _QQLoginDialogState extends State<QQLoginDialog> {
                   children: [
                     if (_isInitialized)
                       InAppWebView(
+                        webViewEnvironment:
+                            WebViewEnvironmentService.environment,
                         initialUrlRequest: URLRequest(url: WebUri(_forumQQLoginUrl)),
                         initialSettings: InAppWebViewSettings(
                           userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
