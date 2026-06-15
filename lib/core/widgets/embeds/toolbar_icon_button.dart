@@ -3,14 +3,16 @@ import '../../constants/app_colors.dart';
 
 /// 工具栏图标按钮通用外壳
 ///
-/// 与 quill 内置工具栏按钮在视觉尺寸/圆角/hover 反馈上保持一致：
-/// - 28×28 命中区
-/// - hover 时填充浅色背景 + 描边色加深
-/// - 禁用时降低不透明度
+/// 直接复用 Material [IconButton]，并套用与 flutter_quill 内置工具栏按钮
+/// （[QuillToolbarIconButton] → [QuillIconTheme]）**完全一致**的 [ButtonStyle]：
+/// - 32×32 命中区、圆角 6
+/// - hover 时通过 `overlayColor` 叠加浅色高亮（而非自绘背景），与官方按钮的
+///   涟漪/高亮反馈机制相同，避免出现「颜色/尺寸/动画不一致」的问题
+/// - 图标颜色固定为工具栏二级文本色，不随 hover 变色（与官方一致）
+/// - 禁用时使用更浅的禁用色
 ///
-/// 给攻略编辑器中三个自定义按钮（插入图片 / 插入引用 / 插入 B 站视频）使用，
-/// 解决「相对 quill 自带按钮没有 hover 反馈」的问题。
-class ToolbarIconButton extends StatefulWidget {
+/// 供攻略编辑器的自定义按钮（插入图片 / 插入引用 / B站视频 / 分割线 / 文字色 / 背景色）使用。
+class ToolbarIconButton extends StatelessWidget {
   /// 图标
   final IconData icon;
 
@@ -29,6 +31,12 @@ class ToolbarIconButton extends StatefulWidget {
   /// 是否处于「禁用」外观（如已达图片上限）。比 onTap=null 多一层提示色。
   final bool disabled;
 
+  /// 图标尺寸（默认 16，与工具栏其它按钮一致）
+  final double iconSize;
+
+  /// 按钮命中区尺寸（默认 32，与工具栏其它按钮一致）
+  final double buttonSize;
+
   const ToolbarIconButton({
     super.key,
     required this.icon,
@@ -37,76 +45,61 @@ class ToolbarIconButton extends StatefulWidget {
     this.color,
     this.loading = false,
     this.disabled = false,
+    this.iconSize = 16,
+    this.buttonSize = 32,
   });
-
-  @override
-  State<ToolbarIconButton> createState() => _ToolbarIconButtonState();
-}
-
-class _ToolbarIconButtonState extends State<ToolbarIconButton> {
-  bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final disabled = widget.disabled || widget.onTap == null;
+    final isDisabled = disabled || onTap == null || loading;
 
-    final defaultColor = isDark
-        ? AppColors.slate400
-        : AppColors.slate500;
-    final disabledColor =
-        isDark ? AppColors.slate600 : AppColors.slate300;
+    final defaultColor = isDark ? AppColors.slate400 : AppColors.slate500;
+    final disabledColor = isDark ? AppColors.slate600 : AppColors.slate300;
+    final iconColor =
+        isDisabled ? disabledColor : (color ?? defaultColor);
 
-    final iconColor = disabled
-        ? disabledColor
-        : (_hover
-            ? (isDark ? Colors.white : AppColors.primary)
-            : (widget.color ?? defaultColor));
-
+    // 与 RichTextEditor._buildIconTheme 中官方按钮的 hover overlay 完全一致
     final hoverBg = isDark
         ? Colors.white.withValues(alpha: 0.08)
         : const Color(0xFFEFF6FF);
 
-    return Tooltip(
-      message: widget.tooltip,
-      waitDuration: const Duration(milliseconds: 400),
-      child: MouseRegion(
-        cursor: disabled ? SystemMouseCursors.basic : SystemMouseCursors.click,
-        onEnter: (_) {
-          if (!disabled) setState(() => _hover = true);
-        },
-        onExit: (_) {
-          if (_hover) setState(() => _hover = false);
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: !disabled && _hover ? hoverBg : Colors.transparent,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(6),
-              onTap: disabled ? null : widget.onTap,
-              child: Center(
-                child: widget.loading
-                    ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.primary,
-                        ),
-                      )
-                    : Icon(widget.icon, size: 16, color: iconColor),
-              ),
-            ),
-          ),
-        ),
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: isDisabled ? null : onTap,
+      iconSize: iconSize,
+      padding: EdgeInsets.zero,
+      visualDensity: VisualDensity.compact,
+      constraints: BoxConstraints(
+        minWidth: buttonSize,
+        maxWidth: buttonSize,
+        minHeight: buttonSize,
+        maxHeight: buttonSize,
       ),
+      style: ButtonStyle(
+        padding: WidgetStateProperty.all(EdgeInsets.zero),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+        shape: WidgetStateProperty.all(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        ),
+        overlayColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.hovered)) {
+            return hoverBg;
+          }
+          return null;
+        }),
+      ),
+      icon: loading
+          ? const SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.primary,
+              ),
+            )
+          : Icon(icon, color: iconColor),
     );
   }
 }

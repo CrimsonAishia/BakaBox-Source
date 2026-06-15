@@ -505,6 +505,10 @@ class RichTextEditorState extends State<RichTextEditor> {
       if (advanced) ...[
         QuillToolbarFontSizeButton(
           controller: widget.controller,
+          // FontSizeButtonOptions 不转发 iconTheme，改由 baseOptions 提供，
+          baseOptions: QuillToolbarBaseButtonOptions(
+            iconTheme: _getDropdownIconTheme(isDark),
+          ),
           options: QuillToolbarFontSizeButtonOptions(
             tooltip: '字号',
             iconSize: widget.toolbarIconSize,
