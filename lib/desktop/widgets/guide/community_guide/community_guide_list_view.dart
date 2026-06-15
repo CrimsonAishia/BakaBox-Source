@@ -41,6 +41,24 @@ class _CommunityGuideListViewState extends State<CommunityGuideListView> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
 
+  /// 列表「代」标识。每当筛选条件（分类/标签/地图）、关键词或排序变化时自增，
+  /// 用作卡片入场动画的 key，让切换分类时整屏卡片重新淡入，避免硬切换的突兀感。
+  int _generation = 0;
+
+  /// 计算当前列表的筛选签名。
+  String _signatureOf(GuideListState s) {
+    final f = s.filter;
+    return [
+      f.category ?? '',
+      (f.tags ?? const []).join(','),
+      f.mapName ?? '',
+      f.hasVideo?.toString() ?? '',
+      f.authorId?.toString() ?? '',
+      s.keyword,
+      s.sortBy.name,
+    ].join('|');
+  }
+
   @override
   void initState() {
     super.initState();
@@ -102,12 +120,20 @@ class _CommunityGuideListViewState extends State<CommunityGuideListView> {
           ),
           // 列表主体单独订阅 GuideListBloc，仅在列表数据变化时重建
           // （工具栏内部各自订阅自己关心的 Bloc，互不干扰）
-          BlocBuilder<GuideListBloc, GuideListState>(
-            builder: (context, listState) {
-              return SliverMainAxisGroup(
-                slivers: _buildBodySlivers(context, listState),
-              );
+          BlocListener<GuideListBloc, GuideListState>(
+            listenWhen: (prev, curr) =>
+                _signatureOf(prev) != _signatureOf(curr),
+            listener: (context, state) {
+              // 筛选条件变化（切换分类/搜索/排序）时自增代号，触发整屏卡片重新淡入。
+              setState(() => _generation++);
             },
+            child: BlocBuilder<GuideListBloc, GuideListState>(
+              builder: (context, listState) {
+                return SliverMainAxisGroup(
+                  slivers: _buildBodySlivers(context, listState),
+                );
+              },
+            ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 60)),
         ],
@@ -181,10 +207,17 @@ class _CommunityGuideListViewState extends State<CommunityGuideListView> {
               // 它的 Fade/Slide 过渡会让子项在进入视口时改变可见尺寸，
               // 触发 SliverMasonryGrid 在 line 624 的
               // estimatedMaxScrollOffset >= endScrollOffset - leadingScrollOffset 断言。
-              return CommunityGuideCard(
-                key: ValueKey('guide_card_${item.id}'),
-                item: item,
-                onTap: () => widget.onViewDetail(item.id),
+              //
+              // 这里的入场动画用 _CardEntrance：它只对绘制做透明度 + 位移变换，
+              // 不改变子项布局尺寸，因此不会触发上述断言。切换分类时 _generation
+              // 自增 → key 变化 → 动画从头播放，实现整屏淡入。
+              return _CardEntrance(
+                key: ValueKey('guide_card_g${_generation}_${item.id}'),
+                index: index,
+                child: CommunityGuideCard(
+                  item: item,
+                  onTap: () => widget.onViewDetail(item.id),
+                ),
               );
             },
           ),
@@ -237,9 +270,7 @@ class _CommunityGuideListViewState extends State<CommunityGuideListView> {
   }
 }
 
-// ===========================================================================
 // 错误 / 空 状态
-// ===========================================================================
 
 class _ErrorState extends StatelessWidget {
   final String? error;
@@ -312,6 +343,74 @@ class _EmptyState extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// 卡片入场动画
+
+/// 卡片入场动画包装器。
+///
+/// 仅对绘制做透明度 + 轻微上移变换（不改变布局尺寸），因此可以安全地用在
+/// [SliverMasonryGrid] 内部，不会触发其布局断言。
+///
+/// 按 [index] 错开起始时间，形成自上而下的瀑布式淡入；切换分类时外层通过
+/// 改变 key 让本组件重建，从而重新播放动画。
+class _CardEntrance extends StatefulWidget {
+  final int index;
+  final Widget child;
+
+  const _CardEntrance({
+    super.key,
+    required this.index,
+    required this.child,
+  });
+
+  @override
+  State<_CardEntrance> createState() => _CardEntranceState();
+}
+
+class _CardEntranceState extends State<_CardEntrance>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 360),
+    );
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
+
+    // 按卡片序号错开起播，最多累计 300ms，避免列表很长时延迟过久。
+    final delayMs = (widget.index * 45).clamp(0, 300);
+    Future.delayed(Duration(milliseconds: delayMs), () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _animation.value,
+          child: Transform.translate(
+            offset: Offset(0, (1 - _animation.value) * 16),
+            child: child,
+          ),
+        );
+      },
+      child: widget.child,
     );
   }
 }
