@@ -20,7 +20,7 @@ import '../../constants/app_colors.dart';
 /// final selected = await GuideMapPickerSheet.show(context, current: currentMap);
 /// ```
 class GuideMapPickerSheet extends StatefulWidget {
-  /// 当前已选中的地图（用于显示「移除关联」按钮）
+  /// 当前已选中的地图（不为空时在标题栏显示「移除关联」按钮）
   final MapInfo? current;
 
   const GuideMapPickerSheet({
@@ -38,8 +38,8 @@ class GuideMapPickerSheet extends StatefulWidget {
       builder: (context) => GuideMapPickerSheet(current: current),
     );
 
-    if (result == null) return current; // 取消，保持原值
-    return result.selected; // 选择了新地图
+    if (result == null) return current; // 取消（点遮罩/关闭按钮），保持原值
+    return result.selected; // 选择了新地图，或清空关联（selected == null）
   }
 
   @override
@@ -49,7 +49,11 @@ class GuideMapPickerSheet extends StatefulWidget {
 class _PickerResult {
   final MapInfo? selected;
 
+  /// 选择了一张地图
   const _PickerResult.select(MapInfo map) : selected = map;
+
+  /// 清空关联（区别于「取消」：会让 [show] 返回 null）
+  const _PickerResult.clear() : selected = null;
 }
 
 // ─── 视觉常量（与编辑器一致的风格，支持亮/暗主题）────────────────────────
@@ -173,6 +177,11 @@ class _GuideMapPickerSheetState extends State<GuideMapPickerSheet> {
     Navigator.of(context).pop(_PickerResult.select(map));
   }
 
+  /// 清空当前关联地图
+  void _clearSelection() {
+    Navigator.of(context).pop(const _PickerResult.clear());
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = _T.of(context);
@@ -225,7 +234,28 @@ class _GuideMapPickerSheetState extends State<GuideMapPickerSheet> {
             letterSpacing: 0.3,
           ),
         ),
-        _CloseButton(onTap: () => Navigator.of(context).pop()),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 已有关联时才显示「移除关联」入口
+            if (widget.current != null) ...[
+              TextButton.icon(
+                onPressed: _clearSelection,
+                icon: const Icon(Icons.link_off, size: 16),
+                label: const Text('移除关联'),
+                style: TextButton.styleFrom(
+                  foregroundColor: colors.textSecondary,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  textStyle: const TextStyle(fontSize: 13),
+                ),
+              ),
+              const SizedBox(width: 4),
+            ],
+            _CloseButton(onTap: () => Navigator.of(context).pop()),
+          ],
+        ),
       ],
     );
   }
