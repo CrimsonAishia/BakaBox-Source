@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/models/guide_models.dart';
+import '../../../../core/utils/time_utils.dart';
 import '../../../../core/widgets/signed_network_image.dart';
 import 'community_guide_fallback.dart';
 import 'community_guide_format.dart';
@@ -80,12 +81,19 @@ class _CommunityGuideCardState extends State<CommunityGuideCard> {
                             right: 8,
                             child: CommunityGuidePinnedBadge(),
                           ),
+                        // 底部数据遮罩（浏览、点赞、收藏、评论）
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: _CardCoverStats(item: item),
+                        ),
                       ],
                     ),
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -121,7 +129,7 @@ class _CommunityGuideCardState extends State<CommunityGuideCard> {
                         maxItems: 2,
                       ),
                       const SizedBox(height: 10),
-                      _CardMetaRow(item: item),
+                      _CardAuthorRow(item: item),
                     ],
                   ),
                 ),
@@ -134,9 +142,7 @@ class _CommunityGuideCardState extends State<CommunityGuideCard> {
   }
 }
 
-// ===========================================================================
 // 置顶徽章
-// ===========================================================================
 
 class CommunityGuidePinnedBadge extends StatelessWidget {
   const CommunityGuidePinnedBadge({super.key});
@@ -175,9 +181,7 @@ class CommunityGuidePinnedBadge extends StatelessWidget {
   }
 }
 
-// ===========================================================================
 // 标签行
-// ===========================================================================
 
 class _CardTagRow extends StatelessWidget {
   final List<String> tags;
@@ -239,64 +243,54 @@ class _CardTagRow extends StatelessWidget {
   }
 }
 
-// ===========================================================================
-// 元信息行（作者、浏览数、点赞数）
-// ===========================================================================
+// 封面底部数据遮罩（浏览数居左，点赞 / 收藏 / 评论居右）
 
-class _CardMetaRow extends StatelessWidget {
+class _CardCoverStats extends StatelessWidget {
   final GuideListItem item;
 
-  const _CardMetaRow({required this.item});
+  const _CardCoverStats({required this.item});
 
   @override
   Widget build(BuildContext context) {
-    final colors = CommunityGuideColors.of(context);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 18, 10, 7),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: [
+            Colors.black.withValues(alpha: 0.8),
+            Colors.transparent,
+          ],
+        ),
+      ),
+      child: Row(
+        children: [
+          _stat(Icons.remove_red_eye, item.viewCount),
+          const Spacer(),
+          _stat(Icons.thumb_up, item.likeCount),
+          const SizedBox(width: 10),
+          _stat(Icons.star, item.favoriteCount),
+          const SizedBox(width: 10),
+          _stat(Icons.chat_bubble, item.commentCount),
+        ],
+      ),
+    );
+  }
+
+  Widget _stat(IconData icon, int count) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        CommunityGuideAuthorAvatar(
-          avatarUrl: item.authorAvatar,
-          fallbackId: item.authorId,
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            item.authorName,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: colors.textSecondary,
-            ),
-          ),
-        ),
-        Icon(
-          Icons.remove_red_eye_outlined,
-          size: 18,
-          color: colors.textTertiary,
-        ),
-        const SizedBox(width: 6),
+        Icon(icon, size: 14, color: Colors.white),
+        const SizedBox(width: 3),
         Text(
-          formatGuideCount(item.viewCount),
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: colors.textTertiary,
-          ),
-        ),
-        const SizedBox(width: 14),
-        Icon(
-          Icons.favorite,
-          size: 18,
-          color: colors.likeRed,
-        ),
-        const SizedBox(width: 6),
-        Text(
-          formatGuideCount(item.likeCount),
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: colors.textTertiary,
+          formatGuideCount(count),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
@@ -304,9 +298,75 @@ class _CardMetaRow extends StatelessWidget {
   }
 }
 
-// ===========================================================================
+// 作者信息行（左侧更新日期，右侧作者头像 + 名称）
+
+class _CardAuthorRow extends StatelessWidget {
+  final GuideListItem item;
+
+  const _CardAuthorRow({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = CommunityGuideColors.of(context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Flexible(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.schedule,
+                size: 14,
+                color: colors.textTertiary,
+              ),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  TimeUtils.formatDateTimeRelative(item.updatedAt),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: colors.textTertiary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  item.authorName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              CommunityGuideAuthorAvatar(
+                avatarUrl: item.authorAvatar,
+                fallbackId: item.authorId,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 // 作者头像
-// ===========================================================================
 
 class CommunityGuideAuthorAvatar extends StatelessWidget {
   final String? avatarUrl;
@@ -345,9 +405,7 @@ class CommunityGuideAuthorAvatar extends StatelessWidget {
   }
 }
 
-// ===========================================================================
 // 封面图
-// ===========================================================================
 
 class CommunityGuideCoverImage extends StatelessWidget {
   final String? coverUrl;
@@ -391,9 +449,7 @@ class CommunityGuideCoverImage extends StatelessWidget {
   }
 }
 
-// ===========================================================================
 // 卡片骨架屏
-// ===========================================================================
 
 class CommunityGuideCardSkeleton extends StatelessWidget {
   const CommunityGuideCardSkeleton({super.key});
