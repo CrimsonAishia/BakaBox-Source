@@ -11,6 +11,7 @@ import '../models/lobby_models.dart';
 import '../models/nakama_config.dart';
 import '../models/proto/lobby.pb.dart' as pb;
 import '../services/auth_service.dart';
+import '../services/network_mode_service.dart';
 import '../utils/device_id_helper.dart';
 import '../utils/log_service.dart';
 import '../utils/platform_utils.dart';
@@ -18,8 +19,6 @@ import '../utils/storage_utils.dart';
 import 'steam_user_service.dart';
 import 'token_service.dart';
 
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 
 /// Nakama REST 客户端管理器（内部使用）
 ///
@@ -197,8 +196,6 @@ class _NakamaClientManager {
   NakamaConfig? get config => _config;
 }
 
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 
 /// Nakama WebSocket 管理器（内部使用）
 ///
@@ -476,8 +473,6 @@ class _NakamaSocketManager {
   }
 }
 
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 
 /// 大厅 Nakama 服务
 ///
@@ -487,6 +482,10 @@ class LobbyNakamaService {
   LobbyNakamaService._() {
     // 注册 AuthService 登录状态监听器
     AuthService.instance.addLoginStateListener(_onAuthStateChanged);
+    // 监听弱网模式切换：大厅内实时联动开启/关闭高频下行裁剪
+    _networkModeSubscription = NetworkModeService.instance.changes.listen(
+      _onWeakNetworkChanged,
+    );
   }
 
   static final LobbyNakamaService instance = LobbyNakamaService._();
@@ -571,9 +570,18 @@ class LobbyNakamaService {
   /// 标记是否已发送 login 但尚未收到响应（防止前厅内重复发送 login）
   bool _isLoginPending = false;
 
-  // =========================================================================
+  // === 弱网模式 ===
+
+  /// 弱网模式切换监听
+  StreamSubscription<bool>? _networkModeSubscription;
+
+  /// 上次发送 mode.change 的时间（用于本地限流，服务端限流为 1 秒 1 次）
+  DateTime? _lastModeChangeSentAt;
+
+  /// mode.change 本地最小发送间隔（与服务端 1 秒限流对齐，留一点余量）
+  static const Duration _modeChangeMinInterval = Duration(milliseconds: 1100);
+
   // 事件流（与现有接口一致）
-  // =========================================================================
 
   /// WebSocket 事件流，支持新订阅者获取最新的 snapshot
   Stream<LobbyWsEvent> get events {
@@ -601,9 +609,7 @@ class LobbyNakamaService {
     _cachedEventsStream = null;
   }
 
-  // =========================================================================
   // 状态属性
-  // =========================================================================
 
   /// WebSocket 连接状态
   bool get isConnected => _isConnected;
@@ -632,9 +638,7 @@ class LobbyNakamaService {
     LogService.i('[LobbyNakamaService] 被踢状态已重置');
   }
 
-  // =========================================================================
   // AuthService 登录状态监听
-  // =========================================================================
 
   /// AuthService 登录状态监听器回调
   void _onAuthStateChanged(bool isLoggedIn) {
@@ -659,9 +663,7 @@ class LobbyNakamaService {
     }
   }
 
-  // =========================================================================
   // 生命周期
-  // =========================================================================
 
   /// 当前设备类型标识
   String get _deviceType => PlatformUtils.isMobile ? 'mobile' : 'pc';
@@ -742,6 +744,8 @@ class LobbyNakamaService {
     _matchEventSubscription = null;
     await _disconnectSubscription?.cancel();
     _disconnectSubscription = null;
+    await _networkModeSubscription?.cancel();
+    _networkModeSubscription = null;
 
     await _socketManager.dispose();
 
@@ -1001,6 +1005,12 @@ class LobbyNakamaService {
         _hasEnteredLobby = true; // 视为已进入大厅
         LogService.d('[LobbyNakamaService] 传送到达，跳过 enter，直接请求 snapshot');
         unawaited(requestSnapshot());
+        // 文档约束：传送走直连流程不经过 enter，新地图会话默认非弱网。
+        // 若本地仍处于弱网模式，需在新地图主动补发 mode.change 重新进入弱网。
+        if (NetworkModeService.instance.weakNetwork) {
+          LogService.d('[LobbyNakamaService] 传送到达且处于弱网模式，补发 mode.change(true)');
+          unawaited(sendModeChange(true));
+        }
       } else if (AuthService.instance.isLoggedIn && hasValidToken) {
         // 已登录：先发 login（携带匿名标志），等待 login.success 后再发 enter + snapshot.request
         LogService.d(
@@ -1012,7 +1022,10 @@ class LobbyNakamaService {
         // 匿名用户或未登录：直接发 enter，然后请求 snapshot
         LogService.d('[LobbyNakamaService] 匿名用户，发送 enter 进入大厅');
         unawaited(sendEnter());
-        unawaited(requestSnapshot());
+        // 弱网模式不渲染场景，跳过 snapshot（省流量）；enter 已携带 low_bandwidth
+        if (!NetworkModeService.instance.weakNetwork) {
+          unawaited(requestSnapshot());
+        }
       }
     }
 
@@ -1024,7 +1037,10 @@ class LobbyNakamaService {
           '[LobbyNakamaService] 收到 login.success（前厅内），发送 enter 进入大厅',
         );
         unawaited(sendEnter());
-        unawaited(requestSnapshot());
+        // 弱网模式不渲染场景，跳过 snapshot（省流量）
+        if (!NetworkModeService.instance.weakNetwork) {
+          unawaited(requestSnapshot());
+        }
       }
     }
 
@@ -1036,7 +1052,10 @@ class LobbyNakamaService {
           '[LobbyNakamaService] 收到 login.failed（前厅内），以匿名身份发送 enter 进入大厅',
         );
         unawaited(sendEnter());
-        unawaited(requestSnapshot());
+        // 弱网模式不渲染场景，跳过 snapshot（省流量）
+        if (!NetworkModeService.instance.weakNetwork) {
+          unawaited(requestSnapshot());
+        }
       }
     }
 
@@ -1385,26 +1404,82 @@ class LobbyNakamaService {
   /// 生成 traceId
   String _generateTraceId() => '${DateTime.now().microsecondsSinceEpoch}';
 
-  // =========================================================================
   // 消息发送方法 - 使用 Protobuf 类型
-  // =========================================================================
 
   /// 宣告正式进入大厅（两阶段进入协议第二步）
   ///
   /// 文档协议：joinMatch 成功并完成身份确认后，客户端必须发送此消息，
   /// 服务端才会将用户正式加入大厅并向其他人广播 presence.join。
   /// 传送到达时不需要发送（服务端自动跳过前厅）。
+  ///
+  /// 若当前处于弱网模式，入场即携带 low_bandwidth=true，服务端从一开始就
+  /// 不向本会话推送高频下行（move / presence），避免进入瞬间的在场风暴。
   Future<void> sendEnter() async {
     _hasEnteredLobby = true;
+    final weakNetwork = NetworkModeService.instance.weakNetwork;
     final envelope = pb.LobbyEnvelope()
       ..v = 1
       ..type = 'enter'
       ..traceId = _generateTraceId()
-      ..enterRequest = (pb.EnterRequest()..protocolFeatures = protocolFeatures);
+      ..enterRequest = (pb.EnterRequest()
+        ..protocolFeatures = protocolFeatures
+        ..lowBandwidth = weakNetwork);
     _sendEnvelope(envelope);
     LogService.i(
-      '[LobbyNakamaService] 已发送 enter（protocolFeatures=0x${protocolFeatures.toRadixString(16)}），正式进入大厅',
+      '[LobbyNakamaService] 已发送 enter（protocolFeatures=0x${protocolFeatures.toRadixString(16)}, lowBandwidth=$weakNetwork），正式进入大厅',
     );
+  }
+
+  /// 弱网模式切换回调（监听 NetworkModeService.changes）
+  ///
+  /// 仅在已进入大厅时联动；未进入大厅时无需发送（下次 sendEnter 会带上
+  /// 最新的 low_bandwidth 状态）。
+  void _onWeakNetworkChanged(bool weakNetwork) {
+    if (_isDisposed) return;
+    if (!_isConnected || !_hasEnteredLobby) {
+      LogService.d(
+        '[LobbyNakamaService] 弱网切换为 $weakNetwork，但尚未进入大厅，跳过 mode.change（由 enter 携带）',
+      );
+      return;
+    }
+    unawaited(sendModeChange(weakNetwork));
+  }
+
+  /// 运行时切换大厅弱网模式
+  ///
+  /// 文档协议：发送 mode.change { low_bandwidth }，服务端据此开启/关闭高频下行裁剪。
+  /// - 开启：无响应；本地已有用户列表仍有效，只是不再更新（move/presence 停推）。
+  /// - 关闭：服务端主动补发一次全量 snapshot（trace_id 为空），走既有 snapshot
+  ///   整表替换流程自动对齐，无需额外处理。
+  /// 本地限流 1 秒 1 次，避免触发服务端 429。
+  ///
+  /// 注意：本应用的状态文字（statusText）由 LobbyBloc 按游戏活动自动管理
+  /// （挤服中 / 暖服中 / 游戏中·地图 等），不在此处用"弱网模式"覆盖，
+  /// 避免与既有活动状态系统冲突。
+  Future<void> sendModeChange(bool lowBandwidth) async {
+    if (!_isConnected || !_hasEnteredLobby) {
+      LogService.w('[LobbyNakamaService] 未进入大厅，忽略 mode.change');
+      return;
+    }
+
+    // 本地限流：与服务端 1 秒 1 次对齐，避免被 429 拒绝导致状态不一致
+    final now = DateTime.now();
+    final last = _lastModeChangeSentAt;
+    if (last != null && now.difference(last) < _modeChangeMinInterval) {
+      final wait = _modeChangeMinInterval - now.difference(last);
+      LogService.d('[LobbyNakamaService] mode.change 限流，${wait.inMilliseconds}ms 后重发');
+      await Future.delayed(wait);
+      if (_isDisposed || !_isConnected || !_hasEnteredLobby) return;
+    }
+    _lastModeChangeSentAt = DateTime.now();
+
+    final envelope = pb.LobbyEnvelope()
+      ..v = 1
+      ..type = 'mode.change'
+      ..traceId = _generateTraceId()
+      ..modeChangeRequest = (pb.ModeChangeRequest()..lowBandwidth = lowBandwidth);
+    _sendEnvelope(envelope);
+    LogService.i('[LobbyNakamaService] 已发送 mode.change lowBandwidth=$lowBandwidth');
   }
 
   /// 发送移动请求
@@ -1685,9 +1760,7 @@ class LobbyNakamaService {
     }
   }
 
-  // =========================================================================
   // 本地设置方法
-  // =========================================================================
 
   String loadSelectedSpriteId({String fallback = 'sprite_01'}) {
     return StorageUtils.getString(
@@ -1736,9 +1809,7 @@ class LobbyNakamaService {
     }
   }
 
-  // =========================================================================
   // 传送门流程
-  // =========================================================================
 
   /// 处理传送门传送
   ///

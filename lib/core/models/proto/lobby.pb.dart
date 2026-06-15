@@ -31,6 +31,7 @@ enum LobbyEnvelope_Payload {
   onlineStatsRequest, 
   profileSteamBindRequest, 
   enterRequest, 
+  modeChangeRequest, 
   loginSuccessResponse, 
   loginFailedResponse, 
   logoutSuccessResponse, 
@@ -88,6 +89,7 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     OnlineStatsRequest? onlineStatsRequest,
     ProfileSteamBindRequest? profileSteamBindRequest,
     EnterRequest? enterRequest,
+    ModeChangeRequest? modeChangeRequest,
     LoginSuccessResponse? loginSuccessResponse,
     LoginFailedResponse? loginFailedResponse,
     LogoutSuccessResponse? logoutSuccessResponse,
@@ -180,6 +182,9 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     }
     if (enterRequest != null) {
       $result.enterRequest = enterRequest;
+    }
+    if (modeChangeRequest != null) {
+      $result.modeChangeRequest = modeChangeRequest;
     }
     if (loginSuccessResponse != null) {
       $result.loginSuccessResponse = loginSuccessResponse;
@@ -297,6 +302,7 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     23 : LobbyEnvelope_Payload.onlineStatsRequest,
     24 : LobbyEnvelope_Payload.profileSteamBindRequest,
     25 : LobbyEnvelope_Payload.enterRequest,
+    26 : LobbyEnvelope_Payload.modeChangeRequest,
     50 : LobbyEnvelope_Payload.loginSuccessResponse,
     51 : LobbyEnvelope_Payload.loginFailedResponse,
     52 : LobbyEnvelope_Payload.logoutSuccessResponse,
@@ -331,7 +337,7 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     0 : LobbyEnvelope_Payload.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'LobbyEnvelope', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
-    ..oo(0, [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80])
+    ..oo(0, [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80])
     ..a<$core.int>(1, _omitFieldNames ? '' : 'v', $pb.PbFieldType.O3)
     ..aOS(2, _omitFieldNames ? '' : 'type')
     ..aInt64(3, _omitFieldNames ? '' : 'ts')
@@ -352,6 +358,7 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
     ..aOM<OnlineStatsRequest>(23, _omitFieldNames ? '' : 'onlineStatsRequest', subBuilder: OnlineStatsRequest.create)
     ..aOM<ProfileSteamBindRequest>(24, _omitFieldNames ? '' : 'profileSteamBindRequest', subBuilder: ProfileSteamBindRequest.create)
     ..aOM<EnterRequest>(25, _omitFieldNames ? '' : 'enterRequest', subBuilder: EnterRequest.create)
+    ..aOM<ModeChangeRequest>(26, _omitFieldNames ? '' : 'modeChangeRequest', subBuilder: ModeChangeRequest.create)
     ..aOM<LoginSuccessResponse>(50, _omitFieldNames ? '' : 'loginSuccessResponse', subBuilder: LoginSuccessResponse.create)
     ..aOM<LoginFailedResponse>(51, _omitFieldNames ? '' : 'loginFailedResponse', subBuilder: LoginFailedResponse.create)
     ..aOM<LogoutSuccessResponse>(52, _omitFieldNames ? '' : 'logoutSuccessResponse', subBuilder: LogoutSuccessResponse.create)
@@ -623,347 +630,358 @@ class LobbyEnvelope extends $pb.GeneratedMessage {
   @$pb.TagNumber(25)
   EnterRequest ensureEnterRequest() => $_ensure(19);
 
+  @$pb.TagNumber(26)
+  ModeChangeRequest get modeChangeRequest => $_getN(20);
+  @$pb.TagNumber(26)
+  set modeChangeRequest(ModeChangeRequest v) { setField(26, v); }
+  @$pb.TagNumber(26)
+  $core.bool hasModeChangeRequest() => $_has(20);
+  @$pb.TagNumber(26)
+  void clearModeChangeRequest() => clearField(26);
+  @$pb.TagNumber(26)
+  ModeChangeRequest ensureModeChangeRequest() => $_ensure(20);
+
   /// 服务端 -> 客户端
   @$pb.TagNumber(50)
-  LoginSuccessResponse get loginSuccessResponse => $_getN(20);
+  LoginSuccessResponse get loginSuccessResponse => $_getN(21);
   @$pb.TagNumber(50)
   set loginSuccessResponse(LoginSuccessResponse v) { setField(50, v); }
   @$pb.TagNumber(50)
-  $core.bool hasLoginSuccessResponse() => $_has(20);
+  $core.bool hasLoginSuccessResponse() => $_has(21);
   @$pb.TagNumber(50)
   void clearLoginSuccessResponse() => clearField(50);
   @$pb.TagNumber(50)
-  LoginSuccessResponse ensureLoginSuccessResponse() => $_ensure(20);
+  LoginSuccessResponse ensureLoginSuccessResponse() => $_ensure(21);
 
   @$pb.TagNumber(51)
-  LoginFailedResponse get loginFailedResponse => $_getN(21);
+  LoginFailedResponse get loginFailedResponse => $_getN(22);
   @$pb.TagNumber(51)
   set loginFailedResponse(LoginFailedResponse v) { setField(51, v); }
   @$pb.TagNumber(51)
-  $core.bool hasLoginFailedResponse() => $_has(21);
+  $core.bool hasLoginFailedResponse() => $_has(22);
   @$pb.TagNumber(51)
   void clearLoginFailedResponse() => clearField(51);
   @$pb.TagNumber(51)
-  LoginFailedResponse ensureLoginFailedResponse() => $_ensure(21);
+  LoginFailedResponse ensureLoginFailedResponse() => $_ensure(22);
 
   @$pb.TagNumber(52)
-  LogoutSuccessResponse get logoutSuccessResponse => $_getN(22);
+  LogoutSuccessResponse get logoutSuccessResponse => $_getN(23);
   @$pb.TagNumber(52)
   set logoutSuccessResponse(LogoutSuccessResponse v) { setField(52, v); }
   @$pb.TagNumber(52)
-  $core.bool hasLogoutSuccessResponse() => $_has(22);
+  $core.bool hasLogoutSuccessResponse() => $_has(23);
   @$pb.TagNumber(52)
   void clearLogoutSuccessResponse() => clearField(52);
   @$pb.TagNumber(52)
-  LogoutSuccessResponse ensureLogoutSuccessResponse() => $_ensure(22);
+  LogoutSuccessResponse ensureLogoutSuccessResponse() => $_ensure(23);
 
   @$pb.TagNumber(53)
-  JoinSuccessResponse get joinSuccessResponse => $_getN(23);
+  JoinSuccessResponse get joinSuccessResponse => $_getN(24);
   @$pb.TagNumber(53)
   set joinSuccessResponse(JoinSuccessResponse v) { setField(53, v); }
   @$pb.TagNumber(53)
-  $core.bool hasJoinSuccessResponse() => $_has(23);
+  $core.bool hasJoinSuccessResponse() => $_has(24);
   @$pb.TagNumber(53)
   void clearJoinSuccessResponse() => clearField(53);
   @$pb.TagNumber(53)
-  JoinSuccessResponse ensureJoinSuccessResponse() => $_ensure(23);
+  JoinSuccessResponse ensureJoinSuccessResponse() => $_ensure(24);
 
   @$pb.TagNumber(54)
-  SnapshotResponse get snapshotResponse => $_getN(24);
+  SnapshotResponse get snapshotResponse => $_getN(25);
   @$pb.TagNumber(54)
   set snapshotResponse(SnapshotResponse v) { setField(54, v); }
   @$pb.TagNumber(54)
-  $core.bool hasSnapshotResponse() => $_has(24);
+  $core.bool hasSnapshotResponse() => $_has(25);
   @$pb.TagNumber(54)
   void clearSnapshotResponse() => clearField(54);
   @$pb.TagNumber(54)
-  SnapshotResponse ensureSnapshotResponse() => $_ensure(24);
+  SnapshotResponse ensureSnapshotResponse() => $_ensure(25);
 
   @$pb.TagNumber(55)
-  PresenceJoinResponse get presenceJoinResponse => $_getN(25);
+  PresenceJoinResponse get presenceJoinResponse => $_getN(26);
   @$pb.TagNumber(55)
   set presenceJoinResponse(PresenceJoinResponse v) { setField(55, v); }
   @$pb.TagNumber(55)
-  $core.bool hasPresenceJoinResponse() => $_has(25);
+  $core.bool hasPresenceJoinResponse() => $_has(26);
   @$pb.TagNumber(55)
   void clearPresenceJoinResponse() => clearField(55);
   @$pb.TagNumber(55)
-  PresenceJoinResponse ensurePresenceJoinResponse() => $_ensure(25);
+  PresenceJoinResponse ensurePresenceJoinResponse() => $_ensure(26);
 
   @$pb.TagNumber(56)
-  PresenceLeaveResponse get presenceLeaveResponse => $_getN(26);
+  PresenceLeaveResponse get presenceLeaveResponse => $_getN(27);
   @$pb.TagNumber(56)
   set presenceLeaveResponse(PresenceLeaveResponse v) { setField(56, v); }
   @$pb.TagNumber(56)
-  $core.bool hasPresenceLeaveResponse() => $_has(26);
+  $core.bool hasPresenceLeaveResponse() => $_has(27);
   @$pb.TagNumber(56)
   void clearPresenceLeaveResponse() => clearField(56);
   @$pb.TagNumber(56)
-  PresenceLeaveResponse ensurePresenceLeaveResponse() => $_ensure(26);
+  PresenceLeaveResponse ensurePresenceLeaveResponse() => $_ensure(27);
 
   @$pb.TagNumber(57)
-  IdentityChangedResponse get identityChangedResponse => $_getN(27);
+  IdentityChangedResponse get identityChangedResponse => $_getN(28);
   @$pb.TagNumber(57)
   set identityChangedResponse(IdentityChangedResponse v) { setField(57, v); }
   @$pb.TagNumber(57)
-  $core.bool hasIdentityChangedResponse() => $_has(27);
+  $core.bool hasIdentityChangedResponse() => $_has(28);
   @$pb.TagNumber(57)
   void clearIdentityChangedResponse() => clearField(57);
   @$pb.TagNumber(57)
-  IdentityChangedResponse ensureIdentityChangedResponse() => $_ensure(27);
+  IdentityChangedResponse ensureIdentityChangedResponse() => $_ensure(28);
 
   @$pb.TagNumber(58)
-  MoveBroadcastResponse get moveBroadcastResponse => $_getN(28);
+  MoveBroadcastResponse get moveBroadcastResponse => $_getN(29);
   @$pb.TagNumber(58)
   set moveBroadcastResponse(MoveBroadcastResponse v) { setField(58, v); }
   @$pb.TagNumber(58)
-  $core.bool hasMoveBroadcastResponse() => $_has(28);
+  $core.bool hasMoveBroadcastResponse() => $_has(29);
   @$pb.TagNumber(58)
   void clearMoveBroadcastResponse() => clearField(58);
   @$pb.TagNumber(58)
-  MoveBroadcastResponse ensureMoveBroadcastResponse() => $_ensure(28);
+  MoveBroadcastResponse ensureMoveBroadcastResponse() => $_ensure(29);
 
   @$pb.TagNumber(59)
-  MoveRejectResponse get moveRejectResponse => $_getN(29);
+  MoveRejectResponse get moveRejectResponse => $_getN(30);
   @$pb.TagNumber(59)
   set moveRejectResponse(MoveRejectResponse v) { setField(59, v); }
   @$pb.TagNumber(59)
-  $core.bool hasMoveRejectResponse() => $_has(29);
+  $core.bool hasMoveRejectResponse() => $_has(30);
   @$pb.TagNumber(59)
   void clearMoveRejectResponse() => clearField(59);
   @$pb.TagNumber(59)
-  MoveRejectResponse ensureMoveRejectResponse() => $_ensure(29);
+  MoveRejectResponse ensureMoveRejectResponse() => $_ensure(30);
 
   @$pb.TagNumber(60)
-  ChatMessageResponse get chatMessageResponse => $_getN(30);
+  ChatMessageResponse get chatMessageResponse => $_getN(31);
   @$pb.TagNumber(60)
   set chatMessageResponse(ChatMessageResponse v) { setField(60, v); }
   @$pb.TagNumber(60)
-  $core.bool hasChatMessageResponse() => $_has(30);
+  $core.bool hasChatMessageResponse() => $_has(31);
   @$pb.TagNumber(60)
   void clearChatMessageResponse() => clearField(60);
   @$pb.TagNumber(60)
-  ChatMessageResponse ensureChatMessageResponse() => $_ensure(30);
+  ChatMessageResponse ensureChatMessageResponse() => $_ensure(31);
 
   @$pb.TagNumber(61)
-  ChatRejectResponse get chatRejectResponse => $_getN(31);
+  ChatRejectResponse get chatRejectResponse => $_getN(32);
   @$pb.TagNumber(61)
   set chatRejectResponse(ChatRejectResponse v) { setField(61, v); }
   @$pb.TagNumber(61)
-  $core.bool hasChatRejectResponse() => $_has(31);
+  $core.bool hasChatRejectResponse() => $_has(32);
   @$pb.TagNumber(61)
   void clearChatRejectResponse() => clearField(61);
   @$pb.TagNumber(61)
-  ChatRejectResponse ensureChatRejectResponse() => $_ensure(31);
+  ChatRejectResponse ensureChatRejectResponse() => $_ensure(32);
 
   @$pb.TagNumber(62)
-  AnonymousChangedResponse get anonymousChangedResponse => $_getN(32);
+  AnonymousChangedResponse get anonymousChangedResponse => $_getN(33);
   @$pb.TagNumber(62)
   set anonymousChangedResponse(AnonymousChangedResponse v) { setField(62, v); }
   @$pb.TagNumber(62)
-  $core.bool hasAnonymousChangedResponse() => $_has(32);
+  $core.bool hasAnonymousChangedResponse() => $_has(33);
   @$pb.TagNumber(62)
   void clearAnonymousChangedResponse() => clearField(62);
   @$pb.TagNumber(62)
-  AnonymousChangedResponse ensureAnonymousChangedResponse() => $_ensure(32);
+  AnonymousChangedResponse ensureAnonymousChangedResponse() => $_ensure(33);
 
   @$pb.TagNumber(63)
-  SpriteChangedResponse get spriteChangedResponse => $_getN(33);
+  SpriteChangedResponse get spriteChangedResponse => $_getN(34);
   @$pb.TagNumber(63)
   set spriteChangedResponse(SpriteChangedResponse v) { setField(63, v); }
   @$pb.TagNumber(63)
-  $core.bool hasSpriteChangedResponse() => $_has(33);
+  $core.bool hasSpriteChangedResponse() => $_has(34);
   @$pb.TagNumber(63)
   void clearSpriteChangedResponse() => clearField(63);
   @$pb.TagNumber(63)
-  SpriteChangedResponse ensureSpriteChangedResponse() => $_ensure(33);
+  SpriteChangedResponse ensureSpriteChangedResponse() => $_ensure(34);
 
   @$pb.TagNumber(64)
-  SpriteChangeRejectResponse get spriteChangeRejectResponse => $_getN(34);
+  SpriteChangeRejectResponse get spriteChangeRejectResponse => $_getN(35);
   @$pb.TagNumber(64)
   set spriteChangeRejectResponse(SpriteChangeRejectResponse v) { setField(64, v); }
   @$pb.TagNumber(64)
-  $core.bool hasSpriteChangeRejectResponse() => $_has(34);
+  $core.bool hasSpriteChangeRejectResponse() => $_has(35);
   @$pb.TagNumber(64)
   void clearSpriteChangeRejectResponse() => clearField(64);
   @$pb.TagNumber(64)
-  SpriteChangeRejectResponse ensureSpriteChangeRejectResponse() => $_ensure(34);
+  SpriteChangeRejectResponse ensureSpriteChangeRejectResponse() => $_ensure(35);
 
   @$pb.TagNumber(65)
-  StatusTextBroadcastResponse get statusTextBroadcastResponse => $_getN(35);
+  StatusTextBroadcastResponse get statusTextBroadcastResponse => $_getN(36);
   @$pb.TagNumber(65)
   set statusTextBroadcastResponse(StatusTextBroadcastResponse v) { setField(65, v); }
   @$pb.TagNumber(65)
-  $core.bool hasStatusTextBroadcastResponse() => $_has(35);
+  $core.bool hasStatusTextBroadcastResponse() => $_has(36);
   @$pb.TagNumber(65)
   void clearStatusTextBroadcastResponse() => clearField(65);
   @$pb.TagNumber(65)
-  StatusTextBroadcastResponse ensureStatusTextBroadcastResponse() => $_ensure(35);
+  StatusTextBroadcastResponse ensureStatusTextBroadcastResponse() => $_ensure(36);
 
   @$pb.TagNumber(66)
-  DisplayNameChangedResponse get displayNameChangedResponse => $_getN(36);
+  DisplayNameChangedResponse get displayNameChangedResponse => $_getN(37);
   @$pb.TagNumber(66)
   set displayNameChangedResponse(DisplayNameChangedResponse v) { setField(66, v); }
   @$pb.TagNumber(66)
-  $core.bool hasDisplayNameChangedResponse() => $_has(36);
+  $core.bool hasDisplayNameChangedResponse() => $_has(37);
   @$pb.TagNumber(66)
   void clearDisplayNameChangedResponse() => clearField(66);
   @$pb.TagNumber(66)
-  DisplayNameChangedResponse ensureDisplayNameChangedResponse() => $_ensure(36);
+  DisplayNameChangedResponse ensureDisplayNameChangedResponse() => $_ensure(37);
 
   @$pb.TagNumber(67)
-  AssetsResponse get assetsResponse => $_getN(37);
+  AssetsResponse get assetsResponse => $_getN(38);
   @$pb.TagNumber(67)
   set assetsResponse(AssetsResponse v) { setField(67, v); }
   @$pb.TagNumber(67)
-  $core.bool hasAssetsResponse() => $_has(37);
+  $core.bool hasAssetsResponse() => $_has(38);
   @$pb.TagNumber(67)
   void clearAssetsResponse() => clearField(67);
   @$pb.TagNumber(67)
-  AssetsResponse ensureAssetsResponse() => $_ensure(37);
+  AssetsResponse ensureAssetsResponse() => $_ensure(38);
 
   @$pb.TagNumber(68)
-  AssetsUpdatedResponse get assetsUpdatedResponse => $_getN(38);
+  AssetsUpdatedResponse get assetsUpdatedResponse => $_getN(39);
   @$pb.TagNumber(68)
   set assetsUpdatedResponse(AssetsUpdatedResponse v) { setField(68, v); }
   @$pb.TagNumber(68)
-  $core.bool hasAssetsUpdatedResponse() => $_has(38);
+  $core.bool hasAssetsUpdatedResponse() => $_has(39);
   @$pb.TagNumber(68)
   void clearAssetsUpdatedResponse() => clearField(68);
   @$pb.TagNumber(68)
-  AssetsUpdatedResponse ensureAssetsUpdatedResponse() => $_ensure(38);
+  AssetsUpdatedResponse ensureAssetsUpdatedResponse() => $_ensure(39);
 
   @$pb.TagNumber(69)
-  PortalTeleportResponse get portalTeleportResponse => $_getN(39);
+  PortalTeleportResponse get portalTeleportResponse => $_getN(40);
   @$pb.TagNumber(69)
   set portalTeleportResponse(PortalTeleportResponse v) { setField(69, v); }
   @$pb.TagNumber(69)
-  $core.bool hasPortalTeleportResponse() => $_has(39);
+  $core.bool hasPortalTeleportResponse() => $_has(40);
   @$pb.TagNumber(69)
   void clearPortalTeleportResponse() => clearField(69);
   @$pb.TagNumber(69)
-  PortalTeleportResponse ensurePortalTeleportResponse() => $_ensure(39);
+  PortalTeleportResponse ensurePortalTeleportResponse() => $_ensure(40);
 
   @$pb.TagNumber(70)
-  PortalUseRejectResponse get portalUseRejectResponse => $_getN(40);
+  PortalUseRejectResponse get portalUseRejectResponse => $_getN(41);
   @$pb.TagNumber(70)
   set portalUseRejectResponse(PortalUseRejectResponse v) { setField(70, v); }
   @$pb.TagNumber(70)
-  $core.bool hasPortalUseRejectResponse() => $_has(40);
+  $core.bool hasPortalUseRejectResponse() => $_has(41);
   @$pb.TagNumber(70)
   void clearPortalUseRejectResponse() => clearField(70);
   @$pb.TagNumber(70)
-  PortalUseRejectResponse ensurePortalUseRejectResponse() => $_ensure(40);
+  PortalUseRejectResponse ensurePortalUseRejectResponse() => $_ensure(41);
 
   @$pb.TagNumber(71)
-  BroadcastMessageResponse get broadcastMessageResponse => $_getN(41);
+  BroadcastMessageResponse get broadcastMessageResponse => $_getN(42);
   @$pb.TagNumber(71)
   set broadcastMessageResponse(BroadcastMessageResponse v) { setField(71, v); }
   @$pb.TagNumber(71)
-  $core.bool hasBroadcastMessageResponse() => $_has(41);
+  $core.bool hasBroadcastMessageResponse() => $_has(42);
   @$pb.TagNumber(71)
   void clearBroadcastMessageResponse() => clearField(71);
   @$pb.TagNumber(71)
-  BroadcastMessageResponse ensureBroadcastMessageResponse() => $_ensure(41);
+  BroadcastMessageResponse ensureBroadcastMessageResponse() => $_ensure(42);
 
   @$pb.TagNumber(72)
-  BroadcastRejectResponse get broadcastRejectResponse => $_getN(42);
+  BroadcastRejectResponse get broadcastRejectResponse => $_getN(43);
   @$pb.TagNumber(72)
   set broadcastRejectResponse(BroadcastRejectResponse v) { setField(72, v); }
   @$pb.TagNumber(72)
-  $core.bool hasBroadcastRejectResponse() => $_has(42);
+  $core.bool hasBroadcastRejectResponse() => $_has(43);
   @$pb.TagNumber(72)
   void clearBroadcastRejectResponse() => clearField(72);
   @$pb.TagNumber(72)
-  BroadcastRejectResponse ensureBroadcastRejectResponse() => $_ensure(42);
+  BroadcastRejectResponse ensureBroadcastRejectResponse() => $_ensure(43);
 
   @$pb.TagNumber(73)
-  BroadcastCDResponse get broadcastCdResponse => $_getN(43);
+  BroadcastCDResponse get broadcastCdResponse => $_getN(44);
   @$pb.TagNumber(73)
   set broadcastCdResponse(BroadcastCDResponse v) { setField(73, v); }
   @$pb.TagNumber(73)
-  $core.bool hasBroadcastCdResponse() => $_has(43);
+  $core.bool hasBroadcastCdResponse() => $_has(44);
   @$pb.TagNumber(73)
   void clearBroadcastCdResponse() => clearField(73);
   @$pb.TagNumber(73)
-  BroadcastCDResponse ensureBroadcastCdResponse() => $_ensure(43);
+  BroadcastCDResponse ensureBroadcastCdResponse() => $_ensure(44);
 
   @$pb.TagNumber(74)
-  OnlineStatsResponse get onlineStatsResponse => $_getN(44);
+  OnlineStatsResponse get onlineStatsResponse => $_getN(45);
   @$pb.TagNumber(74)
   set onlineStatsResponse(OnlineStatsResponse v) { setField(74, v); }
   @$pb.TagNumber(74)
-  $core.bool hasOnlineStatsResponse() => $_has(44);
+  $core.bool hasOnlineStatsResponse() => $_has(45);
   @$pb.TagNumber(74)
   void clearOnlineStatsResponse() => clearField(74);
   @$pb.TagNumber(74)
-  OnlineStatsResponse ensureOnlineStatsResponse() => $_ensure(44);
+  OnlineStatsResponse ensureOnlineStatsResponse() => $_ensure(45);
 
   @$pb.TagNumber(75)
-  SystemErrorResponse get systemErrorResponse => $_getN(45);
+  SystemErrorResponse get systemErrorResponse => $_getN(46);
   @$pb.TagNumber(75)
   set systemErrorResponse(SystemErrorResponse v) { setField(75, v); }
   @$pb.TagNumber(75)
-  $core.bool hasSystemErrorResponse() => $_has(45);
+  $core.bool hasSystemErrorResponse() => $_has(46);
   @$pb.TagNumber(75)
   void clearSystemErrorResponse() => clearField(75);
   @$pb.TagNumber(75)
-  SystemErrorResponse ensureSystemErrorResponse() => $_ensure(45);
+  SystemErrorResponse ensureSystemErrorResponse() => $_ensure(46);
 
   @$pb.TagNumber(76)
-  SystemNoticeResponse get systemNoticeResponse => $_getN(46);
+  SystemNoticeResponse get systemNoticeResponse => $_getN(47);
   @$pb.TagNumber(76)
   set systemNoticeResponse(SystemNoticeResponse v) { setField(76, v); }
   @$pb.TagNumber(76)
-  $core.bool hasSystemNoticeResponse() => $_has(46);
+  $core.bool hasSystemNoticeResponse() => $_has(47);
   @$pb.TagNumber(76)
   void clearSystemNoticeResponse() => clearField(76);
   @$pb.TagNumber(76)
-  SystemNoticeResponse ensureSystemNoticeResponse() => $_ensure(46);
+  SystemNoticeResponse ensureSystemNoticeResponse() => $_ensure(47);
 
   @$pb.TagNumber(77)
-  SystemKickedResponse get systemKickedResponse => $_getN(47);
+  SystemKickedResponse get systemKickedResponse => $_getN(48);
   @$pb.TagNumber(77)
   set systemKickedResponse(SystemKickedResponse v) { setField(77, v); }
   @$pb.TagNumber(77)
-  $core.bool hasSystemKickedResponse() => $_has(47);
+  $core.bool hasSystemKickedResponse() => $_has(48);
   @$pb.TagNumber(77)
   void clearSystemKickedResponse() => clearField(77);
   @$pb.TagNumber(77)
-  SystemKickedResponse ensureSystemKickedResponse() => $_ensure(47);
+  SystemKickedResponse ensureSystemKickedResponse() => $_ensure(48);
 
   @$pb.TagNumber(78)
-  SteamBindSuccessResponse get steamBindSuccessResponse => $_getN(48);
+  SteamBindSuccessResponse get steamBindSuccessResponse => $_getN(49);
   @$pb.TagNumber(78)
   set steamBindSuccessResponse(SteamBindSuccessResponse v) { setField(78, v); }
   @$pb.TagNumber(78)
-  $core.bool hasSteamBindSuccessResponse() => $_has(48);
+  $core.bool hasSteamBindSuccessResponse() => $_has(49);
   @$pb.TagNumber(78)
   void clearSteamBindSuccessResponse() => clearField(78);
   @$pb.TagNumber(78)
-  SteamBindSuccessResponse ensureSteamBindSuccessResponse() => $_ensure(48);
+  SteamBindSuccessResponse ensureSteamBindSuccessResponse() => $_ensure(49);
 
   @$pb.TagNumber(79)
-  SpriteChangeSuccessResponse get spriteChangeSuccessResponse => $_getN(49);
+  SpriteChangeSuccessResponse get spriteChangeSuccessResponse => $_getN(50);
   @$pb.TagNumber(79)
   set spriteChangeSuccessResponse(SpriteChangeSuccessResponse v) { setField(79, v); }
   @$pb.TagNumber(79)
-  $core.bool hasSpriteChangeSuccessResponse() => $_has(49);
+  $core.bool hasSpriteChangeSuccessResponse() => $_has(50);
   @$pb.TagNumber(79)
   void clearSpriteChangeSuccessResponse() => clearField(79);
   @$pb.TagNumber(79)
-  SpriteChangeSuccessResponse ensureSpriteChangeSuccessResponse() => $_ensure(49);
+  SpriteChangeSuccessResponse ensureSpriteChangeSuccessResponse() => $_ensure(50);
 
   @$pb.TagNumber(80)
-  PresenceDeltaResponse get presenceDeltaResponse => $_getN(50);
+  PresenceDeltaResponse get presenceDeltaResponse => $_getN(51);
   @$pb.TagNumber(80)
   set presenceDeltaResponse(PresenceDeltaResponse v) { setField(80, v); }
   @$pb.TagNumber(80)
-  $core.bool hasPresenceDeltaResponse() => $_has(50);
+  $core.bool hasPresenceDeltaResponse() => $_has(51);
   @$pb.TagNumber(80)
   void clearPresenceDeltaResponse() => clearField(80);
   @$pb.TagNumber(80)
-  PresenceDeltaResponse ensurePresenceDeltaResponse() => $_ensure(50);
+  PresenceDeltaResponse ensurePresenceDeltaResponse() => $_ensure(51);
 }
 
 /// LobbyUser 用户信息
@@ -2131,10 +2149,14 @@ class LoginRequest extends $pb.GeneratedMessage {
 class EnterRequest extends $pb.GeneratedMessage {
   factory EnterRequest({
     $core.int? protocolFeatures,
+    $core.bool? lowBandwidth,
   }) {
     final $result = create();
     if (protocolFeatures != null) {
       $result.protocolFeatures = protocolFeatures;
+    }
+    if (lowBandwidth != null) {
+      $result.lowBandwidth = lowBandwidth;
     }
     return $result;
   }
@@ -2144,6 +2166,7 @@ class EnterRequest extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'EnterRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
     ..a<$core.int>(1, _omitFieldNames ? '' : 'protocolFeatures', $pb.PbFieldType.O3)
+    ..aOB(2, _omitFieldNames ? '' : 'lowBandwidth')
     ..hasRequiredFields = false
   ;
 
@@ -2177,6 +2200,69 @@ class EnterRequest extends $pb.GeneratedMessage {
   $core.bool hasProtocolFeatures() => $_has(0);
   @$pb.TagNumber(1)
   void clearProtocolFeatures() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.bool get lowBandwidth => $_getBF(1);
+  @$pb.TagNumber(2)
+  set lowBandwidth($core.bool v) { $_setBool(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasLowBandwidth() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearLowBandwidth() => clearField(2);
+}
+
+/// ModeChangeRequest 运行时切换弱网模式（客户端 → 服务端）
+/// 进入大厅后随时发送，服务端据此开启 / 关闭高频下行裁剪。
+/// 关闭弱网时服务端会主动补发一次全量 snapshot（trace_id 为空）。
+/// 切换限流 1 秒 1 次，超出返回 system.error { code: 429 }。
+class ModeChangeRequest extends $pb.GeneratedMessage {
+  factory ModeChangeRequest({
+    $core.bool? lowBandwidth,
+  }) {
+    final $result = create();
+    if (lowBandwidth != null) {
+      $result.lowBandwidth = lowBandwidth;
+    }
+    return $result;
+  }
+  ModeChangeRequest._() : super();
+  factory ModeChangeRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory ModeChangeRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ModeChangeRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'lobby'), createEmptyInstance: create)
+    ..aOB(1, _omitFieldNames ? '' : 'lowBandwidth')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  ModeChangeRequest clone() => ModeChangeRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  ModeChangeRequest copyWith(void Function(ModeChangeRequest) updates) => super.copyWith((message) => updates(message as ModeChangeRequest)) as ModeChangeRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ModeChangeRequest create() => ModeChangeRequest._();
+  ModeChangeRequest createEmptyInstance() => create();
+  static $pb.PbList<ModeChangeRequest> createRepeated() => $pb.PbList<ModeChangeRequest>();
+  @$core.pragma('dart2js:noInline')
+  static ModeChangeRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ModeChangeRequest>(create);
+  static ModeChangeRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get lowBandwidth => $_getBF(0);
+  @$pb.TagNumber(1)
+  set lowBandwidth($core.bool v) { $_setBool(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasLowBandwidth() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearLowBandwidth() => clearField(1);
 }
 
 class LogoutRequest extends $pb.GeneratedMessage {

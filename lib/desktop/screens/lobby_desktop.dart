@@ -430,7 +430,8 @@ class _LobbyDesktopState extends State<LobbyDesktop>
           previous.queuePosition != current.queuePosition ||
           previous.queueTotal != current.queueTotal ||
           previous.queueEtaSeconds != current.queueEtaSeconds ||
-          previous.queueIsRequeue != current.queueIsRequeue,
+          previous.queueIsRequeue != current.queueIsRequeue ||
+          previous.weakNetworkMode != current.weakNetworkMode,
       listenWhen: (previous, current) =>
           previous.isChatActive != current.isChatActive ||
           previous.transientNoticeSeq != current.transientNoticeSeq ||
@@ -508,6 +509,14 @@ class _LobbyDesktopState extends State<LobbyDesktop>
       },
       builder: (context, state) {
         final pageStatus = state.pageStatus;
+
+        // 弱网模式：不渲染交互场景，直接显示提示。
+        // 大厅连接仍保持（聊天 / 广播 / statusText 照常），但禁用场景交互，
+        // 规避弱网下 presence 列表过时引发的一系列场景/移动 BUG。
+        // 被踢出时仍优先显示踢出遮罩。
+        if (state.weakNetworkMode && state.kickedReason == null) {
+          return const _LobbyWeakNetworkScreen();
+        }
 
         // 被踢出时，无论处于哪个加载阶段，都优先显示踢出遮罩
         if (state.kickedReason != null) {
@@ -917,6 +926,76 @@ class _LobbyIdleScreen extends StatelessWidget {
               Text(
                 '大厅未初始化',
                 style: TextStyle(color: textSecondary, fontSize: 16),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 弱网模式下的大厅提示界面
+///
+/// 弱网模式开启时大厅不渲染交互场景，仅显示此提示。连接仍保持，
+/// 聊天 / 广播照常，statusText 显示"弱网模式"。关闭弱网后自动恢复大厅。
+class _LobbyWeakNetworkScreen extends StatelessWidget {
+  const _LobbyWeakNetworkScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? Colors.white : AppColors.slate800;
+    final textSecondary = isDark ? Colors.white54 : AppColors.slate600;
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(22),
+          bottomRight: Radius.circular(22),
+        ),
+        color: isDark ? const Color(0xFF0B1120) : const Color(0xFFDDE7F7),
+      ),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 36),
+          constraints: const BoxConstraints(maxWidth: 420),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.04)
+                : Colors.white.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Colors.orange.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.wifi_tethering_off_rounded,
+                size: 64,
+                color: Colors.orange.withValues(alpha: 0.8),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                '弱网模式已开启',
+                style: TextStyle(
+                  color: textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '为节省流量，大厅已暂停加载。\n'
+                '可在「设置 - 弱网模式」中关闭以恢复大厅。',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: textSecondary,
+                  fontSize: 14,
+                  height: 1.6,
+                ),
               ),
             ],
           ),

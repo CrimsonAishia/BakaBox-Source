@@ -37,8 +37,8 @@ class WeakNetworkSettings extends StatelessWidget {
           title: '启用弱网模式',
           description:
               '关闭所有自动刷新和实时推送，改为手动触发。\n'
-              '适合网络较差或流量有限的环境。\n'
-              '大厅、挤服、暖服功能不受影响。',
+              '大厅减少高频同步（其他玩家移动 / 进出场暂停接收）。\n'
+              '适合网络较差或流量有限的环境。',
           value: isOn ? _buildSummary(context, isDark) : null,
           action: Switch(
             value: isOn,
@@ -72,7 +72,8 @@ class WeakNetworkSettings extends StatelessWidget {
       '• 服务器列表：仅在你点击"刷新"时更新',
       '• 实时推送：消息 / 公告 / 比分 / 换图 已暂停',
       '• 后台监控：换图监控、比分上报已暂停',
-      '• 大厅 / 挤服 / 暖服：不受影响',
+      '• 大厅：暂停接收其他玩家移动 / 进出场（聊天 / 广播 / 人数照常）',
+      '• 挤服 / 暖服：不受影响',
     ];
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),

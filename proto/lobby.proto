@@ -31,6 +31,7 @@ message LobbyEnvelope {
     OnlineStatsRequest online_stats_request = 23;
     ProfileSteamBindRequest profile_steam_bind_request = 24;
     EnterRequest enter_request = 25;
+    ModeChangeRequest mode_change_request = 26;
 
     // 服务端 -> 客户端
     LoginSuccessResponse login_success_response = 50;
@@ -171,6 +172,15 @@ message LoginRequest {
 message EnterRequest {
   // 无额外参数，服务端从 stagingMap 取当前身份
   int32 protocol_features = 1;  // 位掩码：bit0=支持 presence.delta，bit1=支持排队
+  bool low_bandwidth = 2;       // true = 入场即进入弱网模式（裁剪高频下行）
+}
+
+// ModeChangeRequest 运行时切换弱网模式（客户端 → 服务端）
+// 进入大厅后随时发送，服务端据此开启 / 关闭高频下行裁剪。
+// 关闭弱网时服务端会主动补发一次全量 snapshot（trace_id 为空）。
+// 切换限流 1 秒 1 次，超出返回 system.error { code: 429 }。
+message ModeChangeRequest {
+  bool low_bandwidth = 1;  // true = 开启弱网；false = 关闭弱网
 }
 
 message LogoutRequest {

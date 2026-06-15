@@ -196,6 +196,9 @@ class LobbyState extends Equatable {
   /// 用于排队界面显示更贴合语境的文案。
   final bool queueIsRequeue;
 
+  /// 是否处于弱网模式（开启时大厅不渲染交互场景，仅显示提示）
+  final bool weakNetworkMode;
+
   const LobbyState({
     required this.connectionStatus,
     required this.pageStatus,
@@ -244,6 +247,7 @@ class LobbyState extends Equatable {
     this.queueExpired = false,
     this.queueExpireReason,
     this.queueIsRequeue = false,
+    this.weakNetworkMode = false,
   });
 
   factory LobbyState.initial() {
@@ -291,6 +295,7 @@ class LobbyState extends Equatable {
       queueExpired: false,
       queueExpireReason: null,
       queueIsRequeue: false,
+      weakNetworkMode: false,
     );
   }
 
@@ -368,6 +373,7 @@ class LobbyState extends Equatable {
     bool? queueExpired,
     Object? queueExpireReason = _stateSentinel,
     bool? queueIsRequeue,
+    bool? weakNetworkMode,
   }) {
     return LobbyState(
       connectionStatus: connectionStatus ?? this.connectionStatus,
@@ -478,6 +484,7 @@ class LobbyState extends Equatable {
       queueIsRequeue: clearQueue
           ? false
           : (queueIsRequeue ?? this.queueIsRequeue),
+      weakNetworkMode: weakNetworkMode ?? this.weakNetworkMode,
     );
   }
 
@@ -530,6 +537,7 @@ class LobbyState extends Equatable {
     queueExpired,
     queueExpireReason,
     queueIsRequeue,
+    weakNetworkMode,
   ];
 }
 

@@ -16,6 +16,7 @@ import '../../services/lobby_asset_cache_service.dart';
 import '../../services/lobby_image_cache_service.dart';
 import '../../services/lobby_map_loader_service.dart';
 import '../../services/lobby_nakama_service.dart';
+import '../../services/network_mode_service.dart';
 import '../../services/notification_window_service.dart';
 import '../../services/broadcast_notification_service.dart';
 import '../../services/realtime/realtime_server_map_runtime_channel.dart';
@@ -35,7 +36,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   LobbyBloc({LobbyNakamaService? service, String initialActivityText = '在线'})
     : _service = service ?? LobbyNakamaService.instance,
       super(
-        LobbyState.initial().copyWith(pageActivityText: initialActivityText),
+        LobbyState.initial().copyWith(
+          pageActivityText: initialActivityText,
+          weakNetworkMode: NetworkModeService.instance.weakNetwork,
+        ),
       ) {
     // 在构造时就订阅 WebSocket 事件
     _wsSubscription = _service.events.listen(
@@ -92,6 +96,15 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _authStateListener = _onAuthStateChanged;
     AuthService.instance.addLoginStateListener(_authStateListener);
 
+    // 订阅弱网模式切换：开启时大厅停止渲染交互场景、仅显示提示，
+    // 并把 statusText 切换为"弱网模式"
+    _networkModeSubscription = NetworkModeService.instance.changes.listen((
+      weakNetwork,
+    ) {
+      if (_isDisposed) return;
+      add(_LobbyWeakNetworkChanged(weakNetwork));
+    });
+
     on<LobbyStarted>(_onStarted);
     on<LobbySceneTapped>(_onSceneTapped);
     on<LobbyMovementTicked>(_onMovementTicked);
@@ -112,6 +125,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     on<LobbyPanelsDismissed>(_onPanelsDismissed);
     on<_LobbyAssetsReceived>(_onAssetsReceived);
     on<_LobbyGameStatusChanged>(_onGameStatusChanged);
+    on<_LobbyWeakNetworkChanged>(_onWeakNetworkChanged);
     on<_LobbyMoveFlush>(_onMoveFlush);
     on<LobbyPageActivityChanged>(_onPageActivityChanged);
     on<LobbyTeleportStarted>(_onTeleportStarted);
@@ -174,6 +188,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   StreamSubscription<OperationState>? _operationStateSubscription;
   StreamSubscription<ConsoleLogState>? _consoleLogSubscription;
   StreamSubscription<GsiGameState?>? _gsiSubscription;
+  StreamSubscription<bool>? _networkModeSubscription;
 
   /// `server.map.runtime` 频道适配器（单例）
   final RealtimeServerMapRuntimeChannel _serverMapRuntimeChannel =
@@ -424,7 +439,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     );
 
     // 预加载所有已缓存的图片到内存（加速后续渲染）
-    _preloadCachedImages();
+    // 弱网模式不渲染场景，跳过图片预加载以省流量 / 内存
+    if (!NetworkModeService.instance.weakNetwork) {
+      _preloadCachedImages();
+    }
 
     _scheduleBubbleCleanup();
 
@@ -480,7 +498,17 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     // 仅在已加入 Match 时请求：若处于排队中（已连接但未加入 Match），
     // assets/snapshot 请求会因未加入 Match 被服务端丢弃，且排队完成后
     // _onQueueReady 会在加入 Match 后主动请求，无需在此重复。
-    if (_service.isInMatch) {
+    //
+    // 弱网模式：不请求 assets/snapshot（不渲染场景，省流量）。连接 + enter
+    // 已完成（statusText / 聊天 / 广播照常）；关闭弱网时 _onWeakNetworkChanged
+    // 会补请求 assets/snapshot 加载场景。
+    if (NetworkModeService.instance.weakNetwork) {
+      LogService.i('[LobbyBloc] 弱网模式，跳过 assets/snapshot 请求（仅保持连接）');
+      // 主动上报一次 statusText，确保"弱网模式"广播给大厅其他玩家
+      // （弱网下跳过了 snapshot，需在此显式触发，覆盖匿名用户首次进入场景）
+      _lastSentStatusText = null;
+      _updateStatusTextByGameStatus(GameStatusService().isGameRunning, emit);
+    } else if (_service.isInMatch) {
       _requestAssetsAndSnapshot();
     } else {
       LogService.d('[LobbyBloc] 当前未加入 Match（排队中），跳过 assets/snapshot 请求');
@@ -1148,6 +1176,38 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _updateStatusTextByGameStatus(event.isGameRunning, emit);
   }
 
+  /// 弱网模式切换：更新 UI 标记并刷新 statusText
+  ///
+  /// 开启时大厅页面切换为提示视图（不渲染交互场景，避免场景/presence 相关 BUG），
+  /// 但连接保持，聊天 / 广播照常，并把 statusText 切为"弱网模式"让其他玩家可见。
+  /// 关闭时若大厅已进入但尚未加载场景数据（弱网期间跳过了 assets/snapshot），
+  /// 补请求一次以恢复大厅场景。
+  void _onWeakNetworkChanged(
+    _LobbyWeakNetworkChanged event,
+    Emitter<LobbyState> emit,
+  ) {
+    emit(state.copyWith(weakNetworkMode: event.weakNetwork));
+    // 重新计算 statusText（弱网优先级最高，会切到/切出"弱网模式"）
+    _updateStatusTextByGameStatus(GameStatusService().isGameRunning, emit);
+
+    // 关闭弱网：若已进入大厅但场景未就绪（弱网期间跳过了 assets/snapshot），
+    // 补请求加载场景。已 ready 则无需重复（mode.change 关闭时服务端会补发 snapshot）。
+    if (!event.weakNetwork &&
+        _isLobbyEntered &&
+        _service.isInMatch &&
+        state.pageStatus != LobbyPageStatus.ready) {
+      LogService.i('[LobbyBloc] 弱网关闭，补请求 assets/snapshot 加载大厅场景');
+      emit(
+        state.copyWith(
+          pageStatus: LobbyPageStatus.loading,
+          loadingPhase: LobbyLoadingPhase.loadingAssets,
+        ),
+      );
+      _preloadCachedImages();
+      _requestAssetsAndSnapshot();
+    }
+  }
+
   void _onPageActivityChanged(
     LobbyPageActivityChanged event,
     Emitter<LobbyState> emit,
@@ -1178,7 +1238,10 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     final isWarming = StatusWindowService().state.isWarming;
 
     final String newStatusText;
-    if (isQueueing) {
+    if (NetworkModeService.instance.weakNetwork) {
+      // 弱网模式优先级最高：固定显示"弱网模式"，让大厅其他玩家可见
+      newStatusText = '弱网模式';
+    } else if (isQueueing) {
       newStatusText = '挤服中';
     } else if (isWarming) {
       newStatusText = '暖服中';
@@ -3872,6 +3935,8 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     _operationStateSubscription?.cancel();
     _consoleLogSubscription?.cancel();
     _gsiSubscription?.cancel();
+    _networkModeSubscription?.cancel();
+    _networkModeSubscription = null;
     _serverMapRuntimeSubscription?.cancel();
     _serverMapRuntimeSubscription = null;
     _serverMapRuntimeChannel.unsubscribe();
