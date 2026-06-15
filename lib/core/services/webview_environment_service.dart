@@ -128,10 +128,10 @@ class WebViewEnvironmentService {
       await staging.rename(targetDir.path);
       staging = null;
 
-      // 正式目录就绪后再清理旧目录（失败不影响功能）
-      try {
-        await legacyDir.delete(recursive: true);
-      } catch (_) {}
+      // 正式目录就绪后删除旧目录。迁移此刻发生在 WebView2 环境创建之前，
+      // 旧目录不会被本进程占用，正常都能删掉；个别文件被系统短暂占用时
+      // 通过重试兜底，最终仍失败则记录警告（不影响功能）。
+      await _deleteWithRetry(legacyDir);
 
       LogService.i('WebView2 数据迁移完成（copy）');
     } catch (e) {
@@ -143,6 +143,24 @@ class WebViewEnvironmentService {
         } catch (_) {}
       }
       LogService.e('WebView2 数据迁移失败', e);
+    }
+  }
+
+  /// 删除目录，带少量重试（应对文件被系统短暂占用的情况）
+  static Future<void> _deleteWithRetry(Directory dir) async {
+    for (var attempt = 0; attempt < 3; attempt++) {
+      try {
+        if (await dir.exists()) {
+          await dir.delete(recursive: true);
+        }
+        return;
+      } on FileSystemException catch (e) {
+        if (attempt == 2) {
+          LogService.w('删除旧 WebView2 目录失败（已迁移，可手动清理）: ${dir.path}', e);
+          return;
+        }
+        await Future.delayed(const Duration(milliseconds: 200));
+      }
     }
   }
 
