@@ -322,3 +322,8 @@ class ServerApplyUsersCountUpdates extends ServerEvent {
   @override
   List<Object?> get props => [counts, isSnapshot];
 }
+
+/// 清除实时数据（进入弱网模式时调用）
+/// 清除所有服务器卡片上通过 Realtime 推送获得的数据（比分、人数等），
+/// 避免推送停止后卡片仍显示过期的实时数据。
+class ServerClearRealtimeData extends ServerEvent {}

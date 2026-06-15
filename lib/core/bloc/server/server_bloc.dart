@@ -167,35 +167,46 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     on<ServerApplyUsersCountUpdates>(_onApplyUsersCountUpdates);
     on<ServerApplyMapRuntimeChange>(_onApplyMapRuntimeChange);
     on<ServerApplyMapInfoChange>(_onApplyMapInfoChange);
+    on<ServerClearRealtimeData>(_onClearRealtimeData);
 
-    // 始终订阅频道：弱网模式下 RealtimeService 处于 stopped 状态，
-    // 订阅请求会被 RealtimeService 缓存，等到 start() 后自动补发。
-    _startRealtime();
+    // 实时频道订阅与弱网模式联动：仅在非弱网模式下订阅，
+    // 弱网模式下从源头切断实时数据流（不订阅 = 不可能有残留推送）。
+    if (!NetworkModeService.instance.weakNetwork) {
+      _startRealtime();
+    }
 
-    // 监听弱网模式切换：开启时停掉分类静默刷新，关闭时按需恢复
+    // 监听弱网模式切换：联动实时频道订阅与分类静默刷新
     _networkModeSubscription = NetworkModeService.instance.changes.listen((
       weakNetwork,
     ) {
       if (isClosed) return;
       if (weakNetwork) {
-        // 弱网开启：立即停掉 10 分钟分类刷新定时器
+        // 弱网开启：停掉分类静默刷新
         _categoryRefreshTimer?.cancel();
         _categoryRefreshTimer = null;
-        LogService.i('[ServerBloc] 弱网模式开启，已停止分类静默刷新');
+        // 切断实时频道订阅。cancel() 后监听回调不再触发，
+        // 不会再有残留推送进入 Bloc 事件队列。
+        _stopRealtime();
+        // 此时 ServerClearRealtimeData 必然是最后一个实时相关事件，
+        // 清除后状态干净，无需延迟或守卫。
+        add(ServerClearRealtimeData());
+        LogService.i('[ServerBloc] 弱网模式开启，已切断实时频道与静默刷新');
       } else {
-        // 弱网关闭：仅当用户当前正在服务器页（倒计时激活中）才恢复定时器
+        // 弱网关闭：恢复实时频道订阅
+        _startRealtime();
+        // 仅当用户当前正在服务器页（倒计时激活中）才恢复定时器
         // 避免用户不在服务器页时也启动定时器
         if (state.isCountdownActive && _categoryRefreshTimer == null) {
           _categoryRefreshTimer = Timer.periodic(_categoryRefreshInterval, (_) {
             add(const ServerRefreshCategoriesInternal());
           });
-          LogService.i('[ServerBloc] 弱网模式关闭，已恢复分类静默刷新');
         }
+        LogService.i('[ServerBloc] 弱网模式关闭，已恢复实时频道');
       }
     });
   }
 
-  /// 启动 WS 实时频道订阅（构造时一次性启动，close 时释放）
+  /// 启动 WS 实时频道订阅（非弱网模式下订阅，弱网切换 / close 时释放）
   void _startRealtime() {
     if (_realtimeStarted) return;
     _realtimeStarted = true;
@@ -1618,7 +1629,6 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     }
   }
 
-  // ========== 自定义分类和服务器管理 ==========
 
   Future<void> _onAddCategory(
     ServerAddCategory event,
@@ -2752,6 +2762,28 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
     if (!changed) return;
     emit(state.copyWith(servers: servers));
+  }
+
+  /// 清除所有服务器卡片上的实时推送数据（比分、排队/暖服人数）
+  ///
+  /// 进入弱网模式时调用，避免推送停止后卡片仍显示过期的实时数据。
+  /// 注意：serverData（来自 A2S 主动查询）不清除，保留上次刷新的快照。
+  void _onClearRealtimeData(
+    ServerClearRealtimeData event,
+    Emitter<ServerState> emit,
+  ) {
+    if (state.servers.isEmpty) return;
+
+    final clearedServers = state.servers.map((server) {
+      return server.copyWith(
+        clearTeamScores: true,
+        queueCount: 0,
+        warmupCount: 0,
+      );
+    }).toList();
+
+    emit(state.copyWith(servers: clearedServers));
+    LogService.i('[ServerBloc] 已清除所有服务器实时推送数据（弱网模式）');
   }
 
   /// 内部事件：定时静默检测分类列表是否有变化
