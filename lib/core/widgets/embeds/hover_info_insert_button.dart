@@ -18,7 +18,7 @@ class HoverInfoInsertButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ToolbarIconButton(
       icon: Icons.alternate_email_rounded,
-      tooltip: '插入引用（地图/角色/枪模/刀模/攻略/符卡）',
+      tooltip: '插入引用（地图/角色/枪模/刀模/符卡）',
       onTap: () => _handleInsert(context),
     );
   }
