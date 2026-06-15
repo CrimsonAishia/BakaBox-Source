@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../../../core/models/character_models.dart';
 import '../../../core/services/bilibili_service.dart';
+import '../../../core/services/webview_environment_service.dart';
 
 /// 视频内嵌播放弹窗
 ///
@@ -309,6 +310,7 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
           child: Container(
             color: Colors.black,
             child: InAppWebView(
+              webViewEnvironment: WebViewEnvironmentService.environment,
               initialUrlRequest: URLRequest(url: WebUri(_buildBilibiliEmbedUrl(widget.videoUrl))),
               initialSettings: InAppWebViewSettings(
                 transparentBackground: true,
@@ -620,7 +622,6 @@ class _VideoControlsOverlayState extends State<_VideoControlsOverlay> {
   }
 }
 
-// ============ URL 解析工具 ============
 
 bool _isBilibili(String url) {
   final lower = url.toLowerCase();

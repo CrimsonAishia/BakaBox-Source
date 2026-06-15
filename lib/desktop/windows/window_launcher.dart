@@ -5,6 +5,7 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../core/bootstrap/app_initializer.dart';
 import '../../core/services/single_instance_service.dart';
+import '../../core/services/webview_environment_service.dart';
 import '../../core/services/floating_window_service.dart';
 import '../../core/services/notification_window_service.dart';
 import '../widgets/position_preview_window.dart';
@@ -40,6 +41,11 @@ class DesktopWindowLauncher {
       skipStorage: isSubWindow,
       onPlatformInit: () => windowManager.ensureInitialized(),
     );
+
+    // 初始化 WebView2 环境（必须在 AppDirectoryService.init 之后、
+    // 创建任何 InAppWebView 之前），将缓存指向可写的项目缓存目录，
+    // 避免安装在 Program Files 等只读目录时无法写入。
+    await WebViewEnvironmentService.init();
 
     // 获取当前窗口控制器
     final controller = await WindowController.fromCurrentEngine();
