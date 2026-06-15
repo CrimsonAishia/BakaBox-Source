@@ -499,17 +499,14 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     // assets/snapshot 请求会因未加入 Match 被服务端丢弃，且排队完成后
     // _onQueueReady 会在加入 Match 后主动请求，无需在此重复。
     //
-    // 弱网模式：不请求 assets/snapshot（不渲染场景，省流量）。连接 + enter
-    // 已完成（statusText / 聊天 / 广播照常）；关闭弱网时 _onWeakNetworkChanged
-    // 会补请求 assets/snapshot 加载场景。
-    if (NetworkModeService.instance.weakNetwork) {
-      LogService.i('[LobbyBloc] 弱网模式，跳过 assets/snapshot 请求（仅保持连接）');
-      // 主动上报一次 statusText，确保"弱网模式"广播给大厅其他玩家
-      // （弱网下跳过了 snapshot，需在此显式触发，覆盖匿名用户首次进入场景）
-      _lastSentStatusText = null;
-      _updateStatusTextByGameStatus(GameStatusService().isGameRunning, emit);
-    } else if (_service.isInMatch) {
+    if (_service.isInMatch) {
       _requestAssetsAndSnapshot();
+      // 弱网模式下仍主动上报一次 statusText，确保"弱网模式"广播给大厅其他玩家
+      // （覆盖匿名用户首次进入场景的情况）
+      if (NetworkModeService.instance.weakNetwork) {
+        _lastSentStatusText = null;
+        _updateStatusTextByGameStatus(GameStatusService().isGameRunning, emit);
+      }
     } else {
       LogService.d('[LobbyBloc] 当前未加入 Match（排队中），跳过 assets/snapshot 请求');
     }
@@ -1180,8 +1177,7 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
   ///
   /// 开启时大厅页面切换为提示视图（不渲染交互场景，避免场景/presence 相关 BUG），
   /// 但连接保持，聊天 / 广播照常，并把 statusText 切为"弱网模式"让其他玩家可见。
-  /// 关闭时若大厅已进入但尚未加载场景数据（弱网期间跳过了 assets/snapshot），
-  /// 补请求一次以恢复大厅场景。
+  /// 关闭弱网时恢复大厅场景渲染所需的资源。
   void _onWeakNetworkChanged(
     _LobbyWeakNetworkChanged event,
     Emitter<LobbyState> emit,
@@ -1190,21 +1186,23 @@ class LobbyBloc extends Bloc<LobbyEvent, LobbyState> {
     // 重新计算 statusText（弱网优先级最高，会切到/切出"弱网模式"）
     _updateStatusTextByGameStatus(GameStatusService().isGameRunning, emit);
 
-    // 关闭弱网：若已进入大厅但场景未就绪（弱网期间跳过了 assets/snapshot），
-    // 补请求加载场景。已 ready 则无需重复（mode.change 关闭时服务端会补发 snapshot）。
-    if (!event.weakNetwork &&
-        _isLobbyEntered &&
-        _service.isInMatch &&
-        state.pageStatus != LobbyPageStatus.ready) {
-      LogService.i('[LobbyBloc] 弱网关闭，补请求 assets/snapshot 加载大厅场景');
-      emit(
-        state.copyWith(
-          pageStatus: LobbyPageStatus.loading,
-          loadingPhase: LobbyLoadingPhase.loadingAssets,
-        ),
-      );
-      _preloadCachedImages();
-      _requestAssetsAndSnapshot();
+    if (!event.weakNetwork && _isLobbyEntered && _service.isInMatch) {
+      if (state.pageStatus == LobbyPageStatus.ready) {
+        // 数据已就绪（进入时已拉取），仅补图片预加载以恢复场景渲染
+        LogService.i('[LobbyBloc] 弱网关闭，补图片预加载以恢复大厅场景');
+        _preloadCachedImages();
+      } else {
+        // 兜底：极端情况下进入时未成功拉取（如进入瞬间请求失败），补请求一次
+        LogService.i('[LobbyBloc] 弱网关闭，补请求 assets/snapshot 加载大厅场景');
+        emit(
+          state.copyWith(
+            pageStatus: LobbyPageStatus.loading,
+            loadingPhase: LobbyLoadingPhase.loadingAssets,
+          ),
+        );
+        _preloadCachedImages();
+        _requestAssetsAndSnapshot();
+      }
     }
   }
 
