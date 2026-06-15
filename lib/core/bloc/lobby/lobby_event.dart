@@ -189,6 +189,16 @@ class _LobbyGameStatusChanged extends LobbyEvent {
   List<Object?> get props => [isGameRunning];
 }
 
+/// 内部事件：弱网模式切换（开启时大厅停止渲染交互场景，仅显示提示）
+class _LobbyWeakNetworkChanged extends LobbyEvent {
+  final bool weakNetwork;
+
+  const _LobbyWeakNetworkChanged(this.weakNetwork);
+
+  @override
+  List<Object?> get props => [weakNetwork];
+}
+
 /// 内部事件：C2 批量刷新缓冲的 move.broadcast（节流后统一应用到 UI）
 class _LobbyMoveFlush extends LobbyEvent {
   const _LobbyMoveFlush();
