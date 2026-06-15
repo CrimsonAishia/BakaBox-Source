@@ -7,9 +7,12 @@ import '../../core/bloc/auth/auth_state.dart';
 import '../../core/bloc/daily_task/daily_task_bloc.dart';
 import '../../core/bloc/daily_task/daily_task_event.dart';
 import '../../core/bloc/daily_task/daily_task_state.dart';
+import '../../core/bloc/lobby/lobby_bloc.dart';
 import '../../core/models/user_info.dart';
 import 'login_dialog.dart';
 import 'shake_dialog.dart';
+import 'lobby/lobby_user_info_panel.dart';
+import 'lobby/lobby_inventory_panel.dart';
 import '../../core/constants/app_colors.dart';
 
 /// 用户登录框组件
@@ -459,6 +462,36 @@ class _ExpandedContent extends StatelessWidget {
             },
           ),
           const SizedBox(height: 8),
+          // 个人数据 & 库存统计按钮
+          Builder(
+            builder: (context) {
+              final lobbyAvailable = _isLobbyAvailable(context);
+              return Row(
+                children: [
+                  Expanded(
+                    child: _ActionButton(
+                      icon: Icons.bar_chart_rounded,
+                      label: '个人数据',
+                      onPressed: lobbyAvailable
+                          ? () => _showUserInfoPanel(context)
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _ActionButton(
+                      icon: Icons.inventory_2_outlined,
+                      label: '库存统计',
+                      onPressed: lobbyAvailable
+                          ? () => _showInventoryPanel(context)
+                          : null,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
@@ -474,6 +507,32 @@ class _ExpandedContent extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// 判断大厅是否可用（selfUser 存在且有 serverUserId）
+  bool _isLobbyAvailable(BuildContext context) {
+    try {
+      final lobbyState = context.read<LobbyBloc>().state;
+      final selfUser = lobbyState.selfUser;
+      return selfUser != null &&
+          selfUser.serverUserId != null &&
+          selfUser.serverUserId!.isNotEmpty;
+    } catch (_) {
+      // LobbyBloc 不在 context 中
+      return false;
+    }
+  }
+
+  void _showUserInfoPanel(BuildContext context) {
+    final selfUser = context.read<LobbyBloc>().state.selfUser;
+    if (selfUser == null) return;
+    LobbyUserInfoPanel.show(context, selfUser);
+  }
+
+  void _showInventoryPanel(BuildContext context) {
+    final selfUser = context.read<LobbyBloc>().state.selfUser;
+    if (selfUser == null) return;
+    LobbyInventoryPanel.show(context, selfUser);
   }
 
   void _showUnbindConfirm(BuildContext context) {
