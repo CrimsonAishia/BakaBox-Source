@@ -250,6 +250,45 @@ class RealtimeService {
     }
   }
 
+  /// 强制重新拉取某频道的 snapshot（用于带 snapshot 的频道做对账兜底）。
+  ///
+  /// 适用场景：`server.users.count` / `score.updates` / `server.map.runtime`
+  /// 这类「订阅时下发 snapshot」的频道，在「连接保持但服务端丢了某条 updated/
+  /// changed」（send 缓冲溢出、跨实例桥接降级）时，本地快照会长期停留在旧值。
+  /// 由于没有断线，重连补订阅机制不会触发，需要业务侧监听 [reconcileStream]
+  /// 主动调用本方法，通过「退订 + 重订阅」让服务端重新下发一份全量 snapshot。
+  ///
+  /// 规则：
+  /// - 未连接：直接跳过（重连后 [_resubscribeAll] 会自动补订阅并带回 snapshot）。
+  /// - 频道未订阅或正在等待 sub_ack（snapshot 在途）：跳过，避免重复订阅。
+  /// - 引用计数为 0（无人订阅）：跳过。
+  void requestResnapshot(String channel) {
+    if (_disposed) return;
+    if (!isConnected) return;
+    if ((_channelRefCount[channel] ?? 0) <= 0) return;
+    // 正在等待 sub_ack/snapshot，说明刚发起订阅，snapshot 即将到达，无需重复
+    if (_pendingSubscribeChannels.contains(channel)) return;
+    if (!_subscribedChannels.contains(channel)) return;
+
+    LogService.d('[Realtime] 对账：强制重拉 snapshot $channel');
+    // 退订
+    final unsubId = _nextReqId('unsub');
+    _subscribedChannels.remove(channel);
+    _sendRaw({
+      'action': RealtimeClientActions.unsubscribe,
+      'channel': channel,
+      'reqId': unsubId,
+    });
+    // 立即重订阅，TCP 有序保证服务端先处理退订再处理订阅并重发 snapshot
+    final subId = _nextReqId('sub');
+    _pendingSubscribeChannels.add(channel);
+    _sendRaw({
+      'action': RealtimeClientActions.subscribe,
+      'channel': channel,
+      'reqId': subId,
+    });
+  }
+
   /// 取消订阅（引用计数 - 1，归零时发送 `unsubscribe`）
   void unsubscribe(String channel) {
     if (_disposed) return;
@@ -687,11 +726,17 @@ class RealtimeService {
   }
 
   void _sendUnsubscribeIfPossible(String channel) {
+    // 无论是否连接，都先同步清理本地订阅状态：
+    // 退订意图一旦发出，本地立即视为「未订阅」，避免后续 subscribe 被
+    // 「已订阅 / 等待 sub_ack」判定吞掉（unsub_ack 回来时 _handleUnsubAck 再清一次，幂等）。
+    final wasTracked =
+        _subscribedChannels.remove(channel) ||
+        _pendingSubscribeChannels.remove(channel);
     if (!isConnected) {
-      _subscribedChannels.remove(channel);
-      _pendingSubscribeChannels.remove(channel);
       return;
     }
+    // 没订阅过也没在途，无需向服务端发退订
+    if (!wasTracked) return;
     final reqId = _nextReqId('unsub');
     _sendRaw({
       'action': RealtimeClientActions.unsubscribe,

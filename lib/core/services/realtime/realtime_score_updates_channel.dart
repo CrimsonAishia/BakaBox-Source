@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import '../../models/realtime_models.dart';
 import '../../models/server_score.dart';
@@ -12,7 +13,7 @@ enum ScoreUpdateEventKind { snapshot, updated }
 class ScoreUpdateEvent {
   final ScoreUpdateEventKind kind;
 
-  /// snapshot 时为全量列表；updated 时只有一个元素
+  /// snapshot 时为全量列表；updated 时为本轮合并的若干条
   final List<ServerScore> scores;
 
   const ScoreUpdateEvent({required this.kind, required this.scores});
@@ -31,15 +32,23 @@ class RealtimeScoreUpdatesChannel {
   final StreamController<ScoreUpdateEvent> _controller =
       StreamController<ScoreUpdateEvent>.broadcast();
   StreamSubscription<RealtimeChannelEvent>? _subscription;
+
+  /// 对账信号订阅：连接保持期间服务端可能丢掉某条 updated，本地比分会停留在旧值。
+  StreamSubscription<void>? _reconcileSubscription;
   int _refCount = 0;
 
-  /// 最近一次 snapshot（按地址索引）
-  Map<String, ServerScore> _latestSnapshot = const {};
+  /// 最近一次 snapshot（按地址索引），就地更新，对外只暴露不可变视图。
+  final Map<String, ServerScore> _latestSnapshot = {};
+  late final Map<String, ServerScore> _latestSnapshotView =
+      UnmodifiableMapView(_latestSnapshot);
+
+  /// 同一 event-loop turn 内合并多条 updated，turn 末尾一次性下发。
+  final Map<String, ServerScore> _pendingUpdates = {};
+  bool _flushScheduled = false;
 
   Stream<ScoreUpdateEvent> get events => _controller.stream;
 
-  Map<String, ServerScore> get latestSnapshot =>
-      Map.unmodifiable(_latestSnapshot);
+  Map<String, ServerScore> get latestSnapshot => _latestSnapshotView;
 
   ServerScore? scoreFor(String serverAddress) => _latestSnapshot[serverAddress];
 
@@ -49,6 +58,9 @@ class RealtimeScoreUpdatesChannel {
       _subscription ??= _service
           .events(RealtimeChannels.scoreUpdates)
           .listen(_onEvent);
+      _reconcileSubscription ??= _service.reconcileStream.listen((_) {
+        _service.requestResnapshot(RealtimeChannels.scoreUpdates);
+      });
       _service.subscribe(RealtimeChannels.scoreUpdates);
     }
   }
@@ -60,7 +72,11 @@ class RealtimeScoreUpdatesChannel {
       _service.unsubscribe(RealtimeChannels.scoreUpdates);
       _subscription?.cancel();
       _subscription = null;
-      _latestSnapshot = const {};
+      _reconcileSubscription?.cancel();
+      _reconcileSubscription = null;
+      _latestSnapshot.clear();
+      _pendingUpdates.clear();
+      _flushScheduled = false;
     }
   }
 
@@ -83,11 +99,12 @@ class RealtimeScoreUpdatesChannel {
       final score = _parseScore(raw);
       if (score != null) list.add(score);
     }
-    final indexed = <String, ServerScore>{};
-    for (final s in list) {
-      indexed[s.serverAddress] = s;
-    }
-    _latestSnapshot = indexed;
+    // snapshot 是全量真相：丢弃在途增量合并，直接重建缓存
+    _pendingUpdates.clear();
+    _flushScheduled = false;
+    _latestSnapshot
+      ..clear()
+      ..addEntries(list.map((s) => MapEntry(s.serverAddress, s)));
     if (!_controller.isClosed) {
       _controller.add(
         ScoreUpdateEvent(kind: ScoreUpdateEventKind.snapshot, scores: list),
@@ -98,12 +115,25 @@ class RealtimeScoreUpdatesChannel {
   void _onUpdated(RealtimeChannelEvent event) {
     final score = _parseScore(event.data);
     if (score == null) return;
-    final next = Map<String, ServerScore>.from(_latestSnapshot);
-    next[score.serverAddress] = score;
-    _latestSnapshot = next;
+    _latestSnapshot[score.serverAddress] = score;
+    _pendingUpdates[score.serverAddress] = score;
+    _scheduleFlush();
+  }
+
+  void _scheduleFlush() {
+    if (_flushScheduled) return;
+    _flushScheduled = true;
+    scheduleMicrotask(_flushUpdates);
+  }
+
+  void _flushUpdates() {
+    _flushScheduled = false;
+    if (_pendingUpdates.isEmpty) return;
+    final scores = _pendingUpdates.values.toList(growable: false);
+    _pendingUpdates.clear();
     if (!_controller.isClosed) {
       _controller.add(
-        ScoreUpdateEvent(kind: ScoreUpdateEventKind.updated, scores: [score]),
+        ScoreUpdateEvent(kind: ScoreUpdateEventKind.updated, scores: scores),
       );
     }
   }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import '../../models/realtime_models.dart';
 import '../../utils/log_service.dart';
@@ -80,17 +81,23 @@ class RealtimeServerMapRuntimeChannel {
   final StreamController<ServerMapRuntimeEvent> _controller =
       StreamController<ServerMapRuntimeEvent>.broadcast();
   StreamSubscription<RealtimeChannelEvent>? _subscription;
+
+  /// 对账信号订阅：连接保持期间服务端可能丢掉某条 changed，本地换图状态会停留在旧值。
+  StreamSubscription<void>? _reconcileSubscription;
   int _refCount = 0;
 
-  /// 最近一次 snapshot 缓存（订阅前已发生的事件可以取到最新状态）
-  Map<String, ServerMapRuntimeEntry> _latestSnapshot = const {};
+  /// 最近一次 snapshot 缓存（订阅前已发生的事件可以取到最新状态）。
+  /// 就地更新，对外只暴露不可变视图，避免每条 changed 全量复制整张 map。
+  final Map<String, ServerMapRuntimeEntry> _latestSnapshot = {};
+  late final Map<String, ServerMapRuntimeEntry> _latestSnapshotView =
+      UnmodifiableMapView(_latestSnapshot);
 
   /// 事件流
   Stream<ServerMapRuntimeEvent> get events => _controller.stream;
 
   /// 最近一次 snapshot 数据，按 serverAddress 索引
   Map<String, ServerMapRuntimeEntry> get latestSnapshot =>
-      Map.unmodifiable(_latestSnapshot);
+      _latestSnapshotView;
 
   /// 根据地址获取最近一次的换图条目
   ServerMapRuntimeEntry? snapshotFor(String serverAddress) =>
@@ -102,6 +109,9 @@ class RealtimeServerMapRuntimeChannel {
       _subscription ??= _service
           .events(RealtimeChannels.serverMapRuntime)
           .listen(_onEvent);
+      _reconcileSubscription ??= _service.reconcileStream.listen((_) {
+        _service.requestResnapshot(RealtimeChannels.serverMapRuntime);
+      });
       _service.subscribe(RealtimeChannels.serverMapRuntime);
     }
   }
@@ -113,7 +123,9 @@ class RealtimeServerMapRuntimeChannel {
       _service.unsubscribe(RealtimeChannels.serverMapRuntime);
       _subscription?.cancel();
       _subscription = null;
-      _latestSnapshot = const {};
+      _reconcileSubscription?.cancel();
+      _reconcileSubscription = null;
+      _latestSnapshot.clear();
     }
   }
 
@@ -135,11 +147,9 @@ class RealtimeServerMapRuntimeChannel {
         .map(ServerMapRuntimeEntry.fromJson)
         .where((e) => e.isValid)
         .toList(growable: false);
-    final indexed = <String, ServerMapRuntimeEntry>{};
-    for (final entry in items) {
-      indexed[entry.serverAddress] = entry;
-    }
-    _latestSnapshot = indexed;
+    _latestSnapshot
+      ..clear()
+      ..addEntries(items.map((e) => MapEntry(e.serverAddress, e)));
     if (!_controller.isClosed) {
       _controller.add(
         ServerMapRuntimeEvent(
@@ -153,9 +163,9 @@ class RealtimeServerMapRuntimeChannel {
   void _onChanged(RealtimeChannelEvent event) {
     final entry = ServerMapRuntimeEntry.fromJson(event.data);
     if (!entry.isValid) return;
-    final next = Map<String, ServerMapRuntimeEntry>.from(_latestSnapshot);
-    next[entry.serverAddress] = entry;
-    _latestSnapshot = next;
+    // 就地更新（O(1)）。changed 事件每条都有独立换图语义（含 oldMapName），
+    // 不做按地址合并，逐条派发给下游（通知 / TTS / OBS）。
+    _latestSnapshot[entry.serverAddress] = entry;
     if (!_controller.isClosed) {
       _controller.add(
         ServerMapRuntimeEvent(
