@@ -82,7 +82,7 @@ class AnalyticsService {
 
         'os_platform': platform,
         'os_arch': arch,
-        'os_version': Platform.operatingSystemVersion,
+        'os_version': PlatformUtils.osVersion,
 
         'startup_time_ms': DateTime.now().difference(startTime).inMilliseconds,
       };

@@ -56,6 +56,22 @@ class PlatformUtils {
     return platform_info.getOperatingSystem();
   }
 
+  /// 规范化的操作系统版本字符串。
+  ///
+  /// 相比 `Platform.operatingSystemVersion`：
+  /// - Windows 11 不会再被错误识别为 Windows 10（基于 Build 号 >= 22000 修正）
+  /// - 其他平台行为与原始返回值一致
+  static String get osVersion {
+    if (kIsWeb) return 'web';
+    return platform_info.getOperatingSystemVersion();
+  }
+
+  /// 简短的操作系统名称，例如：`Windows 11`、`Windows 10`、`macOS`、`Android`、`iOS`、`Linux`、`web`。
+  static String get osShortName {
+    if (kIsWeb) return 'web';
+    return platform_info.getOperatingSystemShortName();
+  }
+
   static Map<String, dynamic> getPlatformInfo(BuildContext? context) {
     return {
       'platform': platformName,

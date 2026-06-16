@@ -2721,7 +2721,7 @@ class _IssueCreateViewState extends State<_IssueCreateView> {
     return DeviceInfo(
       appVersion: AppInfoService.instance.version,
       platform: Platform.operatingSystem,
-      osVersion: Platform.operatingSystemVersion,
+      osVersion: PlatformUtils.osVersion,
       deviceModel: 'Desktop',
     );
   }

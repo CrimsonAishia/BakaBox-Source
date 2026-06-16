@@ -161,7 +161,7 @@ class _IssueCreateMobileState extends State<IssueCreateMobile> {
     return DeviceInfo(
       appVersion: AppInfoService.instance.version,
       platform: Platform.operatingSystem,
-      osVersion: Platform.operatingSystemVersion,
+      osVersion: PlatformUtils.osVersion,
       deviceModel: 'Mobile',
     );
   }

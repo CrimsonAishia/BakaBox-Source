@@ -7,6 +7,7 @@ import 'package:crypto/crypto.dart';
 import '../api/crash_report_api.dart';
 import '../utils/device_id_helper.dart';
 import '../utils/log_service.dart';
+import '../utils/platform_utils.dart';
 import '../utils/storage_utils.dart';
 import 'app_info_service.dart';
 import 'crash_inspector/crash_inspector.dart';
@@ -179,7 +180,7 @@ extension _CrashReportUploaderDedup on CrashReportUploader {
       'fileSize': _safeFileSize(summary.dumpPath),
       'dumpAt': dumpAt,
       'appVersion': AppInfoService.instance.version,
-      'osVersion': Platform.operatingSystemVersion,
+      'osVersion': PlatformUtils.osVersion,
       'fatalStrings': summary.fatalStrings.take(10).toList(),
       'resources': summary.resources
           .take(30)
