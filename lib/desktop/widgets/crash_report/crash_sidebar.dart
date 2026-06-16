@@ -62,6 +62,8 @@ class _ExpandedSidebar extends StatelessWidget {
             prev.currentCategory != curr.currentCategory ||
             prev.stats != curr.stats ||
             prev.localFiles != curr.localFiles ||
+            prev.isLoading != curr.isLoading ||
+            prev.isLoadingLocal != curr.isLoadingLocal ||
             prev.totalCount != curr.totalCount,
         builder: (context, state) {
           return Column(
@@ -125,6 +127,8 @@ class _ExpandedSidebar extends StatelessWidget {
                     .read<CrashReportBloc>()
                     .add(const CrashReportRefresh()),
                 isDark: isDark,
+                isRefreshing:
+                    state.showMine ? state.isLoadingLocal : state.isLoading,
               ),
             ],
           );
@@ -145,8 +149,13 @@ class _CollapsedSidebar extends StatelessWidget {
       width: 56,
       color: isDark ? AppColors.slate800 : Colors.white,
       child: BlocBuilder<CrashReportBloc, CrashReportState>(
-        buildWhen: (prev, curr) => prev.showMine != curr.showMine,
+        buildWhen: (prev, curr) =>
+            prev.showMine != curr.showMine ||
+            prev.isLoading != curr.isLoading ||
+            prev.isLoadingLocal != curr.isLoadingLocal,
         builder: (context, state) {
+          final refreshing =
+              state.showMine ? state.isLoadingLocal : state.isLoading;
           return Column(
             children: [
               const SizedBox(height: 12),
@@ -170,10 +179,16 @@ class _CollapsedSidebar extends StatelessWidget {
               const Spacer(),
               IconButton(
                 tooltip: '刷新',
-                icon: Icon(MdiIcons.refresh, size: 18),
-                onPressed: () => context
-                    .read<CrashReportBloc>()
-                    .add(const CrashReportRefresh()),
+                icon: _SpinningIcon(
+                  icon: MdiIcons.refresh,
+                  size: 18,
+                  spinning: refreshing,
+                ),
+                onPressed: refreshing
+                    ? null
+                    : () => context
+                        .read<CrashReportBloc>()
+                        .add(const CrashReportRefresh()),
               ),
               const SizedBox(height: 12),
             ],
@@ -728,8 +743,13 @@ class _StatRow extends StatelessWidget {
 class _SidebarFooter extends StatelessWidget {
   final VoidCallback onRefresh;
   final bool isDark;
+  final bool isRefreshing;
 
-  const _SidebarFooter({required this.onRefresh, required this.isDark});
+  const _SidebarFooter({
+    required this.onRefresh,
+    required this.isDark,
+    this.isRefreshing = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -738,9 +758,16 @@ class _SidebarFooter extends StatelessWidget {
       child: SizedBox(
         height: 34,
         child: OutlinedButton.icon(
-          onPressed: onRefresh,
-          icon: Icon(MdiIcons.refresh, size: 14),
-          label: const Text('刷新', style: TextStyle(fontSize: 12.5)),
+          onPressed: isRefreshing ? null : onRefresh,
+          icon: _SpinningIcon(
+            icon: MdiIcons.refresh,
+            size: 14,
+            spinning: isRefreshing,
+          ),
+          label: Text(
+            isRefreshing ? '刷新中...' : '刷新',
+            style: const TextStyle(fontSize: 12.5),
+          ),
           style: OutlinedButton.styleFrom(
             foregroundColor: isDark ? Colors.white70 : AppColors.gray700,
             side: BorderSide(
@@ -751,5 +778,59 @@ class _SidebarFooter extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// 持续旋转的图标：[spinning] 为 true 时不停旋转，否则静止。
+class _SpinningIcon extends StatefulWidget {
+  final IconData icon;
+  final double size;
+  final bool spinning;
+
+  const _SpinningIcon({
+    required this.icon,
+    required this.size,
+    required this.spinning,
+  });
+
+  @override
+  State<_SpinningIcon> createState() => _SpinningIconState();
+}
+
+class _SpinningIconState extends State<_SpinningIcon>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.spinning) _controller.repeat();
+  }
+
+  @override
+  void didUpdateWidget(covariant _SpinningIcon oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.spinning && !_controller.isAnimating) {
+      _controller.repeat();
+    } else if (!widget.spinning && _controller.isAnimating) {
+      _controller.stop();
+      _controller.reset();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = Icon(widget.icon, size: widget.size);
+    if (!widget.spinning) return icon;
+    return RotationTransition(turns: _controller, child: icon);
   }
 }

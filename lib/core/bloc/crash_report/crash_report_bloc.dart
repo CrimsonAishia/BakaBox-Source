@@ -18,6 +18,9 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
   final CrashReportApi _api = CrashReportApi();
   final LocalCrashService _localService = LocalCrashService();
 
+  /// 同步的"加载更多"在途标记：防止滚动帧在状态尚未刷新前重复触发分页请求。
+  bool _loadingMore = false;
+
   CrashReportBloc() : super(const CrashReportState()) {
     on<CrashReportFetch>(_onFetch);
     on<CrashReportFetchMine>(_onFetchMine);
@@ -45,6 +48,7 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
     CrashReportFetch event,
     Emitter<CrashReportState> emit,
   ) async {
+    _loadingMore = false;
     emit(
       state.copyWith(
         isLoading: true,
@@ -86,7 +90,8 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
     Emitter<CrashReportState> emit,
   ) async {
     if (state.showMine) return;
-    if (!state.canLoadMore) return;
+    if (_loadingMore || !state.canLoadMore) return;
+    _loadingMore = true;
     emit(state.copyWith(isLoadingMore: true));
     try {
       final next = state.currentPage + 1;
@@ -99,12 +104,15 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
         keyword:
             state.currentKeyword.isEmpty ? null : state.currentKeyword,
       );
-      final merged = [...state.items, ...res.items];
+      // 去重：按 id 合并，避免服务端在分页间隙插入新数据导致重复项
+      final seen = state.items.map((e) => e.id).toSet();
+      final appended = res.items.where((e) => seen.add(e.id)).toList();
+      final merged = [...state.items, ...appended];
       emit(
         state.copyWith(
           items: merged,
           totalCount: res.total,
-          hasMore: merged.length < res.total,
+          hasMore: merged.length < res.total && res.items.isNotEmpty,
           isLoadingMore: false,
           currentPage: next,
         ),
@@ -112,6 +120,8 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
     } catch (e) {
       emit(state.copyWith(error: _err(e), isLoadingMore: false));
       LogService.e('崩溃报告加载更多失败', e);
+    } finally {
+      _loadingMore = false;
     }
   }
 

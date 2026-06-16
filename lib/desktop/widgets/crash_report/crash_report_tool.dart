@@ -66,9 +66,13 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
+    final bloc = context.read<CrashReportBloc>();
+    final state = bloc.state;
+    // 仅社区视图分页；已无更多 / 正在加载时不重复触发
+    if (state.showMine || !state.canLoadMore || state.isLoadingMore) return;
     final pos = _scrollController.position;
-    if (pos.pixels >= pos.maxScrollExtent - 200) {
-      context.read<CrashReportBloc>().add(const CrashReportLoadMore());
+    if (pos.pixels >= pos.maxScrollExtent - 300) {
+      bloc.add(const CrashReportLoadMore());
     }
   }
 
@@ -239,7 +243,7 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
         if (state.items.isEmpty) {
           return _buildEmptyList(state, mine: false);
         }
-        return ListView.builder(
+        final list = ListView.builder(
           controller: _scrollController,
           padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
           itemCount: state.items.length + (state.isLoadingMore ? 1 : 0),
@@ -266,6 +270,7 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
             );
           },
         );
+        return _withRefreshBar(list, refreshing: state.isLoading);
       },
     );
   }
@@ -290,7 +295,7 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
         if (state.localFiles.isEmpty) {
           return _buildEmptyList(state, mine: true);
         }
-        return ListView.builder(
+        final list = ListView.builder(
           padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
           itemCount: state.localFiles.length,
           itemBuilder: (context, index) {
@@ -304,7 +309,24 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
             );
           },
         );
+        return _withRefreshBar(list, refreshing: state.isLoadingLocal);
       },
+    );
+  }
+
+  /// 在列表已有数据的前提下重新加载时，顶部显示一条细进度条。
+  Widget _withRefreshBar(Widget child, {required bool refreshing}) {
+    return Stack(
+      children: [
+        Positioned.fill(child: child),
+        if (refreshing)
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: LinearProgressIndicator(minHeight: 2.5),
+          ),
+      ],
     );
   }
 
