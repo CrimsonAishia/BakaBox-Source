@@ -6,6 +6,7 @@ import 'embeds/divider_embed_builder.dart';
 import 'embeds/hover_info_embed_builder.dart';
 import 'embeds/resizable_image_embed_builder.dart';
 import '../constants/app_colors.dart';
+import 'guide/guide_toc_outline.dart';
 
 /// 只读富文本显示组件
 ///
@@ -23,12 +24,26 @@ class RichTextViewer extends StatefulWidget {
   /// 自定义 Embed 渲染器列表（如 BilibiliEmbedBuilder）
   final List<EmbedBuilder>? embedBuilders;
 
+  /// 是否启用 TOC 切片模式
+  ///
+  /// 启用后，会按 h1/h2/h3 把正文切成多段独立 [QuillEditor.basic]，
+  /// 每个 heading 切片外层挂 [GuideTocHeading.key]，方便外部用
+  /// [Scrollable.ensureVisible] 滚动定位。
+  ///
+  /// 解析得到的 outline 会通过 [onOutlineChanged] 回调向外暴露。
+  final bool sliceForToc;
+
+  /// outline 变化回调（仅在 [sliceForToc]=true 时触发）
+  final ValueChanged<List<GuideTocHeading>>? onOutlineChanged;
+
   const RichTextViewer({
     super.key,
     required this.content,
     this.textStyle,
     this.compact = false,
     this.embedBuilders,
+    this.sliceForToc = false,
+    this.onOutlineChanged,
   });
 
   @override
@@ -36,35 +51,72 @@ class RichTextViewer extends StatefulWidget {
 }
 
 class _RichTextViewerState extends State<RichTextViewer> {
-  late QuillController _controller;
+  /// 单 editor 模式下的控制器（sliceForToc=false 时使用）
+  QuillController? _controller;
   final ScrollController _scrollController = ScrollController();
+
+  /// 切片模式下：每个切片对应一个独立 controller（内部 dispose 时释放）
+  final List<QuillController> _sliceControllers = [];
+
+  /// 切片模式产物
+  GuideContentSlice? _slice;
 
   @override
   void initState() {
     super.initState();
-    _initController();
+    _rebuildContent();
   }
 
   @override
   void didUpdateWidget(RichTextViewer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.content != widget.content) {
-      _initController();
+    if (oldWidget.content != widget.content ||
+        oldWidget.sliceForToc != widget.sliceForToc) {
+      _disposeControllers();
+      _rebuildContent();
     }
   }
 
-  void _initController() {
-    final document = QuillDeltaCodec.decode(widget.content);
-    _controller = QuillController(
+  void _rebuildContent() {
+    if (widget.sliceForToc) {
+      final slice = GuideTocSlicer.slice(widget.content);
+      _slice = slice;
+      for (final chunk in slice.chunks) {
+        _sliceControllers.add(_makeController(chunk.deltaJson));
+      }
+      // 通知外部 outline（在下一帧避免 build 期间 setState）
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          widget.onOutlineChanged?.call(slice.outline);
+        }
+      });
+    } else {
+      _controller = _makeController(widget.content);
+    }
+  }
+
+  QuillController _makeController(String deltaJson) {
+    final document = QuillDeltaCodec.decode(deltaJson);
+    return QuillController(
       document: document,
       selection: const TextSelection.collapsed(offset: 0),
       readOnly: true,
     );
   }
 
+  void _disposeControllers() {
+    _controller?.dispose();
+    _controller = null;
+    for (final c in _sliceControllers) {
+      c.dispose();
+    }
+    _sliceControllers.clear();
+    _slice = null;
+  }
+
   @override
   void dispose() {
-    _controller.dispose();
+    _disposeControllers();
     _scrollController.dispose();
     super.dispose();
   }
@@ -74,8 +126,7 @@ class _RichTextViewerState extends State<RichTextViewer> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final baseTextStyle =
-        widget.textStyle ??
+    final baseTextStyle = widget.textStyle ??
         TextStyle(
           fontSize: 15,
           height: 1.7,
@@ -90,18 +141,88 @@ class _RichTextViewerState extends State<RichTextViewer> {
       const DividerEmbedBuilder(),
     ];
 
-    return QuillEditor.basic(
-      controller: _controller,
+    if (widget.sliceForToc && _slice != null) {
+      return _buildSliced(
+        slice: _slice!,
+        embedBuilders: mergedEmbedBuilders,
+        isDark: isDark,
+        baseTextStyle: baseTextStyle,
+      );
+    }
+
+    return _buildSingleEditor(
+      controller: _controller!,
       scrollController: _scrollController,
+      embedBuilders: mergedEmbedBuilders,
+      isDark: isDark,
+      baseTextStyle: baseTextStyle,
+    );
+  }
+
+  /// 单 Editor 渲染（默认模式）
+  Widget _buildSingleEditor({
+    required QuillController controller,
+    required ScrollController scrollController,
+    required List<EmbedBuilder> embedBuilders,
+    required bool isDark,
+    required TextStyle baseTextStyle,
+  }) {
+    return QuillEditor.basic(
+      controller: controller,
+      scrollController: scrollController,
       config: QuillEditorConfig(
         showCursor: false,
         autoFocus: false,
         expands: false,
         padding: EdgeInsets.zero,
         onLaunchUrl: _handleLaunchUrl,
-        embedBuilders: mergedEmbedBuilders,
+        embedBuilders: embedBuilders,
         customStyles: _buildStyles(isDark, baseTextStyle),
       ),
+    );
+  }
+
+  /// 切片渲染（TOC 模式）
+  ///
+  /// 每个切片用独立 [QuillEditor.basic] 渲染。heading 切片外层包一层
+  /// `KeyedSubtree` 挂 [GuideTocHeading.key]，方便 [Scrollable.ensureVisible]
+  /// 精确定位。各 editor 内部不再独立滚动（外层 SingleChildScrollView 接管）。
+  Widget _buildSliced({
+    required GuideContentSlice slice,
+    required List<EmbedBuilder> embedBuilders,
+    required bool isDark,
+    required TextStyle baseTextStyle,
+  }) {
+    final children = <Widget>[];
+    for (var i = 0; i < slice.chunks.length; i++) {
+      final chunk = slice.chunks[i];
+      final controller = _sliceControllers[i];
+      final editor = IgnorePointer(
+        ignoring: false,
+        child: QuillEditor.basic(
+          controller: controller,
+          // 切片模式下，editor 自身不滚动（外层 SingleChildScrollView 已托管）
+          config: QuillEditorConfig(
+            showCursor: false,
+            autoFocus: false,
+            expands: false,
+            scrollable: false,
+            padding: EdgeInsets.zero,
+            onLaunchUrl: _handleLaunchUrl,
+            embedBuilders: embedBuilders,
+            customStyles: _buildStyles(isDark, baseTextStyle),
+          ),
+        ),
+      );
+      if (chunk.isHeading) {
+        children.add(KeyedSubtree(key: chunk.heading!.key, child: editor));
+      } else {
+        children.add(editor);
+      }
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
     );
   }
 

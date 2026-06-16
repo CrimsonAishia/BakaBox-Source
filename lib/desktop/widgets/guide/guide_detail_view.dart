@@ -24,6 +24,8 @@ import '../../../core/widgets/guide/guide_interaction_dock.dart';
 import '../../../core/widgets/guide/guide_reading_progress.dart';
 import '../../../core/widgets/guide/guide_report_dialog.dart';
 import '../../../core/widgets/guide/guide_status_banner.dart';
+import '../../../core/widgets/guide/guide_toc_dock.dart';
+import '../../../core/widgets/guide/guide_toc_outline.dart';
 import '../../../core/widgets/guide/guide_tokens.dart';
 import '../../../core/widgets/rich_text_viewer.dart';
 import '../../../core/widgets/signed_network_image.dart';
@@ -67,6 +69,9 @@ class _GuideDetailViewState extends State<GuideDetailView> {
   /// 滚动指示器状态
   bool _canScrollUp = false;
   bool _canScrollDown = false;
+
+  /// 当前文档目录（由 [RichTextViewer] 切片解析后回填）
+  List<GuideTocHeading> _outline = const [];
 
   /// 当前回复目标（B 站风格底部 composer 状态）
   GuideComment? _replyTarget;
@@ -431,12 +436,23 @@ class _GuideDetailViewState extends State<GuideDetailView> {
           ),
         ),
 
-        // 右下浮动「回到顶部」按钮
+        // 右下浮动按钮组：TOC + 回到顶部
         Positioned(
           bottom: _commentBarVisible ? 90 : 32,
           right: 32,
-          child: GuideInteractionDock(
-            scrollController: _scrollController,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              GuideTocDock(
+                scrollController: _scrollController,
+                outline: _outline,
+              ),
+              if (_outline.isNotEmpty) const SizedBox(height: 10),
+              GuideInteractionDock(
+                scrollController: _scrollController,
+              ),
+            ],
           ),
         ),
 
@@ -693,8 +709,23 @@ class _GuideDetailViewState extends State<GuideDetailView> {
 
   Widget _buildRichContent(BuildContext context, Guide guide) {
     return RichTextViewer(
+      // 用 guide.id 作为 key，确保切换攻略时切片状态被重置（避免旧的 GlobalKey 冲突）
+      key: ValueKey('rich-${guide.id}'),
       content: guide.content!,
       embedBuilders: const [BilibiliEmbedBuilder()],
+      sliceForToc: true,
+      onOutlineChanged: (outline) {
+        if (!mounted) return;
+        // outline 内容相同则跳过 setState，避免不必要的重建
+        if (_outline.length == outline.length &&
+            List.generate(outline.length, (i) =>
+                  _outline[i].text == outline[i].text &&
+                  _outline[i].level == outline[i].level)
+                .every((e) => e)) {
+          return;
+        }
+        setState(() => _outline = outline);
+      },
     );
   }
 
