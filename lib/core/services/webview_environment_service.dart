@@ -25,6 +25,18 @@ class WebViewEnvironmentService {
   /// 全局共享的 WebView 环境，非 Windows 平台为 null
   static WebViewEnvironment? get environment => _environment;
 
+  /// 获取绑定了自定义环境的 [CookieManager]。
+  ///
+  /// 必须使用此方法而非直接调用 `CookieManager.instance()`：
+  /// 在 Windows 上，`CookieManager.instance()` 不带 `webViewEnvironment`
+  /// 时，插件会回退创建「默认 WebView2 环境」（userDataFolder 为 null），
+  /// WebView2 会在 exe 同级目录生成 `<exe名>.exe.WebView2` 缓存目录，
+  /// 安装在 Program Files 等只读位置时还会写入失败。
+  ///
+  /// 显式传入共享环境，确保 Cookie 操作复用同一份可写缓存目录。
+  static CookieManager get cookieManager =>
+      CookieManager.instance(webViewEnvironment: _environment);
+
   /// 初始化 WebView 环境
   ///
   /// 必须在创建任何 [InAppWebView] 之前调用，
@@ -56,6 +68,7 @@ class WebViewEnvironmentService {
       _environment = await WebViewEnvironment.create(
         settings: WebViewEnvironmentSettings(userDataFolder: targetPath),
       );
+      LogService.i('WebView2 缓存目录: $targetPath');
     } catch (e) {
       // 初始化失败不阻塞启动，WebView 将回退到默认目录
       LogService.e('WebView 环境初始化失败', e);

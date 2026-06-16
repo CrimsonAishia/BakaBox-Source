@@ -136,3 +136,7 @@ export 'widgets/guide/guide_interaction_dock.dart';
 export 'widgets/skip_warning_dialog.dart';
 export 'widgets/guide/guide_comment_bubble.dart';
 export 'widgets/guide/guide_comment_section.dart';
+export 'widgets/app_web_view.dart';
+
+// WebView 环境
+export 'services/webview_environment_service.dart';

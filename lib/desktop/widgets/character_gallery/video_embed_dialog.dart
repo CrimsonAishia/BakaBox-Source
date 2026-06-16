@@ -5,7 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../../../core/models/character_models.dart';
 import '../../../core/services/bilibili_service.dart';
-import '../../../core/services/webview_environment_service.dart';
+import '../../../core/widgets/app_web_view.dart';
 
 /// 视频内嵌播放弹窗
 ///
@@ -309,8 +309,7 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
           ),
           child: Container(
             color: Colors.black,
-            child: InAppWebView(
-              webViewEnvironment: WebViewEnvironmentService.environment,
+            child: AppWebView(
               initialUrlRequest: URLRequest(url: WebUri(_buildBilibiliEmbedUrl(widget.videoUrl))),
               initialSettings: InAppWebViewSettings(
                 transparentBackground: true,
@@ -318,12 +317,6 @@ class _VideoEmbedDialogState extends State<VideoEmbedDialog> {
               ),
               onCreateWindow: (controller, createWindowAction) async {
                 return false;
-              },
-              onPermissionRequest: (controller, request) async {
-                return PermissionResponse(
-                  resources: request.resources,
-                  action: PermissionResponseAction.DENY,
-                );
               },
               onReceivedError: (controller, request, error) {
                 if (mounted) {
