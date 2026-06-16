@@ -665,9 +665,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     final canVote = voting?.canVote ?? playtime?.canVote ?? false;
     final thresholdSeconds =
         voting?.voteThresholdSeconds ?? playtime?.voteThresholdSeconds ?? 0;
-    final totalValidSeconds =
-        voting?.userValidSeconds ?? playtime?.validSeconds ?? 0;
-    // 本图时长：voting 优先，没有就用 playtime.currentMap
+    // 投票门槛只看本图时长：voting 优先，没有就用 playtime.currentMap
     final mapValidSeconds =
         voting?.userMapValidSeconds ??
         playtime?.currentMap?.validSeconds ??
@@ -676,7 +674,6 @@ class _MapContributionDialogState extends State<MapContributionDialog>
         voting?.secondsUntilCanVote ?? playtime?.secondsUntilCanVote ?? 0;
 
     final mapDurationText = _formatPlaytime(mapValidSeconds);
-    final totalDurationText = _formatPlaytime(totalValidSeconds);
     final thresholdText = _formatPlaytime(thresholdSeconds);
 
     final String hintText;
@@ -703,7 +700,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
       );
     } else if (canVote) {
       hintText =
-          '您在本图玩了 $mapDurationText（共 $totalDurationText），已达到投票门槛';
+          '您在本图玩了 $mapDurationText，已达到投票门槛';
       iconColor = AppColors.primary;
       iconData = MdiIcons.checkCircleOutline;
       borderColor = AppColors.primary.withValues(alpha: 0.25);
@@ -711,7 +708,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     } else {
       final remainText = _formatPlaytime(remainSeconds);
       hintText =
-          '您在本图玩了 $mapDurationText（共 $totalDurationText），'
+          '您在本图玩了 $mapDurationText，'
           '还差 $remainText 即可投票（门槛 $thresholdText）';
       iconColor = AppColors.amber500;
       iconData = MdiIcons.clockOutline;
@@ -3233,11 +3230,14 @@ class _MapContributionDialogState extends State<MapContributionDialog>
 
     final thresholdSeconds =
         voting?.voteThresholdSeconds ?? playtime?.voteThresholdSeconds ?? 0;
-    final validSeconds =
-        voting?.userValidSeconds ?? playtime?.validSeconds ?? 0;
+    // 投票门槛只看本图时长，不再使用总时长
+    final mapValidSeconds =
+        voting?.userMapValidSeconds ??
+        playtime?.currentMap?.validSeconds ??
+        0;
     _showPlaytimePrompt(
       thresholdSeconds: thresholdSeconds,
-      validSeconds: validSeconds,
+      validSeconds: mapValidSeconds,
     );
     return false;
   }

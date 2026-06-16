@@ -236,10 +236,9 @@ class MapTagVotingInfo extends Equatable {
   /// 投票所需累计有效秒数
   final int voteThresholdSeconds;
 
-  /// 当前用户累计有效秒数（未登录为 0）
-  final int userValidSeconds;
-
   /// 当前用户在本图的累计有效秒数（未登录为 0）
+  ///
+  /// 投票门槛只看「本图」时长，不再使用总时长。
   final int userMapValidSeconds;
 
   /// 服务端最终判断（综合登录 / 时长 / 封禁）
@@ -247,7 +246,6 @@ class MapTagVotingInfo extends Equatable {
 
   const MapTagVotingInfo({
     required this.voteThresholdSeconds,
-    required this.userValidSeconds,
     required this.userMapValidSeconds,
     required this.canVote,
   });
@@ -255,7 +253,7 @@ class MapTagVotingInfo extends Equatable {
   /// 距离投票门槛还差多少秒（已达标返回 0）
   int get secondsUntilCanVote {
     if (canVote) return 0;
-    final diff = voteThresholdSeconds - userValidSeconds;
+    final diff = voteThresholdSeconds - userMapValidSeconds;
     return diff > 0 ? diff : 0;
   }
 
@@ -266,7 +264,6 @@ class MapTagVotingInfo extends Equatable {
   @override
   List<Object?> get props => [
     voteThresholdSeconds,
-    userValidSeconds,
     userMapValidSeconds,
     canVote,
   ];

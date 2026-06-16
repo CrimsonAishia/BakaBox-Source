@@ -104,7 +104,6 @@ Map<String, dynamic> _$MapTagListSimpleResponseToJson(
 MapTagVotingInfo _$MapTagVotingInfoFromJson(Map<String, dynamic> json) =>
     MapTagVotingInfo(
       voteThresholdSeconds: (json['voteThresholdSeconds'] as num).toInt(),
-      userValidSeconds: (json['userValidSeconds'] as num).toInt(),
       userMapValidSeconds: (json['userMapValidSeconds'] as num).toInt(),
       canVote: json['canVote'] as bool,
     );
@@ -112,7 +111,6 @@ MapTagVotingInfo _$MapTagVotingInfoFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$MapTagVotingInfoToJson(MapTagVotingInfo instance) =>
     <String, dynamic>{
       'voteThresholdSeconds': instance.voteThresholdSeconds,
-      'userValidSeconds': instance.userValidSeconds,
       'userMapValidSeconds': instance.userMapValidSeconds,
       'canVote': instance.canVote,
     };

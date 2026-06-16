@@ -342,7 +342,6 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
     if (voting != null) {
       voting = MapTagVotingInfo(
         voteThresholdSeconds: status.voteThresholdSeconds,
-        userValidSeconds: status.validSeconds,
         userMapValidSeconds:
             (status.currentMap != null &&
                     status.currentMap!.mapName == state.currentMapName)
