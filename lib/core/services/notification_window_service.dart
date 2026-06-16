@@ -516,9 +516,18 @@ class NotificationWindowService {
   }) async {
     final id = 'updatelog_${DateTime.now().millisecondsSinceEpoch}';
 
+    // 内容可能是纯文本（WebSocket 推送 / API 的 content 字段），
+    // 也可能是 HTML（API 的 rawHtml 字段）。
+    // 对纯文本需要把 \n 转成 <br>，否则在 _VerticalMarqueeHtml 中无法正确换行。
+    // 对已含 HTML 标签的内容则保持原样，避免在块级元素之间产生多余空行。
+    final hasHtmlTag = RegExp(r'<[a-zA-Z!/][^>]*>').hasMatch(content);
+    final htmlContent = hasHtmlTag
+        ? content
+        : content.replaceAll('\r\n', '\n').replaceAll('\n', '<br>');
+
     // 根据内容长度计算阅读时间
     // 去除 HTML 标签后计算字符数，按每秒阅读 5 个字符计算
-    final plainText = content.replaceAll(RegExp(r'<[^>]*>'), '');
+    final plainText = htmlContent.replaceAll(RegExp(r'<[^>]*>'), '');
     final charCount = plainText.length;
     final readingSeconds = (charCount / 5).ceil();
     // 最短 10 秒，最长 120 秒
@@ -529,7 +538,7 @@ class NotificationWindowService {
         id: id,
         type: NotificationType.updateLog,
         title: '更新日志',
-        message: content,
+        message: htmlContent,
         serverName: updateTime,
         autoDismissSeconds: autoDismissSeconds,
       ),
