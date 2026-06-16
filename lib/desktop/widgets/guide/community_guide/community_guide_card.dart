@@ -81,13 +81,6 @@ class _CommunityGuideCardState extends State<CommunityGuideCard> {
                             right: 8,
                             child: CommunityGuidePinnedBadge(),
                           ),
-                        // 底部数据遮罩（浏览、点赞、收藏、评论）
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: _CardCoverStats(item: item),
-                        ),
                       ],
                     ),
                   ),
@@ -128,7 +121,9 @@ class _CommunityGuideCardState extends State<CommunityGuideCard> {
                         categoryName: item.categoryName,
                         maxItems: 2,
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
+                      _CardStatsMetaRow(item: item),
+                      const SizedBox(height: 6),
                       _CardAuthorRow(item: item),
                     ],
                   ),
@@ -243,54 +238,53 @@ class _CardTagRow extends StatelessWidget {
   }
 }
 
-// 封面底部数据遮罩（浏览数居左，点赞 / 收藏 / 评论居右）
+// 正文区底部统计行（浏览 / 点赞 / 收藏 / 评论）
+// 无背景，使用 textTertiary，呼应作者信息行的轻量风格
 
-class _CardCoverStats extends StatelessWidget {
+class _CardStatsMetaRow extends StatelessWidget {
   final GuideListItem item;
 
-  const _CardCoverStats({required this.item});
+  const _CardStatsMetaRow({required this.item});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(10, 18, 10, 7),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          colors: [
-            Colors.black.withValues(alpha: 0.8),
-            Colors.transparent,
-          ],
-        ),
-      ),
-      child: Row(
-        children: [
-          _stat(Icons.remove_red_eye, item.viewCount),
-          const Spacer(),
-          _stat(Icons.thumb_up, item.likeCount),
-          const SizedBox(width: 10),
-          _stat(Icons.star, item.favoriteCount),
-          const SizedBox(width: 10),
-          _stat(Icons.chat_bubble, item.commentCount),
-        ],
-      ),
+    final colors = CommunityGuideColors.of(context);
+    final textColor = colors.textTertiary;
+    return Row(
+      children: [
+        _stat(Icons.remove_red_eye_outlined, item.viewCount,
+            iconColor: textColor, textColor: textColor),
+        const Spacer(),
+        _stat(Icons.thumb_up_outlined, item.likeCount,
+            iconColor: colors.likeRed, textColor: textColor),
+        const SizedBox(width: 14),
+        _stat(Icons.star_rounded, item.favoriteCount,
+            iconColor: const Color(0xFFFFB300), textColor: textColor),
+        const SizedBox(width: 14),
+        _stat(Icons.chat_bubble_outline, item.commentCount,
+            iconColor: colors.accentBlue, textColor: textColor),
+      ],
     );
   }
 
-  Widget _stat(IconData icon, int count) {
+  Widget _stat(
+    IconData icon,
+    int count, {
+    required Color iconColor,
+    required Color textColor,
+  }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(icon, size: 14, color: Colors.white),
-        const SizedBox(width: 3),
+        Icon(icon, size: 18, color: iconColor),
+        const SizedBox(width: 6),
         Text(
           formatGuideCount(count),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
+          style: TextStyle(
+            color: textColor,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
