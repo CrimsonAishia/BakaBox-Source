@@ -20,6 +20,8 @@ import '../models/map_contribution_models.dart';
 import '../models/map_tag_models.dart';
 import '../utils/contribution_validation_utils.dart';
 import '../utils/log_service.dart';
+import '../utils/platform_utils.dart';
+import '../utils/time_utils.dart';
 import '../utils/toast_utils.dart';
 import '../services/file_upload_service.dart';
 import '../services/image_url_service.dart';
@@ -246,6 +248,11 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     final authState = context.read<AuthBloc>().state;
     if (authState.isAuthenticated) {
       context.read<MapTagBloc>().add(const LoadUserTags());
+      // 拉取最新的游玩时长 / 投票门槛状态（含本图维度）
+      // 用于在投票弹窗顶部显示「您在本图玩了 X」+ 是否可投票
+      context.read<MapTagBloc>().add(
+        LoadUserPlaytime(mapName: widget.mapName),
+      );
     }
   }
 
@@ -640,44 +647,89 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     );
   }
 
-  /// 构建标签显示规则提示
-  /// 卡片上的标签由后端按「认可度」综合票数与赞成比例筛选，
-  /// 这里用通俗文案告诉用户「为什么有的标签没显示在卡片上」。
-  /// [state] 中的 displayMinVotes 来自后端，仅在后端启用该功能后才显示提示。
+  /// 构建投票门槛提示
+  ///
+  /// 永远显示，分三种状态：
+  /// - 未登录：黄色「登录后才能投票」
+  /// - 已登录 + 后端有数据：显示「您在本图玩了 X（共 Y），已达到/还差 Z 即可投票」
+  /// - 已登录 + 后端尚未返回数据（未启用 / 网络异常）：灰色「正在加载游玩时长…」
   Widget _buildTagDisplayHint(bool isDark, MapTagState state) {
-    // 后端未启用（未返回 displayMinVotes）时不显示提示，避免误导
-    final minVotes = state.displayMinVotes;
-    if (minVotes == null) return const SizedBox.shrink();
+    final voting = state.voting;
+    final playtime = state.userPlaytime;
 
-    final hintText = '获得约 $minVotes 票以上认可的标签才会显示在服务器卡片上';
-    final detailText =
-        '标签是否显示在卡片上，由它的「认可度」决定：\n'
-        '• 认可度综合了赞成票、反对票和投票人数\n'
-        '• 票数不够（少于约 $minVotes 票认可）的标签不会显示在卡片上\n'
-        '• 只有 1 个人投票不足以显示，需要更多人认可\n'
-        '• 被较多人反对的标签会被自动隐藏\n'
-        '• 票越多、赞成比例越高，认可度越高，排得越靠前\n\n'
-        '所有标签都会保留在这里可继续投票，达到认可度后会自动显示到卡片上；\n'
-        '已经显示的标签不会因为其他标签涨票而被挤掉。';
+    final authState = context.read<AuthBloc>().state;
+    final isLoggedIn = authState.isAuthenticated;
+    final hasPlaytimeData = voting != null || playtime != null;
+
+    // 优先使用 voting 的字段（后端最终判定），缺失时退化到 userPlaytime
+    final canVote = voting?.canVote ?? playtime?.canVote ?? false;
+    final thresholdSeconds =
+        voting?.voteThresholdSeconds ?? playtime?.voteThresholdSeconds ?? 0;
+    final totalValidSeconds =
+        voting?.userValidSeconds ?? playtime?.validSeconds ?? 0;
+    // 本图时长：voting 优先，没有就用 playtime.currentMap
+    final mapValidSeconds =
+        voting?.userMapValidSeconds ??
+        playtime?.currentMap?.validSeconds ??
+        0;
+    final remainSeconds =
+        voting?.secondsUntilCanVote ?? playtime?.secondsUntilCanVote ?? 0;
+
+    final mapDurationText = _formatPlaytime(mapValidSeconds);
+    final totalDurationText = _formatPlaytime(totalValidSeconds);
+    final thresholdText = _formatPlaytime(thresholdSeconds);
+
+    final String hintText;
+    final Color borderColor;
+    final Color bgColor;
+    final Color iconColor;
+    final IconData iconData;
+    if (!isLoggedIn) {
+      hintText = '登录论坛账户后才能投票';
+      iconColor = AppColors.amber500;
+      iconData = MdiIcons.accountAlertOutline;
+      borderColor = AppColors.amber500.withValues(alpha: 0.3);
+      bgColor = AppColors.amber500.withValues(alpha: isDark ? 0.12 : 0.08);
+    } else if (!hasPlaytimeData) {
+      // 已登录但后端尚未返回数据（接口未启用 / 加载中 / 网络异常）
+      hintText = state.isLoadingMapTagVotes
+          ? '正在加载您的游玩时长…'
+          : '暂未获取到游玩时长，可能是后端未启用或网络异常';
+      iconColor = isDark ? Colors.white54 : AppColors.gray500;
+      iconData = MdiIcons.clockOutline;
+      borderColor = (isDark ? Colors.white24 : Colors.black12);
+      bgColor = (isDark ? Colors.white : Colors.black).withValues(
+        alpha: 0.04,
+      );
+    } else if (canVote) {
+      hintText =
+          '您在本图玩了 $mapDurationText（共 $totalDurationText），已达到投票门槛';
+      iconColor = AppColors.primary;
+      iconData = MdiIcons.checkCircleOutline;
+      borderColor = AppColors.primary.withValues(alpha: 0.25);
+      bgColor = AppColors.primary.withValues(alpha: isDark ? 0.12 : 0.08);
+    } else {
+      final remainText = _formatPlaytime(remainSeconds);
+      hintText =
+          '您在本图玩了 $mapDurationText（共 $totalDurationText），'
+          '还差 $remainText 即可投票（门槛 $thresholdText）';
+      iconColor = AppColors.amber500;
+      iconData = MdiIcons.clockOutline;
+      borderColor = AppColors.amber500.withValues(alpha: 0.3);
+      bgColor = AppColors.amber500.withValues(alpha: isDark ? 0.12 : 0.08);
+    }
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 0),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: isDark ? 0.12 : 0.08),
+        color: bgColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.25),
-          width: 1,
-        ),
+        border: Border.all(color: borderColor, width: 1),
       ),
       child: Row(
         children: [
-          Icon(
-            MdiIcons.informationOutline,
-            size: 15,
-            color: AppColors.primary,
-          ),
+          Icon(iconData, size: 15, color: iconColor),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
@@ -689,30 +741,212 @@ class _MapContributionDialogState extends State<MapContributionDialog>
               ),
             ),
           ),
-          const SizedBox(width: 4),
-          Tooltip(
-            message: detailText,
-            preferBelow: true,
-            margin: const EdgeInsets.symmetric(horizontal: 24),
-            padding: const EdgeInsets.all(12),
-            textStyle: const TextStyle(
-              fontSize: 12,
-              height: 1.5,
-              color: Colors.white,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(0xF21A1A1A),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              MdiIcons.helpCircleOutline,
-              size: 15,
-              color: isDark ? Colors.white54 : AppColors.gray500,
+          const SizedBox(width: 6),
+          // 「如何累计时长？」教程入口
+          InkWell(
+            onTap: _showPlaytimeTutorial,
+            borderRadius: BorderRadius.circular(6),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    MdiIcons.helpCircleOutline,
+                    size: 14,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 3),
+                  const Text(
+                    '如何累计',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// 显示「如何累计游玩时长」教程对话框
+  void _showPlaytimeTutorial() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isMobile = !PlatformUtils.isDesktopPlatform;
+    final textColor = isDark ? Colors.white : AppColors.gray800;
+    final subColor = isDark ? Colors.white70 : AppColors.gray700;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: isDark ? AppColors.slate800 : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: Row(
+          children: [
+            Icon(MdiIcons.clockCheckOutline, color: AppColors.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '如何累计游玩时长',
+                style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 380,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '为防止乱投票，对地图标签投票需要先在该地图上累计一定的游玩时长。'
+                  '只有在服务器中游玩的时间才计入，主菜单挂机不算。',
+                  style: TextStyle(color: subColor, height: 1.5),
+                ),
+                const SizedBox(height: 16),
+                if (isMobile) ...[
+                  _buildTutorialStep(
+                    isDark,
+                    icon: MdiIcons.monitor,
+                    title: '移动端不统计时长',
+                    desc: '请在桌面版 BakaBox 上游玩累计；同一论坛账号的时长在所有设备共享，'
+                        '累计达标后移动端也能投票。',
+                  ),
+                ] else ...[
+                  Text(
+                    '满足以下任意一种启动方式即可被统计：',
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildTutorialStep(
+                    isDark,
+                    icon: MdiIcons.rocketLaunchOutline,
+                    title: '方式一：用 BakaBox 启动游戏（推荐）',
+                    desc: '通过启动器进入游戏，会自动加上 -condebug 监控参数，无需任何手动设置。',
+                  ),
+                  const SizedBox(height: 12),
+                  _buildTutorialStep(
+                    isDark,
+                    icon: MdiIcons.steam,
+                    title: '方式二：给 Steam 添加启动项',
+                    desc: 'Steam 库 → 右键 CS2 → 属性 → 通用 → 启动选项，填入 -condebug，'
+                        '之后正常从 Steam 启动即可。',
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.amber500.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppColors.amber500.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          MdiIcons.alertCircleOutline,
+                          size: 16,
+                          color: AppColors.amber500,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '未带 -condebug 启动时无法识别你在哪张图，时长不会增长。'
+                            '修改启动项后需要重启游戏才生效。',
+                            style: TextStyle(
+                              fontSize: 12,
+                              height: 1.4,
+                              color: subColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('知道了'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 教程步骤行
+  Widget _buildTutorialStep(
+    bool isDark, {
+    required IconData icon,
+    required String title,
+    required String desc,
+  }) {
+    final textColor = isDark ? Colors.white : AppColors.gray800;
+    final subColor = isDark ? Colors.white60 : AppColors.gray500;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 18, color: AppColors.primary),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  color: textColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                desc,
+                style: TextStyle(color: subColor, fontSize: 12, height: 1.4),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 把秒数格式化为「X 小时 Y 分钟」 / 「Y 分钟」
+  String _formatPlaytime(int seconds) {
+    if (seconds <= 0) return '0 分钟';
+    return TimeUtils.formatDuration(Duration(seconds: seconds));
   }
 
   /// 构建标签列表
@@ -921,6 +1155,7 @@ class _MapContributionDialogState extends State<MapContributionDialog>
   /// 处理标签投票
   void _handleTagVote(MapTag tag, String voteType) {
     if (!_checkLogin()) return;
+    if (!_checkPlaytime()) return;
     context.read<MapTagBloc>().add(
       ToggleTagVote(tagId: tag.id, voteType: voteType),
     );
@@ -2977,6 +3212,120 @@ class _MapContributionDialogState extends State<MapContributionDialog>
     return true;
   }
 
+  /// 检查游玩时长是否达到指定操作的门槛
+  /// 检查游玩时长是否达到投票门槛
+  ///
+  /// 仅用于「投票」（赞 / 踩）—— 新建 / 修改 / 删除标签有审核流程把关，
+  /// 与乱投票无关，不设时长门槛。
+  ///
+  /// 后端未启用游玩时长门槛（voting/userPlaytime 均为 null）时直接放行，
+  /// 保持与旧后端的兼容；启用后由后端最终裁决，前端只做提示。
+  bool _checkPlaytime() {
+    final state = context.read<MapTagBloc>().state;
+    final voting = state.voting;
+    final playtime = state.userPlaytime;
+
+    // 后端没启用门槛 → 不阻塞
+    if (voting == null && playtime == null) return true;
+
+    final canVote = voting?.canVote ?? playtime?.canVote ?? true;
+    if (canVote) return true;
+
+    final thresholdSeconds =
+        voting?.voteThresholdSeconds ?? playtime?.voteThresholdSeconds ?? 0;
+    final validSeconds =
+        voting?.userValidSeconds ?? playtime?.validSeconds ?? 0;
+    _showPlaytimePrompt(
+      thresholdSeconds: thresholdSeconds,
+      validSeconds: validSeconds,
+    );
+    return false;
+  }
+
+  /// 显示游玩时长不足提示
+  void _showPlaytimePrompt({
+    required int thresholdSeconds,
+    required int validSeconds,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final remainSeconds = thresholdSeconds - validSeconds;
+    final remainText = _formatPlaytime(
+      remainSeconds > 0 ? remainSeconds : 0,
+    );
+    final thresholdText = _formatPlaytime(thresholdSeconds);
+    final mineText = _formatPlaytime(validSeconds);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: isDark ? AppColors.slate800 : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Row(
+          children: [
+            Icon(MdiIcons.clockOutline, color: AppColors.amber500),
+            const SizedBox(width: 12),
+            Text(
+              '游玩时长不足',
+              style: TextStyle(
+                color: isDark ? Colors.white : AppColors.gray800,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '为防止乱投票，标签投票需要满足游玩时长门槛：',
+              style: TextStyle(
+                color: isDark ? Colors.white70 : AppColors.gray700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '• 门槛：$thresholdText\n'
+              '• 您已累计：$mineText\n'
+              '• 还差：$remainText',
+              style: TextStyle(
+                color: isDark ? Colors.white70 : AppColors.gray700,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              PlatformUtils.isDesktopPlatform
+                  ? '提示：使用 BakaBox 启动 CS2（自动带 -condebug）后，游玩时长会在后台静默累计。'
+                  : '提示：移动端不支持累计游玩时长，请使用桌面版 BakaBox 启动 CS2 后累计；同账号进度共享。',
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? Colors.white54 : AppColors.gray500,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('知道了'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              _showPlaytimeTutorial();
+            },
+            icon: Icon(MdiIcons.helpCircleOutline, size: 18),
+            label: const Text('如何累计'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 检查积分是否足够
   bool _checkCredits() {
     final authState = context.read<AuthBloc>().state;
@@ -3396,7 +3745,6 @@ class _TagGrid extends StatelessWidget {
               voteCount: voteCount,
               upCount: upCount,
               downCount: downCount,
-              displayMinVotes: state.displayMinVotes,
               isVoting: state.isVoting,
               isDark: isDark,
               isOwner: isOwner,
@@ -3425,9 +3773,6 @@ class _AnimatedTagChip extends StatefulWidget {
   final int voteCount;
   final int upCount;
   final int downCount;
-
-  /// 达标票数（无反对时显示到卡片所需的赞成票数），来自后端
-  final int? displayMinVotes;
   final bool isVoting;
   final bool isDark;
   final bool isOwner;
@@ -3447,7 +3792,6 @@ class _AnimatedTagChip extends StatefulWidget {
     required this.voteCount,
     required this.upCount,
     required this.downCount,
-    this.displayMinVotes,
     required this.isVoting,
     required this.isDark,
     required this.isOwner,
@@ -3906,18 +4250,13 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip>
           children: [
             // 投票按钮（审核中的标签不显示）
             if (showVoteButtons) ...[
-              // 赞成按钮：显示「当前赞成票 / 达标票数」（达标票数绿色）
+              // 赞成按钮
               _buildTagVoteButton(
                 icon: hasUpvoted ? MdiIcons.thumbUp : MdiIcons.thumbUpOutline,
                 isActive: hasUpvoted,
                 isUpvote: true,
                 label: '${widget.upCount}',
-                labelSuffix: widget.displayMinVotes != null
-                    ? '/${widget.displayMinVotes}'
-                    : null,
-                tooltip: widget.displayMinVotes != null
-                    ? '赞成 · 当前 ${widget.upCount} 票，达到 ${widget.displayMinVotes} 票认可后显示到卡片'
-                    : '赞成',
+                tooltip: '赞成',
                 onTap: widget.isVoting
                     ? null
                     : () {
@@ -3984,14 +4323,12 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip>
 
   /// 标签投票按钮（与编辑/删除按钮一致大小）
   /// [label] 不为 null 时在图标右侧显示文本，如当前票数
-  /// [labelSuffix] 不为 null 时紧跟 label 显示，用绿色高亮（如"/达标票数"）
   Widget _buildTagVoteButton({
     required IconData icon,
     required bool isActive,
     required bool isUpvote,
     required VoidCallback? onTap,
     String? label,
-    String? labelSuffix,
     String? tooltip,
   }) {
     final activeColor = isUpvote
@@ -4018,29 +4355,13 @@ class _AnimatedTagChipState extends State<_AnimatedTagChip>
                 Icon(icon, size: 18, color: iconColor),
                 if (label != null) ...[
                   const SizedBox(width: 5),
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: label,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: iconColor,
-                            height: 1.0,
-                          ),
-                        ),
-                        if (labelSuffix != null)
-                          TextSpan(
-                            text: labelSuffix,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.emerald500,
-                              height: 1.0,
-                            ),
-                          ),
-                      ],
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: iconColor,
+                      height: 1.0,
                     ),
                   ),
                 ],

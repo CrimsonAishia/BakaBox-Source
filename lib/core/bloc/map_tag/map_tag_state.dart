@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../../models/map_tag_models.dart';
+import '../../models/playtime_models.dart';
 
 class MapTagState extends Equatable {
   /// 全局标签列表
@@ -44,9 +45,13 @@ class MapTagState extends Equatable {
   /// 当前地图名称
   final String? currentMapName;
 
-  /// 无反对票时达到显示门槛所需的最小赞成票数
-  /// 来自标签列表接口，用于面向用户的提示文案
-  final int? displayMinVotes;
+  /// 投票门槛信息（来自 GET /zedbox/tag/{mapName}/list 的 voting 字段）
+  /// 旧后端 / 未启用时为 null
+  final MapTagVotingInfo? voting;
+
+  /// 当前用户的全局游玩时长状态（来自 PlaytimeReportService）
+  /// 用于在投票弹窗顶部展示「您总游玩 X 小时」与可投票门槛进度
+  final UserPlaytimeStatus? userPlaytime;
 
   const MapTagState({
     this.tagList = const [],
@@ -63,7 +68,8 @@ class MapTagState extends Equatable {
     this.cancelSuccess = false,
     this.error,
     this.currentMapName,
-    this.displayMinVotes,
+    this.voting,
+    this.userPlaytime,
   });
 
   /// 是否正在加载
@@ -140,7 +146,8 @@ class MapTagState extends Equatable {
     String? error,
     bool clearError = false,
     String? currentMapName,
-    int? displayMinVotes,
+    MapTagVotingInfo? voting,
+    UserPlaytimeStatus? userPlaytime,
   }) {
     return MapTagState(
       tagList: tagList ?? this.tagList,
@@ -157,7 +164,8 @@ class MapTagState extends Equatable {
       cancelSuccess: cancelSuccess ?? false,
       error: clearError ? null : (error ?? this.error),
       currentMapName: currentMapName ?? this.currentMapName,
-      displayMinVotes: displayMinVotes ?? this.displayMinVotes,
+      voting: voting ?? this.voting,
+      userPlaytime: userPlaytime ?? this.userPlaytime,
     );
   }
 
@@ -177,6 +185,7 @@ class MapTagState extends Equatable {
     cancelSuccess,
     error,
     currentMapName,
-    displayMinVotes,
+    voting,
+    userPlaytime,
   ];
 }

@@ -64,8 +64,6 @@ MapTagVoteSimple _$MapTagVoteSimpleFromJson(Map<String, dynamic> json) =>
       voteCount: (json['voteCount'] as num).toInt(),
       upCount: (json['upCount'] as num).toInt(),
       downCount: (json['downCount'] as num).toInt(),
-      score: (json['score'] as num?)?.toDouble(),
-      isDisplayed: json['isDisplayed'] as bool?,
       hasUpvoted: json['hasUpvoted'] as bool?,
       hasDownvoted: json['hasDownvoted'] as bool?,
     );
@@ -79,8 +77,6 @@ Map<String, dynamic> _$MapTagVoteSimpleToJson(MapTagVoteSimple instance) =>
       'voteCount': instance.voteCount,
       'upCount': instance.upCount,
       'downCount': instance.downCount,
-      'score': instance.score,
-      'isDisplayed': instance.isDisplayed,
       'hasUpvoted': instance.hasUpvoted,
       'hasDownvoted': instance.hasDownvoted,
     };
@@ -92,8 +88,9 @@ MapTagListSimpleResponse _$MapTagListSimpleResponseFromJson(
   items: (json['items'] as List<dynamic>)
       .map((e) => MapTagVoteSimple.fromJson(e as Map<String, dynamic>))
       .toList(),
-  displayThreshold: (json['displayThreshold'] as num?)?.toDouble(),
-  displayMinVotes: (json['displayMinVotes'] as num?)?.toInt(),
+  voting: json['voting'] == null
+      ? null
+      : MapTagVotingInfo.fromJson(json['voting'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$MapTagListSimpleResponseToJson(
@@ -101,9 +98,24 @@ Map<String, dynamic> _$MapTagListSimpleResponseToJson(
 ) => <String, dynamic>{
   'mapName': instance.mapName,
   'items': instance.items,
-  'displayThreshold': instance.displayThreshold,
-  'displayMinVotes': instance.displayMinVotes,
+  'voting': instance.voting,
 };
+
+MapTagVotingInfo _$MapTagVotingInfoFromJson(Map<String, dynamic> json) =>
+    MapTagVotingInfo(
+      voteThresholdSeconds: (json['voteThresholdSeconds'] as num).toInt(),
+      userValidSeconds: (json['userValidSeconds'] as num).toInt(),
+      userMapValidSeconds: (json['userMapValidSeconds'] as num).toInt(),
+      canVote: json['canVote'] as bool,
+    );
+
+Map<String, dynamic> _$MapTagVotingInfoToJson(MapTagVotingInfo instance) =>
+    <String, dynamic>{
+      'voteThresholdSeconds': instance.voteThresholdSeconds,
+      'userValidSeconds': instance.userValidSeconds,
+      'userMapValidSeconds': instance.userMapValidSeconds,
+      'canVote': instance.canVote,
+    };
 
 TagVoteResponse _$TagVoteResponseFromJson(Map<String, dynamic> json) =>
     TagVoteResponse(

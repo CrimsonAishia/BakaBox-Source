@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../api/map_tag_api.dart';
 import '../../models/map_tag_models.dart';
+import '../../models/playtime_models.dart';
+import '../../services/playtime_report_service.dart';
 import '../../utils/error_utils.dart';
 import '../../utils/log_service.dart';
 import 'map_tag_event.dart';
@@ -9,6 +13,7 @@ import 'map_tag_state.dart';
 /// 地图标签 Bloc
 class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
   final MapTagApi _api = MapTagApi();
+  StreamSubscription<UserPlaytimeStatus>? _playtimeSub;
 
   MapTagBloc() : super(const MapTagState()) {
     on<LoadTagList>(_onLoadTagList);
@@ -22,7 +27,21 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
     on<UpdateTag>(_onUpdateTag);
     on<DeleteTag>(_onDeleteTag);
     on<CancelTagChangeRequest>(_onCancelTagChangeRequest);
+    on<LoadUserPlaytime>(_onLoadUserPlaytime);
+    on<PlaytimeStatusUpdated>(_onPlaytimeStatusUpdated);
     on<ClearTagError>(_onClearError);
+
+    // 订阅游玩时长心跳，弹窗打开期间累计达标后自动解锁投票
+    _playtimeSub = PlaytimeReportService().statusStream.listen((status) {
+      add(PlaytimeStatusUpdated(status));
+    });
+  }
+
+  @override
+  Future<void> close() {
+    _playtimeSub?.cancel();
+    _playtimeSub = null;
+    return super.close();
   }
 
   /// 提取错误信息
@@ -66,7 +85,7 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
           state.copyWith(
             mapTagVotes: response.items,
             isLoadingMapTagVotes: false,
-            displayMinVotes: response.displayMinVotes,
+            voting: response.voting,
           ),
         );
       } else {
@@ -290,6 +309,49 @@ class MapTagBloc extends Bloc<MapTagEvent, MapTagState> {
     Emitter<MapTagState> emit,
   ) async {
     add(const LoadUserTags());
+  }
+
+  /// 加载当前用户的游玩时长 / 投票门槛状态
+  Future<void> _onLoadUserPlaytime(
+    LoadUserPlaytime event,
+    Emitter<MapTagState> emit,
+  ) async {
+    try {
+      final status = await PlaytimeReportService().refreshStatus(
+        mapName: event.mapName,
+      );
+      if (status != null && !emit.isDone) {
+        emit(state.copyWith(userPlaytime: status));
+      }
+    } catch (e) {
+      // 拉取游玩时长失败不影响标签流程，只记日志
+      LogService.w('加载用户游玩时长失败: $e');
+    }
+  }
+
+  /// 心跳推送：增量更新本地的 userPlaytime / voting，
+  /// 让弹窗在玩家刚达标时自动解锁投票
+  void _onPlaytimeStatusUpdated(
+    PlaytimeStatusUpdated event,
+    Emitter<MapTagState> emit,
+  ) {
+    final status = event.status;
+    // 如果心跳带回了 currentMap 且与当前打开的地图一致，同步到 voting，
+    // 避免「卡片显示已达标但 voting.canVote 还停在旧值」的不一致
+    var voting = state.voting;
+    if (voting != null) {
+      voting = MapTagVotingInfo(
+        voteThresholdSeconds: status.voteThresholdSeconds,
+        userValidSeconds: status.validSeconds,
+        userMapValidSeconds:
+            (status.currentMap != null &&
+                    status.currentMap!.mapName == state.currentMapName)
+                ? status.currentMap!.validSeconds
+                : voting.userMapValidSeconds,
+        canVote: status.canVote,
+      );
+    }
+    emit(state.copyWith(userPlaytime: status, voting: voting));
   }
 
   /// 清除错误

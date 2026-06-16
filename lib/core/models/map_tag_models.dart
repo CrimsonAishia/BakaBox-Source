@@ -137,14 +137,6 @@ class MapTagVoteSimple extends Equatable {
   /// 反对票数
   final int downCount;
 
-  /// Wilson 认可度分数（后端计算，0.0~1.0）
-  /// 旧后端不返回时为 null
-  final double? score;
-
-  /// 是否已达标显示在服务器卡片上
-  /// 旧后端不返回时为 null
-  final bool? isDisplayed;
-
   /// 当前用户是否投了赞成票
   final bool? hasUpvoted;
 
@@ -159,8 +151,6 @@ class MapTagVoteSimple extends Equatable {
     required this.voteCount,
     required this.upCount,
     required this.downCount,
-    this.score,
-    this.isDisplayed,
     this.hasUpvoted,
     this.hasDownvoted,
   });
@@ -183,8 +173,6 @@ class MapTagVoteSimple extends Equatable {
     int? voteCount,
     int? upCount,
     int? downCount,
-    double? score,
-    bool? isDisplayed,
     bool? hasUpvoted,
     bool? hasDownvoted,
   }) {
@@ -196,8 +184,6 @@ class MapTagVoteSimple extends Equatable {
       voteCount: voteCount ?? this.voteCount,
       upCount: upCount ?? this.upCount,
       downCount: downCount ?? this.downCount,
-      score: score ?? this.score,
-      isDisplayed: isDisplayed ?? this.isDisplayed,
       hasUpvoted: hasUpvoted ?? this.hasUpvoted,
       hasDownvoted: hasDownvoted ?? this.hasDownvoted,
     );
@@ -212,8 +198,6 @@ class MapTagVoteSimple extends Equatable {
     voteCount,
     upCount,
     downCount,
-    score,
-    isDisplayed,
     hasUpvoted,
     hasDownvoted,
   ];
@@ -225,20 +209,14 @@ class MapTagListSimpleResponse extends Equatable {
   final String mapName;
   final List<MapTagVoteSimple> items;
 
-  /// Wilson 显示门槛（后端返回，用于展示/调试）
-  /// 旧后端不返回时为 null
-  final double? displayThreshold;
-
-  /// 无反对票时达到显示门槛所需的最小赞成票数
-  /// 用于面向用户的提示文案（如"获得 N 票认可后显示"）
-  /// 旧后端不返回时为 null
-  final int? displayMinVotes;
+  /// 投票门槛信息（游玩时长 / 是否可投票）
+  /// 详见 `docs/playtime-voting.md`，旧后端不返回时为 null
+  final MapTagVotingInfo? voting;
 
   const MapTagListSimpleResponse({
     required this.mapName,
     required this.items,
-    this.displayThreshold,
-    this.displayMinVotes,
+    this.voting,
   });
 
   factory MapTagListSimpleResponse.fromJson(Map<String, dynamic> json) =>
@@ -246,11 +224,51 @@ class MapTagListSimpleResponse extends Equatable {
   Map<String, dynamic> toJson() => _$MapTagListSimpleResponseToJson(this);
 
   @override
+  List<Object?> get props => [mapName, items, voting];
+}
+
+/// 标签投票门槛信息
+///
+/// 由后端按当前用户的游玩时长 + 风控状态综合判定，前端不要再用本地数据
+/// 自行计算 `canVote`，应直接信任后端结果。
+@JsonSerializable()
+class MapTagVotingInfo extends Equatable {
+  /// 投票所需累计有效秒数
+  final int voteThresholdSeconds;
+
+  /// 当前用户累计有效秒数（未登录为 0）
+  final int userValidSeconds;
+
+  /// 当前用户在本图的累计有效秒数（未登录为 0）
+  final int userMapValidSeconds;
+
+  /// 服务端最终判断（综合登录 / 时长 / 封禁）
+  final bool canVote;
+
+  const MapTagVotingInfo({
+    required this.voteThresholdSeconds,
+    required this.userValidSeconds,
+    required this.userMapValidSeconds,
+    required this.canVote,
+  });
+
+  /// 距离投票门槛还差多少秒（已达标返回 0）
+  int get secondsUntilCanVote {
+    if (canVote) return 0;
+    final diff = voteThresholdSeconds - userValidSeconds;
+    return diff > 0 ? diff : 0;
+  }
+
+  factory MapTagVotingInfo.fromJson(Map<String, dynamic> json) =>
+      _$MapTagVotingInfoFromJson(json);
+  Map<String, dynamic> toJson() => _$MapTagVotingInfoToJson(this);
+
+  @override
   List<Object?> get props => [
-    mapName,
-    items,
-    displayThreshold,
-    displayMinVotes,
+    voteThresholdSeconds,
+    userValidSeconds,
+    userMapValidSeconds,
+    canVote,
   ];
 }
 
