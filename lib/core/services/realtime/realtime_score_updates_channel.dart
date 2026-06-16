@@ -65,6 +65,13 @@ class RealtimeScoreUpdatesChannel {
     }
   }
 
+  /// 主动请求服务端重新下发一份全量 snapshot。
+  ///
+  /// 用于用户手动刷新：强制纠正本地可能停留的旧比分。频率限制由调用方负责。
+  void forceResnapshot() {
+    _service.requestResnapshot(RealtimeChannels.scoreUpdates);
+  }
+
   void unsubscribe() {
     if (_refCount <= 0) return;
     _refCount -= 1;

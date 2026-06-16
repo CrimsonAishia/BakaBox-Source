@@ -28,11 +28,13 @@ class RealtimeMapInfoInvalidator {
     _started = true;
     _channel.subscribe();
     _subscription = _channel.events.listen(_onChanged);
-    // map.info 频道不回放断线期间的变更，重连后无法得知哪些地图变了，
-    // 直接清空地图信息缓存，下次读取自动从 API 拉取最新数据
+    // map.info 频道不回放断线期间的变更，重连后无法得知哪些地图变了。
+    // 这里做「温和失效」而非清空：标记缓存过期触发下次刷新，但保留旧数据
+    // 作为 API 失败时的兜底。弱网下 WS 会频繁断线重连，若每次都清空缓存，
+    // 而 /steam/work/map API 又持续超时，地图译名/背景会被清成空白且补不回来。
     _reconnectedSubscription = RealtimeService().reconnectedStream.listen((_) {
-      LogService.d('[MapInfoInvalidator] 重连成功，清空地图信息缓存');
-      _serverApi.clearMapInfoCache();
+      LogService.d('[MapInfoInvalidator] 重连成功，温和失效地图信息缓存（保留兜底）');
+      _serverApi.invalidateMapInfoCache();
     });
     LogService.d('[MapInfoInvalidator] 已启动');
   }

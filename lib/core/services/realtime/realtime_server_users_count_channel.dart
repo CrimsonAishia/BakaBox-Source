@@ -61,6 +61,14 @@ class RealtimeServerUsersCountChannel {
     }
   }
 
+  /// 主动请求服务端重新下发一份全量 snapshot
+  ///
+  /// 用于用户手动刷新：强制纠正本地可能停留的旧人数。频率限制由调用方
+  /// （ServerBloc 刷新事件）负责，避免高频请求冲击服务端。
+  void forceResnapshot() {
+    _service.requestResnapshot(RealtimeChannels.serverUsersCount);
+  }
+
   void unsubscribe() {
     if (_refCount <= 0) return;
     _refCount -= 1;

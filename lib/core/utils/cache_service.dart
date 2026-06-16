@@ -81,7 +81,6 @@ class CacheService {
     }
   }
 
-  // ========== 地图信息缓存 ==========
 
   /// 缓存单个地图信息
   static Future<void> cacheMapInfo(String mapName, MapData mapData) async {
@@ -164,6 +163,29 @@ class CacheService {
       LogService.i('地图信息缓存已清除');
     } catch (e) {
       LogService.e('清除地图信息缓存失败: $e', e);
+    }
+  }
+
+  /// 温和失效所有地图信息缓存：把时间戳标记为过期（下次读取会触发 API 刷新），
+  /// 但**保留缓存的地图数据**，供 API 失败时通过 [getCachedMapInfoIgnoreExpiry]
+  /// 兜底。
+  ///
+  /// 用于 WS 重连后的对账：相比 [clearMapInfoCache] 直接清空，弱网下 API 持续
+  /// 超时时仍能用上次的译名/背景兜底，避免地图信息被清成空白后补不回来。
+  static Future<void> invalidateAllMapInfoTimestamps() async {
+    try {
+      final timestamps = await _getMapInfoTimestamps();
+      if (timestamps.isEmpty) return;
+      // 全部置为 0（纪元），使 getCachedMapInfo 判定为过期并触发刷新；
+      // 数据本体（_mapInfoKey）保持不动，作为 fallback。
+      final invalidated = {for (final key in timestamps.keys) key: 0};
+      await StorageUtils.setString(
+        _mapInfoTimestampKey,
+        json.encode(invalidated),
+      );
+      LogService.i('地图信息缓存已标记为过期（保留数据兜底）');
+    } catch (e) {
+      LogService.e('标记地图信息缓存过期失败: $e', e);
     }
   }
 

@@ -58,6 +58,7 @@ class RealtimeClientActions {
 
   static const String subscribe = 'subscribe';
   static const String unsubscribe = 'unsubscribe';
+  static const String resnapshot = 'resnapshot';
   static const String auth = 'auth';
   static const String ping = 'ping';
 }
@@ -68,6 +69,8 @@ class RealtimeErrorCodes {
 
   static const String authRequired = 'auth_required';
   static const String invalidChannel = 'invalid_channel';
+  static const String snapshotUnsupported = 'snapshot_unsupported';
+  static const String notSubscribed = 'not_subscribed';
   static const String tooManyConnections = 'too_many_connections';
   static const String unknownAction = 'unknown_action';
   static const String internalError = 'internal_error';

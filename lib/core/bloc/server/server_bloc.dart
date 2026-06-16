@@ -47,6 +47,12 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   final Map<String, List<DateTime>> _refreshHistory = {};
   static const int _maxRefreshPerMinute = 5; // 1分钟内最多刷新5次
 
+  // 手动刷新强制重拉实时 snapshot 的全局节流：
+  // 不应随每次卡片刷新都触发，否则高频点击会冲击服务端。
+  // 全局最多 60 秒强制一次，窗口内的刷新仍走常规增量推送。
+  DateTime? _lastForceResnapshotAt;
+  static const Duration _forceResnapshotCooldown = Duration(seconds: 60);
+
   // 指数退避重试配置
   static const List<int> _retryDelays = [1000, 2000, 4000]; // 1s, 2s, 4s
   static const int _maxRetries = 3;
@@ -564,6 +570,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
               hasError: false,
               consecutiveFailures: 0,
               mapInfo: mapChanged ? null : currentServer.mapInfo,
+              clearMapInfo: mapChanged,
               mapRuntime: apiMapRuntime,
               mapRuntimeLastFetched: apiMapRuntime != null ? nowMs : null,
               clearMapRuntime: apiMapRuntime == null,
@@ -902,7 +909,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           // 不再自动标记 isOffline，让数据保留以便显示
           // 离线判定逻辑移到刷新周期结束后
           mapInfo: mapChanged ? null : currentServer.mapInfo,
+          clearMapInfo: mapChanged,
           mapRuntime: mapChanged ? null : currentServer.mapRuntime,
+          clearMapRuntime: mapChanged,
           mapRuntimeLastFetched: mapChanged
               ? null
               : currentServer.mapRuntimeLastFetched,
@@ -1086,6 +1095,25 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     final servers = List<ExtendedServerItem>.from(state.servers);
     final current = servers[index];
 
+    // 校验异步返回的 mapInfo 是否仍属于该服务器「当前」地图。
+    //
+    // _fetchMapInfoAsync 的 requestId 是「按轮询周期」共享的，并非按地图维度，
+    // 因此无法拦截同一周期内「旧地图的慢请求」晚于「新地图请求」返回的竞态：
+    // 换图 A→B 后，A 的慢请求可能后到并把旧 MapData 盖回去，导致背景/译名/标签
+    // 残留旧地图。这里以服务器当前 serverData.map 为权威，丢弃不匹配的 mapInfo。
+    // （与比分的 TeamScores.isMapMatched 一致：任一为空时放行，避免误伤。）
+    MapData? incomingMapInfo = event.mapInfo;
+    if (incomingMapInfo != null) {
+      final currentMap = current.serverData?.map;
+      if (!TeamScores.isMapMatched(incomingMapInfo.mapName, currentMap)) {
+        LogService.d(
+          '[ServerBloc] 丢弃过期地图信息: mapInfo=${incomingMapInfo.mapName} '
+          '当前=${currentMap ?? "?"} ($event)',
+        );
+        incomingMapInfo = null;
+      }
+    }
+
     // 更新全局缓存
     if (event.mapRuntime != null) {
       _mapRuntimeCache[event.address] = event.mapRuntime!;
@@ -1096,7 +1124,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
     servers[index] = current.copyWith(
       pingInfo: event.pingInfo ?? current.pingInfo,
-      mapInfo: event.mapInfo ?? current.mapInfo,
+      mapInfo: incomingMapInfo ?? current.mapInfo,
       mapRuntime: event.mapRuntime ?? current.mapRuntime,
       mapRuntimeLastFetched: event.mapRuntime != null
           ? DateTime.now().millisecondsSinceEpoch
@@ -2002,6 +2030,11 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     history.add(now);
     _refreshHistory[event.address] = history;
 
+    // 用户手动刷新：在全局冷却窗口内最多强制重拉一次实时 snapshot，
+    // 纠正本地可能停留的旧人数 / 比分 / 换图状态（WS 在保活期间可能丢消息）。
+    // 弱网模式下 WS 已关闭，跳过；冷却由 _forceResnapshotCooldown 控制，防止冲击服务端。
+    _maybeForceRealtimeResnapshot(now);
+
     // 添加到刷新集合
     final refreshingMaps = Set<String>.from(state.refreshingMaps)
       ..add(event.address);
@@ -2039,9 +2072,32 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     }
   }
 
+  /// 用户手动刷新时，按全局冷却强制重拉一次实时 snapshot。
+  ///
+  /// 实时频道（人数 / 比分 / 换图）在连接保活期间可能丢失某条增量推送，
+  /// 导致卡片停留在旧值。手动刷新通过后端原生 `resnapshot` 动作让服务端
+  /// 重发一次该频道的全量 snapshot 纠正（详见 docs/zedbox-realtime-ws.md）。
+  /// 该操作影响整条频道（非单服务器），因此全局节流到
+  /// [_forceResnapshotCooldown] 一次，避免高频点击冲击服务端。
+  ///
+  /// 弱网模式下 WS 已关闭，直接跳过。
+  void _maybeForceRealtimeResnapshot(DateTime now) {
+    if (NetworkModeService.instance.weakNetwork) return;
+
+    final last = _lastForceResnapshotAt;
+    if (last != null && now.difference(last) < _forceResnapshotCooldown) {
+      return;
+    }
+    _lastForceResnapshotAt = now;
+
+    _usersCountChannel.forceResnapshot();
+    _scoreChannel.forceResnapshot();
+    _mapRuntimeChannel.forceResnapshot();
+    LogService.d('[ServerBloc] 手动刷新：已请求重拉实时 snapshot');
+  }
+
   /// 清理过大的缓存，保留最近使用的数据
-  void _trimCacheIfNeeded() {
-    if (_mapRuntimeCache.length <= _maxCacheSize) return;
+  void _trimCacheIfNeeded() {    if (_mapRuntimeCache.length <= _maxCacheSize) return;
 
     // 按最后获取时间排序，移除最旧的条目
     final sortedEntries = _mapRuntimeLastFetchedCache.entries.toList()
@@ -2663,7 +2719,17 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
     final servers = List<ExtendedServerItem>.from(state.servers);
     final current = servers[index];
+
+    // 立即把新地图名写入 serverData，使卡片的地图英文名第一时间更新，
+    // 不必等下一个 A2S/API 轮询周期（轮询失败时英文名会长期停留在旧地图）。
+    final updatedServerData = current.serverData?.copyWith(
+      map: event.newMapName,
+      // WS 换图条目可能带 maxPlayers / hostName，但人数由 users.count 频道维护，
+      // 这里只覆盖地图名，避免用过期值污染其它字段。
+    );
+
     servers[index] = current.copyWith(
+      serverData: updatedServerData ?? current.serverData,
       clearMapRuntime: true,
       clearMapInfo: true,
       mapRuntimeError: false,

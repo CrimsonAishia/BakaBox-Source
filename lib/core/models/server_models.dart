@@ -232,6 +232,58 @@ class ServerInfo extends Equatable {
       _$ServerInfoFromJson(json);
   Map<String, dynamic> toJson() => _$ServerInfoToJson(this);
 
+  ServerInfo copyWith({
+    int? protocol,
+    String? hostName,
+    String? map,
+    String? modDir,
+    String? modDesc,
+    int? appId,
+    int? players,
+    int? maxPlayers,
+    int? bots,
+    String? dedicated,
+    String? os,
+    bool? password,
+    bool? secure,
+    String? version,
+    int? extraDataFlags,
+    int? gamePort,
+    String? steamId,
+    String? gameTags,
+    String? gameId,
+    String? ip,
+    int? pingLatency,
+    String? pingStatus,
+    String? gameType,
+  }) {
+    return ServerInfo(
+      protocol: protocol ?? this.protocol,
+      hostName: hostName ?? this.hostName,
+      map: map ?? this.map,
+      modDir: modDir ?? this.modDir,
+      modDesc: modDesc ?? this.modDesc,
+      appId: appId ?? this.appId,
+      players: players ?? this.players,
+      maxPlayers: maxPlayers ?? this.maxPlayers,
+      bots: bots ?? this.bots,
+      dedicated: dedicated ?? this.dedicated,
+      os: os ?? this.os,
+      password: password ?? this.password,
+      secure: secure ?? this.secure,
+      version: version ?? this.version,
+      extraDataFlags: extraDataFlags ?? this.extraDataFlags,
+      gamePort: gamePort ?? this.gamePort,
+      steamId: steamId ?? this.steamId,
+      gameTags: gameTags ?? this.gameTags,
+      gameId: gameId ?? this.gameId,
+      ip: ip ?? this.ip,
+      pingLatency: pingLatency ?? this.pingLatency,
+      pingStatus: pingStatus ?? this.pingStatus,
+      gameType: gameType ?? this.gameType,
+    );
+  }
+
   @override
   List<Object?> get props => [
     protocol,

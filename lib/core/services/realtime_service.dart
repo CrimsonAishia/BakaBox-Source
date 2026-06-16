@@ -256,11 +256,12 @@ class RealtimeService {
   /// 这类「订阅时下发 snapshot」的频道，在「连接保持但服务端丢了某条 updated/
   /// changed」（send 缓冲溢出、跨实例桥接降级）时，本地快照会长期停留在旧值。
   /// 由于没有断线，重连补订阅机制不会触发，需要业务侧监听 [reconcileStream]
-  /// 主动调用本方法，通过「退订 + 重订阅」让服务端重新下发一份全量 snapshot。
+  /// 主动调用本方法，让服务端重新下发一份全量 snapshot。
   ///
   /// 规则：
   /// - 未连接：直接跳过（重连后 [_resubscribeAll] 会自动补订阅并带回 snapshot）。
-  /// - 频道未订阅或正在等待 sub_ack（snapshot 在途）：跳过，避免重复订阅。
+  /// - 频道未订阅或正在等待 sub_ack（snapshot 在途）：跳过，避免无谓请求与
+  ///   `not_subscribed` 错误。
   /// - 引用计数为 0（无人订阅）：跳过。
   void requestResnapshot(String channel) {
     if (_disposed) return;
@@ -270,22 +271,11 @@ class RealtimeService {
     if (_pendingSubscribeChannels.contains(channel)) return;
     if (!_subscribedChannels.contains(channel)) return;
 
-    LogService.d('[Realtime] 对账：强制重拉 snapshot $channel');
-    // 退订
-    final unsubId = _nextReqId('unsub');
-    _subscribedChannels.remove(channel);
+    LogService.d('[Realtime] 对账：请求重发 snapshot $channel');
     _sendRaw({
-      'action': RealtimeClientActions.unsubscribe,
+      'action': RealtimeClientActions.resnapshot,
       'channel': channel,
-      'reqId': unsubId,
-    });
-    // 立即重订阅，TCP 有序保证服务端先处理退订再处理订阅并重发 snapshot
-    final subId = _nextReqId('sub');
-    _pendingSubscribeChannels.add(channel);
-    _sendRaw({
-      'action': RealtimeClientActions.subscribe,
-      'channel': channel,
-      'reqId': subId,
+      'reqId': _nextReqId('resnap'),
     });
   }
 
