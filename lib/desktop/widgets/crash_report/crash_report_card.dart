@@ -71,26 +71,28 @@ class _CrashReportCardState extends State<CrashReportCard> {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(width: 4, color: palette.accent),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildHeader(palette, secondary, isDark),
-                        const SizedBox(height: 8),
-                        _buildHeadline(textColor),
-                        const SizedBox(height: 10),
-                        _buildFooter(palette, secondary, isDark),
-                      ],
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(width: 4, color: palette.accent),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildHeader(palette, secondary, isDark),
+                          const SizedBox(height: 8),
+                          _buildHeadline(textColor),
+                          const SizedBox(height: 10),
+                          _buildFooter(palette, secondary, isDark),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

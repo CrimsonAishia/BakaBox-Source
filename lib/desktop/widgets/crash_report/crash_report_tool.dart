@@ -29,7 +29,7 @@ class CrashReportTool extends StatelessWidget {
     return BlocProvider(
       create: (_) => CrashReportBloc()
         ..add(const CrashReportFetchStats())
-        ..add(const CrashReportFetch()),
+        ..add(const CrashReportFetchMine()),
       child: const _CrashReportToolContent(),
     );
   }

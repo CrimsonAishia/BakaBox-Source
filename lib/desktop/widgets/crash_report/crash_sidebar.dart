@@ -151,21 +151,21 @@ class _CollapsedSidebar extends StatelessWidget {
             children: [
               const SizedBox(height: 12),
               _CollapsedTab(
-                icon: MdiIcons.formatListBulleted,
-                tooltip: '社区全部',
-                selected: !state.showMine,
-                onTap: () => context
-                    .read<CrashReportBloc>()
-                    .add(const CrashReportSwitchView(false)),
-              ),
-              const SizedBox(height: 6),
-              _CollapsedTab(
                 icon: MdiIcons.laptop,
                 tooltip: '我的本机',
                 selected: state.showMine,
                 onTap: () => context
                     .read<CrashReportBloc>()
                     .add(const CrashReportSwitchView(true)),
+              ),
+              const SizedBox(height: 6),
+              _CollapsedTab(
+                icon: MdiIcons.formatListBulleted,
+                tooltip: '社区全部',
+                selected: !state.showMine,
+                onTap: () => context
+                    .read<CrashReportBloc>()
+                    .add(const CrashReportSwitchView(false)),
               ),
               const Spacer(),
               IconButton(
@@ -282,21 +282,21 @@ class _ViewSwitch extends StatelessWidget {
         children: [
           Expanded(
             child: _ViewTab(
-              icon: MdiIcons.formatListBulleted,
-              label: '社区',
-              selected: !state.showMine,
-              isDark: isDark,
-              onTap: () => onSwitch(false),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: _ViewTab(
               icon: MdiIcons.laptop,
               label: '我的',
               selected: state.showMine,
               isDark: isDark,
               onTap: () => onSwitch(true),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: _ViewTab(
+              icon: MdiIcons.formatListBulleted,
+              label: '社区',
+              selected: !state.showMine,
+              isDark: isDark,
+              onTap: () => onSwitch(false),
             ),
           ),
         ],

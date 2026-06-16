@@ -48,7 +48,7 @@ class CrashReportState extends Equatable {
     this.hasMore = true,
     this.isLoading = false,
     this.isLoadingMore = false,
-    this.showMine = false,
+    this.showMine = true,
     this.currentSeverity = 'all',
     this.currentCategory = 'all',
     this.currentSort = 'created_at DESC',
