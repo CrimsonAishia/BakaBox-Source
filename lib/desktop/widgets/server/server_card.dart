@@ -1549,7 +1549,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: bgColor.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(6),
@@ -1569,12 +1569,12 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
           children: [
             Center(child: _buildPlayerCount(players, maxPlayers)),
             if (showRuntime) ...[
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               SizedBox(
                 height: 1,
                 child: CustomPaint(painter: _DashedLinePainter()),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Center(child: _buildRuntimeInfo()),
             ],
           ],
