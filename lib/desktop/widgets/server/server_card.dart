@@ -1761,7 +1761,9 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
 
   Widget _buildRuntimeInfo() {
     final hasError = widget.server.mapRuntimeError;
-    final isLoading = widget.server.mapRuntime == null && !hasError;
+    if (hasError) return const SizedBox.shrink();
+
+    final isLoading = widget.server.mapRuntime == null;
     final mapName = widget.server.serverData?.map;
     final fetchedAt = widget.server.mapRuntimeLastFetched;
 
@@ -1784,10 +1786,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     Color iconColor;
     Color textColor;
 
-    if (hasError) {
-      iconColor = const Color(0xFFF0A020);
-      textColor = const Color(0xFFF0A020);
-    } else if (_isWarmingUp) {
+    if (_isWarmingUp) {
       iconColor = AppColors.orange;
       textColor = const Color(0xFFE65100);
     } else if (isLoading) {

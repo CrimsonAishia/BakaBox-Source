@@ -62,14 +62,20 @@ class ServerUpdateSingleServer extends ServerEvent {
   final String address;
   final ServerPingInfo? pingInfo;
   final MapData? mapInfo;
+  final bool? mapInfoFetched;
+  final bool? mapInfoError;
   final MapRuntimeData? mapRuntime;
+  final bool? mapRuntimeFetched;
   final bool? mapRuntimeError;
 
   const ServerUpdateSingleServer({
     required this.address,
     this.pingInfo,
     this.mapInfo,
+    this.mapInfoFetched,
+    this.mapInfoError,
     this.mapRuntime,
+    this.mapRuntimeFetched,
     this.mapRuntimeError,
   });
 
@@ -78,7 +84,10 @@ class ServerUpdateSingleServer extends ServerEvent {
     address,
     pingInfo,
     mapInfo,
+    mapInfoFetched,
+    mapInfoError,
     mapRuntime,
+    mapRuntimeFetched,
     mapRuntimeError,
   ];
 }

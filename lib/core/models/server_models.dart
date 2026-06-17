@@ -528,6 +528,7 @@ class ExtendedServerItem extends Equatable {
   final ServerItem serverItem;
   final ServerInfo? serverData;
   final MapData? mapInfo;
+  final bool mapInfoFetched;
   final DateTime? updatedAt;
   final bool recentlyUpdated;
   final bool isLoading;
@@ -547,6 +548,7 @@ class ExtendedServerItem extends Equatable {
     required this.serverItem,
     this.serverData,
     this.mapInfo,
+    this.mapInfoFetched = false,
     this.updatedAt,
     this.recentlyUpdated = false,
     this.isLoading = false,
@@ -567,6 +569,7 @@ class ExtendedServerItem extends Equatable {
     ServerItem? serverItem,
     ServerInfo? serverData,
     MapData? mapInfo,
+    bool? mapInfoFetched,
     DateTime? updatedAt,
     bool? recentlyUpdated,
     bool? isLoading,
@@ -590,6 +593,7 @@ class ExtendedServerItem extends Equatable {
       serverItem: serverItem ?? this.serverItem,
       serverData: clearServerData ? null : (serverData ?? this.serverData),
       mapInfo: clearMapInfo ? null : (mapInfo ?? this.mapInfo),
+      mapInfoFetched: clearMapInfo ? false : (mapInfoFetched ?? this.mapInfoFetched),
       updatedAt: updatedAt ?? this.updatedAt,
       recentlyUpdated: recentlyUpdated ?? this.recentlyUpdated,
       isLoading: isLoading ?? this.isLoading,
@@ -614,6 +618,7 @@ class ExtendedServerItem extends Equatable {
     serverItem,
     serverData,
     mapInfo,
+    mapInfoFetched,
     updatedAt,
     recentlyUpdated,
     isLoading,

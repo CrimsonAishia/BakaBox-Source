@@ -993,7 +993,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           final currentMapInInfo = currentServer.serverData?.map;
           final needFetchMapInfo =
               mapChanged ||
-              currentServer.mapInfo == null ||
+              !currentServer.mapInfoFetched ||
               (currentMapInInfo != null && currentMapInInfo != newMap);
           if (needFetchMapInfo) {
             _fetchMapInfoAsync(address, info.map, requestId, serverApi);
@@ -1003,7 +1003,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
           if (!isCustomServer &&
               (mapChanged ||
                   (currentServer.mapRuntime == null &&
-                      _mapRuntimeCache[address] == null))) {
+                      _mapRuntimeCache[address] == null &&
+                      !currentServer.mapRuntimeError &&
+                      currentServer.mapRuntimeLastFetched == null))) {
             if (!NetworkModeService.instance.weakNetwork) {
               // 正常网络模式下，不论是冷启动还是换图，长连接都会推送 snapshot 或 changed 事件。
               // 为了避免 A2S 查询比长连接快导致的 HTTP 抢跑竞态，延迟 3 秒再决定是否发 HTTP。
@@ -1202,9 +1204,10 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
     servers[index] = current.copyWith(
       pingInfo: event.pingInfo ?? current.pingInfo,
-      mapInfo: incomingMapInfo ?? current.mapInfo,
-      mapRuntime: event.mapRuntime ?? current.mapRuntime,
-      mapRuntimeLastFetched: event.mapRuntime != null
+      mapInfo: event.mapInfoFetched == true ? event.mapInfo : (event.mapInfo ?? current.mapInfo),
+      mapInfoFetched: event.mapInfoFetched ?? current.mapInfoFetched,
+      mapRuntime: event.mapRuntimeFetched == true ? event.mapRuntime : (event.mapRuntime ?? current.mapRuntime),
+      mapRuntimeLastFetched: event.mapRuntimeFetched == true
           ? DateTime.now().millisecondsSinceEpoch
           : current.mapRuntimeLastFetched,
       mapRuntimeError: event.mapRuntimeError ?? current.mapRuntimeError,
@@ -1224,8 +1227,14 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         )
         .then((mapInfo) {
           if (isClosed) return;
-          if (requestId == _currentRequestId && mapInfo != null) {
-            add(ServerUpdateSingleServer(address: address, mapInfo: mapInfo));
+          if (requestId == _currentRequestId) {
+            add(
+              ServerUpdateSingleServer(
+                address: address,
+                mapInfo: mapInfo,
+                mapInfoFetched: true,
+              ),
+            );
           }
         })
         .catchError((e) {
@@ -1250,7 +1259,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
               ServerUpdateSingleServer(
                 address: address,
                 mapRuntime: mapRuntime,
-                mapRuntimeError: mapRuntime == null,
+                mapRuntimeFetched: true,
+                mapRuntimeError: false,
               ),
             );
           }

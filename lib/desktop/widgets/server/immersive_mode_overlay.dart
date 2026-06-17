@@ -1445,25 +1445,20 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     required bool hasValidScore,
     required int? weeklyOccurrences,
   }) {
+    if (hasError) return const SizedBox.shrink();
+
     // 使用 MapRuntimeUtils 计算运行时间显示
     final displayText = MapRuntimeUtils.getRuntimeDisplay(
       mapRuntime: mapRuntime,
       fetchedAt: fetchedAt,
-      isLoading: mapRuntime == null && !hasError,
-      hasError: hasError,
+      isLoading: mapRuntime == null,
+      hasError: false,
     );
 
     Color iconColor = AppColors.gray500;
     Color textColor = AppColors.gray500;
     Color bgColor = Colors.white.withValues(alpha: 0.95);
     Color borderColor = Colors.white.withValues(alpha: 0.3);
-
-    if (hasError) {
-      iconColor = const Color(0xFFF0A020);
-      textColor = const Color(0xFFF0A020);
-      bgColor = const Color(0xFFF0A020).withValues(alpha: 0.15);
-      borderColor = const Color(0xFFF0A020).withValues(alpha: 0.3);
-    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
