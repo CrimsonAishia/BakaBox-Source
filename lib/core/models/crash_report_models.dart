@@ -271,10 +271,10 @@ class CrashReportStats extends Equatable {
   final int totalCount;
   @JsonKey(defaultValue: 0)
   final int todayCount;
-  @JsonKey(defaultValue: <CrashReportModuleStat>[])
-  final List<CrashReportModuleStat> topModules;
-  @JsonKey(defaultValue: <CrashReportModuleStat>[])
-  final List<CrashReportModuleStat> topThirdParty;
+  @JsonKey(defaultValue: <CrashReportTopModule>[])
+  final List<CrashReportTopModule> topModules;
+  @JsonKey(defaultValue: <CrashReportTopThirdParty>[])
+  final List<CrashReportTopThirdParty> topThirdParty;
 
   const CrashReportStats({
     this.totalCount = 0,
@@ -298,23 +298,41 @@ class CrashReportStats extends Equatable {
 }
 
 @JsonSerializable()
-class CrashReportModuleStat extends Equatable {
+class CrashReportTopModule extends Equatable {
+  final String module;
+  @JsonKey(defaultValue: 0)
+  final int count;
+
+  const CrashReportTopModule({
+    required this.module,
+    required this.count,
+  });
+
+  factory CrashReportTopModule.fromJson(Map<String, dynamic> json) =>
+      _$CrashReportTopModuleFromJson(json);
+
+  Map<String, dynamic> toJson() => _$CrashReportTopModuleToJson(this);
+
+  @override
+  List<Object?> get props => [module, count];
+}
+
+@JsonSerializable()
+class CrashReportTopThirdParty extends Equatable {
   final String name;
   @JsonKey(defaultValue: 0)
   final int count;
-  final String? label;
 
-  const CrashReportModuleStat({
+  const CrashReportTopThirdParty({
     required this.name,
     required this.count,
-    this.label,
   });
 
-  factory CrashReportModuleStat.fromJson(Map<String, dynamic> json) =>
-      _$CrashReportModuleStatFromJson(json);
+  factory CrashReportTopThirdParty.fromJson(Map<String, dynamic> json) =>
+      _$CrashReportTopThirdPartyFromJson(json);
 
-  Map<String, dynamic> toJson() => _$CrashReportModuleStatToJson(this);
+  Map<String, dynamic> toJson() => _$CrashReportTopThirdPartyToJson(this);
 
   @override
-  List<Object?> get props => [name, count, label];
+  List<Object?> get props => [name, count];
 }

@@ -6,6 +6,7 @@ import '../../../core/bloc/crash_report/crash_report_bloc.dart';
 import '../../../core/bloc/crash_report/crash_report_event.dart';
 import '../../../core/bloc/crash_report/crash_report_state.dart';
 import '../../../core/constants/app_colors.dart';
+import 'crash_category.dart';
 
 /// 工具页左侧栏：视图切换 + 搜索 + 过滤 + 统计 + 刷新
 ///
@@ -29,14 +30,15 @@ class CrashSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return collapsed ? const _CollapsedSidebar() : _ExpandedSidebar(
-      searchController: searchController,
-      onSearchChanged: onSearchChanged,
-      onSearchClear: onSearchClear,
-    );
+    return collapsed
+        ? const _CollapsedSidebar()
+        : _ExpandedSidebar(
+            searchController: searchController,
+            onSearchChanged: onSearchChanged,
+            onSearchClear: onSearchClear,
+          );
   }
 }
-
 
 class _ExpandedSidebar extends StatelessWidget {
   final TextEditingController searchController;
@@ -70,12 +72,16 @@ class _ExpandedSidebar extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _SectionLabel(text: '视图', isDark: isDark),
-              _ViewSwitch(state: state, isDark: isDark, onSwitch: (mine) {
-                if (searchController.text.isNotEmpty) onSearchClear();
-                context
-                    .read<CrashReportBloc>()
-                    .add(CrashReportSwitchView(mine));
-              }),
+              _ViewSwitch(
+                state: state,
+                isDark: isDark,
+                onSwitch: (mine) {
+                  if (searchController.text.isNotEmpty) onSearchClear();
+                  context.read<CrashReportBloc>().add(
+                    CrashReportSwitchView(mine),
+                  );
+                },
+              ),
               const SizedBox(height: 16),
               _SectionLabel(
                 text: '搜索',
@@ -99,9 +105,9 @@ class _ExpandedSidebar extends StatelessWidget {
                 value: state.currentSeverity,
                 disabled: state.showMine,
                 isDark: isDark,
-                onChanged: (v) => context
-                    .read<CrashReportBloc>()
-                    .add(CrashReportFilterSeverity(v)),
+                onChanged: (v) => context.read<CrashReportBloc>().add(
+                  CrashReportFilterSeverity(v),
+                ),
               ),
               const SizedBox(height: 16),
               _SectionLabel(
@@ -113,9 +119,9 @@ class _ExpandedSidebar extends StatelessWidget {
                 value: state.currentCategory,
                 disabled: state.showMine,
                 isDark: isDark,
-                onChanged: (v) => context
-                    .read<CrashReportBloc>()
-                    .add(CrashReportFilterCategory(v)),
+                onChanged: (v) => context.read<CrashReportBloc>().add(
+                  CrashReportFilterCategory(v),
+                ),
               ),
               const SizedBox(height: 18),
               const Divider(height: 1),
@@ -123,12 +129,13 @@ class _ExpandedSidebar extends StatelessWidget {
               _StatsBlock(state: state, isDark: isDark),
               const Spacer(),
               _SidebarFooter(
-                onRefresh: () => context
-                    .read<CrashReportBloc>()
-                    .add(const CrashReportRefresh()),
+                onRefresh: () => context.read<CrashReportBloc>().add(
+                  const CrashReportRefresh(),
+                ),
                 isDark: isDark,
-                isRefreshing:
-                    state.showMine ? state.isLoadingLocal : state.isLoading,
+                isRefreshing: state.showMine
+                    ? state.isLoadingLocal
+                    : state.isLoading,
               ),
             ],
           );
@@ -137,7 +144,6 @@ class _ExpandedSidebar extends StatelessWidget {
     );
   }
 }
-
 
 class _CollapsedSidebar extends StatelessWidget {
   const _CollapsedSidebar();
@@ -152,31 +158,36 @@ class _CollapsedSidebar extends StatelessWidget {
         buildWhen: (prev, curr) =>
             prev.showMine != curr.showMine ||
             prev.isLoading != curr.isLoading ||
-            prev.isLoadingLocal != curr.isLoadingLocal,
+            prev.isLoadingLocal != curr.isLoadingLocal ||
+            prev.stats != curr.stats ||
+            prev.localFiles != curr.localFiles,
         builder: (context, state) {
-          final refreshing =
-              state.showMine ? state.isLoadingLocal : state.isLoading;
+          final refreshing = state.showMine
+              ? state.isLoadingLocal
+              : state.isLoading;
           return Column(
             children: [
               const SizedBox(height: 12),
               _CollapsedTab(
                 icon: MdiIcons.laptop,
-                tooltip: '我的本机',
+                tooltip: '本地报错',
                 selected: state.showMine,
-                onTap: () => context
-                    .read<CrashReportBloc>()
-                    .add(const CrashReportSwitchView(true)),
+                onTap: () => context.read<CrashReportBloc>().add(
+                  const CrashReportSwitchView(true),
+                ),
               ),
               const SizedBox(height: 6),
               _CollapsedTab(
                 icon: MdiIcons.formatListBulleted,
-                tooltip: '社区全部',
+                tooltip: '其他用户报错',
                 selected: !state.showMine,
-                onTap: () => context
-                    .read<CrashReportBloc>()
-                    .add(const CrashReportSwitchView(false)),
+                onTap: () => context.read<CrashReportBloc>().add(
+                  const CrashReportSwitchView(false),
+                ),
               ),
               const Spacer(),
+              _CollapsedStatsBlock(state: state, isDark: isDark),
+              const SizedBox(height: 16),
               IconButton(
                 tooltip: '刷新',
                 icon: _SpinningIcon(
@@ -186,9 +197,9 @@ class _CollapsedSidebar extends StatelessWidget {
                 ),
                 onPressed: refreshing
                     ? null
-                    : () => context
-                        .read<CrashReportBloc>()
-                        .add(const CrashReportRefresh()),
+                    : () => context.read<CrashReportBloc>().add(
+                        const CrashReportRefresh(),
+                      ),
               ),
               const SizedBox(height: 12),
             ],
@@ -244,7 +255,6 @@ class _CollapsedTab extends StatelessWidget {
     );
   }
 }
-
 
 // Section helpers
 
@@ -308,7 +318,7 @@ class _ViewSwitch extends StatelessWidget {
           Expanded(
             child: _ViewTab(
               icon: MdiIcons.formatListBulleted,
-              label: '社区',
+              label: '其他用户',
               selected: !state.showMine,
               isDark: isDark,
               onTap: () => onSwitch(false),
@@ -379,7 +389,6 @@ class _ViewTab extends StatelessWidget {
   }
 }
 
-
 class _SearchBox extends StatefulWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
@@ -436,10 +445,7 @@ class _SearchBoxState extends State<_SearchBox> {
           child: TextField(
             controller: widget.controller,
             enabled: !widget.disabled,
-            style: TextStyle(
-              fontSize: 13,
-              color: isDark ? Colors.white : null,
-            ),
+            style: TextStyle(fontSize: 13, color: isDark ? Colors.white : null),
             decoration: InputDecoration(
               hintText: '模块 / 关键字...',
               hintStyle: TextStyle(
@@ -456,9 +462,7 @@ class _SearchBoxState extends State<_SearchBox> {
                       icon: const Icon(Icons.close, size: 14),
                       padding: EdgeInsets.zero,
                       onPressed: widget.onClear,
-                      color: isDark
-                          ? Colors.white38
-                          : AppColors.gray400,
+                      color: isDark ? Colors.white38 : AppColors.gray400,
                       splashRadius: 14,
                     )
                   : null,
@@ -473,7 +477,6 @@ class _SearchBoxState extends State<_SearchBox> {
     );
   }
 }
-
 
 class _SeverityList extends StatelessWidget {
   final String value;
@@ -535,28 +538,8 @@ class _CategoryList extends StatelessWidget {
     required this.onChanged,
   });
 
-  // (key, label, icon)
-  static const _options = <(String, String)>[
-    ('all', '全部'),
-    ('resource', '游戏资源'),
-    ('gpu', '显卡驱动'),
-    ('code_exec', '代码异常'),
-    ('system', '系统组件'),
-    ('tools', 'Workshop 工具'),
-    ('unknown', '未知'),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final iconFor = {
-      'all': MdiIcons.formatListBulleted,
-      'resource': MdiIcons.fileSearchOutline,
-      'gpu': MdiIcons.memory,
-      'code_exec': MdiIcons.skullOutline,
-      'system': MdiIcons.cogOutline,
-      'tools': MdiIcons.toolboxOutline,
-      'unknown': MdiIcons.helpCircleOutline,
-    };
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Opacity(
@@ -564,24 +547,32 @@ class _CategoryList extends StatelessWidget {
         child: AbsorbPointer(
           absorbing: disabled,
           child: Column(
-            children: _options.map((o) {
-              final selected = value == o.$1;
-              return _SidebarRow(
-                icon: iconFor[o.$1] ?? MdiIcons.helpCircleOutline,
-                label: o.$2,
+            children: [
+              _SidebarRow(
+                icon: MdiIcons.formatListBulleted,
+                label: '全部',
                 color: AppColors.gray500,
-                selected: selected,
+                selected: value == 'all',
                 isDark: isDark,
-                onTap: () => onChanged(o.$1),
-              );
-            }).toList(),
+                onTap: () => onChanged('all'),
+              ),
+              ...CrashCategory.values.map((c) {
+                return _SidebarRow(
+                  icon: c.icon,
+                  label: c.label,
+                  color: AppColors.gray500,
+                  selected: value == c.key,
+                  isDark: isDark,
+                  onTap: () => onChanged(c.key),
+                );
+              }),
+            ],
           ),
         ),
       ),
     );
   }
 }
-
 
 class _SidebarRow extends StatelessWidget {
   final IconData icon;
@@ -631,8 +622,7 @@ class _SidebarRow extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontSize: 12.5,
-                    fontWeight:
-                        selected ? FontWeight.w600 : FontWeight.w500,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                     color: selected
                         ? color
                         : (isDark ? Colors.white70 : AppColors.gray700),
@@ -664,7 +654,7 @@ class _StatsBlock extends StatelessWidget {
           _StatRow(
             icon: MdiIcons.alertCircleOutline,
             color: AppColors.blue500,
-            label: '社区总数',
+            label: '云端崩溃总数',
             value: stats?.totalCount ?? 0,
             isDark: isDark,
           ),
@@ -672,7 +662,7 @@ class _StatsBlock extends StatelessWidget {
           _StatRow(
             icon: MdiIcons.calendarTodayOutline,
             color: AppColors.amber500,
-            label: '今天',
+            label: '云端今日崩溃',
             value: stats?.todayCount ?? 0,
             isDark: isDark,
           ),
@@ -736,6 +726,88 @@ class _StatRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _CollapsedStatsBlock extends StatelessWidget {
+  final CrashReportState state;
+  final bool isDark;
+
+  const _CollapsedStatsBlock({required this.state, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final stats = state.stats;
+    return Column(
+      children: [
+        _CollapsedStat(
+          icon: MdiIcons.alertCircleOutline,
+          color: AppColors.blue500,
+          tooltip: '总数: ${stats?.totalCount ?? 0}',
+          value: _formatNumber(stats?.totalCount ?? 0),
+          isDark: isDark,
+        ),
+        const SizedBox(height: 12),
+        _CollapsedStat(
+          icon: MdiIcons.calendarTodayOutline,
+          color: AppColors.amber500,
+          tooltip: '今天: ${stats?.todayCount ?? 0}',
+          value: _formatNumber(stats?.todayCount ?? 0),
+          isDark: isDark,
+        ),
+        const SizedBox(height: 12),
+        _CollapsedStat(
+          icon: MdiIcons.laptop,
+          color: AppColors.violet500,
+          tooltip: '本机: ${state.localFiles.length}',
+          value: _formatNumber(state.localFiles.length),
+          isDark: isDark,
+        ),
+      ],
+    );
+  }
+
+  String _formatNumber(int n) {
+    if (n >= 10000) return '${(n / 10000).toStringAsFixed(1)}w';
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k';
+    return n.toString();
+  }
+}
+
+class _CollapsedStat extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String tooltip;
+  final String value;
+  final bool isDark;
+
+  const _CollapsedStat({
+    required this.icon,
+    required this.color,
+    required this.tooltip,
+    required this.value,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Column(
+        children: [
+          Icon(icon, size: 16, color: color.withValues(alpha: 0.8)),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white70 : AppColors.gray500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

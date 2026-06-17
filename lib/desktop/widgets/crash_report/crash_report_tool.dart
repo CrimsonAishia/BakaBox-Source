@@ -35,7 +35,6 @@ class CrashReportTool extends StatelessWidget {
   }
 }
 
-
 class _CrashReportToolContent extends StatefulWidget {
   const _CrashReportToolContent();
 
@@ -117,7 +116,6 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -178,7 +176,9 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
                 ? (state.localDetail != null || state.isLoadingLocalDetail)
                 : (state.detail != null || state.isLoadingDetail);
             if (!twoColumn) {
-              return hasDetail ? _buildDetailPane(state.showMine) : _buildListPane();
+              return hasDetail
+                  ? _buildDetailPane(state.showMine)
+                  : _buildListPane();
             }
             return Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -201,7 +201,6 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
       },
     );
   }
-
 
   // List pane
   Widget _buildListPane() {
@@ -264,9 +263,9 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
             return CrashReportCard(
               report: item,
               selected: state.selectedId == item.id,
-              onTap: () => context
-                  .read<CrashReportBloc>()
-                  .add(CrashReportLoadDetail(item.id)),
+              onTap: () => context.read<CrashReportBloc>().add(
+                CrashReportLoadDetail(item.id),
+              ),
             );
           },
         );
@@ -303,9 +302,9 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
             return LocalCrashCard(
               file: f,
               selected: state.selectedLocalPath == f.path,
-              onTap: () => context
-                  .read<CrashReportBloc>()
-                  .add(CrashReportLoadLocalDetail(f.path)),
+              onTap: () => context.read<CrashReportBloc>().add(
+                CrashReportLoadLocalDetail(f.path),
+              ),
             );
           },
         );
@@ -330,9 +329,10 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
     );
   }
 
-
   Widget _buildEmptyList(CrashReportState state, {required bool mine}) {
+    final isSignatureMatch = state.currentSignature != null && !mine;
     final isSearching = state.currentKeyword.isNotEmpty && !mine;
+
     if (mine && state.gamePathConfigured == false) {
       return _CrashEmptyState(
         icon: MdiIcons.cogOutline,
@@ -340,16 +340,30 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
         subtitle: '在「设置 → 游戏」里指定 CS2 安装目录后，本机崩溃就会出现在这里',
       );
     }
+
+    if (isSignatureMatch) {
+      return _CrashEmptyState(
+        icon: Icons.search_off,
+        title: '没有找到同款崩溃',
+        subtitle: '社区中暂时没有与该崩溃特征码一致的公开报告',
+        action: OutlinedButton.icon(
+          onPressed: () {
+            _searchController.clear();
+            setState(() {});
+            _search('');
+          },
+          icon: Icon(MdiIcons.close, size: 16),
+          label: const Text('清除同款过滤'),
+        ),
+      );
+    }
+
     return _CrashEmptyState(
       icon: isSearching ? Icons.search_off : MdiIcons.alertCircleOutline,
-      title: isSearching
-          ? '没找到相关崩溃'
-          : (mine ? '本机暂无 CS2 崩溃文件' : '社区还没有公开的崩溃'),
+      title: isSearching ? '没找到相关崩溃' : (mine ? '本机暂无 CS2 崩溃文件' : '社区还没有公开的崩溃'),
       subtitle: isSearching
           ? '试试换个关键字 / 模块名'
-          : (mine
-                ? '游戏没崩过 → 这是好事 :)'
-                : '游戏崩了的话，自动上传后社区里就能看到了'),
+          : (mine ? '游戏没崩过 → 这是好事 :)' : '游戏崩了的话，自动上传后社区里就能看到了'),
       action: isSearching
           ? OutlinedButton.icon(
               onPressed: () {
@@ -371,9 +385,8 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
       subtitle: error,
       iconColor: AppColors.red500,
       action: ElevatedButton.icon(
-        onPressed: () => context
-            .read<CrashReportBloc>()
-            .add(const CrashReportRefresh()),
+        onPressed: () =>
+            context.read<CrashReportBloc>().add(const CrashReportRefresh()),
         icon: Icon(MdiIcons.refresh, size: 16),
         label: const Text('重试'),
         style: ElevatedButton.styleFrom(
@@ -400,9 +413,9 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
           return CrashDetailPane(
             detail: vm,
             isLoading: state.isLoadingLocalDetail,
-            onBack: () => context
-                .read<CrashReportBloc>()
-                .add(const CrashReportCloseLocalDetail()),
+            onBack: () => context.read<CrashReportBloc>().add(
+              const CrashReportCloseLocalDetail(),
+            ),
             onDeleteLocal: vm == null
                 ? null
                 : () => _confirmDeleteLocal(context, vm.dumpPath!),
@@ -414,20 +427,21 @@ class _CrashReportToolContentState extends State<_CrashReportToolContent> {
         return CrashDetailPane(
           detail: vm,
           isLoading: state.isLoadingDetail,
-          onBack: () => context
-              .read<CrashReportBloc>()
-              .add(const CrashReportCloseDetail()),
+          onBack: () => context.read<CrashReportBloc>().add(
+            const CrashReportCloseDetail(),
+          ),
           onFindSimilar: (signature) {
+            _searchController.text = signature;
             context.read<CrashReportBloc>().add(
-              CrashReportFetch(signature: signature),
+              CrashReportFetch(keyword: signature, signature: signature),
             );
+            context.read<CrashReportBloc>().add(const CrashReportCloseDetail());
           },
         );
       },
     );
   }
 }
-
 
 // 通用空 / 错误状态
 class _CrashEmptyState extends StatelessWidget {
@@ -482,10 +496,7 @@ class _CrashEmptyState extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            if (action != null) ...[
-              const SizedBox(height: 18),
-              action!,
-            ],
+            if (action != null) ...[const SizedBox(height: 18), action!],
           ],
         ),
       ),

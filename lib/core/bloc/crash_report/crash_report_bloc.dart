@@ -58,6 +58,8 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
         currentCategory: event.category,
         currentSort: event.sort,
         currentKeyword: event.keyword ?? '',
+        currentSignature: event.signature,
+        clearSignature: event.clearSignature,
         currentPage: 1,
       ),
     );
@@ -69,7 +71,7 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
         category: event.category,
         sort: event.sort,
         keyword: event.keyword,
-        signature: event.signature,
+        signature: state.currentSignature,
       );
       emit(
         state.copyWith(
@@ -103,6 +105,7 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
         sort: state.currentSort,
         keyword:
             state.currentKeyword.isEmpty ? null : state.currentKeyword,
+        signature: state.currentSignature,
       );
       // 去重：按 id 合并，避免服务端在分页间隙插入新数据导致重复项
       final seen = state.items.map((e) => e.id).toSet();
@@ -139,6 +142,7 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
           sort: state.currentSort,
           keyword:
               state.currentKeyword.isEmpty ? null : state.currentKeyword,
+          signature: state.currentSignature,
         ),
       );
     }
@@ -164,6 +168,8 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
           severity: state.currentSeverity,
           category: state.currentCategory,
           sort: state.currentSort,
+          keyword: state.currentKeyword.isEmpty ? null : state.currentKeyword,
+          signature: state.currentSignature,
         ),
       );
     }
@@ -185,6 +191,7 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
         sort: state.currentSort,
         keyword:
             state.currentKeyword.isEmpty ? null : state.currentKeyword,
+        signature: state.currentSignature,
       ),
     );
   }
@@ -205,6 +212,7 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
         sort: state.currentSort,
         keyword:
             state.currentKeyword.isEmpty ? null : state.currentKeyword,
+        signature: state.currentSignature,
       ),
     );
   }
@@ -220,6 +228,7 @@ class CrashReportBloc extends Bloc<CrashReportEvent, CrashReportState> {
         category: state.currentCategory,
         sort: state.currentSort,
         keyword: event.keyword.isEmpty ? null : event.keyword,
+        clearSignature: true,
       ),
     );
   }

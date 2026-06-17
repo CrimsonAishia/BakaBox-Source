@@ -13,6 +13,7 @@ class CrashReportFetch extends CrashReportEvent {
   final String sort;
   final String? keyword;
   final String? signature;
+  final bool clearSignature;
 
   const CrashReportFetch({
     this.severity = 'all',
@@ -20,10 +21,11 @@ class CrashReportFetch extends CrashReportEvent {
     this.sort = 'created_at DESC',
     this.keyword,
     this.signature,
+    this.clearSignature = false,
   });
 
   @override
-  List<Object?> get props => [severity, category, sort, keyword, signature];
+  List<Object?> get props => [severity, category, sort, keyword, signature, clearSignature];
 }
 
 /// 拉取我的列表（本地扫描 .mdmp 文件）

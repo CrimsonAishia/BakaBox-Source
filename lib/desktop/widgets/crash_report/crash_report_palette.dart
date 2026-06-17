@@ -40,23 +40,6 @@ class CrashReportPalette {
   }
 }
 
-/// 类别 -> 显示图标（兼容旧调用，优先用 [CrashCategory.fromKey(key).icon]）
-IconData crashCategoryIcon(String category) {
-  switch (category) {
-    case 'gpu':
-      return MdiIcons.memory;
-    case 'tools':
-      return MdiIcons.toolboxOutline;
-    case 'system':
-      return MdiIcons.cogOutline;
-    case 'resource':
-      return MdiIcons.fileSearchOutline;
-    case 'code_exec':
-      return MdiIcons.skullOutline;
-    default:
-      return MdiIcons.helpCircleOutline;
-  }
-}
 
 /// 第三方注入严重度颜色
 ({Color color, String label}) crashThirdPartyPalette(String severity) {

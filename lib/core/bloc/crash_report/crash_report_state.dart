@@ -17,6 +17,7 @@ class CrashReportState extends Equatable {
   final String currentCategory;
   final String currentSort;
   final String currentKeyword;
+  final String? currentSignature;
   final String? error;
 
   // 详情：远端来自 [detail]，本地来自 [localDetail]
@@ -53,6 +54,7 @@ class CrashReportState extends Equatable {
     this.currentCategory = 'all',
     this.currentSort = 'created_at DESC',
     this.currentKeyword = '',
+    this.currentSignature,
     this.error,
     this.detail,
     this.isLoadingDetail = false,
@@ -87,6 +89,8 @@ class CrashReportState extends Equatable {
     String? currentCategory,
     String? currentSort,
     String? currentKeyword,
+    String? currentSignature,
+    bool clearSignature = false,
     String? error,
     bool clearError = false,
     CrashReportDetail? detail,
@@ -120,6 +124,7 @@ class CrashReportState extends Equatable {
       currentCategory: currentCategory ?? this.currentCategory,
       currentSort: currentSort ?? this.currentSort,
       currentKeyword: currentKeyword ?? this.currentKeyword,
+      currentSignature: clearSignature ? null : (currentSignature ?? this.currentSignature),
       error: clearError ? null : (error ?? this.error),
       detail: clearDetail ? null : (detail ?? this.detail),
       isLoadingDetail: isLoadingDetail ?? this.isLoadingDetail,
@@ -155,6 +160,7 @@ class CrashReportState extends Equatable {
     currentCategory,
     currentSort,
     currentKeyword,
+    currentSignature,
     error,
     detail,
     isLoadingDetail,

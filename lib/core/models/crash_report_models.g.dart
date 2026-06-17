@@ -168,27 +168,24 @@ Map<String, dynamic> _$CrashReportDetailToJson(CrashReportDetail instance) =>
       'createdAt': const ServerTimeConverter().toJson(instance.createdAt),
     };
 
-CrashReportStats _$CrashReportStatsFromJson(Map<String, dynamic> json) =>
-    CrashReportStats(
-      totalCount: (json['totalCount'] as num?)?.toInt() ?? 0,
-      todayCount: (json['todayCount'] as num?)?.toInt() ?? 0,
-      topModules:
-          (json['topModules'] as List<dynamic>?)
-              ?.map(
-                (e) =>
-                    CrashReportModuleStat.fromJson(e as Map<String, dynamic>),
-              )
-              .toList() ??
-          [],
-      topThirdParty:
-          (json['topThirdParty'] as List<dynamic>?)
-              ?.map(
-                (e) =>
-                    CrashReportModuleStat.fromJson(e as Map<String, dynamic>),
-              )
-              .toList() ??
-          [],
-    );
+CrashReportStats _$CrashReportStatsFromJson(
+  Map<String, dynamic> json,
+) => CrashReportStats(
+  totalCount: (json['totalCount'] as num?)?.toInt() ?? 0,
+  todayCount: (json['todayCount'] as num?)?.toInt() ?? 0,
+  topModules:
+      (json['topModules'] as List<dynamic>?)
+          ?.map((e) => CrashReportTopModule.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      [],
+  topThirdParty:
+      (json['topThirdParty'] as List<dynamic>?)
+          ?.map(
+            (e) => CrashReportTopThirdParty.fromJson(e as Map<String, dynamic>),
+          )
+          .toList() ??
+      [],
+);
 
 Map<String, dynamic> _$CrashReportStatsToJson(CrashReportStats instance) =>
     <String, dynamic>{
@@ -198,18 +195,24 @@ Map<String, dynamic> _$CrashReportStatsToJson(CrashReportStats instance) =>
       'topThirdParty': instance.topThirdParty,
     };
 
-CrashReportModuleStat _$CrashReportModuleStatFromJson(
+CrashReportTopModule _$CrashReportTopModuleFromJson(
   Map<String, dynamic> json,
-) => CrashReportModuleStat(
-  name: json['name'] as String,
+) => CrashReportTopModule(
+  module: json['module'] as String,
   count: (json['count'] as num?)?.toInt() ?? 0,
-  label: json['label'] as String?,
 );
 
-Map<String, dynamic> _$CrashReportModuleStatToJson(
-  CrashReportModuleStat instance,
-) => <String, dynamic>{
-  'name': instance.name,
-  'count': instance.count,
-  'label': instance.label,
-};
+Map<String, dynamic> _$CrashReportTopModuleToJson(
+  CrashReportTopModule instance,
+) => <String, dynamic>{'module': instance.module, 'count': instance.count};
+
+CrashReportTopThirdParty _$CrashReportTopThirdPartyFromJson(
+  Map<String, dynamic> json,
+) => CrashReportTopThirdParty(
+  name: json['name'] as String,
+  count: (json['count'] as num?)?.toInt() ?? 0,
+);
+
+Map<String, dynamic> _$CrashReportTopThirdPartyToJson(
+  CrashReportTopThirdParty instance,
+) => <String, dynamic>{'name': instance.name, 'count': instance.count};

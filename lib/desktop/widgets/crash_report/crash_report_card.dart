@@ -4,6 +4,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../../core/constants/app_colors.dart';
 import '../../../core/models/crash_report_models.dart';
 import '../../../core/utils/time_utils.dart';
+import 'crash_category.dart';
 import 'crash_report_palette.dart';
 
 /// 社区崩溃报告列表卡片（匿名 / 不带作者维度）
@@ -25,7 +26,6 @@ class CrashReportCard extends StatefulWidget {
 
 class _CrashReportCardState extends State<CrashReportCard> {
   bool _hover = false;
-
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +100,6 @@ class _CrashReportCardState extends State<CrashReportCard> {
     );
   }
 
-
   Widget _buildHeader(
     CrashReportPalette palette,
     Color secondary,
@@ -143,7 +142,7 @@ class _CrashReportCardState extends State<CrashReportCard> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                crashCategoryIcon(widget.report.category),
+                CrashCategory.fromKey(widget.report.category).icon,
                 size: 12,
                 color: secondary,
               ),
@@ -172,8 +171,11 @@ class _CrashReportCardState extends State<CrashReportCard> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(MdiIcons.linkVariant,
-                    size: 12, color: AppColors.violet500),
+                Icon(
+                  MdiIcons.linkVariant,
+                  size: 12,
+                  color: AppColors.violet500,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   '同款 ${widget.report.similarCount}',
@@ -188,8 +190,32 @@ class _CrashReportCardState extends State<CrashReportCard> {
           ),
         ],
         const Spacer(),
-        Text(
-          TimeUtils.formatDateTimeRelative(widget.report.dumpAt),
+        Text.rich(
+          TextSpan(
+            children: [
+              WidgetSpan(
+                alignment: PlaceholderAlignment.middle,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: Icon(
+                    MdiIcons.cloudOutline,
+                    size: 14,
+                    color: secondary.withValues(alpha: 0.7),
+                  ),
+                ),
+              ),
+              TextSpan(
+                text: '社区 · ',
+                style: TextStyle(
+                  color: secondary.withValues(alpha: 0.8),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              TextSpan(
+                text: TimeUtils.formatDateTimeRelative(widget.report.dumpAt),
+              ),
+            ],
+          ),
           style: TextStyle(color: secondary, fontSize: 12),
         ),
       ],
@@ -253,18 +279,12 @@ class _CrashReportCardState extends State<CrashReportCard> {
         if (gpuVendor != null && gpuVendor.isNotEmpty) ...[
           Icon(MdiIcons.memory, size: 13, color: secondary),
           const SizedBox(width: 4),
-          Text(
-            gpuVendor,
-            style: TextStyle(color: secondary, fontSize: 12),
-          ),
+          Text(gpuVendor, style: TextStyle(color: secondary, fontSize: 12)),
           const SizedBox(width: 10),
         ],
         if (appVersion != null && appVersion.isNotEmpty)
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 6,
-              vertical: 2,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
               color: isDark ? AppColors.slate700 : AppColors.gray100,
               borderRadius: BorderRadius.circular(6),
