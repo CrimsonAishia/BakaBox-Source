@@ -227,6 +227,8 @@ class GuideListItem extends Equatable {
   final bool isRecommended;
   @JsonKey(defaultValue: false)
   final bool isPinned;
+  @JsonKey(defaultValue: false)
+  final bool isHot;
 
   final GuideStatus status;
 
@@ -271,6 +273,7 @@ class GuideListItem extends Equatable {
     this.isFavorited = false,
     this.isRecommended = false,
     this.isPinned = false,
+    this.isHot = false,
     required this.status,
     this.rejectReason,
     required this.createdAt,
@@ -309,6 +312,7 @@ class GuideListItem extends Equatable {
         isFavorited,
         isRecommended,
         isPinned,
+        isHot,
         status,
         rejectReason,
         createdAt,
@@ -364,6 +368,7 @@ class Guide extends GuideListItem {
     super.isFavorited,
     super.isRecommended,
     super.isPinned,
+    super.isHot,
     required super.status,
     super.rejectReason,
     required super.createdAt,

@@ -75,11 +75,23 @@ class _CommunityGuideCardState extends State<CommunityGuideCard> {
                           coverUrl: item.coverUrl,
                           fallbackId: item.id,
                         ),
-                        if (item.isPinned)
-                          const Positioned(
+                        if (item.isPinned || item.isRecommended || item.isHot)
+                          Positioned(
                             top: 8,
                             right: 8,
-                            child: CommunityGuidePinnedBadge(),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              mainAxisSize: MainAxisSize.min,
+                              spacing: 6,
+                              children: [
+                                if (item.isPinned)
+                                  const CommunityGuidePinnedBadge(),
+                                if (item.isRecommended)
+                                  const CommunityGuideRecommendedBadge(),
+                                if (item.isHot)
+                                  const CommunityGuideHotBadge(),
+                              ],
+                            ),
                           ),
                       ],
                     ),
@@ -164,6 +176,88 @@ class CommunityGuidePinnedBadge extends StatelessWidget {
           SizedBox(width: 4),
           Text(
             '置顶',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// 推荐徽章
+
+class CommunityGuideRecommendedBadge extends StatelessWidget {
+  const CommunityGuideRecommendedBadge({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFF6D00), Color(0xFFFF9100)],
+        ),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF6D00).withValues(alpha: 0.4),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.auto_awesome, size: 14, color: Colors.white),
+          SizedBox(width: 4),
+          Text(
+            '推荐',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// 热门徽章
+
+class CommunityGuideHotBadge extends StatelessWidget {
+  const CommunityGuideHotBadge({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFE53935), Color(0xFFFF5252)],
+        ),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFE53935).withValues(alpha: 0.4),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.local_fire_department, size: 14, color: Colors.white),
+          SizedBox(width: 4),
+          Text(
+            '热门',
             style: TextStyle(
               color: Colors.white,
               fontSize: 13,
