@@ -46,8 +46,8 @@ class PlaytimeReportService {
   /// 天然过滤掉休眠时间。
   static const int _maxSampleSeconds = 40;
 
-  /// 累计达到该秒数就上报一次（≈ 1 分钟一个心跳）
-  static const int _flushThresholdSeconds = 60;
+  /// 累计达到该秒数就上报一次（≈ 5 分钟一个心跳）
+  static const int _flushThresholdSeconds = 300;
 
   /// 单次心跳允许上报的最大秒数（后端侧安全阈）
   static const int _maxDeltaPerHeartbeat = 600;
