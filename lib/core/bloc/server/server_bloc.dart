@@ -33,9 +33,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
   // 分类人数查询防重入标记
   bool _isUpdatingCategoryOnlineCounts = false;
 
-  // 分类列表定时刷新定时器（每 10 分钟静默刷新一次）
+  // 分类列表定时刷新定时器
   Timer? _categoryRefreshTimer;
-  static const Duration _categoryRefreshInterval = Duration(minutes: 10);
+  static const Duration _categoryRefreshInterval = Duration(minutes: 30);
 
   // map.info 推送节流：后端可能在频繁变动时高频推送（约 5s/次），
   // 同一地图在冷却窗口内最多刷新一次，窗口内的后续推送合并为一次尾部刷新。
@@ -1308,7 +1308,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     // 只设置状态，刷新时机由 UI 倒计时进度条的 onComplete 控制
     emit(state.copyWith(isCountdownActive: true));
 
-    // 启动分类列表定时刷新（每 10 分钟静默更新一次）
+    // 启动分类列表定时刷新
     _categoryRefreshTimer?.cancel();
     _categoryRefreshTimer = Timer.periodic(_categoryRefreshInterval, (_) {
       if (!isClosed && !state.isPaused) {
