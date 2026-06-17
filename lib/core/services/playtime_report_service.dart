@@ -141,7 +141,6 @@ class PlaytimeReportService {
           _latestStatus = _latestStatus!.copyWith(
             totalSeconds: status.totalSeconds,
             validSeconds: status.validSeconds,
-            todayValidSeconds: status.todayValidSeconds,
             canVote: status.canVote,
             voteThresholdSeconds: status.voteThresholdSeconds,
             currentMap: status.currentMap ?? _latestStatus!.currentMap,

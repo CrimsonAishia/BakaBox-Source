@@ -22,7 +22,6 @@ UserPlaytimeStatus _$UserPlaytimeStatusFromJson(Map<String, dynamic> json) =>
     UserPlaytimeStatus(
       totalSeconds: (json['totalSeconds'] as num).toInt(),
       validSeconds: (json['validSeconds'] as num).toInt(),
-      todayValidSeconds: (json['todayValidSeconds'] as num).toInt(),
       canVote: json['canVote'] as bool,
       voteThresholdSeconds: (json['voteThresholdSeconds'] as num).toInt(),
       currentMap: json['currentMap'] == null
@@ -36,7 +35,6 @@ Map<String, dynamic> _$UserPlaytimeStatusToJson(UserPlaytimeStatus instance) =>
     <String, dynamic>{
       'totalSeconds': instance.totalSeconds,
       'validSeconds': instance.validSeconds,
-      'todayValidSeconds': instance.todayValidSeconds,
       'canVote': instance.canVote,
       'voteThresholdSeconds': instance.voteThresholdSeconds,
       'currentMap': instance.currentMap,

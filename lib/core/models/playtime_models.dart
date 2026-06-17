@@ -40,9 +40,6 @@ class UserPlaytimeStatus extends Equatable {
   /// 计入门槛的有效秒数（过滤掉超日上限等）
   final int validSeconds;
 
-  /// 当日有效秒数（UTC+8 当天）
-  final int todayValidSeconds;
-
   /// 是否达到投票门槛
   final bool canVote;
 
@@ -55,7 +52,6 @@ class UserPlaytimeStatus extends Equatable {
   const UserPlaytimeStatus({
     required this.totalSeconds,
     required this.validSeconds,
-    required this.todayValidSeconds,
     required this.canVote,
     required this.voteThresholdSeconds,
     this.currentMap,
@@ -76,7 +72,6 @@ class UserPlaytimeStatus extends Equatable {
   UserPlaytimeStatus copyWith({
     int? totalSeconds,
     int? validSeconds,
-    int? todayValidSeconds,
     bool? canVote,
     int? voteThresholdSeconds,
     UserMapPlaytime? currentMap,
@@ -84,7 +79,6 @@ class UserPlaytimeStatus extends Equatable {
     return UserPlaytimeStatus(
       totalSeconds: totalSeconds ?? this.totalSeconds,
       validSeconds: validSeconds ?? this.validSeconds,
-      todayValidSeconds: todayValidSeconds ?? this.todayValidSeconds,
       canVote: canVote ?? this.canVote,
       voteThresholdSeconds: voteThresholdSeconds ?? this.voteThresholdSeconds,
       currentMap: currentMap ?? this.currentMap,
@@ -95,7 +89,6 @@ class UserPlaytimeStatus extends Equatable {
   List<Object?> get props => [
     totalSeconds,
     validSeconds,
-    todayValidSeconds,
     canVote,
     voteThresholdSeconds,
     currentMap,
