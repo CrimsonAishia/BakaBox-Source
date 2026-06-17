@@ -204,7 +204,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         // 避免用户不在服务器页时也启动定时器
         if (state.isCountdownActive && _categoryRefreshTimer == null) {
           _categoryRefreshTimer = Timer.periodic(_categoryRefreshInterval, (_) {
-            add(const ServerRefreshCategoriesInternal());
+            if (!isClosed && !state.isPaused) {
+              add(const ServerRefreshCategoriesInternal());
+            }
           });
         }
         LogService.i('[ServerBloc] 弱网模式关闭，已恢复实时频道');
@@ -1233,7 +1235,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     // 启动分类列表定时刷新（每 10 分钟静默更新一次）
     _categoryRefreshTimer?.cancel();
     _categoryRefreshTimer = Timer.periodic(_categoryRefreshInterval, (_) {
-      add(const ServerRefreshCategoriesInternal());
+      if (!isClosed && !state.isPaused) {
+        add(const ServerRefreshCategoriesInternal());
+      }
     });
   }
 
