@@ -39,6 +39,9 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
   /// 用于标记是否有待保存的本地变更（自上次云端保存后）
   bool _hasPendingRemoteChanges = false;
 
+  /// 上次成功保存的草稿，用于比对内容是否真正发生改变
+  GuideDraft? _lastSavedDraft;
+
   /// 防抖时长：内容变更后 3 秒本地保存
   static const Duration _contentDebounceDuration = Duration(seconds: 3);
 
@@ -244,6 +247,7 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
         if (remoteDraft != null) {
           final plainTextLen = _calcContentPlainTextLength(remoteDraft.content);
           final errors = _validateDraft(remoteDraft, contentPlainTextLength: plainTextLen);
+          _lastSavedDraft = remoteDraft;
           emit(state.copyWith(
             phase: EditorPhase.idle,
             draft: remoteDraft,
@@ -322,6 +326,7 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
 
       final plainTextLen = _calcContentPlainTextLength(draft.content);
       final errorsWithContent = _validateDraft(draft, contentPlainTextLength: plainTextLen);
+      _lastSavedDraft = draft;
       emit(state.copyWith(
         phase: EditorPhase.idle,
         draft: draft,
@@ -572,6 +577,22 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
       return;
     }
 
+    // 判断内容是否真正有变更（与上一次成功保存的相比）
+    final isContentUnchanged = _lastSavedDraft != null &&
+        _lastSavedDraft!.title == draft.title &&
+        _lastSavedDraft!.content == draft.content &&
+        _lastSavedDraft!.summary == draft.summary &&
+        _lastSavedDraft!.coverUrl == draft.coverUrl &&
+        _lastSavedDraft!.category == draft.category &&
+        _lastSavedDraft!.tags.join(',') == draft.tags.join(',') &&
+        _lastSavedDraft!.mapName == draft.mapName &&
+        _lastSavedDraft!.videoEmbeds.length == draft.videoEmbeds.length;
+
+    if (isContentUnchanged) {
+      _hasPendingRemoteChanges = false;
+      return;
+    }
+
     // 草稿没有实质内容时不触发云端保存（避免生成大量空草稿）
     final hasContent = (draft.title?.isNotEmpty ?? false) ||
         (draft.content?.isNotEmpty ?? false) ||
@@ -604,6 +625,7 @@ class GuideEditorBloc extends Bloc<GuideEditorEvent, GuideEditorState> {
           updatedAt: response.updatedAt ?? DateTime.now(),
         );
 
+        _lastSavedDraft = updatedDraft;
         _hasPendingRemoteChanges = false;
         emit(state.copyWith(
           phase: EditorPhase.idle,
