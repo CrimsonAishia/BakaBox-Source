@@ -1291,6 +1291,7 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
                           teamScores: teamScores,
                           hasValidScore: hasValidScore,
                           weeklyOccurrences: mapRuntime?.weeklyOccurrences,
+                          isFetching: server.mapRuntimeFetching,
                         ),
                       ],
                     ],
@@ -1444,14 +1445,16 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
     required TeamScores? teamScores,
     required bool hasValidScore,
     required int? weeklyOccurrences,
+    required bool isFetching,
   }) {
     if (hasError) return const SizedBox.shrink();
 
     // 使用 MapRuntimeUtils 计算运行时间显示
+    final isLoading = isFetching;
     final displayText = MapRuntimeUtils.getRuntimeDisplay(
       mapRuntime: mapRuntime,
       fetchedAt: fetchedAt,
-      isLoading: mapRuntime == null,
+      isLoading: isLoading,
       hasError: false,
     );
 
@@ -3150,9 +3153,11 @@ class _ImmersiveModeOverlayState extends State<ImmersiveModeOverlay> {
 
     if (mapRuntime == null) {
       // API 服务器没有运行时间数据（接口未提供 map_changed_at）时直接显示 '-'，
-      // 避免一直停留在加载态。官方服务器仍走异步获取，显示加载/错误态。
+      // 官方服务器如果仍在加载则显示 '...'，如果发生错误显示 '?'，否则（正常请求完成但无数据）也显示 '-'
       if (isApiSourced) return '-';
-      return server.mapRuntimeError ? '?' : '...';
+      if (server.mapRuntimeFetching) return '...';
+      if (server.mapRuntimeError) return '?';
+      return '-';
     }
 
     // 使用 MapRuntimeUtils 计算实际运行时间并格式化（与卡片模式一致）

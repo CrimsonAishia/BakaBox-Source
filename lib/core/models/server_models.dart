@@ -537,7 +537,7 @@ class ExtendedServerItem extends Equatable {
   final MapRuntimeData? mapRuntime;
   final int? mapRuntimeLastFetched;
   final bool mapRuntimeError;
-  final bool mapRuntimeFetching;
+  bool get mapRuntimeFetching => mapRuntimeLastFetched == null && !mapRuntimeError;
   final int consecutiveFailures; // 连续失败次数
   final bool isOffline; // 是否离线（连续失败3次）
   final TeamScores? teamScores; // 新增：比分数据
@@ -557,7 +557,6 @@ class ExtendedServerItem extends Equatable {
     this.mapRuntime,
     this.mapRuntimeLastFetched,
     this.mapRuntimeError = false,
-    this.mapRuntimeFetching = false,
     this.consecutiveFailures = 0,
     this.isOffline = false,
     this.teamScores,
@@ -578,7 +577,6 @@ class ExtendedServerItem extends Equatable {
     MapRuntimeData? mapRuntime,
     int? mapRuntimeLastFetched,
     bool? mapRuntimeError,
-    bool? mapRuntimeFetching,
     bool clearServerData = false,
     bool clearMapRuntime = false,
     bool clearMapInfo = false,
@@ -600,11 +598,9 @@ class ExtendedServerItem extends Equatable {
       hasError: hasError ?? this.hasError,
       pingInfo: pingInfo ?? this.pingInfo,
       mapRuntime: clearMapRuntime ? null : (mapRuntime ?? this.mapRuntime),
-      mapRuntimeLastFetched: clearMapRuntime
-          ? null
-          : (mapRuntimeLastFetched ?? this.mapRuntimeLastFetched),
+      mapRuntimeLastFetched: mapRuntimeLastFetched ??
+          (clearMapRuntime ? null : this.mapRuntimeLastFetched),
       mapRuntimeError: mapRuntimeError ?? this.mapRuntimeError,
-      mapRuntimeFetching: mapRuntimeFetching ?? this.mapRuntimeFetching,
       consecutiveFailures: consecutiveFailures ?? this.consecutiveFailures,
       isOffline: isOffline ?? this.isOffline,
       teamScores: clearTeamScores ? null : (teamScores ?? this.teamScores),
@@ -627,7 +623,6 @@ class ExtendedServerItem extends Equatable {
     mapRuntime,
     mapRuntimeLastFetched,
     mapRuntimeError,
-    mapRuntimeFetching,
     consecutiveFailures,
     isOffline,
     teamScores,

@@ -1763,7 +1763,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
     final hasError = widget.server.mapRuntimeError;
     if (hasError) return const SizedBox.shrink();
 
-    final isLoading = widget.server.mapRuntime == null;
+    final isLoading = widget.server.mapRuntimeFetching;
     final mapName = widget.server.serverData?.map;
     final fetchedAt = widget.server.mapRuntimeLastFetched;
 
@@ -1778,7 +1778,7 @@ class _ServerCardState extends State<ServerCard> with TickerProviderStateMixin {
       displayText = MapRuntimeUtils.getRuntimeDisplay(
         mapRuntime: widget.server.mapRuntime,
         fetchedAt: fetchedAt,
-        isLoading: widget.server.isLoading,
+        isLoading: isLoading,
         hasError: hasError,
       );
     }

@@ -537,11 +537,14 @@ class RealtimeService {
     final localToken = TokenService.instance.token;
     final hasLocalToken = localToken != null && localToken.isNotEmpty;
     if (_identity.isAnonymous && hasLocalToken) {
+      // 携带本地 Token 发起身份升级。
+      // 等待 auth_ack 后再统一恢复订阅，避免握手期间发出的 subscribe 被服务端的 auth 处理管线丢弃或清理，
+      // 导致本地卡在 _pendingSubscribeChannels 永远收不到 sub_ack 和快照（比分/人数无法更新，必须重启App）
       _sendAuth(localToken);
+    } else {
+      // 如果已经是目标身份（或是明确的匿名访问），直接触发重连后的批量订阅恢复
+      _resubscribeAll();
     }
-
-    // 重连后补发所有引用计数 > 0 的频道订阅
-    _resubscribeAll();
 
     // 区分首次连接与断线重连：仅重连时通知业务侧主动对账一次
     if (_hasConnectedBefore) {
@@ -566,20 +569,13 @@ class RealtimeService {
     LogService.i(
       '[Realtime] auth_ack anonymous=${_identity.isAnonymous} userId=${_identity.userId} reqId=${msg.reqId}',
     );
-    // 服务端会自动退订用户级频道：清理本地状态并按需重新订阅
-    final userChannels = RealtimeChannels.userScoped;
-    for (final channel in userChannels) {
-      _subscribedChannels.remove(channel);
-      _pendingSubscribeChannels.remove(channel);
-    }
-    // 如果当前已登录，业务侧仍然持有这些频道的引用计数，重新订阅
-    if (!_identity.isAnonymous) {
-      for (final channel in userChannels) {
-        if ((_channelRefCount[channel] ?? 0) > 0) {
-          _sendSubscribeIfPossible(channel);
-        }
-      }
-    }
+    // 无论是登录还是登出，服务端都有可能清理部分或全部频道（避免状态泄露），
+    // 也有可能会丢弃在途的 subscribe 请求。
+    // 为了防止握手阶段或原地切换身份时产生竞态，直接清空本地的订阅/等待状态，
+    // 并根据当前的业务侧引用计数发起全量重新订阅。
+    _subscribedChannels.clear();
+    _pendingSubscribeChannels.clear();
+    _resubscribeAll();
   }
 
   void _handleSubAck(RealtimeIncomingMessage msg) {
@@ -626,6 +622,16 @@ class RealtimeService {
     if (code == RealtimeErrorCodes.authRequired && channel != null) {
       _pendingSubscribeChannels.remove(channel);
       // auth_required：保留引用计数，登录后会自动补发订阅
+    }
+
+    // 如果是 auth 请求失败，身份未发生变更（通常保持匿名状态）。
+    // 此时需要触发订阅恢复，以保证那些非用户级（公共）频道能正常工作。
+    // 否则卡在 _handleWelcome 中等待 auth_ack 的频道将永远无法被订阅。
+    if (msg.reqId?.startsWith('auth_') == true) {
+      LogService.w('[Realtime] auth 请求失败，回退以当前身份恢复订阅');
+      _subscribedChannels.clear();
+      _pendingSubscribeChannels.clear();
+      _resubscribeAll();
     }
   }
 

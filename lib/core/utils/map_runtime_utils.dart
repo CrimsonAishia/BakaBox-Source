@@ -62,8 +62,8 @@ class MapRuntimeUtils {
   }) {
     if (hasError) return '获取失败';
     if (mapRuntime == null) {
-      if (isLoading) return '';
-      return '加载中...';
+      if (isLoading) return '加载中...';
+      return '暂无数据';
     }
 
     final currentRuntime = calculateCurrentRuntime(mapRuntime, fetchedAt);

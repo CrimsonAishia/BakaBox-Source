@@ -276,6 +276,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     _realtimeStarted = false;
     _scoreChannelSubscription?.cancel();
     _scoreChannelSubscription = null;
+    _scoreChannel.unsubscribe();
     _mapRuntimeChannelSubscription?.cancel();
     _mapRuntimeChannelSubscription = null;
     _mapRuntimeChannel.unsubscribe();
@@ -794,7 +795,16 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       final address =
           server.serverItem.address ?? server.serverItem.serverAddress;
       if (address == null) return server;
-      final updated = _applyScoreToServer(server, snapshot[address]);
+      final score = snapshot[address];
+      if (score == null) {
+        if (server.teamScores != null) {
+          changed = true;
+          return server.copyWith(clearTeamScores: true);
+        }
+        return server;
+      }
+      
+      final updated = _applyScoreToServer(server, score);
       if (!identical(updated, server)) changed = true;
       return updated;
     }).toList();
@@ -859,7 +869,12 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       if (address == null) return server;
 
       final entry = snapshot[address];
-      if (entry == null || entry.weeklyOccurrences == null) return server;
+      if (entry == null || entry.weeklyOccurrences == null) {
+        // WebSocket 快照可能并未追踪部分服务器，或者发生漏推。
+        // 如果 WebSocket 没有对应数据，绝对不能用 null 去覆盖可能通过 HTTP 接口拉取到的真实运行时间。
+        // 真正的“无数据”清理工作，应交由 HTTP fallback 接口 `getMapRuntime` 返回 null 时来执行。
+        return server;
+      }
 
       final int currentRuntimeSeconds = entry.changedAt != null
           ? (nowMs ~/ 1000) - entry.changedAt!
@@ -1008,12 +1023,12 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
                       currentServer.mapRuntimeLastFetched == null))) {
             if (!NetworkModeService.instance.weakNetwork) {
               // 正常网络模式下，不论是冷启动还是换图，长连接都会推送 snapshot 或 changed 事件。
-              // 为了避免 A2S 查询比长连接快导致的 HTTP 抢跑竞态，延迟 3 秒再决定是否发 HTTP。
+              // 为了避免 A2S 查询比长连接快导致的 HTTP 抢跑竞态，延迟 1 秒再决定是否发 HTTP。
               final mapNameAtThatTime = info.map;
               final reqIdAtThatTime = requestId;
-              Future.delayed(const Duration(seconds: 3), () {
+              Future.delayed(const Duration(seconds: 1), () {
                 if (isClosed) return;
-                // 3秒后，如果 _mapRuntimeCache 里已经有了该地图的数据，说明长连接已经兜底，直接取消 HTTP
+                // 1秒后，如果 _mapRuntimeCache 里已经有了该地图的数据，说明长连接已经兜底，直接取消 HTTP
                 if (_mapRuntimeCache[address] != null &&
                     _serverMapCache[address] == mapNameAtThatTime) {
                   return;
@@ -1195,8 +1210,12 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     }
 
     // 更新全局缓存
-    if (event.mapRuntime != null) {
-      _mapRuntimeCache[event.address] = event.mapRuntime!;
+    if (event.mapRuntimeFetched == true) {
+      if (event.mapRuntime != null) {
+        _mapRuntimeCache[event.address] = event.mapRuntime!;
+      } else {
+        _mapRuntimeCache.remove(event.address);
+      }
       _mapRuntimeLastFetchedCache[event.address] =
           DateTime.now().millisecondsSinceEpoch;
       _trimCacheIfNeeded();
@@ -1207,6 +1226,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       mapInfo: event.mapInfoFetched == true ? event.mapInfo : (event.mapInfo ?? current.mapInfo),
       mapInfoFetched: event.mapInfoFetched ?? current.mapInfoFetched,
       mapRuntime: event.mapRuntimeFetched == true ? event.mapRuntime : (event.mapRuntime ?? current.mapRuntime),
+      clearMapRuntime: event.mapRuntimeFetched == true && event.mapRuntime == null,
       mapRuntimeLastFetched: event.mapRuntimeFetched == true
           ? DateTime.now().millisecondsSinceEpoch
           : current.mapRuntimeLastFetched,
@@ -2610,6 +2630,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
     // 2. 递增 requestId，取消所有进行中的请求
     final requestId = ++_currentRequestId;
+    
+    // 强制触发一次 WebSocket 快照对账（如果不在冷却期）
+    _maybeForceRealtimeResnapshot(DateTime.now());
 
     // 3. 重置防重入标记
     _isUpdatingCategoryOnlineCounts = false;
@@ -2617,12 +2640,16 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     // 4. 重置比分查询时间，确保强制刷新后能立即重新获取比分
     _lastScoreFetchTime = null;
 
-    // 5. 清除当前分类所有服务器的失败计数缓存（解决离线状态残留问题）
+    // 5. 清除当前分类所有服务器的失败计数缓存和运行时间缓存
+    // 失败计数：解决离线状态残留问题
+    // 运行时间：确保 _fetchSingleServerInfo 中的 guard 条件能重新触发 HTTP 拉取
     for (final server in state.servers) {
       final address =
           server.serverItem.address ?? server.serverItem.serverAddress;
       if (address != null) {
         _failureCountCache.remove(address);
+        _mapRuntimeCache.remove(address);
+        _mapRuntimeLastFetchedCache.remove(address);
       }
     }
 
