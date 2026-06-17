@@ -122,6 +122,9 @@ class RealtimeIncomingMessage {
   /// 服务端时间戳（毫秒）
   final int? timestamp;
 
+  /// 频道最新版本号/序列号（用于心跳包对账比对）
+  final int? version;
+
   const RealtimeIncomingMessage({
     required this.action,
     this.channel,
@@ -130,6 +133,7 @@ class RealtimeIncomingMessage {
     this.error,
     this.reqId,
     this.timestamp,
+    this.version,
   });
 
   factory RealtimeIncomingMessage.fromJson(Map<String, dynamic> json) {
@@ -141,6 +145,7 @@ class RealtimeIncomingMessage {
       error: json['error'] as String?,
       reqId: json['reqId'] as String?,
       timestamp: (json['timestamp'] as num?)?.toInt(),
+      version: (json['version'] as num?)?.toInt(),
     );
   }
 
@@ -165,11 +170,15 @@ class RealtimeChannelEvent {
   /// 服务端时间戳（毫秒），可能为空
   final int? timestamp;
 
+  /// 频道最新版本号/序列号
+  final int? version;
+
   const RealtimeChannelEvent({
     required this.channel,
     required this.eventType,
     required this.data,
     this.timestamp,
+    this.version,
   });
 
   /// 是否为快照事件

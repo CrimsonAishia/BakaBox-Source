@@ -76,6 +76,9 @@ class RealtimeService {
   /// 已发送 subscribe 但尚未收到 sub_ack 的频道
   final Set<String> _pendingSubscribeChannels = {};
 
+  /// 各频道当前本地最新版本号（用于心跳丢包对账）
+  final Map<String, int> _channelVersions = {};
+
   /// 各频道事件流控制器
   final Map<String, StreamController<RealtimeChannelEvent>>
   _channelEventStreams = {};
@@ -300,6 +303,7 @@ class RealtimeService {
       await controller.close();
     }
     _channelEventStreams.clear();
+    _channelVersions.clear();
     await _connectionStateController.close();
     await _forceLogoutController.close();
     await _reconnectedController.close();
@@ -507,7 +511,7 @@ class RealtimeService {
         _handleEvent(msg);
         break;
       case RealtimeServerActions.pong:
-        // 静默处理
+        _handlePong(msg);
         break;
       case RealtimeServerActions.error:
         _handleError(msg);
@@ -600,6 +604,10 @@ class RealtimeService {
     final data = msg.data;
     if (channel == null || eventType == null || data == null) return;
 
+    if (msg.version != null) {
+      _channelVersions[channel] = msg.version!;
+    }
+
     final controller = _channelEventStreams[channel];
     if (controller == null || controller.isClosed) return;
     controller.add(
@@ -608,8 +616,34 @@ class RealtimeService {
         eventType: eventType,
         data: data,
         timestamp: msg.timestamp,
+        version: msg.version,
       ),
     );
+  }
+
+  void _handlePong(RealtimeIncomingMessage msg) {
+    final data = msg.data;
+    if (data == null) return;
+    
+    final versions = data['versions'];
+    if (versions is Map) {
+      for (final entry in versions.entries) {
+        final channel = entry.key.toString();
+        final remoteVersion = (entry.value as num?)?.toInt();
+        if (remoteVersion == null) continue;
+        
+        final localVersion = _channelVersions[channel];
+        // 如果当前频道已订阅，且本地有版本记录但落后于服务端，说明丢包了
+        if (_subscribedChannels.contains(channel) && localVersion != null) {
+          if (localVersion < remoteVersion) {
+            LogService.w('[Realtime] 心跳对账：频道 $channel 发生丢包 (本地 $localVersion < 服务端 $remoteVersion)，强制重拉取');
+            requestResnapshot(channel);
+            // 立即更新为远程版本，防止在 snapshot 回来之前多次触发 resnapshot
+            _channelVersions[channel] = remoteVersion;
+          }
+        }
+      }
+    }
   }
 
   void _handleError(RealtimeIncomingMessage msg) {
