@@ -87,6 +87,7 @@ class RealtimeEventTypes {
   static const String snapshot = 'snapshot';
   static const String changed = 'changed';
   static const String updated = 'updated';
+  static const String syncing = 'syncing';
   // notifications
   static const String created = 'new';
   // announcements

@@ -158,7 +158,6 @@ class MapChangeMonitorService {
     }
   }
 
-  // ---- 实时频道 ----
 
   void _startRealtime() {
     if (_realtimeSubscribed) return;
@@ -191,6 +190,8 @@ class MapChangeMonitorService {
         for (final entry in event.entries) {
           _onChanged(entry);
         }
+        break;
+      case ServerMapRuntimeEventKind.syncing:
         break;
     }
   }
@@ -283,7 +284,6 @@ class MapChangeMonitorService {
     );
   }
 
-  // ---- 持久化 ----
 
   /// 保存监控列表到本地存储（JSON格式）
   Future<void> _saveMonitoredServers() async {

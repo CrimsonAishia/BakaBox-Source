@@ -256,7 +256,7 @@ class RealtimeService {
   /// - 频道未订阅或正在等待 sub_ack（snapshot 在途）：跳过，避免无谓请求与
   ///   `not_subscribed` 错误。
   /// - 引用计数为 0（无人订阅）：跳过。
-  void requestResnapshot(String channel) {
+  void requestResnapshot(String channel, {bool emitSyncing = false}) {
     if (_disposed) return;
     if (!isConnected) return;
     if ((_channelRefCount[channel] ?? 0) <= 0) return;
@@ -270,6 +270,21 @@ class RealtimeService {
       'channel': channel,
       'reqId': _nextReqId('resnap'),
     });
+
+    if (emitSyncing) {
+      // 注入一个内部的 syncing 事件，通知频道适配器清空过期数据并显示 loading
+      final controller = _channelEventStreams[channel];
+      if (controller != null && !controller.isClosed) {
+        controller.add(
+          RealtimeChannelEvent(
+            channel: channel,
+            eventType: RealtimeEventTypes.syncing,
+            data: const {},
+            timestamp: DateTime.now().millisecondsSinceEpoch,
+          ),
+        );
+      }
+    }
   }
 
   /// 取消订阅（引用计数 - 1，归零时发送 `unsubscribe`）

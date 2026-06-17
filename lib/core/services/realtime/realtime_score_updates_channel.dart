@@ -7,7 +7,7 @@ import '../../utils/log_service.dart';
 import '../realtime_service.dart';
 
 /// 比分事件类型
-enum ScoreUpdateEventKind { snapshot, updated }
+enum ScoreUpdateEventKind { snapshot, updated, syncing }
 
 /// 比分事件
 class ScoreUpdateEvent {
@@ -69,7 +69,7 @@ class RealtimeScoreUpdatesChannel {
   ///
   /// 用于用户手动刷新：强制纠正本地可能停留的旧比分。频率限制由调用方负责。
   void forceResnapshot() {
-    _service.requestResnapshot(RealtimeChannels.scoreUpdates);
+    _service.requestResnapshot(RealtimeChannels.scoreUpdates, emitSyncing: true);
   }
 
   void unsubscribe() {
@@ -95,8 +95,22 @@ class RealtimeScoreUpdatesChannel {
       case RealtimeEventTypes.updated:
         _onUpdated(event);
         break;
+      case RealtimeEventTypes.syncing:
+        _onSyncing();
+        break;
       default:
         LogService.d('[Realtime/Score] 忽略事件: ${event.eventType}');
+    }
+  }
+
+  void _onSyncing() {
+    _latestSnapshot.clear();
+    _pendingUpdates.clear();
+    _flushScheduled = false;
+    if (!_controller.isClosed) {
+      _controller.add(
+        const ScoreUpdateEvent(kind: ScoreUpdateEventKind.syncing, scores: []),
+      );
     }
   }
 

@@ -277,14 +277,16 @@ class ServerApplyScoreUpdates extends ServerEvent {
   /// 是否为 snapshot（true 表示需要将所有不在 snapshot 中的服务器比分清空？
   /// 实际不清，只覆盖入参里的条目，避免与本地的“无比分”状态冲突）
   final bool isSnapshot;
+  final bool isSyncing;
 
   const ServerApplyScoreUpdates({
     required this.scores,
     required this.isSnapshot,
+    this.isSyncing = false,
   });
 
   @override
-  List<Object?> get props => [scores, isSnapshot];
+  List<Object?> get props => [scores, isSnapshot, isSyncing];
 }
 
 /// 内部事件：来自 `server.map.runtime` WS 频道的换图事件
@@ -309,7 +311,10 @@ class ServerApplyMapRuntimeChange extends ServerEvent {
 
 /// 内部事件：处理来自 `server.map.runtime` WS 频道的初始快照
 class ServerApplyMapRuntimeSnapshot extends ServerEvent {
-  const ServerApplyMapRuntimeSnapshot();
+  final bool isSyncing;
+  const ServerApplyMapRuntimeSnapshot({this.isSyncing = false});
+  @override
+  List<Object?> get props => [isSyncing];
 }
 
 /// 内部事件：来自 `map.info` WS 频道的地图信息变更（背景图/标签等元数据）
@@ -331,14 +336,16 @@ class ServerApplyMapInfoChange extends ServerEvent {
 class ServerApplyUsersCountUpdates extends ServerEvent {
   final List<ServerUsersCount> counts;
   final bool isSnapshot;
+  final bool isSyncing;
 
   const ServerApplyUsersCountUpdates({
     required this.counts,
     required this.isSnapshot,
+    this.isSyncing = false,
   });
 
   @override
-  List<Object?> get props => [counts, isSnapshot];
+  List<Object?> get props => [counts, isSnapshot, isSyncing];
 }
 
 /// 清除实时数据（进入弱网模式时调用）

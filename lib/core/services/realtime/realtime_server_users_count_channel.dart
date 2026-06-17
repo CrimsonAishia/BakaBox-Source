@@ -6,7 +6,7 @@ import '../../models/server_models.dart';
 import '../../utils/log_service.dart';
 import '../realtime_service.dart';
 
-enum UsersCountUpdateEventKind { snapshot, updated }
+enum UsersCountUpdateEventKind { snapshot, updated, syncing }
 
 class UsersCountUpdateEvent {
   final UsersCountUpdateEventKind kind;
@@ -66,7 +66,7 @@ class RealtimeServerUsersCountChannel {
   /// 用于用户手动刷新：强制纠正本地可能停留的旧人数。频率限制由调用方
   /// （ServerBloc 刷新事件）负责，避免高频请求冲击服务端。
   void forceResnapshot() {
-    _service.requestResnapshot(RealtimeChannels.serverUsersCount);
+    _service.requestResnapshot(RealtimeChannels.serverUsersCount, emitSyncing: true);
   }
 
   void unsubscribe() {
@@ -89,11 +89,26 @@ class RealtimeServerUsersCountChannel {
       case RealtimeEventTypes.snapshot:
         _onSnapshot(event);
         break;
+      case RealtimeEventTypes.changed:
       case RealtimeEventTypes.updated:
         _onUpdated(event);
         break;
+      case RealtimeEventTypes.syncing:
+        _onSyncing();
+        break;
       default:
         LogService.d('[Realtime/UsersCount] 忽略事件: ${event.eventType}');
+    }
+  }
+
+  void _onSyncing() {
+    _latestSnapshot.clear();
+    _pendingUpdates.clear();
+    _flushScheduled = false;
+    if (!_controller.isClosed) {
+      _controller.add(
+        const UsersCountUpdateEvent(kind: UsersCountUpdateEventKind.syncing, counts: []),
+      );
     }
   }
 

@@ -227,6 +227,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         ServerApplyScoreUpdates(
           scores: event.scores,
           isSnapshot: event.kind == ScoreUpdateEventKind.snapshot,
+          isSyncing: event.kind == ScoreUpdateEventKind.syncing,
         ),
       );
     });
@@ -236,6 +237,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       if (isClosed) return;
       if (event.kind == ServerMapRuntimeEventKind.snapshot) {
         add(const ServerApplyMapRuntimeSnapshot());
+        return;
+      } else if (event.kind == ServerMapRuntimeEventKind.syncing) {
+        add(const ServerApplyMapRuntimeSnapshot(isSyncing: true));
         return;
       }
       for (final entry in event.entries) {
@@ -258,6 +262,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         ServerApplyUsersCountUpdates(
           counts: event.counts,
           isSnapshot: event.kind == UsersCountUpdateEventKind.snapshot,
+          isSyncing: event.kind == UsersCountUpdateEventKind.syncing,
         ),
       );
     });
@@ -853,6 +858,19 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     ServerApplyMapRuntimeSnapshot event,
     Emitter<ServerState> emit,
   ) {
+    if (state.servers.isEmpty) return;
+    if (event.isSyncing) {
+      for (final server in state.servers) {
+        final address = server.serverItem.address ?? server.serverItem.serverAddress;
+        if (address != null) {
+          _mapRuntimeCache.remove(address);
+          _mapRuntimeLastFetchedCache.remove(address);
+        }
+      }
+      final updatedServers = state.servers.map((s) => s.copyWith(clearMapRuntime: true)).toList();
+      emit(state.copyWith(servers: updatedServers));
+      return;
+    }
     _applyMapRuntimeSnapshotForCurrentServers(emit);
   }
 
@@ -2742,7 +2760,15 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     ServerApplyScoreUpdates event,
     Emitter<ServerState> emit,
   ) {
-    if (state.servers.isEmpty || event.scores.isEmpty) return;
+    if (state.servers.isEmpty) return;
+
+    if (event.isSyncing) {
+      final updatedServers = state.servers.map((s) => s.copyWith(clearTeamScores: true)).toList();
+      emit(state.copyWith(servers: updatedServers));
+      return;
+    }
+
+    if (event.scores.isEmpty) return;
 
     final byAddress = <String, ServerScore>{};
     for (final score in event.scores) {
@@ -2771,6 +2797,12 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     Emitter<ServerState> emit,
   ) {
     if (state.servers.isEmpty) return;
+
+    if (event.isSyncing) {
+      final updatedServers = state.servers.map((s) => s.copyWith(queueCount: 0, warmupCount: 0)).toList();
+      emit(state.copyWith(servers: updatedServers));
+      return;
+    }
 
     final updates = <String, ServerUsersCount>{};
     for (final c in event.counts) {

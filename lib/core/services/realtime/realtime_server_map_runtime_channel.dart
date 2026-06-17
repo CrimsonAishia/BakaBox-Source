@@ -61,7 +61,7 @@ class ServerMapRuntimeEntry {
 }
 
 /// 服务器换图事件类型
-enum ServerMapRuntimeEventKind { snapshot, changed }
+enum ServerMapRuntimeEventKind { snapshot, changed, syncing }
 
 /// 服务器换图事件
 class ServerMapRuntimeEvent {
@@ -125,7 +125,7 @@ class RealtimeServerMapRuntimeChannel {
   ///
   /// 用于用户手动刷新：强制纠正本地可能停留的旧换图状态。频率限制由调用方负责。
   void forceResnapshot() {
-    _service.requestResnapshot(RealtimeChannels.serverMapRuntime);
+    _service.requestResnapshot(RealtimeChannels.serverMapRuntime, emitSyncing: true);
   }
 
   void unsubscribe() {
@@ -149,8 +149,20 @@ class RealtimeServerMapRuntimeChannel {
       case RealtimeEventTypes.changed:
         _onChanged(event);
         break;
+      case RealtimeEventTypes.syncing:
+        _onSyncing();
+        break;
       default:
         LogService.d('[Realtime/MapRuntime] 忽略事件: ${event.eventType}');
+    }
+  }
+
+  void _onSyncing() {
+    _latestSnapshot.clear();
+    if (!_controller.isClosed) {
+      _controller.add(
+        const ServerMapRuntimeEvent(kind: ServerMapRuntimeEventKind.syncing, entries: []),
+      );
     }
   }
 
