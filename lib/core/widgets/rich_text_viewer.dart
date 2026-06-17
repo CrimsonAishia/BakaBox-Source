@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -61,10 +62,23 @@ class _RichTextViewerState extends State<RichTextViewer> {
   /// 切片模式产物
   GuideContentSlice? _slice;
 
+  bool? _wasDark;
+
   @override
   void initState() {
     super.initState();
-    _rebuildContent();
+    // 延迟到 didChangeDependencies 初始化，以获取 Theme 模式
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (_wasDark != isDark) {
+      _wasDark = isDark;
+      _disposeControllers();
+      _rebuildContent(isDark);
+    }
   }
 
   @override
@@ -73,13 +87,15 @@ class _RichTextViewerState extends State<RichTextViewer> {
     if (oldWidget.content != widget.content ||
         oldWidget.sliceForToc != widget.sliceForToc) {
       _disposeControllers();
-      _rebuildContent();
+      _rebuildContent(_wasDark ?? Theme.of(context).brightness == Brightness.dark);
     }
   }
 
-  void _rebuildContent() {
+  void _rebuildContent(bool isDark) {
+    final adaptedContent = _adaptDeltaJsonColors(widget.content, isDark);
+
     if (widget.sliceForToc) {
-      final slice = GuideTocSlicer.slice(widget.content);
+      final slice = GuideTocSlicer.slice(adaptedContent);
       _slice = slice;
       for (final chunk in slice.chunks) {
         _sliceControllers.add(_makeController(chunk.deltaJson));
@@ -91,8 +107,85 @@ class _RichTextViewerState extends State<RichTextViewer> {
         }
       });
     } else {
-      _controller = _makeController(widget.content);
+      _controller = _makeController(adaptedContent);
     }
+  }
+
+  /// 核心动态颜色自适应算法：根据当前亮暗模式和颜色的感知亮度（Luminance/Lightness），动态反转或调整不合时宜的死颜色。
+  String _adaptDeltaJsonColors(String content, bool isDark) {
+    if (content.trim().isEmpty) return content;
+    try {
+      final json = jsonDecode(content);
+      if (json is List) {
+        for (var op in json) {
+          if (op is Map && op.containsKey('attributes')) {
+            final attrs = op['attributes'];
+            if (attrs is Map) {
+              if (attrs.containsKey('color')) {
+                attrs['color'] = _adaptColorStr(attrs['color'].toString(), isDark, false);
+              }
+              if (attrs.containsKey('background')) {
+                attrs['background'] = _adaptColorStr(attrs['background'].toString(), isDark, true);
+              }
+            }
+          }
+        }
+        return jsonEncode(json);
+      }
+    } catch (_) {}
+    return content;
+  }
+
+  String _adaptColorStr(String colorStr, bool isDark, bool isBackground) {
+    if (!colorStr.startsWith('#')) return colorStr;
+    try {
+      var hex = colorStr.replaceFirst('#', '');
+      if (hex.length == 3) {
+        hex = '${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}';
+      }
+      if (hex.length == 6) {
+        hex = 'FF$hex';
+      }
+      if (hex.length != 8) return colorStr;
+
+      final color = Color(int.parse(hex, radix: 16));
+      final hsl = HSLColor.fromColor(color);
+
+      if (isDark) {
+        if (!isBackground) {
+          // 暗色模式文字：如果太暗（亮度 < 0.4），提升亮度
+          if (hsl.lightness < 0.4) {
+             final newL = (1.0 - hsl.lightness).clamp(0.6, 1.0);
+             final newColor = hsl.withLightness(newL).toColor();
+             return '#${newColor.value.toRadixString(16).padLeft(8, '0').substring(2)}';
+          }
+        } else {
+          // 暗色模式背景：如果太亮（亮度 > 0.6），降低亮度
+          if (hsl.lightness > 0.6) {
+             final newL = (1.0 - hsl.lightness).clamp(0.1, 0.4);
+             final newColor = hsl.withLightness(newL).toColor();
+             return '#${newColor.value.toRadixString(16).padLeft(8, '0').substring(2)}';
+          }
+        }
+      } else {
+        if (!isBackground) {
+          // 亮色模式文字：如果太亮（亮度 > 0.7），降低亮度
+          if (hsl.lightness > 0.7) {
+             final newL = (1.0 - hsl.lightness).clamp(0.1, 0.4);
+             final newColor = hsl.withLightness(newL).toColor();
+             return '#${newColor.value.toRadixString(16).padLeft(8, '0').substring(2)}';
+          }
+        } else {
+          // 亮色模式背景：如果太暗（亮度 < 0.3），提升亮度
+          if (hsl.lightness < 0.3) {
+             final newL = (1.0 - hsl.lightness).clamp(0.6, 1.0);
+             final newColor = hsl.withLightness(newL).toColor();
+             return '#${newColor.value.toRadixString(16).padLeft(8, '0').substring(2)}';
+          }
+        }
+      }
+    } catch (_) {}
+    return colorStr;
   }
 
   QuillController _makeController(String deltaJson) {
