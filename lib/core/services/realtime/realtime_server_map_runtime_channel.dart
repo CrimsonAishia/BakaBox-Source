@@ -30,6 +30,9 @@ class ServerMapRuntimeEntry {
   /// 换图时间（秒），可选
   final int? changedAt;
 
+  /// 一周内出现次数
+  final int? weeklyOccurrences;
+
   const ServerMapRuntimeEntry({
     required this.serverAddress,
     required this.mapName,
@@ -38,6 +41,7 @@ class ServerMapRuntimeEntry {
     this.hostName,
     this.historyId,
     this.changedAt,
+    this.weeklyOccurrences,
   });
 
   factory ServerMapRuntimeEntry.fromJson(Map<String, dynamic> json) {
@@ -49,6 +53,7 @@ class ServerMapRuntimeEntry {
       hostName: json['hostname'] as String?,
       historyId: (json['historyId'] as num?)?.toInt(),
       changedAt: (json['changedAt'] as num?)?.toInt(),
+      weeklyOccurrences: (json['weeklyOccurrences'] as num?)?.toInt(),
     );
   }
 

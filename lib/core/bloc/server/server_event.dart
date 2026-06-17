@@ -283,15 +283,24 @@ class ServerApplyMapRuntimeChange extends ServerEvent {
   final String serverAddress;
   final String newMapName;
   final String? oldMapName;
+  final int? weeklyOccurrences;
+  final int? changedAt;
 
   const ServerApplyMapRuntimeChange({
     required this.serverAddress,
     required this.newMapName,
     this.oldMapName,
+    this.weeklyOccurrences,
+    this.changedAt,
   });
 
   @override
-  List<Object?> get props => [serverAddress, newMapName, oldMapName];
+  List<Object?> get props => [serverAddress, newMapName, oldMapName, weeklyOccurrences, changedAt];
+}
+
+/// 内部事件：处理来自 `server.map.runtime` WS 频道的初始快照
+class ServerApplyMapRuntimeSnapshot extends ServerEvent {
+  const ServerApplyMapRuntimeSnapshot();
 }
 
 /// 内部事件：来自 `map.info` WS 频道的地图信息变更（背景图/标签等元数据）

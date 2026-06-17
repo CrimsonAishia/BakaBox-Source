@@ -172,6 +172,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     on<ServerApplyScoreUpdates>(_onApplyScoreUpdates);
     on<ServerApplyUsersCountUpdates>(_onApplyUsersCountUpdates);
     on<ServerApplyMapRuntimeChange>(_onApplyMapRuntimeChange);
+    on<ServerApplyMapRuntimeSnapshot>(_onApplyMapRuntimeSnapshot);
     on<ServerApplyMapInfoChange>(_onApplyMapInfoChange);
     on<ServerClearRealtimeData>(_onClearRealtimeData);
 
@@ -233,14 +234,18 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     _mapRuntimeChannel.subscribe();
     _mapRuntimeChannelSubscription = _mapRuntimeChannel.events.listen((event) {
       if (isClosed) return;
-      // snapshot 不必逐条触发；交给后续 changed 事件即可
-      if (event.kind != ServerMapRuntimeEventKind.changed) return;
+      if (event.kind == ServerMapRuntimeEventKind.snapshot) {
+        add(const ServerApplyMapRuntimeSnapshot());
+        return;
+      }
       for (final entry in event.entries) {
         add(
           ServerApplyMapRuntimeChange(
             serverAddress: entry.serverAddress,
             newMapName: entry.mapName,
             oldMapName: entry.oldMapName,
+            weeklyOccurrences: entry.weeklyOccurrences,
+            changedAt: entry.changedAt,
           ),
         );
       }
@@ -650,6 +655,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       }
     }
 
+    // 在发起 HTTP 详情查询前，先用实时频道的快照兜底（避免 N+1 HTTP 查询风暴）
+    _applyMapRuntimeSnapshotForCurrentServers(emit);
+
     // 并行执行 A2S 和 API
     await Future.wait([
       Future.wait(
@@ -831,6 +839,56 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     emit(state.copyWith(servers: updatedServers));
   }
 
+  void _onApplyMapRuntimeSnapshot(
+    ServerApplyMapRuntimeSnapshot event,
+    Emitter<ServerState> emit,
+  ) {
+    _applyMapRuntimeSnapshotForCurrentServers(emit);
+  }
+
+  void _applyMapRuntimeSnapshotForCurrentServers(Emitter<ServerState> emit) {
+    if (state.servers.isEmpty) return;
+    final snapshot = _mapRuntimeChannel.latestSnapshot;
+    if (snapshot.isEmpty) return;
+
+    bool changed = false;
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    final updatedServers = state.servers.map((server) {
+      final address =
+          server.serverItem.address ?? server.serverItem.serverAddress;
+      if (address == null) return server;
+
+      final entry = snapshot[address];
+      if (entry == null || entry.weeklyOccurrences == null) return server;
+
+      final int currentRuntimeSeconds = entry.changedAt != null
+          ? (nowMs ~/ 1000) - entry.changedAt!
+          : 0;
+      final instantRuntime = MapRuntimeData(
+        currentRuntime: currentRuntimeSeconds > 0 ? currentRuntimeSeconds : 0,
+        weeklyOccurrences: entry.weeklyOccurrences,
+      );
+
+      if (server.mapRuntime == instantRuntime) {
+        return server;
+      }
+
+      _mapRuntimeCache[address] = instantRuntime;
+      _mapRuntimeLastFetchedCache[address] = nowMs;
+      changed = true;
+      return server.copyWith(
+        mapRuntime: instantRuntime,
+        mapRuntimeLastFetched: nowMs,
+        clearMapRuntime: false,
+        mapRuntimeError: false,
+      );
+    }).toList();
+
+    if (!changed) return;
+    if (emit.isDone) return;
+    emit(state.copyWith(servers: updatedServers));
+  }
+
   /// 获取单个服务器信息（异步独立执行）
   /// 注意：此方法处理的是服务器信息查询的失败，不影响离线状态判定
   /// 离线状态只在刷新周期结束后根据连续失败次数判定
@@ -946,7 +1004,25 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
               (mapChanged ||
                   (currentServer.mapRuntime == null &&
                       _mapRuntimeCache[address] == null))) {
-            _fetchMapRuntimeAsync(address, info.map, requestId, serverApi);
+            if (!NetworkModeService.instance.weakNetwork) {
+              // 正常网络模式下，不论是冷启动还是换图，长连接都会推送 snapshot 或 changed 事件。
+              // 为了避免 A2S 查询比长连接快导致的 HTTP 抢跑竞态，延迟 3 秒再决定是否发 HTTP。
+              final mapNameAtThatTime = info.map;
+              final reqIdAtThatTime = requestId;
+              Future.delayed(const Duration(seconds: 3), () {
+                if (isClosed) return;
+                // 3秒后，如果 _mapRuntimeCache 里已经有了该地图的数据，说明长连接已经兜底，直接取消 HTTP
+                if (_mapRuntimeCache[address] != null &&
+                    _serverMapCache[address] == mapNameAtThatTime) {
+                  return;
+                }
+                _fetchMapRuntimeAsync(
+                    address, mapNameAtThatTime, reqIdAtThatTime, serverApi);
+              });
+            } else {
+              // 弱网模式下没有长连接，直接发 HTTP
+              _fetchMapRuntimeAsync(address, info.map, requestId, serverApi);
+            }
           }
         }
       } else {
@@ -2716,9 +2792,24 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       return;
     }
 
-    // 清掉旧的 mapRuntime / mapInfo 缓存，让 UI 立即知道地图变了
-    _mapRuntimeCache.remove(event.serverAddress);
-    _mapRuntimeLastFetchedCache.remove(event.serverAddress);
+    // 如果 WS 带了 weeklyOccurrences 和 changedAt，我们可以立即构造出一个 MapRuntimeData
+    MapRuntimeData? instantRuntime;
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    if (event.weeklyOccurrences != null) {
+      final int currentRuntimeSeconds = event.changedAt != null
+          ? (nowMs ~/ 1000) - event.changedAt!
+          : 0;
+      instantRuntime = MapRuntimeData(
+        currentRuntime: currentRuntimeSeconds > 0 ? currentRuntimeSeconds : 0,
+        weeklyOccurrences: event.weeklyOccurrences,
+      );
+      _mapRuntimeCache[event.serverAddress] = instantRuntime;
+      _mapRuntimeLastFetchedCache[event.serverAddress] = nowMs;
+    } else {
+      _mapRuntimeCache.remove(event.serverAddress);
+      _mapRuntimeLastFetchedCache.remove(event.serverAddress);
+    }
+
     _serverMapCache[event.serverAddress] = event.newMapName;
 
     final servers = List<ExtendedServerItem>.from(state.servers);
@@ -2734,7 +2825,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
 
     servers[index] = current.copyWith(
       serverData: updatedServerData ?? current.serverData,
-      clearMapRuntime: true,
+      mapRuntime: instantRuntime ?? current.mapRuntime,
+      clearMapRuntime: instantRuntime == null,
+      mapRuntimeLastFetched: instantRuntime != null ? nowMs : null,
       clearMapInfo: true,
       mapRuntimeError: false,
       clearTeamScores: true,
@@ -2750,12 +2843,15 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
       requestId,
       serverApi,
     );
-    _fetchMapRuntimeAsync(
-      event.serverAddress,
-      event.newMapName,
-      requestId,
-      serverApi,
-    );
+    // 自定义服务器不查 runtime；如果 WS 已经传了完整的 instantRuntime，也不查
+    if (instantRuntime == null && !current.serverItem.isCustom) {
+      _fetchMapRuntimeAsync(
+        event.serverAddress,
+        event.newMapName,
+        requestId,
+        serverApi,
+      );
+    }
   }
 
   /// 处理 `map.info` 推送：地图本身没换，但其背景图/标签等元数据被后端修改。
