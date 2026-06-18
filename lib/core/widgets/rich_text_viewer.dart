@@ -157,14 +157,14 @@ class _RichTextViewerState extends State<RichTextViewer> {
           if (hsl.lightness < 0.4) {
              final newL = (1.0 - hsl.lightness).clamp(0.6, 1.0);
              final newColor = hsl.withLightness(newL).toColor();
-             return '#${newColor.value.toRadixString(16).padLeft(8, '0').substring(2)}';
+             return '#${newColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}';
           }
         } else {
           // 暗色模式背景：如果太亮（亮度 > 0.6），降低亮度
           if (hsl.lightness > 0.6) {
              final newL = (1.0 - hsl.lightness).clamp(0.1, 0.4);
              final newColor = hsl.withLightness(newL).toColor();
-             return '#${newColor.value.toRadixString(16).padLeft(8, '0').substring(2)}';
+             return '#${newColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}';
           }
         }
       } else {
@@ -173,14 +173,14 @@ class _RichTextViewerState extends State<RichTextViewer> {
           if (hsl.lightness > 0.7) {
              final newL = (1.0 - hsl.lightness).clamp(0.1, 0.4);
              final newColor = hsl.withLightness(newL).toColor();
-             return '#${newColor.value.toRadixString(16).padLeft(8, '0').substring(2)}';
+             return '#${newColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}';
           }
         } else {
           // 亮色模式背景：如果太暗（亮度 < 0.3），提升亮度
           if (hsl.lightness < 0.3) {
              final newL = (1.0 - hsl.lightness).clamp(0.6, 1.0);
              final newColor = hsl.withLightness(newL).toColor();
-             return '#${newColor.value.toRadixString(16).padLeft(8, '0').substring(2)}';
+             return '#${newColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}';
           }
         }
       }
