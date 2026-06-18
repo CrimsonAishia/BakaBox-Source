@@ -2672,8 +2672,9 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
     }
 
     // 6. 重置服务器列表为加载状态
-    // 保留 serverData/mapInfo/teamScores，避免卡片切换为骨架屏
+    // 保留 serverData/mapInfo/pingInfo，避免卡片切换为骨架屏
     // 骨架屏切换会导致 MouseRegion 的 hover 状态丢失（Flutter widget 重建问题）
+    // 清空 mapRuntime 和 teamScores：强制刷新 = 完全重拉运行时间和比分
     final servers = state.servers.map((server) {
       final address =
           server.serverItem.address ?? server.serverItem.serverAddress;
@@ -2685,7 +2686,7 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         mapInfo: server.mapInfo,
         // 保留 ping 信息，避免强制刷新后丢失
         pingInfo: server.pingInfo,
-        // 保留缓存的数据
+        // 清空 runtime：缓存已在步骤 5 清除，读取到 null
         mapRuntime: address != null ? _mapRuntimeCache[address] : null,
         mapRuntimeLastFetched: address != null
             ? _mapRuntimeLastFetchedCache[address]
@@ -2693,8 +2694,8 @@ class ServerBloc extends Bloc<ServerEvent, ServerState> {
         mapRuntimeError: false,
         consecutiveFailures: 0,
         isOffline: false,
-        // 保留比分数据，新数据到来后会覆盖
-        teamScores: server.teamScores,
+        // 清空比分：强制刷新后由 WS snapshot 或 HTTP 重新填充
+        // teamScores 不传，默认 null
       );
     }).toList();
 
