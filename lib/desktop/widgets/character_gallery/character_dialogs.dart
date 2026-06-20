@@ -699,12 +699,9 @@ class _EditSpellCardDialogState extends State<EditSpellCardDialog> {
                 label: widget.type == 'ultimate' ? '消耗B点' : '消耗P点',
                 controller: _costController,
                 hint: widget.type == 'ultimate' ? '100' : '50',
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
+                keyboardType: TextInputType.number,
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
-                  _SingleDecimalPointFormatter(),
+                  FilteringTextInputFormatter.digitsOnly,
                 ],
               ),
               const SizedBox(height: 12),
@@ -742,7 +739,7 @@ class _EditSpellCardDialogState extends State<EditSpellCardDialog> {
                 ? _damageController.text
                 : null,
             cooldown: double.tryParse(_cooldownController.text),
-            cost: double.tryParse(_costController.text),
+            cost: int.tryParse(_costController.text),
           ),
         ],
       ),
@@ -1048,7 +1045,6 @@ class _EditCharacterDescriptionDialogState
   }
 }
 
-// ============ 共享组件 ============
 
 /// 构建对话框标题
 Widget _buildDialogTitle({
@@ -1305,12 +1301,9 @@ class _AddSpellCardDialogState extends State<AddSpellCardDialog> {
                 label: _selectedType == 'ultimate' ? '消耗B点' : '消耗P点',
                 controller: _costController,
                 hint: _selectedType == 'ultimate' ? '100' : '50',
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
+                keyboardType: TextInputType.number,
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
-                  _SingleDecimalPointFormatter(),
+                  FilteringTextInputFormatter.digitsOnly,
                 ],
               ),
               const SizedBox(height: 12),
@@ -1411,7 +1404,7 @@ class _AddSpellCardDialogState extends State<AddSpellCardDialog> {
                 ? _damageController.text
                 : null,
             cooldown: double.tryParse(_cooldownController.text),
-            cost: double.tryParse(_costController.text),
+            cost: int.tryParse(_costController.text),
           ),
         ],
       ),

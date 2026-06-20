@@ -2750,7 +2750,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
   Widget _buildSpellCardStatsRow({
     double? cooldown,
     String? damage,
-    double? cost,
+    int? cost,
     double? speed,
     int? count,
     double? angle,
@@ -3120,7 +3120,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
             ? double.tryParse(cooldownText) != card.cooldown
             : card.cooldown != null) ||
         (costText.isNotEmpty
-            ? double.tryParse(costText) != card.cost
+            ? int.tryParse(costText) != card.cost
             : card.cost != null) ||
         _tempTier != card.tier;
 
@@ -3130,7 +3130,7 @@ class _UnifiedEditDialogState extends State<UnifiedEditDialog>
           description: descText,
           damage: damageText.isNotEmpty ? damageText : null,
           cooldown: double.tryParse(cooldownText),
-          cost: double.tryParse(costText),
+          cost: int.tryParse(costText),
           tier: _tempTier,
         );
       } else {

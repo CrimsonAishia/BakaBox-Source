@@ -552,7 +552,7 @@ class _HoverInfoCardState extends State<HoverInfoCard> {
                 _buildStat(
                   Icons.local_fire_department,
                   card.type == SpellCardType.ultimate ? 'B点' : 'P点',
-                  _formatNum(card.cost!),
+                  card.cost!.toString(),
                   card.type == SpellCardType.ultimate
                       ? AppColors.amber500
                       : AppColors.violet500,

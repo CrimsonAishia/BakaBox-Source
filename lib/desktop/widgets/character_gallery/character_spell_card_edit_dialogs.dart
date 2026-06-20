@@ -260,7 +260,7 @@ class _SpellCardEditSubDialogState extends State<SpellCardEditSubDialog> {
             ? _damageController.text
             : null,
         cooldown: double.tryParse(_cooldownController.text),
-        cost: double.tryParse(_costController.text),
+        cost: int.tryParse(_costController.text),
         tier: _selectedTier,
         previewType: _previewData?.previewType,
         previewFileId: _previewData?.previewFileId,
@@ -508,7 +508,7 @@ class _SpellCardCreateSubDialogState extends State<SpellCardCreateSubDialog> {
             ? _damageController.text
             : null,
         cooldown: double.tryParse(_cooldownController.text),
-        cost: double.tryParse(_costController.text),
+        cost: int.tryParse(_costController.text),
         tier: _selectedTier,
         previewType: _previewData?.previewType,
         previewFileId: _previewData?.previewFileId,
@@ -790,7 +790,7 @@ class _NewSpellCardEditSubDialogState extends State<NewSpellCardEditSubDialog> {
             ? _damageController.text
             : null,
         cooldown: double.tryParse(_cooldownController.text),
-        cost: double.tryParse(_costController.text),
+        cost: int.tryParse(_costController.text),
         tier: _selectedTier,
         previewType: _previewData?.previewType,
         previewFileId: _previewData?.previewFileId,

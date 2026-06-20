@@ -184,7 +184,7 @@ class SpellCard extends Equatable {
   final String? previewVideoOrigin; // 原始视频地址（B站直链解析前的地址，用于获取封面）
   @JsonKey(unknownEnumValue: VideoUrlSource.original)
   final VideoUrlSource? videoUrlSource; // 视频URL来源类型，仅当previewType为video_url时有值
-  final double? cost;
+  final int? cost;
   final double? cooldown;
   final String? damage;
   final List<String>? tips;
@@ -531,7 +531,7 @@ class CreateSpellCardRequest extends Equatable {
   final SpellCardType type;
   final String description;
   final String? iconUrl;
-  final double? cost; // 消耗资源（普通符卡消耗P点，终极符卡消耗B点）
+  final int? cost; // 消耗资源（普通符卡消耗P点，终极符卡消耗B点）
   final double? cooldown;
   final String? damage;
   final List<String>? tips;
@@ -650,7 +650,7 @@ class EditSpellCardRequest extends Equatable {
   final int id;
   final String? description;
   final String? damage;
-  final double? cost;
+  final int? cost;
   final double? cooldown;
   final List<String>? tips;
   final String? editReason;
@@ -838,7 +838,6 @@ class ContentEditHistoryResponse extends Equatable {
   List<Object?> get props => [list, total, page, pageSize];
 }
 
-// ============ 统一编辑 API 相关模型 ============
 
 /// 获取途径编辑数据
 @JsonSerializable()
@@ -863,7 +862,7 @@ class SpellCardEditItem extends Equatable {
   final int id;
   final String? description;
   final String? damage;
-  final double? cost;
+  final int? cost;
   final double? cooldown;
   final List<String>? tips;
   final String? tier;
@@ -939,7 +938,7 @@ class SpellCardCreateItem extends Equatable {
   final String? tier; // 评级 T0/T1/T2/T3/T4/T5/unranked
   final String? description;
   final String? iconUrl;
-  final double? cost;
+  final int? cost;
   final double? cooldown;
   final String? damage;
   final List<String>? tips;
@@ -1324,7 +1323,6 @@ class MyEditRequestListResponse extends Equatable {
   List<Object?> get props => [items, total];
 }
 
-// ============ 统一编辑历史 API 相关模型 ============
 
 /// 统一编辑历史项（按子模型聚合）
 @JsonSerializable()
@@ -1405,7 +1403,6 @@ class UnifiedEditHistoryResponse extends Equatable {
   List<Object?> get props => [list, total];
 }
 
-// ============ 编辑申请管理 API 相关模型 ============
 
 /// 待审核状态查询响应
 @JsonSerializable()
@@ -1530,7 +1527,6 @@ class EditRequestParsedData extends Equatable {
   ];
 }
 
-// ============ 符卡评级列表 API 相关模型 ============
 
 /// 符卡评级列表项（包含角色信息）
 @JsonSerializable()
@@ -1545,7 +1541,7 @@ class SpellCardTierItem extends Equatable {
   final SpellCardTier tier;
   final String? description;
   final String? iconUrl;
-  final double? cost;
+  final int? cost;
   final double? cooldown;
   final String? damage;
 
@@ -1655,7 +1651,6 @@ class SpellCardTierListResponse extends Equatable {
   List<Object?> get props => [tiers, totalCount];
 }
 
-// ============ 刀模/枪模 API 相关模型 ============
 
 /// 武器模型预览图集
 @JsonSerializable()

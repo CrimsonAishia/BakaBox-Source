@@ -5,7 +5,7 @@ class SpellCardEditData {
   final String? description;
   final String? damage;
   final double? cooldown;
-  final double? cost;
+  final int? cost;
   final SpellCardTier? tier;
   final String? previewType; // none/image/video_url
   final int? previewFileId; // image时的文件ID
@@ -49,7 +49,7 @@ class SpellCardCreateData {
   final String? description;
   final String? damage;
   final double? cooldown;
-  final double? cost;
+  final int? cost;
   final SpellCardTier? tier;
   final String? previewType; // none/image/video_url
   final int? previewFileId;
